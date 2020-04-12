@@ -35,3 +35,9 @@ add_subdirectory(src)
 
 # We should put examples here
 # add_subdirectory(examples)
+
+# Testing only available if this is the main app
+# Emergency override 4KLANG_CMAKE_BUILD_TESTING provided as well
+if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR 4KLANG_CMAKE_BUILD_TESTING) AND BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
