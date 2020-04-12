@@ -11,4 +11,8 @@
 [Bb]in/
 [Oo]bj/
 
+# CMake
+build/
 
+# Project specific
+old/
