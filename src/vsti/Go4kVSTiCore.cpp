@@ -2718,7 +2718,7 @@ void Go4kVSTi_SaveByteStream(HINSTANCE hInst, char* filename, int useenvlevels, 
 		fprintf(file, "%%endif\n");
 
 		fprintf(file, "%%ifdef GO4K_USE_FSTG\n");
-		fprintf(file, "GO4K_FSTG_ID	equ		13\n");
+		fprintf(file, "GO4K_FSTG_ID    equ        %d\n", uses.glitch_use ? 13 : 12);
 		fprintf(file, "%%macro	GO4K_FSTG 2\n");
 		fprintf(file, "	db	%%1\n");
 		fprintf(file, "	dw	%%2\n");
