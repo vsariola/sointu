@@ -597,7 +597,7 @@ section .data
 go4k_synth_instructions
 GO4K_BEGIN_CMDDEF(Instrument0)
 	db GO4K_ENV_ID	
-	db GO4K_PAN_ID	
+	db GO4K_ENV_ID	
 	db GO4K_OUT_ID
 GO4K_END_CMDDEF
 ;//	global commands
@@ -617,7 +617,7 @@ section .data
 go4k_synth_parameter_values
 GO4K_BEGIN_PARAMDEF(Instrument0)
 	GO4K_ENV	ATTAC(64),DECAY(64),SUSTAIN(64),RELEASE(80),GAIN(128)	
-	GO4K_PAN	PANNING(64)	
+	GO4K_ENV	ATTAC(95),DECAY(64),SUSTAIN(64),RELEASE(80),GAIN(128)	
 	GO4K_OUT	GAIN(128), AUXSEND(0)
 GO4K_END_PARAMDEF
 ;//	global parameters
@@ -643,10 +643,9 @@ _go4k_delay_times
 section .data
 
 global _test_name
-_test_name	db 'test_env', 0          ; null terminated string
+_test_name			db 'test_envelope', 0          ; null terminated string
 
 global _test_max_samples
-_test_max_samples
-	dd MAX_SAMPLES
+_test_max_samples	dd MAX_SAMPLES
 
 %include "../src/4klang.inc"

@@ -1,7 +1,5 @@
-add_executable(test_env test_env.asm test_renderer.c test_env_expected.raw)
-add_custom_command(
-        TARGET test_env POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-                ${CMAKE_SOURCE_DIR}/tests/test_env_expected.raw
-                ${CMAKE_CURRENT_BINARY_DIR}/test_env_expected.raw)
-add_test(test_env test_env)
+add_executable(test_envelope test_envelope.asm test_renderer.c)
+add_test(test_envelope test_envelope)
+
+file(GLOB RAW_FILES "${CMAKE_SOURCE_DIR}/tests/*.raw")
+file(COPY ${RAW_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
