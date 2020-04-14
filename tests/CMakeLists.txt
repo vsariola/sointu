@@ -43,10 +43,26 @@ add_test(test_fop_loadnote test_fop_loadnote)
 add_executable(test_vco_sine test_vco_sine.asm test_renderer.c test_vco_sine_expected.raw)
 add_test(test_vco_sine test_vco_sine)
 
+add_executable(test_vco_trisaw test_vco_trisaw.asm test_renderer.c test_vco_trisaw_expected.raw)
+add_test(test_vco_trisaw test_vco_trisaw)
+
+add_executable(test_vco_noise test_vco_noise.asm test_renderer.c test_vco_noise_expected.raw)
+add_test(test_vco_noise test_vco_noise)
+
+add_executable(test_vco_pulse test_vco_pulse.asm test_renderer.c test_vco_pulse_expected.raw)
+add_test(test_vco_pulse test_vco_pulse)
+
+add_executable(test_vco_gate test_vco_gate.asm test_renderer.c test_vco_gate_expected.raw)
+add_test(test_vco_gate test_vco_gate)
+
 set_tests_properties(test_envelope PROPERTIES FIXTURES_SETUP ENVELOPE)
 set_tests_properties(test_panning PROPERTIES FIXTURES_REQUIRED ENVELOPE)
 set_tests_properties(test_multiple_instruments PROPERTIES FIXTURES_REQUIRED ENVELOPE)
 set_tests_properties(test_vco_sine PROPERTIES FIXTURES_REQUIRED ENVELOPE)
+set_tests_properties(test_vco_trisaw PROPERTIES FIXTURES_REQUIRED ENVELOPE)
+set_tests_properties(test_vco_noise PROPERTIES FIXTURES_REQUIRED ENVELOPE)
+set_tests_properties(test_vco_pulse PROPERTIES FIXTURES_REQUIRED ENVELOPE)
+set_tests_properties(test_vco_gate PROPERTIES FIXTURES_REQUIRED ENVELOPE)
 
 set_tests_properties(test_load PROPERTIES FIXTURES_SETUP LOAD)
 set_tests_properties(test_fop_pop PROPERTIES FIXTURES_REQUIRED LOAD)
