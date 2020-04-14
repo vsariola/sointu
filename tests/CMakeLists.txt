@@ -40,9 +40,13 @@ add_test(test_fop_mulp2 test_fop_mulp2)
 add_executable(test_fop_loadnote test_fop_loadnote.asm test_renderer.c test_fop_loadnote_expected.raw)
 add_test(test_fop_loadnote test_fop_loadnote)
 
+add_executable(test_vco_sine test_vco_sine.asm test_renderer.c test_vco_sine_expected.raw)
+add_test(test_vco_sine test_vco_sine)
+
 set_tests_properties(test_envelope PROPERTIES FIXTURES_SETUP ENVELOPE)
 set_tests_properties(test_panning PROPERTIES FIXTURES_REQUIRED ENVELOPE)
 set_tests_properties(test_multiple_instruments PROPERTIES FIXTURES_REQUIRED ENVELOPE)
+set_tests_properties(test_vco_sine PROPERTIES FIXTURES_REQUIRED ENVELOPE)
 
 set_tests_properties(test_load PROPERTIES FIXTURES_SETUP LOAD)
 set_tests_properties(test_fop_pop PROPERTIES FIXTURES_REQUIRED LOAD)
