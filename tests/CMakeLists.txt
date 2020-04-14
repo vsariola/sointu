@@ -37,6 +37,9 @@ add_test(test_fop_addp2 test_fop_addp2)
 add_executable(test_fop_mulp2 test_fop_mulp2.asm test_renderer.c test_fop_mulp2_expected.raw)
 add_test(test_fop_mulp2 test_fop_mulp2)
 
+add_executable(test_fop_loadnote test_fop_loadnote.asm test_renderer.c test_fop_loadnote_expected.raw)
+add_test(test_fop_loadnote test_fop_loadnote)
+
 set_tests_properties(test_envelope PROPERTIES FIXTURES_SETUP ENVELOPE)
 set_tests_properties(test_panning PROPERTIES FIXTURES_REQUIRED ENVELOPE)
 set_tests_properties(test_multiple_instruments PROPERTIES FIXTURES_REQUIRED ENVELOPE)
