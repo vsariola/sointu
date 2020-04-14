@@ -55,6 +55,9 @@ add_test(test_vco_pulse test_vco_pulse)
 add_executable(test_vco_gate test_vco_gate.asm test_renderer.c test_vco_gate_expected.raw)
 add_test(test_vco_gate test_vco_gate)
 
+add_executable(test_vco_stereo test_vco_stereo.asm test_renderer.c test_vco_stereo_expected.raw)
+add_test(test_vco_stereo test_vco_stereo)
+
 set_tests_properties(test_envelope PROPERTIES FIXTURES_SETUP ENVELOPE)
 set_tests_properties(test_panning PROPERTIES FIXTURES_REQUIRED ENVELOPE)
 set_tests_properties(test_multiple_instruments PROPERTIES FIXTURES_REQUIRED ENVELOPE)
@@ -63,6 +66,7 @@ set_tests_properties(test_vco_trisaw PROPERTIES FIXTURES_REQUIRED ENVELOPE)
 set_tests_properties(test_vco_noise PROPERTIES FIXTURES_REQUIRED ENVELOPE)
 set_tests_properties(test_vco_pulse PROPERTIES FIXTURES_REQUIRED ENVELOPE)
 set_tests_properties(test_vco_gate PROPERTIES FIXTURES_REQUIRED ENVELOPE)
+set_tests_properties(test_vco_stereo PROPERTIES FIXTURES_REQUIRED ENVELOPE)
 
 set_tests_properties(test_load PROPERTIES FIXTURES_SETUP LOAD)
 set_tests_properties(test_fop_pop PROPERTIES FIXTURES_REQUIRED LOAD)
