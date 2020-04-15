@@ -1,15 +1,22 @@
-function(regression_test name)
-    add_executable(${name} ${name}.asm test_renderer.c)
-    add_test(${name} ${name})
+function(regression_test testname)
+    if(${ARGC} LESS 2)
+        set(source ${testname})        
+    else()
+        set(source ${ARGV1})        
+    endif()
+
+    add_executable(${testname} ${source}.asm test_renderer.c)
+    add_test(${testname} ${testname})
+    target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}")
     
-    set (rawinput ${CMAKE_CURRENT_SOURCE_DIR}/${name}_expected.raw)
-    set (rawoutput ${CMAKE_CURRENT_BINARY_DIR}/${name}_expected.raw)
+    set (rawinput ${CMAKE_CURRENT_SOURCE_DIR}/${testname}_expected.raw)
+    set (rawoutput ${CMAKE_CURRENT_BINARY_DIR}/${testname}_expected.raw)
     
-    add_custom_target(${name}_rawcopy
+    add_custom_target(${testname}_rawcopy
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${rawinput} ${rawoutput}        
     )    
 
-    add_dependencies(${name} ${name}_rawcopy)    
+    add_dependencies(${testname} ${testname}_rawcopy) 
 endfunction(regression_test)
 
 regression_test(test_envelope)
@@ -32,6 +39,9 @@ regression_test(test_vco_noise)
 regression_test(test_vco_pulse)
 regression_test(test_vco_gate)
 regression_test(test_vco_stereo)
+regression_test(test_envelope_16bit test_envelope)
+
+target_compile_definitions(test_envelope_16bit PUBLIC GO4K_USE_16BIT_OUTPUT)
 
 set_tests_properties(test_envelope PROPERTIES FIXTURES_SETUP ENVELOPE)
 set_tests_properties(test_panning PROPERTIES FIXTURES_REQUIRED ENVELOPE)

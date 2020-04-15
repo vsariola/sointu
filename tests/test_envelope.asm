@@ -642,9 +642,6 @@ _go4k_delay_times
 
 section .data
 
-global _test_name
-_test_name			db 'test_envelope', 0          ; null terminated string
-
 global _test_max_samples
 _test_max_samples	dd MAX_SAMPLES
 
