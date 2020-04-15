@@ -1,62 +1,37 @@
-add_executable(test_envelope test_envelope.asm test_renderer.c test_envelope_expected.raw)
-add_test(test_envelope test_envelope)
+function(regression_test name)
+    add_executable(${name} ${name}.asm test_renderer.c)
+    add_test(${name} ${name})
+    
+    set (rawinput ${CMAKE_CURRENT_SOURCE_DIR}/${name}_expected.raw)
+    set (rawoutput ${CMAKE_CURRENT_BINARY_DIR}/${name}_expected.raw)
+    
+    add_custom_target(${name}_rawcopy
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${rawinput} ${rawoutput}        
+    )    
 
-add_executable(test_load test_load.asm test_renderer.c test_load_expected.raw)
-add_test(test_load test_load)
+    add_dependencies(${name} ${name}_rawcopy)    
+endfunction(regression_test)
 
-add_executable(test_panning test_panning.asm test_renderer.c test_panning_expected.raw)
-add_test(test_panning test_panning)
-
-add_executable(test_multiple_instruments test_multiple_instruments.asm test_renderer.c test_multiple_instruments_expected.raw)
-add_test(test_multiple_instruments test_multiple_instruments)
-
-add_executable(test_fop_pop test_fop_pop.asm test_renderer.c test_fop_pop_expected.raw)
-add_test(test_fop_pop test_fop_pop)
-
-add_executable(test_fop_addp test_fop_addp.asm test_renderer.c test_fop_addp_expected.raw)
-add_test(test_fop_addp test_fop_addp)
-
-add_executable(test_fop_mulp test_fop_mulp.asm test_renderer.c test_fop_mulp_expected.raw)
-add_test(test_fop_mulp test_fop_mulp)
-
-add_executable(test_fop_push test_fop_push.asm test_renderer.c test_fop_push_expected.raw)
-add_test(test_fop_push test_fop_push)
-
-add_executable(test_fop_xch test_fop_xch.asm test_renderer.c test_fop_xch_expected.raw)
-add_test(test_fop_xch test_fop_xch)
-
-add_executable(test_fop_add test_fop_add.asm test_renderer.c test_fop_add_expected.raw)
-add_test(test_fop_add test_fop_add)
-
-add_executable(test_fop_mul test_fop_mul.asm test_renderer.c test_fop_mul_expected.raw)
-add_test(test_fop_mul test_fop_mul)
-
-add_executable(test_fop_addp2 test_fop_addp2.asm test_renderer.c test_fop_addp2_expected.raw)
-add_test(test_fop_addp2 test_fop_addp2)
-
-add_executable(test_fop_mulp2 test_fop_mulp2.asm test_renderer.c test_fop_mulp2_expected.raw)
-add_test(test_fop_mulp2 test_fop_mulp2)
-
-add_executable(test_fop_loadnote test_fop_loadnote.asm test_renderer.c test_fop_loadnote_expected.raw)
-add_test(test_fop_loadnote test_fop_loadnote)
-
-add_executable(test_vco_sine test_vco_sine.asm test_renderer.c test_vco_sine_expected.raw)
-add_test(test_vco_sine test_vco_sine)
-
-add_executable(test_vco_trisaw test_vco_trisaw.asm test_renderer.c test_vco_trisaw_expected.raw)
-add_test(test_vco_trisaw test_vco_trisaw)
-
-add_executable(test_vco_noise test_vco_noise.asm test_renderer.c test_vco_noise_expected.raw)
-add_test(test_vco_noise test_vco_noise)
-
-add_executable(test_vco_pulse test_vco_pulse.asm test_renderer.c test_vco_pulse_expected.raw)
-add_test(test_vco_pulse test_vco_pulse)
-
-add_executable(test_vco_gate test_vco_gate.asm test_renderer.c test_vco_gate_expected.raw)
-add_test(test_vco_gate test_vco_gate)
-
-add_executable(test_vco_stereo test_vco_stereo.asm test_renderer.c test_vco_stereo_expected.raw)
-add_test(test_vco_stereo test_vco_stereo)
+regression_test(test_envelope)
+regression_test(test_load)
+regression_test(test_panning)
+regression_test(test_multiple_instruments)
+regression_test(test_fop_pop)
+regression_test(test_fop_addp)
+regression_test(test_fop_mulp)
+regression_test(test_fop_push)
+regression_test(test_fop_xch)
+regression_test(test_fop_add)
+regression_test(test_fop_mul)
+regression_test(test_fop_addp2)
+regression_test(test_fop_mulp2)
+regression_test(test_fop_loadnote)
+regression_test(test_vco_sine)
+regression_test(test_vco_trisaw)
+regression_test(test_vco_noise)
+regression_test(test_vco_pulse)
+regression_test(test_vco_gate)
+regression_test(test_vco_stereo)
 
 set_tests_properties(test_envelope PROPERTIES FIXTURES_SETUP ENVELOPE)
 set_tests_properties(test_panning PROPERTIES FIXTURES_REQUIRED ENVELOPE)
@@ -81,6 +56,3 @@ set_tests_properties(test_fop_mulp2 PROPERTIES FIXTURES_REQUIRED LOAD)
 
 set_tests_properties(test_fop_pop PROPERTIES FIXTURES_SETUP FOP_POP)
 set_tests_properties(test_fop_push PROPERTIES FIXTURES_REQUIRED FOP_POP)
-
-file(GLOB RAW_FILES "${CMAKE_SOURCE_DIR}/tests/*.raw")
-file(COPY ${RAW_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
