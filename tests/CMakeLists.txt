@@ -21,6 +21,8 @@ endfunction(regression_test)
 
 regression_test(test_envelope)
 regression_test(test_load)
+regression_test(test_store)
+regression_test(test_globalstore)
 regression_test(test_panning)
 regression_test(test_multiple_instruments)
 regression_test(test_fop_pop)
