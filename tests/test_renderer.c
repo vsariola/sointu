@@ -10,20 +10,24 @@ int main(int argc, char* argv[]) {
 	int n;
 	int retval;
 	char test_name[] = TEST_NAME;
+	long fsize;
+	long bufsize;
 #ifndef GO4K_USE_16BIT_OUTPUT
-	float* buf;
+	float* buf = NULL;
+	float* filebuf = NULL;
 	float v;
-	buf = (float*)malloc(test_max_samples * 2 * sizeof(float));
+	bufsize = test_max_samples * 2 * sizeof(float);
+	buf = (float*)malloc(bufsize);
 #else
-	short* buf;
+	short* buf = NULL;
+	short* filebuf = NULL;
 	short v;
-	buf = (short*)malloc(test_max_samples * 2 * sizeof(short));
-#endif
-
-	
+	bufsize = test_max_samples * 2 * sizeof(short);
+	buf = (short*)malloc(bufsize);
+#endif	
 
 	if (buf == NULL) {
-		printf("Could not allocate buffer\n");
+		printf("Could not allocate buffer for 4klang rendering\n");
 		return 1;
 	}
 
@@ -35,35 +39,48 @@ int main(int argc, char* argv[]) {
 
 	if (f == NULL) {
 		printf("No expected waveform found!\n");
-		retval = 1;
-		goto end;
+		goto fail;
+	}
+	
+	fseek(f, 0, SEEK_END);
+	fsize = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	if (bufsize < fsize) {
+		printf("4klang rendered shorter wave than expected\n");
+		goto fail;
 	}
 
-	n = 0;
-	while (1) {		
-		fread((void*)(&v), sizeof(v), 1, f);		
-		if (feof(f)) {
-			if (n == test_max_samples * 2) {
-				retval = 0;
-			}
-			else {
-				printf("4klang rendered longer wave than expected\n");
-				retval = 1;
-			}
-			break;
-		}
-		if (n >= test_max_samples * 2) {
-			printf("4klang rendered shorter wave than expected\n");
-			retval = 1;
-			break;
-		}
-		if (buf[n] != v) {
+	if (bufsize > fsize) {
+		printf("4klang rendered longer wave than expected\n");
+		goto fail;
+	}
+
+#ifndef GO4K_USE_16BIT_OUTPUT	
+	filebuf = (float*)malloc(bufsize);
+#else	
+	filebuf = (short*)malloc(bufsize);
+#endif	
+
+	if (filebuf == NULL) {
+		printf("Could not allocate buffer for file contents\n");
+		goto fail;
+	}
+
+	fread((void*)filebuf, test_max_samples * 2, sizeof(*filebuf), f);
+
+	for (n = 0; n < test_max_samples * 2; n++) {
+		if (buf[n] != filebuf[n]) {
 			printf("4klang rendered different wave than expected\n");
-			retval = 1;
-			break;
+			goto fail;
 		}
-		++n;		
-	}	
+	}
+	
+success:
+	retval = 0;
+	goto end;
+fail:
+	retval = 1;
 end:
 
 	if (f != 0) {
@@ -79,6 +96,11 @@ end:
 	if (buf != 0) {
 		free(buf);
 		buf = 0;
+	}
+
+	if (filebuf != 0) {
+		free(filebuf);
+		filebuf = 0;
 	}
 	return retval;
 }
