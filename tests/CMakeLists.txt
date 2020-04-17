@@ -43,6 +43,7 @@ regression_test(test_vco_gate)
 regression_test(test_vco_stereo)
 regression_test(test_vco_lfo)
 regression_test(test_envelope_16bit test_envelope)
+regression_test(test_envelope_modulation)
 
 target_compile_definitions(test_envelope_16bit PUBLIC GO4K_USE_16BIT_OUTPUT)
 
