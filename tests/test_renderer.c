@@ -1,5 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#if defined (_WIN32)
+#include <windows.h>
+#else
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
+
+
 
 extern void __stdcall _4klang_render();
 extern int test_max_samples;
@@ -10,6 +21,8 @@ int main(int argc, char* argv[]) {
 	int n;
 	int retval;
 	char test_name[] = TEST_NAME;
+	char expected_output_folder[] = "expected_output/";
+	char actual_output_folder[] = "actual_output/";
 	long fsize;
 	long bufsize;
 #ifndef GO4K_USE_16BIT_OUTPUT
@@ -33,7 +46,7 @@ int main(int argc, char* argv[]) {
 
 	_4klang_render(buf);
 
-	snprintf(filename, sizeof filename, "%s%s", test_name, "_expected.raw");
+	snprintf(filename, sizeof filename, "%s%s%s", expected_output_folder, test_name, ".raw");
 
 	f = fopen(filename, "rb");
 
@@ -87,8 +100,14 @@ end:
 		fclose(f);
 		f = 0;
 	}	
+
+#if defined (_WIN32)
+	CreateDirectory(actual_output_folder, NULL);
+#else
+	mkdir(actual_output_folder, 0777);
+#endif
 	
-	snprintf(filename, sizeof filename, "%s%s", test_name, "_got.raw");
+	snprintf(filename, sizeof filename, "%s%s%s", actual_output_folder, test_name, ".raw");
 	f = fopen(filename, "wb");	
 	fwrite((void*)buf, sizeof(*buf), 2 * test_max_samples, f);
 	fclose(f);

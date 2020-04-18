@@ -9,8 +9,8 @@ function(regression_test testname)
     add_test(${testname} ${testname})
     target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}")
     
-    set (rawinput ${CMAKE_CURRENT_SOURCE_DIR}/${testname}_expected.raw)
-    set (rawoutput ${CMAKE_CURRENT_BINARY_DIR}/${testname}_expected.raw)
+    set (rawinput ${CMAKE_CURRENT_SOURCE_DIR}/expected_output/${testname}.raw)
+    set (rawoutput ${CMAKE_CURRENT_BINARY_DIR}/expected_output/${testname}.raw)
     
     add_custom_target(${testname}_rawcopy
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${rawinput} ${rawoutput}        
