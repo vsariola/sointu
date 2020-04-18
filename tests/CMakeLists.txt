@@ -63,6 +63,13 @@ regression_test(test_vco_pm_modulation "VCO_SINE;ENVELOPE;FOP_MULP;FOP_PUSH;STOR
 regression_test(test_vco_cm_modulation "VCO_SINE;ENVELOPE;FOP_MULP;FOP_PUSH;STORE")
 regression_test(test_vco_sm_modulation "VCO_SINE;ENVELOPE;FOP_MULP;FOP_PUSH;STORE")
 regression_test(test_vco_gm_modulation "VCO_SINE;ENVELOPE;FOP_MULP;FOP_PUSH;STORE")
+
+regression_test(test_dst ENVELOPE)
+regression_test(test_dst_modulation "VCO_SINE;ENVELOPE;STORE")
+regression_test(test_dst_sh ENVELOPE)
+regression_test(test_dst_sh_modulation "VCO_SINE;ENVELOPE;STORE")
+regression_test(test_dst_stereo ENVELOPE)
+
 regression_test(test_envelope_modulation "VCO_SINE;ENVELOPE;STORE")
 regression_test(test_envelope_16bit ENVELOPE "" test_envelope)
 target_compile_definitions(test_envelope_16bit PUBLIC GO4K_USE_16BIT_OUTPUT)
