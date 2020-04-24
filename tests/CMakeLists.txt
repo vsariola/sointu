@@ -70,6 +70,13 @@ regression_test(test_dst_sh ENVELOPE)
 regression_test(test_dst_sh_modulation "VCO_SINE;ENVELOPE;STORE")
 regression_test(test_dst_stereo ENVELOPE)
 
+regression_test(test_vcf_band "VCO_SINE;ENVELOPE;FOP_MULP")
+regression_test(test_vcf_low "VCO_SINE;ENVELOPE;FOP_MULP")
+regression_test(test_vcf_high "VCO_SINE;ENVELOPE;FOP_MULP")
+regression_test(test_vcf_peak "VCO_SINE;ENVELOPE;FOP_MULP")
+regression_test(test_vcf_stereo "VCO_SINE;ENVELOPE;FOP_MULP")
+regression_test(test_vcf_fm_modulation "VCO_SINE;ENVELOPE;FOP_MULP;STORE")
+regression_test(test_vcf_rm_modulation "VCO_SINE;ENVELOPE;FOP_MULP;STORE")
 
 regression_test(test_dll "ENVELOPE;FOP_MULP;PANNING;VCO_SINE")
 regression_test(test_dll_chorus "ENVELOPE;FOP_MULP;PANNING;VCO_SINE")
