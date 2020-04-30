@@ -1,14 +1,22 @@
-file(GLOB SOURCE_LIST CONFIGURE_DEPENDS "*.cpp" "*.hpp" "*.asm" "*.rc" "*.bin")
+file(GLOB SOURCE_LIST CONFIGURE_DEPENDS "*.cpp" "*.hpp" "*.asm" "*.bin")
 file(GLOB AEFFECT_SOURCE_LIST CONFIGURE_DEPENDS "audioeffect/*")
 
-# Make an automatic library - will be static or dynamic based on user setting
-add_library(4klang SHARED ${SOURCE_LIST} ${AEFFECT_SOURCE_LIST} Go4kVSTi.def)
+# Make a dynamic library of 4klang
+add_library(4klang SHARED ${SOURCE_LIST} ${AEFFECT_SOURCE_LIST} Go4kVSTi.rc Go4kVSTi.def)
 
-set_property(TARGET 4klang PROPERTY
+# Make a dynamic library of 8klang
+add_library(8klang SHARED ${SOURCE_LIST} ${AEFFECT_SOURCE_LIST} Go4kVSTi2.rc Go4kVSTi2.def)
+
+target_compile_definitions(8klang PUBLIC _8KLANG)
+
+set_target_properties(4klang 8klang PROPERTIES
   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # The private headers 
 target_include_directories(4klang PRIVATE "audioeffect/")
+
+# The private headers 
+target_include_directories(8klang PRIVATE "audioeffect/")
 
 add_library(vstgui STATIC IMPORTED)
 set_target_properties(vstgui
@@ -16,13 +24,5 @@ set_target_properties(vstgui
                       "${CMAKE_SOURCE_DIR}/extern/vstgui.lib")
 
 target_link_libraries(4klang PRIVATE comctl32 vstgui)
-# add_dependencies(4klang_vsti vstgui)
 
-# This depends on (header only) boost
-# target_link_libraries(modern_library PRIVATE Boost::boost)
-
-# All users of this library will need at least C++11
-#target_compile_features(modern_library PUBLIC cxx_std_11)
-
-# IDEs should put the headers in a nice place
-#source_group(TREE "${PROJECT_SOURCE_DIR}/include" PREFIX "Header Files" #FILES ${HEADER_LIST})
+target_link_libraries(8klang PRIVATE comctl32 vstgui)
