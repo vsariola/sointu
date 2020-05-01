@@ -1401,7 +1401,6 @@ go4kUpdateInstrument_newNote:
 %if MAX_VOICES > 1	
     popad
 %endif
-    jmp		short go4kUpdateInstrument_done
 go4kUpdateInstrument_done:
     ret
 
