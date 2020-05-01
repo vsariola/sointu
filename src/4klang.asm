@@ -35,16 +35,16 @@ EXPORT MANGLE_DATA(go4k_delay_buffer)
                         resd	16*16*go4kDLL_wrk.size
 
 %ifdef AUTHORING
-EXPORT MANGLE_DATA(4klang_current_tick)
+EXPORT MANGLE_DATA(_4klang_current_tick)
                         resd	0
 %endif
 
 %ifdef GO4K_USE_ENVELOPE_RECORDINGS
-EXPORT MANGLE_DATA(4klang_envelope_buffer)
+EXPORT MANGLE_DATA(_4klang_envelope_buffer)
                         resd	((MAX_SAMPLES)/8) ; // samples every 256 samples and stores 16*2 = 32 values
 %endif
 %ifdef GO4K_USE_NOTE_RECORDINGS
-EXPORT MANGLE_DATA(4klang_note_buffer)
+EXPORT MANGLE_DATA(_4klang_note_buffer)
                         resd	((MAX_SAMPLES)/8) ; // samples every 256 samples and stores 16*2 = 32 values
 %endif
 
@@ -466,7 +466,7 @@ go4kVCO_func_nodswap:
     fiadd	dword [ecx-4]				; // st0 is note, st1 is t+d offset
 go4kVCO_func_skipnote:		
     fmul	dword [c_i12]
-    call	_Power@0
+    call	MANGLE_FUNC(Power,0)
     test	al, byte LFO
     jz		short go4kVCO_func_normalize_note
     fmul	dword [_LFO_NORMALIZE]	; // st0 is now frequency for lfo  
@@ -780,10 +780,10 @@ EXPORT MANGLE_FUNC(go4kDLL_func,0)
     fld1
     fild	dword [ecx-4]			; // load note freq
     fmul	dword [c_i12]
-    call	_Power@0
+    call	MANGLE_FUNC(Power,0)
     fmul	dword [FREQ_NORMALIZE]	; // normalize
     fdivp	st1, st0				; // invert to get numer of samples
-    fistp	word [_go4k_delay_times+ebx*2]	; store current comb size
+    fistp	word [MANGLE_DATA(go4k_delay_times)+ebx*2]	; store current comb size
 %endif	
 go4kDLL_func_process:
     mov		ecx, eax							;// ecx is delay counter	
@@ -849,7 +849,7 @@ go4kDLL_func_process:
 %endif	
     
 go4kDLL_func_loop:
-    movzx	esi, word [_go4k_delay_times+ebx*2]	; fetch comb size
+    movzx	esi, word [MANGLE_DATA(go4k_delay_times)+ebx*2]	; fetch comb size
     mov 	eax, dword [WRK+go4kDLL_wrk.index]	;// eax is current comb index
 
 %ifdef GO4K_USE_DLL_CHORUS	
@@ -976,7 +976,7 @@ EXPORT MANGLE_FUNC(go4kGLITCH_func,0)
         mov		dword [WRK+go4kGLITCH_wrk.index], eax
         mov		dword [WRK+go4kGLITCH_wrk.store], eax			
         movzx	ebx, byte [VAL-(go4kGLITCH_val.size-go4kGLITCH_val.slicesize)/4]	;// slicesize index
-        movzx	eax, word [_go4k_delay_times+ebx*2]									;// fetch slicesize
+        movzx	eax, word [MANGLE_DATA(go4k_delay_times)+ebx*2]									;// fetch slicesize
         push	eax
         fld1	
         fild	dword [esp]
@@ -1441,11 +1441,11 @@ go4kRenderVoices_next:
     add		eax, dword [esp]				; // + 2*currentinstrument+0
 %ifdef GO4K_USE_ENVELOPE_RECORDINGS
     mov		edx, dword [ecx+go4kENV_wrk.level]
-    mov		dword [__4klang_envelope_buffer+eax*4], edx
+    mov		dword [MANGLE_DATA(_4klang_envelope_buffer)+eax*4], edx
 %endif	
 %ifdef GO4K_USE_NOTE_RECORDINGS
     mov		edx, dword [ecx-4]
-    mov		dword [__4klang_note_buffer+eax*4], edx
+    mov		dword [MANGLE_DATA(_4klang_note_buffer)+eax*4], edx
 %endif		
 %endif
 
@@ -1466,11 +1466,11 @@ go4k_render_instrument_next2:
     add		eax, dword [esp]				; // + 2*currentinstrument+0
 %ifdef GO4K_USE_ENVELOPE_RECORDINGS
     mov		edx, dword [ecx+go4kENV_wrk.level]
-    mov		dword [__4klang_envelope_buffer+eax*4+4], edx
+    mov		dword [MANGLE_DATA(_4klang_envelope_buffer)+eax*4+4], edx
 %endif	
 %ifdef GO4K_USE_NOTE_RECORDINGS
     mov		edx, dword [ecx-4]
-    mov		dword [__4klang_note_buffer+eax*4+4], edx
+    mov		dword [MANGLE_DATA(_4klang_note_buffer)+eax*4+4], edx
 %endif		
 %endif
 
@@ -1613,7 +1613,7 @@ go4k_render_nogroove:
     pop		ecx	
     inc		ecx
 %ifdef AUTHORING
-    mov		dword[__4klang_current_tick], ecx
+    mov		dword[MANGLE_DATA(_4klang_current_tick)], ecx
 %endif
     cmp		ecx, dword MAX_TICKS
     jl		go4k_render_tickloop
