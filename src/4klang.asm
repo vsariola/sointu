@@ -206,21 +206,19 @@ go4kENVMap:
 ; //----------------------------------------------------------------------------------------
 ; //	Power function (2^x)
 ; //----------------------------------------------------------------------------------------
-; //	Input :		st0		:	base
-; //				st1		:	exponent
-; //	Output:		st0		:	result
+; //	Input :		st0		:	x
+; //	Output:		st0		:	2^x
 ; //----------------------------------------------------------------------------------------
-EXPORT MANGLE_FUNC(Power,0)	; // base				exp	
-    fld1
-    fadd	st0	
-    fyl2x				; // log2_base
-    fld1				; // 1					log2_base
-    fld		st1			; // log2_base			1					log2_base
-    fprem				; // (frac)log2_base	1					log2_base
-    f2xm1				; // 2 ^ '' -	1		1					log2_base
-    faddp	st1, st0	; // 2 ^ ''			(int)log2_base
-    fscale
-    fstp	st1
+EXPORT MANGLE_FUNC(Power,0) ; x
+    fld1          ; 1 x
+    fld st1       ; x 1 x
+    fprem         ; mod(x,1) 1 x
+    f2xm1         ; 2^mod(x,1)-1 1 x
+    faddp st1,st0 ; 2^mod(x,1) x
+    fscale        ; 2^mod(x,1)*2^trunc(x) x
+                  ; Equal to:
+                  ; 2^x x
+    fstp st1      ; 2^x
     ret
     
 ; //----------------------------------------------------------------------------------------
