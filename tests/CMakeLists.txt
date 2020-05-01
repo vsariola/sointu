@@ -92,3 +92,5 @@ regression_test(test_dll_im_modulation "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;STORE
 regression_test(test_envelope_modulation "VCO_SINE;ENVELOPE;STORE")
 regression_test(test_envelope_16bit ENVELOPE "" test_envelope)
 target_compile_definitions(test_envelope_16bit PUBLIC GO4K_USE_16BIT_OUTPUT)
+
+regression_test(test_polyphony "ENVELOPE;VCO_SINE")
