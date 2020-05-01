@@ -5,8 +5,6 @@
 %define USE_SECTIONS
 %define GO4K_USE_VCO_SHAPE
 %define GO4K_USE_FST
-%define GO4K_USE_ENV_MOD_GM
-%define GO4K_USE_ENV_MOD_ADR 
 %define GO4K_USE_ENV_CHECK              ; // removing this skips checks	if processing is needed    
  
 %include "../src/4klang.asm"
@@ -59,11 +57,11 @@ GO4K_BEGIN_PARAMDEF(Instrument0)
 	GO4K_ENV	ATTAC(80),DECAY(80),SUSTAIN(64),RELEASE(80),GAIN(128)	
 	GO4K_ENV	ATTAC(80),DECAY(80),SUSTAIN(64),RELEASE(80),GAIN(128)	
 	GO4K_VCO	TRANSPOSE(120),DETUNE(64),PHASE(0),GATES(0),COLOR(128),SHAPE(96),GAIN(128),FLAGS(SINE|LFO)
-	GO4K_FST	AMOUNT(68),DEST(0*MAX_UNIT_SLOTS + 3) ; modulate attack
-	GO4K_FST	AMOUNT(68),DEST(0*MAX_UNIT_SLOTS + 4) ; modulate decay
+	GO4K_FST	AMOUNT(68),VALUE_MOD(0,ENV,attac,0)
+	GO4K_FST	AMOUNT(68),VALUE_MOD(0,ENV,decay,0)
     ; Sustain modulation seems not to be implemented
-	GO4K_FST	AMOUNT(68),DEST(0*MAX_UNIT_SLOTS + 6) ; modulate release
-	GO4K_FST	AMOUNT(68),DEST(1*MAX_UNIT_SLOTS + 2 + FST_POP)	; modulate gain
+	GO4K_FST	AMOUNT(68),VALUE_MOD(0,ENV,release,0)
+	GO4K_FST	AMOUNT(68),VALUE_MOD(1,ENV,gain,FST_POP)
 	GO4K_OUT	GAIN(110), AUXSEND(0)
 GO4K_END_PARAMDEF
 ;//	global parameters

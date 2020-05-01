@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #endif
 
+#include <math.h>
+
 
 
 extern void __stdcall _4klang_render();
@@ -25,6 +27,8 @@ int main(int argc, char* argv[]) {
 	char actual_output_folder[] = "actual_output/";
 	long fsize;
 	long bufsize;
+	boolean small_difference;
+	double diff;
 #ifndef GO4K_USE_16BIT_OUTPUT
 	float* buf = NULL;
 	float* filebuf = NULL;
@@ -82,11 +86,26 @@ int main(int argc, char* argv[]) {
 
 	fread((void*)filebuf, test_max_samples * 2, sizeof(*filebuf), f);
 
+	small_difference = FALSE;
+
 	for (n = 0; n < test_max_samples * 2; n++) {
-		if (buf[n] != filebuf[n]) {
+		diff = (double)(buf[n]) - (double)(filebuf[n]);
+#ifdef GO4K_USE_16BIT_OUTPUT	
+		diff = diff / 32768.0f;
+#endif
+		diff = fabs(diff);
+		if (diff > 1e-4f) {
 			printf("4klang rendered different wave than expected\n");
 			goto fail;
 		}
+		else if (diff > 0.0f) {
+			small_difference = TRUE;
+		}
+	}
+
+	if (small_difference) {
+		printf("4klang rendered almost correct wave, but with small errors (< 1e-4)\n");
+		goto fail;
 	}
 	
 success:

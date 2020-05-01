@@ -7,7 +7,6 @@
 %define GO4K_USE_PAN
 %define GO4K_USE_VCF_BAND
 %define GO4K_USE_VCF_CHECK
-%define GO4K_USE_VCF_MOD_RM
 %define GO4K_USE_VCO_PHASE_OFFSET       ; // removing this will	skip initial phase offset code
 
 %include "../src/4klang.asm"
@@ -64,7 +63,7 @@ GO4K_BEGIN_PARAMDEF(Instrument0)
 	GO4K_PAN	PANNING(64)
 	GO4K_OUT	GAIN(128), AUXSEND(0)
 	GO4K_VCO	TRANSPOSE(70),DETUNE(64),PHASE(64),GATES(0),COLOR(128),SHAPE(64),GAIN(128),FLAGS(SINE|LFO)		
-	GO4K_FST	AMOUNT(32),DEST(3*MAX_UNIT_SLOTS + 5 + FST_POP) ; modulate detune
+	GO4K_FST	AMOUNT(32),VALUE_MOD(3,VCF,res,FST_POP)
 GO4K_END_PARAMDEF
 ;//	global parameters
 GO4K_BEGIN_PARAMDEF(Global)	

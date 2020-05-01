@@ -80,34 +80,22 @@
     %define GO4K_USE_GLOBAL_DLL             ; // removing this will	skip global	dll	processing
     %define GO4K_USE_FSTG                   ; // removing this will	skip global	store unit
     %define GO4K_USE_FLD                    ; // removing this will	skip float load unit
-    %define GO4K_USE_FLD_MOD_VM			 	; // removing this will	skip float load modulation	code
     %define GO4K_USE_GLITCH                 ; // removing this will	skip GLITCH unit
     %define GO4K_USE_ENV_CHECK              ; // removing this skips checks	if processing is needed
-    %define GO4K_USE_ENV_MOD_GM             ; // removing this will	skip env gain modulation code
-    %define GO4K_USE_ENV_MOD_ADR            ; // removing this will skip env attack/decay/release modulation code
     %define GO4K_USE_VCO_CHECK              ; // removing this skips checks	if processing is needed
     %define GO4K_USE_VCO_PHASE_OFFSET       ; // removing this will	skip initial phase offset code
     %define GO4K_USE_VCO_SHAPE				; // removing this skips waveshaping code
     %define GO4K_USE_VCO_GATE				; // removing this skips gate code
     %define GO4K_USE_VCO_MOD_FM				; // removing this skips frequency modulation code
-    %define GO4K_USE_VCO_MOD_PM				; // removing this skips phase modulation code
-    %define GO4K_USE_VCO_MOD_TM				; // removing this skips transpose modulation code
     %define GO4K_USE_VCO_MOD_DM				; // removing this skips detune	modulation code
-    %define GO4K_USE_VCO_MOD_CM				; // removing this skips color modulation code
-    %define GO4K_USE_VCO_MOD_GM				; // removing this skips gain modulation code
-    %define GO4K_USE_VCO_MOD_SM				; // removing this skips shaping modulation	code
     %define GO4K_USE_VCO_STEREO				; // removing this skips stereo code
     %define GO4K_USE_VCF_CHECK				; // removing this skips checks	if processing is needed
-    %define GO4K_USE_VCF_MOD_FM				; // removing this skips frequency modulation code
-    %define GO4K_USE_VCF_MOD_RM				; // removing this skips resonance modulation code
     %define GO4K_USE_VCF_HIGH				; // removing this skips code for high output
     %define GO4K_USE_VCF_BAND				; // removing this skips code for band output
     %define GO4K_USE_VCF_PEAK				; // removing this skips code for peak output
     %define GO4K_USE_VCF_STEREO				; // removing this skips code for stereo filter output
     %define GO4K_USE_DST_CHECK				; // removing this skips checks	if processing is needed
     %define GO4K_USE_DST_SH					; // removing this skips sample	and	hold code
-    %define GO4K_USE_DST_MOD_DM				; // removing this skips distortion	modulation code
-    %define GO4K_USE_DST_MOD_SH             ; // removing this skips sample	and	hold modulation	code
     %define GO4K_USE_DST_STEREO             ; // removing this skips stereo processing
     %define GO4K_USE_DLL_NOTE_SYNC          ; // removing this will	skip delay length adjusting	code (karplus strong)
     %define GO4K_USE_DLL_CHORUS             ; // removing this will	skip delay chorus/flanger code
@@ -115,17 +103,7 @@
     %define GO4K_USE_DLL_DAMP				; // removing this will	skip dll damping code
     %define GO4K_USE_DLL_DC_FILTER			; // removing this will	skip dll dc	offset removal code
     %define GO4K_USE_FSTG_CHECK				; // removing this skips checks	if processing is needed
-    %define GO4K_USE_PAN_MOD				; // removing this will	skip panning modulation	code
-    %define GO4K_USE_OUT_MOD_AM				; // removing this skips output	aux	send modulation	code
-    %define GO4K_USE_OUT_MOD_GM				; // removing this skips output	gain modulation	code
     %define GO4K_USE_WAVESHAPER_CLIP		; // removing this will	skip clipping code    
-    %define GO4K_USE_DLL_MOD				; // define this to enable modulations for delay line
-    %define GO4K_USE_DLL_MOD_PM				; // define this to enable pregain modulation for delay line
-    %define GO4K_USE_DLL_MOD_FM				; // define this to enable feebback modulation for delay line
-    %define GO4K_USE_DLL_MOD_IM				; // define this to enable dry modulation for delay line
-    %define GO4K_USE_DLL_MOD_DM				; // define this to enable damping modulation for delay line
-    %define GO4K_USE_DLL_MOD_SM				; // define this to enable lfo freq modulation for delay line
-    %define GO4K_USE_DLL_MOD_AM				; // define this to enable lfo depth modulation for delay line
 %endif
 
 %ifdef GO4K_USE_VCO_SHAPE
@@ -133,13 +111,6 @@
 %endif
 %ifdef GO4K_USE_DST
     %define INCLUDE_WAVESHAPER
-%endif
-
-%ifdef GO4K_USE_VCO_MOD_PM	
-    %define PHASE_RENORMALIZE
-%endif
-%ifdef GO4K_USE_VCO_PHASE_OFFSET
-    %define PHASE_RENORMALIZE
 %endif
 
 %ifdef GO4K_USE_ENVELOPE_RECORDINGS
@@ -156,6 +127,7 @@
 %define	MAX_DELAY			65536
 %define MAX_UNITS			64
 %define	MAX_UNIT_SLOTS		16
+%define MAX_WORK_VARS       8
 
 %ifndef SAMPLE_RATE
 %define SAMPLE_RATE 44100
@@ -213,12 +185,6 @@ struc	go4kENV_wrk
 ;//	work variables	
     .state		resd	1
     .level		resd	1
-;//	modulation targets
-    .gm			resd	1
-    .am			resd	1
-    .dm			resd	1
-    .sm			resd	1
-    .rm			resd	1
     .size
 endstruc
 %define	ENV_STATE_ATTAC		0
@@ -243,7 +209,6 @@ GO4K_VCO_ID		equ		2
     db	%5
 %ifdef GO4K_USE_VCO_SHAPE
     db	%6
-%else
 %endif	
     db	%7
     db	%8
@@ -283,16 +248,11 @@ endstruc
 struc	go4kVCO_wrk
 ;//	work variables
     .phase		resd	1
-;//	modulation targets
-    .tm			resd	1
-    .dm			resd	1
-    .fm			resd	1
-    .pm			resd	1
-    .cm			resd	1
-    .sm			resd	1
-    .gm			resd	1
 ;// stero variables	
     .phase2		resd	1
+    .gatestate  resd    1
+    .detune_mod resd    1
+    .freq_mod   resd    1
     .size
 endstruc
 ; //----------------------------------------------------------------------------------------
@@ -326,10 +286,7 @@ struc	go4kVCF_wrk
     .low		resd	1
     .high		resd	1
     .band		resd	1
-    .freq		resd	1 ;// unused but kept so modulation target offsets stay same
-;//	modulation targets
-    .fm			resd	1
-    .rm			resd	1
+    .freq_mod   resd	1
 ;// stereo variables	
     .low2		resd	1
     .high2		resd	1
@@ -344,13 +301,9 @@ GO4K_DST_ID		equ		4
     db	%1
 %ifdef GO4K_USE_DST_SH	
     db	%2
-    %ifdef GO4K_USE_DST_STEREO	
-        db	%3
-    %endif
-%else
-    %ifdef GO4K_USE_DST_STEREO	
-        db	%3
-    %endif
+%endif
+%ifdef GO4K_USE_DST_STEREO	
+    db	%3
 %endif
 %endmacro
 %define	DRIVE(val)		val
@@ -361,17 +314,16 @@ struc	go4kDST_val
     .drive		resd	1
 %ifdef GO4K_USE_DST_SH	
     .snhfreq	resd	1
-%endif	
+%endif
+%ifdef GO4K_USE_DST_STEREO	
     .flags		resd	1
+%endif
     .size
 endstruc
 struc	go4kDST_wrk
 ;//	work variables
     .out		resd	1
     .snhphase	resd	1
-;//	modulation targets
-    .dm			resd	1
-    .sm			resd	1
 ;// stereo variables
     .out2		resd	1
     .size
@@ -411,7 +363,7 @@ struc	go4kDLL_val
 %endif
 %ifdef GO4K_USE_DLL_CHORUS
     .freq		resd	1
-    .depth
+    .depth      resd	1
 %endif	
     .delay		resd	1
     .count		resd	1
@@ -426,16 +378,6 @@ struc	go4kDLL_wrk
     .phase		resd	1
 ;// the delay buffer	
     .buffer		resd	MAX_DELAY
-    .size
-endstruc
-struc	go4kDLL_wrk2
-;//	modulation targets
-    .pm			resd	1
-    .fm			resd	1
-    .im			resd	1	
-    .dm			resd	1
-    .sm			resd	1
-    .am			resd	1
     .size
 endstruc
 ; //----------------------------------------------------------------------------------------
@@ -472,13 +414,13 @@ GO4K_FST_ID		equ		7
     dw	%2
 %endmacro
 %define	AMOUNT(val)		val
-%define	DEST(val)		val
+%define	VALUE_MOD(unit,unittype,slot,flags) unit*MAX_UNIT_SLOTS+go4k %+ unittype %+ _val. %+ slot /4+MAX_WORK_VARS+flags
+%define	WRK_MOD(unit,unittype,slot,flags) unit*MAX_UNIT_SLOTS+go4k %+ unittype %+ _wrk. %+ slot /4+flags
 %define	FST_SET			0x0000
 %define	FST_ADD			0x4000
 %define	FST_POP			0x8000
 struc	go4kFST_val
     .amount		resd	1
-    .op1		resd	1
     .size
 endstruc
 struc	go4kFST_wrk
@@ -501,8 +443,6 @@ struc	go4kPAN_val
     .size
 endstruc
 struc	go4kPAN_wrk
-;//	modulation targets
-    .pm			resd	1
     .size
 endstruc
 ; //----------------------------------------------------------------------------------------
@@ -524,9 +464,6 @@ struc	go4kOUT_val
     .size
 endstruc
 struc	go4kOUT_wrk
-;//	modulation targets
-    .am			resd	1
-    .gm			resd	1
     .size
 endstruc
 ; //----------------------------------------------------------------------------------------
@@ -560,8 +497,6 @@ struc	go4kFLD_val
     .size
 endstruc
 struc	go4kFLD_wrk
-;//	modulation targets
-    .vm			resd	1
     .size
 endstruc
 %endif
@@ -601,14 +536,6 @@ struc	go4kGLITCH_wrk
     .buffer		resd	MAX_DELAY
     .size
 endstruc
-struc	go4kGLITCH_wrk2
-;//	modulation targets
-    .am			resd	1
-    .dm			resd	1
-    .sm			resd	1
-    .pm			resd	1
-    .size
-endstruc
 %endif
 %ifdef GO4K_USE_FSTG
 ; //----------------------------------------------------------------------------------------
@@ -623,9 +550,11 @@ GO4K_FSTG_ID	equ		12
     db	%1
     dw	%2
 %endmacro
+
+%define	GLOBAL_VALUE_MOD(inst,unit,unittype,slot,flags) inst*go4k_instrument.size*MAX_VOICES/4 + unit*MAX_UNIT_SLOTS+go4k %+ unittype %+ _val. %+ slot /4+(go4k_instrument.workspace/4)+MAX_WORK_VARS+flags
+%define	GLOBAL_WRK_MOD(inst,unit,unittype,slot,flags) inst*go4k_instrument.size*MAX_VOICES/4 + unit*MAX_UNIT_SLOTS+go4k %+ unittype %+ _wrk. %+ slot /4+(go4k_instrument.workspace/4)+flags
 struc	go4kFSTG_val
     .amount		resd	1
-    .op1		resd	1
     .size
 endstruc
 struc	go4kFSTG_wrk

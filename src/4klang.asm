@@ -4,6 +4,11 @@
 %define	VAL esi				; // alias for unit values (transformed/untransformed)
 %define COM ebx				; // alias for instrument opcodes
 
+%macro TRANSFORM_VALUES 1
+    push go4k %+ %1 %+ _val.size/4
+    call go4kTransformValues
+%endmacro
+
 ; if SINGLE_FILE is defined, then it means that the whole 4klang.asm will be included
 ; somewhere else where patterns, pattern_lists and synth_instructions are defined
 ; Otherwise, they are extern and linker should link them
@@ -183,6 +188,7 @@ go4kTransformValues_loop:
     push	eax
     fild	dword [esp]
     fmul	dword [c_i128]
+    fadd	dword [WRK+MAX_WORK_VARS*4+ecx*4]
     fstp	dword [edx+ecx*4]
     pop		eax
     inc		ecx
@@ -198,11 +204,9 @@ SECT_TEXT(g4kcod4)
 
 go4kENVMap:
     fld		dword [edx+eax*4]
-%ifdef GO4K_USE_ENV_MOD_ADR	
-    fadd	dword [WRK+go4kENV_wrk.am+eax*4]
-%endif	
     fimul	dword [c_24]
     fchs
+
 ; //----------------------------------------------------------------------------------------
 ; //	Power function (2^x)
 ; //----------------------------------------------------------------------------------------
@@ -233,8 +237,7 @@ EXPORT MANGLE_FUNC(Power,0) ; x
 SECT_TEXT(g4kcoda)
 
 EXPORT MANGLE_FUNC(go4kENV_func,0)
-    push	5
-    call	go4kTransformValues
+    TRANSFORM_VALUES ENV
 %ifdef GO4K_USE_ENV_CHECK
 ; check if current note still active
     mov		eax, dword [ecx-4]
@@ -293,13 +296,7 @@ go4kENV_func_leave:						; //	newval	bla
     fst		dword [WRK+go4kENV_wrk.level]
 go4kENV_func_leave2:	
 ; // mul by gain
-%ifdef GO4K_USE_ENV_MOD_GM
-    fld		dword [edx+go4kENV_val.gain]
-    fadd	dword [WRK+go4kENV_wrk.gm]
-    fmulp	st1, st0
-%else
     fmul	dword [edx+go4kENV_val.gain]
-%endif
     ret
 
 ; //----------------------------------------------------------------------------------------
@@ -372,11 +369,11 @@ go4kVCO_gate:
     jc		go4kVCO_gate_bit
     fsub	st0, st0						; // 0
 go4kVCO_gate_bit:
-    fld		dword [WRK+go4kVCO_wrk.cm]		; // f		x
+    fld		dword [WRK+go4kVCO_wrk.gatestate]		; // f		x
     fsub	st1								; // f-x	x
     fmul	dword [c_dc_const]				; // c(f-x)	x
     faddp	st1, st0						; // x'
-    fst		dword [WRK+go4kVCO_wrk.cm]	
+    fst		dword [WRK+go4kVCO_wrk.gatestate]	
     pop		eax
     ret	
 %endif
@@ -384,36 +381,7 @@ go4kVCO_gate_bit:
 SECT_TEXT(g4kcodb)
 
 EXPORT MANGLE_FUNC(go4kVCO_func,0)
-%ifdef GO4K_USE_VCO_PHASE_OFFSET
-    %ifdef GO4K_USE_VCO_SHAPE
-        %ifdef GO4K_USE_VCO_GATE
-            push 8
-        %else
-            push 7
-        %endif
-    %else
-        %ifdef GO4K_USE_VCO_GATE
-            push 7
-        %else
-            push 6
-        %endif
-    %endif
-%else
-    %ifdef GO4K_USE_VCO_SHAPE
-        %ifdef GO4K_USE_VCO_GATE
-            push 7
-        %else
-            push 6
-        %endif
-    %else
-        %ifdef GO4K_USE_VCO_GATE
-            push 6
-        %else
-            push 5
-        %endif
-    %endif
-%endif
-    call	go4kTransformValues
+    TRANSFORM_VALUES VCO
 %ifdef GO4K_USE_VCO_CHECK
 ; check if current note still active
     mov		eax, dword [ecx-4]
@@ -443,9 +411,6 @@ go4kVCO_func_nopswap:
 go4kVCO_func_process:
     fld		dword [edx+go4kVCO_val.transpose]
     fsub	dword [c_0_5]
-%ifdef GO4K_USE_VCO_MOD_TM
-    fadd	dword [WRK+go4kVCO_wrk.tm]	
-%endif
     fdiv	dword [c_i128]
     fld		dword [edx+go4kVCO_val.detune]
     fsub	dword [c_0_5]
@@ -456,11 +421,10 @@ go4kVCO_func_process:
     fchs	;// negate detune for stereo
 go4kVCO_func_nodswap:	
 %endif	
-    faddp	st1
+    faddp	st1	
 %ifdef GO4K_USE_VCO_MOD_DM	
-    fadd	dword [WRK+go4kVCO_wrk.dm]
+    fadd	dword [WRK+go4kVCO_wrk.detune_mod]
 %endif		
-    ; // st0 now contains the transpose+detune offset
     test	al, byte LFO
     jnz		go4kVCO_func_skipnote
     fiadd	dword [ecx-4]				; // st0 is note, st1 is t+d offset
@@ -476,7 +440,7 @@ go4kVCO_func_normalize_note:
 go4kVCO_func_normalized:
     fadd	dword [WRK+go4kVCO_wrk.phase]	
 %ifdef GO4K_USE_VCO_MOD_FM	
-    fadd	dword [WRK+go4kVCO_wrk.fm]
+    fadd	dword [WRK+go4kVCO_wrk.freq_mod]
 %endif		
     fld1
     fadd	st1, st0
@@ -484,13 +448,8 @@ go4kVCO_func_normalized:
     fprem	
     fstp	st1
     fst		dword [WRK+go4kVCO_wrk.phase]
-%ifdef GO4K_USE_VCO_MOD_PM	
-    fadd	dword [WRK+go4kVCO_wrk.pm]
-%endif
 %ifdef GO4K_USE_VCO_PHASE_OFFSET
     fadd	dword [edx+go4kVCO_val.phaseofs]
-%endif
-%ifdef PHASE_RENORMALIZE	
     fld1
     fadd	st1, st0
     fxch	
@@ -498,9 +457,6 @@ go4kVCO_func_normalized:
     fstp	st1											; // p
 %endif	
     fld		dword [edx+go4kVCO_val.color]				; // c		p
-%ifdef GO4K_USE_VCO_MOD_CM	
-    fadd	dword [WRK+go4kVCO_wrk.cm]					; // c		p
-%endif
 go4kVCO_func_sine:	
     test	al, byte SINE
     jz		short go4kVCO_func_trisaw
@@ -532,15 +488,9 @@ go4kVCO_func_noise:
 go4kVCO_func_end:
 %ifdef GO4K_USE_VCO_SHAPE
     fld		dword [edx+go4kVCO_val.shape]
-%ifdef GO4K_USE_VCO_MOD_SM	
-    fadd	dword [WRK+go4kVCO_wrk.sm]
-%endif
     call	go4kWaveshaper	
 %endif	
     fld		dword [edx+go4kVCO_val.gain]
-%ifdef GO4K_USE_VCO_MOD_GM	
-    fadd	dword [WRK+go4kVCO_wrk.gm]
-%endif
     fmulp	st1, st0	
     
 %ifdef GO4K_USE_VCO_STEREO	
@@ -568,8 +518,7 @@ go4kVCO_func_stereodone:
 SECT_TEXT(g4kcodc)
 
 EXPORT MANGLE_FUNC(go4kVCF_func,0)
-    push	3
-    call	go4kTransformValues
+    TRANSFORM_VALUES VCF
 %ifdef GO4K_USE_VCF_CHECK
 ; check if current note still active
     mov		eax, dword [ecx-4]
@@ -581,15 +530,9 @@ go4kVCF_func_do:
     movzx	eax, byte [VAL-1]				; // get type flag 	
     
     fld		dword [edx+go4kVCF_val.res]		; //	r		in
-%ifdef GO4K_USE_VCF_MOD_RM	
-    fadd	dword [WRK+go4kVCF_wrk.rm]			
-%endif
     fstp	dword [esp-8]
     
     fld		dword [edx+go4kVCF_val.freq]	; //	f		in
-%ifdef GO4K_USE_VCF_MOD_FM	
-    fadd	dword [WRK+go4kVCF_wrk.fm]
-%endif
     fmul	st0, st0						; // square the input so we never get negative and also have a smoother behaviour in the lower frequencies
     fstp	dword [esp-4]					; //	in
 
@@ -664,20 +607,7 @@ SECT_TEXT(g4kcodd)
 
 EXPORT MANGLE_FUNC(go4kDST_func,0)
 %ifdef GO4K_USE_DST
-%ifdef GO4K_USE_DST_SH
-    %ifdef GO4K_USE_DST_STEREO
-        push	3
-    %else
-        push	2
-    %endif
-%else
-    %ifdef GO4K_USE_DST_STEREO
-        push	2
-    %else
-        push	1
-    %endif
-%endif
-    call	go4kTransformValues
+    TRANSFORM_VALUES DST
 %ifdef GO4K_USE_DST_CHECK
 ; check if current note still active
     mov		eax, dword [ecx-4]
@@ -689,9 +619,6 @@ go4kDST_func_do:
     movzx	eax, byte [VAL-1]				; // get type flag
 %ifdef	GO4K_USE_DST_SH
     fld		dword [edx+go4kDST_val.snhfreq]	; //	snh		in		(inr)
-%ifdef 	GO4K_USE_DST_MOD_SH	
-    fadd	dword [WRK+go4kDST_wrk.sm]		; // 	snh'	in		(inr)
-%endif
     fmul	st0, st0						; // square the input so we never get negative and also have a smoother behaviour in the lower frequencies
     fchs
     fadd	dword [WRK+go4kDST_wrk.snhphase]; // 	snh'	in		(inr)
@@ -710,9 +637,6 @@ go4kDST_func_do:
     jz		short go4kDST_func_mono
     fxch	st1								; // 	inr		inl
     fld		dword [edx+go4kDST_val.drive]	; // 	drive	inr		inl
-%ifdef GO4K_USE_DST_MOD_DM	
-    fadd	dword [WRK+go4kDST_wrk.dm]
-%endif
     call	go4kWaveshaper					; // 	outr	inl
 %ifdef	GO4K_USE_DST_SH		
     fst		dword [WRK+go4kDST_wrk.out2]	; // 	outr	inl
@@ -721,9 +645,6 @@ go4kDST_func_do:
 go4kDST_func_mono:	
 %endif	
     fld		dword [edx+go4kDST_val.drive]	; // 	drive	in		(outr)
-%ifdef GO4K_USE_DST_MOD_DM	
-    fadd	dword [WRK+go4kDST_wrk.dm]
-%endif
     call	go4kWaveshaper					; // 	out		(outr)
 %ifdef	GO4K_USE_DST_SH		
     fst		dword [WRK+go4kDST_wrk.out]		; // 	out'	(outr)
@@ -758,20 +679,7 @@ SECT_TEXT(g4kcodf)
 
 EXPORT MANGLE_FUNC(go4kDLL_func,0)
 %ifdef GO4K_USE_DLL
-%ifdef GO4K_USE_DLL_CHORUS
-    %ifdef GO4K_USE_DLL_DAMP
-        push	8
-    %else
-        push	7
-    %endif		
-%else
-    %ifdef GO4K_USE_DLL_DAMP
-        push	6
-    %else
-        push	5
-    %endif		
-%endif	
-    call	go4kTransformValues
+    TRANSFORM_VALUES DLL
     pushad
     movzx	ebx, byte [VAL-(go4kDLL_val.size-go4kDLL_val.delay)/4]	;// delay length index
 %ifdef GO4K_USE_DLL_NOTE_SYNC
@@ -787,35 +695,16 @@ EXPORT MANGLE_FUNC(go4kDLL_func,0)
 %endif	
 go4kDLL_func_process:
     mov		ecx, eax							;// ecx is delay counter	
-%ifdef 	GO4K_USE_DLL_MOD
-    mov		edi, WRK							;// edi is modulation workspace
-%endif
     mov		WRK, dword [MANGLE_DATA(go4k_delay_buffer_ofs)]	;// ebp is current delay
     fld		st0									;// in		in
-%ifdef GO4K_USE_DLL_MOD_IM
-    fld		dword [edx+go4kDLL_val.dry]			;// dry		in		in
-    fadd	dword [edi+go4kDLL_wrk2.im]			;// dry'	in		in
-    fmulp	st1, st0							;// out		in
-%else	
     fmul	dword [edx+go4kDLL_val.dry]			;// out		in
-%endif	
     fxch										;// in		out
-%ifdef GO4K_USE_DLL_MOD_PM
-    fld		dword [edx+go4kDLL_val.pregain]		;// pg		in		out
-    fadd	dword [edi+go4kDLL_wrk2.pm]			;// pg'		in		out
-    fmul	st0, st0							;// pg''	in		out
-    fmulp	st1, st0							;// in'		out
-%else	
     fmul	dword [edx+go4kDLL_val.pregain]		;// in'		out
     fmul	dword [edx+go4kDLL_val.pregain]		;// in'		out
-%endif	
 
 %ifdef GO4K_USE_DLL_CHORUS	
 ;// update saw lfo for chorus/flanger
     fld		dword [edx+go4kDLL_val.freq]		;// f		in'		out
-%ifdef GO4K_USE_DLL_MOD_SM
-    fadd	dword [edi+go4kDLL_wrk2.sm]			;// f'		in'		out
-%endif	
     fmul	st0, st0
     fmul	st0, st0
     fdiv	dword [DLL_DEPTH]
@@ -838,9 +727,6 @@ go4kDLL_func_process:
     faddp	st1, st0							; // 1+sin	in'		out		
 ;// mul with depth and convert to samples	
     fld		dword [edx+go4kDLL_val.depth]		; // d		1+sin	in'		out
-%ifdef GO4K_USE_DLL_MOD_AM
-    fadd	dword [edi+go4kDLL_wrk2.am]			; // d'		1+sin	in'		out
-%endif	
     fmul	st0, st0
     fmul	st0, st0
     fmul	dword [DLL_DEPTH]
@@ -872,25 +758,13 @@ go4kDLL_func_buffer_nowrap1:
 %ifdef GO4K_USE_DLL_DAMP
     fld1										;//	1			cout		in'			out'		
     fsub 	dword [edx+go4kDLL_val.damp]		;//	1-damp		cout		in'			out'
-%ifdef GO4K_USE_DLL_MOD_DM
-    fsub	dword [edi+go4kDLL_wrk2.dm]			;//	1-damp'		cout		in'			out'
-%endif	
     fmulp	st1, st0							;//	cout*d2		in'			out'		
     fld		dword [edx+go4kDLL_val.damp]		;//	d1   		cout*d2		in'			out'
-%ifdef GO4K_USE_DLL_MOD_DM
-    fadd	dword [edi+go4kDLL_wrk2.dm]			;//	d1'   		cout*d2		in'			out'
-%endif	
     fmul	dword [WRK+go4kDLL_wrk.store]		;//	store*d1	cout*d2		in'			out'		
     faddp	st1, st0							;//	store'		in'			out'	
     fst		dword [WRK+go4kDLL_wrk.store]		;//	store'		in'			out'		
 %endif	
-%ifdef GO4K_USE_DLL_MOD_FM
-    fld		dword [edx+go4kDLL_val.feedback]	;//	fb			cout		in'			out'
-    fadd 	dword [edi+go4kDLL_wrk2.fm]			;//	fb'			cout		in'			out'
-    fmulp	st1, st0							;//	cout*fb'	in'			out'
-%else
     fmul	dword [edx+go4kDLL_val.feedback]	;//	cout*fb		in'			out'
-%endif	
 %ifdef GO4K_USE_DLL_DC_FILTER		
     fadd	st0, st1							;//	store		in'			out'
     fstp	dword [WRK+eax*4+go4kDLL_wrk.buffer];//	in'			out'
@@ -949,8 +823,7 @@ SECT_TEXT(g4kcodu)
 
 EXPORT MANGLE_FUNC(go4kGLITCH_func,0)
 %ifdef GO4K_USE_GLITCH
-    push	5
-    call	go4kTransformValues
+    TRANSFORM_VALUES GLITCH
     pushad	
         
     mov		edi, WRK
@@ -962,7 +835,6 @@ EXPORT MANGLE_FUNC(go4kGLITCH_func,0)
 ;	je		go4kGLITCH_func_notactive			;//	out
     
     fld		dword [edx+go4kGLITCH_val.active]	;// a		in
-    fadd	dword [edi+go4kGLITCH_wrk2.am]		;// a'		in	
     ; // check for activity
     fldz										;//	0		a'		in
     fucomip	st1									;//	a'		in
@@ -1017,7 +889,6 @@ go4kGLITCH_func_filldone:
         mov		dword [WRK+go4kGLITCH_wrk.index], eax
         
         fld		dword [edx+go4kGLITCH_val.dsize]
-        fadd	dword [edi+go4kGLITCH_wrk2.sm]
         fsub	dword [c_0_5]
         fmul	dword [c_0_5]
         call MANGLE_FUNC(Power,0)
@@ -1025,7 +896,6 @@ go4kGLITCH_func_filldone:
         fstp	dword [WRK+go4kGLITCH_wrk.slizesize]
         
         fld		dword [edx+go4kGLITCH_val.dpitch]
-        fadd	dword [edi+go4kGLITCH_wrk2.pm]
         fsub	dword [c_0_5]
         fmul	dword [c_0_5]
         call MANGLE_FUNC(Power,0)
@@ -1035,7 +905,6 @@ go4kGLITCH_func_process_done:
         
     ;// dry wet mix
     fld		dword [edx+go4kGLITCH_val.dry]				;// dry		out
-    fadd	dword [edi+go4kGLITCH_wrk2.dm]				;// dry'	out
     fld1												;// 1 		dry'	out
     fsub	st1											;// 1-dry'	dry'	out
     fmulp	st2											;// dry'	out'
@@ -1067,8 +936,7 @@ go4kGLITCH_func_leave:
 SECT_TEXT(g4kcodg)
 
 EXPORT MANGLE_FUNC(go4kFOP_func,0)
-    push	1
-    call	go4kTransformValues
+    TRANSFORM_VALUES FOP
 go4kFOP_func_pop:	
     dec		eax
     jnz		go4kFOP_func_addp	
@@ -1133,8 +1001,7 @@ go4kFOP_func_mulp2:
 SECT_TEXT(g4kcodh)
 
 EXPORT MANGLE_FUNC(go4kFST_func,0)
-    push	1
-    call	go4kTransformValues
+    TRANSFORM_VALUES FST
     fld		dword [edx+go4kFST_val.amount]
     fsub	dword [c_0_5]
     fadd	st0
@@ -1165,14 +1032,10 @@ SECT_TEXT(g4kcodm)
 
 EXPORT MANGLE_FUNC(go4kFLD_func,0)								;// in		main env
 %ifdef GO4K_USE_FLD
-    push	1
-    call	go4kTransformValues
+    TRANSFORM_VALUES FLD
     fld		dword [edx+go4kFLD_val.value]				;// value		in
     fsub	dword [c_0_5]
     fadd	st0
-%ifdef GO4K_USE_FLD_MOD_VM
-    fadd	dword [WRK+go4kFLD_wrk.vm]					;// value'		in
-%endif
 %endif	
     ret		
     
@@ -1190,8 +1053,7 @@ EXPORT MANGLE_FUNC(go4kFLD_func,0)								;// in		main env
 SECT_TEXT(g4kcodi)
 
 EXPORT MANGLE_FUNC(go4kFSTG_func,0)
-    push	1
-    call	go4kTransformValues
+    TRANSFORM_VALUES FSTG
 %ifdef GO4K_USE_FSTG_CHECK
 ; check if current note still active
     mov		eax, dword [ecx-4]
@@ -1238,12 +1100,8 @@ SECT_TEXT(g4kcodj)
 
 EXPORT MANGLE_FUNC(go4kPAN_func,0)								;// in		main env
 %ifdef GO4K_USE_PAN
-    push	1
-    call	go4kTransformValues
+    TRANSFORM_VALUES PAN
     fld		dword [edx+go4kPAN_val.panning]				;// pan		in
-%ifdef GO4K_USE_PAN_MOD	
-    fadd	dword [WRK+go4kPAN_wrk.pm]					;// pan		in
-%endif
     fmul	st1											;// r		in
     fsub	st1, st0									;// r		l
     fxch												;// l		r
@@ -1265,56 +1123,34 @@ EXPORT MANGLE_FUNC(go4kPAN_func,0)								;// in		main env
 SECT_TEXT(g4kcodk)
 
 EXPORT MANGLE_FUNC(go4kOUT_func,0)								;// l		r
+    TRANSFORM_VALUES OUT
 %ifdef	GO4K_USE_GLOBAL_DLL
-    push	2
-    call	go4kTransformValues
     pushad
     lea		edi, [ecx+MAX_UNITS*MAX_UNIT_SLOTS*4]
     fld		st1											;//	r		l		r
     fld		st1											;// l		r		l		r
     fld		dword [edx+go4kOUT_val.auxsend]				;// as		l		r		l		r
-%ifdef 	GO4K_USE_OUT_MOD_AM
-    fadd	dword [WRK+go4kOUT_wrk.am]					;//	am		l		r		l		r
-%endif	
     fmulp	st1, st0									;//	l'		r		l		r
     fstp	dword [edi]									;// r		l		r
     scasd
     fld		dword [edx+go4kOUT_val.auxsend]				;// as		r		l		r
-%ifdef 	GO4K_USE_OUT_MOD_AM
-    fadd	dword [WRK+go4kOUT_wrk.am]					;//	am		r		l		r
-%endif	
     fmulp	st1, st0									;//	r'		l		r
     fstp	dword [edi]									;// l		r
     scasd
     fld		dword [edx+go4kOUT_val.gain]				;// g		l		r
-%ifdef 	GO4K_USE_OUT_MOD_GM
-    fadd	dword [WRK+go4kOUT_wrk.gm]					;//	gm		l		r
-%endif	
     fmulp	st1, st0									;//	l'		r
     fstp	dword [edi]									;// r
     scasd
     fld		dword [edx+go4kOUT_val.gain]				;// g		r
-%ifdef 	GO4K_USE_OUT_MOD_GM
-    fadd	dword [WRK+go4kOUT_wrk.gm]					;//	gm		r
-%endif	
     fmulp	st1, st0									;//	r'
     fstp	dword [edi]									;// -
     scasd
     popad
 %else
-    push	1
-    call	go4kTransformValues
-
     fld		dword [edx+go4kOUT_val.gain]				;// g		l		r
-%ifdef 	GO4K_USE_OUT_MOD_GM
-    fadd	dword [WRK+go4kOUT_wrk.gm]					;//	gm		l		r
-%endif	
     fmulp	st1, st0									;//	l'		r
     fstp	dword [ecx+MAX_UNITS*MAX_UNIT_SLOTS*4+8]							;// r
     fld		dword [edx+go4kOUT_val.gain]				;// g		r
-%ifdef 	GO4K_USE_OUT_MOD_GM
-    fadd	dword [WRK+go4kOUT_wrk.gm]					;//	gm		r
-%endif	
     fmulp	st1, st0									;//	r'
     fstp	dword [ecx+MAX_UNITS*MAX_UNIT_SLOTS*4+12]							;// -
     
@@ -1333,8 +1169,7 @@ EXPORT MANGLE_FUNC(go4kOUT_func,0)								;// l		r
 SECT_TEXT(g4kcodl)
 
 EXPORT MANGLE_FUNC(go4kACC_func,0)
-    push	1
-    call	go4kTransformValues
+    TRANSFORM_VALUES ACC
     pushad
     mov		edi, go4k_synth_wrk
     add		edi, go4k_instrument.size
