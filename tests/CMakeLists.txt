@@ -34,6 +34,7 @@ function(regression_test testname)
 endfunction(regression_test)
 
 regression_test(test_envelope "" ENVELOPE)
+regression_test(test_out_aux ENVELOPE)
 regression_test(test_load "" LOAD)
 regression_test(test_store "" STORE)
 regression_test(test_globalstore)
