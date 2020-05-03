@@ -6,6 +6,12 @@ function(regression_test testname)
     endif()
 
     add_executable(${testname} ${source}.asm test_renderer.c)
+
+    # the tests include the entire ASM but we still want to rebuild when they change
+    set(FOURKLANG ${PROJECT_SOURCE_DIR}/src/4klang.inc ${PROJECT_SOURCE_DIR}/src/4klang.asm)
+    set_source_files_properties(${source}.asm PROPERTIES OBJECT_DEPENDS "${FOURKLANG}")
+    set_source_files_properties(${FOURKLANG} PROPERTIES HEADER_FILE_ONLY TRUE)
+    
     add_test(${testname} ${testname})
     target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}")
     
