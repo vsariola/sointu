@@ -5,7 +5,7 @@
 %define COM ebx				; // alias for instrument opcodes
 
 %macro TRANSFORM_VALUES 1
-    push go4k %+ %1 %+ _val.size/4
+    push %1 %+ .size/4
     call go4kTransformValues
 %endmacro
 
@@ -237,7 +237,7 @@ EXPORT MANGLE_FUNC(Power,0) ; x
 SECT_TEXT(g4kcoda)
 
 EXPORT MANGLE_FUNC(go4kENV_func,0)
-    TRANSFORM_VALUES ENV
+    TRANSFORM_VALUES go4kENV_val
 %ifdef GO4K_USE_ENV_CHECK
 ; check if current note still active
     mov		eax, dword [ecx-4]
@@ -381,7 +381,7 @@ go4kVCO_gate_bit:
 SECT_TEXT(g4kcodb)
 
 EXPORT MANGLE_FUNC(go4kVCO_func,0)
-    TRANSFORM_VALUES VCO
+    TRANSFORM_VALUES go4kVCO_val
 %ifdef GO4K_USE_VCO_CHECK
 ; check if current note still active
     mov		eax, dword [ecx-4]
@@ -518,7 +518,7 @@ go4kVCO_func_stereodone:
 SECT_TEXT(g4kcodc)
 
 EXPORT MANGLE_FUNC(go4kVCF_func,0)
-    TRANSFORM_VALUES VCF
+    TRANSFORM_VALUES go4kVCF_val
 %ifdef GO4K_USE_VCF_CHECK
 ; check if current note still active
     mov		eax, dword [ecx-4]
@@ -607,7 +607,7 @@ SECT_TEXT(g4kcodd)
 
 EXPORT MANGLE_FUNC(go4kDST_func,0)
 %ifdef GO4K_USE_DST
-    TRANSFORM_VALUES DST
+    TRANSFORM_VALUES go4kDST_val
 %ifdef GO4K_USE_DST_CHECK
 ; check if current note still active
     mov		eax, dword [ecx-4]
@@ -679,7 +679,7 @@ SECT_TEXT(g4kcodf)
 
 EXPORT MANGLE_FUNC(go4kDLL_func,0)
 %ifdef GO4K_USE_DLL
-    TRANSFORM_VALUES DLL
+    TRANSFORM_VALUES go4kDLL_val
     pushad
     movzx	ebx, byte [VAL-(go4kDLL_val.size-go4kDLL_val.delay)/4]	;// delay length index
 %ifdef GO4K_USE_DLL_NOTE_SYNC
@@ -823,7 +823,7 @@ SECT_TEXT(g4kcodu)
 
 EXPORT MANGLE_FUNC(go4kGLITCH_func,0)
 %ifdef GO4K_USE_GLITCH
-    TRANSFORM_VALUES GLITCH
+    TRANSFORM_VALUES go4kGLITCH_val
     pushad	
         
     mov		edi, WRK
@@ -936,7 +936,7 @@ go4kGLITCH_func_leave:
 SECT_TEXT(g4kcodg)
 
 EXPORT MANGLE_FUNC(go4kFOP_func,0)
-    TRANSFORM_VALUES FOP
+    TRANSFORM_VALUES go4kFOP_val
 go4kFOP_func_pop:	
     dec		eax
     jnz		go4kFOP_func_addp	
@@ -1001,7 +1001,7 @@ go4kFOP_func_mulp2:
 SECT_TEXT(g4kcodh)
 
 EXPORT MANGLE_FUNC(go4kFST_func,0)
-    TRANSFORM_VALUES FST
+    TRANSFORM_VALUES go4kFST_val
     fld		dword [edx+go4kFST_val.amount]
     fsub	dword [c_0_5]
     fadd	st0
@@ -1032,7 +1032,7 @@ SECT_TEXT(g4kcodm)
 
 EXPORT MANGLE_FUNC(go4kFLD_func,0)								;// in		main env
 %ifdef GO4K_USE_FLD
-    TRANSFORM_VALUES FLD
+    TRANSFORM_VALUES go4kFLD_val
     fld		dword [edx+go4kFLD_val.value]				;// value		in
     fsub	dword [c_0_5]
     fadd	st0
@@ -1053,7 +1053,7 @@ EXPORT MANGLE_FUNC(go4kFLD_func,0)								;// in		main env
 SECT_TEXT(g4kcodi)
 
 EXPORT MANGLE_FUNC(go4kFSTG_func,0)
-    TRANSFORM_VALUES FSTG
+    TRANSFORM_VALUES go4kFSTG_val
 %ifdef GO4K_USE_FSTG_CHECK
 ; check if current note still active
     mov		eax, dword [ecx-4]
@@ -1100,7 +1100,7 @@ SECT_TEXT(g4kcodj)
 
 EXPORT MANGLE_FUNC(go4kPAN_func,0)								;// in		main env
 %ifdef GO4K_USE_PAN
-    TRANSFORM_VALUES PAN
+    TRANSFORM_VALUES go4kPAN_val
     fld		dword [edx+go4kPAN_val.panning]				;// pan		in
     fmul	st1											;// r		in
     fsub	st1, st0									;// r		l
@@ -1123,7 +1123,7 @@ EXPORT MANGLE_FUNC(go4kPAN_func,0)								;// in		main env
 SECT_TEXT(g4kcodk)
 
 EXPORT MANGLE_FUNC(go4kOUT_func,0)								;// l		r
-    TRANSFORM_VALUES OUT
+    TRANSFORM_VALUES go4kOUT_val
 %ifdef	GO4K_USE_GLOBAL_DLL
     pushad
     lea		edi, [ecx+MAX_UNITS*MAX_UNIT_SLOTS*4]
@@ -1169,7 +1169,7 @@ EXPORT MANGLE_FUNC(go4kOUT_func,0)								;// l		r
 SECT_TEXT(g4kcodl)
 
 EXPORT MANGLE_FUNC(go4kACC_func,0)
-    TRANSFORM_VALUES ACC
+    TRANSFORM_VALUES go4kACC_val
     pushad
     mov		edi, go4k_synth_wrk
     add		edi, go4k_instrument.size
