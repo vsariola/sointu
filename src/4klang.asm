@@ -131,7 +131,7 @@ EXPORT MANGLE_FUNC(FloatRandomNumber,0)
 ;-------------------------------------------------------------------------------
 ;   Input:      st0     :   a - the shaping coefficient
 ;               st1     :   x - input value
-;   Output:     st0     :   (1+k)*x/(1+k*abs(x)), where k=2*m/(1-m) and m=2*a-1
+;   Output:     st0     :  x*a/(1-a+(2*a-1)*abs(x))
 ;                          and x is clamped first if GO4K_USE_WAVESHAPER_CLIP
 ;-------------------------------------------------------------------------------
 %ifdef INCLUDE_WAVESHAPER
@@ -151,23 +151,17 @@ go4kWaveshaper_clip:
     fstp    st1                             ; x' a, where x' = clamp(x)
     fxch                                    ; a x' (from now on just called x)
 %endif
-    fsub    dword [c_0_5]                   ; a-.5 x
-    fadd    st0                             ; 2*a-1 x
-    fst     dword [esp-4]                   ; m=2*a-1 x
-    fadd    st0                             ; 2*m x
-    fld1                                    ; 1 2*m x
-    fsub    dword [esp-4]                   ; 1-m 2*m x
-    fdivp   st1, st0                        ; k=2*m/(1-m) x
-    fld     st1                             ; x k x
-    fabs                                    ; abs(x) k x
-    fmul    st1                             ; k*abs(x) k x
-    fld1                                    ; 1 k*abs(x) k x
-    faddp   st1, st0                        ; 1+k*abs(x) k x
-    fxch    st1                             ; k 1+k*abs(x) x
-    fld1                                    ; 1 k 1+k*abs(x) x
-    faddp   st1, st0                        ; 1+k 1+k*abs(x) x
-    fmulp   st2                             ; 1+k*abs(x) (1+k)*x
-    fdivp   st1, st0                        ; (1+k)*x/(1+k*abs(x))
+    fld     st0                             ; a a x
+    fsub    dword [c_0_5]                   ; a-.5 a x
+    fadd    st0                             ; 2*a-1 a x
+    fld     st2                             ; x 2*a-1 a x
+    fabs                                    ; abs(x) 2*a-1 a x
+    fmulp   st1                             ; (2*a-1)*abs(x) a x
+    fld1                                    ; 1 (2*a-1)*abs(x) a x
+    faddp   st1                             ; 1+(2*a-1)*abs(x) a x
+    fsub    st1                             ; 1-a+(2*a-1)*abs(x) a x
+    fdivp   st1, st0                        ; a/(1-a+(2*a-1)*abs(x)) x
+    fmulp   st1                             ; x*a/(1-a+(2*a-1)*abs(x))
     ret
 
 %endif ; INCLUDE_WAVESHAPER
