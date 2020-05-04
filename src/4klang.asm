@@ -1202,6 +1202,11 @@ go4kACC_func_loop:
 ;-------------------------------------------------------------------------------
 ;   Update Instrument (allocate voices, set voice to release)
 ;-------------------------------------------------------------------------------
+;   Input:      [esp+8] :   current tick
+;               ecx     :   instrument number
+;               edi     :   pointer to the instrument struct of first voice
+;   Dirty:      eax,edx
+;-------------------------------------------------------------------------------
 SECT_TEXT(g4kcodw)
 
 go4kUpdateInstrument:
@@ -1225,20 +1230,20 @@ go4kUpdateInstrument:
     jl      short go4kUpdateInstrument_done
 %if MAX_VOICES > 1
     pushad
-    xchg    eax, dword [go4k_voiceindex + ecx*4]
-    test    eax, eax
-    je      go4kUpdateInstrument_newNote
-    add     edi, go4k_instrument.size
-go4kUpdateInstrument_newNote:
-    xor     al,1
-    xchg    dword [go4k_voiceindex + ecx*4], eax
+    xchg    eax, dword [go4k_voiceindex + ecx*4]    ; eax = current voice index
+    test    eax, eax                                ; if (eax == 0)
+    je      go4kUpdateInstrument_newNote            ;   goto newnote
+    add     edi, go4k_instrument.size               ; move edi to point to second voice
+go4kUpdateInstrument_newNote:                       ; newnote:
+    xor     al,1                                    ; current voice = 1 - current voice
+    xchg    dword [go4k_voiceindex + ecx*4], eax    ; save current voice
 %endif
     pushad
     xor     eax, eax
-    mov     ecx, (8+MAX_UNITS*MAX_UNIT_SLOTS*4)/4   ; // clear only relase, note and workspace
-    rep     stosd
+    mov     ecx, (8+MAX_UNITS*MAX_UNIT_SLOTS*4)/4   ; clear relase, note and workspace
+    rep     stosd                                   ; but don't clear output signals
     popad
-    mov     dword [edi+4], edx                      ; // set requested note as current note
+    mov     dword [edi+4], edx                      ; set go4k_instrument.note as current note
 %if MAX_VOICES > 1
     popad
 %endif
