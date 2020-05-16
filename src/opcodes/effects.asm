@@ -24,7 +24,7 @@ su_op_distort_mono:
 %ifdef SU_INCLUDE_WAVESHAPER
 su_waveshaper:
     fxch                                    ; x a
-    call    MANGLE_FUNC(su_clip_op,0)
+    call    su_clip
     fxch                                    ; a x' (from now on just called x)
     fld     st0                             ; a a x
     fsub    dword [c_0_5]                   ; a-.5 a x
@@ -193,15 +193,22 @@ su_op_filter_skipneghighpass:
 ;   Input:      st0     :   x
 ;   Output:     st0     :   min(max(x,-1),1)
 ;-------------------------------------------------------------------------------
-%if CLIP_ID > -1
-    %define SU_INCLUDE_CLIP
-%endif
-
-%ifdef SU_INCLUDE_CLIP
-
 SECT_TEXT(suclip)
 
-EXPORT MANGLE_FUNC(su_clip_op,0)
+%if CLIP_ID > -1
+    EXPORT MANGLE_FUNC(su_op_clip,0)
+    %ifdef INCLUDE_STEREO_CLIP
+        jnc     su_op_clip_mono
+        call    su_stereo_filterhelper
+        %define INCLUDE_STEREO_FILTERHELPER
+    su_op_clip_mono:
+    %endif
+    %define SU_INCLUDE_CLIP
+    ; flow into su_doclip
+%endif ; CLIP_ID > -1
+
+%ifdef SU_INCLUDE_CLIP
+su_clip:
     fld1                                    ; 1 x a
     fucomi  st1                             ; if (1 <= x)
     jbe     short su_clip_do                ;   goto Clip_Do

@@ -61,7 +61,7 @@ c_32767     dd      32767.0
         mov     ecx, 2
         %%loop: ; loop over two channels, left & right
             fld     dword [edi]
-            call    MANGLE_FUNC(su_clip_op,0)
+            call    su_clip
             fmul    dword [c_32767]
             push    eax
             fistp   dword [esp]

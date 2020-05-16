@@ -89,9 +89,13 @@ regression_test(test_oscillat_gainmod "VCO_SINE;ENVELOPE;FOP_MULP;FOP_PUSH;SEND"
 regression_test(test_distort ENVELOPE)
 regression_test(test_distort_mod "VCO_SINE;ENVELOPE;SEND")
 regression_test(test_distort_stereo ENVELOPE)
+
 regression_test(test_hold ENVELOPE HOLD)
 regression_test(test_hold_mod "VCO_SINE;ENVELOPE;SEND")
 regression_test(test_hold_stereo HOLD)
+
+regression_test(test_clip "VCO_SINE;ENVELOPE;FOP_MULP;INVGAIN" CLIP)
+regression_test(test_clip_stereo CLIP)
 
 regression_test(test_filter_band "VCO_SINE;ENVELOPE;FOP_MULP")
 regression_test(test_filter_low "VCO_SINE;ENVELOPE;FOP_MULP")
