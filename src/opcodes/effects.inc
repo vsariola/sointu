@@ -157,6 +157,36 @@ struc su_hold_wrk
 endstruc
 
 ;-------------------------------------------------------------------------------
+;   CRUSH effect related defines
+;-------------------------------------------------------------------------------
+%assign CRUSH_ID -1
+
+%macro USE_CRUSH 0
+    %if CRUSH_ID == -1
+        %assign CRUSH_ID CUR_ID
+        %assign CUR_ID CUR_ID + 2
+        %xdefine OPCODES OPCODES MANGLE_FUNC(su_op_crush,0),
+        %xdefine NUMPARAMS NUMPARAMS 1,
+    %endif
+%endmacro
+
+%macro SU_CRUSH 2
+    db  %2
+    USE_CRUSH
+    %xdefine CMDS CMDS CRUSH_ID + %1,
+    %if %1 == STEREO
+        %define INCLUDE_STEREO_CRUSH
+    %endif
+%endmacro
+
+%define RESOLUTION(val) val
+
+struc su_crush_ports
+    .resolution     resd    1
+    .params
+endstruc
+
+;-------------------------------------------------------------------------------
 ;   GAIN effect related defines
 ;-------------------------------------------------------------------------------
 %assign GAIN_ID -1

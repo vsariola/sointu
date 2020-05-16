@@ -79,6 +79,27 @@ su_op_hold_holding:
 %endif ; HOLD_ID > -1
 
 ;-------------------------------------------------------------------------------
+;   CRUSH Tick
+;-------------------------------------------------------------------------------
+%if CRUSH_ID > -1
+
+SECT_TEXT(sucrush)
+
+EXPORT MANGLE_FUNC(su_op_crush,0)
+%ifdef INCLUDE_STEREO_CRUSH
+    jnc     su_op_crush_mono
+    call    su_stereo_filterhelper
+    %define INCLUDE_STEREO_FILTERHELPER
+su_op_crush_mono:
+%endif    
+    fdiv    dword [edx+su_crush_ports.resolution]
+    frndint
+    fmul    dword [edx+su_crush_ports.resolution]
+    ret
+
+%endif ; CRUSH_ID > -1
+
+;-------------------------------------------------------------------------------
 ;   GAIN Tick
 ;-------------------------------------------------------------------------------
 %if GAIN_ID > -1
