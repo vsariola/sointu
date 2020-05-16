@@ -79,6 +79,46 @@ su_op_hold_holding:
 %endif ; HOLD_ID > -1
 
 ;-------------------------------------------------------------------------------
+;   GAIN Tick
+;-------------------------------------------------------------------------------
+%if GAIN_ID > -1
+
+SECT_TEXT(sugain)
+
+EXPORT MANGLE_FUNC(su_op_gain,0)
+%ifdef INCLUDE_STEREO_GAIN
+    jnc     su_op_gain_mono
+    call    su_stereo_filterhelper
+    %define INCLUDE_STEREO_FILTERHELPER
+su_op_gain_mono:
+%endif
+    fld     dword [edx+su_gain_ports.gain]  ; g x
+    fmulp   st1, st0                        ; g*x
+    ret
+
+%endif ; GAIN_ID > -1
+
+;-------------------------------------------------------------------------------
+;   INVGAIN Tick
+;-------------------------------------------------------------------------------
+%if INVGAIN_ID > -1
+
+SECT_TEXT(suingain)
+
+EXPORT MANGLE_FUNC(su_op_invgain,0)
+%ifdef INCLUDE_STEREO_INVGAIN
+    jnc     su_op_invgain_mono
+    call    su_stereo_filterhelper
+    %define INCLUDE_STEREO_FILTERHELPER
+su_op_invgain_mono:
+%endif
+    fld     dword [edx+su_invgain_ports.invgain] ; g x
+    fdivp   st1, st0                             ; x/g
+    ret
+
+%endif ; INVINVGAIN_ID > -1
+
+;-------------------------------------------------------------------------------
 ;   su_op_filter: perform low/high/band-pass filtering on the signal
 ;-------------------------------------------------------------------------------
 ;   Input:      WRK     :   pointer to unit workspace

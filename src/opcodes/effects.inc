@@ -157,6 +157,66 @@ struc su_hold_wrk
 endstruc
 
 ;-------------------------------------------------------------------------------
+;   GAIN effect related defines
+;-------------------------------------------------------------------------------
+%assign GAIN_ID -1
+
+%macro USE_GAIN 0
+    %if GAIN_ID == -1
+        %assign GAIN_ID CUR_ID
+        %assign CUR_ID CUR_ID + 2
+        %xdefine OPCODES OPCODES MANGLE_FUNC(su_op_gain,0),
+        %xdefine NUMPARAMS NUMPARAMS 1,
+    %endif
+%endmacro
+
+%macro SU_GAIN 2
+    db  %2
+    USE_GAIN
+    %xdefine CMDS CMDS GAIN_ID + %1,
+    %if %1 == STEREO
+        %define INCLUDE_STEREO_GAIN
+    %endif
+%endmacro
+
+%define GAIN(val) val
+
+struc su_gain_ports
+    .gain       resd    1
+    .params
+endstruc
+
+;-------------------------------------------------------------------------------
+;   INVGAIN effect related defines
+;-------------------------------------------------------------------------------
+%assign INVGAIN_ID -1
+
+%macro USE_INVGAIN 0
+    %if INVGAIN_ID == -1
+        %assign INVGAIN_ID CUR_ID
+        %assign CUR_ID CUR_ID + 2
+        %xdefine OPCODES OPCODES MANGLE_FUNC(su_op_invgain,0),
+        %xdefine NUMPARAMS NUMPARAMS 1,
+    %endif
+%endmacro
+
+%macro SU_INVGAIN 2
+    db  %2
+    USE_INVGAIN
+    %xdefine CMDS CMDS INVGAIN_ID + %1,
+    %if %1 == STEREO
+        %define INCLUDE_STEREO_INVGAIN
+    %endif
+%endmacro
+
+%define INVGAIN(val) val
+
+struc su_invgain_ports
+    .invgain        resd    1
+    .params
+endstruc
+
+;-------------------------------------------------------------------------------
 ;   CLIP effect related defines
 ;-------------------------------------------------------------------------------
 %assign CLIP_ID -1
