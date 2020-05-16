@@ -14,28 +14,25 @@ produce the audio; however, by now the internal virtual machine has been
 heavily rewritten and extended to make the code more maintainable, possibly 
 even saving some bytes in the process. 
 
-Project goals and current state
--------------------------------
-
-The overly ambitious primary goals of the project:
-  - **Cross-platform support for win / mac / linux**. The build is already based 
-    on CMake and compiles on Windows. Cross-platform YASM macros have been
-    drafted and remain to be tested. Once the project is more mature, I will 
-    try compiling on other platforms.
-  - **Per instrument polyphonism**. An instrument should have the possibility to
-    have any number of voices. A draft of this has been written, but remains to
-    be tested. The maximum total number of voices will be 32: you can have 32
-    monophonic instruments or any combination of polyphonic instruments adding
-    up to 32.
-  - **Chords / more than one track per instrument**. For example, a polyphonic 
-    instrument of 3 voices can be triggered by 3 parallel tracks, to produce 
-    chords. A draft of this has been written, but remains to be tested.
+Implemented features
+--------------------
+  - **Per instrument polyphonism**. An instrument has the possibility to 
+    have any number of voices, meaning in practice that multiple instruments can
+    reuse the same opcodes. Done, see [here](tests/test_polyphony.asm) for an 
+    example and [here](src/opcodes/flowcontrol.asm) for the implementation. The 
+    maximum total number of voices will be 32: you can have 32 monophonic 
+    instruments or any combination of polyphonic instruments adding up to 32. 
+  - **Any number of voices per track**. For example, a polyphonic instrument of 
+    3 voices can be triggered by 3 parallel tracks, to produce chords. But one 
+    track can also trigger 3 voices, for example when using arpeggio. A track 
+    can even trigger 2 voices of different instruments, alternating between 
+    these two; maybe useful for example as an easy way to alternate between an 
+    open and a closed hihat.
   - **Easily extensible**. Instead of %ifdef hell, the primary extension
     mechanism will be through new opcodes for the virtual machine. Only the
     opcodes actually used in a song are compiled into the virtual machine. The
     goal is to try to write the code so that if two similar opcodes are used,
-    the common code in both is reused by moving it to a function. This opcode
-    extension mechanism is done.
+    the common code in both is reused by moving it to a function.
   - **Take the macro languge to its logical conclusion**. Only the patch
     definition should be needed; all the %define USE_SOMETHING will be
     defined automatically by the macros. Furthermore, only the opcodes needed
@@ -58,26 +55,39 @@ The overly ambitious primary goals of the project:
   - **Test-driven development**. Given that 4klang was already a mature project, 
     the first thing actually implemented was a set of regression tests to avoid 
     breaking everything beyond any hope of repair. Mostly done, using CTests. 
-    Ttests for new opcodes / opcode variants implemented since 4klang are not
+    Tests for new opcodes / opcode variants implemented since 4klang are not
     done.
-  - **Support for 64-bit targets**. Not started.
+
+Future goals
+------------
+
+  - **Cross-platform support for win / mac / linux**. The build is already based 
+    on CMake and compiles on Windows. Cross-platform YASM macros have been
+    drafted and remain to be tested. Once the project is more mature, I will 
+    try compiling on other platforms.
+  - **New opcodes**. At least: bit-crush, compressor (with side-chaining),
+    change bpm. Maybe also equalizer.
+  - **Support for 64-bit targets**.
   - **Browser-based GUI and MIDI instrument**. Modern browsers support WebMIDI,
      WebAudio and, most importantly, they are cross-platform and come installed
      on pretty much any computer. The only thing needed is to be able to
      communicate with the platform specific synth; for this, the best
      option seems to be to run the synth inside a tiny websocket server that
      receives messages from browser and streams the audio to the  browser. 
-     Only the feasibility of the approach is proven (localhost websocket calls
+     The feasibility of the approach is proven (localhost websocket calls
      have 1 ms range of latency), but nothing more is done yet.
 
-Possible, nice-to-have ideas:
+Nice-to-have ideas
+------------------
+
   - **Sample import from gm.dls**. This is Windows only, but implementing it 
     should be easy and the potential payoffs pretty high for Windows users, so 
     it is a nice prospect.
   - **Tracker**. If the list of primary goals is ever exhausted, a browser-based
     tracker would be nice to take advantage of all the features.
 
-Anti-goals:
+Anti-goals
+----------
   - **Ability to run Sointu as a DAW plugin (VSTi, AU, LADSPA and DSSI...)**.
     None of these plugin technologies are cross-platform and they are full of 
     proprietary technologies. In particular, since Sointu was initiated after 
@@ -120,17 +130,17 @@ http://zine.bitfellas.org/article.php?zine=14&id=35) will still be helpful for
 manipulate the signals. Since then, 4klang has been used in countless of scene
  productions and people use it even today.
 
-However, 4klang is pretty deep in the [%ifdef hell](https://www.cqse.eu/en/blog/living-in-the-ifdef-hell/), and the polyphonism was 
-never implemented in a very well engineered way (you can have exactly 2
-voices per instrument if you enable it). Also, reading through the code, 
-I spotted several avenues to squeeze away more bytes. These observations
-triggered project Sointu. That, and I just wanted to learn x86 assembly, and
-needed a real-world project to work on.
+However, 4klang is pretty deep in the [%ifdef hell](https://www.cqse.eu/en/blog/living-in-the-ifdef-hell/), 
+and the polyphonism was never implemented in a very well engineered way (you 
+can have exactly 2 voices per instrument if you enable it). Also, reading 
+through the code, I spotted several avenues to squeeze away more bytes. These 
+observations triggered project Sointu. That, and I just wanted to learn x86 
+assembly, and needed a real-world project to work on. 
 
 Credits
 -------
 
-The original 4klang was developed by Dominik Ries (gopher) and Paul Kraus 
+The original 4klang was developed by Dominik Ries ([gopher](https://github.com/hzdgopher/4klang)) and Paul Kraus 
 (pOWL) of Alcatraz.
 
 Sointu was initiated by Veikko Sariola (pestis/bC!).
