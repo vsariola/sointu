@@ -12,7 +12,7 @@ EXPORT MANGLE_FUNC(su_op_out,0) ; l r
     call    su_op_out_mono
     add     eax, 4
 su_op_out_mono:
-%endif    
+%endif
     fmul    dword [edx+su_out_ports.gain] ; g*l
     fadd    dword [eax]                   ; g*l+o
     fstp    dword [eax]                   ; o'=g*l+o
@@ -47,7 +47,7 @@ EXPORT MANGLE_FUNC(su_op_send,0)
     jnz     su_op_send_mono
     fxch                        ; swap them back: l r
 su_op_send_mono:
-%endif     
+%endif
 %ifdef INCLUDE_GLOBAL_SEND
     test    eax, SEND_GLOBAL
     jz      su_op_send_skipglobal
@@ -55,7 +55,7 @@ su_op_send_mono:
 su_op_send_skipglobal:
 %endif
     test    eax, SEND_POP       ; if the SEND_POP bit is not set
-    jnz     su_op_send_skippush 
+    jnz     su_op_send_skippush
     fld     st0                 ; duplicate the signal on stack: s s
 su_op_send_skippush:            ; there is signal s, but maybe also another: s (s)
     fld     dword [edx+su_send_ports.amount]   ; a l (l)

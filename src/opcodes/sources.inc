@@ -12,11 +12,11 @@
 %endmacro
 
 %macro SU_ENVELOPE 6
-    db	%2
-    db	%3
-    db	%4
-    db	%5
-    db	%6
+    db  %2
+    db  %3
+    db  %4
+    db  %5
+    db  %6
     USE_ENVELOPE
     %xdefine CMDS CMDS ENVELOPE_ID+%1,
     %if %1 == STEREO
@@ -24,32 +24,32 @@
     %endif
 %endmacro
 
-%define	ATTAC(val)		val	
-%define	DECAY(val)		val	
-%define	SUSTAIN(val)	val	
-%define	RELEASE(val)	val	
-%define	GAIN(val)		val
+%define ATTAC(val)      val
+%define DECAY(val)      val
+%define SUSTAIN(val)    val
+%define RELEASE(val)    val
+%define GAIN(val)       val
 
-struc	su_env_ports
-    .attac		resd	1
-    .decay		resd	1
-    .sustain	resd	1
-    .release	resd	1
-    .gain		resd	1
+struc   su_env_ports
+    .attac      resd    1
+    .decay      resd    1
+    .sustain    resd    1
+    .release    resd    1
+    .gain       resd    1
     .params
 endstruc
 
-struc	su_env_work
-    .state		resd	1
-    .level		resd	1
+struc   su_env_work
+    .state      resd    1
+    .level      resd    1
     .size
 endstruc
 
-%define	ENV_STATE_ATTAC		0
-%define	ENV_STATE_DECAY		1
-%define	ENV_STATE_SUSTAIN	2
-%define	ENV_STATE_RELEASE	3
-%define	ENV_STATE_OFF		4
+%define ENV_STATE_ATTAC     0
+%define ENV_STATE_DECAY     1
+%define ENV_STATE_SUSTAIN   2
+%define ENV_STATE_RELEASE   3
+%define ENV_STATE_OFF       4
 
 ;-------------------------------------------------------------------------------
 ;   OSCILLAT structs
@@ -64,18 +64,18 @@ endstruc
     %endif
 %endmacro
 
-%define	SINE		0x40
-%define	TRISAW		0x20
-%define	PULSE		0x10
-%define	LFO			0x08
-%define	GATE		0x04
+%define SINE        0x40
+%define TRISAW      0x20
+%define PULSE       0x10
+%define LFO         0x08
+%define GATE        0x04
 
-%macro	SU_OSCILLAT 8
-    db	%2
-    db	%3
-    db	%4
-    db	%5
-    db	%6
+%macro  SU_OSCILLAT 8
+    db  %2
+    db  %3
+    db  %4
+    db  %5
+    db  %6
     db  %7
     db  %8
     USE_OSCILLAT
@@ -97,29 +97,29 @@ endstruc
     %endif
 %endmacro
 
-struc	su_osc_ports
-    .transpose	resd	1
-    .detune		resd	1
-    .phaseofs	resd	1
-    .color		resd	1
-    .shape		resd	1
-    .gain		resd	1    
+struc   su_osc_ports
+    .transpose  resd    1
+    .detune     resd    1
+    .phaseofs   resd    1
+    .color      resd    1
+    .shape      resd    1
+    .gain       resd    1
     .params
 endstruc
 
-struc	su_osc_wrk
-    .phase		resd	1
+struc   su_osc_wrk
+    .phase      resd    1
     .gatestate  resd    1
     .size
 endstruc
 
-%define	TRANSPOSE(val)	val	
-%define	DETUNE(val)		val	
-%define	PHASE(val)		val
-%define GATESLOW(val)	val		
-%define GATESHIGH(val)	val		
-%define	COLOR(val)		val
-%define	SHAPE(val)		val	
+%define TRANSPOSE(val)  val
+%define DETUNE(val)     val
+%define PHASE(val)      val
+%define GATESLOW(val)   val
+%define GATESHIGH(val)  val
+%define COLOR(val)      val
+%define SHAPE(val)      val
 %define FLAGS(val)      val
 
 ;-------------------------------------------------------------------------------
@@ -135,9 +135,9 @@ endstruc
     %endif
 %endmacro
 
-%macro	SU_NOISE 3
-    db	%2
-    db	%3
+%macro  SU_NOISE 3
+    db  %2
+    db  %3
     USE_NOISE
     %xdefine CMDS CMDS NOISE_ID + %1,
     %if %1 == STEREO
@@ -145,9 +145,9 @@ endstruc
     %endif
 %endmacro
 
-struc	su_noise_ports
-    .shape		resd	1
-    .gain		resd	1
+struc   su_noise_ports
+    .shape      resd    1
+    .gain       resd    1
     .params
 endstruc
 
@@ -164,8 +164,8 @@ endstruc
     %endif
 %endmacro
 
-%macro	SU_LOAD_VAL 2
-    db	%2
+%macro  SU_LOAD_VAL 2
+    db  %2
     USE_LOAD_VAL
     %xdefine CMDS CMDS LOAD_VAL_ID+%1,
     %if %1 == STEREO
@@ -173,13 +173,13 @@ endstruc
     %endif
 %endmacro
 
-%define	VALUE(val)	val
+%define VALUE(val)  val
 
-struc	su_load_val_ports
-    .value		resd	1
+struc   su_load_val_ports
+    .value      resd    1
     .params
 endstruc
 
-struc	su_load_val_wrk
+struc   su_load_val_wrk
     .size
 endstruc

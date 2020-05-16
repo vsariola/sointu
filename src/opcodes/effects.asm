@@ -57,24 +57,24 @@ EXPORT MANGLE_FUNC(su_op_hold,0)
     %define INCLUDE_STEREO_FILTERHELPER
 su_op_hold_mono:
 %endif
-	fld		dword [edx+su_hold_ports.freq]    ; f x
-    fmul	st0, st0					    ; f^2 x	
+    fld     dword [edx+su_hold_ports.freq]    ; f x
+    fmul    st0, st0                        ; f^2 x
     fchs                                    ; -f^2 x
-	fadd	dword [WRK+su_hold_wrk.phase]   ; p-f^2 x
-    fst		dword [WRK+su_hold_wrk.phase]   ; p <- p-f^2
-	fldz									; 0 p x
-	fucomip	st1								; p x
-	fstp    dword [esp-4]					; t=p, x 
-	jc		short su_op_hold_holding        ; if (0 < p) goto holding
-	fld1									; 1 x
-	fadd	dword [esp-4]					; 1+t x
-	fstp	dword [WRK+su_hold_wrk.phase]   ; x	
-	fst		dword [WRK+su_hold_wrk.holdval] ; save holded value
-	ret	                                    ; x
+    fadd    dword [WRK+su_hold_wrk.phase]   ; p-f^2 x
+    fst     dword [WRK+su_hold_wrk.phase]   ; p <- p-f^2
+    fldz                                    ; 0 p x
+    fucomip st1                             ; p x
+    fstp    dword [esp-4]                   ; t=p, x
+    jc      short su_op_hold_holding        ; if (0 < p) goto holding
+    fld1                                    ; 1 x
+    fadd    dword [esp-4]                   ; 1+t x
+    fstp    dword [WRK+su_hold_wrk.phase]   ; x
+    fst     dword [WRK+su_hold_wrk.holdval] ; save holded value
+    ret                                     ; x
 su_op_hold_holding:
-	fstp	st0                             ;
-	fld		dword [WRK+su_hold_wrk.holdval]	; x
-	ret
+    fstp    st0                             ;
+    fld     dword [WRK+su_hold_wrk.holdval] ; x
+    ret
 
 %endif ; HOLD_ID > -1
 
@@ -117,31 +117,31 @@ su_op_filter_mono:
 %ifdef INCLUDE_LOWPASS
     test    al, byte LOWPASS
     jz      short su_op_filter_skiplowpass
-    fadd    dword [WRK+su_filter_wrk.low] 
+    fadd    dword [WRK+su_filter_wrk.low]
 su_op_filter_skiplowpass:
 %endif
 %ifdef INCLUDE_BANDPASS
     test    al, byte BANDPASS
     jz      short su_op_filter_skipbandpass
-    fadd    dword [WRK+su_filter_wrk.band] 
+    fadd    dword [WRK+su_filter_wrk.band]
 su_op_filter_skipbandpass:
 %endif
 %ifdef INCLUDE_HIGHPASS
     test    al, byte HIGHPASS
     jz      short su_op_filter_skiphighpass
-    fadd    dword [WRK+su_filter_wrk.high] 
+    fadd    dword [WRK+su_filter_wrk.high]
 su_op_filter_skiphighpass:
 %endif
 %ifdef INCLUDE_NEGBANDPASS
     test    al, byte NEGBANDPASS
     jz      short su_op_filter_skipnegbandpass
-    fsub    dword [WRK+su_filter_wrk.band] 
+    fsub    dword [WRK+su_filter_wrk.band]
 su_op_filter_skipnegbandpass:
 %endif
 %ifdef INCLUDE_NEGHIGHPASS
     test    al, byte NEGHIGHPASS
     jz      short su_op_filter_skipneghighpass
-    fsub    dword [WRK+su_filter_wrk.high] 
+    fsub    dword [WRK+su_filter_wrk.high]
 su_op_filter_skipneghighpass:
 %endif
     ret
@@ -250,8 +250,8 @@ su_stereo_filterhelper:
 
 SECT_TEXT(sudelay)
 
-EXPORT MANGLE_FUNC(su_op_delay,0)    
-    lodsb             ; eax = delay index    
+EXPORT MANGLE_FUNC(su_op_delay,0)
+    lodsb             ; eax = delay index
     mov     edi, eax
     lodsb             ; eax = delay count
 %ifdef INCLUDE_STEREO_DELAY
@@ -262,7 +262,7 @@ EXPORT MANGLE_FUNC(su_op_delay,0)
     add     edi, eax ; the second delay is done with the delay time index added by count
 su_op_delay_mono:
 %endif
-    pushad    
+    pushad
     mov     ebx, edi; ugly register juggling, refactor
 %ifdef DELAY_NOTE_SYNC
     test    ebx, ebx ; note s
@@ -276,8 +276,8 @@ su_op_delay_mono:
     fistp   word [MANGLE_DATA(su_delay_times)]  ; store current comb size
 su_op_delay_skipnotesync:
 %endif
-kmDLL_func_process:    
-    mov     ecx, eax                            ;// ecx is the number of parallel delays    
+kmDLL_func_process:
+    mov     ecx, eax                            ;// ecx is the number of parallel delays
     mov     WRK, dword [MANGLE_DATA(su_delay_buffer_ofs)] ;// ebp is current delay
     fld     st0                                 ; x x
     fmul    dword [edx+su_delay_ports.dry]      ; dr*x x
@@ -304,7 +304,7 @@ kmDLL_func_loop:
         fmul    dword [WRK+su_delayline_wrk.filtstate]      ; o*da s*(1-da) p^2*x dr*x+s, where o is stored
         faddp   st1, st0                            ; o*da+s*(1-da) p^2*x dr*x+s
         fst     dword [WRK+su_delayline_wrk.filtstate]      ; o'=o*da+s*(1-da), o' p^2*x dr*x+s
-        fmul    dword [edx+su_delay_ports.feedback] ; f*o' p^2*x dr*x+s                 
+        fmul    dword [edx+su_delay_ports.feedback] ; f*o' p^2*x dr*x+s
         fadd    st0, st1                            ; f*o'+p^2*x p^2*x dr*x+s
         fstp    dword [WRK+edi*4+su_delayline_wrk.buffer]; save f*o'+p^2*x to delay buffer
         inc     ebx                                 ;// go to next delay lenkmh index
@@ -313,15 +313,15 @@ kmDLL_func_loop:
         loopne  kmDLL_func_loop
     fstp    st0                                 ; dr*x+s1+s2+s3+...
     ; DC-filtering
-    sub		WRK, su_delayline_wrk.size ; the reason to use the last su_delayline_wrk instead of su_delay_wrk is that su_delay_wrk is wiped by retriggering
+    sub     WRK, su_delayline_wrk.size ; the reason to use the last su_delayline_wrk instead of su_delay_wrk is that su_delay_wrk is wiped by retriggering
     fld     dword [WRK+su_delayline_wrk.dcout]  ; o s
     fmul    dword [c_dc_const]              ; c*o s
     fsub    dword [WRK+su_delayline_wrk.dcin]   ; c*o-i s
     fxch                                    ; s c*o-i
     fst     dword [WRK+su_delayline_wrk.dcin]   ; i'=s, s c*o-i
-    faddp   st1                             ; s+c*o-i	
-	fadd	dword [c_0_5]						;// add and sub small offset to prevent denormalization
-	fsub	dword [c_0_5]
+    faddp   st1                             ; s+c*o-i
+    fadd    dword [c_0_5]                       ;// add and sub small offset to prevent denormalization
+    fsub    dword [c_0_5]
     fst     dword [WRK+su_delayline_wrk.dcout]  ; o'=s+c*o-i
     popad
     ret
@@ -344,7 +344,7 @@ SECT_DATA(suconst)
 %endif
 
 %ifndef C_FREQ_NORMALIZE
-    c_freq_normalize        dd		0.000092696138	; // 220.0/(2^(69/12)) / 44100.0
+    c_freq_normalize        dd      0.000092696138  ; // 220.0/(2^(69/12)) / 44100.0
     %define C_FREQ_NORMALIZE
 %endif
 

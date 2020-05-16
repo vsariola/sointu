@@ -1,8 +1,8 @@
 function(regression_test testname)
     if(${ARGC} LESS 4)
-        set(source ${testname})        
+        set(source ${testname})
     else()
-        set(source ${ARGV3})        
+        set(source ${ARGV3})
     endif()
 
     add_executable(${testname} ${source}.asm test_renderer.c)
@@ -11,30 +11,30 @@ function(regression_test testname)
     file(GLOB FOURKLANG ${PROJECT_SOURCE_DIR}/src/*.inc ${PROJECT_SOURCE_DIR}/src/*.asm ${PROJECT_SOURCE_DIR}/src/opcodes/*.asm ${PROJECT_SOURCE_DIR}/src/opcodes/*.inc)
     set_source_files_properties(${source}.asm PROPERTIES OBJECT_DEPENDS "${FOURKLANG}")
     set_source_files_properties(${FOURKLANG} PROPERTIES HEADER_FILE_ONLY TRUE)
-    
+
     add_test(${testname} ${testname})
     target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}" SU_USE_INTROSPECTION SU_USE_PLAYER)
-    
+
     set (rawinput ${CMAKE_CURRENT_SOURCE_DIR}/expected_output/${testname}.raw)
     set (rawoutput ${CMAKE_CURRENT_BINARY_DIR}/expected_output/${testname}.raw)
-    
+
     add_custom_target(${testname}_rawcopy
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${rawinput} ${rawoutput}        
-    )    
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${rawinput} ${rawoutput}
+    )
 
     add_dependencies(${testname} ${testname}_rawcopy)
 
-    if(ARGC GREATER 1)                        
-        if (ARGV1)            
-            message("${testname} requires ${ARGV1}") 
-            set_tests_properties(${testname} PROPERTIES FIXTURES_REQUIRED "${ARGV1}")        
+    if(ARGC GREATER 1)
+        if (ARGV1)
+            message("${testname} requires ${ARGV1}")
+            set_tests_properties(${testname} PROPERTIES FIXTURES_REQUIRED "${ARGV1}")
         endif()
     endif()
 
-    if(ARGC GREATER 2)             
+    if(ARGC GREATER 2)
         if (ARGV2)
-            message("${testname} setups ${ARGV2}") 
-            set_tests_properties(${testname} PROPERTIES FIXTURES_SETUP "${ARGV2}")        
+            message("${testname} setups ${ARGV2}")
+            set_tests_properties(${testname} PROPERTIES FIXTURES_SETUP "${ARGV2}")
         endif()
     endif()
 endfunction(regression_test)

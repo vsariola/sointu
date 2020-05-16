@@ -7,7 +7,7 @@
 ;               valptr  :   pointer to the first unit's value of current voice
 ;               comptr  :   pointer to the first command of current voice
 ;               COM     :   pointer to the command after current command
-;   Output:     WRK     :   pointer to the next unit to be processed 
+;   Output:     WRK     :   pointer to the next unit to be processed
 ;               VAL     :   pointer to the values of the next to be processed
 ;               COM     :   pointer to the next command to be executed
 ;
@@ -20,7 +20,7 @@ SECT_TEXT(suopadvn)
 
 %ifdef INCLUDE_POLYPHONY
 
-EXPORT MANGLE_FUNC(su_op_advance,0)     ; Stack: addr voice wrkptr valptr comptr 
+EXPORT MANGLE_FUNC(su_op_advance,0)     ; Stack: addr voice wrkptr valptr comptr
     mov     WRK, dword [esp+8]          ; WRK = wrkptr
     add     WRK, su_voice.size          ; move to next voice
     mov     dword [esp+8], WRK          ; update stack
@@ -40,7 +40,7 @@ su_op_advance_finish:
 
 %else
 
-EXPORT MANGLE_FUNC(su_op_advance,0)     ; Stack: addr voice wrkptr valptr comptr 
+EXPORT MANGLE_FUNC(su_op_advance,0)     ; Stack: addr voice wrkptr valptr comptr
     mov     WRK, dword [esp+8]          ; WRK = wrkptr
     add     WRK, su_voice.size          ; move to next voice
     mov     dword [esp+8], WRK          ; update stack

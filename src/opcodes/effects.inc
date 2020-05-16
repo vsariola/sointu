@@ -12,15 +12,15 @@
     %endif
 %endmacro
 
-%define	LOWPASS     0x40
-%define	BANDPASS    0x20
-%define	HIGHPASS    0x10
-%define	NEGBANDPASS 0x08
-%define	NEGHIGHPASS 0x04
+%define LOWPASS     0x40
+%define BANDPASS    0x20
+%define HIGHPASS    0x10
+%define NEGBANDPASS 0x08
+%define NEGHIGHPASS 0x04
 
-%macro	SU_FILTER 4
-    db	%2
-    db	%3
+%macro  SU_FILTER 4
+    db  %2
+    db  %3
     db  %4
     USE_FILTER
     %xdefine CMDS CMDS FILTER_ID + %1,
@@ -44,20 +44,20 @@
     %endif
 %endmacro
 
-%define	FREQUENCY(val)	val
-%define	RESONANCE(val)	val
-%define	FLAGS(val)      val
+%define FREQUENCY(val)  val
+%define RESONANCE(val)  val
+%define FLAGS(val)      val
 
-struc	su_filter_ports
-    .freq		resd	1
-    .res		resd	1    
-    .params    
+struc   su_filter_ports
+    .freq       resd    1
+    .res        resd    1
+    .params
 endstruc
 
-struc	su_filter_wrk
-    .low		resd	1
-    .high		resd	1
-    .band		resd	1
+struc   su_filter_wrk
+    .low        resd    1
+    .high       resd    1
+    .band       resd    1
     .size
 endstruc
 
@@ -75,8 +75,8 @@ endstruc
     %endif
 %endmacro
 
-%macro	SU_PAN 2
-    db	%2
+%macro  SU_PAN 2
+    db  %2
     USE_PAN
     %xdefine CMDS CMDS PAN_ID + %1,
     %if %1 == STEREO
@@ -84,10 +84,10 @@ endstruc
     %endif
 %endmacro
 
-%define	PANNING(val)	val
+%define PANNING(val)    val
 
-struc	su_pan_ports
-    .panning	resd	1
+struc   su_pan_ports
+    .panning    resd    1
     .params
 endstruc
 
@@ -106,7 +106,7 @@ endstruc
 %endmacro
 
 %macro SU_DISTORT 2
-    db	%2
+    db  %2
     USE_DISTORT
     %xdefine CMDS CMDS DISTORT_ID + %1,
     %if %1 == STEREO
@@ -114,10 +114,10 @@ endstruc
     %endif
 %endmacro
 
-%define	DRIVE(val)		val
+%define DRIVE(val)      val
 
-struc	su_distort_ports
-    .drive		resd	1
+struc   su_distort_ports
+    .drive      resd    1
     .params
 endstruc
 
@@ -136,7 +136,7 @@ endstruc
 %endmacro
 
 %macro SU_HOLD 2
-    db	%2
+    db  %2
     USE_HOLD
     %xdefine CMDS CMDS HOLD_ID + %1,
     %if %1 == STEREO
@@ -144,15 +144,15 @@ endstruc
     %endif
 %endmacro
 
-%define	HOLDFREQ(val) val
+%define HOLDFREQ(val) val
 
 struc su_hold_ports
-    .freq		resd	1
+    .freq       resd    1
     .params
 endstruc
 
 struc su_hold_wrk
-    .phase      resd	1
+    .phase      resd    1
     .holdval    resd    1
 endstruc
 
@@ -194,13 +194,13 @@ endstruc
 %define MAX_DELAY 65536
 %assign NUM_DELAY_LINES 0
 
-%macro	SU_DELAY 7
-    db	%2
-    db	%3
-    db	%4
-    db	%5
-    db	%6
-    db	%7    
+%macro  SU_DELAY 7
+    db  %2
+    db  %3
+    db  %4
+    db  %5
+    db  %6
+    db  %7
     USE_DELAY
     %xdefine CMDS CMDS DELAY_ID + %1,
     %assign NUM_DELAY_LINES NUM_DELAY_LINES + %7 * (1+%1)
@@ -214,9 +214,9 @@ endstruc
 
 %macro SU_BEGIN_DELTIMES 0
     SECT_DATA(sudeltim)
-    
+
     EXPORT MANGLE_DATA(su_delay_times)
-	    dw 0
+        dw 0
 %endmacro
 
 %define SU_END_DELTIMES
@@ -224,33 +224,33 @@ endstruc
 %macro DELTIME 1-*
     %rep  %0
         dw      %1
-        %rotate 1        
+        %rotate 1
     %endrep
 %endmacro
- 
 
-%define	PREGAIN(val)	val
-%define	DRY(val)		val
-%define	FEEDBACK(val)	val
-%define	DEPTH(val)		val
-%define	DAMP(val)		val
-%define	DELAY(val)		val
-%define	COUNT(val)		val
 
-struc	su_delay_ports
-    .pregain	resd	1
-    .dry		resd	1
-    .feedback	resd	1
-    .damp		resd	1	
-    .freq		resd	1    
-    .ports       
+%define PREGAIN(val)    val
+%define DRY(val)        val
+%define FEEDBACK(val)   val
+%define DEPTH(val)      val
+%define DAMP(val)       val
+%define DELAY(val)      val
+%define COUNT(val)      val
+
+struc   su_delay_ports
+    .pregain    resd    1
+    .dry        resd    1
+    .feedback   resd    1
+    .damp       resd    1
+    .freq       resd    1
+    .ports
 endstruc
 
-struc	su_delayline_wrk    
+struc   su_delayline_wrk
     .time       resd    1
-    .filtstate  resd	1    
+    .filtstate  resd    1
     .dcin       resd    1
     .dcout      resd    1
-    .buffer		resd	MAX_DELAY
+    .buffer     resd    MAX_DELAY
     .size
 endstruc

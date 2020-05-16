@@ -32,18 +32,18 @@ c_32767     dd      32767.0
 %macro output_sound 0
     %ifndef SU_USE_16BIT_OUTPUT
         %ifndef SU_CLIP_OUTPUT ; The modern way. No need to clip; OS can do it.
-            mov     edi, dword [esp+44] ; edi containts ptr            
+            mov     edi, dword [esp+44] ; edi containts ptr
             mov     esi, su_synth_obj+su_synth.left
             movsd   ; copy left channel to output buffer
             movsd   ; copy right channel to output buffer
             mov     dword [esp+44], edi ; save back the updated ptr
-            lea     edi, [esi-8]            
+            lea     edi, [esi-8]
             xor     eax,eax
             stosd   ; clear left channel so the VM is ready to write them again
-            stosd   ; clear right channel so the VM is ready to write them again            
+            stosd   ; clear right channel so the VM is ready to write them again
         %else
             mov     esi, dword [esp+44] ; esi points to the output buffer
-            xor     ecx,ecx  
+            xor     ecx,ecx
             xor     eax,eax
             %%loop: ; loop over two channels, left & right
                 fld     dword [su_synth_obj+su_synth.left+ecx*4]
@@ -63,7 +63,7 @@ c_32767     dd      32767.0
             fld     dword [edi]
             call    MANGLE_FUNC(su_clip_op,0)
             fmul    dword [c_32767]
-            push    eax        
+            push    eax
             fistp   dword [esp]
             pop     eax
             mov     word [esi],ax   ; // store integer converted right sample
@@ -87,7 +87,7 @@ SECT_TEXT(surender)
 EXPORT MANGLE_FUNC(su_render,4)         ; Stack: ptr
     pushad                              ; Stack: pushad ptr
     xor     eax, eax                    ; ecx is the current row
-su_render_rowloop:                      ; loop through every row in the song        
+su_render_rowloop:                      ; loop through every row in the song
         push    eax                     ; Stack: row pushad ptr
         call    su_update_voices        ; update instruments for the new row
         xor     eax, eax                ; ecx is the current sample within row
@@ -97,11 +97,11 @@ su_render_sampleloop:                   ; loop through every sample in the row
             output_sound                ; *ptr++ = left, *ptr++ = right
             pop     eax                 ; Stack: row pushad ptr
             inc     eax
-            cmp     eax, SAMPLES_PER_ROW        
+            cmp     eax, SAMPLES_PER_ROW
             jl      su_render_sampleloop
         pop     eax                     ; Stack: pushad ptr
         inc     eax
-        cmp     eax, TOTAL_ROWS        
+        cmp     eax, TOTAL_ROWS
         jl      su_render_rowloop
     popad                               ; Stack: ptr
     ret     4                           ; Stack emptied by ret
@@ -116,19 +116,19 @@ SECT_TEXT(suupdvce)
 
 %ifdef INCLUDE_MULTIVOICE_TRACKS
 
-su_update_voices: ; Stack: retaddr row      
-    xor     edx, edx    
-    mov     ebx, PATTERN_SIZE             
+su_update_voices: ; Stack: retaddr row
+    xor     edx, edx
+    mov     ebx, PATTERN_SIZE
     div     ebx                                 ; eax = current pattern, edx = current row in pattern
-    lea     esi, [MANGLE_DATA(su_tracks)+eax]   ; esi points to the pattern data for current track                
+    lea     esi, [MANGLE_DATA(su_tracks)+eax]   ; esi points to the pattern data for current track
     xor     eax, eax                            ; eax is the first voice of next track
     xor     ebx, ebx                            ; ebx is the first voice of current track
-    xor     ebp, ebp                            ; ebp is the current track being processed    
-su_update_voices_trackloop:              
-        movzx   eax, byte [esi]                     ; eax = current pattern        
+    xor     ebp, ebp                            ; ebp is the current track being processed
+su_update_voices_trackloop:
+        movzx   eax, byte [esi]                     ; eax = current pattern
         imul    eax, PATTERN_SIZE                   ; eax = offset to current pattern data
-        movzx   eax, byte [MANGLE_DATA(su_patterns)+eax+edx]  ; eax = note     
-        push    edx                                 ; Stack: ptrnrow 
+        movzx   eax, byte [MANGLE_DATA(su_patterns)+eax+edx]  ; eax = note
+        push    edx                                 ; Stack: ptrnrow
         xor     edx, edx                            ; edx=0
         mov     ecx, ebx                            ; ecx=first voice of the track to be done
 su_calculate_voices_loop:                           ; do {
@@ -136,66 +136,66 @@ su_calculate_voices_loop:                           ; do {
         inc     edx                                 ;   edx++   // edx=numvoices
         inc     ecx                                 ;   ecx++   // ecx=the first voice of next track
         jc      su_calculate_voices_loop            ; } while bit ecx-1 of bitmask is on
-        push    ecx                                 ; Stack: next_instr ptrnrow                   
+        push    ecx                                 ; Stack: next_instr ptrnrow
         cmp     al, HLD                             ; anything but hold causes action
-        je      short su_update_voices_nexttrack             
+        je      short su_update_voices_nexttrack
         mov     ecx, dword [su_current_voiceno+ebp*4]
         mov     edi, ecx
         add     edi, ebx
-        imul    edi, edi, su_voice.size        
-        mov     dword [su_synth_obj+su_synth.voices+edi+su_voice.release],1      ; set the voice currently active to release        
+        imul    edi, edi, su_voice.size
+        mov     dword [su_synth_obj+su_synth.voices+edi+su_voice.release],1      ; set the voice currently active to release
         cmp     al, HLD                             ; if cl < HLD (no new note triggered)
-        jl      su_update_voices_nexttrack          ;   goto nexttrack        
+        jl      su_update_voices_nexttrack          ;   goto nexttrack
         inc     ecx                                 ; curvoice++
         cmp     ecx, edx                            ; if (curvoice >= num_voices)
         jl      su_update_voices_skipreset
         xor     ecx,ecx                             ;   curvoice = 0
 su_update_voices_skipreset:
-        mov     dword [su_current_voiceno+ebp*4],ecx 
+        mov     dword [su_current_voiceno+ebp*4],ecx
         add     ecx, ebx
-        imul    ecx, ecx, su_voice.size        
+        imul    ecx, ecx, su_voice.size
         lea     edi, [su_synth_obj+su_synth.voices+ecx]
         stosd                                       ; save note
         mov     ecx, (su_voice.size - su_voice.release)/4
         xor     eax, eax
-        rep stosd                                   ; clear the workspace of the new voice, retriggering oscillators        
-su_update_voices_nexttrack:                               
-        pop     ebx                                 ; ebx=first voice of next instrument, Stack: ptrnrow         
-        pop     edx                                 ; edx=patrnrow 
-        add     esi, MAX_PATTERNS 
-        inc     ebp                
+        rep stosd                                   ; clear the workspace of the new voice, retriggering oscillators
+su_update_voices_nexttrack:
+        pop     ebx                                 ; ebx=first voice of next instrument, Stack: ptrnrow
+        pop     edx                                 ; edx=patrnrow
+        add     esi, MAX_PATTERNS
+        inc     ebp
         cmp     ebp, MAX_TRACKS
         jl      short su_update_voices_trackloop
     ret
 
 %else ; INCLUDE_MULTIVOICE_TRACKS not defined -> one voice per track version
 
-su_update_voices: ; Stack: retaddr row      
-    xor     edx, edx    
-    mov     ebx, PATTERN_SIZE             
+su_update_voices: ; Stack: retaddr row
+    xor     edx, edx
+    mov     ebx, PATTERN_SIZE
     div     ebx                                 ; eax = current pattern, edx = current row in pattern
-    lea     esi, [MANGLE_DATA(su_tracks)+eax]   ; esi points to the pattern data for current track            
+    lea     esi, [MANGLE_DATA(su_tracks)+eax]   ; esi points to the pattern data for current track
     lea     edi, [su_synth_obj+su_synth.voices]
     mov     ebp, MAX_TRACKS
-su_update_voices_trackloop:                    
-        movzx   eax, byte [esi]                     ; eax = current pattern        
+su_update_voices_trackloop:
+        movzx   eax, byte [esi]                     ; eax = current pattern
         imul    eax, PATTERN_SIZE                   ; eax = offset to current pattern data
-        movzx   eax, byte [MANGLE_DATA(su_patterns)+eax+edx]  ; ecx = note        
+        movzx   eax, byte [MANGLE_DATA(su_patterns)+eax+edx]  ; ecx = note
         cmp     al, HLD                             ; anything but hold causes action
-        je      short su_update_voices_nexttrack                     
-        mov     dword [edi+su_voice.release],1      ; set the voice currently active to release         
+        je      short su_update_voices_nexttrack
+        mov     dword [edi+su_voice.release],1      ; set the voice currently active to release
         jl      su_update_voices_nexttrack          ; if cl < HLD (no new note triggered)  goto nexttrack
-su_update_voices_retrigger:       
+su_update_voices_retrigger:
         stosd                                       ; save note
         mov     ecx, (su_voice.size - su_voice.release)/4
         xor     eax, eax
-        rep stosd                                   ; clear the workspace of the new voice, retriggering oscillators        
+        rep stosd                                   ; clear the workspace of the new voice, retriggering oscillators
         jmp     short su_update_voices_skipadd
-su_update_voices_nexttrack:        
+su_update_voices_nexttrack:
         add     edi, su_voice.size
-su_update_voices_skipadd:   
+su_update_voices_skipadd:
         add     esi, MAX_PATTERNS
-        dec     ebp                
+        dec     ebp
         jnz     short su_update_voices_trackloop
     ret
 

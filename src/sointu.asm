@@ -42,7 +42,7 @@ c_i12                   dd      0x3DAAAAAA
 EXPORT MANGLE_DATA(LFO_NORMALIZE)
                         dd      DEF_LFO_NORMALIZE
 
-%ifdef INCLUDE_POLYPHONY                        
+%ifdef INCLUDE_POLYPHONY
 su_polyphony_bitmask    dd      POLYPHONY_BITMASK ; does the next voice reuse the current opcodes?
 %endif
 
@@ -58,7 +58,7 @@ su_polyphony_bitmask    dd      POLYPHONY_BITMASK ; does the next voice reuse th
 SECT_TEXT(surunvm)
 
 EXPORT MANGLE_FUNC(su_run_vm,0)
-    mov     COM, MANGLE_DATA(su_commands)           ; COM points to vm code    
+    mov     COM, MANGLE_DATA(su_commands)           ; COM points to vm code
     mov     VAL, MANGLE_DATA(su_params)             ; VAL points to unit params
     ; su_unit.size will be added back before WRK is used
     mov     WRK, su_synth_obj + su_synth.voices + su_voice.workspace - su_unit.size
@@ -74,16 +74,16 @@ EXPORT MANGLE_FUNC(su_run_vm,0)
 su_run_vm_loop:                                     ; loop until all voices done
     movzx   eax, byte [COM]                         ; eax = command byte
     inc     COM                                     ; move to next instruction
-    add     WRK, su_unit.size                       ; move WRK to next unit     
-    push    eax    
+    add     WRK, su_unit.size                       ; move WRK to next unit
+    push    eax
     shr     eax,1
     mov     al,byte [eax+su_opcode_numparams]
     push    eax
-    call    su_transform_values        
+    call    su_transform_values
     mov     ecx, dword [esp+8]
-    pop     eax    
+    pop     eax
     shr     eax,1
-    call    dword [eax*4+su_synth_commands]         ; call the function corresponding to the instruction    
+    call    dword [eax*4+su_synth_commands]         ; call the function corresponding to the instruction
     cmp     dword [esp],MAX_VOICES                  ; if (voice < MAX_VOICES)
     jl      su_run_vm_loop                          ;   goto vm_loop
     add     esp, 16                                 ; Stack cleared
@@ -186,9 +186,9 @@ EXPORT MANGLE_FUNC(su_power,0)
 %include "opcodes/flowcontrol.asm"
 %include "opcodes/sources.asm"
 %include "opcodes/sinks.asm"
-; warning: at the moment effects has to be assembled after 
+; warning: at the moment effects has to be assembled after
 ; sources, as sources.asm defines SU_USE_WAVESHAPER
 ; if needed.
-%include "opcodes/effects.asm" 
+%include "opcodes/effects.asm"
 %include "player.asm"
 %include "introspection.asm"

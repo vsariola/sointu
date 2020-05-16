@@ -21,7 +21,7 @@ EXPORT MANGLE_FUNC(su_op_envelope,0)
     ret
 su_op_envelope_mono:
 %endif
-kmENV_func_do:    
+kmENV_func_do:
     mov     eax, dword [ecx+su_unit.size-su_voice.workspace+su_voice.release] ; eax = su_instrument.release
     test    eax, eax                            ; if (eax == 0)
     je      kmENV_func_process                  ;   goto process
@@ -83,7 +83,7 @@ EXPORT MANGLE_FUNC(su_op_noise,0)
     call    dword [esp]
 su_op_noise_mono:
 %endif
-    call	MANGLE_FUNC(FloatRandomNumber,0)
+    call    MANGLE_FUNC(FloatRandomNumber,0)
     fld     dword [edx+su_noise_ports.shape]
     call    su_waveshaper
     fld     dword [edx+su_noise_ports.gain]
@@ -136,12 +136,12 @@ su_op_oscillat_normalize_note:
 su_op_oscillat_normalized:
     fadd    dword [WRK+su_osc_wrk.phase]
     fst     dword [WRK+su_osc_wrk.phase]
-	fadd	dword [edx+su_osc_ports.phaseofs]
-	fld1
-	fadd	st1, st0
-	fxch	
-	fprem	
-	fstp	st1	
+    fadd    dword [edx+su_osc_ports.phaseofs]
+    fld1
+    fadd    st1, st0
+    fxch
+    fprem
+    fstp    st1
     fld     dword [edx+su_osc_ports.color]               ; // c      p
     ; every oscillator test included if needed
 %ifdef INCLUDE_SINE
@@ -181,7 +181,7 @@ su_op_oscillat_gain:
 SECT_DATA(suconst)
 
 %ifndef C_FREQ_NORMALIZE
-    c_freq_normalize        dd		0.000092696138	; // 220.0/(2^(69/12)) / 44100.0
+    c_freq_normalize        dd      0.000092696138  ; // 220.0/(2^(69/12)) / 44100.0
     %define C_FREQ_NORMALIZE
 %endif
     c_lfo_normalize         dd      0.000038
@@ -268,7 +268,7 @@ go4kVCO_gate_bit:                           ; stack: 0/1, let's call it x
     fmul    dword [c_dc_const]              ; c(g-x) x
     faddp   st1, st0                        ; x+c(g-x)
     fst     dword [WRK+su_osc_wrk.gatestate] ; g'=x+c(g-x)
-    pop     eax                             ; Another way to see this (c~0.996)  
+    pop     eax                             ; Another way to see this (c~0.996)
     ret                                     ; g'=cg+(1-c)x
     ; This is a low-pass to smooth the gate transitions
 
@@ -284,7 +284,7 @@ SECT_DATA(suconst)
     %define C_DC_CONST
 %endif
 
-%endif                                      
+%endif
 
 ;-------------------------------------------------------------------------------
 ;   LOAD_VAL opcode
@@ -300,8 +300,8 @@ SECT_TEXT(suloadvl)
 
 EXPORT MANGLE_FUNC(su_op_load_val,0)
 %ifdef INCLUDE_STEREO_LOAD_VAL
-    jnc     su_op_load_val_mono    
-    call    su_load_val_mono  
+    jnc     su_op_load_val_mono
+    call    su_load_val_mono
 su_load_val_mono:
 %endif
     fld     dword [edx+su_load_val_ports.value] ; v
