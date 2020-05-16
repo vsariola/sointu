@@ -65,9 +65,8 @@ EXPORT MANGLE_FUNC(su_run_vm,0)
     push    COM                                     ; Stack: COM
     push    VAL                                     ; Stack: VAL COM
     push    WRK                                     ; Stack: WRK VAL COM
-%if DELAY_ID > -1
-    mov     ecx, MANGLE_DATA(su_delay_buffer)       ; reset delaywrk to first delayline
-    mov     dword [MANGLE_DATA(su_delay_buffer_ofs)], ecx
+%if DELAY_ID > -1    
+    mov     dword [MANGLE_DATA(su_delay_buffer_ofs)], MANGLE_DATA(su_delay_buffer) ; reset delaywrk to first delayline
 %endif
     xor     ecx, ecx                                ; voice = 0
     push    ecx                                     ; Stack: voice WRK VAL COM
