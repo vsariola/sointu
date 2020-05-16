@@ -12,10 +12,8 @@
 
 #include <math.h>
 
-
-
-extern void __stdcall _4klang_render();
-extern int test_max_samples;
+extern void __stdcall su_render();
+extern int su_max_samples;
 
 int main(int argc, char* argv[]) {
 	FILE* f;
@@ -29,17 +27,17 @@ int main(int argc, char* argv[]) {
 	long bufsize;
 	boolean small_difference;
 	double diff;
-#ifndef GO4K_USE_16BIT_OUTPUT
+#ifndef SU_USE_16BIT_OUTPUT
 	float* buf = NULL;
 	float* filebuf = NULL;
 	float v;
-	bufsize = test_max_samples * 2 * sizeof(float);
+	bufsize = su_max_samples * 2 * sizeof(float);
 	buf = (float*)malloc(bufsize);
 #else
 	short* buf = NULL;
 	short* filebuf = NULL;
 	short v;
-	bufsize = test_max_samples * 2 * sizeof(short);
+	bufsize = su_max_samples * 2 * sizeof(short);
 	buf = (short*)malloc(bufsize);
 #endif	
 
@@ -48,7 +46,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	_4klang_render(buf);
+	su_render(buf);
 
 	snprintf(filename, sizeof filename, "%s%s%s", expected_output_folder, test_name, ".raw");
 
@@ -73,7 +71,7 @@ int main(int argc, char* argv[]) {
 		goto fail;
 	}
 
-#ifndef GO4K_USE_16BIT_OUTPUT	
+#ifndef SU_USE_16BIT_OUTPUT	
 	filebuf = (float*)malloc(bufsize);
 #else	
 	filebuf = (short*)malloc(bufsize);
@@ -84,17 +82,17 @@ int main(int argc, char* argv[]) {
 		goto fail;
 	}
 
-	fread((void*)filebuf, test_max_samples * 2, sizeof(*filebuf), f);
+	fread((void*)filebuf, su_max_samples * 2, sizeof(*filebuf), f);
 
 	small_difference = FALSE;
 
-	for (n = 0; n < test_max_samples * 2; n++) {
+	for (n = 0; n < su_max_samples * 2; n++) {
 		diff = (double)(buf[n]) - (double)(filebuf[n]);
-#ifdef GO4K_USE_16BIT_OUTPUT	
+#ifdef SU_USE_16BIT_OUTPUT	
 		diff = diff / 32768.0f;
 #endif
 		diff = fabs(diff);
-		if (diff > 1e-4f) {
+		if (diff > 1e-3f || isnan(diff)) {
 			printf("4klang rendered different wave than expected\n");
 			goto fail;
 		}
@@ -104,7 +102,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	if (small_difference) {
-		printf("4klang rendered almost correct wave, but with small errors (< 1e-4)\n");
+		printf("4klang rendered almost correct wave, but with small errors (< 1e-3)\n");
 		goto fail;
 	}
 	
@@ -128,7 +126,7 @@ end:
 	
 	snprintf(filename, sizeof filename, "%s%s%s", actual_output_folder, test_name, ".raw");
 	f = fopen(filename, "wb");	
-	fwrite((void*)buf, sizeof(*buf), 2 * test_max_samples, f);
+	fwrite((void*)buf, sizeof(*buf), 2 * su_max_samples, f);
 	fclose(f);
 
 	if (buf != 0) {
