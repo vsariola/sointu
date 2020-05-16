@@ -298,11 +298,11 @@ SECT_DATA(suconst)
 
 SECT_TEXT(suloadvl)
 
-EXPORT MANGLE_FUNC(su_op_load_val,0)
+EXPORT MANGLE_FUNC(su_op_loadval,0)
 %ifdef INCLUDE_STEREO_LOAD_VAL
-    jnc     su_op_load_val_mono
-    call    su_load_val_mono
-su_load_val_mono:
+    jnc     su_op_loadval_mono
+    call    su_loadval_mono
+su_loadval_mono:
 %endif
     fld     dword [edx+su_load_val_ports.value] ; v
     fsub    dword [c_0_5]                       ; v-.5

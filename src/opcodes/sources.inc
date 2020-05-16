@@ -159,12 +159,12 @@ endstruc
     %if LOAD_VAL_ID == -1
         %assign LOAD_VAL_ID CUR_ID
         %assign CUR_ID CUR_ID + 2
-        %xdefine OPCODES OPCODES MANGLE_FUNC(su_op_load_val,0),
+        %xdefine OPCODES OPCODES MANGLE_FUNC(su_op_loadval,0),
         %xdefine NUMPARAMS NUMPARAMS 1,
     %endif
 %endmacro
 
-%macro  SU_LOAD_VAL 2
+%macro  SU_LOADVAL 2
     db  %2
     USE_LOAD_VAL
     %xdefine CMDS CMDS LOAD_VAL_ID+%1,
