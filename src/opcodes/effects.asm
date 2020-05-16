@@ -84,18 +84,19 @@ su_op_hold_holding:
 %if GAIN_ID > -1
 
 SECT_TEXT(sugain)
-
-EXPORT MANGLE_FUNC(su_op_gain,0)
-%ifdef INCLUDE_STEREO_GAIN
-    jnc     su_op_gain_mono
-    call    su_stereo_filterhelper
-    %define INCLUDE_STEREO_FILTERHELPER
-su_op_gain_mono:
-%endif
-    fld     dword [edx+su_gain_ports.gain]  ; g x
-    fmulp   st1, st0                        ; g*x
-    ret
-
+    %ifdef INCLUDE_STEREO_GAIN
+        EXPORT MANGLE_FUNC(su_op_gain,0)
+            fld     dword [edx+su_gain_ports.gain] ; g l (r)
+            jnc     su_op_gain_mono
+            fmul    st2, st0                             ; g l r/g    
+        su_op_gain_mono:
+            fmulp   st1, st0                             ; l/g (r/)
+            ret
+    %else
+        EXPORT MANGLE_FUNC(su_op_gain,0)
+            fmul    dword [edx+su_gain_ports.gain]    
+            ret
+    %endif
 %endif ; GAIN_ID > -1
 
 ;-------------------------------------------------------------------------------
@@ -104,19 +105,20 @@ su_op_gain_mono:
 %if INVGAIN_ID > -1
 
 SECT_TEXT(suingain)
-
-EXPORT MANGLE_FUNC(su_op_invgain,0)
-%ifdef INCLUDE_STEREO_INVGAIN
-    jnc     su_op_invgain_mono
-    call    su_stereo_filterhelper
-    %define INCLUDE_STEREO_FILTERHELPER
-su_op_invgain_mono:
-%endif
-    fld     dword [edx+su_invgain_ports.invgain] ; g x
-    fdivp   st1, st0                             ; x/g
-    ret
-
-%endif ; INVINVGAIN_ID > -1
+    %ifdef INCLUDE_STEREO_INVGAIN
+        EXPORT MANGLE_FUNC(su_op_invgain,0)
+            fld     dword [edx+su_invgain_ports.invgain] ; g l (r)
+            jnc     su_op_invgain_mono
+            fdiv    st2, st0                             ; g l r/g    
+        su_op_invgain_mono:
+            fdivp   st1, st0                             ; l/g (r/)
+            ret
+    %else
+        EXPORT MANGLE_FUNC(su_op_invgain,0)
+            fdiv    dword [edx+su_invgain_ports.invgain]    
+            ret
+    %endif
+%endif ; INVGAIN_ID > -1
 
 ;-------------------------------------------------------------------------------
 ;   su_op_filter: perform low/high/band-pass filtering on the signal
