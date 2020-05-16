@@ -1,11 +1,11 @@
 # Sointu
-A cross-platform modular software synthesizer for small intros, evolved from
+A cross-platform modular software synthesizer for small intros, forked from
 [4klang](https://github.com/hzdgopher/4klang).
 
 Summary
 -------
 
-Sointu is work-in-progress. It is an evolution of [4klang]( 
+Sointu is work-in-progress. It is a fork and an evolution of [4klang]( 
 https://github.com/hzdgopher/4klang), a modular software synthesizer intended 
 to easily produce music for 4k intros-small executables with a maximum 
 filesize of 4096 bytes containing realtime audio and visuals. Like 4klang, the
@@ -14,10 +14,10 @@ produce the audio; however, by now the internal virtual machine has been
 heavily rewritten and extended to make the code more maintainable, possibly 
 even saving some bytes in the process. 
 
-Implemented features
---------------------
+New features since fork
+-----------------------
   - **Per instrument polyphonism**. An instrument has the possibility to 
-    have any number of voices, meaning in practice that multiple instruments can
+    have any number of voices, meaning in practice that multiple voices can
     reuse the same opcodes. Done, see [here](tests/test_polyphony.asm) for an 
     example and [here](src/opcodes/flowcontrol.asm) for the implementation. The 
     maximum total number of voices will be 32: you can have 32 monophonic 
@@ -37,7 +37,7 @@ Implemented features
     definition should be needed; all the %define USE_SOMETHING will be
     defined automatically by the macros. Furthermore, only the opcodes needed
     are compiled into the program. Done, see for example
-    [this test](tests/test_vco_trisaw.asm)! This has the nice implication that,
+    [this test](tests/test_oscillat_trisaw.asm)! This has the nice implication that,
     in future, there will be no need for binary format to save patches: the .asm
     is easy enough to be imported into / exported from the GUI. Being a text
     format, the .asm based patch definitions play nicely with source control.
@@ -46,23 +46,22 @@ Implemented features
     command stream and passed in carry to the opcode. This has several nice 
     advantages: 1) the opcodes that don't need any parameters do not need an 
     entire byte in the value stream to define whether it is stereo; 2) stereo 
-    variants of opcodes can be implemented rather efficiently; in some cases, 
-    the extra cost of stereo variant (e.g. most filters) is only 6 bytes. 3) 
-    Since stereo opcodes usually follow stereo opcodes, and mono opcodes 
-    follow mono opcodes, the stereo bits of the command bytes will be highly 
-    correlated and if crinkler or any other compressor is doing its job, that
-    should make them highly predictable i.e. highly compressably. Mostly done.
+    variants of opcodes can be implemented rather efficiently; in many cases, 
+    the extra cost of stereo variant is only 7 bytes, of which 4 are zeros, so
+    should compress quite nicely. 3) Since stereo opcodes usually follow stereo
+    opcodes (and mono opcodes follow mono opcodes), the stereo bits of the
+    command bytes will be highly correlated and if crinkler or any other
+    modeling compressor is doing its job, that should make them highly
+    predictable i.e. highly compressably. Done.
   - **Test-driven development**. Given that 4klang was already a mature project, 
     the first thing actually implemented was a set of regression tests to avoid 
-    breaking everything beyond any hope of repair. Mostly done, using CTests. 
-    Tests for new opcodes / opcode variants implemented since 4klang are not
-    done.
+    breaking everything beyond any hope of repair. Done, using CTest.
 
 Future goals
 ------------
 
   - **Cross-platform support for win / mac / linux**. The build is already based 
-    on CMake and compiles on Windows. Cross-platform YASM macros have been
+    on CMake and compiles on Windows. Cross-platform NASM/YASM macros have been
     drafted and remain to be tested. Once the project is more mature, I will 
     try compiling on other platforms.
   - **New opcodes**. At least: bit-crush, compressor (with side-chaining),
@@ -112,7 +111,7 @@ Design philosophy
     no %ifdefs cluttering the view, many opportunities to shave away
     instructions became apparent. Also, by making the most advanced synth
     cheaply available to the scene, we promote better music in future 4ks :)
-  - Size first, speed second. Speed will only considered, if the situation 
+  - Size first, speed second. Speed will only considered if the situation 
     becomes untolerable.
   - Benchmark optimizations. Compression results are sometimes slightly 
     nonintuitive so alternative implementations should always be benchmarked
