@@ -56,6 +56,8 @@ New features since fork
   - **Test-driven development**. Given that 4klang was already a mature project, 
     the first thing actually implemented was a set of regression tests to avoid 
     breaking everything beyond any hope of repair. Done, using CTest.
+  - **New units**. Bit-crusher, gain, inverse gain, clip. As always, if you
+    don't use them, they won't be compiled into the code.
 
 Future goals
 ------------
@@ -64,8 +66,8 @@ Future goals
     on CMake and compiles on Windows. Cross-platform NASM/YASM macros have been
     drafted and remain to be tested. Once the project is more mature, I will 
     try compiling on other platforms.
-  - **New opcodes**. At least: bit-crush, compressor (with side-chaining),
-    change bpm. Maybe also equalizer.
+  - **Even more opcodes**. At least: compressor (with side-chaining), change
+    bpm. Maybe also equalizer.
   - **Support for 64-bit targets**.
   - **Browser-based GUI and MIDI instrument**. Modern browsers support WebMIDI,
      WebAudio and, most importantly, they are cross-platform and come installed
