@@ -31,7 +31,7 @@ EXPORT MANGLE_FUNC(su_op_add,0)
     fadd    st0, st3
     fxch
     ret
-su_op_pop_mono:
+su_op_add_mono:
 %endif
     fadd    st1
     ret
@@ -146,7 +146,7 @@ EXPORT MANGLE_FUNC(su_op_xch,0)
     jnc     su_op_xch_mono
     fxch    st0, st2 ; c b a d
     fxch    st0, st1 ; b c a d
-    fxch    st0, st2 ; d c a b
+    fxch    st0, st3 ; d c a b
 su_op_xch_mono:
 %endif
     fxch    st0, st1

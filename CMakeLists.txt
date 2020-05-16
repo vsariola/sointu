@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.15)
 # i.e. set_property(TARGET 4klang PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 cmake_policy(SET CMP0091 NEW) 
 
-project(4klang
+project(sointu
     VERSION 3.3.2
     DESCRIPTION "A modular synthesizer for 4k/8k intros"
     LANGUAGES C CXX)
@@ -38,6 +38,6 @@ add_subdirectory(src)
 
 # Testing only available if this is the main app
 # Emergency override 4KLANG_CMAKE_BUILD_TESTING provided as well
-if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR 4KLANG_CMAKE_BUILD_TESTING) AND BUILD_TESTING)
+if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR SOINTU_CMAKE_BUILD_TESTING) AND BUILD_TESTING)
     add_subdirectory(tests)
 endif()

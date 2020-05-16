@@ -140,7 +140,7 @@ endstruc
     USE_HOLD
     %xdefine CMDS CMDS HOLD_ID + %1,
     %if %1 == STEREO
-        %define INCLUDE_STEREO_DISTORT
+        %define INCLUDE_STEREO_HOLD
     %endif
 %endmacro
 

@@ -154,10 +154,10 @@ endstruc
 ;-------------------------------------------------------------------------------
 ;   LOAD_VAL structs
 ;-------------------------------------------------------------------------------
-%assign LOAD_VAL_ID -1
+%assign LOADVAL_ID -1
 %macro USE_LOAD_VAL 0
-    %if LOAD_VAL_ID == -1
-        %assign LOAD_VAL_ID CUR_ID
+    %if LOADVAL_ID == -1
+        %assign LOADVAL_ID CUR_ID
         %assign CUR_ID CUR_ID + 2
         %xdefine OPCODES OPCODES MANGLE_FUNC(su_op_loadval,0),
         %xdefine NUMPARAMS NUMPARAMS 1,
@@ -167,7 +167,7 @@ endstruc
 %macro  SU_LOADVAL 2
     db  %2
     USE_LOAD_VAL
-    %xdefine CMDS CMDS LOAD_VAL_ID+%1,
+    %xdefine CMDS CMDS LOADVAL_ID+%1,
     %if %1 == STEREO
         %define INCLUDE_STEREO_LOAD_VAL
     %endif
@@ -182,4 +182,31 @@ endstruc
 
 struc   su_load_val_wrk
     .size
+endstruc
+
+;-------------------------------------------------------------------------------
+;   RECEIVE structs
+;-------------------------------------------------------------------------------
+%assign RECEIVE_ID -1
+%macro USE_RECEIVE 0
+    %if RECEIVE_ID == -1
+        %assign RECEIVE_ID CUR_ID
+        %assign CUR_ID CUR_ID + 2
+        %xdefine OPCODES OPCODES MANGLE_FUNC(su_op_receive,0),
+        %xdefine NUMPARAMS NUMPARAMS 0,
+    %endif
+%endmacro
+
+%macro  SU_RECEIVE 1    
+    USE_RECEIVE
+    %xdefine CMDS CMDS RECEIVE_ID+%1,
+    %if %1 == STEREO
+        %define INCLUDE_STEREO_RECEIVE
+    %endif
+%endmacro
+
+struc su_receive_ports
+    .params  ; receive does not actually have params, left and right only through send
+    .left       resd    1
+    .right      resd    1
 endstruc

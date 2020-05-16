@@ -1,5 +1,4 @@
 %define BPM 100
-%define SINGLE_FILE
 %define USE_SECTIONS
 
 %include "../src/sointu.inc"
@@ -16,8 +15,8 @@ SU_BEGIN_PATCH
     SU_BEGIN_INSTRUMENT VOICES(1) ; Instrument0
         SU_LOADVAL MONO,VALUE(96)
         SU_LOADVAL MONO,VALUE(32)
-        SU_XCH      MONO
-        SU_OUT      STEREO,GAIN(128)
+        SU_XCH     MONO
+        SU_OUT     STEREO,GAIN(128)
     SU_END_INSTRUMENT
 SU_END_PATCH
 

@@ -79,8 +79,7 @@ SECT_TEXT(sunoise)
 EXPORT MANGLE_FUNC(su_op_noise,0)
 %ifdef INCLUDE_STEREO_NOISE
     jnc     su_op_noise_mono
-    clc
-    call    dword [esp]
+    call    su_op_noise_mono
 su_op_noise_mono:
 %endif
     call    MANGLE_FUNC(FloatRandomNumber,0)
@@ -287,22 +286,22 @@ SECT_DATA(suconst)
 %endif
 
 ;-------------------------------------------------------------------------------
-;   LOAD_VAL opcode
+;   LOADVAL opcode
 ;-------------------------------------------------------------------------------
-;   Input:      WRK     :   pointer to unit workspace
-;               VAL     :   pointer to unit values as bytes
-;   Output:     st0     :   2*v-1, where v is the loaded value
-;   Dirty:      eax, edx
+;   Input:      edx     :   pointer to unit ports
+; 
+;   Mono version: push 2*v-1 on stack, where v is the input to port "value"
+;   Stereo version: push 2*v-1 twice on stack
 ;-------------------------------------------------------------------------------
-%if LOAD_VAL_ID > -1
+%if LOADVAL_ID > -1
 
 SECT_TEXT(suloadvl)
 
 EXPORT MANGLE_FUNC(su_op_loadval,0)
 %ifdef INCLUDE_STEREO_LOAD_VAL
     jnc     su_op_loadval_mono
-    call    su_loadval_mono
-su_loadval_mono:
+    call    su_op_loadval_mono
+su_op_loadval_mono:
 %endif
     fld     dword [edx+su_load_val_ports.value] ; v
     fsub    dword [c_0_5]                       ; v-.5
@@ -310,3 +309,31 @@ su_loadval_mono:
     ret
 
 %endif ; SU_USE_LOAD_VAL
+
+
+;-------------------------------------------------------------------------------
+;   RECEIVE opcode
+;-------------------------------------------------------------------------------
+;   Mono version:   push l on stack, where l is the left channel received
+;   Stereo version: push l r on stack
+;-------------------------------------------------------------------------------
+%if RECEIVE_ID > -1
+
+SECT_TEXT(sureceiv)
+
+EXPORT MANGLE_FUNC(su_op_receive,0)
+    lea     ecx, dword [WRK+su_unit.ports]    
+%ifdef INCLUDE_STEREO_RECEIVE
+    jnc     su_op_receive_mono
+    xor     eax,eax
+    fld     dword [ecx+su_receive_ports.right]
+    mov     dword [ecx+su_receive_ports.right],eax
+su_op_receive_mono:
+%else
+    xor     eax,eax
+%endif
+    fld     dword [ecx+su_receive_ports.left]
+    mov     dword [ecx+su_receive_ports.left],eax
+    ret
+
+%endif ; RECEIVE_ID > -1
