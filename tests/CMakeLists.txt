@@ -122,3 +122,4 @@ regression_test(test_envelope_16bit ENVELOPE "" test_envelope)
 target_compile_definitions(test_envelope_16bit PUBLIC SU_USE_16BIT_OUTPUT)
 
 regression_test(test_polyphony "ENVELOPE;VCO_SINE")
+regression_test(test_chords "ENVELOPE;VCO_SINE")
