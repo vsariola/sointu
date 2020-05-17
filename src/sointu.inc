@@ -127,6 +127,7 @@
 %define MONO            0
 %define STEREO          1
 
+%include "opcodes/flowcontrol.inc"
 %include "opcodes/arithmetic.inc"
 %include "opcodes/effects.inc"
 %include "opcodes/sources.inc"
