@@ -59,6 +59,13 @@ New features since fork
   - **New units**. Bit-crusher, gain, inverse gain, clip, modulate bpm
     (proper triplets!), compressor (can be used for side-chaining)... As 
     always, if you don't use them, they won't be compiled into the code.
+  - **Arbitrary signal routing**. SEND (used to be called FST) opcode normally 
+    sends the signal as a modulation to another opcode. But with the new 
+    RECEIVE opcode, you just receive the plain signal there. So you can connect
+    signals in an arbitrary way. Actually, 4klang could already do this but in
+    a very awkward way: it had FLD (load value) opcode that could be modulated;
+    FLD 0 with modulation basically achieved what RECEIVE does, except that
+    RECEIVE can also handle stereo signals.
   - **Pattern length does not have to be a power of 2**.
 
 Future goals
