@@ -152,7 +152,7 @@ su_transform_values_out:
 ;-------------------------------------------------------------------------------
 SECT_TEXT(supower)
 
-%if ENVELOPE_ID > -1
+%if ENVELOPE_ID > -1 ; TODO: compressor also uses this, so should be compiled if either
 su_env_map:
     fld     dword [edx+eax*4]   ; x, where x is the parameter in the range 0-1
     fimul   dword [c_24]        ; 24*x

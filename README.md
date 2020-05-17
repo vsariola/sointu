@@ -57,8 +57,8 @@ New features since fork
     the first thing actually implemented was a set of regression tests to avoid 
     breaking everything beyond any hope of repair. Done, using CTest.
   - **New units**. Bit-crusher, gain, inverse gain, clip, modulate bpm
-    (proper triplets!)... As always, if you don't use them, they won't be
-    compiled into the code.
+    (proper triplets!), compressor (can be used for side-chaining)... As 
+    always, if you don't use them, they won't be compiled into the code.
   - **Pattern length does not have to be a power of 2**.
 
 Future goals
@@ -68,8 +68,11 @@ Future goals
     on CMake and compiles on Windows. Cross-platform NASM/YASM macros have been
     drafted and remain to be tested. Once the project is more mature, I will 
     try compiling on other platforms.
-  - **Even more opcodes**. At least: compressor (with side-chaining). Maybe 
-    also equalizer.
+  - **Find a more general solution for skipping opcodes / early outs**. It's 
+    probably a new opcode "skip" that skips from the opcode to the next out in
+    case the signal entering skip and the signal leaving out are both close to
+    zero.
+  - **Even more opcodes**. Maybe an equalizer? DC-offset removal?
   - **Support for 64-bit targets**.
   - **Browser-based GUI and MIDI instrument**. Modern browsers support WebMIDI,
      WebAudio and, most importantly, they are cross-platform and come installed

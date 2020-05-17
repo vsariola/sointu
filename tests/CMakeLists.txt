@@ -100,6 +100,9 @@ regression_test(test_clip_stereo CLIP)
 regression_test(test_crush "VCO_SINE;ENVELOPE;FOP_MULP;INVGAIN" CRUSH)
 regression_test(test_crush_stereo CRUSH)
 
+regression_test(test_compressor "" COMPRESSOR)
+regression_test(test_compressor_stereo COMPRESSOR)
+
 regression_test(test_filter_band "VCO_SINE;ENVELOPE;FOP_MULP")
 regression_test(test_filter_low "VCO_SINE;ENVELOPE;FOP_MULP")
 regression_test(test_filter_high "VCO_SINE;ENVELOPE;FOP_MULP")

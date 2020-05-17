@@ -344,3 +344,47 @@ struc   su_delayline_wrk
     .buffer     resd    MAX_DELAY
     .size
 endstruc
+
+
+;-------------------------------------------------------------------------------
+;   COMPRES effect related defines
+;-------------------------------------------------------------------------------
+%assign COMPRES_ID -1
+
+%macro USE_COMPRES 0
+    %if COMPRES_ID == -1
+        %assign COMPRES_ID CUR_ID
+        %assign CUR_ID CUR_ID + 2
+        %xdefine OPCODES OPCODES MANGLE_FUNC(su_op_compressor,0),
+        %xdefine NUMPARAMS NUMPARAMS 4,
+    %endif
+%endmacro
+
+%macro SU_COMPRES 5
+    db  %2
+    db  %3
+    db  %4
+    db  %5
+    USE_COMPRES
+    %xdefine CMDS CMDS COMPRES_ID + %1,
+    %if %1 == STEREO
+        %define INCLUDE_STEREO_COMPRES
+    %endif
+%endmacro
+
+%define ATTAC(val)      val
+%define RELEASE(val)    val
+%define THRESHOLD(val)  val
+%define RATIO(val)      val
+
+struc su_compres_ports
+    .attack     resd    1
+    .release    resd    1
+    .threshold  resd    1
+    .ratio      resd    1
+    .ports
+endstruc
+
+struc su_compres_wrk
+    .level      resd    1
+endstruc
