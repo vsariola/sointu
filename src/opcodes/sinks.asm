@@ -43,7 +43,7 @@ EXPORT MANGLE_FUNC(su_op_send,0)
     fxch                        ; r l
     call    su_op_send_mono     ; (r) l
     mov     eax, edi            ; move back to original address
-    test    edx, SEND_POP       ; if r was not popped and is still in the stack
+    test    eax, SEND_POP       ; if r was not popped and is still in the stack
     jnz     su_op_send_mono
     fxch                        ; swap them back: l r
 su_op_send_mono:
