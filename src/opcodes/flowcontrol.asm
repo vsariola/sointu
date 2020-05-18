@@ -34,8 +34,7 @@ su_op_advance_next_instrument:
     mov     dword [esp+12], VAL         ; save current VAL as a checkpoint
     mov     dword [esp+16], COM         ; save current COM as a checkpoint
 su_op_advance_finish:
-    inc     ecx                         ; voice++
-    mov     dword [esp+4], ecx
+    inc     dword [esp+4]
     ret
 
 %else
