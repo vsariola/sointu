@@ -191,3 +191,4 @@ EXPORT MANGLE_FUNC(su_power,0)
 %include "opcodes/effects.asm"
 %include "player.asm"
 %include "introspection.asm"
+%include "gmdls.asm"

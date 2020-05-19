@@ -67,6 +67,12 @@ New features since fork
     FLD 0 with modulation basically achieved what RECEIVE does, except that
     RECEIVE can also handle stereo signals.
   - **Pattern length does not have to be a power of 2**.
+  - **Sample-based oscillators, with samples imported from gm.dls**. Reading
+    gm.dls is obviously Windows only, but the sample mechanism can be used also
+    without it, in case you are working on a 64k and have some kilobytes to
+    spare. See [this example](tests/test_oscillat_sample.asm), and this Python 
+    [script](scripts/parse_gmdls.py) parses the gm.dls file and dumps the
+    sample offsets from it.
 
 Future goals
 ------------
@@ -92,10 +98,7 @@ Future goals
 
 Nice-to-have ideas
 ------------------
-
-  - **Sample import from gm.dls**. This is Windows only, but implementing it 
-    should be easy and the potential payoffs pretty high for Windows users, so 
-    it is a nice prospect.
+  
   - **Tracker**. If the list of primary goals is ever exhausted, a browser-based
     tracker would be nice to take advantage of all the features.
 

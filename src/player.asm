@@ -19,7 +19,10 @@ su_voicetrack_bitmask   dd      VOICETRACK_BITMASK; does the following voice bel
 SECT_DATA(suconst)
 
 %ifdef SU_USE_16BIT_OUTPUT
-c_32767     dd      32767.0
+    %ifndef C_32767
+        c_32767     dd      32767.0
+        %define C_32767
+    %endif
 %endif
 
 ;-------------------------------------------------------------------------------
@@ -86,6 +89,9 @@ SECT_TEXT(surender)
 
 EXPORT MANGLE_FUNC(su_render,4)         ; Stack: ptr
     pushad                              ; Stack: pushad ptr
+%ifdef INCLUDE_GMDLS
+    call    su_gmdls_load
+%endif
     xor     eax, eax                    ; ecx is the current row
 su_render_rowloop:                      ; loop through every row in the song
         push    eax                     ; Stack: row pushad ptr

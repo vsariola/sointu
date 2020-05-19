@@ -136,6 +136,13 @@ su_op_oscillat_normalized:
     fadd    dword [WRK+su_osc_wrk.phase]
     fst     dword [WRK+su_osc_wrk.phase]
     fadd    dword [edx+su_osc_ports.phaseofs]
+%ifdef INCLUDE_SAMPLES
+    test    al, byte SAMPLE
+    jz      short su_op_oscillat_not_sample
+    call    su_oscillat_sample
+    jmp     su_op_oscillat_shaping ; skip the rest to avoid color phase normalization and colorloading
+su_op_oscillat_not_sample:
+%endif
     fld1
     fadd    st1, st0
     fxch
@@ -168,6 +175,7 @@ su_op_oscillat_not_pulse:
     jmp     su_op_oscillat_gain ; skip waveshaping as the shape parameter is reused for gateshigh
 su_op_oscillat_not_gate:
 %endif
+su_op_oscillat_shaping:
     ; finally, shape the oscillator and apply gain
     fld     dword [edx+su_osc_ports.shape]
     call    su_waveshaper
@@ -282,6 +290,42 @@ SECT_DATA(suconst)
     c_dc_const              dd      0.99609375      ; R = 1 - (pi*2 * frequency /samplerate)
     %define C_DC_CONST
 %endif
+
+%endif
+
+; SAMPLES
+%ifdef INCLUDE_SAMPLES
+
+SECT_TEXT(suoscsam)
+
+su_oscillat_sample:                                         ; p
+    pushad                                                  ; edx must be saved, eax & ecx if this is stereo osc
+    push    edx
+    mov     al, byte [VAL-4]                                ; reuse "color" as the sample number
+    lea     edi, [MANGLE_DATA(su_sample_offsets) + eax*8]   ; edi points now to the sample table entry
+    fmul    dword [c_samplefreq_scaling]                    ; p*r
+    fistp   dword [esp]
+    pop     edx                                             ; edx is now the sample number
+    movzx   ebx, word [edi + su_sample_offset.loopstart]    ; ecx = loopstart
+    sub     edx, ebx                                        ; if sample number < loop start
+    jl      su_oscillat_sample_not_looping                  ;   then we're not looping yet
+    mov     eax, edx                                        ; eax = sample number
+    movzx   ecx, word [edi + su_sample_offset.looplength]   ; edi is now the loop length
+    xor     edx, edx                                        ; div wants edx to be empty
+    div     ecx                                             ; edx is now the remainder
+su_oscillat_sample_not_looping:
+    add     edx, ebx                                        ; sampleno += loopstart
+    add     edx, dword [edi + su_sample_offset.start]
+    fild    word [MANGLE_DATA(su_sample_table) + edx*2]
+    fdiv    dword [c_32767]
+    popad
+    ret
+
+SECT_DATA(suconst)
+    %ifndef C_32767
+    c_32767                 dd      32767.0
+        %define C_32767
+    %endif
 
 %endif
 

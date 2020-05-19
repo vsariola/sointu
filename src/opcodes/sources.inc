@@ -64,6 +64,7 @@ endstruc
     %endif
 %endmacro
 
+%define SAMPLE      0x80  ; in this case, all the rest of the bits is the sample index
 %define SINE        0x40
 %define TRISAW      0x20
 %define PULSE       0x10
@@ -95,6 +96,9 @@ endstruc
     %if (%8) & GATE == GATE
         %define INCLUDE_GATE
     %endif
+    %if (%8) & SAMPLE == SAMPLE
+        %define INCLUDE_SAMPLES
+    %endif
 %endmacro
 
 struc   su_osc_ports
@@ -119,8 +123,38 @@ endstruc
 %define GATESLOW(val)   val
 %define GATESHIGH(val)  val
 %define COLOR(val)      val
+%define SAMPLENO(val)   val
 %define SHAPE(val)      val
 %define FLAGS(val)      val
+
+;-------------------------------------------------------------------------------
+;   Sample related defines
+;-------------------------------------------------------------------------------
+
+%macro SU_BEGIN_SAMPLE_OFFSETS 0
+    SECT_DATA(susamoff)
+
+    EXPORT MANGLE_DATA(su_sample_offsets)
+%endmacro
+
+%macro SAMPLE_OFFSET 3
+    dd  %1
+    dw  %2
+    dw  %3
+%endmacro
+
+%define START(val)      val
+%define LOOPSTART(val)  val
+%define LOOPLENGTH(val) val
+
+%define SU_END_SAMPLE_OFFSETS
+
+struc   su_sample_offset  ; length conveniently 8, so easy to index
+    .start      resd    1
+    .loopstart  resw    1
+    .looplength resw    1
+    .size
+endstruc
 
 ;-------------------------------------------------------------------------------
 ;   NOISE structs
