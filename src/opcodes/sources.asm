@@ -101,24 +101,46 @@ su_op_noise_mono:
 SECT_TEXT(suoscill)
 
 EXPORT MANGLE_FUNC(su_op_oscillat,0)
-    lodsb    ; load the flags
+    lodsb                                   ; load the flags
+    fld     dword [edx+su_osc_ports.detune] ; e, where e is the detune [0,1]
+    fsub    dword [c_0_5]                   ; e-.5
+    fadd    st0, st0                        ; d=2*e-.5, where d is the detune [-1,1]
 %ifdef INCLUDE_STEREO_OSCILLAT
     jnc     su_op_oscillat_mono
-    add     WRK, 4
-    call    su_op_oscillat_mono
-    fld1                                    ; invert the detune for second run for some stereo separation
-    fld     dword [edx+su_osc_ports.detune]
-    fsubp   st1
-    fstp    dword [edx+su_osc_ports.detune]
-    sub     WRK, 4
-su_op_oscillat_mono:
+    fld     st0                             ; d d
+    call    su_op_oscillat_mono             ; r d
+    add     WRK, 4                          ; state vars: r1 l1 r2 l2 r3 l3 r4 l4, for the unison osc phases
+    fxch                                    ; d r
+    fchs                                    ; -d r, negate the detune for second round
+    su_op_oscillat_mono:
+%endif
+%ifdef INCLUDE_UNISONS
+    pushad                          ; push eax, WRK, WRK would suffice but this is shorter
+    fldz                            ; 0 d
+    fxch                            ; d a=0, "accumulated signal"
+su_op_oscillat_unison_loop:
+    fst     dword [esp]             ; save the current detune, d. We could keep it in fpu stack but it was getting big.
+    call    su_op_oscillat_single   ; s a
+    faddp   st1, st0                ; a+=s
+    test    al, UNISON4
+    je      su_op_oscillat_unison_out    
+    add     WRK, 8
+    fld     dword [edx+su_osc_ports.phaseofs] ; p s
+    fadd    dword [c_i12]                     ; p s, add some little phase offset to unison oscillators so they don't start in sync
+    fstp    dword [edx+su_osc_ports.phaseofs] ; s    note that this changes the phase for second, possible stereo run. That's probably ok
+    fld     dword [esp]             ; d s
+    fmul    dword [c_0_5]           ; .5*d s    // negate and halve the detune of each oscillator
+    fchs                            ; -.5*d s   // negate and halve the detune of each oscillator
+    dec     eax
+    jmp     short su_op_oscillat_unison_loop
+su_op_oscillat_unison_out:
+    popad                           ; similarly, pop WRK, WRK, eax would suffice
+    ret
+su_op_oscillat_single:
 %endif
     fld     dword [edx+su_osc_ports.transpose]
     fsub    dword [c_0_5]
     fdiv    dword [c_i128]
-    fld     dword [edx+su_osc_ports.detune]
-    fsub    dword [c_0_5]
-    fadd    st0
     faddp   st1
     test    al, byte LFO
     jnz     su_op_oscillat_skipnote

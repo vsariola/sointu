@@ -64,12 +64,15 @@ endstruc
     %endif
 %endmacro
 
-%define SAMPLE      0x80  ; in this case, all the rest of the bits is the sample index
+%define SAMPLE      0x80
 %define SINE        0x40
 %define TRISAW      0x20
 %define PULSE       0x10
 %define LFO         0x08
 %define GATE        0x04
+%define UNISON2     0x01
+%define UNISON3     0x02 ; Warning, UNISON3 and UNISON4 do not work with gate at the moment, as they use the same state variable
+%define UNISON4     0x03 
 
 %macro  SU_OSCILLAT 8
     db  %2
@@ -99,6 +102,9 @@ endstruc
     %if (%8) & SAMPLE == SAMPLE
         %define INCLUDE_SAMPLES
     %endif
+    %if (%8) & UNISON4 > 0
+        %define INCLUDE_UNISONS
+    %endif    
 %endmacro
 
 struc   su_osc_ports
@@ -113,7 +119,7 @@ endstruc
 
 struc   su_osc_wrk
     .phase      resd    1
-    .gatestate  resd    1
+    .gatestate  equ     16   ; we put is late so only UNISON3 and UNISON4 are unusable with gate
     .size
 endstruc
 

@@ -73,6 +73,10 @@ New features since fork
     spare. See [this example](tests/test_oscillat_sample.asm), and this Python 
     [script](scripts/parse_gmdls.py) parses the gm.dls file and dumps the
     sample offsets from it.
+  - **Unison oscillators**. Multiple copies of the oscillator running sligthly
+    detuned and added up to together. Great for trance leads (supersaw). Unison
+    of up to 4, or 8 if you make stereo unison oscillator and add up both left 
+    and right channels. See [this example](tests/test_oscillat_unison.asm).
 
 Future goals
 ------------
