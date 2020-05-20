@@ -10,12 +10,10 @@
 SECT_TEXT(sudistrt)
 
 EXPORT MANGLE_FUNC(su_op_distort,0)
-%ifdef INCLUDE_STEREO_DISTORT
-    jnc su_op_distort_mono
-    call su_stereo_filterhelper
-    %define INCLUDE_STEREO_FILTERHELPER
-su_op_distort_mono:
-%endif
+    %ifdef INCLUDE_STEREO_DISTORT    
+        call su_effects_stereohelper
+        %define INCLUDE_EFFECTS_STEREOHELPER
+    %endif
     fld     dword [edx+su_distort_ports.drive]
     %define SU_INCLUDE_WAVESHAPER
     ; flow into waveshaper
@@ -51,12 +49,10 @@ su_waveshaper:
 SECT_TEXT(suhold)
 
 EXPORT MANGLE_FUNC(su_op_hold,0)
-%ifdef INCLUDE_STEREO_HOLD
-    jnc     su_op_hold_mono
-    call    su_stereo_filterhelper
-    %define INCLUDE_STEREO_FILTERHELPER
-su_op_hold_mono:
-%endif
+    %ifdef INCLUDE_STEREO_HOLD   
+        call    su_effects_stereohelper
+        %define INCLUDE_EFFECTS_STEREOHELPER
+    %endif
     fld     dword [edx+su_hold_ports.freq]    ; f x
     fmul    st0, st0                        ; f^2 x
     fchs                                    ; -f^2 x
@@ -86,12 +82,10 @@ su_op_hold_holding:
 SECT_TEXT(sucrush)
 
 EXPORT MANGLE_FUNC(su_op_crush,0)
-%ifdef INCLUDE_STEREO_CRUSH
-    jnc     su_op_crush_mono
-    call    su_stereo_filterhelper
-    %define INCLUDE_STEREO_FILTERHELPER
-su_op_crush_mono:
-%endif    
+    %ifdef INCLUDE_STEREO_CRUSH    
+        call    su_effects_stereohelper
+        %define INCLUDE_EFFECTS_STEREOHELPER
+    %endif    
     fdiv    dword [edx+su_crush_ports.resolution]
     frndint
     fmul    dword [edx+su_crush_ports.resolution]
@@ -156,12 +150,10 @@ SECT_TEXT(sufilter)
 
 EXPORT MANGLE_FUNC(su_op_filter,0)
     lodsb ; load the flags to al
-%ifdef INCLUDE_STEREO_FILTER
-    jnc     su_op_filter_mono
-    call    su_stereo_filterhelper
-    %define INCLUDE_STEREO_FILTERHELPER
-su_op_filter_mono:
-%endif
+    %ifdef INCLUDE_STEREO_FILTER    
+        call    su_effects_stereohelper
+        %define INCLUDE_EFFECTS_STEREOHELPER
+    %endif
     fld     dword [edx+su_filter_ports.res] ; r x
     fld     dword [edx+su_filter_ports.freq]; f r x
     fmul    st0, st0                        ; f2 x (square the input so we never get negative and also have a smoother behaviour in the lower frequencies)
@@ -220,11 +212,9 @@ SECT_TEXT(suclip)
 
 %if CLIP_ID > -1
     EXPORT MANGLE_FUNC(su_op_clip,0)
-    %ifdef INCLUDE_STEREO_CLIP
-        jnc     su_op_clip_mono
-        call    su_stereo_filterhelper
-        %define INCLUDE_STEREO_FILTERHELPER
-    su_op_clip_mono:
+    %ifdef INCLUDE_STEREO_CLIP        
+        call    su_effects_stereohelper
+        %define INCLUDE_EFFECTS_STEREOHELPER    
     %endif
     %define SU_INCLUDE_CLIP
     ; flow into su_doclip
@@ -288,19 +278,21 @@ EXPORT MANGLE_FUNC(su_op_pan,0)
 %endif ; SU_USE_PAN
 
 ;-------------------------------------------------------------------------------
-;   su_stereo_filterhelper: moves the workspace to next, does the filtering for
+;   su_effects_stereohelper: moves the workspace to next, does the filtering for
 ;   right channel (pulling the calling address from stack), rewinds the
 ;   workspace and returns
 ;-------------------------------------------------------------------------------
-%ifdef INCLUDE_STEREO_FILTERHELPER
+%ifdef INCLUDE_EFFECTS_STEREOHELPER
 
-su_stereo_filterhelper:
+su_effects_stereohelper:
+    jnc     su_effects_stereohelper_mono ; carry is still the stereo bit
     add     WRK, 16
     fxch                  ; r l
     call    dword [esp]   ; call whoever called me...
     fxch                  ; l r
     sub     WRK, 16       ; move WRK back to where it was
-    ret
+su_effects_stereohelper_mono:
+    ret                   ; return to process l/mono sound
 
 %endif
 
