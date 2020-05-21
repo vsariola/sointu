@@ -19,17 +19,33 @@
     ; on win32, function f with n parameters is mangled as "_f@n"
     %define MANGLE_FUNC(f,n) _ %+ f %+ @ %+ n
     %define WIN_OR_MAC
+    %assign BITS 32
+    ; On windows and mac, data label d is mangled as "_d"
+    %define MANGLE_DATA(d) _ %+ d
+%endif
+
+%ifidn __OUTPUT_FORMAT__,win64
+    ; on win32, function f with n parameters is mangled as "_f@n"
+    %define MANGLE_FUNC(f,n) f
+    %define WIN_OR_MAC
+    %assign BITS 64
+    ; On windows and mac, data label d is mangled as "_d"
+    %define MANGLE_DATA(d) d
 %endif
 
 %ifidn __OUTPUT_FORMAT__,elf32
     ; on linux, function f with n parameters is mangled as "f"
     %define MANGLE_FUNC(f,n) f
+    ; On linux, data label d is mangled as "d"
+    %define MANGLE_DATA(d) d
 %endif
 
 %ifidn __OUTPUT_FORMAT__,macho32
     ; on mac, function f with x parameters is mangled as "_f"
     %define MANGLE_FUNC(f,n) _f
     %define WIN_OR_MAC
+    ; On windows and mac, data label d is mangled as "_d"
+    %define MANGLE_DATA(d) _ %+ d
 %endif
 
 %ifdef WIN_OR_MAC
@@ -44,8 +60,6 @@
         %define SECT_DATA(n) section .data align=1
         %define SECT_TEXT(n) section .code align=1
     %endif
-    ; On windows and mac, data label d is mangled as "_d"
-    %define MANGLE_DATA(d) _ %+ d
 %else
     ; Linux
     %ifdef USE_SECTIONS
@@ -57,8 +71,6 @@
         %define SECT_DATA(n) section .data. progbits alloc noexec write align=1
         %define SECT_TEXT(n) section .text. progbits alloc exec nowrite align=1
     %endif
-    ; On linux, data label d is mangled as "d"
-    %define MANGLE_DATA(d) d
 %endif
 
 %ifdef SU_USE_ALL

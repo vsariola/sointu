@@ -1,6 +1,97 @@
-%define WRK ebp             ; // alias for unit workspace
-%define VAL esi             ; // alias for unit values (transformed/untransformed)
-%define COM ebx             ; // alias for instrument opcodes
+%if BITS == 64
+    %define WRK rbp ; alias for unit workspace
+    %define VAL rsi ; alias for unit values (transformed/untransformed)
+    %define COM rbx ; alias for instrument opcodes
+    %define INP rdx ; alias for transformed inputs
+    %define _AX rax ; push and offsets have to be r* on 64-bit and e* on 32-bit
+    %define _BX rbx
+    %define _CX rcx
+    %define _DX rdx
+    %define _SP rsp
+    %define _SI rsi
+    %define _DI rdi
+    %define _BP rbp
+    %define PTRSIZE 8
+    %define PTRWORD qword
+    %define RESPTR resq
+    %define DPTR dq
+
+    %macro apply 2
+        mov r9, qword %2
+        %1 [r9]
+    %endmacro
+
+    %macro apply 3
+        mov r9, qword %2
+        %1 [r9] %3
+    %endmacro
+
+    %macro apply 4
+        mov r9, qword %2
+        %1 [r9+%3] %4
+    %endmacro
+
+    %macro apply 5
+        mov r9, qword %2
+        lea r9, [r9+%3]
+        %1 [r9+%4] %5
+    %endmacro
+
+    %macro  push_registers 1-*
+        %rep  %0
+            push    %1
+            %rotate 1
+        %endrep
+    %endmacro
+
+    %macro  pop_registers 1-*
+        %rep %0
+            %rotate -1
+            pop     %1
+        %endrep
+    %endmacro
+%else
+    %define WRK ebp ; alias for unit workspace
+    %define VAL esi ; alias for unit values (transformed/untransformed)
+    %define COM ebx ; alias for instrument opcodes
+    %define INP edx ; alias for transformed inputs
+    %define _AX eax
+    %define _BX ebx
+    %define _CX ecx
+    %define _DX edx
+    %define _SP esp
+    %define _SI esi
+    %define _DI edi
+    %define _BP ebp
+    %define PTRSIZE 4
+    %define PTRWORD dword
+    %define RESPTR resd
+    %define DPTR dd
+
+    %macro apply 2
+        %1 [%2]
+    %endmacro
+
+    %macro apply 3
+        %1 [%2] %3
+    %endmacro
+
+    %macro apply 4
+        %1 [%2+%3] %4
+    %endmacro
+
+    %macro apply 5
+        %1 [%2+%3+%4] %5
+    %endmacro
+
+    %macro  push_registers 1-*
+        pushad ; in 32-bit mode, this is the easiest way to store all the registers
+    %endmacro
+
+    %macro  pop_registers 1-*
+        popad
+    %endmacro
+%endif
 
 ;===============================================================================
 ;   Uninitialized data: The one and only synth object
@@ -16,16 +107,14 @@ su_transformed_values   resd    16
 ;===============================================================================
 SECT_DATA(suoptabl)
 
-su_synth_commands
-                        dd      OPCODES
+su_synth_commands       DPTR    OPCODES
 
 ;===============================================================================
 ; The number of transformed parameters each opcode takes
 ;===============================================================================
 SECT_DATA(suparcnt)
 
-su_opcode_numparams
-                        db      NUMPARAMS
+su_opcode_numparams     db      NUMPARAMS
 
 ;-------------------------------------------------------------------------------
 ;   Constants used by the common functions
@@ -58,34 +147,40 @@ su_polyphony_bitmask    dd      POLYPHONY_BITMASK ; does the next voice reuse th
 SECT_TEXT(surunvm)
 
 EXPORT MANGLE_FUNC(su_run_vm,0)
-    mov     COM, MANGLE_DATA(su_commands)           ; COM points to vm code
-    mov     VAL, MANGLE_DATA(su_params)             ; VAL points to unit params
+    mov     COM, PTRWORD MANGLE_DATA(su_commands)           ; COM points to vm code
+    mov     VAL, PTRWORD MANGLE_DATA(su_params)             ; VAL points to unit params
     ; su_unit.size will be added back before WRK is used
-    mov     WRK, su_synth_obj + su_synth.voices + su_voice.workspace - su_unit.size
+    mov     WRK, PTRWORD su_synth_obj + su_synth.voices + su_voice.workspace - su_unit.size
     push    COM                                     ; Stack: COM
     push    VAL                                     ; Stack: VAL COM
     push    WRK                                     ; Stack: WRK VAL COM
-%if DELAY_ID > -1    
-    mov     dword [MANGLE_DATA(su_delay_buffer_ofs)], MANGLE_DATA(su_delay_buffer) ; reset delaywrk to first delayline
+%if DELAY_ID > -1
+    %if BITS == 64 ; TODO: find a way to do this with a macro
+        mov     r9,PTRWORD MANGLE_DATA(su_delay_buffer_ofs)
+        mov     _AX,PTRWORD MANGLE_DATA(su_delay_buffer)
+        mov     qword [r9],_AX                      ; reset delaywrk to first delayline
+    %else
+        mov     dword [MANGLE_DATA(su_delay_buffer_ofs)],MANGLE_DATA(su_delay_buffer) ; reset delaywrk to first
+    %endif
 %endif
     xor     ecx, ecx                                ; voice = 0
-    push    ecx                                     ; Stack: voice WRK VAL COM
+    push    _CX                                     ; Stack: voice WRK VAL COM
 su_run_vm_loop:                                     ; loop until all voices done
     movzx   eax, byte [COM]                         ; eax = command byte
     inc     COM                                     ; move to next instruction
     add     WRK, su_unit.size                       ; move WRK to next unit
-    push    eax
+    push    _AX
     shr     eax,1
-    mov     al,byte [eax+su_opcode_numparams]
-    push    eax
+    apply {mov al,byte},su_opcode_numparams,_AX,{}
+    push    _AX
     call    su_transform_values
-    mov     ecx, dword [esp+8]
-    pop     eax
+    mov     _CX, PTRWORD [_SP+2*PTRSIZE]
+    pop     _AX
     shr     eax,1
-    call    dword [eax*4+su_synth_commands]         ; call the function corresponding to the instruction
-    cmp     dword [esp],MAX_VOICES                  ; if (voice < MAX_VOICES)
+    apply call,su_synth_commands,_AX*PTRSIZE,{}     ; call the function corresponding to the instruction
+    cmp     dword [_SP],MAX_VOICES                  ; if (voice < MAX_VOICES)
     jl      su_run_vm_loop                          ;   goto vm_loop
-    add     esp, 16                                 ; Stack cleared
+    add     _SP, 4*PTRSIZE                          ; Stack cleared
     ret
 
 ;-------------------------------------------------------------------------------
@@ -96,12 +191,12 @@ su_run_vm_loop:                                     ; loop until all voices done
 SECT_TEXT(surandom)
 
 EXPORT MANGLE_FUNC(FloatRandomNumber,0)
-    push    eax
-    imul    eax,dword [MANGLE_DATA(RandSeed)],16007
-    mov     dword [MANGLE_DATA(RandSeed)], eax
-    fild    dword [MANGLE_DATA(RandSeed)]
-    fidiv   dword [c_RandDiv]
-    pop     eax
+    push    _AX
+    apply {imul eax,},MANGLE_DATA(RandSeed),{,16007}
+    apply mov,MANGLE_DATA(RandSeed),{, eax}
+    apply fild dword,MANGLE_DATA(RandSeed)
+    apply fidiv dword,c_RandDiv
+    pop     _AX
     ret
 
 ;-------------------------------------------------------------------------------
@@ -117,31 +212,26 @@ EXPORT MANGLE_FUNC(FloatRandomNumber,0)
 SECT_TEXT(sutransf)
 
 su_transform_values:
-    push    ecx
+    push    _CX
     xor     ecx, ecx
     xor     eax, eax
-    mov     edx, su_transformed_values
+    mov     INP, PTRWORD su_transformed_values
 su_transform_values_loop:
-    cmp     ecx, dword [esp+8]
+    cmp     ecx, dword [_SP+2*PTRSIZE]
     jge     su_transform_values_out
     lodsb
-    push    eax
-    fild    dword [esp]
-    fmul    dword [c_i128]
-    fadd    dword [WRK+su_unit.ports+ecx*4]
-    fstp    dword [edx+ecx*4]
-    mov     dword [WRK+su_unit.ports+ecx*4], 0
-    pop     eax
+    push    _AX
+    fild    dword [_SP]
+    apply fmul dword, c_i128
+    fadd    dword [WRK+su_unit.ports+_CX*4]
+    fstp    dword [INP+_CX*4]
+    mov     dword [WRK+su_unit.ports+_CX*4], 0
+    pop     _AX
     inc     ecx
     jmp     su_transform_values_loop
 su_transform_values_out:
-    pop     ecx
-    ret     4
-
-%macro TRANSFORM_VALUES 1
-    push %1 %+ .params/4
-    call su_transform_values
-%endmacro
+    pop     _CX
+    ret     PTRSIZE
 
 ;-------------------------------------------------------------------------------
 ;   su_env_map function: computes 2^(-24*x) of the envelope parameter
@@ -154,8 +244,8 @@ SECT_TEXT(supower)
 
 %if ENVELOPE_ID > -1 ; TODO: compressor also uses this, so should be compiled if either
 su_env_map:
-    fld     dword [edx+eax*4]   ; x, where x is the parameter in the range 0-1
-    fimul   dword [c_24]        ; 24*x
+    fld     dword [INP+_AX*4]   ; x, where x is the parameter in the range 0-1
+    apply   fimul dword,c_24          ; 24*x
     fchs                        ; -24*x
     ; flow into Power function, which outputs 2^(-24*x)
 %endif
@@ -189,6 +279,13 @@ EXPORT MANGLE_FUNC(su_power,0)
 ; sources, as sources.asm defines SU_USE_WAVESHAPER
 ; if needed.
 %include "opcodes/effects.asm"
-%include "player.asm"
 %include "introspection.asm"
-%include "gmdls.asm"
+%include "player.asm"
+
+%ifidn __OUTPUT_FORMAT__,win64
+    %include "win64/gmdls_win64.asm"
+%endif
+
+%ifidn __OUTPUT_FORMAT__,win32
+    %include "win32/gmdls_win32.asm"
+%endif

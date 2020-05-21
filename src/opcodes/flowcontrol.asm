@@ -21,31 +21,29 @@ SECT_TEXT(suopadvn)
 %ifdef INCLUDE_POLYPHONY
 
 EXPORT MANGLE_FUNC(su_op_advance,0)     ; Stack: addr voice wrkptr valptr comptr
-    mov     WRK, dword [esp+8]          ; WRK = wrkptr
+    mov     WRK, [_SP+PTRSIZE*2]          ; WRK = wrkptr
     add     WRK, su_voice.size          ; move to next voice
-    mov     dword [esp+8], WRK          ; update stack
-    mov     ecx, dword [esp+4]          ; ecx = voice
-    bt      dword [su_polyphony_bitmask],ecx ; if voice bit of su_polyphonism not set
+    mov     [_SP+PTRSIZE*2], WRK        ; update stack
+    mov     ecx, [_SP+PTRSIZE]          ; ecx = voice
+    apply bt dword,su_polyphony_bitmask,{,ecx} ; if voice bit of su_polyphonism not set
     jnc     su_op_advance_next_instrument ; goto next_instrument
-    mov     VAL, dword [esp+12]         ; rollback to where we were earlier
-    mov     COM, dword [esp+16]
+    mov     VAL, PTRWORD [_SP+PTRSIZE*3]         ; rollback to where we were earlier
+    mov     COM, PTRWORD [_SP+PTRSIZE*4]
     jmp     short su_op_advance_finish
 su_op_advance_next_instrument:
-    mov     dword [esp+12], VAL         ; save current VAL as a checkpoint
-    mov     dword [esp+16], COM         ; save current COM as a checkpoint
+    mov     PTRWORD [_SP+PTRSIZE*3], VAL         ; save current VAL as a checkpoint
+    mov     PTRWORD [_SP+PTRSIZE*4], COM         ; save current COM as a checkpoint
 su_op_advance_finish:
-    inc     dword [esp+4]
+    inc     PTRWORD [_SP+PTRSIZE]
     ret
 
 %else
-
-EXPORT MANGLE_FUNC(su_op_advance,0)     ; Stack: addr voice wrkptr valptr comptr
-    mov     WRK, dword [esp+8]          ; WRK = wrkptr
-    add     WRK, su_voice.size          ; move to next voice
-    mov     dword [esp+8], WRK          ; update stack
-    inc     dword [esp+4]               ; voice++
-    ret
-
+    EXPORT MANGLE_FUNC(su_op_advance,0)         ; Stack: addr voice wrkptr valptr comptr
+        mov     WRK, PTRWORD [_SP+PTRSIZE*2]    ; WRK = wrkptr
+        add     WRK, su_voice.size              ; move to next voice
+        mov     PTRWORD [_SP+PTRSIZE*2], WRK      ; update stack
+        inc     PTRWORD [_SP+PTRSIZE]             ; voice++
+        ret
 %endif
 
 ;-------------------------------------------------------------------------------
@@ -56,18 +54,18 @@ EXPORT MANGLE_FUNC(su_op_advance,0)     ; Stack: addr voice wrkptr valptr comptr
 SECT_TEXT(suspeed)
 
 EXPORT MANGLE_FUNC(su_op_speed,0)
-    fsub    dword [c_0_5]                ; s-.5
+    apply fsub dword, c_0_5              ; s-.5
     fadd    st0, st0                     ; 2*s-1
-    fmul    dword [c_bpmscale]           ; (2*s-1)*64/24, let's call this p from now on
+    apply fmul dword, c_bpmscale         ; (2*s-1)*64/24, let's call this p from now on
     call    MANGLE_FUNC(su_power,0)      ; 2^p, this is how many ticks we should be taking
     fld1                                 ; 1 2^p
     fsubp   st1, st0                     ; 2^p-1, the player is advancing 1 tick by its own
     fadd    dword [WRK+su_speed_wrk.remainder] ; t+2^p-1, t is the remainder from previous rounds as ticks have to be rounded to 1
-    push    eax
-    fist    dword [esp]                  ; Main stack: k=int(t+2^p-1)
-    fisub   dword [esp]                  ; t+2^p-1-k, the remainder
-    pop     eax
-    add     dword [esp+24], eax          ; add the whole ticks to song tick count, [esp+24] is the current tick in the row
+    push    _AX
+    fist    dword [_SP]                  ; Main stack: k=int(t+2^p-1)
+    fisub   dword [_SP]                  ; t+2^p-1-k, the remainder
+    pop     _AX
+    add     dword [_SP+6*PTRSIZE], eax          ; add the whole ticks to song tick count, [esp+24] is the current tick in the row
     fstp    dword [WRK+su_speed_wrk.remainder] ; save the remainder for future
     ret
 

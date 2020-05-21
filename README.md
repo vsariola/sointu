@@ -77,6 +77,9 @@ New features since fork
     detuned and added up to together. Great for trance leads (supersaw). Unison
     of up to 4, or 8 if you make stereo unison oscillator and add up both left 
     and right channels. See [this example](tests/test_oscillat_unison.asm).
+  - **Supports 32 and 64 bit builds**. The 64-bit version is done with minimal
+    changes to get it work, mainly for the future prospect of running the MIDI
+    instrument in 64-bit mode. All the tests are passing so it seems to work.
 
 Future goals
 ------------
@@ -90,7 +93,6 @@ Future goals
     case the signal entering skip and the signal leaving out are both close to
     zero.
   - **Even more opcodes**. Maybe an equalizer? DC-offset removal?
-  - **Support for 64-bit targets**.
   - **Browser-based GUI and MIDI instrument**. Modern browsers support WebMIDI,
      WebAudio and, most importantly, they are cross-platform and come installed
      on pretty much any computer. The only thing needed is to be able to

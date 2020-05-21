@@ -14,7 +14,7 @@ EXPORT MANGLE_FUNC(su_op_distort,0)
         call su_effects_stereohelper
         %define INCLUDE_EFFECTS_STEREOHELPER
     %endif
-    fld     dword [edx+su_distort_ports.drive]
+    fld     dword [INP+su_distort_ports.drive]
     %define SU_INCLUDE_WAVESHAPER
     ; flow into waveshaper
 %endif
@@ -25,7 +25,7 @@ su_waveshaper:
     call    su_clip
     fxch                                    ; a x' (from now on just called x)
     fld     st0                             ; a a x
-    fsub    dword [c_0_5]                   ; a-.5 a x
+    apply fsub dword,c_0_5                  ; a-.5 a x
     fadd    st0                             ; 2*a-1 a x
     fld     st2                             ; x 2*a-1 a x
     fabs                                    ; abs(x) 2*a-1 a x
@@ -53,17 +53,17 @@ EXPORT MANGLE_FUNC(su_op_hold,0)
         call    su_effects_stereohelper
         %define INCLUDE_EFFECTS_STEREOHELPER
     %endif
-    fld     dword [edx+su_hold_ports.freq]    ; f x
+    fld     dword [INP+su_hold_ports.freq]    ; f x
     fmul    st0, st0                        ; f^2 x
     fchs                                    ; -f^2 x
     fadd    dword [WRK+su_hold_wrk.phase]   ; p-f^2 x
     fst     dword [WRK+su_hold_wrk.phase]   ; p <- p-f^2
     fldz                                    ; 0 p x
     fucomip st1                             ; p x
-    fstp    dword [esp-4]                   ; t=p, x
+    fstp    dword [_SP-4]                   ; t=p, x
     jc      short su_op_hold_holding        ; if (0 < p) goto holding
     fld1                                    ; 1 x
-    fadd    dword [esp-4]                   ; 1+t x
+    fadd    dword [_SP-4]                   ; 1+t x
     fstp    dword [WRK+su_hold_wrk.phase]   ; x
     fst     dword [WRK+su_hold_wrk.holdval] ; save holded value
     ret                                     ; x
@@ -85,10 +85,10 @@ EXPORT MANGLE_FUNC(su_op_crush,0)
     %ifdef INCLUDE_STEREO_CRUSH    
         call    su_effects_stereohelper
         %define INCLUDE_EFFECTS_STEREOHELPER
-    %endif    
-    fdiv    dword [edx+su_crush_ports.resolution]
+    %endif
+    fdiv    dword [INP+su_crush_ports.resolution]
     frndint
-    fmul    dword [edx+su_crush_ports.resolution]
+    fmul    dword [INP+su_crush_ports.resolution]
     ret
 
 %endif ; CRUSH_ID > -1
@@ -101,15 +101,15 @@ EXPORT MANGLE_FUNC(su_op_crush,0)
 SECT_TEXT(sugain)
     %ifdef INCLUDE_STEREO_GAIN
         EXPORT MANGLE_FUNC(su_op_gain,0)
-            fld     dword [edx+su_gain_ports.gain] ; g l (r)
+            fld     dword [INP+su_gain_ports.gain] ; g l (r)
             jnc     su_op_gain_mono
-            fmul    st2, st0                             ; g l r/g    
+            fmul    st2, st0                             ; g l r/g
         su_op_gain_mono:
             fmulp   st1, st0                             ; l/g (r/)
             ret
     %else
         EXPORT MANGLE_FUNC(su_op_gain,0)
-            fmul    dword [edx+su_gain_ports.gain]    
+            fmul    dword [INP+su_gain_ports.gain]
             ret
     %endif
 %endif ; GAIN_ID > -1
@@ -122,7 +122,7 @@ SECT_TEXT(sugain)
 SECT_TEXT(suingain)
     %ifdef INCLUDE_STEREO_INVGAIN
         EXPORT MANGLE_FUNC(su_op_invgain,0)
-            fld     dword [edx+su_invgain_ports.invgain] ; g l (r)
+            fld     dword [INP+su_invgain_ports.invgain] ; g l (r)
             jnc     su_op_invgain_mono
             fdiv    st2, st0                             ; g l r/g    
         su_op_invgain_mono:
@@ -130,7 +130,7 @@ SECT_TEXT(suingain)
             ret
     %else
         EXPORT MANGLE_FUNC(su_op_invgain,0)
-            fdiv    dword [edx+su_invgain_ports.invgain]    
+            fdiv    dword [INP+su_invgain_ports.invgain]
             ret
     %endif
 %endif ; INVGAIN_ID > -1
@@ -150,14 +150,14 @@ SECT_TEXT(sufilter)
 
 EXPORT MANGLE_FUNC(su_op_filter,0)
     lodsb ; load the flags to al
-    %ifdef INCLUDE_STEREO_FILTER    
+    %ifdef INCLUDE_STEREO_FILTER
         call    su_effects_stereohelper
         %define INCLUDE_EFFECTS_STEREOHELPER
     %endif
-    fld     dword [edx+su_filter_ports.res] ; r x
-    fld     dword [edx+su_filter_ports.freq]; f r x
+    fld     dword [INP+su_filter_ports.res] ; r x
+    fld     dword [INP+su_filter_ports.freq]; f r x
     fmul    st0, st0                        ; f2 x (square the input so we never get negative and also have a smoother behaviour in the lower frequencies)
-    fst     dword [esp-4]                   ; f2 r x
+    fst     dword [_SP-4]                   ; f2 r x
     fmul    dword [WRK+su_filter_wrk.band]  ; f2*b r x
     fadd    dword [WRK+su_filter_wrk.low]   ; f2*b+l r x
     fst     dword [WRK+su_filter_wrk.low]   ; l'=f2*b+l r x
@@ -165,7 +165,7 @@ EXPORT MANGLE_FUNC(su_op_filter,0)
     fmul    dword [WRK+su_filter_wrk.band]  ; r*b x-l'
     fsubp   st1, st0                        ; x-l'-r*b
     fst     dword [WRK+su_filter_wrk.high]  ; h'=x-l'-r*b
-    fmul    dword [esp-4]                   ; f2*h'
+    fmul    dword [_SP-4]                   ; f2*h'
     fadd    dword [WRK+su_filter_wrk.band]  ; f2*h'+b
     fstp    dword [WRK+su_filter_wrk.band]  ; b'=f2*h'+b
     fldz                                    ; 0
@@ -212,9 +212,9 @@ SECT_TEXT(suclip)
 
 %if CLIP_ID > -1
     EXPORT MANGLE_FUNC(su_op_clip,0)
-    %ifdef INCLUDE_STEREO_CLIP        
+    %ifdef INCLUDE_STEREO_CLIP
         call    su_effects_stereohelper
-        %define INCLUDE_EFFECTS_STEREOHELPER    
+        %define INCLUDE_EFFECTS_STEREOHELPER
     %endif
     %define SU_INCLUDE_CLIP
     ; flow into su_doclip
@@ -255,7 +255,7 @@ EXPORT MANGLE_FUNC(su_op_pan,0)
     jc      su_op_pan_do    ; this time, if this is mono op...
     fld     st0             ;   ...we duplicate the mono into stereo first
 su_op_pan_do:
-    fld     dword [edx+su_pan_ports.panning]    ; p l r
+    fld     dword [INP+su_pan_ports.panning]    ; p l r
     fld1                                        ; 1 p l r
     fsub    st1                                 ; 1-p p l r
     fmulp   st2                                 ; p (1-p)*l r
@@ -265,7 +265,7 @@ su_op_pan_do:
 %else ; ifndef INCLUDE_STEREO_PAN
 
 EXPORT MANGLE_FUNC(su_op_pan,0)
-    fld     dword [edx+su_pan_ports.panning]    ; p s
+    fld     dword [INP+su_pan_ports.panning]    ; p s
     fmul    st1                                 ; p*s s
     fsub    st1, st0                            ; p*s s-p*s
                                                 ; Equal to
@@ -288,7 +288,7 @@ su_effects_stereohelper:
     jnc     su_effects_stereohelper_mono ; carry is still the stereo bit
     add     WRK, 16
     fxch                  ; r l
-    call    dword [esp]   ; call whoever called me...
+    call    [_SP]         ; call whoever called me...
     fxch                  ; l r
     sub     WRK, 16       ; move WRK back to where it was
 su_effects_stereohelper_mono:
@@ -324,68 +324,68 @@ EXPORT MANGLE_FUNC(su_op_delay,0)
     add     edi, eax ; the second delay is done with the delay time index added by count
 su_op_delay_mono:
 %endif
-    pushad
+    push_registers  _AX, _CX, _BX, WRK, _SI, _DI
     mov     ebx, edi; ugly register juggling, refactor
 %ifdef DELAY_NOTE_SYNC
     test    ebx, ebx ; note s
     jne     su_op_delay_skipnotesync
     fld1
-    fild    dword [ecx+su_unit.size-su_voice.workspace+su_voice.note]
-    fmul    dword [c_i12]
+    fild    dword [_CX+su_unit.size-su_voice.workspace+su_voice.note]
+    apply fmul dword, c_i12
     call    MANGLE_FUNC(su_power,0)
-    fmul    dword [c_freq_normalize]  ; // normalize
+    apply fmul dword, c_freq_normalize ; // normalize
     fdivp   st1, st0                ; // invert to get numer of samples
-    fistp   word [MANGLE_DATA(su_delay_times)]  ; store current comb size
+    apply fistp word, MANGLE_DATA(su_delay_times)  ; store current comb size
 su_op_delay_skipnotesync:
 %endif
 kmDLL_func_process:
     mov     ecx, eax                            ;// ecx is the number of parallel delays
-    mov     WRK, dword [MANGLE_DATA(su_delay_buffer_ofs)] ;// ebp is current delay
+    apply {mov WRK, PTRWORD},MANGLE_DATA(su_delay_buffer_ofs) ;// ebp is current delay
     fld     st0                                 ; x x
-    fmul    dword [edx+su_delay_ports.dry]      ; dr*x x
+    fmul    dword [INP+su_delay_ports.dry]      ; dr*x x
     fxch                                        ; x dr*x
-    fmul    dword [edx+su_delay_ports.pregain]  ; p*x dr*x
-    fmul    dword [edx+su_delay_ports.pregain]  ; p^2*x dr*x
+    fmul    dword [INP+su_delay_ports.pregain]  ; p*x dr*x
+    fmul    dword [INP+su_delay_ports.pregain]  ; p^2*x dr*x
 
 kmDLL_func_loop:
         mov     edi, dword [WRK + su_delayline_wrk.time]
         inc     edi
         and     edi, MAX_DELAY-1
         mov     dword [WRK + su_delayline_wrk.time],edi
-        movzx   esi, word [MANGLE_DATA(su_delay_times)+ebx*2] ; esi = comb size from the delay times table
+        apply {movzx esi, word},MANGLE_DATA(su_delay_times),_BX*2,{} ; esi = comb size from the delay times table
         mov     eax, edi
         sub     eax, esi
         and     eax, MAX_DELAY-1
-        fld     dword [WRK+eax*4+su_delayline_wrk.buffer] ; s p^2*x dr*x, where s is the sample from delay buffer
+        apply fld dword, su_delayline_wrk.buffer, WRK, _AX*4,{} ; s p^2*x dr*x, where s is the sample from delay buffer
         ;// add comb output to current output
         fadd    st2, st0                            ; s p^2*x dr*x+s
         fld1                                        ; 1 s p^2*x dr*x+s
-        fsub    dword [edx+su_delay_ports.damp]     ; 1-da s p^2*x dr*x+s
+        fsub    dword [INP+su_delay_ports.damp]     ; 1-da s p^2*x dr*x+s
         fmulp   st1, st0                            ; s*(1-da) p^2*x dr*x+s
-        fld     dword [edx+su_delay_ports.damp]     ; da s*(1-da) p^2*x dr*x+s
+        fld     dword [INP+su_delay_ports.damp]     ; da s*(1-da) p^2*x dr*x+s
         fmul    dword [WRK+su_delayline_wrk.filtstate]      ; o*da s*(1-da) p^2*x dr*x+s, where o is stored
         faddp   st1, st0                            ; o*da+s*(1-da) p^2*x dr*x+s
         fst     dword [WRK+su_delayline_wrk.filtstate]      ; o'=o*da+s*(1-da), o' p^2*x dr*x+s
-        fmul    dword [edx+su_delay_ports.feedback] ; f*o' p^2*x dr*x+s
+        fmul    dword [INP+su_delay_ports.feedback] ; f*o' p^2*x dr*x+s
         fadd    st0, st1                            ; f*o'+p^2*x p^2*x dr*x+s
-        fstp    dword [WRK+edi*4+su_delayline_wrk.buffer]; save f*o'+p^2*x to delay buffer
+        fstp    dword [WRK+_DI*4+su_delayline_wrk.buffer]; save f*o'+p^2*x to delay buffer
         inc     ebx                                 ;// go to next delay lenkmh index
         add     WRK, su_delayline_wrk.size               ;// go to next delay
-        mov     dword [MANGLE_DATA(su_delay_buffer_ofs)], WRK ;// store next delay offset
+        apply mov PTRWORD, MANGLE_DATA(su_delay_buffer_ofs),{, WRK} ;// store next delay offset
         loopne  kmDLL_func_loop
     fstp    st0                                 ; dr*x+s1+s2+s3+...
     ; DC-filtering
     sub     WRK, su_delayline_wrk.size ; the reason to use the last su_delayline_wrk instead of su_delay_wrk is that su_delay_wrk is wiped by retriggering
     fld     dword [WRK+su_delayline_wrk.dcout]  ; o s
-    fmul    dword [c_dc_const]              ; c*o s
+    apply fmul dword, c_dc_const                      ; c*o s
     fsub    dword [WRK+su_delayline_wrk.dcin]   ; c*o-i s
     fxch                                    ; s c*o-i
     fst     dword [WRK+su_delayline_wrk.dcin]   ; i'=s, s c*o-i
     faddp   st1                             ; s+c*o-i
-    fadd    dword [c_0_5]                       ;// add and sub small offset to prevent denormalization
-    fsub    dword [c_0_5]
+    apply fadd dword, c_0_5                       ;// add and sub small offset to prevent denormalization
+    apply fsub dword, c_0_5
     fst     dword [WRK+su_delayline_wrk.dcout]  ; o'=s+c*o-i
-    popad
+    pop_registers  _AX, _CX, _BX, WRK, _SI, _DI
     ret
 
 ;-------------------------------------------------------------------------------
@@ -394,7 +394,8 @@ kmDLL_func_loop:
 SECT_BSS(sudelbuf)
 
 EXPORT MANGLE_DATA(su_delay_buffer_ofs)
-                        resd    1
+                        RESPTR  1
+
 EXPORT MANGLE_DATA(su_delay_buffer)
                         resb   NUM_DELAY_LINES*su_delayline_wrk.size
 
@@ -443,7 +444,7 @@ su_op_compressor_releasing:
     fmulp   st2, st0                            ; l c*(x^2-l) x
     faddp   st1, st0                            ; l+c*(x^2-l) x
     fst     dword [WRK+su_compres_wrk.level] ; l'=l+c*(x^2-l), l' x
-    fld     dword [edx+su_compres_ports.threshold] ; t l' x
+    fld     dword [INP+su_compres_ports.threshold] ; t l' x
     fmul    st0, st0                            ; t*t
     fucomi  st0, st1                            ; if threshold < l'
     jb      su_op_compressor_compress           ;    then we actually do compression
@@ -453,8 +454,8 @@ su_op_compressor_releasing:
     ret                                         ; return unity gain when we are below threshold
 su_op_compressor_compress:                      ; l' x
     fdivrp  st1, st0                            ; t*t/l' x
-    fld     dword [edx+su_compres_ports.ratio]  ; r t*t/l' x
-    fmul    dword [c_0_5]                       ; p=r/2 t*t/l' x
+    fld     dword [INP+su_compres_ports.ratio]  ; r t*t/l' x
+    apply fmul dword, c_0_5                           ; p=r/2 t*t/l' x
     fxch                                        ; t*t/l' p x
     fyl2x                                       ; p*log2(t*t/l') x
     jmp     MANGLE_FUNC(su_power,0)             ; 2^(p*log2(t*t/l')) x

@@ -8,7 +8,14 @@ function(regression_test testname)
     add_executable(${testname} ${source}.asm test_renderer.c)
 
     # the tests include the entire ASM but we still want to rebuild when they change
-    file(GLOB SOINTU ${PROJECT_SOURCE_DIR}/src/*.inc ${PROJECT_SOURCE_DIR}/src/*.asm ${PROJECT_SOURCE_DIR}/src/opcodes/*.asm ${PROJECT_SOURCE_DIR}/src/opcodes/*.inc)
+    file(GLOB SOINTU ${PROJECT_SOURCE_DIR}/src/*.inc
+                     ${PROJECT_SOURCE_DIR}/src/*.asm
+                     ${PROJECT_SOURCE_DIR}/src/opcodes/*.asm
+                     ${PROJECT_SOURCE_DIR}/src/opcodes/*.inc
+                     ${PROJECT_SOURCE_DIR}/src/win32/*.asm
+                     ${PROJECT_SOURCE_DIR}/src/win32/*.inc
+                     ${PROJECT_SOURCE_DIR}/src/win64/*.asm
+                     ${PROJECT_SOURCE_DIR}/src/win64/*.inc)
     set_source_files_properties(${source}.asm PROPERTIES OBJECT_DEPENDS "${SOINTU}")
     set_source_files_properties(${FOURKLANG} PROPERTIES HEADER_FILE_ONLY TRUE)
 
