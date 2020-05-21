@@ -93,6 +93,16 @@
     %endmacro
 %endif
 
+struc su_stack ; the structure of stack _as the units see it_
+    .retaddr    RESPTR  1
+    .voiceno    RESPTR  1
+    .wrk        RESPTR  1
+    .val        RESPTR  1
+    .com        RESPTR  1
+    .retaddrvm  RESPTR  1
+    .curtick    RESPTR  1
+endstruc
+
 ;===============================================================================
 ;   Uninitialized data: The one and only synth object
 ;===============================================================================
@@ -174,13 +184,13 @@ su_run_vm_loop:                                     ; loop until all voices done
     apply {mov al,byte},su_opcode_numparams,_AX,{}
     push    _AX
     call    su_transform_values
-    mov     _CX, PTRWORD [_SP+2*PTRSIZE]
+    mov     _CX, PTRWORD [_SP+su_stack.wrk]
     pop     _AX
     shr     eax,1
     apply call,su_synth_commands,_AX*PTRSIZE,{}     ; call the function corresponding to the instruction
-    cmp     dword [_SP],MAX_VOICES                  ; if (voice < MAX_VOICES)
+    cmp     dword [_SP+su_stack.voiceno-PTRSIZE],MAX_VOICES ; if (voice < MAX_VOICES)
     jl      su_run_vm_loop                          ;   goto vm_loop
-    add     _SP, 4*PTRSIZE                          ; Stack cleared
+    add     _SP, su_stack.retaddrvm-PTRSIZE         ; Stack cleared
     ret
 
 ;-------------------------------------------------------------------------------
