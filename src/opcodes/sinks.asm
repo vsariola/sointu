@@ -59,7 +59,7 @@ su_op_send_skipglobal:
     fld     st0                 ; duplicate the signal on stack: s s
 su_op_send_skippush:            ; there is signal s, but maybe also another: s (s)
     fld     dword [INP+su_send_ports.amount]   ; a l (l)
-    apply   fsub dword, c_0_5                        ; a-.5 l (l)
+ do fsub    dword [,c_0_5,]                    ; a-.5 l (l)
     fadd    st0                                ; g=2*a-1 l (l)
     and     _AX, 0x0000ffff - SEND_POP - SEND_GLOBAL ; eax = send address
     fmulp   st1, st0                           ; g*l (l)

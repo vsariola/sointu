@@ -24,7 +24,7 @@ su_waveshaper:
     call    su_clip
     fxch                                    ; a x' (from now on just called x)
     fld     st0                             ; a a x
-    apply fsub dword,c_0_5                  ; a-.5 a x
+ do fsub    dword [,c_0_5,]                 ; a-.5 a x
     fadd    st0                             ; 2*a-1 a x
     fld     st2                             ; x 2*a-1 a x
     fabs                                    ; abs(x) 2*a-1 a x
@@ -317,7 +317,7 @@ EXPORT MANGLE_FUNC(su_op_delay,0)
     lodsw                           ; al = delay index, ah = delay count
     push_registers VAL, COM         ; these are non-volatile according to our convention
     movzx   ebx, al
-    apply {lea _BX,},MANGLE_DATA(su_delay_times),_BX*2,{}               ; _BP now points to the right position within delay time table
+ do{lea     _BX,[},MANGLE_DATA(su_delay_times),_BX*2,]                  ; _BP now points to the right position within delay time table
     movzx   esi, word [_SP + su_stack.tick + PUSH_REG_SIZE(2)]          ; notice that we load word, so we wrap at 65536
     mov     _CX, PTRWORD [_SP + su_stack.delaywrk + PUSH_REG_SIZE(2)]   ; WRK is now the separate delay workspace, as they require a lot more space
 %ifdef INCLUDE_STEREO_DELAY
@@ -367,14 +367,14 @@ su_op_delay_loop:
                 test    ah, 1 ; note syncing is the least significant bit of ah, 0 = ON, 1 = OFF
                 jne     su_op_delay_skipnotesync
                 fild    dword [INP-su_voice.inputs+su_voice.note]
-                apply fmul dword, c_i12
+             do fmul    dword [,c_i12,]
                 call    MANGLE_FUNC(su_power,0)
                 fdivp   st1, st0                 ; use 10787 for delaytime to have neutral transpose
             su_op_delay_skipnotesync:
             %endif
             %ifdef INCLUDE_DELAY_MODULATION
                 fld     dword [WRK+su_unit.ports+su_delay_ports.delaymod]
-                apply fmul dword, c_32767 ; scale it up, as the modulations would be too small otherwise
+             do fmul    dword [,c_32767,] ; scale it up, as the modulations would be too small otherwise
                 faddp   st1, st0
             %endif
             fistp   dword [_SP-4]                       ; dr*y p*p*x, dword [_SP-4] = integer amount of delay (samples)
@@ -403,13 +403,13 @@ su_op_delay_loop:
     fstp    st1                                 ; dr*y+s1+s2+s3+...
     ; DC-filtering
     fld     dword [_CX+su_delayline_wrk.dcout]  ; o s
-    apply fmul dword, c_dc_const                ; c*o s
+ do fmul    dword [,c_dc_const,]                ; c*o s
     fsub    dword [_CX+su_delayline_wrk.dcin]   ; c*o-i s
     fxch                                        ; s c*o-i
     fst     dword [_CX+su_delayline_wrk.dcin]   ; i'=s, s c*o-i
     faddp   st1                                 ; s+c*o-i
-    apply fadd dword, c_0_5                     ; add and sub small offset to prevent denormalization
-    apply fsub dword, c_0_5
+ do fadd    dword [,c_0_5,]                     ; add and sub small offset to prevent denormalization
+ do fsub    dword [,c_0_5,]
     fst     dword [_CX+su_delayline_wrk.dcout]  ; o'=s+c*o-i
     ret
 
@@ -480,7 +480,7 @@ su_op_compressor_releasing:
 su_op_compressor_compress:                      ; l' x
     fdivrp  st1, st0                            ; t*t/l' x
     fld     dword [INP+su_compres_ports.ratio]  ; r t*t/l' x
-    apply fmul dword, c_0_5                           ; p=r/2 t*t/l' x
+ do fmul    dword [,c_0_5,]                     ; p=r/2 t*t/l' x
     fxch                                        ; t*t/l' p x
     fyl2x                                       ; p*log2(t*t/l') x
     jmp     MANGLE_FUNC(su_power,0)             ; 2^(p*log2(t*t/l')) x

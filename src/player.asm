@@ -89,10 +89,10 @@ SECT_DATA(suconst)
             xor     _CX,_CX
             xor     eax,eax
             %%loop: ; loop over two channels, left & right
-                apply fld dword,su_synth_obj+su_synth.left,_CX*4,{}
+             do fld     dword [,su_synth_obj+su_synth.left,_CX*4,]
                 call    su_clip
                 fstp    dword [_SI]
-                apply mov dword,su_synth_obj+su_synth.left,_CX*4,{,eax} ; clear the sample so the VM is ready to write it
+             do mov     dword [,su_synth_obj+su_synth.left,_CX*4,{],eax} ; clear the sample so the VM is ready to write it
                 add     _SI,4
                 cmp     ecx,2
                 jl      %%loop
@@ -105,7 +105,7 @@ SECT_DATA(suconst)
         %%loop: ; loop over two channels, left & right
             fld     dword [_DI]
             call    su_clip
-            apply fmul dword, c_32767
+         do fmul    dword [,c_32767,]
             push    _AX
             fistp   dword [_SP]
             pop     _AX
@@ -186,14 +186,14 @@ su_update_voices: ; Stack: retaddr row
     xor     edx, edx
     mov     ebx, PATTERN_SIZE                   ; we could do xor ebx,ebx; mov bl,PATTERN_SIZE, but that would limit patternsize to 256...
     div     ebx                                 ; eax = current pattern, edx = current row in pattern
-    apply {lea _SI,},MANGLE_DATA(su_tracks),_AX,{} ; esi points to the pattern data for current track
+ do{lea     _SI, [},MANGLE_DATA(su_tracks),_AX,]  ; esi points to the pattern data for current track
     xor     eax, eax                            ; eax is the first voice of next track
     xor     ebx, ebx                            ; ebx is the first voice of current track
     mov     _BP, PTRWORD su_synth_obj           ; ebp points to the current_voiceno array
 su_update_voices_trackloop:
         movzx   eax, byte [_SI]                     ; eax = current pattern
         imul    eax, PATTERN_SIZE                   ; eax = offset to current pattern data
-        apply {movzx eax,byte},MANGLE_DATA(su_patterns),_AX,_DX,{}  ; eax = note
+     do{movzx   eax,byte [},MANGLE_DATA(su_patterns),_AX,_DX,]  ; eax = note
         push    _DX                                 ; Stack: ptrnrow
         xor     edx, edx                            ; edx=0
         mov     ecx, ebx                            ; ecx=first voice of the track to be done
@@ -209,7 +209,7 @@ su_calculate_voices_loop:                           ; do {
         mov     edi, ecx
         add     edi, ebx
         shl     edi, MAX_UNITS_SHIFT + 6            ; each unit = 64 bytes and there are 1<<MAX_UNITS_SHIFT units + small header
-        apply inc dword, su_synth_obj+su_synth.voices+su_voice.release,_DI,{} ; set the voice currently active to release; notice that it could increment any number of times
+     do inc     dword [,su_synth_obj+su_synth.voices+su_voice.release,_DI,] ; set the voice currently active to release; notice that it could increment any number of times
         cmp     al, HLD                             ; if cl < HLD (no new note triggered)
         jl      su_update_voices_nexttrack          ;   goto nexttrack
         inc     ecx                                 ; curvoice++
@@ -220,7 +220,7 @@ su_update_voices_skipreset:
         mov     byte [_BP],cl
         add     ecx, ebx
         shl     ecx, MAX_UNITS_SHIFT + 6            ; each unit = 64 bytes and there are 1<<MAX_UNITS_SHIFT units + small header
-        apply {lea _DI,},su_synth_obj+su_synth.voices,_CX,{}
+     do{lea    _DI,[},su_synth_obj+su_synth.voices,_CX,]
         stosd                                       ; save note
         mov     ecx, (su_voice.size - su_voice.release)/4
         xor     eax, eax
@@ -230,8 +230,7 @@ su_update_voices_nexttrack:
         pop     _DX                                 ; edx=patrnrow
         add     _SI, MAX_PATTERNS
         inc     _BP
-        apply {lea _AX,},su_synth_obj,MAX_TRACKS,{}
-        cmp     _BP,_AX
+     do{cmp     _BP,},su_synth_obj+MAX_TRACKS
         jl      su_update_voices_trackloop
     ret
 
@@ -243,13 +242,13 @@ su_update_voices: ; Stack: retaddr row
     xor     ebx, ebx
     mov     bl, PATTERN_SIZE
     div     ebx                                 ; eax = current pattern, edx = current row in pattern
-    apply {lea _SI,},MANGLE_DATA(su_tracks),_AX,{}; esi points to the pattern data for current track
+ do{lea     _SI, [},MANGLE_DATA(su_tracks),_AX,]; esi points to the pattern data for current track
     mov     _DI, PTRWORD su_synth_obj+su_synth.voices
     mov     bl, MAX_TRACKS                      ; MAX_TRACKS is always <= 32 so this is ok
 su_update_voices_trackloop:
         movzx   eax, byte [_SI]                     ; eax = current pattern
         imul    eax, PATTERN_SIZE                   ; eax = offset to current pattern data
-        apply {movzx eax, byte}, MANGLE_DATA(su_patterns), _AX, _DX, {}  ; ecx = note
+     do{movzx   eax, byte [}, MANGLE_DATA(su_patterns),_AX,_DX,]  ; ecx = note
         cmp     al, HLD                             ; anything but hold causes action
         je      short su_update_voices_nexttrack
         inc     dword [_DI+su_voice.release]        ; set the voice currently active to release; notice that it could increment any number of times

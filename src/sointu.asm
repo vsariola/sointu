@@ -16,25 +16,25 @@
     %define RESPTR resq
     %define DPTR dq
 
-    %macro apply 2
+    %macro do 2
         mov r9, qword %2
-        %1 [r9]
+        %1 r9
     %endmacro
 
-    %macro apply 3
+    %macro do 3
         mov r9, qword %2
-        %1 [r9] %3
+        %1 r9 %3
     %endmacro
 
-    %macro apply 4
+    %macro do 4
         mov r9, qword %2
-        %1 [r9+%3] %4
+        %1 r9+%3 %4
     %endmacro
 
-    %macro apply 5
+    %macro do 5
         mov r9, qword %2
         lea r9, [r9+%3]
-        %1 [r9+%4] %5
+        %1 r9+%4 %5
     %endmacro
 
     %macro  push_registers 1-*
@@ -70,20 +70,20 @@
     %define RESPTR resd
     %define DPTR dd
 
-    %macro apply 2
-        %1 [%2]
+    %macro do 2
+        %1 %2
     %endmacro
 
-    %macro apply 3
-        %1 [%2] %3
+    %macro do 3
+        %1 %2 %3
     %endmacro
 
-    %macro apply 4
-        %1 [%2+%3] %4
+    %macro do 4
+        %1 %2+%3 %4
     %endmacro
 
-    %macro apply 5
-        %1 [%2+%3+%4] %5
+    %macro do 5
+        %1 %2+%3+%4 %5
     %endmacro
 
     %macro  push_registers 1-*
@@ -174,12 +174,12 @@ su_run_vm_loop:                                     ; loop until all voices done
     add     WRK, su_unit.size                       ; move WRK to next unit
     push    _AX
     shr     eax,1
-    apply {mov al,byte},su_opcode_numparams,_AX,{}
+do {mov     al, byte [},su_opcode_numparams,_AX,]
     push    _AX
     call    su_transform_values
     pop     _AX
     shr     eax,1
-    apply call,su_synth_commands,_AX*PTRSIZE,{}     ; call the function corresponding to the instruction
+ do call    [,su_synth_commands,_AX*PTRSIZE,]    ; call the function corresponding to the instruction
     cmp     dword [_SP+su_stack.voiceno-PTRSIZE],MAX_VOICES ; if (voice < MAX_VOICES)
     jl      su_run_vm_loop                          ;   goto vm_loop
     add     _SP, su_stack.retaddrvm-PTRSIZE         ; Stack cleared
@@ -208,7 +208,7 @@ su_transform_values_loop:
     lodsb
     push    _AX
     fild    dword [_SP]
-    apply fmul dword, c_i128
+ do fmul    dword [,c_i128,]
     fadd    dword [WRK+su_unit.ports+_CX*4]
     fstp    dword [INP+_CX*4]
     mov     dword [WRK+su_unit.ports+_CX*4], 0
@@ -230,7 +230,7 @@ SECT_TEXT(supower)
 %if ENVELOPE_ID > -1 ; TODO: compressor also uses this, so should be compiled if either
 su_env_map:
     fld     dword [INP+_AX*4]   ; x, where x is the parameter in the range 0-1
-    apply   fimul dword,c_24          ; 24*x
+ do fimul   dword [,c_24,]      ; 24*x
     fchs                        ; -24*x
     ; flow into Power function, which outputs 2^(-24*x)
 %endif

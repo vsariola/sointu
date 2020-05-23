@@ -84,7 +84,7 @@ su_op_noise_mono:
     imul    eax, [_CX + su_stack.randseed],16007
     mov     [_CX + su_stack.randseed],eax
     fild    dword [_CX + su_stack.randseed]
-    apply fidiv dword,c_RandDiv
+ do fidiv   dword [,c_RandDiv,]
     fld     dword [INP+su_noise_ports.shape]
     call    su_waveshaper
     fld     dword [INP+su_noise_ports.gain]
@@ -108,7 +108,7 @@ SECT_TEXT(suoscill)
 EXPORT MANGLE_FUNC(su_op_oscillat,0)
     lodsb                                   ; load the flags
     fld     dword [INP+su_osc_ports.detune] ; e, where e is the detune [0,1]
-    apply fsub dword,c_0_5                  ; e-.5
+ do fsub    dword [,c_0_5,]                 ; e-.5
     fadd    st0, st0                        ; d=2*e-.5, where d is the detune [-1,1]
 %ifdef INCLUDE_STEREO_OSCILLAT
     jnc     su_op_oscillat_mono
@@ -131,10 +131,10 @@ su_op_oscillat_unison_loop:
     je      su_op_oscillat_unison_out
     add     WRK, 8
     fld     dword [INP+su_osc_ports.phaseofs] ; p s
-    apply fadd dword, c_i12                         ; p s, add some little phase offset to unison oscillators so they don't start in sync
+ do fadd    dword [,c_i12,]                   ; p s, add some little phase offset to unison oscillators so they don't start in sync
     fstp    dword [INP+su_osc_ports.phaseofs] ; s    note that this changes the phase for second, possible stereo run. That's probably ok
     fld     dword [_SP]             ; d s
-    apply fmul dword, c_0_5               ; .5*d s    // negate and halve the detune of each oscillator
+ do fmul    dword [,c_0_5,]         ; .5*d s    // negate and halve the detune of each oscillator
     fchs                            ; -.5*d s   // negate and halve the detune of each oscillator
     dec     eax
     jmp     short su_op_oscillat_unison_loop
@@ -144,21 +144,21 @@ su_op_oscillat_unison_out:
 su_op_oscillat_single:
 %endif
     fld     dword [INP+su_osc_ports.transpose]
-    apply fsub dword,c_0_5
-    apply fdiv dword,c_i128
+ do fsub    dword [,c_0_5,]
+ do fdiv    dword [,c_i128,]
     faddp   st1
     test    al, byte LFO
     jnz     su_op_oscillat_skipnote
     fiadd   dword [INP-su_voice.inputs+su_voice.note]   ; // st0 is note, st1 is t+d offset
 su_op_oscillat_skipnote:
-    apply fmul dword,c_i12
+ do fmul    dword [,c_i12,]
     call    MANGLE_FUNC(su_power,0)
     test    al, byte LFO
     jz      short su_op_oscillat_normalize_note
-    apply fmul dword,c_lfo_normalize  ; // st0 is now frequency for lfo
+ do fmul    dword [,c_lfo_normalize,]  ; // st0 is now frequency for lfo
     jmp     short su_op_oscillat_normalized
 su_op_oscillat_normalize_note:
-    apply fmul dword,c_freq_normalize   ; // st0 is now frequency
+ do fmul    dword [,c_freq_normalize,]   ; // st0 is now frequency
 su_op_oscillat_normalized:
     fadd    dword [WRK+su_osc_wrk.phase]
     fst     dword [WRK+su_osc_wrk.phase]
@@ -286,7 +286,7 @@ SECT_TEXT(sugate)
 su_oscillat_gate:
     fxch                                    ; p c
     fstp    st1                             ; p
-    apply fmul dword, c_16                        ; 16*p
+ do fmul    dword [,c_16,]                  ; 16*p
     push    _AX
     push    _AX
     fistp   dword [_SP]                     ; s=int(16*p), stack empty
@@ -299,9 +299,9 @@ su_oscillat_gate:
 go4kVCO_gate_bit:                           ; stack: 0/1, let's call it x
     fld     dword [WRK+su_osc_wrk.gatestate] ; g x, g is gatestate, x is the input to this filter 0/1
     fsub    st1                             ; g-x x
-    apply fmul dword,c_dc_const                   ; c(g-x) x
+ do fmul    dword [,c_dc_const,]            ; c(g-x) x
     faddp   st1, st0                        ; x+c(g-x)
-    fst     dword [WRK+su_osc_wrk.gatestate] ; g'=x+c(g-x)
+    fst     dword [WRK+su_osc_wrk.gatestate]; g'=x+c(g-x)
     pop     _AX                             ; Another way to see this (c~0.996)
     ret                                     ; g'=cg+(1-c)x
     ; This is a low-pass to smooth the gate transitions
@@ -329,8 +329,8 @@ su_oscillat_sample:                                         ; p
     push_registers _AX,_DX,_CX,_BX                              ; edx must be saved, eax & ecx if this is stereo osc
     push    _AX
     mov     al, byte [VAL-4]                                ; reuse "color" as the sample number
-    apply {lea _DI,}, MANGLE_DATA(su_sample_offsets), _AX*8,{}  ; edi points now to the sample table entry
-    apply fmul dword, c_samplefreq_scaling                        ; p*r
+ do{lea     _DI, [}, MANGLE_DATA(su_sample_offsets), _AX*8,]; edi points now to the sample table entry
+ do fmul    dword [,c_samplefreq_scaling,]                  ; p*r
     fistp   dword [_SP]
     pop     _DX                                             ; edx is now the sample number
     movzx   ebx, word [_DI + su_sample_offset.loopstart]    ; ecx = loopstart
@@ -343,8 +343,8 @@ su_oscillat_sample:                                         ; p
 su_oscillat_sample_not_looping:
     add     edx, ebx                                        ; sampleno += loopstart
     add     edx, dword [_DI + su_sample_offset.start]
-    apply fild word, MANGLE_DATA(su_sample_table), _DX*2,{}
-    apply fdiv dword, c_32767
+ do fild    word [,MANGLE_DATA(su_sample_table),_DX*2,]
+ do fdiv    dword [,c_32767,]
     pop_registers _AX,_DX,_CX,_BX
     ret
 
@@ -373,7 +373,7 @@ EXPORT MANGLE_FUNC(su_op_loadval,0)
 su_op_loadval_mono:
 %endif
     fld     dword [INP+su_load_val_ports.value] ; v
-    apply   fsub dword, c_0_5
+ do fsub    dword [,c_0_5,]
     fadd    st0                                 ; 2*v-1
     ret
 

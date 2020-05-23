@@ -50,9 +50,9 @@ su_op_advance_finish:
 SECT_TEXT(suspeed)
 
 EXPORT MANGLE_FUNC(su_op_speed,0)
-    apply fsub dword, c_0_5              ; s-.5
+ do fsub    dword [,c_0_5,]              ; s-.5
     fadd    st0, st0                     ; 2*s-1
-    apply fmul dword, c_bpmscale         ; (2*s-1)*64/24, let's call this p from now on
+ do fmul    dword [,c_bpmscale,]         ; (2*s-1)*64/24, let's call this p from now on
     call    MANGLE_FUNC(su_power,0)      ; 2^p, this is how many ticks we should be taking
     fld1                                 ; 1 2^p
     fsubp   st1, st0                     ; 2^p-1, the player is advancing 1 tick by its own
