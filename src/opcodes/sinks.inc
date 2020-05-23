@@ -54,7 +54,7 @@ endstruc
 %endmacro
 
 %define AMOUNT(val)     val
-%define PORT(unit,unittype,port) (unit*su_unit.size + su_ %+ unittype %+ _ports. %+ port + su_unit.ports)/4
+%define PORT(unit,unittype,port) ((unit+1)*su_unit.size + su_ %+ unittype %+ _ports. %+ port + su_unit.ports)/4
 %define GLOBALPORT(voice,unit,unittype,port) SEND_GLOBAL + (su_synth.voices+voice*su_voice.size+su_voice.workspace+unit*su_unit.size + su_ %+ unittype %+ _ports. %+ port + su_unit.ports)/4
 %define OUTPORT         0
 %define SEND_POP        0x8000

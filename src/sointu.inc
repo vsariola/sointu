@@ -236,7 +236,8 @@ endstruc
 struc su_voice
     .note       resd    1
     .release    resd    1
-    .reserved   resb    (su_unit.size - 8) ; this is done to so the whole voice is 2^n long, see polyphonic player
+    .inputs     resd    8
+    .reserved   resd    6 ; this is done to so the whole voice is 2^n long, see polyphonic player
     .workspace  resb    MAX_UNITS * su_unit.size
     .size
 endstruc
@@ -245,8 +246,10 @@ endstruc
 ;   synth struct
 ;-------------------------------------------------------------------------------
 struc su_synth
+    .reserved   resd    8       ; this is so that left/right/aux ports are aligned to the input ports of units
     .left       resd    1
     .right      resd    1
+    .aux        resd    6       ; 3 auxiliary signals
     .voices     resb    ABSOLUTE_MAX_VOICES * su_voice.size
     .size
 endstruc

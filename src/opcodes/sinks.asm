@@ -35,6 +35,7 @@ SECT_TEXT(susend)
 
 EXPORT MANGLE_FUNC(su_op_send,0)
     lodsw
+    mov     _CX, [_SP + su_stack.wrk]
 %ifdef INCLUDE_STEREO_SEND
     jnc     su_op_send_mono
     mov     _DI, _AX
@@ -50,7 +51,7 @@ su_op_send_mono:
 %ifdef INCLUDE_GLOBAL_SEND
     test    _AX, SEND_GLOBAL
     jz      su_op_send_skipglobal
-    mov     _CX, PTRWORD su_synth_obj - su_unit.size
+    mov     _CX, PTRWORD su_synth_obj
 su_op_send_skipglobal:
 %endif
     test    _AX, SEND_POP       ; if the SEND_POP bit is not set
@@ -62,8 +63,8 @@ su_op_send_skippush:            ; there is signal s, but maybe also another: s (
     fadd    st0                                ; g=2*a-1 l (l)
     and     _AX, 0x0000ffff - SEND_POP - SEND_GLOBAL ; eax = send address
     fmulp   st1, st0                           ; g*l (l)
-    fadd    dword [_CX+su_unit.size+_AX*4]     ; g*l+L (l),where L is the current value
-    fstp    dword [_CX+su_unit.size+_AX*4]     ; (l)
+    fadd    dword [_CX + _AX*4]     ; g*l+L (l),where L is the current value
+    fstp    dword [_CX + _AX*4]     ; (l)
     ret
 
 %endif ; SU_USE_SEND > -1

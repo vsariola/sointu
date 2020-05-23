@@ -78,7 +78,7 @@ EXPORT MANGLE_FUNC(su_op_loadnote,0)
     call    su_op_loadnote_mono
 su_op_loadnote_mono:
 %endif
-    fild    dword [_CX+su_unit.size-su_voice.workspace+su_voice.note]
+    fild    dword [INP-su_voice.inputs+su_voice.note]
     apply fmul dword, c_i128
     ret
 

@@ -17,7 +17,7 @@ EXPORT MANGLE_FUNC(su_op_envelope,0)
 su_op_envelope_mono:
 %endif
 kmENV_func_do:
-    mov     eax, dword [_CX+su_unit.size-su_voice.workspace+su_voice.release] ; eax = su_instrument.release
+    mov     eax, dword [INP-su_voice.inputs+su_voice.release] ; eax = su_instrument.release
     test    eax, eax                            ; if (eax == 0)
     je      kmENV_func_process                  ;   goto process
     mov     dword [WRK+su_env_work.state], ENV_STATE_RELEASE  ; [state]=RELEASE
@@ -145,7 +145,7 @@ su_op_oscillat_single:
     faddp   st1
     test    al, byte LFO
     jnz     su_op_oscillat_skipnote
-    fiadd   dword [_CX+su_unit.size-su_voice.workspace+su_voice.note]               ; // st0 is note, st1 is t+d offset
+    fiadd   dword [INP-su_voice.inputs+su_voice.note]   ; // st0 is note, st1 is t+d offset
 su_op_oscillat_skipnote:
     apply fmul dword,c_i12
     call    MANGLE_FUNC(su_power,0)

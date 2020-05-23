@@ -118,7 +118,6 @@ endstruc
 SECT_BSS(susynth)
 
 su_synth_obj            resb    su_synth.size
-su_transformed_values   resd    16
 
 ;===============================================================================
 ; The opcode table jump table. This is constructed to only include the opcodes
@@ -176,8 +175,7 @@ EXPORT MANGLE_FUNC(su_run_vm,0)
 %endif
     mov     COM, PTRWORD MANGLE_DATA(su_commands)           ; COM points to vm code
     mov     VAL, PTRWORD MANGLE_DATA(su_params)             ; VAL points to unit params
-    ; su_unit.size will be added back before WRK is used
-    mov     WRK, PTRWORD su_synth_obj + su_synth.voices + su_voice.workspace - su_unit.size
+    mov     WRK, PTRWORD su_synth_obj + su_synth.voices     ; WRK points to the first voice
     push    COM                                     ; Stack: COM
     push    VAL                                     ; Stack: VAL COM
     push    WRK                                     ; Stack: WRK VAL COM
@@ -192,7 +190,6 @@ su_run_vm_loop:                                     ; loop until all voices done
     apply {mov al,byte},su_opcode_numparams,_AX,{}
     push    _AX
     call    su_transform_values
-    mov     _CX, PTRWORD [_SP+su_stack.wrk]
     pop     _AX
     shr     eax,1
     apply call,su_synth_commands,_AX*PTRSIZE,{}     ; call the function corresponding to the instruction
@@ -230,13 +227,13 @@ EXPORT MANGLE_FUNC(FloatRandomNumber,0)
 SECT_TEXT(sutransf)
 
 su_transform_values:
-    push    _CX
     xor     ecx, ecx
     xor     eax, eax
-    mov     INP, PTRWORD su_transformed_values
+    mov     INP, [_SP+su_stack.wrk+2*PTRSIZE]
+    add     INP, su_voice.inputs
 su_transform_values_loop:
-    cmp     ecx, dword [_SP+2*PTRSIZE]
-    jge     su_transform_values_out
+    cmp     ecx, dword [_SP+PTRSIZE]
+    jnb     su_transform_values_out
     lodsb
     push    _AX
     fild    dword [_SP]
@@ -248,7 +245,6 @@ su_transform_values_loop:
     inc     ecx
     jmp     su_transform_values_loop
 su_transform_values_out:
-    pop     _CX
     ret     PTRSIZE
 
 ;-------------------------------------------------------------------------------

@@ -370,7 +370,7 @@ su_op_delay_loop:
             %ifdef INCLUDE_DELAY_NOTETRACKING
                 test    ah, 1 ; note syncing is the least significant bit of ah, 0 = ON, 1 = OFF
                 jne     su_op_delay_skipnotesync
-                fild    dword [_CX+su_unit.size-su_voice.workspace+su_voice.note]
+                fild    dword [INP-su_voice.inputs+su_voice.note]
                 apply fmul dword, c_i12
                 call    MANGLE_FUNC(su_power,0)
                 fdivp   st1, st0                 ; use 10787 for delaytime to have neutral transpose
