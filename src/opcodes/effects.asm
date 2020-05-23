@@ -416,11 +416,6 @@ su_op_delay_loop:
 ;-------------------------------------------------------------------------------
 ;    Delay data
 ;-------------------------------------------------------------------------------
-SECT_BSS(sudelbuf)
-
-EXPORT MANGLE_DATA(su_delay_buffer)
-                        resb   NUM_DELAY_LINES*su_delayline_wrk.size
-
 SECT_DATA(suconst)
 
 %ifndef C_DC_CONST

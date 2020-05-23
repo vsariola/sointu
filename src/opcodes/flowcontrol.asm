@@ -17,7 +17,7 @@ EXPORT MANGLE_FUNC(su_op_advance,0)     ; Stack: addr voice wrkptr valptr comptr
     add     WRK, su_voice.size          ; move to next voice
     mov     [_SP+su_stack.wrk], WRK        ; update stack
     mov     ecx, [_SP+su_stack.voiceno]          ; ecx = voice
-    apply bt dword,su_polyphony_bitmask,{,ecx} ; if voice bit of su_polyphonism not set
+    bt      dword [_SP+su_stack.polyphony], ecx ; if voice bit of su_polyphonism not set
     jnc     su_op_advance_next_instrument ; goto next_instrument
     mov     VAL, PTRWORD [_SP+su_stack.val]         ; rollback to where we were earlier
     mov     COM, PTRWORD [_SP+su_stack.com]

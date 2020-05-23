@@ -9,16 +9,16 @@
 SECT_TEXT(suopout)
 
 EXPORT MANGLE_FUNC(su_op_out,0) ; l r
-    mov     _AX, PTRWORD su_synth_obj + su_synth.left
+    mov     _AX, [_SP + su_stack.synth]
     %ifdef INCLUDE_STEREO_OUT
         jnc     su_op_out_mono
         call    su_op_out_mono
         add     _AX, 4
     su_op_out_mono:
     %endif
-    fmul    dword [INP+su_out_ports.gain] ; g*l
-    fadd    dword [_AX]                   ; g*l+o
-    fstp    dword [_AX]                   ; o'=g*l+o
+    fmul    dword [INP + su_out_ports.gain] ; g*l
+    fadd    dword [_AX + su_synth.left]   ; g*l+o
+    fstp    dword [_AX + su_synth.left]   ; o'=g*l+o
     ret
 
 %endif ; SU_OUT_ID > -1
@@ -51,7 +51,7 @@ su_op_send_mono:
 %ifdef INCLUDE_GLOBAL_SEND
     test    _AX, SEND_GLOBAL
     jz      su_op_send_skipglobal
-    mov     _CX, PTRWORD su_synth_obj
+    mov     _CX, [_SP + su_stack.synth]
 su_op_send_skipglobal:
 %endif
     test    _AX, SEND_POP       ; if the SEND_POP bit is not set

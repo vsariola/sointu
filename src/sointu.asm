@@ -103,21 +103,19 @@ struc su_stack ; the structure of stack _as the units see it_
     .wrk        RESPTR  1
     .val        RESPTR  1
     .com        RESPTR  1
+    .synth      RESPTR  1
 %if DELAY_ID > -1
     .delaywrk   RESPTR  1
 %endif
     .retaddrvm  RESPTR  1
+%ifdef INCLUDE_POLYPHONY
+    .polyphony  RESPTR  1
+%endif
     .rowtick    RESPTR  1    ; which tick within this row are we at
     .row        RESPTR  1    ; which total row of the song are we at
     .tick       RESPTR  1    ; which total tick of the song are we at
+    .randseed   RESPTR  1
 endstruc
-
-;===============================================================================
-;   Uninitialized data: The one and only synth object
-;===============================================================================
-SECT_BSS(susynth)
-
-su_synth_obj            resb    su_synth.size
 
 ;===============================================================================
 ; The opcode table jump table. This is constructed to only include the opcodes
@@ -142,16 +140,10 @@ SECT_DATA(suconst)
 c_i128                  dd      0.0078125
 c_RandDiv               dd      65536*32768
 c_0_5                   dd      0.5
-EXPORT MANGLE_DATA(RandSeed)
-                        dd      1
 c_24                    dd      24
 c_i12                   dd      0x3DAAAAAA
 EXPORT MANGLE_DATA(LFO_NORMALIZE)
                         dd      DEF_LFO_NORMALIZE
-
-%ifdef INCLUDE_POLYPHONY
-su_polyphony_bitmask    dd      POLYPHONY_BITMASK ; does the next voice reuse the current opcodes?
-%endif
 
 ;-------------------------------------------------------------------------------
 ;   su_run_vm function: runs the entire virtual machine once, creating 1 sample
@@ -165,22 +157,17 @@ su_polyphony_bitmask    dd      POLYPHONY_BITMASK ; does the next voice reuse th
 SECT_TEXT(surunvm)
 
 EXPORT MANGLE_FUNC(su_run_vm,0)
-%if DELAY_ID > -1
-    %if BITS == 64 ; TODO: find a way to do this with a macro
-        mov     _AX,PTRWORD MANGLE_DATA(su_delay_buffer-su_delayline_wrk.filtstate)
+    %if DELAY_ID > -1
+        lea     _AX, [WRK + su_synth.size - su_delayline_wrk.filtstate]
         push    _AX                                 ; reset delaywrk to first delayline
-    %else
-        push    PTRWORD MANGLE_DATA(su_delay_buffer-su_delayline_wrk.filtstate)
     %endif
-%endif
-    mov     COM, PTRWORD MANGLE_DATA(su_commands)           ; COM points to vm code
-    mov     VAL, PTRWORD MANGLE_DATA(su_params)             ; VAL points to unit params
-    mov     WRK, PTRWORD su_synth_obj + su_synth.voices     ; WRK points to the first voice
-    push    COM                                     ; Stack: COM
-    push    VAL                                     ; Stack: VAL COM
-    push    WRK                                     ; Stack: WRK VAL COM
+    push    WRK                                     ; Stack: synth (delayWRK)
+    lea     WRK, [WRK + su_synth.voices]            ; WRK points to the first voice
+    push    COM                                     ; Stack: COM synth
+    push    VAL                                     ; Stack: VAL COM synth
+    push    WRK                                     ; Stack: WRK VAL COM synth
     xor     ecx, ecx                                ; voice = 0
-    push    _CX                                     ; Stack: voice WRK VAL COM
+    push    _CX                                     ; Stack: voice WRK VAL COM synth
 su_run_vm_loop:                                     ; loop until all voices done
     movzx   eax, byte [COM]                         ; eax = command byte
     inc     COM                                     ; move to next instruction
@@ -196,22 +183,6 @@ su_run_vm_loop:                                     ; loop until all voices done
     cmp     dword [_SP+su_stack.voiceno-PTRSIZE],MAX_VOICES ; if (voice < MAX_VOICES)
     jl      su_run_vm_loop                          ;   goto vm_loop
     add     _SP, su_stack.retaddrvm-PTRSIZE         ; Stack cleared
-    ret
-
-;-------------------------------------------------------------------------------
-;   FloatRandomNumber function
-;-------------------------------------------------------------------------------
-;   Output:     st0     :   result
-;-------------------------------------------------------------------------------
-SECT_TEXT(surandom)
-
-EXPORT MANGLE_FUNC(FloatRandomNumber,0)
-    push    _AX
-    apply {imul eax,},MANGLE_DATA(RandSeed),{,16007}
-    apply mov,MANGLE_DATA(RandSeed),{, eax}
-    apply fild dword,MANGLE_DATA(RandSeed)
-    apply fidiv dword,c_RandDiv
-    pop     _AX
     ret
 
 ;-------------------------------------------------------------------------------

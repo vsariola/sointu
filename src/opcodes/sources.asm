@@ -75,12 +75,16 @@ kmENV_func_leave2:
 SECT_TEXT(sunoise)
 
 EXPORT MANGLE_FUNC(su_op_noise,0)
+    mov     _CX,_SP
 %ifdef INCLUDE_STEREO_NOISE
     jnc     su_op_noise_mono
     call    su_op_noise_mono
 su_op_noise_mono:
 %endif
-    call    MANGLE_FUNC(FloatRandomNumber,0)
+    imul    eax, [_CX + su_stack.randseed],16007
+    mov     [_CX + su_stack.randseed],eax
+    fild    dword [_CX + su_stack.randseed]
+    apply fidiv dword,c_RandDiv
     fld     dword [INP+su_noise_ports.shape]
     call    su_waveshaper
     fld     dword [INP+su_noise_ports.gain]
