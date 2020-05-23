@@ -72,7 +72,7 @@ endstruc
 %define GATE        0x04
 %define UNISON2     0x01
 %define UNISON3     0x02 ; Warning, UNISON3 and UNISON4 do not work with gate at the moment, as they use the same state variable
-%define UNISON4     0x03 
+%define UNISON4     0x03
 
 %macro  SU_OSCILLAT 8
     db  %2
@@ -104,7 +104,7 @@ endstruc
     %endif
     %if (%8) & UNISON4 > 0
         %define INCLUDE_UNISONS
-    %endif    
+    %endif
 %endmacro
 
 struc   su_osc_ports
@@ -237,7 +237,7 @@ endstruc
     %endif
 %endmacro
 
-%macro  SU_RECEIVE 1    
+%macro  SU_RECEIVE 1
     USE_RECEIVE
     %xdefine CMDS CMDS RECEIVE_ID+%1,
     %if %1 == STEREO

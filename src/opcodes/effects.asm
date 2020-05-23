@@ -10,7 +10,7 @@
 SECT_TEXT(sudistrt)
 
 EXPORT MANGLE_FUNC(su_op_distort,0)
-    %ifdef INCLUDE_STEREO_DISTORT    
+    %ifdef INCLUDE_STEREO_DISTORT
         call su_effects_stereohelper
         %define INCLUDE_EFFECTS_STEREOHELPER
     %endif
@@ -49,7 +49,7 @@ su_waveshaper:
 SECT_TEXT(suhold)
 
 EXPORT MANGLE_FUNC(su_op_hold,0)
-    %ifdef INCLUDE_STEREO_HOLD   
+    %ifdef INCLUDE_STEREO_HOLD
         call    su_effects_stereohelper
         %define INCLUDE_EFFECTS_STEREOHELPER
     %endif
@@ -82,7 +82,7 @@ su_op_hold_holding:
 SECT_TEXT(sucrush)
 
 EXPORT MANGLE_FUNC(su_op_crush,0)
-    %ifdef INCLUDE_STEREO_CRUSH    
+    %ifdef INCLUDE_STEREO_CRUSH
         call    su_effects_stereohelper
         %define INCLUDE_EFFECTS_STEREOHELPER
     %endif
@@ -124,7 +124,7 @@ SECT_TEXT(suingain)
         EXPORT MANGLE_FUNC(su_op_invgain,0)
             fld     dword [INP+su_invgain_ports.invgain] ; g l (r)
             jnc     su_op_invgain_mono
-            fdiv    st2, st0                             ; g l r/g    
+            fdiv    st2, st0                             ; g l r/g
         su_op_invgain_mono:
             fdivp   st1, st0                             ; l/g (r/)
             ret

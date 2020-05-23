@@ -231,7 +231,7 @@
     %else
         %if %0 != PATTERN_SIZE
             %error 'All patterns should have the same length!'
-        %endif        
+        %endif
     %endif
 %endmacro
 
@@ -297,7 +297,7 @@ struc su_voice
     .note       resd    1
     .release    resd    1
     .reserved   resb    (su_unit.size - 8) ; this is done to so the whole voice is 2^n long, see polyphonic player
-    .workspace  resb    MAX_UNITS * su_unit.size    
+    .workspace  resb    MAX_UNITS * su_unit.size
     .size
 endstruc
 ; //----------------------------------------------------------------------------------------

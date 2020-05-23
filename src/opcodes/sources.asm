@@ -355,7 +355,7 @@ SECT_DATA(suconst)
 ;   LOADVAL opcode
 ;-------------------------------------------------------------------------------
 ;   Input:      edx     :   pointer to unit ports
-; 
+;
 ;   Mono version: push 2*v-1 on stack, where v is the input to port "value"
 ;   Stereo version: push 2*v-1 twice on stack
 ;-------------------------------------------------------------------------------
