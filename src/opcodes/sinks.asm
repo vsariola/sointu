@@ -1,5 +1,8 @@
 ;-------------------------------------------------------------------------------
-;   OUT Tick
+;   OUT opcode: outputs and pops the signal
+;-------------------------------------------------------------------------------
+;   Mono: add ST0 to global left port
+;   Stereo: also add ST1 to global right port
 ;-------------------------------------------------------------------------------
 %if OUT_ID > -1
 
@@ -21,14 +24,10 @@ EXPORT MANGLE_FUNC(su_op_out,0) ; l r
 %endif ; SU_OUT_ID > -1
 
 ;-------------------------------------------------------------------------------
-;   Send Tick
+;   SEND opcode: adds the signal to a port
 ;-------------------------------------------------------------------------------
-;   Input:      WRK     :   pointer to unit workspace
-;               VAL     :   pointer to unit values as bytes
-;               ecx     :   pointer to global workspace
-;               st0     :   signal
-;   Output:     (st0)   :   signal, unless popped
-;   Dirty:      eax, edx
+;   Mono: adds signal to a memory address, defined by a word in VAL stream
+;   Stereo: also add right signal to the following address
 ;-------------------------------------------------------------------------------
 %if SEND_ID > -1
 

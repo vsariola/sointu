@@ -1,20 +1,12 @@
 ;-------------------------------------------------------------------------------
-;   su_op_advance function: opcode to advance from one instrument to next
+;   ADVANCE opcode: advances from one voice to next
 ;-------------------------------------------------------------------------------
-;   Stack:      voice wrkptr valptr comptr
-;               voice   :   the number of voice we are currently processing
-;               wrkptr  :   pointer to the first unit of current voice - su_unit.size
-;               valptr  :   pointer to the first unit's value of current voice
-;               comptr  :   pointer to the first command of current voice
-;               COM     :   pointer to the command after current command
-;   Output:     WRK     :   pointer to the next unit to be processed
-;               VAL     :   pointer to the values of the next to be processed
-;               COM     :   pointer to the next command to be executed
-;
 ;   Checks if this was the last voice of current instrument. If so, moves to
 ;   next opcodes and updates the stack to reflect the instrument change.
 ;   If this instrument has more voices to process, rolls back the COM and VAL
 ;   pointers to where they were when this instrument started.
+;
+;   There is no stereo version.
 ;-------------------------------------------------------------------------------
 SECT_TEXT(suopadvn)
 
@@ -47,7 +39,11 @@ su_op_advance_finish:
 %endif
 
 ;-------------------------------------------------------------------------------
-;   SPEED tick
+;   SPEED opcode: modulate the speed (bpm) of the song based on ST0
+;-------------------------------------------------------------------------------
+;   Mono: adds or subtracts the ticks, a value of 0.5 is neutral & will7
+;   result in no speed change.
+;   There is no STEREO version.
 ;-------------------------------------------------------------------------------
 %if SPEED_ID > -1
 

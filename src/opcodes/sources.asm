@@ -1,13 +1,8 @@
 ;-------------------------------------------------------------------------------
-;   ENV Tick
+;   ENVELOPE opcode: pushes an ADSR envelope value on stack [0,1]
 ;-------------------------------------------------------------------------------
-;   Input:      WRK     :   pointer to unit workspace
-;               VAL     :   pointer to unit values as bytes
-;               ecx     :   pointer to global workspace
-;   Output:     st0     :   envelope value, [gain]*level. The slopes of
-;                           level is 2^(-24*p) per sample, where p is either
-;                           attack, decay or release in [0,1] range
-;   Dirty:      eax, edx
+;   Mono:   push the envelope value on stack
+;   Stereo: push the envelope valeu on stack twice
 ;-------------------------------------------------------------------------------
 %if ENVELOPE_ID > -1
 
@@ -70,7 +65,10 @@ kmENV_func_leave2:
 %endif ; SU_USE_ENVELOPE
 
 ;-------------------------------------------------------------------------------
-;   su_noise function: noise oscillators
+;   NOISE opcode: creates noise
+;-------------------------------------------------------------------------------
+;   Mono:   push a random value [-1,1] value on stack
+;   Stereo: push two (differeent) random values on stack
 ;-------------------------------------------------------------------------------
 %if NOISE_ID > -1
 
@@ -94,7 +92,10 @@ su_op_noise_mono:
 %endif
 
 ;-------------------------------------------------------------------------------
-;   su_op_oscillat function: oscillator, the heart of the synth
+;   OSCILLAT opcode: oscillator, the heart of the synth
+;-------------------------------------------------------------------------------
+;   Mono:   push oscillator value on stack
+;   Stereo: push l r on stack, where l has opposite detune compared to r
 ;-------------------------------------------------------------------------------
 %if OSCILLAT_ID > -1
 
@@ -354,17 +355,15 @@ SECT_DATA(suconst)
 ;-------------------------------------------------------------------------------
 ;   LOADVAL opcode
 ;-------------------------------------------------------------------------------
-;   Input:      edx     :   pointer to unit ports
-;
-;   Mono version: push 2*v-1 on stack, where v is the input to port "value"
-;   Stereo version: push 2*v-1 twice on stack
+;   Mono: push 2*v-1 on stack, where v is the input to port "value"
+;   Stereo: push 2*v-1 twice on stack
 ;-------------------------------------------------------------------------------
 %if LOADVAL_ID > -1
 
 SECT_TEXT(suloadvl)
 
 EXPORT MANGLE_FUNC(su_op_loadval,0)
-%ifdef INCLUDE_STEREO_LOAD_VAL
+%ifdef INCLUDE_STEREO_LOADVAL
     jnc     su_op_loadval_mono
     call    su_op_loadval_mono
 su_op_loadval_mono:
@@ -380,8 +379,8 @@ su_op_loadval_mono:
 ;-------------------------------------------------------------------------------
 ;   RECEIVE opcode
 ;-------------------------------------------------------------------------------
-;   Mono version:   push l on stack, where l is the left channel received
-;   Stereo version: push l r on stack
+;   Mono:   push l on stack, where l is the left channel received
+;   Stereo: push l r on stack
 ;-------------------------------------------------------------------------------
 %if RECEIVE_ID > -1
 

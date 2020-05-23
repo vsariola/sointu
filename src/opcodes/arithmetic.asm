@@ -1,8 +1,10 @@
 SECT_TEXT(suarithm)
 
 ;-------------------------------------------------------------------------------
-;   op_pop function: a -> (empty)
-;            stereo: a b -> (empty)
+;   POP opcode: remove (discard) the topmost signal from the stack
+;-------------------------------------------------------------------------------
+;   Mono:   a -> (empty)
+;   Stereo: a b -> (empty)
 ;-------------------------------------------------------------------------------
 %if POP_ID > -1
 
@@ -18,8 +20,10 @@ su_op_pop_mono:
 %endif
 
 ;-------------------------------------------------------------------------------
-;   op_add function: a b -> a+b b
-;            stereo: a b c d -> a+c b+d c d
+;   ADD opcode: add the two top most signals on the stack
+;-------------------------------------------------------------------------------
+;   Mono:   a b -> a+b b
+;   Stereo: a b c d -> a+c b+d c d
 ;-------------------------------------------------------------------------------
 %if ADD_ID > -1
 
@@ -38,9 +42,12 @@ su_op_add_mono:
 
 %endif
 
+
 ;-------------------------------------------------------------------------------
-;   op_addp function: a b -> a+b
-;             stereo: a b c d -> a+c b+d
+;   ADDP opcode: add the two top most signals on the stack and pop
+;-------------------------------------------------------------------------------
+;   Mono:   a b -> a+b
+;   Stereo: a b c d -> a+c b+d
 ;-------------------------------------------------------------------------------
 %if ADDP_ID > -1
 
@@ -58,9 +65,10 @@ su_op_addp_mono:
 %endif
 
 ;-------------------------------------------------------------------------------
-;   op_loadnote function: (empty) -> n
-;                 stereo: (empty) -> n n
-;   ecx should point to the workspace (slightly offset)
+;   LOADNOTE opcode: load the current note, scaled to [0,1]
+;-------------------------------------------------------------------------------
+;   Mono:   (empty) -> n, where n is the note
+;   Stereo: (empty) -> n n
 ;-------------------------------------------------------------------------------
 %if LOADNOTE_ID > -1
 
@@ -77,8 +85,10 @@ su_op_loadnote_mono:
 %endif
 
 ;-------------------------------------------------------------------------------
-;   op_mul function: a b -> a*b a
-;            stereo: a b c d -> a*c b*d c d
+;   MUL opcode: multiply the two top most signals on the stack
+;-------------------------------------------------------------------------------
+;   Mono:   a b -> a*b a
+;   Stereo: a b c d -> a*c b*d c d
 ;-------------------------------------------------------------------------------
 %if MUL_ID > -1
 
@@ -98,8 +108,10 @@ su_op_mul_mono:
 %endif
 
 ;-------------------------------------------------------------------------------
-;   op_mulp function: a b -> a*b
-;             stereo: a b c d -> a*c b*d
+;   MULP opcode: multiply the two top most signals on the stack and pop
+;-------------------------------------------------------------------------------
+;   Mono:   a b -> a*b
+;   Stereo: a b c d -> a*c b*d
 ;-------------------------------------------------------------------------------
 %if MULP_ID > -1
 
@@ -117,8 +129,10 @@ su_op_mulp_mono:
 %endif
 
 ;-------------------------------------------------------------------------------
-;   op_push function: a -> a a
-;             stereo: a b -> a b a b
+;   PUSH opcode: push the topmost signal on the stack
+;-------------------------------------------------------------------------------
+;   Mono:   a -> a a
+;   Stereo: a b -> a b a b
 ;-------------------------------------------------------------------------------
 %if PUSH_ID > -1
 
@@ -136,8 +150,10 @@ su_op_push_mono:
 %endif
 
 ;-------------------------------------------------------------------------------
-;   op_xch function: a b -> b a
-;            stereo: a b c d -> c d a b
+;   XCH opcode: exchange the signals on the stack
+;-------------------------------------------------------------------------------
+;   Mono:   a b -> b a
+;   stereo: a b c d -> c d a b
 ;-------------------------------------------------------------------------------
 %if XCH_ID > -1
 

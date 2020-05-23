@@ -1,9 +1,8 @@
 ;-------------------------------------------------------------------------------
-;   DISTORT Tick
+;   DISTORT opcode: apply distortion on the signal
 ;-------------------------------------------------------------------------------
-;   Input:      st0     :   x - input value
-;   Output:     st0     :  x*a/(1-a+(2*a-1)*abs(x))
-;                          where x is clamped first
+;   Mono:   x   ->  x*a/(1-a+(2*a-1)*abs(x))            where x is clamped first
+;   Stereo: l r ->  l*a/(1-a+(2*a-1)*abs(l)) r*a/(1-a+(2*a-1)*abs(r))
 ;-------------------------------------------------------------------------------
 %if DISTORT_ID > -1
 
@@ -42,7 +41,10 @@ su_waveshaper:
 %endif ; SU_USE_DST
 
 ;-------------------------------------------------------------------------------
-;   HOLD Tick
+;   HOLD opcode: sample and hold the signal, reducing sample rate
+;-------------------------------------------------------------------------------
+;   Mono version:   holds the signal at a rate defined by the freq parameter
+;   Stereo version: holds both channels
 ;-------------------------------------------------------------------------------
 %if HOLD_ID > -1
 
@@ -75,7 +77,10 @@ su_op_hold_holding:
 %endif ; HOLD_ID > -1
 
 ;-------------------------------------------------------------------------------
-;   CRUSH Tick
+;   CRUSH opcode: quantize the signal to finite number of levels
+;-------------------------------------------------------------------------------
+;   Mono:   x   ->  e*int(x/e)
+;   Stereo: l r ->  e*int(l/e) e*int(r/e)
 ;-------------------------------------------------------------------------------
 %if CRUSH_ID > -1
 
@@ -94,7 +99,10 @@ EXPORT MANGLE_FUNC(su_op_crush,0)
 %endif ; CRUSH_ID > -1
 
 ;-------------------------------------------------------------------------------
-;   GAIN Tick
+;   GAIN opcode: apply gain on the signal
+;-------------------------------------------------------------------------------
+;   Mono:   x   ->  x*g
+;   Stereo: l r ->  l*g r*g
 ;-------------------------------------------------------------------------------
 %if GAIN_ID > -1
 
@@ -115,7 +123,10 @@ SECT_TEXT(sugain)
 %endif ; GAIN_ID > -1
 
 ;-------------------------------------------------------------------------------
-;   INVGAIN Tick
+;   INVGAIN opcode: apply inverse gain on the signal
+;-------------------------------------------------------------------------------
+;   Mono:   x   ->  x/g
+;   Stereo: l r ->  l/g r/g
 ;-------------------------------------------------------------------------------
 %if INVGAIN_ID > -1
 
@@ -136,14 +147,10 @@ SECT_TEXT(suingain)
 %endif ; INVGAIN_ID > -1
 
 ;-------------------------------------------------------------------------------
-;   su_op_filter: perform low/high/band-pass filtering on the signal
+;   FILTER opcode: perform low/high/band-pass/notch etc. filtering on the signal
 ;-------------------------------------------------------------------------------
-;   Input:      WRK     :   pointer to unit workspace
-;               VAL     :   pointer to unit values as bytes
-;               ecx     :   pointer to global workspace
-;               st0     :   signal
-;   Output:     st0     :   filtered signal
-;   Dirty:      eax, edx
+;   Mono:   x   ->  filtered(x)
+;   Stereo: l r ->  filtered(l) filtered(r)
 ;-------------------------------------------------------------------------------
 %if FILTER_ID > -1
 SECT_TEXT(sufilter)
@@ -203,10 +210,10 @@ su_op_filter_skipneghighpass:
 %endif ; SU_INCLUDE_FILTER
 
 ;-------------------------------------------------------------------------------
-;   su_clip function
+;   CLIP opcode: clips the signal into [-1,1] range
 ;-------------------------------------------------------------------------------
-;   Input:      st0     :   x
-;   Output:     st0     :   min(max(x,-1),1)
+;   Mono:   x   ->  min(max(x,-1),1)
+;   Stereo: l r ->  min(max(l,-1),1) min(max(r,-1),1)
 ;-------------------------------------------------------------------------------
 SECT_TEXT(suclip)
 
@@ -235,15 +242,12 @@ su_clip_do:
 %endif ; SU_INCLUDE_CLIP
 
 ;-------------------------------------------------------------------------------
-;   PAN Tick
+;   PAN opcode: pan the signal
 ;-------------------------------------------------------------------------------
-;   Input:      WRK     :   pointer to unit workspace
-;               VAL     :   pointer to unit values as bytes
-;               ecx     :   pointer to global workspace
-;               st0     :   s, the signal
-;   Output:     st0     :   s*(1-p), where p is the panning in [0,1] range
-;               st1     :   s*p
-;   Dirty:      eax, edx
+;   Mono:   s   ->  s*(1-p) s*p
+;   Stereo: l r ->  l*(1-p) r*p
+;
+;   where p is the panning in [0,1] range
 ;-------------------------------------------------------------------------------
 %if PAN_ID > -1
 
@@ -297,16 +301,13 @@ su_effects_stereohelper_mono:
 %endif
 
 ;-------------------------------------------------------------------------------
-;   Delay Tick
+;   DELAY opcode: adds delay effect to the signal
 ;-------------------------------------------------------------------------------
-;   Pseudocode:
-;   q = dr*x
-;   for (i = 0;i < count;i++)
-;     s = b[(t-delaytime[i+offset])&65535]
-;     q += s
-;     o[i] = o[i]*da+s*(1-da)
-;     b[t] = f*o[i] +p^2*x
-;  Perform dc-filtering q and output
+;   Mono:   perform delay on ST0, using delaycount delaylines starting
+;           at delayindex from the delaytable
+;   Stereo: perform delay on ST1, using delaycount delaylines starting
+;           at delayindex + delaycount from the delaytable (so the right delays
+;           can be different)
 ;-------------------------------------------------------------------------------
 %if DELAY_ID > -1
 
@@ -347,6 +348,15 @@ su_op_delay_mono:               ; flow into mono delay
 
 ;-------------------------------------------------------------------------------
 ;   su_op_delay_do: executes the actual delay
+;-------------------------------------------------------------------------------
+;   Pseudocode:
+;   q = dr*x
+;   for (i = 0;i < count;i++)
+;     s = b[(t-delaytime[i+offset])&65535]
+;     q += s
+;     o[i] = o[i]*da+s*(1-da)
+;     b[t] = f*o[i] +p^2*x
+;  Perform dc-filtering q and output q
 ;-------------------------------------------------------------------------------
 su_op_delay_do:                                 ; x y
     fld     st0
@@ -433,7 +443,12 @@ SECT_DATA(suconst)
 %endif ; DELAY_ID > -1
 
 ;-------------------------------------------------------------------------------
-;   Compressor Tick
+;   COMPRES opcode: push compressor gain to stack
+;-------------------------------------------------------------------------------
+;   Mono:   push g on stack, where g is a suitable gain for the signal
+;           you can either MULP to compress the signal or SEND it to a GAIN
+;           somewhere else for compressor side-chaining.
+;   Stereo: push g g on stack, where g is calculated using l^2 + r^2
 ;-------------------------------------------------------------------------------
 %if COMPRES_ID > -1
 

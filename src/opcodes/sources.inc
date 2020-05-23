@@ -209,7 +209,7 @@ endstruc
     USE_LOAD_VAL
     %xdefine CMDS CMDS LOADVAL_ID+%1,
     %if %1 == STEREO
-        %define INCLUDE_STEREO_LOAD_VAL
+        %define INCLUDE_STEREO_LOADVAL
     %endif
 %endmacro
 

@@ -1,14 +1,8 @@
 %ifndef SOINTU_INC
 %define SOINTU_INC
 
-; Following defines have to be defined before this include:
-; MAX_TRACKS            e.g.         %define MAX_TRACKS 10
-; BPM                   e.g.         %define BPM 100
-; MAX_PATTERNS          e.g.         %define MAX_PATTERNS 1
-; MAX_VOICES            e.g.         %define MAX_VOICES 4 <- e.g. 4 instruments or 1 polyphonic instrument with 4 voices
-;
-; Optionally:
-; PATTERN_SIZE          e.g.         %define PATTERN_SIZE 16 <- this is the default
+; You will have to define a BPM for your song, e.g.
+; %define BPM 100
 
 %macro EXPORT 1
     global %1
@@ -73,63 +67,9 @@
     %endif
 %endif
 
-%ifdef SU_USE_ALL
-    ; SU_USE_ALL is convenience way to enable almost all features of the synth, for vsti plugins and such which
-    ; do not have any size constraints. However, SU_USE_ALL should only enable features that absolutely do not
-    ; change the functioning of the synth in any way, just add features. Clipping, 16 bit output etc. should still
-    ; be enabled only whent they are actually needed
-
-    ; Things that are NOT defined by SU_USE_ALL
-    ;%define SU_USE_16BIT_OUTPUT         ; // removing this will output to 32bit floating point buffer
-    ;%define SU_USE_GROOVE_PATTERN       ; // removing this skips groove pattern code
-    ;%define SU_USE_ENVELOPE_RECORDINGS  ; // removing this skips envelope recording code
-    ;%define SU_USE_NOTE_RECORDINGS      ; // removing this skips note recording code
-    ;%define SU_USE_UNDENORMALIZE        ; // removing this skips denormalization code in the units
-    ;%define SU_CLIP_OUTPUT              ; // removing this skips clipping code for the final output
-
-    %define SU_USE_DST                    ; // removing this will skip DST unit
-    %define SU_USE_DLL                    ; // removing this will   skip DLL unit
-    %define SU_USE_PAN                    ; // removing this will   skip PAN unit
-    %define SU_USE_GLOBAL_DLL             ; // removing this will   skip global dll processing
-    %define SU_USE_FSTG                   ; // removing this will   skip global store unit
-    %define SU_USE_FLD                    ; // removing this will   skip float load unit
-    %define SU_USE_GLITCH                 ; // removing this will   skip GLITCH unit
-    %define SU_USE_ENV_CHECK              ; // removing this skips checks   if processing is needed
-    %define SU_USE_VCO_CHECK              ; // removing this skips checks   if processing is needed
-    %define SU_USE_VCO_PHASE_OFFSET       ; // removing this will   skip initial phase offset code
-    %define SU_USE_VCO_SHAPE                ; // removing this skips waveshaping code
-    %define SU_USE_VCO_GATE             ; // removing this skips gate code
-    %define SU_USE_VCO_MOD_FM               ; // removing this skips frequency modulation code
-    %define SU_USE_VCO_MOD_DM               ; // removing this skips detune modulation code
-    %define SU_USE_VCO_STEREO               ; // removing this skips stereo code
-    %define SU_USE_VCF_CHECK                ; // removing this skips checks if processing is needed
-    %define SU_USE_VCF_HIGH             ; // removing this skips code for high output
-    %define SU_USE_VCF_BAND             ; // removing this skips code for band output
-    %define SU_USE_VCF_PEAK             ; // removing this skips code for peak output
-    %define SU_USE_VCF_STEREO               ; // removing this skips code for stereo filter output
-    %define SU_USE_DST_CHECK                ; // removing this skips checks if processing is needed
-    %define SU_USE_DST_SH                   ; // removing this skips sample and hold code
-    %define SU_USE_DST_STEREO             ; // removing this skips stereo processing
-    %define SU_USE_DLL_NOTE_SYNC          ; // removing this will   skip delay length adjusting code (karplus strong)
-    %define SU_USE_DLL_CHORUS             ; // removing this will   skip delay chorus/flanger code
-    %define SU_USE_DLL_CHORUS_CLAMP       ; // removing this will skip chorus lfo phase clamping
-    %define SU_USE_DLL_DAMP             ; // removing this will skip dll damping code
-    %define SU_USE_DLL_DC_FILTER            ; // removing this will skip dll dc offset removal code
-    %define SU_USE_FSTG_CHECK               ; // removing this skips checks if processing is needed
-    %define SU_USE_WAVESHAPER_CLIP      ; // removing this will skip clipping code
-%endif
-
-%ifdef SU_USE_VCO_SHAPE
-    %define INCLUDE_WAVESHAPER
-%endif
-%ifdef SU_USE_DST
-    %define INCLUDE_WAVESHAPER
-%endif
 %ifdef SU_USE_16BIT_OUTPUT
     %define SU_INCLUDE_CLIP
 %endif
-
-;%include "opcodes/flowcontrol.inc"
 
 %assign CUR_ID          2
 %define CMDS              ; CMDS is empty at first, no commands defined
@@ -145,9 +85,9 @@
 %include "opcodes/sources.inc"
 %include "opcodes/sinks.inc"
 
-; //----------------------------------------------------------------------------------------
-; // synth defines
-; //----------------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
+;   synth defines
+;-------------------------------------------------------------------------------
 
 %define MAX_DELAY           65536
 %assign MAX_UNITS_SHIFT     6
@@ -281,18 +221,18 @@
 
 %define SU_END_TRACKS
 
-; //----------------------------------------------------------------------------------------
-; // Unit struct
-; //----------------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
+;   unit struct
+;-------------------------------------------------------------------------------
 struc su_unit
     .state      resd    8
     .ports      resd    8
     .size
 endstruc
 
-; //----------------------------------------------------------------------------------------
-; // Voice struct
-; //----------------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
+;   voice struct
+;-------------------------------------------------------------------------------
 struc su_voice
     .note       resd    1
     .release    resd    1
@@ -300,9 +240,10 @@ struc su_voice
     .workspace  resb    MAX_UNITS * su_unit.size
     .size
 endstruc
-; //----------------------------------------------------------------------------------------
-; // Synth struct
-; //----------------------------------------------------------------------------------------
+
+;-------------------------------------------------------------------------------
+;   synth struct
+;-------------------------------------------------------------------------------
 struc su_synth
     .left       resd    1
     .right      resd    1
