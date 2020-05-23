@@ -65,7 +65,7 @@ EXPORT MANGLE_FUNC(su_op_speed,0)
     fist    dword [_SP]                  ; Main stack: k=int(t+2^p-1)
     fisub   dword [_SP]                  ; t+2^p-1-k, the remainder
     pop     _AX
-    add     dword [_SP+su_stack.curtick], eax          ; add the whole ticks to song tick count, [esp+24] is the current tick in the row
+    add     dword [_SP+su_stack.rowtick], eax          ; add the whole ticks to row tick count
     fstp    dword [WRK+su_speed_wrk.remainder] ; save the remainder for future
     ret
 

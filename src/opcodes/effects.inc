@@ -281,7 +281,7 @@ endstruc
     %endif
 %endmacro
 
-%define MAX_DELAY 65536
+%define MAX_DELAY 65536     ; warning: this is pretty much fixed, as we use 16-bit math to wraparound the delay buffers
 %assign NUM_DELAY_LINES 0
 
 %macro  SU_DELAY 7
@@ -297,8 +297,9 @@ endstruc
     %if %1 == STEREO
         %define INCLUDE_STEREO_DELAY
     %endif
-    %if %6 == 0
-        %define DELAY_NOTE_SYNC
+    %if (%7) & NOTETRACKING == 0
+        %define INCLUDE_DELAY_NOTETRACKING
+        %define INCLUDE_DELAY_FLOAT_TIME
     %endif
 %endmacro
 
@@ -306,7 +307,6 @@ endstruc
     SECT_DATA(sudeltim)
 
     EXPORT MANGLE_DATA(su_delay_times)
-        dw 0
 %endmacro
 
 %define SU_END_DELTIMES
@@ -325,7 +325,8 @@ endstruc
 %define DEPTH(val)      val
 %define DAMP(val)       val
 %define DELAY(val)      val
-%define COUNT(val)      val
+%define COUNT(val)      (2*val-1)
+%define NOTETRACKING    1
 
 struc   su_delay_ports
     .pregain    resd    1
@@ -333,18 +334,17 @@ struc   su_delay_ports
     .feedback   resd    1
     .damp       resd    1
     .freq       resd    1
+    .delaymod   resd    1 ; note that this is not converted from integer, only modulated
     .ports
 endstruc
 
 struc   su_delayline_wrk
-    .time       resd    1
-    .filtstate  resd    1
     .dcin       resd    1
     .dcout      resd    1
+    .filtstate  resd    1
     .buffer     resd    MAX_DELAY
     .size
 endstruc
-
 
 ;-------------------------------------------------------------------------------
 ;   COMPRES effect related defines

@@ -130,6 +130,7 @@ regression_test(test_delay_feedbackmod "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;SEND"
 regression_test(test_delay_pregainmod "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;SEND")
 regression_test(test_delay_dampmod "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;SEND")
 regression_test(test_delay_drymod "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;SEND")
+regression_test(test_delay_flanger "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;SEND")
 
 regression_test(test_envelope_mod "VCO_SINE;ENVELOPE;SEND")
 regression_test(test_envelope_16bit ENVELOPE "" test_envelope)

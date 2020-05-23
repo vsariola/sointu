@@ -50,6 +50,8 @@
             pop     %1
         %endrep
     %endmacro
+
+    %define PUSH_REG_SIZE(n) (n*8)
 %else
     %define WRK ebp ; alias for unit workspace
     %define VAL esi ; alias for unit values (transformed/untransformed)
@@ -91,6 +93,8 @@
     %macro  pop_registers 1-*
         popad
     %endmacro
+
+    %define PUSH_REG_SIZE(n) 32
 %endif
 
 struc su_stack ; the structure of stack _as the units see it_
@@ -99,8 +103,13 @@ struc su_stack ; the structure of stack _as the units see it_
     .wrk        RESPTR  1
     .val        RESPTR  1
     .com        RESPTR  1
+%if DELAY_ID > -1
+    .delaywrk   RESPTR  1
+%endif
     .retaddrvm  RESPTR  1
-    .curtick    RESPTR  1
+    .rowtick    RESPTR  1    ; which tick within this row are we at
+    .row        RESPTR  1    ; which total row of the song are we at
+    .tick       RESPTR  1    ; which total tick of the song are we at
 endstruc
 
 ;===============================================================================
@@ -157,6 +166,14 @@ su_polyphony_bitmask    dd      POLYPHONY_BITMASK ; does the next voice reuse th
 SECT_TEXT(surunvm)
 
 EXPORT MANGLE_FUNC(su_run_vm,0)
+%if DELAY_ID > -1
+    %if BITS == 64 ; TODO: find a way to do this with a macro
+        mov     _AX,PTRWORD MANGLE_DATA(su_delay_buffer-su_delayline_wrk.filtstate)
+        push    _AX                                 ; reset delaywrk to first delayline
+    %else
+        push    PTRWORD MANGLE_DATA(su_delay_buffer-su_delayline_wrk.filtstate)
+    %endif
+%endif
     mov     COM, PTRWORD MANGLE_DATA(su_commands)           ; COM points to vm code
     mov     VAL, PTRWORD MANGLE_DATA(su_params)             ; VAL points to unit params
     ; su_unit.size will be added back before WRK is used
@@ -164,15 +181,6 @@ EXPORT MANGLE_FUNC(su_run_vm,0)
     push    COM                                     ; Stack: COM
     push    VAL                                     ; Stack: VAL COM
     push    WRK                                     ; Stack: WRK VAL COM
-%if DELAY_ID > -1
-    %if BITS == 64 ; TODO: find a way to do this with a macro
-        mov     r9,PTRWORD MANGLE_DATA(su_delay_buffer_ofs)
-        mov     _AX,PTRWORD MANGLE_DATA(su_delay_buffer)
-        mov     qword [r9],_AX                      ; reset delaywrk to first delayline
-    %else
-        mov     dword [MANGLE_DATA(su_delay_buffer_ofs)],MANGLE_DATA(su_delay_buffer) ; reset delaywrk to first
-    %endif
-%endif
     xor     ecx, ecx                                ; voice = 0
     push    _CX                                     ; Stack: voice WRK VAL COM
 su_run_vm_loop:                                     ; loop until all voices done

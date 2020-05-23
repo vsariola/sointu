@@ -1,19 +1,19 @@
 %if BITS == 32
-    %define BUFFER_STACK_LOC 44
+    %define BUFFER_STACK_LOC 48
     %define render_prologue pushad ; stdcall & everything nonvolatile except eax, ecx, edx
     %macro render_epilogue 0
         popad
         ret     4 ; clean the passed parameter from stack.
     %endmacro
 %elifidn __OUTPUT_FORMAT__,win64
-    %define BUFFER_STACK_LOC 48
+    %define BUFFER_STACK_LOC 56
     %define render_prologue push_registers rcx,rdi,rsi,rbx,rbp  ; rcx = ptr to buf. rdi,rsi,rbx,rbp  nonvolatile
     %macro render_epilogue 0
         pop_registers rcx,rdi,rsi,rbx,rbp
         ret
     %endmacro
 %else ; 64 bit mac & linux
-    %define BUFFER_STACK_LOC 48
+    %define BUFFER_STACK_LOC 40
     %define render_prologue push_registers rdi,rbx,rbp ; rdi = ptr to buf. rbx & rbp nonvolatile
     %macro render_epilogue 0
         pop_registers rdi,rbx,rbp
@@ -116,6 +116,7 @@ EXPORT MANGLE_FUNC(su_render,PTRSIZE)   ; Stack: ptr
     call    su_gmdls_load
 %endif
     xor     eax, eax                    ; ecx is the current row
+    push    _AX                         ; global tick time
 su_render_rowloop:                      ; loop through every row in the song
         push    _AX                     ; Stack: row pushad ptr
         call    su_update_voices        ; update instruments for the new row
@@ -125,6 +126,7 @@ su_render_sampleloop:                   ; loop through every sample in the row
             call    MANGLE_FUNC(su_run_vm,0) ; run through the VM code
             output_sound                ; *ptr++ = left, *ptr++ = right
             pop     _AX                 ; Stack: row pushad ptr
+            inc     dword [_SP + PTRSIZE] ; increment global time, used by delays
             inc     eax
             cmp     eax, SAMPLES_PER_ROW
             jl      su_render_sampleloop
@@ -132,6 +134,7 @@ su_render_sampleloop:                   ; loop through every sample in the row
         inc     eax
         cmp     eax, TOTAL_ROWS
         jl      su_render_rowloop
+    pop     _AX
     render_epilogue
 
 ;-------------------------------------------------------------------------------
