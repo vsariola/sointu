@@ -18,13 +18,6 @@
     %endmacro
 %endif
 
-%ifdef INCLUDE_MULTIVOICE_TRACKS
-struc trackarray
-    .curvoices  resd    MAX_TRACKS
-    .size
-endstruc
-%endif
-
 struc su_playerstack ; the structure of stack _as the output sound sees it_
     .rowtick    RESPTR  1    ; which tick within this row are we at
     .row        RESPTR  1    ; which total row of the song are we at
@@ -32,7 +25,6 @@ struc su_playerstack ; the structure of stack _as the output sound sees it_
     .randseed   RESPTR  1
 %ifdef INCLUDE_MULTIVOICE_TRACKS
     .trackbits  RESPTR  1
-    .trackarray resb    trackarray.size
 %endif
     .cleanup
 %if BITS == 32
@@ -141,11 +133,7 @@ EXPORT MANGLE_FUNC(su_render,PTRSIZE)   ; Stack: ptr
     call    su_gmdls_load
 %endif
     xor     eax, eax
-%ifdef INCLUDE_MULTIVOICE_TRACKS   ; TODO: it's nice to keep the curvoices in stack but it's very unnice having to clear them ourselves
-    sub     _SP, trackarray.size; reserve space from stack for the current voiceno
-    mov     _DI, _SP
-    mov     ecx, trackarray.size/4
-    rep stosd
+%ifdef INCLUDE_MULTIVOICE_TRACKS
     push    VOICETRACK_BITMASK
 %endif
     push    1                           ; randseed
@@ -201,7 +189,7 @@ su_update_voices: ; Stack: retaddr row
     apply {lea _SI,},MANGLE_DATA(su_tracks),_AX,{} ; esi points to the pattern data for current track
     xor     eax, eax                            ; eax is the first voice of next track
     xor     ebx, ebx                            ; ebx is the first voice of current track
-    lea     _BP, [_SP + su_playerstack.trackarray] ; ebp points to the current_voiceno array
+    mov     _BP, PTRWORD su_synth_obj           ; ebp points to the current_voiceno array
 su_update_voices_trackloop:
         movzx   eax, byte [_SI]                     ; eax = current pattern
         imul    eax, PATTERN_SIZE                   ; eax = offset to current pattern data
@@ -217,7 +205,7 @@ su_calculate_voices_loop:                           ; do {
         push    _CX                                 ; Stack: next_instr ptrnrow
         cmp     al, HLD                             ; anything but hold causes action
         je      short su_update_voices_nexttrack
-        mov     ecx, dword [_BP]
+        mov     cl, byte [_BP]
         mov     edi, ecx
         add     edi, ebx
         shl     edi, MAX_UNITS_SHIFT + 6            ; each unit = 64 bytes and there are 1<<MAX_UNITS_SHIFT units + small header
@@ -229,7 +217,7 @@ su_calculate_voices_loop:                           ; do {
         jl      su_update_voices_skipreset
         xor     ecx,ecx                             ;   curvoice = 0
 su_update_voices_skipreset:
-        mov     dword [_BP],ecx
+        mov     byte [_BP],cl
         add     ecx, ebx
         shl     ecx, MAX_UNITS_SHIFT + 6            ; each unit = 64 bytes and there are 1<<MAX_UNITS_SHIFT units + small header
         apply {lea _DI,},su_synth_obj+su_synth.voices,_CX,{}
@@ -241,8 +229,8 @@ su_update_voices_nexttrack:
         pop     _BX                                 ; ebx=first voice of next instrument, Stack: ptrnrow
         pop     _DX                                 ; edx=patrnrow
         add     _SI, MAX_PATTERNS
-        add     _BP, 4
-        lea     _AX, [_SP + su_playerstack.trackarray + MAX_TRACKS*4]
+        inc     _BP
+        apply {lea _AX,},su_synth_obj,MAX_TRACKS,{}
         cmp     _BP,_AX
         jl      su_update_voices_trackloop
     ret
