@@ -315,15 +315,11 @@ SECT_TEXT(sudelay)
 
 EXPORT MANGLE_FUNC(su_op_delay,0)
     lodsw                           ; al = delay index, ah = delay count
-    push_registers VAL, COM, WRK    ; these are non-volatile according to our convention
-%ifdef INCLUDE_DELAY_MODULATION     ; TODO: at the moment, this must be manually enabled, as the PORT macro is a singleline macro and cannot toggle this. Will have to think of a good solution.
-    mov     esi, dword [WRK+su_unit.ports+su_delay_ports.delaymod]
-    mov     [INP+su_delay_ports.delaymod],esi ; move the modulation to the transformed values, as we will not have access to WRK soon
-%endif
+    push_registers VAL, COM         ; these are non-volatile according to our convention
     movzx   ebx, al
     apply {lea _BX,},MANGLE_DATA(su_delay_times),_BX*2,{}               ; _BP now points to the right position within delay time table
-    movzx   esi, word [_SP + su_stack.tick + PUSH_REG_SIZE(3)]          ; notice that we load word, so we wrap at 65536
-    mov     WRK, PTRWORD [_SP + su_stack.delaywrk + PUSH_REG_SIZE(3)]   ; WRK is now the separate delay workspace, as they require a lot more space
+    movzx   esi, word [_SP + su_stack.tick + PUSH_REG_SIZE(2)]          ; notice that we load word, so we wrap at 65536
+    mov     _CX, PTRWORD [_SP + su_stack.delaywrk + PUSH_REG_SIZE(2)]   ; WRK is now the separate delay workspace, as they require a lot more space
 %ifdef INCLUDE_STEREO_DELAY
     jnc     su_op_delay_mono
     push    _AX                 ; save _ah (delay count)
@@ -334,8 +330,8 @@ EXPORT MANGLE_FUNC(su_op_delay,0)
 su_op_delay_mono:               ; flow into mono delay
 %endif
     call    su_op_delay_do      ; when stereo delay is not enabled, we could inline this to save 5 bytes, but I expect stereo delay to be farely popular so maybe not worth the hassle
-    mov     PTRWORD [_SP + su_stack.delaywrk + PUSH_REG_SIZE(3)],WRK   ; move delay workspace pointer back to stack.
-    pop_registers VAL, COM, WRK
+    mov     PTRWORD [_SP + su_stack.delaywrk + PUSH_REG_SIZE(2)],_CX   ; move delay workspace pointer back to stack.
+    pop_registers VAL, COM
 %ifdef INCLUDE_DELAY_MODULATION
     xor     eax, eax
     mov     dword [WRK+su_unit.ports+su_delay_ports.delaymod], eax ; zero it
@@ -377,7 +373,7 @@ su_op_delay_loop:
             su_op_delay_skipnotesync:
             %endif
             %ifdef INCLUDE_DELAY_MODULATION
-                fld     dword [INP+su_delay_ports.delaymod]
+                fld     dword [WRK+su_unit.ports+su_delay_ports.delaymod]
                 apply fmul dword, c_32767 ; scale it up, as the modulations would be too small otherwise
                 faddp   st1, st0
             %endif
@@ -388,33 +384,33 @@ su_op_delay_loop:
             mov     edi, esi
             sub     di, word [_BX]                      ; we perform the math in 16-bit to wrap around
         %endif
-        fld     dword [WRK+su_delayline_wrk.buffer+_DI*4]; s dr*y p*p*x, where s is the sample from delay buffer
+        fld     dword [_CX+su_delayline_wrk.buffer+_DI*4]; s dr*y p*p*x, where s is the sample from delay buffer
         fadd    st1, st0                                ; s dr*y+s p*p*x (add comb output to current output)
         fld1                                            ; 1 s dr*y+s p*p*x
         fsub    dword [INP+su_delay_ports.damp]         ; 1-da s dr*y+s p*p*x
         fmulp   st1, st0                                ; s*(1-da) dr*y+s p*p*x
         fld     dword [INP+su_delay_ports.damp]         ; da s*(1-da) dr*y+s p*p*x
-        fmul    dword [WRK+su_delayline_wrk.filtstate]  ; o*da s*(1-da) dr*y+s p*p*x, where o is stored
+        fmul    dword [_CX+su_delayline_wrk.filtstate]  ; o*da s*(1-da) dr*y+s p*p*x, where o is stored
         faddp   st1, st0                                ; o*da+s*(1-da) dr*y+s p*p*x
-        fst     dword [WRK+su_delayline_wrk.filtstate]  ; o'=o*da+s*(1-da), o' dr*y+s p*p*x
+        fst     dword [_CX+su_delayline_wrk.filtstate]  ; o'=o*da+s*(1-da), o' dr*y+s p*p*x
         fmul    dword [INP+su_delay_ports.feedback]     ; f*o' dr*y+s p*p*x
         fadd    st0, st2                                ; f*o'+p*p*x dr*y+s p*p*x
-        fstp    dword [WRK+su_delayline_wrk.buffer+_SI*4]; save f*o'+p*p*x to delay buffer
+        fstp    dword [_CX+su_delayline_wrk.buffer+_SI*4]; save f*o'+p*p*x to delay buffer
         add     _BX,2                                   ; move to next index
-        add     WRK, su_delayline_wrk.size              ; go to next delay delay workspace
+        add     _CX, su_delayline_wrk.size              ; go to next delay delay workspace
         sub     ah, 2
         jg      su_op_delay_loop                        ; if ah > 0, goto loop
     fstp    st1                                 ; dr*y+s1+s2+s3+...
     ; DC-filtering
-    fld     dword [WRK+su_delayline_wrk.dcout]  ; o s
+    fld     dword [_CX+su_delayline_wrk.dcout]  ; o s
     apply fmul dword, c_dc_const                ; c*o s
-    fsub    dword [WRK+su_delayline_wrk.dcin]   ; c*o-i s
+    fsub    dword [_CX+su_delayline_wrk.dcin]   ; c*o-i s
     fxch                                        ; s c*o-i
-    fst     dword [WRK+su_delayline_wrk.dcin]   ; i'=s, s c*o-i
+    fst     dword [_CX+su_delayline_wrk.dcin]   ; i'=s, s c*o-i
     faddp   st1                                 ; s+c*o-i
     apply fadd dword, c_0_5                     ; add and sub small offset to prevent denormalization
     apply fsub dword, c_0_5
-    fst     dword [WRK+su_delayline_wrk.dcout]  ; o'=s+c*o-i
+    fst     dword [_CX+su_delayline_wrk.dcout]  ; o'=s+c*o-i
     ret
 
 ;-------------------------------------------------------------------------------
