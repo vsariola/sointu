@@ -123,6 +123,7 @@ su_render_sampleloop:                   ; loop through every sample in the row
             %ifdef INCLUDE_POLYPHONY
                 push    POLYPHONY_BITMASK ; does the next voice reuse the current opcodes?
             %endif
+            push    MAX_VOICES
             mov     _DX, PTRWORD su_synth_obj                       ; _DX points to the synth object
             mov     COM, PTRWORD MANGLE_DATA(su_commands)           ; COM points to vm code
             mov     VAL, PTRWORD MANGLE_DATA(su_params)             ; VAL points to unit params
@@ -130,13 +131,13 @@ su_render_sampleloop:                   ; loop through every sample in the row
                 lea     _CX, [_DX + su_synth.size - su_delayline_wrk.filtstate]
             %endif
             lea     WRK, [_DX + su_synth.voices]            ; WRK points to the first voice
-            xor     edi, edi                                ; voice = 0
             call    MANGLE_FUNC(su_run_vm,0) ; run through the VM code
+            pop     _AX
             %ifdef INCLUDE_POLYPHONY
                 pop     _AX
             %endif
             output_sound                ; *ptr++ = left, *ptr++ = right
-            pop     _AX                 ; Stack: row pushad ptr
+            pop     _AX
             inc     dword [_SP + PTRSIZE] ; increment global time, used by delays
             inc     eax
             cmp     eax, SAMPLES_PER_ROW

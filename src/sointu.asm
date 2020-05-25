@@ -99,7 +99,9 @@
 
 struc su_stack ; the structure of stack _as the units see it_
     .retaddr    RESPTR  1
-    .voiceno    RESPTR  1
+%if BITS == 32              ; we dump everything with pushad, so this is unused in 32-bit
+                RESPTR  1
+%endif
     .val        RESPTR  1
     .wrk        RESPTR  1
 %if BITS == 32              ; we dump everything with pushad, so this is unused in 32-bit
@@ -112,6 +114,7 @@ struc su_stack ; the structure of stack _as the units see it_
                 RESPTR  1
 %endif
     .retaddrvm  RESPTR  1
+    .voiceno    RESPTR  1
 %ifdef INCLUDE_POLYPHONY
     .polyphony  RESPTR  1
 %endif
@@ -175,7 +178,7 @@ EXPORT MANGLE_DATA(LFO_NORMALIZE)
 ;               COM                 :   Pointer to command stream
 ;               VAL                 :   Pointer to value stream
 ;               WRK                 :   Pointer to the last workspace processed
-;               _DI                 :   Voice number (0 = starting from first voice)
+;               _DI                 :   Number of voices to process
 ;   Output:     su_synth_obj.left   :   left sample
 ;               su_synth_obj.right  :   right sample
 ;   Dirty:      everything
@@ -183,7 +186,7 @@ EXPORT MANGLE_DATA(LFO_NORMALIZE)
 SECT_TEXT(surunvm)
 
 EXPORT MANGLE_FUNC(su_run_vm,0)
-    push_registers _CX, _DX, COM, WRK, VAL, _DI     ; save everything to stack
+    push_registers _CX, _DX, COM, WRK, VAL          ; save everything to stack
 su_run_vm_loop:                                     ; loop until all voices done
     movzx   edi, byte [COM]                         ; edi = command byte
     inc     COM                                     ; move to next instruction
@@ -210,9 +213,9 @@ su_transform_values_loop:
 su_transform_values_out:
     bt      dword [COM-1],0                         ; LSB of COM = stereo bit => carry
  do call    [,su_synth_commands,_DI*PTRSIZE,]       ; call the function corresponding to the instruction
-    cmp     dword [_SP+su_stack.voiceno-PTRSIZE],MAX_VOICES ; if (voice < MAX_VOICES)
-    jl      su_run_vm_loop                          ;   goto vm_loop
-    pop_registers _CX, _DX, COM, WRK, VAL, _DI      ; pop everything from stack
+    cmp     dword [_SP+su_stack.voiceno-PTRSIZE],0  ; do we have more voices to process?
+    jne     su_run_vm_loop                          ;   if there's more voices to process, goto vm_loop
+    pop_registers _CX, _DX, COM, WRK, VAL           ; pop everything from stack
     ret
 
 ;-------------------------------------------------------------------------------

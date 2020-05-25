@@ -128,10 +128,11 @@
     ; increment MAX_VOICES equal to %1 and construct the POLYPHONY_BITMASK so that
     ; for every except the last, the bit is on
     %rep  %1-1
-        %assign POLYPHONY_BITMASK POLYPHONY_BITMASK + (1 << MAX_VOICES)
+        %assign POLYPHONY_BITMASK (POLYPHONY_BITMASK << 1) + 1
         %assign MAX_VOICES MAX_VOICES + 1
     %endrep
-    %assign MAX_VOICES MAX_VOICES + 1 ; the last voice increment, without adding bit mask
+    %assign POLYPHONY_BITMASK (POLYPHONY_BITMASK << 1)
+    %assign MAX_VOICES MAX_VOICES + 1 ; the last voice increment, without adding one bit to the mask
     %if MAX_VOICES > 32
         %error Error: cannot have more than 32 voices!
     %endif
