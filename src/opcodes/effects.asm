@@ -461,11 +461,11 @@ su_op_compressor_mono:
     fld     dword [WRK+su_compres_wrk.level]    ; l x^2 x
     fucomi  st0, st1
     setnb   al                                  ; if (st0 >= st1) al = 1; else al = 0;
-    fsub    st1, st0                            ; l x^2-l x
-    call    su_env_map                          ; c l x^2-l x, c is either attack or release parameter mapped in a nonlinear way
-    fmulp   st2, st0                            ; l c*(x^2-l) x
-    faddp   st1, st0                            ; l+c*(x^2-l) x
-    fst     dword [WRK+su_compres_wrk.level] ; l'=l+c*(x^2-l), l' x
+    fsubp   st1, st0                            ; x^2-l x
+    call    su_env_map                          ; c x^2-l x, c is either attack or release parameter mapped in a nonlinear way
+    fmulp   st1, st0                            ; c*(x^2-l) x
+    fadd    dword [WRK+su_compres_wrk.level]    ; l+c*(x^2-l) x   // we could've kept level in the stack and save a few bytes, but su_env_map uses 3 stack (c + 2 temp), so the stack was getting quite big.
+    fst     dword [WRK+su_compres_wrk.level]    ; l'=l+c*(x^2-l), l' x
     fld     dword [INP+su_compres_ports.threshold] ; t l' x
     fmul    st0, st0                            ; t*t l' x
     fxch                                        ; l' t*t x
