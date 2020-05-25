@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION 3.15)
 cmake_policy(SET CMP0091 NEW) 
 
 project(sointu
-    VERSION 3.3.2
-    DESCRIPTION "A modular synthesizer for 4k/8k intros"
+    VERSION 0.0.0
+    DESCRIPTION "A modular synthesizer for 4k/8k/64k intros"
     LANGUAGES C CXX)
 
 # Only do these if this is the main project, and not if it is included through add_subdirectory
