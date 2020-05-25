@@ -219,16 +219,16 @@ su_transform_values_out:
     ret
 
 ;-------------------------------------------------------------------------------
-;   su_env_map function: computes 2^(-24*x) of the envelope parameter
+;   su_nonlinear_map function: returns 2^(-24*x) of parameter number _AX
 ;-------------------------------------------------------------------------------
-;   Input:      eax     :   envelope parameter (0 = attac, 1 = decay...)
-;               edx     :   pointer to su_transformed_values
+;   Input:      _AX     :   parameter number (e.g. for envelope: 0 = attac, 1 = decay...)
+;               INP     :   pointer to transformed values
 ;   Output:     st0     :   2^(-24*x), where x is the parameter in the range 0-1
 ;-------------------------------------------------------------------------------
 SECT_TEXT(supower)
 
-%if ENVELOPE_ID > -1 ; TODO: compressor also uses this, so should be compiled if either
-su_env_map:
+%if ENVELOPE_ID > -1 || COMPRES_ID > -1
+su_nonlinear_map:
     fld     dword [INP+_AX*4]   ; x, where x is the parameter in the range 0-1
  do fimul   dword [,c_24,]      ; 24*x
     fchs                        ; -24*x

@@ -29,7 +29,7 @@ kmENV_func_process:
 kmENV_func_attac:
     cmp     al, ENV_STATE_ATTAC                 ; if (al!=ATTAC)
     jne     short kmENV_func_decay              ;   goto decay
-    call    su_env_map                          ; a x, where a=attack
+    call    su_nonlinear_map                    ; a x, where a=attack
     faddp   st1, st0                            ; a+x
     fld1                                        ; 1 a+x
     fucomi  st1                                 ; if (a+x<=1) // is attack complete?
@@ -38,7 +38,7 @@ kmENV_func_attac:
 kmENV_func_decay:
     cmp     al, ENV_STATE_DECAY                 ; if (al!=DECAY)
     jne     short kmENV_func_release            ;   goto release
-    call    su_env_map                          ; d x, where d=decay
+    call    su_nonlinear_map                    ; d x, where d=decay
     fsubp   st1, st0                            ; x-d
     fld     dword [INP+su_env_ports.sustain]       ; s x-d, where s=sustain
     fucomi  st1                                 ; if (x-d>s) // is decay complete?
@@ -47,7 +47,7 @@ kmENV_func_decay:
 kmENV_func_release:
     cmp     al, ENV_STATE_RELEASE               ; if (al!=RELEASE)
     jne     short kmENV_func_leave              ;   goto leave
-    call    su_env_map                            ; r x, where r=release
+    call    su_nonlinear_map                    ; r x, where r=release
     fsubp   st1, st0                            ; x-r
     fldz                                        ; 0 x-r
     fucomi  st1                                 ; if (x-r>0) // is release complete?
