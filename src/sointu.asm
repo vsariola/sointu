@@ -185,54 +185,35 @@ SECT_TEXT(surunvm)
 EXPORT MANGLE_FUNC(su_run_vm,0)
     push_registers _CX, _DX, COM, WRK, VAL, _DI     ; save everything to stack
 su_run_vm_loop:                                     ; loop until all voices done
-    movzx   eax, byte [COM]                         ; eax = command byte
+    movzx   edi, byte [COM]                         ; edi = command byte
     inc     COM                                     ; move to next instruction
     add     WRK, su_unit.size                       ; move WRK to next unit
-    push    _AX
-    shr     eax,1
-do {mov     al, byte [},su_opcode_numparams,_AX,]
-    push    _AX
-    call    su_transform_values
-    pop     _AX
-    shr     eax,1
- do call    [,su_synth_commands,_AX*PTRSIZE,]    ; call the function corresponding to the instruction
-    cmp     dword [_SP+su_stack.voiceno-PTRSIZE],MAX_VOICES ; if (voice < MAX_VOICES)
-    jl      su_run_vm_loop                          ;   goto vm_loop
-    pop_registers _CX, _DX, COM, WRK, VAL, _DI      ; pop everything from stack
-    ret
-
-;-------------------------------------------------------------------------------
-;   su_transform_values function: transforms values and adds modulations
-;-------------------------------------------------------------------------------
-;   Input:      [esp]   :   number of bytes to transform
-;               VAL     :   pointer to byte stream
-;   Output:     eax     :   last transformed byte (zero extended)
-;               edx     :   pointer to su_transformed_values, containing
-;                           each byte transformed as x/128.0f+modulations
-;               VAL     :   updated to point after the transformed bytes
-;-------------------------------------------------------------------------------
-SECT_TEXT(sutransf)
-
-su_transform_values:
-    xor     ecx, ecx
-    xor     eax, eax
-    mov     INP, [_SP+su_stack.wrk+2*PTRSIZE]
+    shr     edi, 1                                  ; shift out the LSB bit = stereo bit
+    mov     INP, [_SP+su_stack.wrk-PTRSIZE]         ; reset INP to point to the inputs part of voice
     add     INP, su_voice.inputs
+    xor     ecx, ecx                                ; counter = 0
+    xor     eax, eax                                ; clear out high bits of eax, as lodsb only sets al
 su_transform_values_loop:
-    cmp     ecx, dword [_SP+PTRSIZE]
-    jnb     su_transform_values_out
-    lodsb
-    push    _AX
-    fild    dword [_SP]
- do fmul    dword [,c_i128,]
-    fadd    dword [WRK+su_unit.ports+_CX*4]
-    fstp    dword [INP+_CX*4]
-    mov     dword [WRK+su_unit.ports+_CX*4], 0
+ do{cmp     cl, byte [},su_opcode_numparams,_DI,]   ; compare the counter to the value in the param count table
+    je      su_transform_values_out
+    lodsb                                           ; load the byte value from VAL stream
+    push    _AX                                     ; push it to memory so FPU can read it
+    fild    dword [_SP]                             ; load the value to FPU stack
+ do fmul    dword [,c_i128,]                        ; divide it by 128 (0 => 0, 128 => 1.0)
+    fadd    dword [WRK+su_unit.ports+_CX*4]         ; add the modulations in the current workspace
+    fstp    dword [INP+_CX*4]                       ; store the modulated value in the inputs section of voice
+    xor     eax, eax
+    mov     dword [WRK+su_unit.ports+_CX*4], eax    ; clear out the modulation ports
     pop     _AX
     inc     ecx
     jmp     su_transform_values_loop
 su_transform_values_out:
-    ret     PTRSIZE
+    bt      dword [COM-1],0                         ; LSB of COM = stereo bit => carry
+ do call    [,su_synth_commands,_DI*PTRSIZE,]       ; call the function corresponding to the instruction
+    cmp     dword [_SP+su_stack.voiceno-PTRSIZE],MAX_VOICES ; if (voice < MAX_VOICES)
+    jl      su_run_vm_loop                          ;   goto vm_loop
+    pop_registers _CX, _DX, COM, WRK, VAL, _DI      ; pop everything from stack
+    ret
 
 ;-------------------------------------------------------------------------------
 ;   su_env_map function: computes 2^(-24*x) of the envelope parameter
