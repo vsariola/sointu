@@ -28,6 +28,66 @@ struc   su_out_ports
 endstruc
 
 ;-------------------------------------------------------------------------------
+;   OUTAUX structs
+;-------------------------------------------------------------------------------
+%assign OUTAUX_ID -1
+%macro USE_OUTAUX 0
+    %if OUTAUX_ID == -1
+        %assign OUTAUX_ID CUR_ID
+        %assign CUR_ID CUR_ID + 2
+        %xdefine OPCODES OPCODES MANGLE_FUNC(su_op_outaux,0),
+        %xdefine NUMPARAMS NUMPARAMS 2,
+    %endif
+%endmacro
+
+%macro  SU_OUTAUX 3
+    db  %2
+    db  %3
+    USE_OUTAUX
+    %xdefine CMDS CMDS OUTAUX_ID+%1,
+    %if %1 == STEREO
+        %define INCLUDE_STEREO_OUTAUX
+    %endif
+%endmacro
+
+%define OUTGAIN(val)    val
+%define AUXGAIN(val)    val
+
+struc   su_outaux_ports
+    .outgain    resd    1
+    .auxgain    resd    1
+endstruc
+
+;-------------------------------------------------------------------------------
+;   AUX defines
+;-------------------------------------------------------------------------------
+%assign AUX_ID -1
+%macro USE_AUX 0
+    %if AUX_ID == -1
+        %assign AUX_ID CUR_ID
+        %assign CUR_ID CUR_ID + 2
+        %xdefine OPCODES OPCODES MANGLE_FUNC(su_op_aux,0),
+        %xdefine NUMPARAMS NUMPARAMS 1,
+    %endif
+%endmacro
+
+%macro  SU_AUX 3
+    db  %2
+    db  %3
+    USE_AUX
+    %xdefine CMDS CMDS AUX_ID+%1,
+    %if %1 == STEREO
+        %define INCLUDE_STEREO_AUX
+    %endif
+%endmacro
+
+%define CHANNEL(val)    val
+
+struc   su_aux_ports
+    .gain       resd    1
+endstruc
+
+;-------------------------------------------------------------------------------
 ;   SEND structs
 ;-------------------------------------------------------------------------------
 %assign SEND_ID -1

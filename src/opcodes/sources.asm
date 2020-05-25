@@ -406,3 +406,35 @@ su_op_receive_mono:
     ret
 
 %endif ; RECEIVE_ID > -1
+
+;-------------------------------------------------------------------------------
+;   IN opcode: inputs and clears a global port
+;-------------------------------------------------------------------------------
+;   Mono: push the left channel of a global port (out or aux)
+;   Stereo: also push the right channel (stack in l r order)
+;-------------------------------------------------------------------------------
+%if IN_ID > -1
+
+SECT_TEXT(suopin)
+
+EXPORT MANGLE_FUNC(su_op_in,0)
+    lodsb
+    %ifdef INCLUDE_STEREO_IN
+        mov     _DI, [_SP + su_stack.synth]
+        jnc     su_op_in_mono
+        call    su_op_in_right
+    su_op_in_mono:
+        sub     _DI, 4
+    su_op_in_right:
+        xor     ecx, ecx
+        fld     dword [_DI + su_synth.right + _AX*4]
+        mov     dword [_DI + su_synth.right + _AX*4], ecx
+    %else
+        xor     ecx, ecx
+        mov     _DI, [_SP + su_stack.synth]
+        fld     dword [_DI + su_synth.left + _AX*4]
+        mov     dword [_DI + su_synth.left + _AX*4], ecx
+    %endif
+    ret
+
+%endif ; SU_IN_ID > -1

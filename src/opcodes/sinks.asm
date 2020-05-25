@@ -1,8 +1,8 @@
 ;-------------------------------------------------------------------------------
 ;   OUT opcode: outputs and pops the signal
 ;-------------------------------------------------------------------------------
-;   Mono: add ST0 to global left port
-;   Stereo: also add ST1 to global right port
+;   Mono: add ST0 to main left port
+;   Stereo: also add ST1 to main right port
 ;-------------------------------------------------------------------------------
 %if OUT_ID > -1
 
@@ -22,6 +22,61 @@ EXPORT MANGLE_FUNC(su_op_out,0) ; l r
     ret
 
 %endif ; SU_OUT_ID > -1
+
+;-------------------------------------------------------------------------------
+;   OUTAUX opcode: outputs to main and aux1 outputs and pops the signal
+;-------------------------------------------------------------------------------
+;   Mono: add outgain*ST0 to main left port and auxgain*ST0 to aux1 left
+;   Stereo: also add outgain*ST1 to main right port and auxgain*ST1 to aux1 right
+;-------------------------------------------------------------------------------
+%if OUTAUX_ID > -1
+
+SECT_TEXT(suoutaux)
+
+EXPORT MANGLE_FUNC(su_op_outaux,0) ; l r
+    mov     _AX, [_SP + su_stack.synth]
+    %ifdef INCLUDE_STEREO_OUTAUX
+        jnc     su_op_outaux_mono
+        call    su_op_outaux_mono
+        add     _AX, 4
+    su_op_outaux_mono:
+    %endif
+    fld     st0                                     ; l l
+    fmul    dword [INP + su_outaux_ports.outgain]   ; g*l
+    fadd    dword [_AX + su_synth.left]             ; g*l+o
+    fstp    dword [_AX + su_synth.left]             ; o'=g*l+o
+    fmul    dword [INP + su_outaux_ports.auxgain]   ; h*l
+    fadd    dword [_AX + su_synth.aux]              ; h*l+a
+    fstp    dword [_AX + su_synth.aux]              ; a'=h*l+a
+    ret
+
+%endif ; SU_OUTAUX_ID > -1
+
+;-------------------------------------------------------------------------------
+;   AUX opcode: outputs the signal to aux (or main) port and pops the signal
+;-------------------------------------------------------------------------------
+;   Mono: add gain*ST0 to left port
+;   Stereo: also add gain*ST1 to right port
+;-------------------------------------------------------------------------------
+%if AUX_ID > -1
+
+SECT_TEXT(suopaux)
+
+EXPORT MANGLE_FUNC(su_op_aux,0) ; l r
+    lodsb
+    mov     _DI, [_SP + su_stack.synth]
+    %ifdef INCLUDE_STEREO_AUX
+        jnc     su_op_aux_mono
+        call    su_op_aux_mono
+        add     _DI, 4
+    su_op_aux_mono:
+    %endif
+    fmul    dword [INP + su_aux_ports.gain]     ; g*l
+    fadd    dword [_DI + su_synth.left + _AX*4] ; g*l+o
+    fstp    dword [_DI + su_synth.left + _AX*4] ; o'=g*l+o
+    ret
+
+%endif ; SU_AUX_ID > -1
 
 ;-------------------------------------------------------------------------------
 ;   SEND opcode: adds the signal to a port

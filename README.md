@@ -65,7 +65,11 @@ New features since fork
     signals in an arbitrary way. Actually, 4klang could already do this but in
     a very awkward way: it had FLD (load value) opcode that could be modulated;
     FLD 0 with modulation basically achieved what RECEIVE does, except that
-    RECEIVE can also handle stereo signals.
+    RECEIVE can also handle stereo signals. Additionally, we have OUTAUX, AUX
+    and IN opcodes, which route the signals through global main or aux ports, 
+    more closer to how 4klang does. But this time we have 8 mono ports / 4
+    stereo ports, so even this method of routing is unlikely to run out of ports
+    in small intros.
   - **Pattern length does not have to be a power of 2**.
   - **Sample-based oscillators, with samples imported from gm.dls**. Reading
     gm.dls is obviously Windows only, but the sample mechanism can be used also

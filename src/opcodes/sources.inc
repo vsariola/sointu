@@ -250,3 +250,25 @@ struc su_receive_ports
     .left       resd    1
     .right      resd    1
 endstruc
+
+;-------------------------------------------------------------------------------
+;   IN defines
+;-------------------------------------------------------------------------------
+%assign IN_ID -1
+%macro USE_IN 0
+    %if IN_ID == -1
+        %assign IN_ID CUR_ID
+        %assign CUR_ID CUR_ID + 2
+        %xdefine OPCODES OPCODES MANGLE_FUNC(su_op_in,0),
+        %xdefine NUMPARAMS NUMPARAMS 0,
+    %endif
+%endmacro
+
+%macro  SU_IN 2
+    db %2
+    USE_IN
+    %xdefine CMDS CMDS IN_ID+%1,
+    %if %1 == STEREO
+        %define INCLUDE_STEREO_IN
+    %endif
+%endmacro
