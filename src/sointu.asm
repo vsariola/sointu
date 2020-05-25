@@ -100,21 +100,41 @@
 struc su_stack ; the structure of stack _as the units see it_
     .retaddr    RESPTR  1
     .voiceno    RESPTR  1
-    .wrk        RESPTR  1
     .val        RESPTR  1
+    .wrk        RESPTR  1
+%if BITS == 32              ; we dump everything with pushad, so this is unused in 32-bit
+                RESPTR  1
+%endif
     .com        RESPTR  1
     .synth      RESPTR  1
-%if DELAY_ID > -1
     .delaywrk   RESPTR  1
+%if BITS == 32              ; we dump everything with pushad, so this is unused in 32-bit
+                RESPTR  1
 %endif
     .retaddrvm  RESPTR  1
 %ifdef INCLUDE_POLYPHONY
     .polyphony  RESPTR  1
 %endif
+    .output_sound
     .rowtick    RESPTR  1    ; which tick within this row are we at
+    .update_voices
     .row        RESPTR  1    ; which total row of the song are we at
     .tick       RESPTR  1    ; which total tick of the song are we at
     .randseed   RESPTR  1
+%ifdef INCLUDE_MULTIVOICE_TRACKS
+    .voicetrack RESPTR  1
+%endif
+    .render_epilogue
+%if BITS == 32
+                RESPTR  8   ; registers
+    .retaddr_pl RESPTR  1
+%elifidn __OUTPUT_FORMAT__,win64
+                RESPTR  4   ; registers
+%else
+                RESPTR  2   ; registers
+%endif
+    .bufferptr  RESPTR  1
+    .size
 endstruc
 
 ;===============================================================================
@@ -150,6 +170,12 @@ EXPORT MANGLE_DATA(LFO_NORMALIZE)
 ;-------------------------------------------------------------------------------
 ;   Input:      su_synth_obj.left   :   Set to 0 before calling
 ;               su_synth_obj.right  :   Set to 0 before calling
+;               _CX                 :   Pointer to delay workspace (if needed)
+;               _DX                 :   Pointer to synth object
+;               COM                 :   Pointer to command stream
+;               VAL                 :   Pointer to value stream
+;               WRK                 :   Pointer to the last workspace processed
+;               _DI                 :   Voice number (0 = starting from first voice)
 ;   Output:     su_synth_obj.left   :   left sample
 ;               su_synth_obj.right  :   right sample
 ;   Dirty:      everything
@@ -157,17 +183,7 @@ EXPORT MANGLE_DATA(LFO_NORMALIZE)
 SECT_TEXT(surunvm)
 
 EXPORT MANGLE_FUNC(su_run_vm,0)
-    %if DELAY_ID > -1
-        lea     _AX, [WRK + su_synth.size - su_delayline_wrk.filtstate]
-        push    _AX                                 ; reset delaywrk to first delayline
-    %endif
-    push    WRK                                     ; Stack: synth (delayWRK)
-    lea     WRK, [WRK + su_synth.voices]            ; WRK points to the first voice
-    push    COM                                     ; Stack: COM synth
-    push    VAL                                     ; Stack: VAL COM synth
-    push    WRK                                     ; Stack: WRK VAL COM synth
-    xor     ecx, ecx                                ; voice = 0
-    push    _CX                                     ; Stack: voice WRK VAL COM synth
+    push_registers _CX, _DX, COM, WRK, VAL, _DI     ; save everything to stack
 su_run_vm_loop:                                     ; loop until all voices done
     movzx   eax, byte [COM]                         ; eax = command byte
     inc     COM                                     ; move to next instruction
@@ -182,7 +198,7 @@ do {mov     al, byte [},su_opcode_numparams,_AX,]
  do call    [,su_synth_commands,_AX*PTRSIZE,]    ; call the function corresponding to the instruction
     cmp     dword [_SP+su_stack.voiceno-PTRSIZE],MAX_VOICES ; if (voice < MAX_VOICES)
     jl      su_run_vm_loop                          ;   goto vm_loop
-    add     _SP, su_stack.retaddrvm-PTRSIZE         ; Stack cleared
+    pop_registers _CX, _DX, COM, WRK, VAL, _DI      ; pop everything from stack
     ret
 
 ;-------------------------------------------------------------------------------

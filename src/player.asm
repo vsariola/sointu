@@ -18,27 +18,6 @@
     %endmacro
 %endif
 
-struc su_playerstack ; the structure of stack _as the output sound sees it_
-    .rowtick    RESPTR  1    ; which tick within this row are we at
-    .row        RESPTR  1    ; which total row of the song are we at
-    .tick       RESPTR  1    ; which total tick of the song are we at
-    .randseed   RESPTR  1
-%ifdef INCLUDE_MULTIVOICE_TRACKS
-    .trackbits  RESPTR  1
-%endif
-    .cleanup
-%if BITS == 32
-    .regs       RESPTR  8
-    .retaddr    RESPTR  1
-%elifidn __OUTPUT_FORMAT__,win64
-    .regs       RESPTR  4
-%else
-    .regs       RESPTR  2
-%endif
-    .bufferptr  RESPTR  1
-    .size
-endstruc
-
 ;===============================================================================
 ;   Uninitialized data: The one and only synth object
 ;===============================================================================
@@ -48,9 +27,6 @@ su_synth_obj            resb    su_synth.size
 
 %if DELAY_ID > -1       ; if we use delay, then the synth obj should be immediately followed by the delay workspaces
                         resb   NUM_DELAY_LINES*su_delayline_wrk.size
-%endif
-%ifdef INCLUDE_MULTIVOICE_TRACKS
-su_curvoices            resd    MAX_TRACKS 
 %endif
 
 ;-------------------------------------------------------------------------------
@@ -75,17 +51,17 @@ SECT_DATA(suconst)
 %macro output_sound 0
     %ifndef SU_USE_16BIT_OUTPUT
         %ifndef SU_CLIP_OUTPUT ; The modern way. No need to clip; OS can do it.
-            mov     _DI, [_SP+su_playerstack.bufferptr] ; edi containts ptr
+            mov     _DI, [_SP+su_stack.bufferptr - su_stack.output_sound] ; edi containts ptr
             mov     _SI, PTRWORD su_synth_obj + su_synth.left
             movsd   ; copy left channel to output buffer
             movsd   ; copy right channel to output buffer
-            mov     [_SP+su_playerstack.bufferptr], _DI ; save back the updated ptr
+            mov     [_SP+su_stack.bufferptr - su_stack.output_sound], _DI ; save back the updated ptr
             lea     _DI, [_SI-8]
             xor     eax, eax
             stosd   ; clear left channel so the VM is ready to write them again
             stosd   ; clear right channel so the VM is ready to write them again
         %else
-            mov     _SI, qword [_SP+su_playerstack.bufferptr] ; esi points to the output buffer
+            mov     _SI, qword [_SP+su_stack.bufferptr - su_stack.output_sound] ; esi points to the output buffer
             xor     _CX,_CX
             xor     eax,eax
             %%loop: ; loop over two channels, left & right
@@ -96,10 +72,10 @@ SECT_DATA(suconst)
                 add     _SI,4
                 cmp     ecx,2
                 jl      %%loop
-            mov     dword [_SP+su_playerstack.bufferptr], _SI ; save esi back to stack
+            mov     dword [_SP+su_stack.bufferptr - su_stack.output_sound], _SI ; save esi back to stack
         %endif
     %else ; 16-bit output, always clipped. This is a bit legacy method.
-        mov     _SI, [_SP+su_playerstack.bufferptr] ; esi points to the output buffer
+        mov     _SI, [_SP+su_stack.bufferptr - su_stack.output_sound] ; esi points to the output buffer
         mov     _DI, PTRWORD su_synth_obj+su_synth.left
         mov     ecx, 2
         %%loop: ; loop over two channels, left & right
@@ -114,7 +90,7 @@ SECT_DATA(suconst)
             stosd
             add     _SI,2
             loop    %%loop
-        mov     [_SP+su_playerstack.bufferptr], _SI ; save esi back to stack
+        mov     [_SP+su_stack.bufferptr - su_stack.output_sound], _SI ; save esi back to stack
     %endif
 %endmacro
 
@@ -146,14 +122,19 @@ su_render_sampleloop:                   ; loop through every sample in the row
             push    _AX                 ; Stack: sample row pushad ptr
             %ifdef INCLUDE_POLYPHONY
                 push    POLYPHONY_BITMASK ; does the next voice reuse the current opcodes?
-            %endif    
-            mov     WRK, PTRWORD su_synth_obj                       ; WRK points to the synth object
+            %endif
+            mov     _DX, PTRWORD su_synth_obj                       ; _DX points to the synth object
             mov     COM, PTRWORD MANGLE_DATA(su_commands)           ; COM points to vm code
             mov     VAL, PTRWORD MANGLE_DATA(su_params)             ; VAL points to unit params
+            %if DELAY_ID > -1
+                lea     _CX, [_DX + su_synth.size - su_delayline_wrk.filtstate]
+            %endif
+            lea     WRK, [_DX + su_synth.voices]            ; WRK points to the first voice
+            xor     edi, edi                                ; voice = 0
             call    MANGLE_FUNC(su_run_vm,0) ; run through the VM code
             %ifdef INCLUDE_POLYPHONY
                 pop     _AX
-            %endif  
+            %endif
             output_sound                ; *ptr++ = left, *ptr++ = right
             pop     _AX                 ; Stack: row pushad ptr
             inc     dword [_SP + PTRSIZE] ; increment global time, used by delays
@@ -165,11 +146,11 @@ su_render_sampleloop:                   ; loop through every sample in the row
         cmp     eax, TOTAL_ROWS
         jl      su_render_rowloop
 %ifdef INCLUDE_MULTIVOICE_TRACKS
-    add     _SP, su_playerstack.cleanup - su_playerstack.tick ; rewind the remaining tack
+    add     _SP, su_stack.render_epilogue - su_stack.tick ; rewind the remaining tack
 %else
     pop     _AX
     pop     _AX
-%endif   
+%endif
     render_epilogue
 
 ;-------------------------------------------------------------------------------
@@ -198,7 +179,7 @@ su_update_voices_trackloop:
         xor     edx, edx                            ; edx=0
         mov     ecx, ebx                            ; ecx=first voice of the track to be done
 su_calculate_voices_loop:                           ; do {
-        bt      dword [_SP + su_playerstack.trackbits + PTRSIZE],ecx ; test voicetrack_bitmask// notice that the incs don't set carry
+        bt      dword [_SP + su_stack.voicetrack - su_stack.update_voices + 2*PTRSIZE],ecx ; test voicetrack_bitmask// notice that the incs don't set carry
         inc     edx                                 ;   edx++   // edx=numvoices
         inc     ecx                                 ;   ecx++   // ecx=the first voice of next track
         jc      su_calculate_voices_loop            ; } while bit ecx-1 of bitmask is on
@@ -233,7 +214,6 @@ su_update_voices_nexttrack:
      do{cmp     _BP,},su_synth_obj+MAX_TRACKS
         jl      su_update_voices_trackloop
     ret
-
 
 %else ; INCLUDE_MULTIVOICE_TRACKS not defined -> one voice per track ve_SIon
 
