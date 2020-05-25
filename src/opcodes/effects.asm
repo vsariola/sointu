@@ -459,26 +459,19 @@ EXPORT MANGLE_FUNC(su_op_compressor,0)
 su_op_compressor_mono:
 %endif
     fld     dword [WRK+su_compres_wrk.level]    ; l x^2 x
-    mov     al,1                                ; high bits are zero so this is ok. eax = 1 => release
-    fucomi  st0, st1                            ; if l > x^2 // we're releasing
-    jnb     su_op_compressor_releasing
-    xor     eax, eax                            ; eax = 0 => attacking
-su_op_compressor_releasing:
+    fucomi  st0, st1
+    setnb   al                                  ; if (st0 >= st1) al = 1; else al = 0;
     fsub    st1, st0                            ; l x^2-l x
     call    su_env_map                          ; c l x^2-l x, c is either attack or release parameter mapped in a nonlinear way
     fmulp   st2, st0                            ; l c*(x^2-l) x
     faddp   st1, st0                            ; l+c*(x^2-l) x
     fst     dword [WRK+su_compres_wrk.level] ; l'=l+c*(x^2-l), l' x
     fld     dword [INP+su_compres_ports.threshold] ; t l' x
-    fmul    st0, st0                            ; t*t
-    fucomi  st0, st1                            ; if threshold < l'
-    jb      su_op_compressor_compress           ;    then we actually do compression
-    fstp    st0                                 ; l' x
-    fstp    st0                                 ; x
-    fld1                                        ; 1 x
-    ret                                         ; return unity gain when we are below threshold
-su_op_compressor_compress:                      ; l' x
-    fdivrp  st1, st0                            ; t*t/l' x
+    fmul    st0, st0                            ; t*t l' x
+    fxch                                        ; l' t*t x
+    fucomi  st0, st1                            ; if l' < t*t
+    fcmovb  st0, st1                            ;   l'=t*t
+    fdivp   st1, st0                            ; t*t/l' x
     fld     dword [INP+su_compres_ports.ratio]  ; r t*t/l' x
  do fmul    dword [,c_0_5,]                     ; p=r/2 t*t/l' x
     fxch                                        ; t*t/l' p x
