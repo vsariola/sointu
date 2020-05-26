@@ -295,13 +295,13 @@ endstruc
     %endif
 %endmacro
 
-%macro SU_BEGIN_DELTIMES 0
+%macro BEGIN_DELTIMES 0
     SECT_DATA(sudeltim)
 
     EXPORT MANGLE_DATA(su_delay_times)
 %endmacro
 
-%define SU_END_DELTIMES
+%define END_DELTIMES
 
 %macro DELTIME 1-*
     %rep  %0

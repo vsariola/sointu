@@ -1,5 +1,5 @@
 # Usage: python parse_gmdls.py <path-to-gmdls>
-# Parses the GMDLs sample and loop locations and dumps them ready to be included in the SU_BEGIN_SAMPLE_OFFSETS block
+# Parses the GMDLs sample and loop locations and dumps them ready to be included in the BEGIN_SAMPLE_OFFSETS block
 
 import sys
 

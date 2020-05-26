@@ -133,7 +133,7 @@ endstruc
 ;   Sample related defines
 ;-------------------------------------------------------------------------------
 
-%macro SU_BEGIN_SAMPLE_OFFSETS 0
+%macro BEGIN_SAMPLE_OFFSETS 0
     SECT_DATA(susamoff)
 
     EXPORT MANGLE_DATA(su_sample_offsets)
@@ -149,7 +149,7 @@ endstruc
 %define LOOPSTART(val)  val
 %define LOOPLENGTH(val) val
 
-%define SU_END_SAMPLE_OFFSETS
+%define END_SAMPLE_OFFSETS
 
 struc   su_sample_offset  ; length conveniently 8, so easy to index
     .start      resd    1

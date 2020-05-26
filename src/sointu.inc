@@ -106,13 +106,13 @@
 %define SAMPLES_PER_ROW (SAMPLE_RATE*4*60/(BPM*16))
 %define MAX_SAMPLES (SAMPLES_PER_ROW*TOTAL_ROWS)
 
-%macro SU_BEGIN_PATCH 0
+%macro BEGIN_PATCH 0
     SECT_DATA(params)
 
     EXPORT MANGLE_DATA(su_params)
 %endmacro
 
-%macro SU_END_PATCH 0 ; After the patch is finished, saves the accumulated commands
+%macro END_PATCH 0 ; After the patch is finished, saves the accumulated commands
     SECT_DATA(sucomnds)
 
     EXPORT MANGLE_DATA(su_commands)
@@ -122,7 +122,7 @@
 %define POLYPHONY_BITMASK 0
 %assign MAX_VOICES 0
 %assign MAX_TRACKS 0
-%macro SU_BEGIN_INSTRUMENT 1
+%macro BEGIN_INSTRUMENT 1
     ; increment MAX_VOICES equal to %1 and construct the POLYPHONY_BITMASK so that
     ; for every except the last, the bit is on
     %rep  %1-1
@@ -142,19 +142,19 @@
 %define VOICES(val)     val
 %define TRACKS(val)     val
 
-%macro SU_END_INSTRUMENT 0
+%macro END_INSTRUMENT 0
     %xdefine CMDS CMDS SU_ADVANCE_ID,
 %endmacro
 
 %assign PATTERN_LENGTH -1
-%macro SU_BEGIN_PATTERNS 0
+%macro BEGIN_PATTERNS 0
     SECT_DATA(supatrns)
 
     EXPORT MANGLE_DATA(su_patterns)
     %define USE_PLAYER
 %endmacro
 
-%define SU_END_PATTERNS
+%define END_PATTERNS
 
 %assign PATTERN_SIZE -1
 %macro PATTERN 1-*
@@ -174,7 +174,7 @@
     %endif
 %endmacro
 
-%macro SU_BEGIN_TRACKS 0
+%macro BEGIN_TRACKS 0
     SECT_DATA(sutracks)
 
     EXPORT MANGLE_DATA(su_tracks)
@@ -218,7 +218,7 @@
     %endif
 %endmacro
 
-%define SU_END_TRACKS
+%define END_TRACKS
 
 ;-------------------------------------------------------------------------------
 ;   unit struct
