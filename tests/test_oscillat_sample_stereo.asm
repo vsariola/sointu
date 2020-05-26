@@ -1,5 +1,4 @@
 %define BPM 100
-%define USE_SECTIONS
 %define INCLUDE_GMDLS
 
 %include "../src/sointu.inc"

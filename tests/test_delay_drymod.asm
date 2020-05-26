@@ -1,5 +1,4 @@
 %define BPM 100
-%define USE_SECTIONS
 
 %include "../src/sointu.inc"
 

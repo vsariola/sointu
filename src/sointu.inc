@@ -43,9 +43,9 @@
 %endif
 
 %ifdef WIN_OR_MAC
-    ; Windows has crinkler so one may USE_SECTIONS to put everything in custom sections to aid crinkler.
+    ; Windows has crinkler so one may put everything in custom sections to aid crinkler.
     ; Maybe mac users need it too
-    %ifdef USE_SECTIONS
+    %ifndef DISABLE_SECTIONS
         %define SECT_BSS(n) section . %+ n bss align=1
         %define SECT_DATA(n) section . %+ n data align=1
         %define SECT_TEXT(n) section . %+ n code align=1
@@ -56,7 +56,7 @@
     %endif
 %else
     ; Linux
-    %ifdef USE_SECTIONS
+    %ifndef DISABLE_SECTIONS
         %define SECT_BSS(n) section .bss. %+ n nobits alloc noexec write align=1
         %define SECT_DATA(n) section .data. %+ n progbits alloc noexec write align=1
         %define SECT_TEXT(n) section .text. %+ n progbits alloc exec nowrite align=1
