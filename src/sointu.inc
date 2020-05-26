@@ -27,11 +27,18 @@
     %define MANGLE_DATA(d) d
 %endif
 
-%ifidn __OUTPUT_FORMAT__,elf32
+%ifidn __OUTPUT_FORMAT__,elf
     ; on linux, function f with n parameters is mangled as "f"
     %define MANGLE_FUNC(f,n) f
     ; On linux, data label d is mangled as "d"
     %define MANGLE_DATA(d) d
+    %assign BITS 32
+%endif
+
+%ifidn __OUTPUT_FORMAT__,elf64
+    %define MANGLE_FUNC(f,n) f
+    %define MANGLE_DATA(d) d
+    %assign BITS 64
 %endif
 
 %ifidn __OUTPUT_FORMAT__,macho32

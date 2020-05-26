@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdbool.h>
 
 #if defined (_WIN32)
 #include <windows.h>
@@ -12,7 +13,19 @@
 
 #include <math.h>
 
-extern void __stdcall su_render();
+#include <stdint.h>
+
+#if UINTPTR_MAX == 0xffffffff // are we 32-bit?
+    #if defined(__clang__) || defined(__GNUC__)
+        #define CALLCONV __attribute__ ((stdcall))
+    #elif defined(_WIN32)
+        #define CALLCONV __stdcall // on 32-bit platforms, we just use stdcall, as all know it
+    #endif
+#else // 64-bit
+    #define CALLCONV  // the asm will use honor honor correct x64 ABI on all 64-bit platforms
+#endif
+extern void CALLCONV su_render(void *);
+
 extern int su_max_samples;
 
 int main(int argc, char* argv[]) {
@@ -25,7 +38,7 @@ int main(int argc, char* argv[]) {
     char actual_output_folder[] = "actual_output/";
     long fsize;
     long bufsize;
-    boolean small_difference;
+    bool small_difference;
     double diff;
 #ifndef SU_USE_16BIT_OUTPUT
     float* buf = NULL;
@@ -84,7 +97,7 @@ int main(int argc, char* argv[]) {
 
     fread((void*)filebuf, su_max_samples * 2, sizeof(*filebuf), f);
 
-    small_difference = FALSE;
+    small_difference = false;
 
     for (n = 0; n < su_max_samples * 2; n++) {
         diff = (double)(buf[n]) - (double)(filebuf[n]);
@@ -97,7 +110,7 @@ int main(int argc, char* argv[]) {
             goto fail;
         }
         else if (diff > 0.0f) {
-            small_difference = TRUE;
+            small_difference = true;
         }
     }
 
