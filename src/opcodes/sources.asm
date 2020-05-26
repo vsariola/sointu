@@ -16,50 +16,49 @@ EXPORT MANGLE_FUNC(su_op_envelope,0)
     ret
 su_op_envelope_mono:
 %endif
-kmENV_func_do:
     mov     eax, dword [INP-su_voice.inputs+su_voice.release] ; eax = su_instrument.release
     test    eax, eax                            ; if (eax == 0)
-    je      kmENV_func_process                  ;   goto process
+    je      su_op_envelope_process              ;   goto process
     mov     dword [WRK+su_env_work.state], ENV_STATE_RELEASE  ; [state]=RELEASE
-kmENV_func_process:
-    mov     eax, dword [WRK+su_env_work.state]    ; al=[state]
-    fld     dword [WRK+su_env_work.level]         ; x=[level]
+su_op_envelope_process:
+    mov     eax, dword [WRK+su_env_work.state]  ; al=[state]
+    fld     dword [WRK+su_env_work.level]       ; x=[level]
     cmp     al, ENV_STATE_SUSTAIN               ; if (al==SUSTAIN)
-    je      short kmENV_func_leave2             ;   goto leave2
-kmENV_func_attac:
+    je      short su_op_envelope_leave2         ;   goto leave2
+su_op_envelope_attac:
     cmp     al, ENV_STATE_ATTAC                 ; if (al!=ATTAC)
-    jne     short kmENV_func_decay              ;   goto decay
+    jne     short su_op_envelope_decay          ;   goto decay
     call    su_nonlinear_map                    ; a x, where a=attack
     faddp   st1, st0                            ; a+x
     fld1                                        ; 1 a+x
     fucomi  st1                                 ; if (a+x<=1) // is attack complete?
     fcmovnb st0, st1                            ;   a+x a+x
-    jbe     short kmENV_func_statechange        ; else goto statechange
-kmENV_func_decay:
+    jbe     short su_op_envelope_statechange    ; else goto statechange
+su_op_envelope_decay:
     cmp     al, ENV_STATE_DECAY                 ; if (al!=DECAY)
-    jne     short kmENV_func_release            ;   goto release
+    jne     short su_op_envelope_release        ;   goto release
     call    su_nonlinear_map                    ; d x, where d=decay
     fsubp   st1, st0                            ; x-d
-    fld     dword [INP+su_env_ports.sustain]       ; s x-d, where s=sustain
+    fld     dword [INP+su_env_ports.sustain]    ; s x-d, where s=sustain
     fucomi  st1                                 ; if (x-d>s) // is decay complete?
     fcmovb  st0, st1                            ;   x-d x-d
-    jnc     short kmENV_func_statechange        ; else goto statechange
-kmENV_func_release:
+    jnc     short su_op_envelope_statechange    ; else goto statechange
+su_op_envelope_release:
     cmp     al, ENV_STATE_RELEASE               ; if (al!=RELEASE)
-    jne     short kmENV_func_leave              ;   goto leave
+    jne     short su_op_envelope_leave          ;   goto leave
     call    su_nonlinear_map                    ; r x, where r=release
     fsubp   st1, st0                            ; x-r
     fldz                                        ; 0 x-r
     fucomi  st1                                 ; if (x-r>0) // is release complete?
     fcmovb  st0, st1                            ;   x-r x-r, then goto leave
-    jc      short kmENV_func_leave
-kmENV_func_statechange:
-    inc     dword [WRK+su_env_work.state]         ; [state]++
-kmENV_func_leave:
+    jc      short su_op_envelope_leave
+su_op_envelope_statechange:
+    inc     dword [WRK+su_env_work.state]       ; [state]++
+su_op_envelope_leave:
     fstp    st1                                 ; x', where x' is the new value
-    fst     dword [WRK+su_env_work.level]         ; [level]=x'
-kmENV_func_leave2:
-    fmul    dword [INP+su_env_ports.gain]          ; [gain]*x'
+    fst     dword [WRK+su_env_work.level]       ; [level]=x'
+su_op_envelope_leave2:
+    fmul    dword [INP+su_env_ports.gain]       ; [gain]*x'
     ret
 
 %endif ; SU_USE_ENVELOPE
