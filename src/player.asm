@@ -30,18 +30,6 @@ su_synth_obj            resb    su_synth.size
 %endif
 
 ;-------------------------------------------------------------------------------
-;    Constants
-;-------------------------------------------------------------------------------
-SECT_DATA(suconst)
-
-%ifdef SU_USE_16BIT_OUTPUT
-    %ifndef C_32767
-        c_32767     dd      32767.0
-        %define C_32767
-    %endif
-%endif
-
-;-------------------------------------------------------------------------------
 ;   output_sound macro: used by the render function to write sound to buffer
 ;-------------------------------------------------------------------------------
 ;   The macro contains the ifdef hell to handle 16bit output and clipping cases
@@ -91,6 +79,7 @@ SECT_DATA(suconst)
             add     _SI,2
             loop    %%loop
         mov     [_SP+su_stack.bufferptr - su_stack.output_sound], _SI ; save esi back to stack
+        %define USE_C_32767
     %endif
 %endmacro
 

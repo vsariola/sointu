@@ -66,19 +66,6 @@ EXPORT MANGLE_FUNC(su_op_speed,0)
     fstp    dword [WRK+su_speed_wrk.remainder] ; save the remainder for future
     ret
 
-SECT_DATA(suconst)
-    c_bpmscale      dd      2.666666666666 ; 64/24, 24 values will be double speed, so you can go from ~ 1/2.5 speed to 2.5x speed
-
-%endif
-
-;-------------------------------------------------------------------------------
-;    Constants
-;-------------------------------------------------------------------------------
-%ifdef SU_USE_DLL_DC_FILTER
-%ifndef C_DC_CONST
-SECT_DATA(suconst)
-c_dc_const              dd      0.99609375      ; R = 1 - (pi*2 * frequency /samplerate)
-%define C_DC_CONST
-%endif
+%define USE_C_BPMSCALE
 
 %endif

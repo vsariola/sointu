@@ -156,19 +156,6 @@ SECT_DATA(suparcnt)
 su_opcode_numparams     db      NUMPARAMS
 
 ;-------------------------------------------------------------------------------
-;   Constants used by the common functions
-;-------------------------------------------------------------------------------
-SECT_DATA(suconst)
-
-c_i128                  dd      0.0078125
-c_RandDiv               dd      65536*32768
-c_0_5                   dd      0.5
-c_24                    dd      24
-c_i12                   dd      0x3DAAAAAA
-EXPORT MANGLE_DATA(LFO_NORMALIZE)
-                        dd      DEF_LFO_NORMALIZE
-
-;-------------------------------------------------------------------------------
 ;   su_run_vm function: runs the entire virtual machine once, creating 1 sample
 ;-------------------------------------------------------------------------------
 ;   Input:      su_synth_obj.left   :   Set to 0 before calling
@@ -273,4 +260,37 @@ EXPORT MANGLE_FUNC(su_power,0)
 
 %ifidn __OUTPUT_FORMAT__,win32
     %include "win32/gmdls_win32.asm"
+%endif
+
+;-------------------------------------------------------------------------------
+;    Constants
+;-------------------------------------------------------------------------------
+SECT_DATA(suconst)
+
+c_24                    dd      24
+c_i128                  dd      0.0078125
+c_RandDiv               dd      65536*32768
+c_0_5                   dd      0.5
+c_i12                   dd      0x3DAAAAAA
+c_lfo_normalize         dd      0.000038
+c_freq_normalize        dd      0.000092696138  ; // 220.0/(2^(69/12)) / 44100.0
+
+%ifdef USE_C_DC_CONST
+    c_dc_const          dd      0.99609375      ; R = 1 - (pi*2 * frequency /samplerate)
+%endif
+
+%ifdef USE_C_32767
+    c_32767             dd      32767.0
+%endif
+
+%ifdef USE_C_BPMSCALE
+    c_bpmscale          dd      2.666666666666 ; 64/24, 24 values will be double speed, so you can go from ~ 1/2.5 speed to 2.5x speed
+%endif
+
+%ifdef USE_C_16
+    c_16                dd      16.0
+%endif
+
+%ifdef USE_C_SAMPLEFREQ_SCALING
+    c_samplefreq_scaling    dd      84.28074964676522       ; o = 0.000092696138, n = 72, f = 44100*o*2**(n/12), scaling = 22050/f <- so note 72 plays at the "normal rate"
 %endif

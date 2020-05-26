@@ -212,14 +212,6 @@ su_op_oscillat_gain:
     ret
     %define SU_INCLUDE_WAVESHAPER
 
-SECT_DATA(suconst)
-
-%ifndef C_FREQ_NORMALIZE
-    c_freq_normalize        dd      0.000092696138  ; // 220.0/(2^(69/12)) / 44100.0
-    %define C_FREQ_NORMALIZE
-%endif
-    c_lfo_normalize         dd      0.000038
-
 %endif
 
 ; PULSE
@@ -306,17 +298,8 @@ go4kVCO_gate_bit:                           ; stack: 0/1, let's call it x
     ret                                     ; g'=cg+(1-c)x
     ; This is a low-pass to smooth the gate transitions
 
-SECT_DATA(suconst)
-
-%ifndef C_16
-    c_16                    dd      16.0
-    %define C_16
-%endif
-
-%ifndef C_DC_CONST
-    c_dc_const              dd      0.99609375      ; R = 1 - (pi*2 * frequency /samplerate)
-    %define C_DC_CONST
-%endif
+%define USE_C_16
+%define USE_C_DC_CONST
 
 %endif
 
@@ -348,11 +331,8 @@ su_oscillat_sample_not_looping:
     pop_registers _AX,_DX,_CX,_BX
     ret
 
-SECT_DATA(suconst)
-    %ifndef C_32767
-    c_32767                 dd      32767.0
-        %define C_32767
-    %endif
+%define USE_C_32767
+%define USE_C_SAMPLEFREQ_SCALING
 
 %endif
 

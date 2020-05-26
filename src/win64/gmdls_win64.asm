@@ -35,9 +35,6 @@ su_gmdls_path1:
 su_gmdls_path2:
     db 'drivers/etc/gm.dls',0
 
-SECT_DATA(suconst)
-    c_samplefreq_scaling    dd      84.28074964676522       ; o = 0.000092696138, n = 72, f = 44100*o*2**(n/12), scaling = 22050/f <- so note 72 plays at the "normal rate"
-
 SECT_BSS(susamtbl)
     EXPORT MANGLE_DATA(su_sample_table)    resb    SAMPLE_TABLE_SIZE    ; size of gmdls.
 

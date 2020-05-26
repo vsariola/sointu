@@ -376,6 +376,7 @@ su_op_delay_loop:
                 fld     dword [WRK+su_unit.ports+su_delay_ports.delaymod]
              do fmul    dword [,c_32767,] ; scale it up, as the modulations would be too small otherwise
                 faddp   st1, st0
+                %define USE_C_32767
             %endif
             fistp   dword [_SP-4]                       ; dr*y p*p*x, dword [_SP-4] = integer amount of delay (samples)
             mov     edi, esi                            ; edi = esi = current time
@@ -413,23 +414,7 @@ su_op_delay_loop:
     fst     dword [_CX+su_delayline_wrk.dcout]  ; o'=s+c*o-i
     ret
 
-;-------------------------------------------------------------------------------
-;    Delay data
-;-------------------------------------------------------------------------------
-SECT_DATA(suconst)
-
-%ifndef C_DC_CONST
-    c_dc_const              dd      0.99609375      ; R = 1 - (pi*2 * frequency /samplerate)
-    %define C_DC_CONST
-%endif
-
-%ifdef INCLUDE_DELAY_MODULATION
-    %ifndef C_32767
-        c_32767     dd      32767.0
-        %define C_32767
-    %endif
-%endif
-
+%define USE_C_DC_CONST
 
 %endif ; DELAY_ID > -1
 
