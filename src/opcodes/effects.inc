@@ -51,14 +51,12 @@
 struc   su_filter_ports
     .freq       resd    1
     .res        resd    1
-    .params
 endstruc
 
 struc   su_filter_wrk
     .low        resd    1
     .high       resd    1
     .band       resd    1
-    .size
 endstruc
 
 ;-------------------------------------------------------------------------------
@@ -88,7 +86,6 @@ endstruc
 
 struc   su_pan_ports
     .panning    resd    1
-    .params
 endstruc
 
 ;-------------------------------------------------------------------------------
@@ -118,7 +115,6 @@ endstruc
 
 struc   su_distort_ports
     .drive      resd    1
-    .params
 endstruc
 
 ;-------------------------------------------------------------------------------
@@ -148,7 +144,6 @@ endstruc
 
 struc su_hold_ports
     .freq       resd    1
-    .params
 endstruc
 
 struc su_hold_wrk
@@ -183,7 +178,6 @@ endstruc
 
 struc su_crush_ports
     .resolution     resd    1
-    .params
 endstruc
 
 ;-------------------------------------------------------------------------------
@@ -213,7 +207,6 @@ endstruc
 
 struc su_gain_ports
     .gain       resd    1
-    .params
 endstruc
 
 ;-------------------------------------------------------------------------------
@@ -243,7 +236,6 @@ endstruc
 
 struc su_invgain_ports
     .invgain        resd    1
-    .params
 endstruc
 
 ;-------------------------------------------------------------------------------
@@ -335,7 +327,6 @@ struc   su_delay_ports
     .damp       resd    1
     .freq       resd    1
     .delaymod   resd    1 ; note that this is not converted from integer, only modulated
-    .ports
 endstruc
 
 struc   su_delayline_wrk
@@ -382,7 +373,6 @@ struc su_compres_ports
     .release    resd    1
     .threshold  resd    1
     .ratio      resd    1
-    .ports
 endstruc
 
 struc su_compres_wrk

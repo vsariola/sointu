@@ -36,13 +36,11 @@ struc   su_env_ports
     .sustain    resd    1
     .release    resd    1
     .gain       resd    1
-    .params
 endstruc
 
 struc   su_env_work
     .state      resd    1
     .level      resd    1
-    .size
 endstruc
 
 %define ENV_STATE_ATTAC     0
@@ -114,13 +112,11 @@ struc   su_osc_ports
     .color      resd    1
     .shape      resd    1
     .gain       resd    1
-    .params
 endstruc
 
 struc   su_osc_wrk
     .phase      resd    1
     .gatestate  equ     16   ; we put is late so only UNISON3 and UNISON4 are unusable with gate
-    .size
 endstruc
 
 %define TRANSPOSE(val)  val
@@ -159,7 +155,6 @@ struc   su_sample_offset  ; length conveniently 8, so easy to index
     .start      resd    1
     .loopstart  resw    1
     .looplength resw    1
-    .size
 endstruc
 
 ;-------------------------------------------------------------------------------
@@ -188,7 +183,6 @@ endstruc
 struc   su_noise_ports
     .shape      resd    1
     .gain       resd    1
-    .params
 endstruc
 
 ;-------------------------------------------------------------------------------
@@ -217,11 +211,6 @@ endstruc
 
 struc   su_load_val_ports
     .value      resd    1
-    .params
-endstruc
-
-struc   su_load_val_wrk
-    .size
 endstruc
 
 ;-------------------------------------------------------------------------------
@@ -246,7 +235,6 @@ endstruc
 %endmacro
 
 struc su_receive_ports
-    .params  ; receive does not actually have params, left and right only through send
     .left       resd    1
     .right      resd    1
 endstruc

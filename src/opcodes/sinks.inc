@@ -24,7 +24,6 @@
 
 struc   su_out_ports
     .gain       resd    1
-    .params
 endstruc
 
 ;-------------------------------------------------------------------------------
@@ -122,5 +121,4 @@ endstruc
 
 struc   su_send_ports
     .amount     resd    1
-    .params
 endstruc
