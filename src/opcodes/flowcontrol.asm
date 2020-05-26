@@ -10,33 +10,29 @@
 ;-------------------------------------------------------------------------------
 SECT_TEXT(suopadvn)
 
+EXPORT MANGLE_FUNC(su_op_advance,0)
 %ifdef INCLUDE_POLYPHONY
-
-EXPORT MANGLE_FUNC(su_op_advance,0)     ; Stack: addr voice wrkptr valptr comptr
-    mov     WRK, [_SP+su_stack.wrk]          ; WRK = wrkptr
-    add     WRK, su_voice.size          ; move to next voice
-    mov     [_SP+su_stack.wrk], WRK        ; update stack
-    mov     ecx, [_SP+su_stack.voiceno]          ; ecx = voice
-    dec     ecx                                  ; decrement number of voices to process
+    mov     WRK, [_SP+su_stack.wrk]         ; WRK points to start of current voice
+    add     WRK, su_voice.size              ; move to next voice
+    mov     [_SP+su_stack.wrk], WRK         ; update the pointer in the stack to point to the new voice
+    mov     ecx, [_SP+su_stack.voiceno]     ; ecx = how many voices remain to process
+    dec     ecx                             ; decrement number of voices to process
     bt      dword [_SP+su_stack.polyphony], ecx ; if voice bit of su_polyphonism not set
-    jnc     su_op_advance_next_instrument ; goto next_instrument
-    mov     VAL, PTRWORD [_SP+su_stack.val]         ; rollback to where we were earlier
+    jnc     su_op_advance_next_instrument   ; goto next_instrument
+    mov     VAL, PTRWORD [_SP+su_stack.val] ; if it was set, then repeat the opcodes for the current voice
     mov     COM, PTRWORD [_SP+su_stack.com]
-    jmp     short su_op_advance_finish
 su_op_advance_next_instrument:
-    mov     PTRWORD [_SP+su_stack.val], VAL         ; save current VAL as a checkpoint
-    mov     PTRWORD [_SP+su_stack.com], COM         ; save current COM as a checkpoint
+    mov     PTRWORD [_SP+su_stack.val], VAL ; save current VAL as a checkpoint
+    mov     PTRWORD [_SP+su_stack.com], COM ; save current COM as a checkpoint
 su_op_advance_finish:
     mov     [_SP+su_stack.voiceno], ecx
     ret
-
 %else
-    EXPORT MANGLE_FUNC(su_op_advance,0)         ; Stack: addr voice wrkptr valptr comptr
-        mov     WRK, PTRWORD [_SP+su_stack.wrk] ; WRK = wrkptr
-        add     WRK, su_voice.size              ; move to next voice
-        mov     PTRWORD [_SP+su_stack.wrk], WRK ; update stack
-        dec     PTRWORD [_SP+su_stack.voiceno]  ; voices--
-        ret
+    mov     WRK, PTRWORD [_SP+su_stack.wrk] ; WRK = wrkptr
+    add     WRK, su_voice.size              ; move to next voice
+    mov     PTRWORD [_SP+su_stack.wrk], WRK ; update stack
+    dec     PTRWORD [_SP+su_stack.voiceno]  ; voices--
+    ret
 %endif
 
 ;-------------------------------------------------------------------------------
