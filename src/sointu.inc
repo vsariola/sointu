@@ -120,7 +120,6 @@
         db      CMDS
 %endmacro
 
-%define CONCATENATE(x,y) x %+ y
 %define POLYPHONY_BITMASK 0
 %assign MAX_VOICES 0
 %assign MAX_TRACKS 0
