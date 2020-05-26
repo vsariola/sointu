@@ -65,7 +65,7 @@ su_op_addp_mono:
 %endif
 
 ;-------------------------------------------------------------------------------
-;   LOADNOTE opcode: load the current note, scaled to [0,1]
+;   LOADNOTE opcode: load the current note, scaled to [-1,1]
 ;-------------------------------------------------------------------------------
 ;   Mono:   (empty) -> n, where n is the note
 ;   Stereo: (empty) -> n n
@@ -80,6 +80,8 @@ su_op_loadnote_mono:
 %endif
     fild    dword [INP-su_voice.inputs+su_voice.note]
  do fmul    dword [,c_i128,]
+ do fsub    dword [,c_0_5,]              ; s-.5
+    fadd    st0, st0                     ; 2*s-1
     ret
 
 %endif
