@@ -347,15 +347,16 @@ endstruc
         %assign COMPRES_ID CUR_ID
         %assign CUR_ID CUR_ID + 2
         %xdefine OPCODES OPCODES MANGLE_FUNC(su_op_compressor,0),
-        %xdefine NUMPARAMS NUMPARAMS 4,
+        %xdefine NUMPARAMS NUMPARAMS 5,
     %endif
 %endmacro
 
-%macro SU_COMPRES 5
+%macro SU_COMPRES 6
     db  %2
     db  %3
     db  %4
     db  %5
+    db  %6
     USE_COMPRES
     %xdefine CMDS CMDS COMPRES_ID + %1,
     %if %1 == STEREO
@@ -365,12 +366,14 @@ endstruc
 
 %define ATTAC(val)      val
 %define RELEASE(val)    val
+%define INVGAIN(val)    val
 %define THRESHOLD(val)  val
 %define RATIO(val)      val
 
 struc su_compres_ports
     .attack     resd    1
     .release    resd    1
+    .invgain    resd    1
     .threshold  resd    1
     .ratio      resd    1
 endstruc

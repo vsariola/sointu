@@ -431,13 +431,16 @@ su_op_delay_loop:
 SECT_TEXT(sucompr)
 
 EXPORT MANGLE_FUNC(su_op_compressor,0)
+    fdiv    dword [INP+su_compres_ports.invgain]; l/g, we'll call this pre inverse gained signal x from now on
     fld     st0                                 ; x x
     fmul    st0, st0                            ; x^2 x
 %ifdef INCLUDE_STEREO_COMPRES
     jnc     su_op_compressor_mono
-    fld     st2                                 ; r l^2 l r
-    fmul    st0, st0                            ; r^2 l^2 l r
-    faddp   st1, st0                            ; r^2+l^2 l r
+    fld     st2                                 ; r x^2 l/g r
+    fdiv    dword [INP+su_compres_ports.invgain]; r/g, we'll call this pre inverse gained signal y from now on
+    fst     st3                                 ; y x^2 l/g r/g
+    fmul    st0, st0                            ; y^2 x^2 l/g r/g
+    faddp   st1, st0                            ; y^2+x^2 l/g r/g
     call    su_op_compressor_mono               ; So, for stereo, we square both left & right and add them up
     fld     st0                                 ; and return the computed gain two times, ready for MULP STEREO
     ret
