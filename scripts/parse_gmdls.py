@@ -18,7 +18,7 @@ def read_chunk(file,indent=0):
             datablock = next((x[1] for x in data if x[0] == b"data"))                        
             wsmp = next((x[1] for x in data if x[0] == b"wsmp"), None)                        
             if "loopstart" not in wsmp:                                
-                loopstart,looplength = datablock["length"]/2-1,1 # For samples without loop, keep on repeating the last sample
+                loopstart,looplength = datablock["length"]-1,1 # For samples without loop, keep on repeating the last sample
             else:
                 loopstart,looplength = wsmp["loopstart"],wsmp["looplength"]
             INFO = next((x[1] for x in data if x[0] == b"INFO"), None)            
