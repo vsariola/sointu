@@ -1,3 +1,5 @@
+%ifdef SU_USE_INTROSPECTION
+
 ; Various compile time definitions exported
 SECT_DATA(introscn)
 
@@ -10,3 +12,5 @@ SECT_DATA(introscn)
 %ifdef MAX_SAMPLES
     EXPORT MANGLE_DATA(su_max_samples)  dd MAX_SAMPLES
 %endif
+
+%endif ; SU_USE_INTROSPECTION
