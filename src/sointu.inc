@@ -86,6 +86,8 @@
 %define MONO            0
 %define STEREO          1
 
+section .text ; yasm throws section redeclaration warnings if strucs are defined without a plain .text section
+
 %include "opcodes/flowcontrol.inc"
 %include "opcodes/arithmetic.inc"
 %include "opcodes/effects.inc"

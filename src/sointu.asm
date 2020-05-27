@@ -118,6 +118,8 @@
     %endmacro
 %endif
 
+section .text ; yasm throws section redeclaration warnings if strucs are defined without a plain .text section
+
 struc su_stack ; the structure of stack _as the units see it_
     .retaddr    RESPTR  1
 %if BITS == 32              ; we dump everything with pushad, so this is unused in 32-bit
