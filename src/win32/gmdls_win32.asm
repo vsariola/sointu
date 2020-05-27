@@ -7,21 +7,21 @@ extern _ReadFile@20 ; requires windows
 
 SECT_TEXT(sugmdls)
 
-su_gmdls_load:
-    mov     edi, MANGLE_DATA(su_sample_table)
-    mov     esi, su_gmdls_path1
+EXPORT MANGLE_FUNC(su_load_gmdls,0)
+    mov     edx, MANGLE_DATA(su_sample_table)
+    mov     ecx, su_gmdls_path1
     su_gmdls_pathloop:
         push    0                   ; OF_READ
-        push    edi                 ; &ofstruct, blatantly reuse the sample table
-        push    esi                 ; path
+        push    edx                 ; &ofstruct, blatantly reuse the sample table
+        push    ecx                 ; path
         call    _OpenFile@12        ; eax = OpenFile(path,&ofstruct,OF_READ)
-        add     esi, su_gmdls_path2 - su_gmdls_path1 ; if we ever get to third, then crash
+        add     ecx, su_gmdls_path2 - su_gmdls_path1 ; if we ever get to third, then crash
         cmp     eax, -1             ; eax == INVALID?
         je      su_gmdls_pathloop
     push    0                       ; NULL
-    push    edi                     ; &bytes_read, reusing sample table again; it does not matter that the first four bytes are trashed
+    push    edx                     ; &bytes_read, reusing sample table again; it does not matter that the first four bytes are trashed
     push    SAMPLE_TABLE_SIZE       ; number of bytes to read
-    push    edi                     ; here we actually pass the sample table to readfile
+    push    edx                     ; here we actually pass the sample table to readfile
     push    eax                     ; handle to file
     call    _ReadFile@20            ; Readfile(handle,&su_sample_table,SAMPLE_TABLE_SIZE,&bytes_read,NULL)
     ret

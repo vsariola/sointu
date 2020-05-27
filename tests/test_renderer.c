@@ -26,6 +26,10 @@
 #endif
 extern void CALLCONV su_render(void *);
 
+#ifdef INCLUDE_GMDLS
+extern void CALLCONV su_load_gmdls(void);
+#endif
+
 extern int su_max_samples;
 
 int main(int argc, char* argv[]) {
@@ -58,6 +62,10 @@ int main(int argc, char* argv[]) {
         printf("Could not allocate buffer for 4klang rendering\n");
         return 1;
     }
+
+    #ifdef INCLUDE_GMDLS
+    su_load_gmdls();
+    #endif
 
     su_render(buf);
 

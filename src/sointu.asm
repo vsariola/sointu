@@ -339,9 +339,6 @@ SECT_TEXT(surender)
 
 EXPORT MANGLE_FUNC(su_render,PTRSIZE)   ; Stack: ptr
     render_prologue
-%ifdef INCLUDE_GMDLS
-    call    su_gmdls_load
-%endif
     xor     eax, eax
 %ifdef INCLUDE_MULTIVOICE_TRACKS
     push    VOICETRACK_BITMASK
