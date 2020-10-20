@@ -485,22 +485,22 @@ su_update_voices_skipadd:
 ;-------------------------------------------------------------------------------
 ;   Include the rest of the code
 ;-------------------------------------------------------------------------------
-%include "opcodes/arithmetic.asm"
-%include "opcodes/flowcontrol.asm"
-%include "opcodes/sources.asm"
-%include "opcodes/sinks.asm"
+%include "opcodes/arithmetic_footer.inc"
+%include "opcodes/flowcontrol_footer.inc"
+%include "opcodes/sources_footer.inc"
+%include "opcodes/sinks_footer.inc"
 ; warning: at the moment effects has to be assembled after
 ; sources, as sources.asm defines SU_USE_WAVESHAPER
 ; if needed.
-%include "opcodes/effects.asm"
-%include "introspection.asm"
+%include "opcodes/effects_footer.inc"
+%include "introspection_footer.inc"
 
 %ifidn __OUTPUT_FORMAT__,win64
-    %include "win64/gmdls_win64.asm"
+    %include "win64/gmdls_win64_footer.inc"
 %endif
 
 %ifidn __OUTPUT_FORMAT__,win32
-    %include "win32/gmdls_win32.asm"
+    %include "win32/gmdls_win32_footer.inc"
 %endif
 
 ;-------------------------------------------------------------------------------

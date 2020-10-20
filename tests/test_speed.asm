@@ -1,6 +1,6 @@
 %define BPM 100
 
-%include "../src/sointu.inc"
+%include "../src/sointu_header.inc"
 
 ; warning: crashes ahead. Now that the bpm could be changed and even modulated by other
 ; signals, there is no easy way to figure out how many ticks your song is. Either
@@ -33,4 +33,4 @@ BEGIN_PATCH
     END_INSTRUMENT
 END_PATCH
 
-%include "../src/sointu.asm"
+%include "../src/sointu_footer.inc"

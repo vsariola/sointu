@@ -33,7 +33,7 @@ New features since fork
   - **Per instrument polyphonism**. An instrument has the possibility to
     have any number of voices, meaning in practice that multiple voices can
     reuse the same opcodes. Done, see [here](tests/test_polyphony.asm) for an
-    example and [here](src/opcodes/flowcontrol.asm) for the implementation. The
+    example and [here](src/opcodes/flowcontrol_footer.inc) for the implementation. The
     maximum total number of voices will be 32: you can have 32 monophonic
     instruments or any combination of polyphonic instruments adding up to 32.
   - **Any number of voices per track**. For example, a polyphonic instrument of
