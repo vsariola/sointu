@@ -14,6 +14,20 @@ produce the audio; however, by now the internal virtual machine has been
 heavily rewritten and extended to make the code more maintainable, possibly
 even saving some bytes in the process.
 
+Building
+--------
+
+Requires [CMake](https://cmake.org), [yasm](https://yasm.tortall.net), and 
+your favorite c-compiler & build tool. Results have been obtained using Visual
+Studio 2019, gcc&make on linux, and MinGW&mingw32-make.
+
+> :warning: **If you are using MinGW**: Yasm 1.3.0 (currently still the latest
+stable release) and GNU linker do not play nicely along, trashing the BSS layout.
+See [here](https://tortall.lighthouseapp.com/projects/78676/tickets/274-bss-problem-with-windows-win64)
+and the fix [here](https://github.com/yasm/yasm/commit/1910e914792399137dec0b047c59965207245df5).
+Use a newer nightly build of yasm that includes the fix. The linker had placed
+our synth object overlapping with DLL call addresses; very funny stuff to debug.
+
 New features since fork
 -----------------------
   - **Per instrument polyphonism**. An instrument has the possibility to
