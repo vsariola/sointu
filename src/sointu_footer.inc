@@ -274,6 +274,8 @@ EXPORT MANGLE_FUNC(su_power,0)
     fstp st1      ; 2^x
     ret
 
+%ifndef SU_DISABLE_PLAYER
+
 ;-------------------------------------------------------------------------------
 ;   output_sound macro: used by the render function to write sound to buffer
 ;-------------------------------------------------------------------------------
@@ -481,6 +483,8 @@ su_update_voices_skipadd:
     ret
 
 %endif ;INCLUDE_MULTIVOICE_TRACKS
+
+%endif ; SU_DISABLE_PLAYER
 
 ;-------------------------------------------------------------------------------
 ;   Include the rest of the code

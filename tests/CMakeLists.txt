@@ -1,11 +1,11 @@
 function(regression_test testname)
     if(${ARGC} LESS 4)
-        set(source ${testname})
+        set(source ${testname}.asm)
     else()
         set(source ${ARGV3})
     endif()
 
-    add_executable(${testname} ${source}.asm test_renderer.c)
+    add_executable(${testname} ${source} test_renderer.c)
 
     # the tests include the entire ASM but we still want to rebuild when they change
     file(GLOB SOINTU ${PROJECT_SOURCE_DIR}/src/*.inc
@@ -143,9 +143,12 @@ regression_test(test_delay_drymod "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;SEND")
 regression_test(test_delay_flanger "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;SEND")
 
 regression_test(test_envelope_mod "VCO_SINE;ENVELOPE;SEND")
-regression_test(test_envelope_16bit ENVELOPE "" test_envelope)
+regression_test(test_envelope_16bit ENVELOPE "" test_envelope.asm)
 target_compile_definitions(test_envelope_16bit PUBLIC SU_USE_16BIT_OUTPUT)
 
 regression_test(test_polyphony "ENVELOPE;VCO_SINE")
 regression_test(test_chords "ENVELOPE;VCO_SINE")
 regression_test(test_speed "ENVELOPE;VCO_SINE")
+
+regression_test(test_render_samples ENVELOPE "" test_render_samples.c)
+target_link_libraries(test_render_samples sointu)
