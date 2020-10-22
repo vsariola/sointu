@@ -27,3 +27,4 @@ build/
 build32/
 build64/
 out/
+.cache/
