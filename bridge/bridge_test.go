@@ -21,10 +21,8 @@ const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
 // const bufsize = su_max_samples * 2
 
 func TestBridge(t *testing.T) {
-	commands := [2048]byte{
-		2, 2, 11, 0, // envelope mono, envelope mono, out stereo, advance
-		// TODO: pull these somehow from the C-side
-	}
+	commands := [2048]bridge.Opcode{
+		bridge.Envelope, bridge.Envelope, bridge.Out.Stereo(), bridge.Advance}
 	values := [16384]byte{64, 64, 64, 80, 128, // envelope 1
 		95, 64, 64, 80, 128, // envelope 2
 		128}
