@@ -21,6 +21,25 @@ Requires [CMake](https://cmake.org), [yasm](https://yasm.tortall.net), and
 your favorite c-compiler & build tool. Results have been obtained using Visual
 Studio 2019, gcc&make on linux, and MinGW&mingw32-make.
 
+### Example: building and testing using MinGW32
+
+```
+mkdir build
+cd build
+cmake .. -G"MinGW Makefiles"
+mingw32-make
+mingw32-make test
+cd ../bridge
+go test
+```
+
+Note that this builds 64-bit binaries on 64-bit Windows. To build 32-bit
+binaries on 64-bit Windows, replace in above:
+
+```
+cmake .. -DCMAKE_C_FLAGS="-m32" -DCMAKE_ASM_NASM_OBJECT_FORMAT="win32" -G"MinGW Makefiles"
+```
+
 > :warning: **If you are using MinGW**: Yasm 1.3.0 (currently still the latest
 stable release) and GNU linker do not play nicely along, trashing the BSS layout.
 See [here](https://tortall.lighthouseapp.com/projects/78676/tickets/274-bss-problem-with-windows-win64)
