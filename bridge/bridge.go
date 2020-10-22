@@ -3,8 +3,8 @@ package bridge
 import "fmt"
 import "unsafe"
 
-// #cgo CFLAGS: -I${INCLUDE_PATH}
-// #cgo LDFLAGS: ${LIBRARY_PATH}
+// #cgo CFLAGS: -I"${SRCDIR}/../include"
+// #cgo LDFLAGS: "${SRCDIR}/../build/src/libsointu.a"
 // #include <sointu.h>
 import "C"
 

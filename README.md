@@ -40,6 +40,10 @@ binaries on 64-bit Windows, replace in above:
 cmake .. -DCMAKE_C_FLAGS="-m32" -DCMAKE_ASM_NASM_OBJECT_FORMAT="win32" -G"MinGW Makefiles"
 ```
 
+If you plan to build the Sointu library for using it from the Go side, you
+*must* build in the build/ directory, as bridge.go assumes the library can be
+found from build/src/.
+
 > :warning: **If you are using MinGW**: Yasm 1.3.0 (currently still the latest
 stable release) and GNU linker do not play nicely along, trashing the BSS layout.
 See [here](https://tortall.lighthouseapp.com/projects/78676/tickets/274-bss-problem-with-windows-win64)
