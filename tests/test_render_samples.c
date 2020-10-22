@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../include/sointu.h"
 
 #if UINTPTR_MAX == 0xffffffff // are we 32-bit?

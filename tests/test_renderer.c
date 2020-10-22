@@ -42,8 +42,8 @@ int main(int argc, char* argv[]) {
     char actual_output_folder[] = "actual_output/";
     long fsize;
     long bufsize;
-    bool small_difference;
-    double diff;
+    float max_diff;
+    float diff;
 #ifndef SU_USE_16BIT_OUTPUT
     float* buf = NULL;
     float* filebuf = NULL;
@@ -105,10 +105,10 @@ int main(int argc, char* argv[]) {
 
     fread((void*)filebuf, su_max_samples * 2, sizeof(*filebuf), f);
 
-    small_difference = false;
+    max_diff = 0.0f;
 
     for (n = 0; n < su_max_samples * 2; n++) {
-        diff = (double)(buf[n]) - (double)(filebuf[n]);
+        diff = buf[n] - filebuf[n];
 #ifdef SU_USE_16BIT_OUTPUT
         diff = diff / 32768.0f;
 #endif
@@ -117,13 +117,11 @@ int main(int argc, char* argv[]) {
             printf("4klang rendered different wave than expected\n");
             goto fail;
         }
-        else if (diff > 0.0f) {
-            small_difference = true;
-        }
+        max_diff = fmax(diff, max_diff);
     }
 
-    if (small_difference) {
-        printf("4klang rendered almost correct wave, but with small errors (< 1e-3)\n");
+    if (max_diff > 1e-6) {
+        printf("4klang rendered almost correct wave, but a small maximum error of %f\n",max_diff);
         goto fail;
     }
 
