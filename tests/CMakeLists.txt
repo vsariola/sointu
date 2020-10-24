@@ -152,3 +152,7 @@ regression_test(test_speed "ENVELOPE;VCO_SINE")
 
 regression_test(test_render_samples ENVELOPE "" test_render_samples.c)
 target_link_libraries(test_render_samples sointu)
+
+add_executable(test_render_samples_api test_render_samples_api.c)
+target_link_libraries(test_render_samples_api sointu)
+add_test(test_render_samples_api test_render_samples_api)

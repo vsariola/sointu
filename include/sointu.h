@@ -38,9 +38,9 @@ typedef struct SynthState {
     unsigned int Polyphony;
     unsigned int NumVoices;
     unsigned int RandSeed;
-    unsigned int Globaltime;
+    unsigned int GlobalTick;
     unsigned int RowTick;
-    unsigned int RowLen;
+    unsigned int SamplesPerRow; // nominal value, actual rows could be more or less due to speed modulation
 } SynthState;
 #pragma pack(pop)
 
@@ -58,22 +58,49 @@ typedef struct SynthState {
 extern void CALLCONV su_load_gmdls(void);
 #endif
 
-// Returns the number of samples remaining in the buffer i.e. 0 if the buffer was
-// filled completely.
+// su_render_samples(SynthState* synthState, int maxSamples, float* buffer):
+//      Renders at most maxsamples to the buffer, using and modifying the
+//      synthesizer state in synthState.
 //
-// NOTE: The buffer should have a length of 2 * maxsamples, as the audio
-// is stereo.
+// Parameters:
+//      synthState  pointer to current synthState. RandSeed should be > 0 e.g. 1
+//                  Also synthState->SamplesPerRow cannot be 0 or nothing will be
+//                  rendered; either set it to INT32_MAX to always render full
+//                  buffer, or something like SAMPLE_RATE * 60 / (BPM * 4) for
+//                  having 4 rows per beat.
+//      maxSamples  maximum number of samples to be rendered.  buffer should
+//                  have a length of 2 * maxsamples as the audio is stereo.
+//      buffer      audio sample buffer, L R L R ...
 //
-// You should always check if rowtick >= rowlen after calling this. If so, most
-// likely you didn't get full buffer filled but the end of row was hit before
-// filling the buffer. In that case, trigger/release new voices, set rowtick to 0.
+// Returns:
+//      -1  end of row was not reached & buffer full
+//      0   end of row was reached & buffer full (there is space for zero
+//          samples in the buffer)
+//      n>0 end of row was reached & there is space for n samples in the buffer
 //
 // Beware of infinite loops: with a rowlen of 0; or without resetting rowtick
 // between rows; or with a problematic synth patch e.g. if the speed is
-// modulated to be become infinite, this function might return maxsamples i.e. not
-// render any samples. If you try to call this with your buffer until the whole
-// buffer is filled, you will be stuck in an infinite loop.
-extern int CALLCONV su_render_samples(SynthState* synthState, int maxsamples, float* buffer);
+// modulated to be become infinite, this function might return maxsamples i.e.
+// not render any samples. If you try to call this with your buffer until the
+// whole buffer is filled, you will be stuck in an infinite loop.
+//
+// So a reasonable track player would be something like:
+//
+// function render_buffer(maxsamples,buffer) {
+//   remaining = maxsamples
+//   for i = 0..MAX_TRIES       // limit retries to prevent infinite loop
+//        remaining = su_render_samples(synthState,
+//                                      remaining,
+//                                      &buffer[(maxsamples-remaining)*2])
+//        if remaining >= 0     // end of row reached
+//            song_row++        // advance row
+//            retrigger/release voices based on the new row
+//        if remaining <= 0     // buffer full
+//            return
+//    return // could not fill buffer despite MAX_TRIES, something is wrong
+//           // audio will come to sudden end
+//  }
+extern int CALLCONV su_render_samples(SynthState* synthState, int maxSamples, float* buffer);
 
 // Arithmetic opcode ids
 extern const int su_add_id;
@@ -110,7 +137,6 @@ extern const int su_send_id;
 // Source opcode ids
 extern const int su_envelope_id;
 extern const int su_noise_id;
-extern const int su_aux_id;
 extern const int su_oscillat_id;
 extern const int su_loadval_id;
 extern const int su_receive_id;

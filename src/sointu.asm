@@ -66,7 +66,11 @@ EXPORT MANGLE_FUNC(su_render_samples,12)
     mov     eax, [_CX + su_synth_state.rowlen] 
     push    _AX                        ; push the rowlength to stack so we can easily compare to it, normally this would be row
     mov     eax, [_CX + su_synth_state.rowtick]
-su_render_samples_loop: 
+su_render_samples_loop:
+        cmp     eax, [_SP] ; compare current tick to rowlength
+        jge     su_render_samples_row_advance
+        sub     dword [_SP + PTRSIZE*5], 1 ; compare current tick to rowlength
+        jb      su_render_samples_buffer_full
         mov     _CX, [_SP + PTRSIZE*3]
         push    _AX                        ; push rowtick
         mov     eax, [_CX + su_synth_state.polyphony]
@@ -93,12 +97,11 @@ su_render_samples_loop:
         stosd   ; clear right channel so the VM is ready to write them again
         pop     _AX
         inc     dword [_SP + PTRSIZE] ; increment global time, used by delays
-        inc     eax      
-        dec     dword [_SP + PTRSIZE*5]
-        jz      su_render_samples_finish
-        cmp     eax, [_SP] ; compare current tick to rowlength
-        jl      su_render_samples_loop
-su_render_samples_finish:        
+        inc     eax
+        jmp     su_render_samples_loop
+su_render_samples_row_advance:
+    xor     eax, eax ; row has finished, so clear the rowtick for next round
+su_render_samples_buffer_full:
     pop     _CX
     pop     _BX
     pop     _DX    
@@ -107,7 +110,7 @@ su_render_samples_finish:
     mov     [_CX + su_synth_state.globaltime], ebx        
     mov     [_CX + su_synth_state.rowtick], eax
     pop     _AX
-    pop     _AX ; todo: return correct value based on this
+    pop     _AX
 %if BITS == 32  ; stdcall
     popad
     ret 12

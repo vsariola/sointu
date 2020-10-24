@@ -2,6 +2,7 @@ package bridge
 
 import "fmt"
 import "unsafe"
+import "math"
 
 // #cgo CFLAGS: -I"${SRCDIR}/../include"
 // #cgo LDFLAGS: "${SRCDIR}/../build/src/libsointu.a"
@@ -83,16 +84,12 @@ func (s *SynthState) Release(voice int) {
   fmt.Printf("Returning from Release...\n")
 }
 
-func (s *SynthState) RowEnd() bool {
-  return s.RowTick == s.RowLen
-}
-
-func (s *SynthState) ResetRow() bool {
-  return s.RowTick == 0
-}
-
 func NewSynthState() *SynthState {
   s := new(SynthState)
   s.RandSeed = 1
+  // The default behaviour will be to have rows/beats disabled i.e.
+  // fill the whole buffer every call. This is a lot better default
+  // behaviour than leaving this 0 (Render would never render anything)
+  s.SamplesPerRow = math.MaxInt32
   return s
 }

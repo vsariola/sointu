@@ -34,7 +34,7 @@ void CALLCONV su_render(float* buffer) {
     memcpy(synthState->Commands, commands, sizeof(commands));
     memcpy(synthState->Values, values, sizeof(values));
     synthState->RandSeed = 1;
-    synthState->RowLen = INT32_MAX;
+    synthState->SamplesPerRow = INT32_MAX;
     synthState->NumVoices = 1;
     synthState->Synth.Voices[0].Note = 64;
     retval = su_render_samples(synthState, su_max_samples / 2, buffer);

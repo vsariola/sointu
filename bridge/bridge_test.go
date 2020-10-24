@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"github.com/vsariola/sointu/bridge"
 	"io/ioutil"
-	"math"
 	"path"
 	"runtime"
 	"testing"
@@ -34,7 +33,6 @@ func TestBridge(t *testing.T) {
 	// synthState->RandSeed = 1;
 	// initialized in NewSynthState
 	// synthState->RowLen = INT32_MAX;
-	s.RowLen = math.MaxInt32 // (why?)
 	// synthState->NumVoices = 1;
 	s.NumVoices = 1
 	// synthState->Synth.Voices[0].Note = 64;
@@ -42,15 +40,15 @@ func TestBridge(t *testing.T) {
 	// retval = su_render_samples(buffer, su_max_samples / 2, synthState);
 	buffer := make([]float32, su_max_samples)
 	remaining := s.Render(buffer)
-	if remaining != 0 {
-		t.Fatalf("could not render full buffer, %v bytes remaining, expected %v", remaining, len(buffer))
+	if remaining > 0 {
+		t.Fatalf("could not render full buffer, %v bytes remaining, expected <= 0", remaining)
 	}
 	// synthState->Synth.Voices[0].Release++;
 	s.Synth.Voices[0].Release++
 	sbuffer := make([]float32, su_max_samples)
 	remaining = s.Render(sbuffer)
-	if remaining != 0 {
-		t.Fatalf("could not render second full buffer, %v bytes remaining, expected %v", remaining, len(buffer))
+	if remaining > 0 {
+		t.Fatalf("could not render second full buffer, %v bytes remaining, expected <= 0", remaining)
 	}
 	buffer = append(buffer, sbuffer...)
 	_, filename, _, _ := runtime.Caller(0)
