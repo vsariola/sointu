@@ -112,6 +112,7 @@ su_render_samples_buffer_full:
     pop     _AX
     pop     _AX
 %if BITS == 32  ; stdcall
+    mov     [_SP + 28],eax ; we want to return eax, but popad pops everything, so put eax to stack for popad to pop 
     popad
     ret 12
 %else
