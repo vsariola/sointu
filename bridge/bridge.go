@@ -28,6 +28,16 @@ type Instrument struct {
 	Units     []Unit
 }
 
+type Patch []Instrument
+
+func (p Patch) TotalVoices() int {
+	ret := 0
+	for _, i := range p {
+		ret += i.NumVoices
+	}
+	return ret
+}
+
 var ( // cannot be const as the rhs are not known at compile-time
 	Add      = Opcode(C.su_add_id)
 	Addp     = Opcode(C.su_addp_id)
@@ -100,7 +110,7 @@ func (s *SynthState) Render(buffer []float32, maxRows int, callback func()) (int
 	return maxSamples - remaining, nil
 }
 
-func (s *SynthState) SetPatch(patch []Instrument) error {
+func (s *SynthState) SetPatch(patch Patch) error {
 	totalVoices := 0
 	commands := make([]Opcode, 0)
 	values := make([]byte, 0)
@@ -138,7 +148,7 @@ func (s *SynthState) SetPatch(patch []Instrument) error {
 	return nil
 }
 
-func (s *SynthState) Trigger(voice int, note int) {
+func (s *SynthState) Trigger(voice int, note byte) {
 	cs := (*C.SynthState)(s)
 	cs.Synth.Voices[voice] = C.Voice{}
 	cs.Synth.Voices[voice].Note = C.int(note)
@@ -147,6 +157,10 @@ func (s *SynthState) Trigger(voice int, note int) {
 func (s *SynthState) Release(voice int) {
 	cs := (*C.SynthState)(s)
 	cs.Synth.Voices[voice].Release = 1
+}
+
+func (s *SynthState) SetSamplesPerRow(spr int) {
+	s.SamplesPerRow = C.uint(spr)
 }
 
 func NewSynthState() *SynthState {
