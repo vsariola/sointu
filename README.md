@@ -125,6 +125,12 @@ New features since fork
     on Windows and Linux, both 32-bit and 64-bit, and the tests are passing on
     64-bit Linux, tested on WSL. 32-bit executables don't run on WSL, so those
     remain to be tested.
+  - **Compiling as a library**. The API is very rudimentary, a single function
+    render_samples, and between calls, the user is responsible for manipulating
+    the synth state in a similar way as the actual player does (e.g. triggering/
+    releasing voices etc.)
+  - **Calling Sointu as a library from Go language**. The Go API is slighty more
+    sane than the low-level library API, offering more Go-like experience.
 
 Future goals
 ------------
