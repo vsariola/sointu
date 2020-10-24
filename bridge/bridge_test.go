@@ -26,31 +26,18 @@ func TestBridge(t *testing.T) {
 		95, 64, 64, 80, 128, // envelope 2
 		128}
 	s := bridge.NewSynthState()
-	// memcpy(synthState->Commands, commands, sizeof(commands));
 	s.SetCommands(commands)
-	// memcpy(synthState->Values, values, sizeof(values));
 	s.SetValues(values)
-	// synthState->RandSeed = 1;
-	// initialized in NewSynthState
-	// synthState->RowLen = INT32_MAX;
-	// synthState->NumVoices = 1;
 	s.NumVoices = 1
-	// synthState->Synth.Voices[0].Note = 64;
 	s.Synth.Voices[0].Note = 64
-	// retval = su_render_samples(buffer, su_max_samples / 2, synthState);
-	buffer := make([]float32, su_max_samples)
-	remaining := s.Render(buffer)
-	if remaining > 0 {
-		t.Fatalf("could not render full buffer, %v bytes remaining, expected <= 0", remaining)
+	s.SamplesPerRow = SAMPLES_PER_ROW * 8 // this song is two blocks of 8 rows, release during second
+	buffer := make([]float32, 2*su_max_samples)
+	n,err := s.Render(buffer,2,func() {
+	   s.Synth.Voices[0].Release = 1
+	})
+	if n < su_max_samples {
+		t.Fatalf("could not fill the whole buffer, %v samples rendered, %v expected", n, su_max_samples)
 	}
-	// synthState->Synth.Voices[0].Release++;
-	s.Synth.Voices[0].Release++
-	sbuffer := make([]float32, su_max_samples)
-	remaining = s.Render(sbuffer)
-	if remaining > 0 {
-		t.Fatalf("could not render second full buffer, %v bytes remaining, expected <= 0", remaining)
-	}
-	buffer = append(buffer, sbuffer...)
 	_, filename, _, _ := runtime.Caller(0)
 	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "tests", "expected_output", "test_render_samples.raw"))
 	if err != nil {

@@ -8,6 +8,7 @@ import "math"
 // #cgo LDFLAGS: "${SRCDIR}/../build/src/libsointu.a"
 // #include <sointu.h>
 import "C"
+import "errors"
 
 type SynthState = C.SynthState
 
@@ -54,11 +55,33 @@ func (o Opcode) Mono() Opcode {
   return Opcode(byte(o) & 0xFE) // clear lowest bit
 }
 
-func (s *SynthState) Render(buffer []float32) int {
-  fmt.Printf("Calling Render...\n")
-  var ret = C.su_render_samples(s, C.int(len(buffer))/2, (*C.float)(&buffer[0]))
-  fmt.Printf("Returning from Render...\n")
-  return int(ret)
+// Render tries to fill the buffer with samples rendered by Sointu.
+// Parameters:
+//   buffer		float32 slice to fill with rendered samples. Stereo signal, so
+//              should have even length.
+//   maxRows	maximum number of tracker rows that will be rendered in one
+//              call. Can be a large number, but keep finite to avoid getting
+//				stuck trying to render rows in case the synth is buggy and
+//				produces no sample.
+//	 callback	called every time a row advances. Won't get called if you have
+//				not set SamplesPerRow explicitly.
+// Returns the number samples rendered, len(buffer)/2 in the typical case where buffer was filled
+func (s *SynthState) Render(buffer []float32,maxRows int,callback func()) (int, error) {
+  if len(buffer) % 1 == 1 {
+    return -1, errors.New("Render writes stereo signals, so buffer should have even length")
+  }
+  maxSamples := len(buffer) / 2
+  remaining := maxSamples
+  for i := 0; i < maxRows; i++ {
+    remaining = int(C.su_render_samples(s,C.int(remaining),(*C.float)(&buffer[2*(maxSamples-remaining)])))
+    if (remaining >= 0) { // values >= 0 mean that row end was reached
+      callback()
+    }
+    if (remaining <= 0) { // values <= 0 mean that buffer is full, ready to return
+      break;
+    }
+  }
+  return maxSamples - remaining, nil
 }
 
 func (s *SynthState) SetCommands(c [2048]Opcode) {
