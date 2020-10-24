@@ -3,11 +3,12 @@ package bridge_test
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/vsariola/sointu/bridge"
 	"io/ioutil"
 	"path"
 	"runtime"
 	"testing"
+
+	"github.com/vsariola/sointu/bridge"
 )
 
 const BPM = 100
@@ -20,20 +21,19 @@ const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
 // const bufsize = su_max_samples * 2
 
 func TestBridge(t *testing.T) {
-	commands := [2048]bridge.Opcode{
-		bridge.Envelope, bridge.Envelope, bridge.Out.Stereo(), bridge.Advance}
-	values := [16384]byte{64, 64, 64, 80, 128, // envelope 1
-		95, 64, 64, 80, 128, // envelope 2
-		128}
 	s := bridge.NewSynthState()
-	s.SetCommands(commands)
-	s.SetValues(values)
-	s.NumVoices = 1
-	s.Synth.Voices[0].Note = 64
-	s.SamplesPerRow = SAMPLES_PER_ROW * 8 // this song is two blocks of 8 rows, release during second
+	s.SetPatch([]bridge.Instrument{
+		bridge.Instrument{1, []bridge.Unit{
+			bridge.Unit{bridge.Envelope, []byte{64, 64, 64, 80, 128}},
+			bridge.Unit{bridge.Envelope, []byte{95, 64, 64, 80, 128}},
+			bridge.Unit{bridge.Out.Stereo(), []byte{128}},
+		}},
+	})
+	s.Trigger(0, 64)
+	s.SamplesPerRow = SAMPLES_PER_ROW * 8 // this song is two blocks of 8 rows, release before second block start
 	buffer := make([]float32, 2*su_max_samples)
-	n,err := s.Render(buffer,2,func() {
-	   s.Synth.Voices[0].Release = 1
+	n, err := s.Render(buffer, 2, func() {
+		s.Release(0)
 	})
 	if n < su_max_samples {
 		t.Fatalf("could not fill the whole buffer, %v samples rendered, %v expected", n, su_max_samples)
