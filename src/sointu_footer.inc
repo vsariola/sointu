@@ -466,8 +466,7 @@ su_update_voices_trackloop:
         cmp     al, HLD                             ; anything but hold causes action
         je      short su_update_voices_nexttrack
         inc     dword [_DI+su_voice.release]        ; set the voice currently active to release; notice that it could increment any number of times
-        cmp     al, HLD
-        jl      su_update_voices_nexttrack          ; if cl < HLD (no new note triggered)  goto nexttrack
+        jb      su_update_voices_nexttrack          ; if cl < HLD (no new note triggered)  goto nexttrack
 su_update_voices_retrigger:
         stosd                                       ; save note
         mov     ecx, (su_voice.size - su_voice.release)/4  ; could be xor ecx, ecx; mov ch,...>>8, but will it actually be smaller after compression?
