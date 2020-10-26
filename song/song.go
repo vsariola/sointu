@@ -108,7 +108,8 @@ func (s *Song) Render() ([]float32, error) {
 		patternRow := row % s.PatternRows()
 		pattern := row / s.PatternRows()
 		for t := range s.Tracks {
-			note := s.Patterns[pattern][patternRow]
+			patternIndex := s.Tracks[t].Sequence[pattern]
+			note := s.Patterns[patternIndex][patternRow]
 			if note == 1 { // anything but hold causes an action.
 				continue // TODO: can hold be actually something else than 1?
 			}
