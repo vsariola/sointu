@@ -98,10 +98,13 @@ func (s *Song) Render() ([]float32, error) {
 	for i := range curVoices {
 		curVoices[i] = s.FirstTrackVoice(i)
 	}
-	processRow := func(row int) {
-		if row >= s.TotalRows() {
-			return
-		}
+	samples := s.Samples
+	if samples < 0 {
+		samples = s.TotalRows() * s.SamplesPerRow()
+	}
+	buffer := make([]float32, samples*2)
+	totaln := 0
+	for row := 0; row < s.TotalRows(); row++ {
 		patternRow := row % s.PatternRows()
 		pattern := row / s.PatternRows()
 		for t := range s.Tracks {
@@ -119,17 +122,8 @@ func (s *Song) Render() ([]float32, error) {
 				synth.Trigger(curVoices[t], note)
 			}
 		}
+		n, _, _ := synth.Render(buffer[2*totaln:])
+		totaln += n
 	}
-	samples := s.Samples
-	if samples < 0 {
-		samples = s.TotalRows() * s.SamplesPerRow()
-	}
-	buffer := make([]float32, samples*2)
-	row := 0
-	processRow(0)
-	synth.Render(buffer, s.TotalRows(), func() {
-		row++
-		processRow(row)
-	})
 	return buffer, nil
 }

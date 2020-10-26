@@ -32,11 +32,20 @@ func TestBridge(t *testing.T) {
 	s.Trigger(0, 64)
 	s.SamplesPerRow = SAMPLES_PER_ROW * 8 // this song is two blocks of 8 rows, release before second block start
 	buffer := make([]float32, 2*su_max_samples)
-	n, err := s.Render(buffer, 2, func() {
-		s.Release(0)
-	})
-	if n < su_max_samples {
-		t.Fatalf("could not fill the whole buffer, %v samples rendered, %v expected", n, su_max_samples)
+	n, rowend, err := s.Render(buffer)
+	if n < su_max_samples/2 {
+		t.Fatalf("render should have filled half of the buffer on first call, %v samples rendered, %v expected", n, su_max_samples/2)
+	}
+	if rowend != true {
+		t.Fatalf("Row end should have been hit (rowend should have been true) on the first call to Render")
+	}
+	s.Release(0)
+	n, rowend, err = s.Render(buffer[(n * 2):])
+	if n < su_max_samples/2 {
+		t.Fatalf("render should have filled second half of the buffer on the second call, %v samples rendered, %v expected", n, su_max_samples/2)
+	}
+	if rowend != true {
+		t.Fatalf("Row end should have been hit (rowend should have been true) on the second call to Render")
 	}
 	_, filename, _, _ := runtime.Caller(0)
 	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "tests", "expected_output", "test_render_samples.raw"))

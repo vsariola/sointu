@@ -83,31 +83,25 @@ func (o Opcode) Mono() Opcode {
 
 // Render tries to fill the buffer with samples rendered by Sointu.
 // Parameters:
-//   buffer		float32 slice to fill with rendered samples. Stereo signal, so
+//   buffer     float32 slice to fill with rendered samples. Stereo signal, so
 //              should have even length.
-//   maxRows	maximum number of tracker rows that will be rendered in one
-//              call. Can be a large number, but keep finite to avoid getting
-//				stuck trying to render rows in case the synth is buggy and
-//				produces no sample.
-//	 callback	called every time a row advances. Won't get called if you have
-//				not set SamplesPerRow explicitly.
-// Returns the number samples rendered, len(buffer)/2 in the typical case where buffer was filled
-func (s *SynthState) Render(buffer []float32, maxRows int, callback func()) (int, error) {
+// Returns a tuple (int, bool, error), consisting of the number samples
+// rendered (len(buffer)/2 in the case where buffer was filled, less or equal
+// if row end was reached before buffer was full), and bool indicating if row
+// has ended
+func (s *SynthState) Render(buffer []float32) (int, bool, error) {
 	if len(buffer)%1 == 1 {
-		return -1, errors.New("Render writes stereo signals, so buffer should have even length")
+		return -1, false, errors.New("Render writes stereo signals, so buffer should have even length")
 	}
 	maxSamples := len(buffer) / 2
-	remaining := maxSamples
-	for i := 0; i < maxRows; i++ {
-		remaining = int(C.su_render_samples((*C.SynthState)(s), C.int(remaining), (*C.float)(&buffer[2*(maxSamples-remaining)])))
-		if remaining >= 0 { // values >= 0 mean that row end was reached
-			callback()
-		}
-		if remaining <= 0 { // values <= 0 mean that buffer is full, ready to return
-			break
-		}
+	retval := int(C.su_render_samples((*C.SynthState)(s), C.int(maxSamples), (*C.float)(&buffer[0])))
+	if retval < 0 {
+		return maxSamples, false, nil
+	} else if retval == 0 {
+		return maxSamples, true, nil
+	} else {
+		return maxSamples - retval, true, nil
 	}
-	return maxSamples - remaining, nil
 }
 
 func (s *SynthState) SetPatch(patch Patch) error {
