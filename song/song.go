@@ -42,7 +42,7 @@ func (s *Song) Validate() error {
 			return errors.New("Every pattern should have the same length")
 		}
 	}
-	for i := range s.Tracks[:len(s.Patterns)-1] {
+	for i := range s.Tracks[:len(s.Tracks)-1] {
 		if len(s.Tracks[i].Sequence) != len(s.Tracks[i+1].Sequence) {
 			return errors.New("Every track should have the same sequence length")
 		}
