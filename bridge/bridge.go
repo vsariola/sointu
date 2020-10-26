@@ -108,6 +108,7 @@ func (s *SynthState) SetPatch(patch Patch) error {
 	totalVoices := 0
 	commands := make([]Opcode, 0)
 	values := make([]byte, 0)
+	polyphonyBitmask := 0
 	for _, instr := range patch {
 		if len(instr.Units) > 63 {
 			return errors.New("An instrument can have a maximum of 63 units")
@@ -121,6 +122,10 @@ func (s *SynthState) SetPatch(patch Patch) error {
 		}
 		commands = append(commands, Advance)
 		totalVoices += instr.NumVoices
+		for k := 0; k < instr.NumVoices-1; k++ {
+			polyphonyBitmask = (polyphonyBitmask << 1) + 1
+		}
+		polyphonyBitmask <<= 1
 	}
 	if totalVoices > 32 {
 		return errors.New("Sointu does not support more than 32 concurrent voices")
@@ -139,6 +144,7 @@ func (s *SynthState) SetPatch(patch Patch) error {
 		cs.Values[i] = (C.uchar)(values[i])
 	}
 	cs.NumVoices = C.uint(totalVoices)
+	cs.Polyphony = C.uint(polyphonyBitmask)
 	return nil
 }
 
