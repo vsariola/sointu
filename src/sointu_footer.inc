@@ -331,15 +331,15 @@ EXPORT MANGLE_FUNC(su_power,0)
 %endmacro
 
 ;-------------------------------------------------------------------------------
-;   su_render function: the entry point for the synth
+;   su_render_song function: the entry point for the synth
 ;-------------------------------------------------------------------------------
-;   Has the signature su_render(void *ptr), where ptr is a pointer to
-;   the output buffer
+;   Has the signature su_render_song(void *ptr), where ptr is a pointer to
+;   the output buffer. Renders the compile time hard-coded song to the buffer.
 ;   Stack:  output_ptr
 ;-------------------------------------------------------------------------------
-SECT_TEXT(surender)
+SECT_TEXT(surensng)
 
-EXPORT MANGLE_FUNC(su_render,PTRSIZE)   ; Stack: ptr
+EXPORT MANGLE_FUNC(su_render_song,PTRSIZE)   ; Stack: ptr
     render_prologue
     xor     eax, eax
 %ifdef INCLUDE_MULTIVOICE_TRACKS

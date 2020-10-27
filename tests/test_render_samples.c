@@ -19,7 +19,7 @@
 #define SAMPLES_PER_ROW SAMPLE_RATE * 4 * 60 / (BPM * 16)
 const int su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS;
 
-void CALLCONV su_render(float* buffer) {
+void CALLCONV su_render_song(float* buffer) {
     SynthState* synthState;  
     const unsigned char commands[] = { su_envelope_id, // MONO
                                        su_envelope_id, // MONO
@@ -33,14 +33,13 @@ void CALLCONV su_render(float* buffer) {
     memset(synthState, 0, sizeof(SynthState));
     memcpy(synthState->Commands, commands, sizeof(commands));
     memcpy(synthState->Values, values, sizeof(values));
-    synthState->RandSeed = 1;
-    synthState->SamplesPerRow = INT32_MAX;
+    synthState->RandSeed = 1;    
     synthState->NumVoices = 1;
     synthState->Synth.Voices[0].Note = 64;
-    retval = su_render_samples(synthState, su_max_samples / 2, buffer);
+    retval = su_render(synthState, buffer, su_max_samples / 2);
     synthState->Synth.Voices[0].Release++;
     buffer = buffer + su_max_samples;
-    retval = su_render_samples(synthState, su_max_samples / 2, buffer);
+    retval = su_render(synthState, buffer, su_max_samples / 2);
     free(synthState);
 	return;
 }

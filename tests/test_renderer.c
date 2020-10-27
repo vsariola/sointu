@@ -24,7 +24,7 @@
 #else // 64-bit
     #define CALLCONV  // the asm will use honor honor correct x64 ABI on all 64-bit platforms
 #endif
-extern void CALLCONV su_render(void *);
+extern void CALLCONV su_render_song(void *);
 
 #ifdef INCLUDE_GMDLS
 extern void CALLCONV su_load_gmdls(void);
@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
     su_load_gmdls();
     #endif
 
-    su_render(buf);
+    su_render_song(buf);
 
     snprintf(filename, sizeof filename, "%s%s%s", expected_output_folder, test_name, ".raw");
 
@@ -117,7 +117,10 @@ int main(int argc, char* argv[]) {
             printf("4klang rendered different wave than expected\n");
             goto fail;
         }
-        max_diff = fmax(diff, max_diff);
+        
+        if (diff > max_diff) {
+            max_diff = diff;
+        }
     }
 
     if (max_diff > 1e-6) {

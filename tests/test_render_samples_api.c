@@ -19,8 +19,11 @@ int main(int argc, char* argv[]) {
                                        su_advance_id };// MONO
     const unsigned char values[] = { 64, 64, 64, 80, 128, // envelope 1
                                      95, 64, 64, 80, 128, // envelope 2
-                                     128 };
-    int remaining, remainingOut;
+                                     128 };    
+    int errcode;
+    int time;
+    int samples;
+    int totalrendered;
     int retval;
     synthState = (SynthState*)malloc(sizeof(SynthState));
     buffer = (float*)malloc(2 * sizeof(float) * su_max_samples);
@@ -29,58 +32,89 @@ int main(int argc, char* argv[]) {
     memcpy(synthState->Values, values, sizeof(values));
     synthState->RandSeed = 1;
     synthState->NumVoices = 1;
-    synthState->Synth.Voices[0].Note = 64;
-    remaining = su_max_samples;
-    // First check that when RowLen = 0, we render nothing and remaining does not change
-    synthState->SamplesPerRow = 0;
-    if (su_render_samples(synthState, remaining, buffer) != remaining)
+    synthState->Synth.Voices[0].Note = 64;    
+    totalrendered = 0;
+    // First check that when we render using su_render_time with 0 time
+    // we get nothing done    
+    samples = su_max_samples;
+    time = 0;
+    errcode = su_render_time(synthState, buffer, &samples, &time);
+    if (errcode != 0)
     {
-        printf("su_render_samples rendered samples despite number of samples per row being 0");
+        printf("su_render_time returned error");
+        goto fail;
+    }
+    if (samples > 0)
+    {
+        printf("su_render_time rendered samples, despite it should not");
+        goto fail;
+    }    
+    if (time > 0)
+    {
+        printf("su_render_time advanced time, despite it should not");
+        goto fail;
+    }
+    // Then check that when we render using su_render_time with 0 samples,
+    // we get nothing done    
+    samples = 0;
+    time = INT32_MAX;
+    errcode = su_render_time(synthState, buffer, &samples, &time);
+    if (errcode != 0)
+    {    
+        printf("su_render_time returned error");
+        goto fail;
+    }
+    if (samples > 0)
+    {
+        printf("su_render_time rendered samples, despite it should not");
+        goto fail;
+    }
+    if (time > 0)
+    {
+        printf("su_render_time advanced time, despite it should not");
         goto fail;
     }
     // Then check that each time we call render, only SAMPLES_PER_ROW
     // number of samples are rendered
-    synthState->SamplesPerRow = SAMPLES_PER_ROW;
     for (int i = 0; i < 16; i++) {
         // Simulate "small buffers" i.e. render a buffer with 1 sample
         // check that buffer full
-        remainingOut = su_render_samples(synthState, 1, &buffer[2 * (su_max_samples - remaining)]);
-        if (remainingOut != -1)
+        samples = 1;
+        time = INT32_MAX;
+        su_render_time(synthState, &buffer[totalrendered*2], &samples, &time);
+        totalrendered += samples;
+        if (samples != 1)
         {
-            printf("su_render_samples should have return -1, as it should have believed buffer is full");
+            printf("su_render should have return 1, as it should have believed buffer is full");
             goto fail;
         }
-        if (synthState->RowTick != 1)
+        if (time != 1)
         {
-            printf("su_render_samples RowTick should be at 1 after rendering 1 tick of a row");
+            printf("su_render should have advanced the time also by one");
+            goto fail;
+        }        
+        samples = SAMPLES_PER_ROW - 1;
+        time = INT32_MAX;
+        su_render_time(synthState, &buffer[totalrendered * 2], &samples, &time);
+        totalrendered += samples;
+        if (samples != SAMPLES_PER_ROW - 1)
+        {
+            printf("su_render should have return SAMPLES_PER_ROW - 1, as it should have believed buffer is full");
             goto fail;
         }
-        remaining--; // we rendered just one sample
-        remainingOut = su_render_samples(synthState, remaining, &buffer[2 * (su_max_samples - remaining)]);
-        if (remainingOut != remaining - SAMPLES_PER_ROW + 1)
+        if (time != SAMPLES_PER_ROW - 1)
         {
-            printf("su_render_samples did not render SAMPLES_PER_ROW, despite rowLen being SAMPLES_PER_ROW");
+            printf("su_render should have advanced the time also by SAMPLES_PER_ROW - 1");
             goto fail;
         }
-        if (synthState->RowTick != 0)
-        {
-            printf("The row should be have been reseted");
-            goto fail;
-        }
-        remaining = remainingOut;
         if (i == 8)
-            synthState->Synth.Voices[0].Release++;
+            synthState->Synth.Voices[0].Release++;        
     }
-    if (remaining != 0) {
-        printf("The buffer should be full and row finished");
-        goto fail;
-    }
-    // Finally, now that there is no more buffer remaining, should return -1
-    if (su_render_samples(synthState, remaining, &buffer[2 * (su_max_samples - remaining)]) != -1)
+    if (totalrendered != su_max_samples)
     {
-        printf("su_render_samples should have ran out of buffer and thus return -1");
+        printf("su_render should have rendered a total of su_max_samples");
         goto fail;
-    }
+    }    
     retval = 0;
 finish:
     free(synthState);

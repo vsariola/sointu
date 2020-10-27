@@ -38,9 +38,7 @@ typedef struct SynthState {
     unsigned int Polyphony;
     unsigned int NumVoices;
     unsigned int RandSeed;
-    unsigned int GlobalTick;
-    unsigned int RowTick;
-    unsigned int SamplesPerRow; // nominal value, actual rows could be more or less due to speed modulation
+    unsigned int GlobalTick;    
 } SynthState;
 #pragma pack(pop)
 
@@ -58,9 +56,26 @@ typedef struct SynthState {
 extern void CALLCONV su_load_gmdls(void);
 #endif
 
-// su_render_samples(SynthState* synthState, int maxSamples, float* buffer):
-//      Renders at most maxsamples to the buffer, using and modifying the
-//      synthesizer state in synthState.
+// int su_render(SynthState* synthState, float* buffer, int samples):
+//      Renders 'samples' number of samples to the buffer, using and modifying
+//      the synthesizer state in synthState.
+//
+// Parameters:
+//      synthState  pointer to current synthState. RandSeed should be > 0 e.g. 1
+//      buffer      audio sample buffer, L R L R ...
+//      samples     maximum number of samples to be rendered. WARNING: buffer
+//                  should have a length of 2 * samples as the audio is stereo.
+//
+// Returns error code:
+//      0   everything ok
+//      (returns always 0 as no errors are implemented yet)
+int CALLCONV su_render(SynthState* synthState, float* buffer, int samples);
+
+// int su_render_time(SynthState* synthState, float* buffer, int* samples, int* time):
+//      Renders samples until 'samples' number of samples are reached or 'time' number of
+//      modulated time ticks are reached, whichever happens first. 'samples' and 'time' are
+//      are passed by reference as the function modifies to tell how many samples were
+//      actually rendered and how many time ticks were actually advanced.
 //
 // Parameters:
 //      synthState  pointer to current synthState. RandSeed should be > 0 e.g. 1
@@ -68,39 +83,23 @@ extern void CALLCONV su_load_gmdls(void);
 //                  rendered; either set it to INT32_MAX to always render full
 //                  buffer, or something like SAMPLE_RATE * 60 / (BPM * 4) for
 //                  having 4 rows per beat.
-//      maxSamples  maximum number of samples to be rendered.  buffer should
-//                  have a length of 2 * maxsamples as the audio is stereo.
 //      buffer      audio sample buffer, L R L R ...
+//      samples     pointer to the maximum number of samples to be rendered.
+//                  buffer should have a length of 2 * maxsamples as the audio
+//                  is stereo.
+//      time        maximum modulated time rendered.
 //
-// Returns:
-//      -1  end of row was not reached & buffer full
-//      0   end of row was reached & buffer full (there is space for zero
-//          samples in the buffer)
-//      n>0 end of row was reached & there is space for n samples in the buffer
+// The value referred by samples is changed to contain the actual number of samples rendered
+// Similarly, the value referred by time is changed to contain the number of time ticks advanced.
+// If samples_out == samples_in, then is must be that time_in <= time_out.
+// If samples_out < samples_in, then time_out >= time_in. Note that it could happen that
+// time_out > time_in, as it is modulated and the time could advance by 2 or more, so the loop
+// exit condition would fire when the current time is already past time_in
 //
-// Beware of infinite loops: with a rowlen of 0; or without resetting rowtick
-// between rows; or with a problematic synth patch e.g. if the speed is
-// modulated to be become infinite, this function might return maxsamples i.e.
-// not render any samples. If you try to call this with your buffer until the
-// whole buffer is filled, you will be stuck in an infinite loop.
-//
-// So a reasonable track player would be something like:
-//
-// function render_buffer(maxsamples,buffer) {
-//   remaining = maxsamples
-//   for i = 0..MAX_TRIES       // limit retries to prevent infinite loop
-//        remaining = su_render_samples(synthState,
-//                                      remaining,
-//                                      &buffer[(maxsamples-remaining)*2])
-//        if remaining >= 0     // end of row reached
-//            song_row++        // advance row
-//            retrigger/release voices based on the new row
-//        if remaining <= 0     // buffer full
-//            return
-//    return // could not fill buffer despite MAX_TRIES, something is wrong
-//           // audio will come to sudden end
-//  }
-extern int CALLCONV su_render_samples(SynthState* synthState, int maxSamples, float* buffer);
+// Returns error code:
+//      0   everything ok
+//      (no actual errors implemented yet)
+int CALLCONV su_render_time(SynthState* synthState, float* buffer, int* samples, int* time);
 
 // Arithmetic opcode ids
 extern const int su_add_id;

@@ -2,7 +2,6 @@ package bridge
 
 import (
 	"errors"
-	"math"
 )
 
 // #cgo CFLAGS: -I"${SRCDIR}/../include"
@@ -93,10 +92,10 @@ func (s *SynthState) Render(buffer []float32) error {
 		return errors.New("Render writes stereo signals, so buffer should have even length")
 	}
 	maxSamples := len(buffer) / 2
-	cs := (*C.SynthState)(s)
-	cs.SamplesPerRow = C.uint(math.MaxInt32)
-	cs.RowTick = 0
-	C.su_render_samples((*C.SynthState)(s), C.int(maxSamples), (*C.float)(&buffer[0]))
+	errcode := C.su_render((*C.SynthState)(s), (*C.float)(&buffer[0]), C.int(maxSamples))
+	if errcode > 0 {
+		return errors.New("Render failed")
+	}
 	return nil
 }
 
@@ -106,7 +105,8 @@ func (s *SynthState) Render(buffer []float32) error {
 //   buffer     float32 slice to fill with rendered samples. Stereo signal, so
 //              should have even length.
 //   maxtime    how long nominal time to render in samples. Speed unit might modulate time
-//              so the actual number of samples rendered is not the
+//              so the actual number of samples rendered depends on the modulation and if
+//              buffer is full before maxtime is reached.
 // Returns a tuple (int, int, error), consisting of:
 //   samples    number of samples rendered in the buffer
 //   time       how much the time advanced
@@ -118,20 +118,15 @@ func (s *SynthState) Render(buffer []float32) error {
 // Under no conditions, nsamples >= len(buffer)/2 i.e. guaranteed to never overwrite the buffer.
 func (s *SynthState) RenderTime(buffer []float32, maxtime int) (int, int, error) {
 	if len(buffer)%1 == 1 {
-		return -1, -1, errors.New("Render writes stereo signals, so buffer should have even length")
+		return -1, -1, errors.New("RenderTime writes stereo signals, so buffer should have even length")
 	}
-	maxSamples := len(buffer) / 2
-	cs := (*C.SynthState)(s)
-	cs.SamplesPerRow = C.uint(maxtime) // these two lines are here just because the C-API is not
-	cs.RowTick = 0                     // updated. SamplesPerRow should be "maxtime" and passed as a parameter
-	retval := int(C.su_render_samples((*C.SynthState)(s), C.int(maxSamples), (*C.float)(&buffer[0])))
-	if retval < 0 { // this ugliness is just because the C-API is not updated yet
-		return maxSamples, int(cs.RowTick), nil
-	} else if retval == 0 {
-		return maxSamples, int(cs.RowTick), nil
-	} else {
-		return maxSamples - retval, int(cs.RowTick), nil
+	samples := C.int(len(buffer) / 2)
+	time := C.int(maxtime)
+	errcode := int(C.su_render_time((*C.SynthState)(s), (*C.float)(&buffer[0]), &samples, &time))
+	if errcode > 0 {
+		return -1, -1, errors.New("RenderTime failed")
 	}
+	return int(samples), int(time), nil
 }
 
 func (s *SynthState) SetPatch(patch Patch) error {
@@ -192,9 +187,5 @@ func (s *SynthState) Release(voice int) {
 func NewSynthState() *SynthState {
 	s := new(SynthState)
 	s.RandSeed = 1
-	// The default behaviour will be to have rows/beats disabled i.e.
-	// fill the whole buffer every call. This is a lot better default
-	// behaviour than leaving this 0 (Render would never render anything)
-	s.SamplesPerRow = math.MaxInt32
 	return s
 }
