@@ -82,25 +82,55 @@ func (o Opcode) Mono() Opcode {
 }
 
 // Render tries to fill the buffer with samples rendered by Sointu.
+// Use this version if you are not interested in time modulation. Will always
+// fill the buffer.
 // Parameters:
 //   buffer     float32 slice to fill with rendered samples. Stereo signal, so
 //              should have even length.
-// Returns a tuple (int, bool, error), consisting of the number samples
-// rendered (len(buffer)/2 in the case where buffer was filled, less or equal
-// if row end was reached before buffer was full), and bool indicating if row
-// has ended
-func (s *SynthState) Render(buffer []float32) (int, bool, error) {
+// Returns an error if something went wrong.
+func (s *SynthState) Render(buffer []float32) error {
 	if len(buffer)%1 == 1 {
-		return -1, false, errors.New("Render writes stereo signals, so buffer should have even length")
+		return errors.New("Render writes stereo signals, so buffer should have even length")
 	}
 	maxSamples := len(buffer) / 2
+	cs := (*C.SynthState)(s)
+	cs.SamplesPerRow = C.uint(math.MaxInt32)
+	cs.RowTick = 0
+	C.su_render_samples((*C.SynthState)(s), C.int(maxSamples), (*C.float)(&buffer[0]))
+	return nil
+}
+
+// RenderTime renders until the buffer is full or the modulated time is reached, whichever
+// happens first.
+// Parameters:
+//   buffer     float32 slice to fill with rendered samples. Stereo signal, so
+//              should have even length.
+//   maxtime    how long nominal time to render in samples. Speed unit might modulate time
+//              so the actual number of samples rendered is not the
+// Returns a tuple (int, int, error), consisting of:
+//   samples    number of samples rendered in the buffer
+//   time       how much the time advanced
+//   error      potential error
+// In practice, if nsamples = len(buffer)/2, then time <= maxtime. If maxtime was reached
+// first, then nsamples <= len(buffer)/2 and time >= maxtime. Note that it could happen that
+// time > maxtime, as it is modulated and the time could advance by 2 or more, so the loop
+// exit condition would fire when the time is already past maxtime.
+// Under no conditions, nsamples >= len(buffer)/2 i.e. guaranteed to never overwrite the buffer.
+func (s *SynthState) RenderTime(buffer []float32, maxtime int) (int, int, error) {
+	if len(buffer)%1 == 1 {
+		return -1, -1, errors.New("Render writes stereo signals, so buffer should have even length")
+	}
+	maxSamples := len(buffer) / 2
+	cs := (*C.SynthState)(s)
+	cs.SamplesPerRow = C.uint(maxtime) // these two lines are here just because the C-API is not
+	cs.RowTick = 0                     // updated. SamplesPerRow should be "maxtime" and passed as a parameter
 	retval := int(C.su_render_samples((*C.SynthState)(s), C.int(maxSamples), (*C.float)(&buffer[0])))
-	if retval < 0 {
-		return maxSamples, false, nil
+	if retval < 0 { // this ugliness is just because the C-API is not updated yet
+		return maxSamples, int(cs.RowTick), nil
 	} else if retval == 0 {
-		return maxSamples, true, nil
+		return maxSamples, int(cs.RowTick), nil
 	} else {
-		return maxSamples - retval, true, nil
+		return maxSamples - retval, int(cs.RowTick), nil
 	}
 }
 
@@ -157,10 +187,6 @@ func (s *SynthState) Trigger(voice int, note byte) {
 func (s *SynthState) Release(voice int) {
 	cs := (*C.SynthState)(s)
 	cs.Synth.Voices[voice].Release = 1
-}
-
-func (s *SynthState) SetSamplesPerRow(spr int) {
-	s.SamplesPerRow = C.uint(spr)
 }
 
 func NewSynthState() *SynthState {

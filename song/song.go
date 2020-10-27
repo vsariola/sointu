@@ -93,7 +93,6 @@ func (s *Song) Render() ([]float32, error) {
 	}
 	synth := bridge.NewSynthState()
 	synth.SetPatch(s.Patch)
-	synth.SetSamplesPerRow(44100 * 60 / (s.BPM * 4))
 	curVoices := make([]int, len(s.Tracks))
 	for i := range curVoices {
 		curVoices[i] = s.FirstTrackVoice(i)
@@ -104,6 +103,7 @@ func (s *Song) Render() ([]float32, error) {
 	}
 	buffer := make([]float32, samples*2)
 	totaln := 0
+	rowtime := 44100 * 60 / (s.BPM * 4)
 	for row := 0; row < s.TotalRows(); row++ {
 		patternRow := row % s.PatternRows()
 		pattern := row / s.PatternRows()
@@ -123,8 +123,8 @@ func (s *Song) Render() ([]float32, error) {
 				synth.Trigger(curVoices[t], note)
 			}
 		}
-		n, _, _ := synth.Render(buffer[2*totaln:])
-		totaln += n
+		samples, _, _ := synth.RenderTime(buffer[2*totaln:], rowtime)
+		totaln += samples
 	}
 	return buffer, nil
 }
