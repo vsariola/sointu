@@ -10,6 +10,8 @@ import (
 import "C"
 
 // SynthState contains the entire state of sointu sound engine
+type Synth C.Synth // hide C.Synth, explicit cast is still possible if needed
+
 type SynthState C.SynthState // hide C.Synthstate, explicit cast is still possible if needed
 
 // Opcode is a single byte, representing the virtual machine commands used in Sointu
@@ -87,12 +89,12 @@ func (o Opcode) Mono() Opcode {
 //   buffer     float32 slice to fill with rendered samples. Stereo signal, so
 //              should have even length.
 // Returns an error if something went wrong.
-func (s *SynthState) Render(buffer []float32) error {
+func (synth *Synth) Render(state *SynthState, buffer []float32) error {
 	if len(buffer)%1 == 1 {
 		return errors.New("Render writes stereo signals, so buffer should have even length")
 	}
 	maxSamples := len(buffer) / 2
-	errcode := C.su_render((*C.SynthState)(s), (*C.float)(&buffer[0]), C.int(maxSamples))
+	errcode := C.su_render((*C.Synth)(synth), (*C.SynthState)(state), (*C.float)(&buffer[0]), C.int(maxSamples))
 	if errcode > 0 {
 		return errors.New("Render failed")
 	}
@@ -116,30 +118,30 @@ func (s *SynthState) Render(buffer []float32) error {
 // time > maxtime, as it is modulated and the time could advance by 2 or more, so the loop
 // exit condition would fire when the time is already past maxtime.
 // Under no conditions, nsamples >= len(buffer)/2 i.e. guaranteed to never overwrite the buffer.
-func (s *SynthState) RenderTime(buffer []float32, maxtime int) (int, int, error) {
+func (synth *Synth) RenderTime(state *SynthState, buffer []float32, maxtime int) (int, int, error) {
 	if len(buffer)%1 == 1 {
 		return -1, -1, errors.New("RenderTime writes stereo signals, so buffer should have even length")
 	}
 	samples := C.int(len(buffer) / 2)
 	time := C.int(maxtime)
-	errcode := int(C.su_render_time((*C.SynthState)(s), (*C.float)(&buffer[0]), &samples, &time))
+	errcode := int(C.su_render_time((*C.Synth)(synth), (*C.SynthState)(state), (*C.float)(&buffer[0]), &samples, &time))
 	if errcode > 0 {
 		return -1, -1, errors.New("RenderTime failed")
 	}
 	return int(samples), int(time), nil
 }
 
-func (s *SynthState) SetPatch(patch Patch) error {
+func Compile(patch Patch) (*Synth, error) {
 	totalVoices := 0
 	commands := make([]Opcode, 0)
 	values := make([]byte, 0)
 	polyphonyBitmask := 0
 	for _, instr := range patch {
 		if len(instr.Units) > 63 {
-			return errors.New("An instrument can have a maximum of 63 units")
+			return nil, errors.New("An instrument can have a maximum of 63 units")
 		}
 		if instr.NumVoices < 1 {
-			return errors.New("Each instrument must have at least 1 voice")
+			return nil, errors.New("Each instrument must have at least 1 voice")
 		}
 		for _, unit := range instr.Units {
 			commands = append(commands, unit.Command)
@@ -153,35 +155,35 @@ func (s *SynthState) SetPatch(patch Patch) error {
 		polyphonyBitmask <<= 1
 	}
 	if totalVoices > 32 {
-		return errors.New("Sointu does not support more than 32 concurrent voices")
+		return nil, errors.New("Sointu does not support more than 32 concurrent voices")
 	}
 	if len(commands) > 2048 { // TODO: 2048 could probably be pulled automatically from cgo
-		return errors.New("The patch would result in more than 2048 commands")
+		return nil, errors.New("The patch would result in more than 2048 commands")
 	}
 	if len(values) > 16384 { // TODO: 16384 could probably be pulled automatically from cgo
-		return errors.New("The patch would result in more than 16384 values")
+		return nil, errors.New("The patch would result in more than 16384 values")
 	}
-	cs := (*C.SynthState)(s)
+	s := new(Synth)
 	for i := range commands {
-		cs.Commands[i] = (C.uchar)(commands[i])
+		s.Commands[i] = (C.uchar)(commands[i])
 	}
 	for i := range values {
-		cs.Values[i] = (C.uchar)(values[i])
+		s.Values[i] = (C.uchar)(values[i])
 	}
-	cs.NumVoices = C.uint(totalVoices)
-	cs.Polyphony = C.uint(polyphonyBitmask)
-	return nil
+	s.NumVoices = C.uint(totalVoices)
+	s.Polyphony = C.uint(polyphonyBitmask)
+	return s, nil
 }
 
 func (s *SynthState) Trigger(voice int, note byte) {
 	cs := (*C.SynthState)(s)
-	cs.Synth.Voices[voice] = C.Voice{}
-	cs.Synth.Voices[voice].Note = C.int(note)
+	cs.SynthWrk.Voices[voice] = C.Voice{}
+	cs.SynthWrk.Voices[voice].Note = C.int(note)
 }
 
 func (s *SynthState) Release(voice int) {
 	cs := (*C.SynthState)(s)
-	cs.Synth.Voices[voice].Release = 1
+	cs.SynthWrk.Voices[voice].Release = 1
 }
 
 func NewSynthState() *SynthState {

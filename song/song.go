@@ -86,13 +86,11 @@ func (s *Song) FirstTrackVoice(track int) int {
 	return ret
 }
 
-func (s *Song) Render() ([]float32, error) {
+func (s *Song) Render(synth *bridge.Synth, state *bridge.SynthState) ([]float32, error) {
 	err := s.Validate()
 	if err != nil {
 		return nil, err
 	}
-	synth := bridge.NewSynthState()
-	synth.SetPatch(s.Patch)
 	curVoices := make([]int, len(s.Tracks))
 	for i := range curVoices {
 		curVoices[i] = s.FirstTrackVoice(i)
@@ -113,17 +111,17 @@ func (s *Song) Render() ([]float32, error) {
 			if note == 1 { // anything but hold causes an action.
 				continue // TODO: can hold be actually something else than 1?
 			}
-			synth.Release(curVoices[t])
+			state.Release(curVoices[t])
 			if note > 1 {
 				curVoices[t]++
 				first := s.FirstTrackVoice(t)
 				if curVoices[t] >= first+s.Tracks[t].NumVoices {
 					curVoices[t] = first
 				}
-				synth.Trigger(curVoices[t], note)
+				state.Trigger(curVoices[t], note)
 			}
 		}
-		samples, _, _ := synth.RenderTime(buffer[2*totaln:], rowtime)
+		samples, _, _ := synth.RenderTime(state, buffer[2*totaln:], rowtime)
 		totaln += samples
 	}
 	return buffer, nil

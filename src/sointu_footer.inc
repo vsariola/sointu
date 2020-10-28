@@ -168,7 +168,7 @@ endstruc
 ;===============================================================================
 SECT_BSS(susynth)
 
-su_synth_obj            resb    su_synth.size
+su_synth_obj            resb    su_synthworkspace.size
 
 %if DELAY_ID > -1       ; if we use delay, then the synth obj should be immediately followed by the delay workspaces
                         resb   NUM_DELAY_LINES*su_delayline_wrk.size
@@ -287,7 +287,7 @@ EXPORT MANGLE_FUNC(su_power,0)
     %ifndef SU_USE_16BIT_OUTPUT
         %ifndef SU_CLIP_OUTPUT ; The modern way. No need to clip; OS can do it.
             mov     _DI, [_SP+su_stack.bufferptr - su_stack.output_sound] ; edi containts ptr
-            mov     _SI, PTRWORD su_synth_obj + su_synth.left
+            mov     _SI, PTRWORD su_synth_obj + su_synthworkspace.left
             movsd   ; copy left channel to output buffer
             movsd   ; copy right channel to output buffer
             mov     [_SP+su_stack.bufferptr - su_stack.output_sound], _DI ; save back the updated ptr
@@ -300,10 +300,10 @@ EXPORT MANGLE_FUNC(su_power,0)
             xor     _CX,_CX
             xor     eax,eax
             %%loop: ; loop over two channels, left & right
-             do fld     dword [,su_synth_obj+su_synth.left,_CX*4,]
+             do fld     dword [,su_synth_obj+su_synthworkspace.left,_CX*4,]
                 call    su_clip
                 fstp    dword [_SI]
-             do mov     dword [,su_synth_obj+su_synth.left,_CX*4,{],eax} ; clear the sample so the VM is ready to write it
+             do mov     dword [,su_synth_obj+su_synthworkspace.left,_CX*4,{],eax} ; clear the sample so the VM is ready to write it
                 add     _SI,4
                 cmp     ecx,2
                 jl      %%loop
@@ -311,7 +311,7 @@ EXPORT MANGLE_FUNC(su_power,0)
         %endif
     %else ; 16-bit output, always clipped. This is a bit legacy method.
         mov     _SI, [_SP+su_stack.bufferptr - su_stack.output_sound] ; esi points to the output buffer
-        mov     _DI, PTRWORD su_synth_obj+su_synth.left
+        mov     _DI, PTRWORD su_synth_obj+su_synthworkspace.left
         mov     ecx, 2
         %%loop: ; loop over two channels, left & right
             fld     dword [_DI]
@@ -361,9 +361,9 @@ su_render_sampleloop:                   ; loop through every sample in the row
             mov     COM, PTRWORD MANGLE_DATA(su_commands)           ; COM points to vm code
             mov     VAL, PTRWORD MANGLE_DATA(su_params)             ; VAL points to unit params
             %if DELAY_ID > -1
-                lea     _CX, [_DX + su_synth.size - su_delayline_wrk.filtstate]
+                lea     _CX, [_DX + su_synthworkspace.size - su_delayline_wrk.filtstate]
             %endif
-            lea     WRK, [_DX + su_synth.voices]            ; WRK points to the first voice
+            lea     WRK, [_DX + su_synthworkspace.voices]            ; WRK points to the first voice
             call    MANGLE_FUNC(su_run_vm,0) ; run through the VM code
             pop     _AX
             %ifdef INCLUDE_POLYPHONY
@@ -424,7 +424,7 @@ su_calculate_voices_loop:                           ; do {
         mov     edi, ecx
         add     edi, ebx
         shl     edi, MAX_UNITS_SHIFT + 6            ; each unit = 64 bytes and there are 1<<MAX_UNITS_SHIFT units + small header
-     do inc     dword [,su_synth_obj+su_synth.voices+su_voice.release,_DI,] ; set the voice currently active to release; notice that it could increment any number of times
+     do inc     dword [,su_synth_obj+su_synthworkspace.voices+su_voice.release,_DI,] ; set the voice currently active to release; notice that it could increment any number of times
         cmp     al, HLD                             ; if cl < HLD (no new note triggered)
         jl      su_update_voices_nexttrack          ;   goto nexttrack
         inc     ecx                                 ; curvoice++
@@ -435,7 +435,7 @@ su_update_voices_skipreset:
         mov     byte [_BP],cl
         add     ecx, ebx
         shl     ecx, MAX_UNITS_SHIFT + 6            ; each unit = 64 bytes and there are 1<<MAX_UNITS_SHIFT units + small header
-     do{lea    _DI,[},su_synth_obj+su_synth.voices,_CX,]
+     do{lea    _DI,[},su_synth_obj+su_synthworkspace.voices,_CX,]
         stosd                                       ; save note
         mov     ecx, (su_voice.size - su_voice.release)/4
         xor     eax, eax
@@ -457,7 +457,7 @@ su_update_voices: ; Stack: retaddr row
     mov     bl, PATTERN_SIZE
     div     ebx                                 ; eax = current pattern, edx = current row in pattern
  do{lea     _SI, [},MANGLE_DATA(su_tracks),_AX,]; esi points to the pattern data for current track
-    mov     _DI, PTRWORD su_synth_obj+su_synth.voices
+    mov     _DI, PTRWORD su_synth_obj+su_synthworkspace.voices
     mov     bl, MAX_TRACKS                      ; MAX_TRACKS is always <= 32 so this is ok
 su_update_voices_trackloop:
         movzx   eax, byte [_SI]                     ; eax = current pattern

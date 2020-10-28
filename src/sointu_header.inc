@@ -251,9 +251,9 @@ struc su_voice
 endstruc
 
 ;-------------------------------------------------------------------------------
-;   synth struct
+;   synthworkspace struct
 ;-------------------------------------------------------------------------------
-struc su_synth
+struc su_synthworkspace
     .curvoices  resb    32      ; these are used by the multitrack player to store which voice is playing on which track
     .left       resd    1
     .right      resd    1

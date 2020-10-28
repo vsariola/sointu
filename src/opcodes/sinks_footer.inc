@@ -17,8 +17,8 @@ EXPORT MANGLE_FUNC(su_op_out,0) ; l r
     su_op_out_mono:
     %endif
     fmul    dword [INP + su_out_ports.gain] ; g*l
-    fadd    dword [_AX + su_synth.left]   ; g*l+o
-    fstp    dword [_AX + su_synth.left]   ; o'=g*l+o
+    fadd    dword [_AX + su_synthworkspace.left]   ; g*l+o
+    fstp    dword [_AX + su_synthworkspace.left]   ; o'=g*l+o
     ret
 
 %endif ; SU_OUT_ID > -1
@@ -43,11 +43,11 @@ EXPORT MANGLE_FUNC(su_op_outaux,0) ; l r
     %endif
     fld     st0                                     ; l l
     fmul    dword [INP + su_outaux_ports.outgain]   ; g*l
-    fadd    dword [_AX + su_synth.left]             ; g*l+o
-    fstp    dword [_AX + su_synth.left]             ; o'=g*l+o
+    fadd    dword [_AX + su_synthworkspace.left]             ; g*l+o
+    fstp    dword [_AX + su_synthworkspace.left]             ; o'=g*l+o
     fmul    dword [INP + su_outaux_ports.auxgain]   ; h*l
-    fadd    dword [_AX + su_synth.aux]              ; h*l+a
-    fstp    dword [_AX + su_synth.aux]              ; a'=h*l+a
+    fadd    dword [_AX + su_synthworkspace.aux]              ; h*l+a
+    fstp    dword [_AX + su_synthworkspace.aux]              ; a'=h*l+a
     ret
 
 %endif ; SU_OUTAUX_ID > -1
@@ -72,8 +72,8 @@ EXPORT MANGLE_FUNC(su_op_aux,0) ; l r
     su_op_aux_mono:
     %endif
     fmul    dword [INP + su_aux_ports.gain]     ; g*l
-    fadd    dword [_DI + su_synth.left + _AX*4] ; g*l+o
-    fstp    dword [_DI + su_synth.left + _AX*4] ; o'=g*l+o
+    fadd    dword [_DI + su_synthworkspace.left + _AX*4] ; g*l+o
+    fstp    dword [_DI + su_synthworkspace.left + _AX*4] ; o'=g*l+o
     ret
 
 %endif ; SU_AUX_ID > -1

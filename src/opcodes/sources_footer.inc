@@ -406,13 +406,13 @@ EXPORT MANGLE_FUNC(su_op_in,0)
         sub     _DI, 4
     su_op_in_right:
         xor     ecx, ecx
-        fld     dword [_DI + su_synth.right + _AX*4]
-        mov     dword [_DI + su_synth.right + _AX*4], ecx
+        fld     dword [_DI + su_synthworkspace.right + _AX*4]
+        mov     dword [_DI + su_synthworkspace.right + _AX*4], ecx
     %else
         xor     ecx, ecx
         mov     _DI, [_SP + su_stack.synth]
-        fld     dword [_DI + su_synth.left + _AX*4]
-        mov     dword [_DI + su_synth.left + _AX*4], ecx
+        fld     dword [_DI + su_synthworkspace.left + _AX*4]
+        mov     dword [_DI + su_synthworkspace.left + _AX*4], ecx
     %endif
     ret
 

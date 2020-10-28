@@ -38,7 +38,12 @@ func TestSongRender(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewSong failed: %v", err)
 	}
-	buffer, err := song.Render()
+	synth, err := bridge.Compile(patch)
+	if err != nil {
+		t.Fatalf("Compiling patch failed: %v", err)
+	}
+	state := bridge.NewSynthState()
+	buffer, err := song.Render(synth, state)
 	if err != nil {
 		t.Fatalf("Render failed: %v", err)
 	}

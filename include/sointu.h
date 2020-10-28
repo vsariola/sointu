@@ -15,14 +15,6 @@ typedef struct Voice {
     struct Unit Units[63];
 } Voice;
 
-typedef struct Synth {
-    unsigned char Curvoices[32];
-    float Left;
-    float Right;
-    float Aux[6];
-    struct Voice Voices[32];
-} Synth;
-
 typedef struct DelayWorkspace {
     float Buffer[65536];
     float Dcin;
@@ -30,16 +22,27 @@ typedef struct DelayWorkspace {
     float Filtstate;
 } DelayWorkspace;
 
+typedef struct SynthWorkspace {
+    unsigned char Curvoices[32];
+    float Left;
+    float Right;
+    float Aux[6];
+    struct Voice Voices[32];
+} SynthWorkspace;
+
 typedef struct SynthState {
-    struct Synth Synth;
-    struct DelayWorkspace Delaywrks[64]; // let's keep this as 64 for now, so the delays take 16 meg. If that's too little or too much, we can change this in future.
+    struct SynthWorkspace SynthWrk;
+    struct DelayWorkspace DelayWrks[64]; // let's keep this as 64 for now, so the delays take 16 meg. If that's too little or too much, we can change this in future.    
+    unsigned int RandSeed;
+    unsigned int GlobalTick;    
+} SynthState;
+
+typedef struct Synth {
     unsigned char Commands[32 * 64];
     unsigned char Values[32 * 64 * 8];
     unsigned int Polyphony;
     unsigned int NumVoices;
-    unsigned int RandSeed;
-    unsigned int GlobalTick;    
-} SynthState;
+} Synth;
 #pragma pack(pop)
 
 #if UINTPTR_MAX == 0xffffffff // are we 32-bit?
@@ -56,11 +59,12 @@ typedef struct SynthState {
 extern void CALLCONV su_load_gmdls(void);
 #endif
 
-// int su_render(SynthState* synthState, float* buffer, int samples):
-//      Renders 'samples' number of samples to the buffer, using and modifying
-//      the synthesizer state in synthState.
+// int su_render(Synth* synth,SynthState* synthState, float* buffer, int samples):
+//      Renders 'samples' number of 'samples' to the 'buffer', using 'synth'.
+//      Modifies 'synthState' and fills the 'buffer'.
 //
 // Parameters:
+//      synth       pointer to the synthesizer used. Won't get modified by the call.
 //      synthState  pointer to current synthState. RandSeed should be > 0 e.g. 1
 //      buffer      audio sample buffer, L R L R ...
 //      samples     maximum number of samples to be rendered. WARNING: buffer
@@ -69,15 +73,16 @@ extern void CALLCONV su_load_gmdls(void);
 // Returns error code:
 //      0   everything ok
 //      (returns always 0 as no errors are implemented yet)
-int CALLCONV su_render(SynthState* synthState, float* buffer, int samples);
+int CALLCONV su_render(Synth* synth,SynthState* synthState, float* buffer, int samples);
 
-// int su_render_time(SynthState* synthState, float* buffer, int* samples, int* time):
+// int su_render_time(Synth* synth,SynthState* synthState, float* buffer, int* samples, int* time):
 //      Renders samples until 'samples' number of samples are reached or 'time' number of
 //      modulated time ticks are reached, whichever happens first. 'samples' and 'time' are
 //      are passed by reference as the function modifies to tell how many samples were
 //      actually rendered and how many time ticks were actually advanced.
 //
 // Parameters:
+//      synth       pointer to the synthesizer used. Won't get modified by the call.
 //      synthState  pointer to current synthState. RandSeed should be > 0 e.g. 1
 //                  Also synthState->SamplesPerRow cannot be 0 or nothing will be
 //                  rendered; either set it to INT32_MAX to always render full
@@ -99,7 +104,7 @@ int CALLCONV su_render(SynthState* synthState, float* buffer, int samples);
 // Returns error code:
 //      0   everything ok
 //      (no actual errors implemented yet)
-int CALLCONV su_render_time(SynthState* synthState, float* buffer, int* samples, int* time);
+int CALLCONV su_render_time(Synth* synth,SynthState* synthState, float* buffer, int* samples, int* time);
 
 // Arithmetic opcode ids
 extern const int su_add_id;

@@ -21,22 +21,25 @@ const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
 // const bufsize = su_max_samples * 2
 
 func TestBridge(t *testing.T) {
-	s := bridge.NewSynthState()
-	s.SetPatch([]bridge.Instrument{
+	patch := []bridge.Instrument{
 		bridge.Instrument{1, []bridge.Unit{
 			bridge.Unit{bridge.Envelope, []byte{64, 64, 64, 80, 128}},
 			bridge.Unit{bridge.Envelope, []byte{95, 64, 64, 80, 128}},
 			bridge.Unit{bridge.Out.Stereo(), []byte{128}},
-		}},
-	})
-	s.Trigger(0, 64)
+		}}}
+	synth, err := bridge.Compile(patch)
+	if err != nil {
+		t.Fatalf("bridge compile error: %v", err)
+	}
+	state := bridge.NewSynthState()
+	state.Trigger(0, 64)
 	buffer := make([]float32, 2*su_max_samples)
-	err := s.Render(buffer[:len(buffer)/2])
+	err = synth.Render(state, buffer[:len(buffer)/2])
 	if err != nil {
 		t.Fatalf("first render gave an error")
 	}
-	s.Release(0)
-	err = s.Render(buffer[len(buffer)/2:])
+	state.Release(0)
+	err = synth.Render(state, buffer[len(buffer)/2:])
 	if err != nil {
 		t.Fatalf("first render gave an error")
 	}

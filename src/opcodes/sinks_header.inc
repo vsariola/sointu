@@ -114,7 +114,7 @@ endstruc
 
 %define AMOUNT(val)     val
 %define LOCALPORT(unit,port) ((unit+1)*su_unit.size + su_unit.ports)/4 + port
-%define GLOBALPORT(voice,unit,port) SEND_GLOBAL + (su_synth.voices+voice*su_voice.size+su_voice.workspace+unit*su_unit.size + su_unit.ports)/4 + port
+%define GLOBALPORT(voice,unit,port) SEND_GLOBAL + (su_synthworkspace.voices+voice*su_voice.size+su_voice.workspace+unit*su_unit.size + su_unit.ports)/4 + port
 %define OUTPORT         0
 %define SEND_POP        0x8000
 %define SEND_GLOBAL     0x4000

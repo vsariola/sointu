@@ -11,6 +11,7 @@
 const int su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS;
 
 int main(int argc, char* argv[]) {
+    Synth* synth;
     SynthState* synthState;
     float* buffer;
     const unsigned char commands[] = { su_envelope_id, // MONO
@@ -24,21 +25,27 @@ int main(int argc, char* argv[]) {
     int time;
     int samples;
     int totalrendered;
-    int retval;
+    int retval;    
+    // initialize Synth
+    synth = (Synth*)malloc(sizeof(Synth));    
+    memcpy(synth->Commands, commands, sizeof(commands));
+    memcpy(synth->Values, values, sizeof(values));
+    synth->NumVoices = 1;
+    synth->Polyphony = 0;
+    // initialize SynthState
     synthState = (SynthState*)malloc(sizeof(SynthState));
-    buffer = (float*)malloc(2 * sizeof(float) * su_max_samples);
     memset(synthState, 0, sizeof(SynthState));
-    memcpy(synthState->Commands, commands, sizeof(commands));
-    memcpy(synthState->Values, values, sizeof(values));
     synthState->RandSeed = 1;
-    synthState->NumVoices = 1;
-    synthState->Synth.Voices[0].Note = 64;    
+    // initialize Buffer
+    buffer = (float*)malloc(2 * sizeof(float) * su_max_samples);
+    // triger first voice    
+    synthState->SynthWrk.Voices[0].Note = 64;
     totalrendered = 0;
     // First check that when we render using su_render_time with 0 time
     // we get nothing done    
     samples = su_max_samples;
     time = 0;
-    errcode = su_render_time(synthState, buffer, &samples, &time);
+    errcode = su_render_time(synth, synthState, buffer, &samples, &time);
     if (errcode != 0)
     {
         printf("su_render_time returned error");
@@ -58,7 +65,7 @@ int main(int argc, char* argv[]) {
     // we get nothing done    
     samples = 0;
     time = INT32_MAX;
-    errcode = su_render_time(synthState, buffer, &samples, &time);
+    errcode = su_render_time(synth, synthState, buffer, &samples, &time);
     if (errcode != 0)
     {    
         printf("su_render_time returned error");
@@ -81,7 +88,7 @@ int main(int argc, char* argv[]) {
         // check that buffer full
         samples = 1;
         time = INT32_MAX;
-        su_render_time(synthState, &buffer[totalrendered*2], &samples, &time);
+        su_render_time(synth, synthState, &buffer[totalrendered*2], &samples, &time);
         totalrendered += samples;
         if (samples != 1)
         {
@@ -95,7 +102,7 @@ int main(int argc, char* argv[]) {
         }        
         samples = SAMPLES_PER_ROW - 1;
         time = INT32_MAX;
-        su_render_time(synthState, &buffer[totalrendered * 2], &samples, &time);
+        su_render_time(synth, synthState, &buffer[totalrendered * 2], &samples, &time);
         totalrendered += samples;
         if (samples != SAMPLES_PER_ROW - 1)
         {
@@ -108,7 +115,7 @@ int main(int argc, char* argv[]) {
             goto fail;
         }
         if (i == 8)
-            synthState->Synth.Voices[0].Release++;        
+            synthState->SynthWrk.Voices[0].Release++;
     }
     if (totalrendered != su_max_samples)
     {
@@ -117,6 +124,7 @@ int main(int argc, char* argv[]) {
     }    
     retval = 0;
 finish:
+    free(synth);
     free(synthState);
     free(buffer);
     return retval;
