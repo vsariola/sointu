@@ -94,7 +94,9 @@ func (synth *Synth) Render(state *SynthState, buffer []float32) error {
 		return errors.New("Render writes stereo signals, so buffer should have even length")
 	}
 	maxSamples := len(buffer) / 2
+	state.RandSeed += 1 // if you initialize with empty struct, you will get randseed 1 which is sointu default behavior
 	errcode := C.su_render((*C.Synth)(synth), (*C.SynthState)(state), (*C.float)(&buffer[0]), C.int(maxSamples))
+	state.RandSeed -= 1
 	if errcode > 0 {
 		return errors.New("Render failed")
 	}
@@ -124,7 +126,9 @@ func (synth *Synth) RenderTime(state *SynthState, buffer []float32, maxtime int)
 	}
 	samples := C.int(len(buffer) / 2)
 	time := C.int(maxtime)
+	state.RandSeed += 1 // if you initialize with empty struct, you will get randseed 1 which is sointu default behavior
 	errcode := int(C.su_render_time((*C.Synth)(synth), (*C.SynthState)(state), (*C.float)(&buffer[0]), &samples, &time))
+	state.RandSeed -= 1
 	if errcode > 0 {
 		return -1, -1, errors.New("RenderTime failed")
 	}
@@ -184,10 +188,4 @@ func (s *SynthState) Trigger(voice int, note byte) {
 func (s *SynthState) Release(voice int) {
 	cs := (*C.SynthState)(s)
 	cs.SynthWrk.Voices[voice].Release = 1
-}
-
-func NewSynthState() *SynthState {
-	s := new(SynthState)
-	s.RandSeed = 1
-	return s
 }

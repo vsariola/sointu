@@ -31,15 +31,15 @@ func TestBridge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
-	state := bridge.NewSynthState()
+	var state bridge.SynthState
 	state.Trigger(0, 64)
 	buffer := make([]float32, 2*su_max_samples)
-	err = synth.Render(state, buffer[:len(buffer)/2])
+	err = synth.Render(&state, buffer[:len(buffer)/2])
 	if err != nil {
 		t.Fatalf("first render gave an error")
 	}
 	state.Release(0)
-	err = synth.Render(state, buffer[len(buffer)/2:])
+	err = synth.Render(&state, buffer[len(buffer)/2:])
 	if err != nil {
 		t.Fatalf("first render gave an error")
 	}
