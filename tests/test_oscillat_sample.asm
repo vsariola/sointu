@@ -1,6 +1,6 @@
 %define BPM 100
 
-%include "../src/sointu_header.inc"
+%include "sointu_header.inc"
 
 BEGIN_PATTERNS
     PATTERN 0,0,0,0,0,0,0,0,
@@ -39,4 +39,4 @@ BEGIN_SAMPLE_OFFSETS
     SAMPLE_OFFSET START(1680142),LOOPSTART(1483),LOOPLENGTH(95) ; name VIOLN70, unitynote 58 (transpose to 2), data length 1579
 END_SAMPLE_OFFSETS
 
-%include "../src/sointu_footer.inc"
+%include "sointu_footer.inc"

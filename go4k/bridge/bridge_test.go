@@ -8,7 +8,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/vsariola/sointu/bridge"
+	"github.com/vsariola/sointu/go4k"
+	"github.com/vsariola/sointu/go4k/bridge"
 )
 
 const BPM = 100
@@ -21,30 +22,29 @@ const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
 // const bufsize = su_max_samples * 2
 
 func TestBridge(t *testing.T) {
-	patch := []bridge.Instrument{
-		bridge.Instrument{1, []bridge.Unit{
-			bridge.Unit{bridge.Envelope, []byte{64, 64, 64, 80, 128}},
-			bridge.Unit{bridge.Envelope, []byte{95, 64, 64, 80, 128}},
-			bridge.Unit{bridge.Out.Stereo(), []byte{128}},
+	patch := []go4k.Instrument{
+		go4k.Instrument{1, []go4k.Unit{
+			go4k.Unit{"envelope", false, map[string]int{"attack": 64, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
+			go4k.Unit{"envelope", false, map[string]int{"attack": 95, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
+			go4k.Unit{"out", true, map[string]int{"gain": 128}},
 		}}}
-	synth, err := bridge.Compile(patch)
+	synth, err := bridge.Synth(patch)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
-	var state bridge.SynthState
-	state.Trigger(0, 64)
+	synth.Trigger(0, 64)
 	buffer := make([]float32, 2*su_max_samples)
-	err = synth.Render(&state, buffer[:len(buffer)/2])
+	err = go4k.Render(synth, buffer[:len(buffer)/2])
 	if err != nil {
 		t.Fatalf("first render gave an error")
 	}
-	state.Release(0)
-	err = synth.Render(&state, buffer[len(buffer)/2:])
+	synth.Release(0)
+	err = go4k.Render(synth, buffer[len(buffer)/2:])
 	if err != nil {
 		t.Fatalf("first render gave an error")
 	}
 	_, filename, _, _ := runtime.Caller(0)
-	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "tests", "expected_output", "test_render_samples.raw"))
+	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "..", "tests", "expected_output", "test_render_samples.raw"))
 	if err != nil {
 		t.Fatalf("cannot read expected: %v", err)
 	}

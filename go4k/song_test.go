@@ -1,4 +1,4 @@
-package song_test
+package go4k_test
 
 import (
 	"bytes"
@@ -8,8 +8,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/vsariola/sointu/bridge"
-	"github.com/vsariola/sointu/song"
+	"github.com/vsariola/sointu/go4k"
+	"github.com/vsariola/sointu/go4k/bridge"
+	// TODO: test the song using a mocks instead
 )
 
 const BPM = 100
@@ -21,29 +22,24 @@ const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
 
 // const bufsize = su_max_samples * 2
 
-func TestSongRender(t *testing.T) {
-	patch := []bridge.Instrument{
-		bridge.Instrument{1, []bridge.Unit{
-			bridge.Unit{bridge.Envelope, []byte{32, 32, 64, 64, 128}},
-			bridge.Unit{bridge.Oscillat, []byte{64, 64, 0, 96, 64, 128, 0x40}},
-			bridge.Unit{bridge.Mulp, []byte{}},
-			bridge.Unit{bridge.Envelope, []byte{32, 32, 64, 64, 128}},
-			bridge.Unit{bridge.Oscillat, []byte{72, 64, 64, 64, 96, 128, 0x40}},
-			bridge.Unit{bridge.Mulp, []byte{}},
-			bridge.Unit{bridge.Out.Stereo(), []byte{128}},
-		}}}
+func TestPlayer(t *testing.T) {
+	patch := go4k.Patch{go4k.Instrument{1, []go4k.Unit{
+		go4k.Unit{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
+		go4k.Unit{"oscillator", false, map[string]int{"transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "flags": 0x40}},
+		go4k.Unit{"mulp", false, map[string]int{}},
+		go4k.Unit{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
+		go4k.Unit{"oscillator", false, map[string]int{"transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "flags": 0x40}},
+		go4k.Unit{"mulp", false, map[string]int{}},
+		go4k.Unit{"out", true, map[string]int{"gain": 128}},
+	}}}
 	patterns := [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}}
-	tracks := []song.Track{song.Track{1, []byte{0}}}
-	song, err := song.NewSong(100, patterns, tracks, patch)
-	if err != nil {
-		t.Fatalf("NewSong failed: %v", err)
-	}
-	synth, err := bridge.Compile(patch)
+	tracks := []go4k.Track{go4k.Track{1, []byte{0}}}
+	song := go4k.Song{100, patterns, tracks, 0, patch}
+	synth, err := bridge.Synth(patch)
 	if err != nil {
 		t.Fatalf("Compiling patch failed: %v", err)
 	}
-	var state bridge.SynthState
-	buffer, err := song.Render(synth, &state)
+	buffer, err := go4k.Play(synth, song)
 	if err != nil {
 		t.Fatalf("Render failed: %v", err)
 	}

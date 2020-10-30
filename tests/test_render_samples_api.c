@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "../include/sointu.h"
+#include <sointu.h>
 
 #define BPM 100
 #define SAMPLE_RATE 44100
@@ -12,7 +12,6 @@ const int su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS;
 
 int main(int argc, char* argv[]) {
     Synth* synth;
-    SynthState* synthState;
     float* buffer;
     const unsigned char commands[] = { su_envelope_id, // MONO
                                        su_envelope_id, // MONO
@@ -32,53 +31,50 @@ int main(int argc, char* argv[]) {
     memcpy(synth->Values, values, sizeof(values));
     synth->NumVoices = 1;
     synth->Polyphony = 0;
-    // initialize SynthState
-    synthState = (SynthState*)malloc(sizeof(SynthState));
-    memset(synthState, 0, sizeof(SynthState));
-    synthState->RandSeed = 1;
+    synth->RandSeed = 1;
     // initialize Buffer
     buffer = (float*)malloc(2 * sizeof(float) * su_max_samples);
     // triger first voice    
-    synthState->SynthWrk.Voices[0].Note = 64;
+    synth->SynthWrk.Voices[0].Note = 64;
     totalrendered = 0;
-    // First check that when we render using su_render_time with 0 time
+    // First check that when we render using su_render with 0 time
     // we get nothing done    
     samples = su_max_samples;
     time = 0;
-    errcode = su_render_time(synth, synthState, buffer, &samples, &time);
+    errcode = su_render(synth, buffer, &samples, &time);
     if (errcode != 0)
     {
-        printf("su_render_time returned error");
+        printf("su_render returned error");
         goto fail;
     }
     if (samples > 0)
     {
-        printf("su_render_time rendered samples, despite it should not");
+        printf("su_render rendered samples, despite it should not");
         goto fail;
     }    
     if (time > 0)
     {
-        printf("su_render_time advanced time, despite it should not");
+        printf("su_render advanced time, despite it should not");
         goto fail;
     }
-    // Then check that when we render using su_render_time with 0 samples,
+    // Then check that when we render using su_render with 0 samples,
     // we get nothing done    
     samples = 0;
     time = INT32_MAX;
-    errcode = su_render_time(synth, synthState, buffer, &samples, &time);
+    errcode = su_render(synth, buffer, &samples, &time);
     if (errcode != 0)
     {    
-        printf("su_render_time returned error");
+        printf("su_render returned error");
         goto fail;
     }
     if (samples > 0)
     {
-        printf("su_render_time rendered samples, despite it should not");
+        printf("su_render rendered samples, despite it should not");
         goto fail;
     }
     if (time > 0)
     {
-        printf("su_render_time advanced time, despite it should not");
+        printf("su_render advanced time, despite it should not");
         goto fail;
     }
     // Then check that each time we call render, only SAMPLES_PER_ROW
@@ -88,7 +84,7 @@ int main(int argc, char* argv[]) {
         // check that buffer full
         samples = 1;
         time = INT32_MAX;
-        su_render_time(synth, synthState, &buffer[totalrendered*2], &samples, &time);
+        su_render(synth, &buffer[totalrendered*2], &samples, &time);
         totalrendered += samples;
         if (samples != 1)
         {
@@ -102,7 +98,7 @@ int main(int argc, char* argv[]) {
         }        
         samples = SAMPLES_PER_ROW - 1;
         time = INT32_MAX;
-        su_render_time(synth, synthState, &buffer[totalrendered * 2], &samples, &time);
+        su_render(synth, &buffer[totalrendered * 2], &samples, &time);
         totalrendered += samples;
         if (samples != SAMPLES_PER_ROW - 1)
         {
@@ -115,7 +111,7 @@ int main(int argc, char* argv[]) {
             goto fail;
         }
         if (i == 8)
-            synthState->SynthWrk.Voices[0].Release++;
+            synth->SynthWrk.Voices[0].Release++;
     }
     if (totalrendered != su_max_samples)
     {
@@ -125,7 +121,6 @@ int main(int argc, char* argv[]) {
     retval = 0;
 finish:
     free(synth);
-    free(synthState);
     free(buffer);
     return retval;
 fail:

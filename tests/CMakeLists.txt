@@ -21,6 +21,7 @@ function(regression_test testname)
 
     add_test(${testname} ${testname})
     target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}" SU_USE_INTROSPECTION SU_USE_PLAYER)
+    target_link_libraries(${testname} ${HEADERLIB})
 
     set (rawinput ${CMAKE_CURRENT_SOURCE_DIR}/expected_output/${testname}.raw)
     set (rawoutput ${CMAKE_CURRENT_BINARY_DIR}/expected_output/${testname}.raw)
@@ -151,8 +152,8 @@ regression_test(test_chords "ENVELOPE;VCO_SINE")
 regression_test(test_speed "ENVELOPE;VCO_SINE")
 
 regression_test(test_render_samples ENVELOPE "" test_render_samples.c)
-target_link_libraries(test_render_samples sointu)
+target_link_libraries(test_render_samples ${STATICLIB})
 
 add_executable(test_render_samples_api test_render_samples_api.c)
-target_link_libraries(test_render_samples_api sointu)
+target_link_libraries(test_render_samples_api ${STATICLIB})
 add_test(test_render_samples_api test_render_samples_api)

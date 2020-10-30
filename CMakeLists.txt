@@ -30,8 +30,17 @@ enable_language(ASM_NASM)
 # By putting them there, we can pass the same compile definitions to C and ASM
 set(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <INCLUDES> <DEFINES> <FLAGS> -f ${CMAKE_ASM_NASM_OBJECT_FORMAT} -o <OBJECT> <SOURCE>")
 
-# The compiled VSTi is here
-add_subdirectory(src)
+# Sointu as a header-only library 
+set(HEADERLIB sointuinterface)
+add_library(${HEADERLIB} INTERFACE)
+target_include_directories(${HEADERLIB} INTERFACE ${PROJECT_SOURCE_DIR}/include/sointu)
+
+# Sointu as static library
+set(STATICLIB sointu)
+add_library(${STATICLIB} render.asm)
+set_target_properties(${STATICLIB} PROPERTIES LINKER_LANGUAGE C)
+target_link_libraries(${STATICLIB} ${HEADERLIB})
+target_compile_definitions(${STATICLIB} PUBLIC SU_USE_INTROSPECTION)
 
 # We should put examples here
 # add_subdirectory(examples)

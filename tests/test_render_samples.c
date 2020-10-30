@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/sointu.h"
+#include "sointu.h"
 
 #if UINTPTR_MAX == 0xffffffff // are we 32-bit?
 #if defined(__clang__) || defined(__GNUC__)
@@ -21,7 +21,6 @@ const int su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS;
 
 void CALLCONV su_render_song(float* buffer) {
     Synth* synth;
-    SynthState* synthState;  
     const unsigned char commands[] = { su_envelope_id, // MONO
                                        su_envelope_id, // MONO
                                        su_out_id + 1,  // STEREO
@@ -30,23 +29,26 @@ void CALLCONV su_render_song(float* buffer) {
                                      95, 64, 64, 80, 128, // envelope 2
                                      128};
     int retval;
+    int samples;
+    int time;
     // initialize Synth
     synth = (Synth*)malloc(sizeof(Synth));    
+    memset(synth, 0, sizeof(Synth));
     memcpy(synth->Commands, commands, sizeof(commands));
     memcpy(synth->Values, values, sizeof(values));
     synth->NumVoices = 1;
     synth->Polyphony = 0;
-    // initialize SynthState
-    synthState = (SynthState*)malloc(sizeof(SynthState));
-    memset(synthState, 0, sizeof(SynthState));
-    synthState->RandSeed = 1;    
+    synth->RandSeed = 1;
     // triger first voice    
-    synthState->SynthWrk.Voices[0].Note = 64;    
-    retval = su_render(synth, synthState, buffer, su_max_samples / 2);
-    synthState->SynthWrk.Voices[0].Release++;
+    synth->SynthWrk.Voices[0].Note = 64;
+    samples = su_max_samples / 2;
+    time = INT32_MAX;
+    retval = su_render(synth, buffer, &samples, &time);
+    synth->SynthWrk.Voices[0].Release++;
     buffer = buffer + su_max_samples;
-    retval = su_render(synth, synthState, buffer, su_max_samples / 2);
+    samples = su_max_samples / 2;
+    time = INT32_MAX;
+    retval = su_render(synth, buffer, &samples, &time);
     free(synth);
-    free(synthState);
-	return;
+    return;
 }
