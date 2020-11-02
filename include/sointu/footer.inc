@@ -147,6 +147,14 @@ struc su_stack ; the structure of stack _as the units see it_
     .row        RESPTR  1    ; which total row of the song are we at
     .tick       RESPTR  1    ; which total tick of the song are we at
     .randseed   RESPTR  1
+%ifdef RUNTIME_TABLES        ; RUNTIME_TABLES move these table ptrs to stack
+    %if DELAY_ID > -1        ; allowing them to be in the heap &
+    .delaytimes RESPTR 1     ; modifying them safely & having many synths
+    %endif
+    %ifdef INCLUDE_SAMPLES
+    .sampleoffs RESPTR 1
+    %endif
+%endif
 %ifdef INCLUDE_MULTIVOICE_TRACKS
     .voicetrack RESPTR  1
 %endif
@@ -344,6 +352,14 @@ EXPORT MANGLE_FUNC(su_render_song,PTRSIZE)   ; Stack: ptr
     xor     eax, eax
 %ifdef INCLUDE_MULTIVOICE_TRACKS
     push    VOICETRACK_BITMASK
+%endif
+%ifdef RUNTIME_TABLES ; runtime tables is actually only useful in the api use case, but it's nice it works also in the render case
+    %ifdef INCLUDE_SAMPLES
+ do push    ,MANGLE_DATA(su_sample_offsets) ; &su_sample_offsets is in the stack, instead of hard coded
+    %endif
+    %if DELAY_ID > -1
+ do push    ,MANGLE_DATA(su_delay_times) ; &su_delay_times is in the stack, instead of hard coded
+    %endif
 %endif
     push    1                           ; randseed
     push    _AX                         ; global tick time

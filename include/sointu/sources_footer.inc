@@ -106,6 +106,11 @@ SECT_TEXT(suoscill)
 
 EXPORT MANGLE_FUNC(su_op_oscillat,0)
     lodsb                                   ; load the flags
+%ifdef RUNTIME_TABLES  
+    %ifdef INCLUDE_SAMPLES
+    mov     _DI, [_SP + su_stack.sampleoffs]; we need to put this in a register, as the stereo & unisons screw the stack positions
+    %endif                                  ; ain't we lucky that _DI was unused throughout
+%endif
     fld     dword [INP+su_osc_ports.detune] ; e, where e is the detune [0,1]
  do fsub    dword [,c_0_5,]                 ; e-.5
     fadd    st0, st0                        ; d=2*e-.5, where d is the detune [-1,1]
@@ -311,7 +316,11 @@ su_oscillat_sample:                                         ; p
     push_registers _AX,_DX,_CX,_BX                              ; edx must be saved, eax & ecx if this is stereo osc
     push    _AX
     mov     al, byte [VAL-4]                                ; reuse "color" as the sample number
+%ifdef RUNTIME_TABLES                                       ; when using RUNTIME_TABLES, assumed the sample_offset ptr is in _DI
+ do{lea     _DI, [}, _DI, _AX*8,]                           ; edi points now to the sample table entry
+%else
  do{lea     _DI, [}, MANGLE_DATA(su_sample_offsets), _AX*8,]; edi points now to the sample table entry
+%endif
  do fmul    dword [,c_samplefreq_scaling,]                  ; p*r
     fistp   dword [_SP]
     pop     _DX                                             ; edx is now the sample number

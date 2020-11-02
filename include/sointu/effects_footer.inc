@@ -317,7 +317,12 @@ EXPORT MANGLE_FUNC(su_op_delay,0)
     lodsw                           ; al = delay index, ah = delay count
     push_registers VAL, COM         ; these are non-volatile according to our convention
     movzx   ebx, al
+%ifdef RUNTIME_TABLES               ; when using runtime tables, delaytimes is pulled from the stack so can be a pointer to heap
+    mov     _SI, [_SP + su_stack.delaytimes + PUSH_REG_SIZE(2)]
+    lea     _BX, [_SI + _BX*2]
+%else
  do{lea     _BX,[},MANGLE_DATA(su_delay_times),_BX*2,]                  ; _BP now points to the right position within delay time table
+%endif
     movzx   esi, word [_SP + su_stack.tick + PUSH_REG_SIZE(2)]          ; notice that we load word, so we wrap at 65536
     mov     _CX, PTRWORD [_SP + su_stack.delaywrk + PUSH_REG_SIZE(2)]   ; WRK is now the separate delay workspace, as they require a lot more space
 %ifdef INCLUDE_STEREO_DELAY
