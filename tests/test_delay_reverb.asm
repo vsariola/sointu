@@ -1,6 +1,6 @@
 %define BPM 100
 
-%include "sointu_header.inc"
+%include "sointu/header.inc"
 
 BEGIN_PATTERNS
     PATTERN 64, 0, 68, 0, 32, 0, 0, 0,  75, 0, 78, 0,   0, 0, 0, 0,
@@ -25,4 +25,4 @@ BEGIN_DELTIMES
     DELTIME 1116,1188,1276,1356,1422,1492,1556,1618
 END_DELTIMES
 
-%include "sointu_footer.inc"
+%include "sointu/footer.inc"

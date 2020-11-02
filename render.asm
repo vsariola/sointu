@@ -1,7 +1,7 @@
 ; source file for compiling sointu as a library
 %define SU_DISABLE_PLAYER
 
-%include "sointu_header.inc"
+%include "sointu/header.inc"
 
 ; TODO: make sure compile everything in
 
@@ -21,7 +21,7 @@ USE_OUT
 %define INCLUDE_POLYPHONY
 %define INCLUDE_MULTIVOICE_TRACKS
 
-%include "sointu_footer.inc"
+%include "sointu/footer.inc"
 
 section .text
 

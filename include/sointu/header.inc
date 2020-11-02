@@ -88,11 +88,11 @@
 
 section .text ; yasm throws section redeclaration warnings if strucs are defined without a plain .text section
 
-%include "opcodes/flowcontrol_header.inc"
-%include "opcodes/arithmetic_header.inc"
-%include "opcodes/effects_header.inc"
-%include "opcodes/sources_header.inc"
-%include "opcodes/sinks_header.inc"
+%include "sointu/flowcontrol_header.inc"
+%include "sointu/arithmetic_header.inc"
+%include "sointu/effects_header.inc"
+%include "sointu/sources_header.inc"
+%include "sointu/sinks_header.inc"
 
 ;-------------------------------------------------------------------------------
 ;   synth defines

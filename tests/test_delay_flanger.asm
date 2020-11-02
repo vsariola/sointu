@@ -1,7 +1,7 @@
 %define BPM 100
 %define INCLUDE_DELAY_MODULATION
 
-%include "sointu_header.inc"
+%include "sointu/header.inc"
 
 BEGIN_PATTERNS
     PATTERN 80, HLD, HLD, HLD, HLD, HLD, HLD, HLD, HLD, HLD, HLD, 0, 0, 0, 0, 0
@@ -28,4 +28,4 @@ BEGIN_DELTIMES
     DELTIME 1000
 END_DELTIMES
 
-%include "sointu_footer.inc"
+%include "sointu/footer.inc"
