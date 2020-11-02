@@ -30,8 +30,8 @@ cd build
 cmake .. -G"MinGW Makefiles"
 mingw32-make
 mingw32-make test
-cd ../bridge
-go test
+cd ..
+go test ./...
 ```
 
 Note that this builds 64-bit binaries on 64-bit Windows. To build 32-bit
@@ -45,7 +45,7 @@ If you plan to build the Sointu library for using it from the Go side, you
 *must* build in the build/ directory, as bridge.go assumes the library can be
 found from build/src/.
 
-> :warning: **If you are using MinGW**: Yasm 1.3.0 (currently still the latest
+> :warning: **If you are using MinGW and Yasm**: Yasm 1.3.0 (currently still the latest
 stable release) and GNU linker do not play nicely along, trashing the BSS layout.
 See [here](https://tortall.lighthouseapp.com/projects/78676/tickets/274-bss-problem-with-windows-win64)
 and the fix [here](https://github.com/yasm/yasm/commit/1910e914792399137dec0b047c59965207245df5).
@@ -71,10 +71,11 @@ New features since fork
     opcodes actually used in a song are compiled into the virtual machine. The
     goal is to try to write the code so that if two similar opcodes are used,
     the common code in both is reused by moving it to a function.
-  - **Take the macro languge to its logical conclusion**. Only the patch
-    definition should be needed; all the %define USE_SOMETHING will be
-    defined automatically by the macros. Furthermore, only the opcodes needed
-    are compiled into the program. Done, see for example
+  - **Take the macro languge to its logical conclusion**: it should probably be
+    called an internal domain specific language, hosted within the .asm preprocessor,
+    implemented using loads of macro definitions. Only the patch definition is needed;
+    all the %define USE_SOMETHING will be defined automatically by the macros. Only
+    the opcodes needed are compiled into the program. Done, see for example
     [this test](tests/test_oscillat_trisaw.asm)! This has the nice implication that,
     in future, there will be no need for binary format to save patches: the .asm
     is easy enough to be imported into / exported from the GUI. Being a text
@@ -127,7 +128,7 @@ New features since fork
     64-bit Linux, tested on WSL. 32-bit executables don't run on WSL, so those
     remain to be tested.
   - **Compiling as a library**. The API is very rudimentary, a single function
-    render_samples, and between calls, the user is responsible for manipulating
+    render, and between calls, the user is responsible for manipulating
     the synth state in a similar way as the actual player does (e.g. triggering/
     releasing voices etc.)
   - **Calling Sointu as a library from Go language**. The Go API is slighty more
