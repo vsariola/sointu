@@ -379,11 +379,13 @@ su_render_sampleloop:                   ; loop through every sample in the row
         inc     eax
         cmp     eax, TOTAL_ROWS
         jl      su_render_rowloop
-%ifdef INCLUDE_MULTIVOICE_TRACKS
+    ; rewind the stack. Use add when there's a lot to clean, repeated pops if only a little
+%if su_stack.render_epilogue - su_stack.tick > 3*PTRSIZE
     add     _SP, su_stack.render_epilogue - su_stack.tick ; rewind the remaining tack
 %else
-    pop     _AX
-    pop     _AX
+    %rep    (su_stack.render_epilogue - su_stack.tick)/PTRSIZE 
+        pop _AX ; the entropy of 3 x pop _AX is probably lower than 3 byte add
+    %endrep     ; but this needs to be confirmed
 %endif
     render_epilogue
 
