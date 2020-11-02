@@ -141,16 +141,16 @@ struc su_stack ; the structure of stack _as the units see it_
 %ifdef INCLUDE_POLYPHONY
     .polyphony  RESPTR  1
 %endif
-    .output_sound
+    .output_sound:
     .rowtick    RESPTR  1    ; which tick within this row are we at
-    .update_voices
+    .update_voices:
     .row        RESPTR  1    ; which total row of the song are we at
     .tick       RESPTR  1    ; which total tick of the song are we at
     .randseed   RESPTR  1
 %ifdef INCLUDE_MULTIVOICE_TRACKS
     .voicetrack RESPTR  1
 %endif
-    .render_epilogue
+    .render_epilogue:
 %if BITS == 32
                 RESPTR  8   ; registers
     .retaddr_pl RESPTR  1
@@ -160,7 +160,7 @@ struc su_stack ; the structure of stack _as the units see it_
                 RESPTR  2   ; registers
 %endif
     .bufferptr  RESPTR  1
-    .size
+    .size:
 endstruc
 
 ;===============================================================================

@@ -260,7 +260,7 @@ su_oscillat_sine:
     fstp    st1
     fsub    st0, st0                        ; // 0
     ret
-su_oscillat_sine_do
+su_oscillat_sine_do:
     fdivp   st1, st0                        ; // p/c
     fldpi                                   ; // pi     p
     fadd    st0                             ; // 2*pi   p

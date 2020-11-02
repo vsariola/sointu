@@ -3,7 +3,7 @@
 %include "sointu/header.inc"
 
 BEGIN_PATTERNS
-    PATTERN 64, 0, 68, 0, 32, 0, 0, 0,  75, 0, 78, 0,   0, 0, 0, 0,
+    PATTERN 64, 0, 68, 0, 32, 0, 0, 0,  75, 0, 78, 0,   0, 0, 0, 0
 END_PATTERNS
 
 BEGIN_TRACKS

@@ -334,7 +334,7 @@ struc   su_delayline_wrk
     .dcout      resd    1
     .filtstate  resd    1
     .buffer     resd    MAX_DELAY
-    .size
+    .size:
 endstruc
 
 ;-------------------------------------------------------------------------------

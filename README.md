@@ -17,9 +17,10 @@ even saving some bytes in the process.
 Building
 --------
 
-Requires [CMake](https://cmake.org), [yasm](https://yasm.tortall.net), and 
-your favorite c-compiler & build tool. Results have been obtained using Visual
-Studio 2019, gcc&make on linux, and MinGW&mingw32-make.
+Requires [CMake](https://cmake.org), [nasm](https://www.nasm.us/) or
+[yasm](https://yasm.tortall.net), and your favorite c-compiler & build tool.
+Results have been obtained using Visual Studio 2019, gcc&make on linux, and
+MinGW&mingw32-make.
 
 ### Example: building and testing using MinGW32
 
