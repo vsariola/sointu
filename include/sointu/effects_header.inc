@@ -276,20 +276,20 @@ endstruc
 %define MAX_DELAY 65536     ; warning: this is pretty much fixed, as we use 16-bit math to wraparound the delay buffers
 %assign NUM_DELAY_LINES 0
 
-%macro  SU_DELAY 7
+%macro  SU_DELAY 8
     db  %2
     db  %3
     db  %4
     db  %5
     db  %6
-    db  %7
+    db  (2*%7-1)+%8
     USE_DELAY
     %xdefine CMDS CMDS DELAY_ID + %1,
     %assign NUM_DELAY_LINES NUM_DELAY_LINES + %7 * (1+%1)
     %if %1 == STEREO
         %define INCLUDE_STEREO_DELAY
     %endif
-    %if (%7) & NOTETRACKING == 0
+    %if (%8) & NOTETRACKING == 1
         %define INCLUDE_DELAY_NOTETRACKING
         %define INCLUDE_DELAY_FLOAT_TIME
     %endif
@@ -317,7 +317,7 @@ endstruc
 %define DEPTH(val)      val
 %define DAMP(val)       val
 %define DELAY(val)      val
-%define COUNT(val)      (2*val-1)
+%define COUNT(val)      val
 %define NOTETRACKING    1
 
 struc   su_delay_ports
