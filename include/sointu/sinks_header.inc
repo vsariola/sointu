@@ -99,23 +99,33 @@ endstruc
     %endif
 %endmacro
 
-%macro  SU_SEND 3
+%macro  SU_SEND 5  ; local send (params: STEREO, AMOUNT, UNIT, PORT, FLAGS)
     db  %2
-    dw  %3
+    dw  ((%3+1)*su_unit.size + su_unit.ports)/4 + %4 + %5
     USE_SEND
     %xdefine CMDS CMDS SEND_ID + %1,
     %if %1 == STEREO
         %define INCLUDE_STEREO_SEND
     %endif
-    %if (%3) & SEND_GLOBAL == SEND_GLOBAL
-        %define INCLUDE_GLOBAL_SEND
-    %endif
 %endmacro
 
+%macro  SU_SEND 6  ; global send (params: STEREO, AMOUNT, VOICE, UNIT, PORT, FLAGS)
+    db  %2
+    dw  SEND_GLOBAL + (su_synthworkspace.voices+%3*su_voice.size+su_voice.workspace+%4*su_unit.size + su_unit.ports)/4 + %5 + %6
+    USE_SEND
+    %xdefine CMDS CMDS SEND_ID + %1,
+    %if %1 == STEREO
+        %define INCLUDE_STEREO_SEND
+    %endif
+    %define INCLUDE_GLOBAL_SEND
+%endmacro
+
+%define VOICE(val)      val
+%define UNIT(val)       val
+%define PORT(val)       val
 %define AMOUNT(val)     val
-%define LOCALPORT(unit,port) ((unit+1)*su_unit.size + su_unit.ports)/4 + port
-%define GLOBALPORT(voice,unit,port) SEND_GLOBAL + (su_synthworkspace.voices+voice*su_voice.size+su_voice.workspace+unit*su_unit.size + su_unit.ports)/4 + port
 %define OUTPORT         0
+%define NONE            0
 %define SEND_POP        0x8000
 %define SEND_GLOBAL     0x4000
 
