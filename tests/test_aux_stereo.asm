@@ -1,6 +1,6 @@
 %define BPM 100
 
-%include "sointu_header.inc"
+%include "sointu/header.inc"
 
 BEGIN_PATTERNS
     PATTERN 64, HLD, HLD, HLD, HLD, HLD, HLD, HLD,  0, 0, 0, 0, 0, 0, 0, 0
@@ -25,4 +25,4 @@ BEGIN_PATCH
     END_INSTRUMENT
 END_PATCH
 
-%include "sointu_footer.inc"
+%include "sointu/footer.inc"

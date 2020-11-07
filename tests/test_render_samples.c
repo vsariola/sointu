@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "sointu.h"
+#include <sointu/sointu.h>
 
 #if UINTPTR_MAX == 0xffffffff // are we 32-bit?
 #if defined(__clang__) || defined(__GNUC__)

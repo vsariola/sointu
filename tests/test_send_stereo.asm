@@ -1,6 +1,6 @@
 %define BPM 100
 
-%include "sointu_header.inc"
+%include "sointu/header.inc"
 
 BEGIN_PATTERNS
     PATTERN 64, HLD, HLD, HLD, HLD, HLD, HLD, HLD,  0, 0, 0, 0, 0, 0, 0, 0      
@@ -14,13 +14,13 @@ BEGIN_PATCH
     BEGIN_INSTRUMENT VOICES(1) ; Instrument0
         SU_LOADVAL MONO,VALUE(0)
         SU_LOADVAL MONO,VALUE(0)
-        SU_SEND    STEREO,AMOUNT(96),LOCALPORT(6,0) + SEND_POP
+        SU_SEND    STEREO,AMOUNT(96),UNIT(6),PORT(0),FLAGS(SEND_POP)
         SU_LOADVAL MONO,VALUE(64)
         SU_LOADVAL MONO,VALUE(128)
-        SU_SEND    STEREO,AMOUNT(128),LOCALPORT(6,0) + SEND_POP
+        SU_SEND    STEREO,AMOUNT(128),UNIT(6),PORT(0),FLAGS(SEND_POP)
         SU_RECEIVE STEREO; should receive 0.5 -0.5      
         SU_OUT     STEREO,GAIN(128)
     END_INSTRUMENT
 END_PATCH
 
-%include "sointu_footer.inc"
+%include "sointu/footer.inc"

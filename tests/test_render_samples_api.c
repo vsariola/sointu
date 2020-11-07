@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <sointu.h>
+#include <sointu/sointu.h>
 
 #define BPM 100
 #define SAMPLE_RATE 44100

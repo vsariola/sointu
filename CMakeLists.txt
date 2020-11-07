@@ -33,7 +33,7 @@ set(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <INCLUDES> <DEFINES
 # Sointu as a header-only library 
 set(HEADERLIB sointuinterface)
 add_library(${HEADERLIB} INTERFACE)
-target_include_directories(${HEADERLIB} INTERFACE ${PROJECT_SOURCE_DIR}/include/sointu)
+target_include_directories(${HEADERLIB} INTERFACE ${PROJECT_SOURCE_DIR}/include)
 
 # Sointu as static library
 set(STATICLIB sointu)

@@ -141,16 +141,24 @@ struc su_stack ; the structure of stack _as the units see it_
 %ifdef INCLUDE_POLYPHONY
     .polyphony  RESPTR  1
 %endif
-    .output_sound
+    .output_sound:
     .rowtick    RESPTR  1    ; which tick within this row are we at
-    .update_voices
+    .update_voices:
     .row        RESPTR  1    ; which total row of the song are we at
     .tick       RESPTR  1    ; which total tick of the song are we at
     .randseed   RESPTR  1
+%ifdef RUNTIME_TABLES        ; RUNTIME_TABLES move these table ptrs to stack
+    %if DELAY_ID > -1        ; allowing them to be in the heap &
+    .delaytimes RESPTR 1     ; modifying them safely & having many synths
+    %endif
+    %ifdef INCLUDE_SAMPLES
+    .sampleoffs RESPTR 1
+    %endif
+%endif
 %ifdef INCLUDE_MULTIVOICE_TRACKS
     .voicetrack RESPTR  1
 %endif
-    .render_epilogue
+    .render_epilogue:
 %if BITS == 32
                 RESPTR  8   ; registers
     .retaddr_pl RESPTR  1
@@ -160,7 +168,7 @@ struc su_stack ; the structure of stack _as the units see it_
                 RESPTR  2   ; registers
 %endif
     .bufferptr  RESPTR  1
-    .size
+    .size:
 endstruc
 
 ;===============================================================================
@@ -345,6 +353,14 @@ EXPORT MANGLE_FUNC(su_render_song,PTRSIZE)   ; Stack: ptr
 %ifdef INCLUDE_MULTIVOICE_TRACKS
     push    VOICETRACK_BITMASK
 %endif
+%ifdef RUNTIME_TABLES ; runtime tables is actually only useful in the api use case, but it's nice it works also in the render case
+    %ifdef INCLUDE_SAMPLES
+ do push    ,MANGLE_DATA(su_sample_offsets) ; &su_sample_offsets is in the stack, instead of hard coded
+    %endif
+    %if DELAY_ID > -1
+ do push    ,MANGLE_DATA(su_delay_times) ; &su_delay_times is in the stack, instead of hard coded
+    %endif
+%endif
     push    1                           ; randseed
     push    _AX                         ; global tick time
 su_render_rowloop:                      ; loop through every row in the song
@@ -379,11 +395,13 @@ su_render_sampleloop:                   ; loop through every sample in the row
         inc     eax
         cmp     eax, TOTAL_ROWS
         jl      su_render_rowloop
-%ifdef INCLUDE_MULTIVOICE_TRACKS
+    ; rewind the stack. Use add when there's a lot to clean, repeated pops if only a little
+%if su_stack.render_epilogue - su_stack.tick > 3*PTRSIZE
     add     _SP, su_stack.render_epilogue - su_stack.tick ; rewind the remaining tack
 %else
-    pop     _AX
-    pop     _AX
+    %rep    (su_stack.render_epilogue - su_stack.tick)/PTRSIZE 
+        pop _AX ; the entropy of 3 x pop _AX is probably lower than 3 byte add
+    %endrep     ; but this needs to be confirmed
 %endif
     render_epilogue
 
@@ -488,22 +506,22 @@ su_update_voices_skipadd:
 ;-------------------------------------------------------------------------------
 ;   Include the rest of the code
 ;-------------------------------------------------------------------------------
-%include "opcodes/arithmetic_footer.inc"
-%include "opcodes/flowcontrol_footer.inc"
-%include "opcodes/sources_footer.inc"
-%include "opcodes/sinks_footer.inc"
+%include "sointu/arithmetic_footer.inc"
+%include "sointu/flowcontrol_footer.inc"
+%include "sointu/sources_footer.inc"
+%include "sointu/sinks_footer.inc"
 ; warning: at the moment effects has to be assembled after
 ; sources, as sources.asm defines SU_USE_WAVESHAPER
 ; if needed.
-%include "opcodes/effects_footer.inc"
-%include "introspection_footer.inc"
+%include "sointu/effects_footer.inc"
+%include "sointu/introspection_footer.inc"
 
 %ifidn __OUTPUT_FORMAT__,win64
-    %include "win64/gmdls_win64_footer.inc"
+    %include "sointu/win64/gmdls_win64_footer.inc"
 %endif
 
 %ifidn __OUTPUT_FORMAT__,win32
-    %include "win32/gmdls_win32_footer.inc"
+    %include "sointu/win32/gmdls_win32_footer.inc"
 %endif
 
 ;-------------------------------------------------------------------------------

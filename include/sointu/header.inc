@@ -6,7 +6,7 @@
 
 %macro EXPORT 1
     global %1
-    %1
+    %1:
 %endmacro
 
 %ifidn __OUTPUT_FORMAT__,win32
@@ -88,11 +88,11 @@
 
 section .text ; yasm throws section redeclaration warnings if strucs are defined without a plain .text section
 
-%include "opcodes/flowcontrol_header.inc"
-%include "opcodes/arithmetic_header.inc"
-%include "opcodes/effects_header.inc"
-%include "opcodes/sources_header.inc"
-%include "opcodes/sinks_header.inc"
+%include "sointu/flowcontrol_header.inc"
+%include "sointu/arithmetic_header.inc"
+%include "sointu/effects_header.inc"
+%include "sointu/sources_header.inc"
+%include "sointu/sinks_header.inc"
 
 ;-------------------------------------------------------------------------------
 ;   synth defines
@@ -235,7 +235,7 @@ section .text ; yasm throws section redeclaration warnings if strucs are defined
 struc su_unit
     .state      resd    8
     .ports      resd    8
-    .size
+    .size:
 endstruc
 
 ;-------------------------------------------------------------------------------
@@ -247,7 +247,7 @@ struc su_voice
     .inputs     resd    8
     .reserved   resd    6 ; this is done to so the whole voice is 2^n long, see polyphonic player
     .workspace  resb    MAX_UNITS * su_unit.size
-    .size
+    .size:
 endstruc
 
 ;-------------------------------------------------------------------------------
@@ -259,7 +259,7 @@ struc su_synthworkspace
     .right      resd    1
     .aux        resd    6       ; 3 auxiliary signals
     .voices     resb    ABSOLUTE_MAX_VOICES * su_voice.size
-    .size
+    .size:
 endstruc
 
 %endif ; SOINTU_INC

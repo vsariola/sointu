@@ -1,9 +1,9 @@
 %define BPM 100
 
-%include "sointu_header.inc"
+%include "sointu/header.inc"
 
 BEGIN_PATTERNS
-    PATTERN 64, 0, 68, 0, 32, 0, 0, 0,  75, 0, 78, 0,   0, 0, 0, 0,
+    PATTERN 64, 0, 68, 0, 32, 0, 0, 0,  75, 0, 78, 0,   0, 0, 0, 0
 END_PATTERNS
 
 ; %define   SU_USE_UNDENORMALIZE            ; // removing this skips denormalization code in the units
@@ -19,7 +19,7 @@ BEGIN_PATCH
         SU_OSCILLAT MONO,TRANSPOSE(64),DETUNE(64),PHASE(0),COLOR(64),SHAPE(127),GAIN(64),FLAGS(SINE)
         SU_MULP     MONO
         SU_FILTER   MONO,FREQUENCY(32),RESONANCE(128),FLAGS(LOWPASS + BANDPASS + HIGHPASS)
-        SU_DELAY    MONO,PREGAIN(128),DRY(128),FEEDBACK(128),DAMP(16),DELAY(0),COUNT(1) + NOTETRACKING
+        SU_DELAY    MONO,PREGAIN(128),DRY(128),FEEDBACK(128),DAMP(16),DELAY(0),COUNT(1),FLAGS(NOTETRACKING)
         SU_FILTER   MONO,FREQUENCY(24),RESONANCE(128),FLAGS(LOWPASS + BANDPASS + HIGHPASS)
         SU_MULP     MONO
         SU_PAN      MONO,PANNING(64)
@@ -31,4 +31,4 @@ BEGIN_DELTIMES
     DELTIME 10787
 END_DELTIMES
 
-%include "sointu_footer.inc"
+%include "sointu/footer.inc"

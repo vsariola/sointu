@@ -1,6 +1,6 @@
 %define BPM 100
 
-%include "sointu_header.inc"
+%include "sointu/header.inc"
 
 ; warning: crashes ahead. Now that the bpm could be changed and even modulated by other
 ; signals, there is no easy way to figure out how many ticks your song is. Either
@@ -8,9 +8,9 @@
 ; samples are outputted. Here the triplets are slightly faster than the original so 
 ; they fit the default MAX_TICKS that is calculated using the simple bpm assumption.
 BEGIN_PATTERNS
-    PATTERN 64, 0, 64, 64, 64,  0, 64, 64, 64, 0, 64, 64,   65, 0, 65, 65,
-    PATTERN 64, 0,  0,  0,  0,  0,  0,  0,  0, 0,  0,  0,    0, 0,  0,  0, ; 4-rows
-    PATTERN 78, 0, 54,  0, 78,  0, 54,  0, 78, 0, 54,  0,   78, 0, 54,  0, ; triplets
+    PATTERN 64, 0, 64, 64, 64,  0, 64, 64, 64, 0, 64, 64,   65, 0, 65, 65
+    PATTERN 64, 0,  0,  0,  0,  0,  0,  0,  0, 0,  0,  0,    0, 0,  0,  0 ; 4-rows
+    PATTERN 78, 0, 54,  0, 78,  0, 54,  0, 78, 0, 54,  0,   78, 0, 54,  0 ; triplets
 END_PATTERNS
 
 BEGIN_TRACKS
@@ -33,4 +33,4 @@ BEGIN_PATCH
     END_INSTRUMENT
 END_PATCH
 
-%include "sointu_footer.inc"
+%include "sointu/footer.inc"

@@ -38,6 +38,8 @@ su_gmdls_path2:
     db 'drivers/etc/gm.dls',0
 
 SECT_BSS(susamtbl)
-    EXPORT MANGLE_DATA(su_sample_table)    resb    SAMPLE_TABLE_SIZE    ; size of gmdls.
+
+EXPORT MANGLE_DATA(su_sample_table)
+    resb    SAMPLE_TABLE_SIZE    ; size of gmdls.
 
 %endif

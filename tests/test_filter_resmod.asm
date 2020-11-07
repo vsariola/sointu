@@ -1,9 +1,9 @@
 %define BPM 100
 
-%include "sointu_header.inc"
+%include "sointu/header.inc"
 
 BEGIN_PATTERNS
-    PATTERN 64, 0, 68, 0, 32, 0, 0, 0,  75, 0, 78, 0,   0, 0, 0, 0,
+    PATTERN 64, 0, 68, 0, 32, 0, 0, 0,  75, 0, 78, 0,   0, 0, 0, 0
 END_PATTERNS
 
 BEGIN_TRACKS
@@ -19,8 +19,8 @@ BEGIN_PATCH
         SU_PAN      MONO,PANNING(64)
         SU_OUT      STEREO,GAIN(128)
         SU_OSCILLAT MONO,TRANSPOSE(70),DETUNE(64),PHASE(64),COLOR(128),SHAPE(64),GAIN(128),FLAGS(SINE + LFO)
-        SU_SEND     MONO,AMOUNT(32),LOCALPORT(3,1) + SEND_POP
+        SU_SEND     MONO,AMOUNT(32),UNIT(3),PORT(1),FLAGS(SEND_POP)
     END_INSTRUMENT
 END_PATCH
 
-%include "sointu_footer.inc"
+%include "sointu/footer.inc"
