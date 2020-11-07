@@ -18,11 +18,7 @@ func (o *OtoPlayer) Play(floatBuffer []float32) (err error) {
 		return fmt.Errorf("error writing to player: %w", err)
 	} else if _, err := o.player.Write(byteBuffer); err != nil {
 		return fmt.Errorf("error writing to player: %w", err)
-	} else {
-		fmt.Printf("%#v\n", floatBuffer[0:100])
-		fmt.Printf("%#v\n", byteBuffer[0:200])
 	}
-
 	return nil
 }
 
@@ -45,8 +41,8 @@ func NewPlayer() (*OtoPlayer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create oto context: %w", err)
 	}
-	player := context.NewPlayer()
 
+	player := context.NewPlayer()
 	return &OtoPlayer{
 		context: context,
 		player:  player,
