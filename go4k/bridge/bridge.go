@@ -26,24 +26,24 @@ var opcodeTable = map[string]opTableEntry{
 	"mulp":       opTableEntry{C.su_mulp_id, []string{}},
 	"push":       opTableEntry{C.su_push_id, []string{}},
 	"xch":        opTableEntry{C.su_xch_id, []string{}},
-	"distortion": opTableEntry{C.su_distort_id, []string{"drive"}},
+	"distort":    opTableEntry{C.su_distort_id, []string{"drive"}},
 	"hold":       opTableEntry{C.su_hold_id, []string{"holdfreq"}},
 	"crush":      opTableEntry{C.su_crush_id, []string{"resolution"}},
 	"gain":       opTableEntry{C.su_gain_id, []string{"gain"}},
 	"invgain":    opTableEntry{C.su_invgain_id, []string{"invgain"}},
-	"filter":     opTableEntry{C.su_filter_id, []string{"frequency", "resonance", "flags"}},
+	"filter":     opTableEntry{C.su_filter_id, []string{"frequency", "resonance"}},
 	"clip":       opTableEntry{C.su_clip_id, []string{}},
 	"pan":        opTableEntry{C.su_pan_id, []string{"panning"}},
-	"delay":      opTableEntry{C.su_delay_id, []string{"pregain", "dry", "feedback", "depth", "damp", "delay", "count"}},
+	"delay":      opTableEntry{C.su_delay_id, []string{"pregain", "dry", "feedback", "damp", "damp", "delay", "count"}},
 	"compressor": opTableEntry{C.su_compres_id, []string{"attack", "release", "invgain", "threshold", "ratio"}},
 	"speed":      opTableEntry{C.su_speed_id, []string{}},
 	"out":        opTableEntry{C.su_out_id, []string{"gain"}},
 	"outaux":     opTableEntry{C.su_outaux_id, []string{"outgain", "auxgain"}},
 	"aux":        opTableEntry{C.su_aux_id, []string{"gain", "channel"}},
-	"send":       opTableEntry{C.su_send_id, []string{"amount", "port"}},
+	"send":       opTableEntry{C.su_send_id, []string{"amount"}},
 	"envelope":   opTableEntry{C.su_envelope_id, []string{"attack", "decay", "sustain", "release", "gain"}},
 	"noise":      opTableEntry{C.su_noise_id, []string{"shape", "gain"}},
-	"oscillator": opTableEntry{C.su_oscillat_id, []string{"transpose", "detune", "phase", "color", "shape", "gain", "flags"}},
+	"oscillator": opTableEntry{C.su_oscillat_id, []string{"transpose", "detune", "phase", "color", "shape", "gain"}},
 	"loadval":    opTableEntry{C.su_loadval_id, []string{"value"}},
 	"receive":    opTableEntry{C.su_receive_id, []string{}},
 	"in":         opTableEntry{C.su_in_id, []string{"channel"}},
@@ -93,17 +93,70 @@ func Synth(patch go4k.Patch) (*C.Synth, error) {
 		}
 		for unitid, unit := range instr.Units {
 			if val, ok := opcodeTable[unit.Type]; ok {
+				opCode := val.opcode
 				if unit.Stereo {
-					commands = append(commands, byte(val.opcode+1))
-				} else {
-					commands = append(commands, byte(val.opcode))
+					opCode++
 				}
+				commands = append(commands, byte(opCode))
 				for _, paramname := range val.parameterList {
 					if pval, ok := unit.Parameters[paramname]; ok {
+						if unit.Type == "delay" && paramname == "count" {
+							pval = pval*2 - 1
+							if val, ok := unit.Parameters["notetracking"]; ok && val == 1 {
+								pval++
+							}
+						}
 						values = append(values, byte(pval))
 					} else {
 						return nil, fmt.Errorf("Unit parameter undefined: %v (at instrument %v, unit %v)", paramname, insid, unitid)
 					}
+				}
+				if unit.Type == "oscillator" {
+					flags := 0
+					switch unit.Parameters["type"] {
+					case go4k.Sine:
+						flags = 0x40
+					case go4k.Trisaw:
+						flags = 0x20
+					case go4k.Pulse:
+						flags = 0x10
+					case go4k.Gate:
+						flags = 0x04
+					case go4k.Sample:
+						flags = 0x80
+					}
+					if unit.Parameters["lfo"] == 1 {
+						flags += 0x08
+					}
+					flags += unit.Parameters["unison"] - 1
+					values = append(values, byte(flags))
+				} else if unit.Type == "filter" {
+					flags := 0
+					if unit.Parameters["lowpass"] == 1 {
+						flags += 0x40
+					}
+					if unit.Parameters["bandpass"] == 1 {
+						flags += 0x20
+					}
+					if unit.Parameters["highpass"] == 1 {
+						flags += 0x10
+					}
+					if unit.Parameters["negbandpass"] == 1 {
+						flags += 0x08
+					}
+					if unit.Parameters["neghighpass"] == 1 {
+						flags += 0x04
+					}
+					values = append(values, byte(flags))
+				} else if unit.Type == "send" {
+					address := unit.Parameters["unit"]*16 + 24 + unit.Parameters["port"]
+					if unit.Parameters["voice"] != -1 {
+						address += 0x4000 + 16 + unit.Parameters["voice"]*1024 // global send, address is computed relative to synthworkspace
+					}
+					if unit.Parameters["pop"] == 1 {
+						address += 0x8000
+					}
+					values = append(values, byte(address&255), byte(address>>8))
 				}
 			} else {
 				return nil, fmt.Errorf("Unknown unit type: %v (at instrument %v, unit %v)", unit.Type, insid, unitid)

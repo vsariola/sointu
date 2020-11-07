@@ -40,7 +40,7 @@ set(STATICLIB sointu)
 add_library(${STATICLIB} render.asm)
 set_target_properties(${STATICLIB} PROPERTIES LINKER_LANGUAGE C)
 target_link_libraries(${STATICLIB} ${HEADERLIB})
-target_compile_definitions(${STATICLIB} PUBLIC SU_USE_INTROSPECTION)
+target_compile_definitions(${STATICLIB} PUBLIC SU_USE_INTROSPECTION RUNTIME_TABLES)
 
 # We should put examples here
 # add_subdirectory(examples)

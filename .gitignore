@@ -27,3 +27,4 @@ build32/
 build64/
 out/
 .cache/
+go4k/actual_output/

@@ -11,9 +11,9 @@
     %endif
 %endmacro
 
-%macro SU_SPEED 0
+%macro SU_SPEED 1
     USE_SPEED
-    %xdefine CMDS CMDS SPEED_ID, ; there is no stereo variant I can think of
+    %xdefine CMDS CMDS SPEED_ID+%1, ; for future, although currently there is no stereo variant implemented
 %endmacro
 
 struc su_speed_wrk

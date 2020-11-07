@@ -12,6 +12,14 @@ type Unit struct {
 	Parameters map[string]int
 }
 
+const (
+	Sine   = iota
+	Trisaw = iota
+	Pulse  = iota
+	Gate   = iota
+	Sample = iota
+)
+
 // Instrument includes a list of units consisting of the instrument, and the number of polyphonic voices for this instrument
 type Instrument struct {
 	NumVoices int

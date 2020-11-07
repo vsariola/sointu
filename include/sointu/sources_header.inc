@@ -24,7 +24,7 @@
     %endif
 %endmacro
 
-%define ATTAC(val)      val
+%define ATTACK(val)     val
 %define DECAY(val)      val
 %define SUSTAIN(val)    val
 %define RELEASE(val)    val
@@ -122,10 +122,7 @@ endstruc
 %define TRANSPOSE(val)  val
 %define DETUNE(val)     val
 %define PHASE(val)      val
-%define GATESLOW(val)   val
-%define GATESHIGH(val)  val
 %define COLOR(val)      val
-%define SAMPLENO(val)   val
 %define SHAPE(val)      val
 %define FLAGS(val)      val
 
