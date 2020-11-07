@@ -15,9 +15,9 @@ type OtoPlayer struct {
 // Play implements the audio.Player interface for OtoPlayer
 func (o *OtoPlayer) Play(floatBuffer []float32) (err error) {
 	if byteBuffer, err := audio.FloatBufferTo16BitLE(floatBuffer); err != nil {
-		return fmt.Errorf("error writing to player: %w", err)
+		return fmt.Errorf("cannot convert buffer to bytes: %w", err)
 	} else if _, err := o.player.Write(byteBuffer); err != nil {
-		return fmt.Errorf("error writing to player: %w", err)
+		return fmt.Errorf("cannot write to player: %w", err)
 	}
 	return nil
 }
@@ -25,10 +25,10 @@ func (o *OtoPlayer) Play(floatBuffer []float32) (err error) {
 // Close disposes of resources
 func (o *OtoPlayer) Close() error {
 	if err := o.player.Close(); err != nil {
-		return fmt.Errorf("error closing player: %w", err)
+		return fmt.Errorf("cannot close player: %w", err)
 	}
 	if err := o.context.Close(); err != nil {
-		return fmt.Errorf("error closing oto context: %w", err)
+		return fmt.Errorf("cannot close oto context: %w", err)
 	}
 	return nil
 }
