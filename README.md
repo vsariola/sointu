@@ -22,7 +22,7 @@ Requires [CMake](https://cmake.org), [nasm](https://www.nasm.us/) or
 Results have been obtained using Visual Studio 2019, gcc&make on linux, and
 MinGW&mingw32-make.
 
-### Example: building and testing using MinGW32
+### Example: building and running CTests using MinGW32
 
 ```
 mkdir build
@@ -30,8 +30,6 @@ cd build
 cmake .. -G"MinGW Makefiles"
 mingw32-make
 mingw32-make test
-cd ..
-go test ./...
 ```
 
 Note that this builds 64-bit binaries on 64-bit Windows. To build 32-bit
@@ -41,9 +39,23 @@ binaries on 64-bit Windows, replace in above:
 cmake .. -DCMAKE_C_FLAGS="-m32" -DCMAKE_ASM_NASM_OBJECT_FORMAT="win32" -G"MinGW Makefiles"
 ```
 
+### Example: building and running go tests using MinGW32
+
+```
+mkdir build
+cd build
+cmake .. -G"MinGW Makefiles"
+mingw32-make sointu
+cd ..
+go test ./...
+```
+
+Running `mingw32-make sointu` only builds the static library that go needs. This is a lot
+faster than building all the CTests.
+
 If you plan to build the Sointu library for using it from the Go side, you
 *must* build in the build/ directory, as bridge.go assumes the library can be
-found from build/src/.
+found from build/.
 
 > :warning: **If you are using MinGW and Yasm**: Yasm 1.3.0 (currently still the latest
 stable release) and GNU linker do not play nicely along, trashing the BSS layout.
