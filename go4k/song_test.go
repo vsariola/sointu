@@ -25,10 +25,10 @@ const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
 func TestPlayer(t *testing.T) {
 	patch := go4k.Patch{go4k.Instrument{1, []go4k.Unit{
 		go4k.Unit{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
-		go4k.Unit{"oscillator", false, map[string]int{"transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "type": go4k.Sine, "lfo": 0, "unison": 1}},
+		go4k.Unit{"oscillator", false, map[string]int{"transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "type": go4k.Sine, "lfo": 0, "unison": 0}},
 		go4k.Unit{"mulp", false, map[string]int{}},
 		go4k.Unit{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
-		go4k.Unit{"oscillator", false, map[string]int{"transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "type": go4k.Sine, "lfo": 0, "unison": 1}},
+		go4k.Unit{"oscillator", false, map[string]int{"transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "type": go4k.Sine, "lfo": 0, "unison": 0}},
 		go4k.Unit{"mulp", false, map[string]int{}},
 		go4k.Unit{"out", true, map[string]int{"gain": 128}},
 	}}}

@@ -184,13 +184,13 @@ func ParseAsm(reader io.Reader) (*Song, error) {
 							return nil, errors.New("Invalid oscillator type")
 						}
 						if flags["UNISON4"] {
-							parameters["unison"] = 4
-						} else if flags["UNISON3"] {
 							parameters["unison"] = 3
-						} else if flags["UNISON2"] {
+						} else if flags["UNISON3"] {
 							parameters["unison"] = 2
-						} else {
+						} else if flags["UNISON2"] {
 							parameters["unison"] = 1
+						} else {
+							parameters["unison"] = 0
 						}
 						if flags["LFO"] {
 							parameters["lfo"] = 1

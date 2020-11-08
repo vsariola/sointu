@@ -128,7 +128,7 @@ func Synth(patch go4k.Patch) (*C.Synth, error) {
 					if unit.Parameters["lfo"] == 1 {
 						flags += 0x08
 					}
-					flags += unit.Parameters["unison"] - 1
+					flags += unit.Parameters["unison"]
 					values = append(values, byte(flags))
 				} else if unit.Type == "filter" {
 					flags := 0
