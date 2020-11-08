@@ -21,7 +21,9 @@ func main() {
 			app.Size(unit.Dp(800), unit.Dp(600)),
 			app.Title("Sointu Tracker"),
 		)
-		if err := tracker.New(plr).Run(w); err != nil {
+		t := tracker.New(plr)
+		defer t.Close()
+		if err := t.Run(w); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}

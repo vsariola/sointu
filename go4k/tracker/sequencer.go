@@ -12,7 +12,7 @@ func (t *Tracker) TogglePlay() {
 }
 
 // sequencerLoop is the main goroutine that handles the playing logic
-func (t *Tracker) sequencerLoop() {
+func (t *Tracker) sequencerLoop(closer chan struct{}) {
 	playing := false
 	rowTime := (time.Second * 60) / time.Duration(4*t.song.BPM)
 	tick := make(<-chan time.Time)
@@ -46,6 +46,8 @@ func (t *Tracker) sequencerLoop() {
 			atomic.StoreInt32(&t.PlayRow, int32(rowJump))
 		case patternJump := <-t.patternJump:
 			atomic.StoreInt32(&t.PlayPattern, int32(patternJump))
+		case <-closer:
+			return
 		case playState := <-t.setPlaying:
 			playing = playState
 			if playing {

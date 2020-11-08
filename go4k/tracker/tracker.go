@@ -26,6 +26,7 @@ type Tracker struct {
 	player         audio.Player
 	synth          go4k.Synth
 	playBuffer     []float32
+	closer         chan struct{}
 }
 
 func (t *Tracker) LoadSong(song go4k.Song) error {
@@ -42,6 +43,11 @@ func (t *Tracker) LoadSong(song go4k.Song) error {
 	return nil
 }
 
+func (t *Tracker) Close() {
+	t.player.Close()
+	t.closer <- struct{}{}
+}
+
 func New(player audio.Player) *Tracker {
 	t := &Tracker{
 		QuitButton:    new(widget.Clickable),
@@ -51,8 +57,9 @@ func New(player audio.Player) *Tracker {
 		rowJump:       make(chan int),
 		patternJump:   make(chan int),
 		ticked:        make(chan struct{}),
+		closer:        make(chan struct{}),
 	}
-	go t.sequencerLoop()
+	go t.sequencerLoop(t.closer)
 	if err := t.LoadSong(defaultSong); err != nil {
 		panic(fmt.Errorf("cannot load default song: %w", err))
 	}
