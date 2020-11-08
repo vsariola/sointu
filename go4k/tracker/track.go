@@ -29,7 +29,7 @@ func (t *Tracker) layoutTrack(notes []byte, active bool, cursorRow, cursorCol in
 			}.Op())
 		}
 		defer op.Push(gtx.Ops).Pop()
-		// clip.Rect{Max:gtx.Constraints.Max}.Add(gtx.Ops)
+		clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
 		op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y/2)-trackRowHeight)).Add(gtx.Ops)
 		paint.FillShape(gtx.Ops, panelColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, trackRowHeight)}.Op())
 		if active {
