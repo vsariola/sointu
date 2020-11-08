@@ -1,7 +1,6 @@
 package tracker
 
 import (
-	"fmt"
 	"gioui.org/f32"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -21,13 +20,11 @@ func Lowered(w layout.Widget) layout.Widget {
 
 func Beveled(w layout.Widget, base, light, shade color.RGBA) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
-		fmt.Println("BR", gtx.Constraints)
 		paint.FillShape(gtx.Ops, light, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, 1)).Op())
 		paint.FillShape(gtx.Ops, light, clip.Rect(image.Rect(0, 0, 1, gtx.Constraints.Max.Y)).Op())
 		paint.FillShape(gtx.Ops, base, clip.Rect(image.Rect(1, 1, gtx.Constraints.Max.X-1, gtx.Constraints.Max.Y-1)).Op())
 		paint.FillShape(gtx.Ops, shade, clip.Rect(image.Rect(0, gtx.Constraints.Max.Y-1, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 		paint.FillShape(gtx.Ops, shade, clip.Rect(image.Rect(gtx.Constraints.Max.X-1, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
-		fmt.Println("drawing sub..", gtx.Constraints)
 		stack := op.Push(gtx.Ops)
 		mcs := gtx.Constraints
 		mcs.Max.X -= 2
