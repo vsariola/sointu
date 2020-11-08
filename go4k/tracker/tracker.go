@@ -12,11 +12,13 @@ type Tracker struct {
 	CursorColumn   int
 	DisplayPattern int
 	ActiveTrack    int
+	CurrentOctave  byte
 }
 
 func New() *Tracker {
 	return &Tracker{
-		QuitButton: new(widget.Clickable),
-		song:       defaultSong,
+		QuitButton:    new(widget.Clickable),
+		CurrentOctave: 4,
+		song:          defaultSong,
 	}
 }
