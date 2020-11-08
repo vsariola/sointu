@@ -70,6 +70,7 @@ USE_IN
 %define INCLUDE_SINE
 %define INCLUDE_PULSE
 %define INCLUDE_GATE
+%define INCLUDE_SAMPLES
 %define INCLUDE_UNISONS
 %define INCLUDE_POLYPHONY
 %define INCLUDE_MULTIVOICE_TRACKS
@@ -80,14 +81,26 @@ USE_IN
 %define INCLUDE_NEGBANDPASS
 %define INCLUDE_NEGHIGHPASS
 %define INCLUDE_GLOBAL_SEND
+%define INCLUDE_DELAY_NOTETRACKING
+%define INCLUDE_DELAY_FLOAT_TIME
+%define INCLUDE_GMDLS
 
 %include "sointu/footer.inc"
 
 section .text
 
+struc su_sampleoff
+    .start      resd    1
+    .loopstart  resw    1
+    .looplength resw    1
+    .size:
+endstruc
+
 struc su_synth
     .synthwrk   resb    su_synthworkspace.size
     .delaywrks  resb    su_delayline_wrk.size * 64    
+    .delaytimes resw    768
+    .sampleoffs resb    su_sampleoff.size * 256
     .randseed   resd    1
     .globaltime resd    1  
     .commands   resb    32 * 64
@@ -125,6 +138,10 @@ EXPORT MANGLE_FUNC(su_render,16)
     push    _SI         ; push bufsize
     push    _DX         ; push bufptr
     push    _CX         ; this takes place of the voicetrack
+    lea     _AX, [_CX + su_synth.sampleoffs]
+    push    _AX
+    lea     _AX, [_CX + su_synth.delaytimes]
+    push    _AX
     mov     eax, [_CX + su_synth.randseed]
     push    _AX                             ; randseed
     mov     eax, [_CX + su_synth.globaltime]
@@ -135,12 +152,12 @@ EXPORT MANGLE_FUNC(su_render,16)
 su_render_samples_loop:
         cmp     eax, [_SP]                    ; if rowtick >= maxtime
         jge     su_render_samples_time_finish ;   goto finish
-        mov     ecx, [_SP + PTRSIZE*5]        ; ecx = buffer length in samples
-        cmp     [_SP + PTRSIZE*6], ecx        ; if samples >= maxsamples
+        mov     ecx, [_SP + PTRSIZE*7]        ; ecx = buffer length in samples
+        cmp     [_SP + PTRSIZE*8], ecx        ; if samples >= maxsamples
         jge     su_render_samples_time_finish ;   goto finish
         inc     eax                           ; time++
-        inc     dword [_SP + PTRSIZE*6]       ; samples++
-        mov     _CX, [_SP + PTRSIZE*3]
+        inc     dword [_SP + PTRSIZE*8]       ; samples++
+        mov     _CX, [_SP + PTRSIZE*5]
         push    _AX                        ; push rowtick
         mov     eax, [_CX + su_synth.polyphony]
         push    _AX                        ;polyphony
@@ -154,12 +171,12 @@ su_render_samples_loop:
         call    MANGLE_FUNC(su_run_vm,0)
         pop     _AX
         pop     _AX
-        mov     _DI, [_SP + PTRSIZE*5] ; edi containts buffer ptr
-        mov     _CX, [_SP + PTRSIZE*4]
+        mov     _DI, [_SP + PTRSIZE*7] ; edi containts buffer ptr
+        mov     _CX, [_SP + PTRSIZE*6]
         lea     _SI, [_CX + su_synth.synthwrk + su_synthworkspace.left]
         movsd   ; copy left channel to output buffer
         movsd   ; copy right channel to output buffer
-        mov     [_SP + PTRSIZE*5], _DI ; save back the updated ptr
+        mov     [_SP + PTRSIZE*7], _DI ; save back the updated ptr
         lea     _DI, [_SI-8]
         xor     eax, eax
         stosd   ; clear left channel so the VM is ready to write them again
@@ -170,7 +187,9 @@ su_render_samples_loop:
 su_render_samples_time_finish:
     pop     _CX
     pop     _BX
-    pop     _DX    
+    pop     _DX
+    pop     _CX     ; discard delaytimes ptr
+    pop     _CX     ; discard samplesoffs ptr
     pop     _CX
     mov     [_CX + su_synth.randseed], edx
     mov     [_CX + su_synth.globaltime], ebx            

@@ -1,7 +1,7 @@
 #ifndef _SOINTU_H
 #define _SOINTU_H
 
-#pragma pack(push,4) // this should be fine for both Go and assembly
+#pragma pack(push,1) // this should be fine for both Go and assembly
 typedef struct Unit {
     float State[8];
     float Ports[8];
@@ -30,9 +30,17 @@ typedef struct SynthWorkspace {
     struct Voice Voices[32];
 } SynthWorkspace;
 
+typedef struct SampleOffset {
+    unsigned int Start;
+    unsigned short LoopStart;
+    unsigned short LoopLength;
+} SampleOffset;
+
 typedef struct Synth {
     struct SynthWorkspace SynthWrk;
     struct DelayWorkspace DelayWrks[64]; // let's keep this as 64 for now, so the delays take 16 meg. If that's too little or too much, we can change this in future.    
+    unsigned short DelayTimes[768];
+    struct SampleOffset SampleOffsets[256];
     unsigned int RandSeed;
     unsigned int GlobalTick;    
     unsigned char Commands[32 * 64];
@@ -52,9 +60,7 @@ typedef struct Synth {
 #define CALLCONV  // the asm will use honor honor correct x64 ABI on all 64-bit platforms
 #endif
 
-#ifdef INCLUDE_GMDLS
-extern void CALLCONV su_load_gmdls(void);
-#endif
+void CALLCONV su_load_gmdls(void);
 
 // int su_render(Synth* synth, float* buffer, int* samples, int* time):
 //      Renders samples until 'samples' number of samples are reached or 'time' number of

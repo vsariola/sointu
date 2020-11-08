@@ -23,14 +23,14 @@ const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
 // const bufsize = su_max_samples * 2
 
 func TestPlayer(t *testing.T) {
-	patch := go4k.Patch{go4k.Instrument{1, []go4k.Unit{
-		go4k.Unit{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
-		go4k.Unit{"oscillator", false, map[string]int{"transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "type": go4k.Sine, "lfo": 0, "unison": 0}},
-		go4k.Unit{"mulp", false, map[string]int{}},
-		go4k.Unit{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
-		go4k.Unit{"oscillator", false, map[string]int{"transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "type": go4k.Sine, "lfo": 0, "unison": 0}},
-		go4k.Unit{"mulp", false, map[string]int{}},
-		go4k.Unit{"out", true, map[string]int{"gain": 128}},
+	patch := []go4k.Instrument{go4k.Instrument{1, []go4k.Unit{
+		go4k.Unit{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}, []int{}},
+		go4k.Unit{"oscillator", false, map[string]int{"transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "type": go4k.Sine, "lfo": 0, "unison": 0}, []int{}},
+		go4k.Unit{"mulp", false, map[string]int{}, []int{}},
+		go4k.Unit{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}, []int{}},
+		go4k.Unit{"oscillator", false, map[string]int{"transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "type": go4k.Sine, "lfo": 0, "unison": 0}, []int{}},
+		go4k.Unit{"mulp", false, map[string]int{}, []int{}},
+		go4k.Unit{"out", true, map[string]int{"gain": 128}, []int{}},
 	}}}
 	patterns := [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}}
 	tracks := []go4k.Track{go4k.Track{1, []byte{0}}}

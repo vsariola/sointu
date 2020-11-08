@@ -15,13 +15,13 @@ var defaultSong = go4k.Song{
 	SongLength: 0,
 	Patch: go4k.Patch{
 		go4k.Instrument{NumVoices: 2, Units: []go4k.Unit{
-			{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
-			{"oscillator", false, map[string]int{"transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "type": go4k.Sine}},
-			{"mulp", false, map[string]int{}},
-			{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
-			{"oscillator", false, map[string]int{"transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "type": go4k.Sine}},
-			{"mulp", false, map[string]int{}},
-			{"out", true, map[string]int{"gain": 128}},
+			{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}, []int{}},
+			{"oscillator", false, map[string]int{"transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "type": go4k.Sine}, []int{}},
+			{"mulp", false, map[string]int{}, []int{}},
+			{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}, []int{}},
+			{"oscillator", false, map[string]int{"transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "type": go4k.Sine}, []int{}},
+			{"mulp", false, map[string]int{}, []int{}},
+			{"out", true, map[string]int{"gain": 128}, []int{}},
 		}},
 	},
 }

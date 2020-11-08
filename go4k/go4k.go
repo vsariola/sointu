@@ -10,6 +10,7 @@ type Unit struct {
 	Type       string
 	Stereo     bool
 	Parameters map[string]int
+	DelayTimes []int
 }
 
 const (

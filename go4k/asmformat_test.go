@@ -18,6 +18,7 @@ import (
 )
 
 func TestAllAsmFiles(t *testing.T) {
+	bridge.Init()
 	_, myname, _, _ := runtime.Caller(0)
 	files, err := filepath.Glob(path.Join(path.Dir(myname), "..", "tests", "*.asm"))
 	if err != nil {
@@ -27,9 +28,6 @@ func TestAllAsmFiles(t *testing.T) {
 		basename := filepath.Base(filename)
 		testname := strings.TrimSuffix(basename, path.Ext(basename))
 		t.Run(testname, func(t *testing.T) {
-			if strings.Contains(testname, "delay") || strings.Contains(testname, "sample") {
-				return // delays and samples are not implemented yet in the bridge, so skip them for now
-			}
 			file, err := os.Open(filename)
 			if err != nil {
 				t.Fatalf("cannot read the .asm file: %v", filename)

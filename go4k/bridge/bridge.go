@@ -34,7 +34,7 @@ var opcodeTable = map[string]opTableEntry{
 	"filter":     opTableEntry{C.su_filter_id, []string{"frequency", "resonance"}},
 	"clip":       opTableEntry{C.su_clip_id, []string{}},
 	"pan":        opTableEntry{C.su_pan_id, []string{"panning"}},
-	"delay":      opTableEntry{C.su_delay_id, []string{"pregain", "dry", "feedback", "damp", "damp", "delay", "count"}},
+	"delay":      opTableEntry{C.su_delay_id, []string{"pregain", "dry", "feedback", "damp", "delaycount"}},
 	"compressor": opTableEntry{C.su_compres_id, []string{"attack", "release", "invgain", "threshold", "ratio"}},
 	"speed":      opTableEntry{C.su_speed_id, []string{}},
 	"out":        opTableEntry{C.su_out_id, []string{"gain"}},
@@ -80,6 +80,9 @@ func (synth *C.Synth) Render(buffer []float32, maxtime int) (int, int, error) {
 }
 
 func Synth(patch go4k.Patch) (*C.Synth, error) {
+	s := new(C.Synth)
+	sampleno := 0
+	delaytimeno := 0
 	totalVoices := 0
 	commands := make([]byte, 0)
 	values := make([]byte, 0)
@@ -99,13 +102,31 @@ func Synth(patch go4k.Patch) (*C.Synth, error) {
 				}
 				commands = append(commands, byte(opCode))
 				for _, paramname := range val.parameterList {
-					if pval, ok := unit.Parameters[paramname]; ok {
-						if unit.Type == "delay" && paramname == "count" {
-							pval = pval*2 - 1
-							if val, ok := unit.Parameters["notetracking"]; ok && val == 1 {
-								pval++
-							}
+					if unit.Type == "delay" && paramname == "delaycount" {
+						if unit.Stereo && len(unit.DelayTimes)%2 != 0 {
+							return nil, errors.New("Stereo delays should have even number of delaytimes")
 						}
+						values = append(values, byte(delaytimeno))
+						for _, v := range unit.DelayTimes {
+							s.DelayTimes[delaytimeno] = C.ushort(v)
+							delaytimeno++
+						}
+						count := len(unit.DelayTimes)
+						if unit.Stereo {
+							count /= 2
+						}
+						count = count*2 - 1
+						if unit.Parameters["notetracking"] == 1 {
+							count++
+						}
+						values = append(values, byte(count))
+					} else if unit.Type == "oscillator" && unit.Parameters["type"] == go4k.Sample && paramname == "color" {
+						values = append(values, byte(sampleno))
+						s.SampleOffsets[sampleno].Start = (C.uint)(unit.Parameters["start"])
+						s.SampleOffsets[sampleno].LoopStart = (C.ushort)(unit.Parameters["loopstart"])
+						s.SampleOffsets[sampleno].LoopLength = (C.ushort)(unit.Parameters["looplength"])
+						sampleno++
+					} else if pval, ok := unit.Parameters[paramname]; ok {
 						values = append(values, byte(pval))
 					} else {
 						return nil, fmt.Errorf("Unit parameter undefined: %v (at instrument %v, unit %v)", paramname, insid, unitid)
@@ -178,7 +199,6 @@ func Synth(patch go4k.Patch) (*C.Synth, error) {
 	if len(values) > 16384 { // TODO: 16384 could probably be pulled automatically from cgo
 		return nil, errors.New("The patch would result in more than 16384 values")
 	}
-	s := new(C.Synth)
 	for i := range commands {
 		s.Commands[i] = (C.uchar)(commands[i])
 	}

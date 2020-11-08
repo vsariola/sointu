@@ -17,6 +17,8 @@ func ParseAsm(reader io.Reader) (*Song, error) {
 	tracks := make([]Track, 0)
 	var patch Patch
 	var instr Instrument
+	var delayTimes []int
+	var sampleOffsets [][]int
 	paramReg, err := regexp.Compile(`([a-zA-Z]\w*)\s*\(\s*([0-9]+)\s*\)`) // matches FOO(42), groups "FOO" and "42"
 	if err != nil {
 		return nil, err
@@ -158,6 +160,20 @@ func ParseAsm(reader io.Reader) (*Song, error) {
 				instr = Instrument{NumVoices: ints[0], Units: []Unit{}}
 			case "END_INSTRUMENT":
 				patch = append(patch, instr)
+			case "DELTIME":
+				ints, err := parseNumbers(rest)
+				if err != nil {
+					return nil, err
+				}
+				for _, v := range ints {
+					delayTimes = append(delayTimes, v)
+				}
+			case "SAMPLE_OFFSET":
+				ints, err := parseNumbers(rest)
+				if err != nil {
+					return nil, err
+				}
+				sampleOffsets = append(sampleOffsets, ints)
 			}
 			if unittype, ok := unitNameMap[word]; ok {
 				instrMatch := wordReg.FindStringSubmatch(rest)
@@ -214,10 +230,36 @@ func ParseAsm(reader io.Reader) (*Song, error) {
 						} else {
 							parameters["pop"] = 0
 						}
+					} else if unittype == "delay" {
+						if flags["NOTETRACKING"] {
+							parameters["notetracking"] = 1
+						} else {
+							parameters["notetracking"] = 0
+						}
 					}
 					unit := Unit{Type: unittype, Stereo: stereo, Parameters: parameters}
 					instr.Units = append(instr.Units, unit)
 				}
+			}
+		}
+	}
+	for i := range patch {
+		for u := range patch[i].Units {
+			if patch[i].Units[u].Type == "delay" {
+				s := patch[i].Units[u].Parameters["delay"]
+				e := patch[i].Units[u].Parameters["count"]
+				if patch[i].Units[u].Stereo {
+					e *= 2 // stereo delays use 'count' number of delaytimes, but for both channels
+				}
+				patch[i].Units[u].DelayTimes = append(patch[i].Units[u].DelayTimes, delayTimes[s:e]...)
+				delete(patch[i].Units[u].Parameters, "delay")
+				delete(patch[i].Units[u].Parameters, "count")
+			} else if patch[i].Units[u].Type == "oscillator" && patch[i].Units[u].Parameters["type"] == Sample {
+				sampleno := patch[i].Units[u].Parameters["color"]
+				patch[i].Units[u].Parameters["start"] = sampleOffsets[sampleno][0]
+				patch[i].Units[u].Parameters["loopstart"] = sampleOffsets[sampleno][1]
+				patch[i].Units[u].Parameters["looplength"] = sampleOffsets[sampleno][2]
+				delete(patch[i].Units[u].Parameters, "color")
 			}
 		}
 	}
