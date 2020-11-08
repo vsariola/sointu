@@ -34,7 +34,7 @@ func (t *Tracker) LoadSong(song go4k.Song) error {
 	}
 	t.song = song
 	if synth, err := bridge.Synth(song.Patch); err != nil {
-		fmt.Println("error loading synth: %v", err)
+		fmt.Printf("error loading synth: %v\n", err)
 		t.synth = nil
 	} else {
 		t.synth = synth
