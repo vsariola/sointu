@@ -16,6 +16,7 @@ var dark = color.RGBA{R: 24, G: 40, B: 44, A: 255}
 var white = color.RGBA{R: 255, G: 255, B: 255, A: 255}
 var black = color.RGBA{R: 0, G: 0, B: 0, A: 255}
 var yellow = color.RGBA{R: 255, G: 255, B: 130, A: 255}
+var red = color.RGBA{R: 255, G: 0, B: 0, A: 255}
 
 var panelColor = neutral
 var panelShadeColor = dark
@@ -31,3 +32,4 @@ var trackerFont = fontCollection[6].Font
 var trackerFontSize = unit.Px(16)
 var trackerTextColor = white
 var trackerActiveTextColor = yellow
+var trackerPlayColor = red

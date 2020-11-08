@@ -13,6 +13,8 @@ func (t *Tracker) Run(w *app.Window) error {
 	var ops op.Ops
 	for {
 		select {
+		case <-t.ticked:
+			w.Invalidate()
 		case e := <-w.Events():
 			switch e := e.(type) {
 			case system.DestroyEvent:

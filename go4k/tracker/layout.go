@@ -19,6 +19,7 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 			t.ActiveTrack == i,
 			t.CursorRow,
 			t.CursorColumn,
+			int(t.PlayRow),
 		)))
 	}
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,

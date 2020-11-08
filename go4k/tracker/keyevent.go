@@ -50,6 +50,9 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 		switch e.Name {
 		case key.NameEscape:
 			os.Exit(0)
+		case "Space":
+			t.TogglePlay()
+			return true
 		case key.NameUpArrow:
 			t.CursorRow = (t.CursorRow + t.song.PatternRows() - 1) % t.song.PatternRows()
 			return true
