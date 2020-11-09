@@ -99,25 +99,19 @@ endstruc
     %endif
 %endmacro
 
-%macro  SU_SEND 5  ; local send (params: STEREO, AMOUNT, UNIT, PORT, FLAGS)
-    db  %2
-    dw  ((%3+1)*su_unit.size + su_unit.ports)/4 + %4 + (SENDPOPFLAG * %5)
-    USE_SEND
-    %xdefine CMDS CMDS SEND_ID + %1,
-    %if %1 == STEREO
-        %define INCLUDE_STEREO_SEND
-    %endif
-%endmacro
-
 %macro  SU_SEND 6  ; global send (params: STEREO, AMOUNT, VOICE, UNIT, PORT, SENDPOP)
     db  %2
-    dw  SEND_GLOBAL + (su_synthworkspace.voices+%3*su_voice.size+su_voice.workspace+%4*su_unit.size + su_unit.ports)/4 + %5 + (SENDPOPFLAG * %6)
+    %if (%3) > 0 
+        dw  SEND_GLOBAL + (su_synthworkspace.voices+(%3-1)*su_voice.size+su_voice.workspace+%4*su_unit.size + su_unit.ports)/4 + %5 + (SENDPOPFLAG * %6)
+        %define INCLUDE_GLOBAL_SEND
+    %else
+        dw  ((%4+1)*su_unit.size + su_unit.ports)/4 + %5 + (SENDPOPFLAG * %6)
+    %endif
     USE_SEND
     %xdefine CMDS CMDS SEND_ID + %1,
     %if %1 == STEREO
         %define INCLUDE_STEREO_SEND
-    %endif
-    %define INCLUDE_GLOBAL_SEND
+    %endif    
 %endmacro
 
 %define VOICE(val)      val

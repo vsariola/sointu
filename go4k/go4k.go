@@ -195,7 +195,7 @@ var UnitTypes = []UnitType{
 		SupportsStereo: true,
 		Parameters: []UnitParameter{
 			{Name: "amount", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-			{Name: "voice", MinValue: -1, MaxValue: 31, CanSet: true, CanModulate: false},
+			{Name: "voice", MinValue: 0, MaxValue: 32, CanSet: true, CanModulate: false},
 			{Name: "unit", MinValue: 0, MaxValue: 63, CanSet: true, CanModulate: false},
 			{Name: "port", MinValue: 0, MaxValue: 7, CanSet: true, CanModulate: false},
 			{Name: "sendpop", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},

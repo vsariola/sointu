@@ -156,10 +156,6 @@ func ParseAsm(reader io.Reader) (*Song, error) {
 						case "SAMPLE":
 							parameters["type"] = Sample
 						}
-					} else if unittype == "send" {
-						if _, ok := parameters["voice"]; !ok {
-							parameters["voice"] = -1
-						}
 					}
 					unit := Unit{Type: unittype, Stereo: stereo, Parameters: parameters}
 					instr.Units = append(instr.Units, unit)

@@ -170,8 +170,8 @@ func Synth(patch go4k.Patch) (*C.Synth, error) {
 					values = append(values, byte(flags))
 				} else if unit.Type == "send" {
 					address := unit.Parameters["unit"]*16 + 24 + unit.Parameters["port"]
-					if unit.Parameters["voice"] != -1 {
-						address += 0x4000 + 16 + unit.Parameters["voice"]*1024 // global send, address is computed relative to synthworkspace
+					if unit.Parameters["voice"] > 0 {
+						address += 0x4000 + 16 + (unit.Parameters["voice"]-1)*1024 // global send, address is computed relative to synthworkspace
 					}
 					if unit.Parameters["sendpop"] == 1 {
 						address += 0x8000
