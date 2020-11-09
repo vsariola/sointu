@@ -198,6 +198,7 @@ var UnitTypes = []UnitType{
 			{Name: "voice", MinValue: -1, MaxValue: 31, CanSet: true, CanModulate: false},
 			{Name: "unit", MinValue: 0, MaxValue: 63, CanSet: true, CanModulate: false},
 			{Name: "port", MinValue: 0, MaxValue: 7, CanSet: true, CanModulate: false},
+			{Name: "sendpop", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		}},
 	{
 		Name:           "envelope",
