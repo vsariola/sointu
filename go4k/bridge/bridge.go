@@ -82,11 +82,14 @@ func (synth *C.Synth) Render(buffer []float32, maxtime int) (int, int, error) {
 func Synth(patch go4k.Patch) (*C.Synth, error) {
 	s := new(C.Synth)
 	sampleno := 0
-	delaytimeno := 0
 	totalVoices := 0
 	commands := make([]byte, 0)
 	values := make([]byte, 0)
 	polyphonyBitmask := 0
+	delayTable, delayIndices := go4k.ConstructDelayTimeTable(patch)
+	for i, v := range delayTable {
+		s.DelayTimes[i] = C.ushort(v)
+	}
 	for insid, instr := range patch {
 		if len(instr.Units) > 63 {
 			return nil, errors.New("An instrument can have a maximum of 63 units")
@@ -106,11 +109,7 @@ func Synth(patch go4k.Patch) (*C.Synth, error) {
 						if unit.Stereo && len(unit.DelayTimes)%2 != 0 {
 							return nil, errors.New("Stereo delays should have even number of delaytimes")
 						}
-						values = append(values, byte(delaytimeno))
-						for _, v := range unit.DelayTimes {
-							s.DelayTimes[delaytimeno] = C.ushort(v)
-							delaytimeno++
-						}
+						values = append(values, byte(delayIndices[insid][unitid]))
 						count := len(unit.DelayTimes)
 						if unit.Stereo {
 							count /= 2
