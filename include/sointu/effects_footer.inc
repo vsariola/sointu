@@ -177,31 +177,31 @@ EXPORT MANGLE_FUNC(su_op_filter,0)
     fstp    dword [WRK+su_filter_wrk.band]  ; b'=f2*h'+b
     fldz                                    ; 0
 %ifdef INCLUDE_LOWPASS
-    test    al, byte LOWPASS
+    test    al, byte LOWPASSFLAG
     jz      short su_op_filter_skiplowpass
     fadd    dword [WRK+su_filter_wrk.low]
 su_op_filter_skiplowpass:
 %endif
 %ifdef INCLUDE_BANDPASS
-    test    al, byte BANDPASS
+    test    al, byte BANDPASSFLAG
     jz      short su_op_filter_skipbandpass
     fadd    dword [WRK+su_filter_wrk.band]
 su_op_filter_skipbandpass:
 %endif
 %ifdef INCLUDE_HIGHPASS
-    test    al, byte HIGHPASS
+    test    al, byte HIGHPASSFLAG
     jz      short su_op_filter_skiphighpass
     fadd    dword [WRK+su_filter_wrk.high]
 su_op_filter_skiphighpass:
 %endif
 %ifdef INCLUDE_NEGBANDPASS
-    test    al, byte NEGBANDPASS
+    test    al, byte NEGBANDPASSFLAG
     jz      short su_op_filter_skipnegbandpass
     fsub    dword [WRK+su_filter_wrk.band]
 su_op_filter_skipnegbandpass:
 %endif
 %ifdef INCLUDE_NEGHIGHPASS
-    test    al, byte NEGHIGHPASS
+    test    al, byte NEGHIGHPASSFLAG
     jz      short su_op_filter_skipneghighpass
     fsub    dword [WRK+su_filter_wrk.high]
 su_op_filter_skipneghighpass:

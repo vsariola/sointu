@@ -98,7 +98,7 @@ EXPORT MANGLE_FUNC(su_op_send,0)
     fxch                        ; r l
     call    su_op_send_mono     ; (r) l
     mov     _AX, _DI            ; move back to original address
-    test    _AX, SEND_POP       ; if r was not popped and is still in the stack
+    test    _AX, SENDPOPFLAG    ; if r was not popped and is still in the stack
     jnz     su_op_send_mono
     fxch                        ; swap them back: l r
 su_op_send_mono:
@@ -109,14 +109,14 @@ su_op_send_mono:
     mov     _CX, [_SP + su_stack.synth]
 su_op_send_skipglobal:
 %endif
-    test    _AX, SEND_POP       ; if the SEND_POP bit is not set
+    test    _AX, SENDPOPFLAG       ; if the SEND_POP bit is not set
     jnz     su_op_send_skippush
     fld     st0                 ; duplicate the signal on stack: s s
 su_op_send_skippush:            ; there is signal s, but maybe also another: s (s)
     fld     dword [INP+su_send_ports.amount]   ; a l (l)
  do fsub    dword [,c_0_5,]                    ; a-.5 l (l)
     fadd    st0                                ; g=2*a-1 l (l)
-    and     _AX, 0x0000ffff - SEND_POP - SEND_GLOBAL ; eax = send address
+    and     _AX, 0x0000ffff - SENDPOPFLAG - SEND_GLOBAL ; eax = send address
     fmulp   st1, st0                           ; g*l (l)
     fadd    dword [_CX + _AX*4]     ; g*l+L (l),where L is the current value
     fstp    dword [_CX + _AX*4]     ; (l)

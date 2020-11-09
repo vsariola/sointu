@@ -12,41 +12,46 @@
     %endif
 %endmacro
 
-%define LOWPASS     0x40
-%define BANDPASS    0x20
-%define HIGHPASS    0x10
-%define NEGBANDPASS 0x08
-%define NEGHIGHPASS 0x04
+%define LOWPASSFLAG     0x40
+%define BANDPASSFLAG    0x20
+%define HIGHPASSFLAG    0x10
+%define NEGBANDPASSFLAG 0x08
+%define NEGHIGHPASSFLAG 0x04
 
-%macro  SU_FILTER 4
+%macro  SU_FILTER 8
     db  %2
     db  %3
-    db  %4
+    db  (%4*LOWPASSFLAG)+(%5*BANDPASSFLAG)+(%6*HIGHPASSFLAG)+(%7*NEGBANDPASSFLAG)+(%8*NEGHIGHPASSFLAG)
     USE_FILTER
     %xdefine CMDS CMDS FILTER_ID + %1,
     %if %1 == STEREO
         %define INCLUDE_STEREO_FILTER
     %endif
-    %if (%4) & LOWPASS == LOWPASS
+    %if %4 > 0
         %define INCLUDE_LOWPASS
     %endif
-    %if (%4) & BANDPASS == BANDPASS
+    %if %5 > 0
         %define INCLUDE_BANDPASS
     %endif
-    %if (%4) & HIGHPASS == HIGHPASS
+    %if %6 > 0
         %define INCLUDE_HIGHPASS
     %endif
-    %if (%4) & NEGBANDPASS == NEGBANDPASS
+    %if %7 > 0
         %define INCLUDE_NEGBANDPASS
     %endif
-    %if (%4) & NEGHIGHPASS == NEGHIGHPASS
+    %if %8 > 0
         %define INCLUDE_NEGHIGHPASS
     %endif
 %endmacro
 
-%define FREQUENCY(val)  val
-%define RESONANCE(val)  val
-%define FLAGS(val)      val
+%define FREQUENCY(val)      val
+%define RESONANCE(val)      val
+%define FLAGS(val)          val
+%define LOWPASS(val)        val
+%define BANDPASS(val)       val
+%define HIGHPASS(val)       val
+%define NEGBANDPASS(val)    val
+%define NEGHIGHPASS(val)    val
 
 struc   su_filter_ports
     .freq       resd    1
@@ -289,7 +294,7 @@ endstruc
     %if %1 == STEREO
         %define INCLUDE_STEREO_DELAY
     %endif
-    %if (%8) & NOTETRACKING == 1
+    %if %8 > 0
         %define INCLUDE_DELAY_NOTETRACKING
         %define INCLUDE_DELAY_FLOAT_TIME
     %endif
@@ -311,14 +316,14 @@ endstruc
 %endmacro
 
 
-%define PREGAIN(val)    val
-%define DRY(val)        val
-%define FEEDBACK(val)   val
-%define DEPTH(val)      val
-%define DAMP(val)       val
-%define DELAY(val)      val
-%define COUNT(val)      val
-%define NOTETRACKING    1
+%define PREGAIN(val)        val
+%define DRY(val)            val
+%define FEEDBACK(val)       val
+%define DEPTH(val)          val
+%define DAMP(val)           val
+%define DELAY(val)          val
+%define COUNT(val)          val
+%define NOTETRACKING(val)   val
 
 struc   su_delay_ports
     .pregain    resd    1

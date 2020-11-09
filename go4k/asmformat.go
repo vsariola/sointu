@@ -35,27 +35,9 @@ func ParseAsm(reader io.Reader) (*Song, error) {
 		}
 		return ret, nil
 	}
-	flagsReg, err := regexp.Compile(`FLAGS\s*\(\s*(\s*\w+(?:\s*\+\s*\w+)*)\s*\)`) // matches FLAGS ( FOO + FAA), groups "FOO + FAA"
+	typeReg, err := regexp.Compile(`TYPE\s*\(\s*(SINE|TRISAW|PULSE|GATE|SAMPLE)\s*\)`) // matches TYPE(TRISAW), groups "TRISAW"
 	if err != nil {
 		return nil, err
-	}
-	flagNameReg, err := regexp.Compile(`\w+`) // matches any alphanumeric word
-	if err != nil {
-		return nil, err
-	}
-	parseFlags := func(s string) map[string]bool {
-		match := flagsReg.FindStringSubmatch(s)
-		if match == nil {
-			return nil
-		}
-		ret := map[string]bool{}
-		flagmatches := flagNameReg.FindAllString(match[1], 256)
-		for _, f := range flagmatches {
-			if f != "NONE" {
-				ret[f] = true
-			}
-		}
-		return ret
 	}
 	wordReg, err := regexp.Compile(`\s*([a-zA-Z_][a-zA-Z0-9_]*)([^;\n]*)`) // matches a word and "the rest", until newline or a comment
 	if err != nil {
@@ -184,57 +166,26 @@ func ParseAsm(reader io.Reader) (*Song, error) {
 					if err != nil {
 						return nil, fmt.Errorf("Error parsing parameters: %v", err)
 					}
-					flags := parseFlags(instrRest)
 					if unittype == "oscillator" {
-						if flags["SINE"] {
+						match := typeReg.FindStringSubmatch(instrRest)
+						if match == nil {
+							return nil, errors.New("Oscillator should define a type")
+						}
+						switch match[1] {
+						case "SINE":
 							parameters["type"] = Sine
-						} else if flags["TRISAW"] {
+						case "TRISAW":
 							parameters["type"] = Trisaw
-						} else if flags["PULSE"] {
+						case "PULSE":
 							parameters["type"] = Pulse
-						} else if flags["GATE"] {
+						case "GATE":
 							parameters["type"] = Gate
-						} else if flags["SAMPLE"] {
+						case "SAMPLE":
 							parameters["type"] = Sample
-						} else {
-							return nil, errors.New("Invalid oscillator type")
-						}
-						if flags["UNISON4"] {
-							parameters["unison"] = 3
-						} else if flags["UNISON3"] {
-							parameters["unison"] = 2
-						} else if flags["UNISON2"] {
-							parameters["unison"] = 1
-						} else {
-							parameters["unison"] = 0
-						}
-						if flags["LFO"] {
-							parameters["lfo"] = 1
-						} else {
-							parameters["lfo"] = 0
-						}
-					} else if unittype == "filter" {
-						for _, flag := range []string{"LOWPASS", "BANDPASS", "HIGHPASS", "NEGBANDPASS", "NEGHIGHPASS"} {
-							if flags[flag] {
-								parameters[strings.ToLower(flag)] = 1
-							} else {
-								parameters[strings.ToLower(flag)] = 0
-							}
 						}
 					} else if unittype == "send" {
 						if _, ok := parameters["voice"]; !ok {
 							parameters["voice"] = -1
-						}
-						if flags["SEND_POP"] {
-							parameters["pop"] = 1
-						} else {
-							parameters["pop"] = 0
-						}
-					} else if unittype == "delay" {
-						if flags["NOTETRACKING"] {
-							parameters["notetracking"] = 1
-						} else {
-							parameters["notetracking"] = 0
 						}
 					}
 					unit := Unit{Type: unittype, Stereo: stereo, Parameters: parameters}

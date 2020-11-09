@@ -66,20 +66,18 @@ endstruc
 %define SINE        0x40
 %define TRISAW      0x20
 %define PULSE       0x10
-%define LFO         0x08
+%define LFOFLAG     0x08
 %define GATE        0x04
-%define UNISON2     0x01
-%define UNISON3     0x02 ; Warning, UNISON3 and UNISON4 do not work with gate at the moment, as they use the same state variable
-%define UNISON4     0x03
+%define UNISONBITS  0x03
 
-%macro  SU_OSCILLAT 8
+%macro  SU_OSCILLAT 10
     db  %2
     db  %3
     db  %4
     db  %5
     db  %6
     db  %7
-    db  %8
+    db  %8 + (LFOFLAG * %9) + %10 ; TYPE + LFO + UNISON
     USE_OSCILLAT
     %xdefine CMDS CMDS OSCILLAT_ID + %1,
     %if %1 == STEREO
@@ -100,7 +98,7 @@ endstruc
     %if (%8) & SAMPLE == SAMPLE
         %define INCLUDE_SAMPLES
     %endif
-    %if (%8) & UNISON4 > 0
+    %if (%10) > 0
         %define INCLUDE_UNISONS
     %endif
 %endmacro
@@ -124,6 +122,9 @@ endstruc
 %define PHASE(val)      val
 %define COLOR(val)      val
 %define SHAPE(val)      val
+%define TYPE(val)       val
+%define LFO(val)        val
+%define UNISON(val)     val
 %define FLAGS(val)      val
 
 ;-------------------------------------------------------------------------------

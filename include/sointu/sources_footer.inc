@@ -131,7 +131,7 @@ su_op_oscillat_unison_loop:
     fst     dword [_SP]             ; save the current detune, d. We could keep it in fpu stack but it was getting big.
     call    su_op_oscillat_single   ; s a
     faddp   st1, st0                ; a+=s
-    test    al, UNISON4
+    test    al, UNISONBITS
     je      su_op_oscillat_unison_out
     add     WRK, 8
     fld     dword [INP+su_osc_ports.phaseofs] ; p s
@@ -151,13 +151,13 @@ su_op_oscillat_single:
  do fsub    dword [,c_0_5,]
  do fdiv    dword [,c_i128,]
     faddp   st1
-    test    al, byte LFO
+    test    al, byte LFOFLAG
     jnz     su_op_oscillat_skipnote
     fiadd   dword [INP-su_voice.inputs+su_voice.note]   ; // st0 is note, st1 is t+d offset
 su_op_oscillat_skipnote:
  do fmul    dword [,c_i12,]
     call    MANGLE_FUNC(su_power,0)
-    test    al, byte LFO
+    test    al, byte LFOFLAG
     jz      short su_op_oscillat_normalize_note
  do fmul    dword [,c_lfo_normalize,]  ; // st0 is now frequency for lfo
     jmp     short su_op_oscillat_normalized
