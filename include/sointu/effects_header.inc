@@ -356,7 +356,7 @@ endstruc
     %endif
 %endmacro
 
-%macro SU_COMPRES 6
+%macro SU_COMPRESSOR 6
     db  %2
     db  %3
     db  %4

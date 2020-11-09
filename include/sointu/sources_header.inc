@@ -70,7 +70,7 @@ endstruc
 %define GATE        0x04
 %define UNISONBITS  0x03
 
-%macro  SU_OSCILLAT 10
+%macro  SU_OSCILLATOR 10
     db  %2
     db  %3
     db  %4

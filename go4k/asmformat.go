@@ -72,37 +72,7 @@ func ParseAsm(reader io.Reader) (*Song, error) {
 		}
 		return ret
 	}
-	unitNameMap := map[string]string{
-		"SU_ADD":      "add",
-		"SU_ADDP":     "addp",
-		"SU_POP":      "pop",
-		"SU_LOADNOTE": "loadnote",
-		"SU_MUL":      "mul",
-		"SU_MULP":     "mulp",
-		"SU_PUSH":     "push",
-		"SU_XCH":      "xch",
-		"SU_DISTORT":  "distort",
-		"SU_HOLD":     "hold",
-		"SU_CRUSH":    "crush",
-		"SU_GAIN":     "gain",
-		"SU_INVGAIN":  "invgain",
-		"SU_FILTER":   "filter",
-		"SU_CLIP":     "clip",
-		"SU_PAN":      "pan",
-		"SU_DELAY":    "delay",
-		"SU_COMPRES":  "compressor",
-		"SU_SPEED":    "speed",
-		"SU_OUT":      "out",
-		"SU_OUTAUX":   "outaux",
-		"SU_AUX":      "aux",
-		"SU_SEND":     "send",
-		"SU_ENVELOPE": "envelope",
-		"SU_NOISE":    "noise",
-		"SU_OSCILLAT": "oscillator",
-		"SU_LOADVAL":  "loadval",
-		"SU_RECEIVE":  "receive",
-		"SU_IN":       "in",
-	}
+	inInstrument := false
 	for scanner.Scan() {
 		line := scanner.Text()
 		macroMatch := wordReg.FindStringSubmatch(line)
@@ -140,8 +110,10 @@ func ParseAsm(reader io.Reader) (*Song, error) {
 					return nil, err
 				}
 				instr = Instrument{NumVoices: ints[0], Units: []Unit{}}
+				inInstrument = true
 			case "END_INSTRUMENT":
 				patch = append(patch, instr)
+				inInstrument = false
 			case "DELTIME":
 				ints, err := parseNumbers(rest)
 				if err != nil {
@@ -157,7 +129,8 @@ func ParseAsm(reader io.Reader) (*Song, error) {
 				}
 				sampleOffsets = append(sampleOffsets, ints)
 			}
-			if unittype, ok := unitNameMap[word]; ok {
+			if inInstrument && strings.HasPrefix(word, "SU_") {
+				unittype := strings.ToLower(word[3:])
 				instrMatch := wordReg.FindStringSubmatch(rest)
 				if instrMatch != nil {
 					stereoMono, instrRest := instrMatch[1], instrMatch[2]
