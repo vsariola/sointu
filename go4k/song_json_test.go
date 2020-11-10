@@ -8,7 +8,7 @@ import (
 	"github.com/vsariola/sointu/go4k"
 )
 
-const expectedMarshaled = "{\"BPM\":100,\"Patterns\":[\"QABEACAAAABLAE4AAAAAAA==\"],\"Tracks\":[{\"NumVoices\":1,\"Sequence\":\"AA==\"}],\"SongLength\":0,\"Patch\":[{\"NumVoices\":1,\"Units\":[{\"Type\":\"envelope\",\"Stereo\":false,\"Parameters\":{\"attack\":32,\"decay\":32,\"gain\":128,\"release\":64,\"sustain\":64},\"DelayTimes\":[]},{\"Type\":\"oscillator\",\"Stereo\":false,\"Parameters\":{\"color\":96,\"detune\":64,\"flags\":64,\"gain\":128,\"phase\":0,\"shape\":64,\"transpose\":64},\"DelayTimes\":[]},{\"Type\":\"mulp\",\"Stereo\":false,\"Parameters\":{},\"DelayTimes\":[]},{\"Type\":\"envelope\",\"Stereo\":false,\"Parameters\":{\"attack\":32,\"decay\":32,\"gain\":128,\"release\":64,\"sustain\":64},\"DelayTimes\":[]},{\"Type\":\"oscillator\",\"Stereo\":false,\"Parameters\":{\"color\":64,\"detune\":64,\"flags\":64,\"gain\":128,\"phase\":64,\"shape\":96,\"transpose\":72},\"DelayTimes\":[]},{\"Type\":\"mulp\",\"Stereo\":false,\"Parameters\":{},\"DelayTimes\":[]},{\"Type\":\"out\",\"Stereo\":true,\"Parameters\":{\"gain\":128},\"DelayTimes\":[]}]}]}"
+const expectedMarshaled = `{"BPM":100,"Patterns":["QABEACAAAABLAE4AAAAAAA=="],"Tracks":[{"NumVoices":1,"Sequence":"AA=="}],"SongLength":0,"Patch":[{"NumVoices":1,"Units":[{"Type":"envelope","Parameters":{"attack":32,"decay":32,"gain":128,"release":64,"stereo":0,"sustain":64},"DelayTimes":[]},{"Type":"oscillator","Parameters":{"color":96,"detune":64,"flags":64,"gain":128,"phase":0,"shape":64,"stereo":0,"transpose":64},"DelayTimes":[]},{"Type":"mulp","Parameters":{"stereo":0},"DelayTimes":[]},{"Type":"envelope","Parameters":{"attack":32,"decay":32,"gain":128,"release":64,"stereo":0,"sustain":64},"DelayTimes":[]},{"Type":"oscillator","Parameters":{"color":64,"detune":64,"flags":64,"gain":128,"phase":64,"shape":96,"stereo":0,"transpose":72},"DelayTimes":[]},{"Type":"mulp","Parameters":{"stereo":0},"DelayTimes":[]},{"Type":"out","Parameters":{"gain":128,"stereo":1},"DelayTimes":[]}]}]}`
 
 var testSong = go4k.Song{
 	BPM:      100,
@@ -19,13 +19,13 @@ var testSong = go4k.Song{
 	SongLength: 0,
 	Patch: go4k.Patch{
 		go4k.Instrument{NumVoices: 1, Units: []go4k.Unit{
-			{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}, []int{}},
-			{"oscillator", false, map[string]int{"transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "flags": 0x40}, []int{}},
-			{"mulp", false, map[string]int{}, []int{}},
-			{"envelope", false, map[string]int{"attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}, []int{}},
-			{"oscillator", false, map[string]int{"transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "flags": 0x40}, []int{}},
-			{"mulp", false, map[string]int{}, []int{}},
-			{"out", true, map[string]int{"gain": 128}, []int{}},
+			{"envelope", map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}, []int{}},
+			{"oscillator", map[string]int{"stereo": 0, "transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "flags": 0x40}, []int{}},
+			{"mulp", map[string]int{"stereo": 0}, []int{}},
+			{"envelope", map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}, []int{}},
+			{"oscillator", map[string]int{"stereo": 0, "transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "flags": 0x40}, []int{}},
+			{"mulp", map[string]int{"stereo": 0}, []int{}},
+			{"out", map[string]int{"stereo": 1, "gain": 128}, []int{}},
 		}},
 	},
 }

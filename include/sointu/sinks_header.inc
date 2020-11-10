@@ -15,7 +15,7 @@
     db  %2
     USE_OUT
     %xdefine CMDS CMDS OUT_ID+%1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_OUT
     %endif
 %endmacro
@@ -44,7 +44,7 @@ endstruc
     db  %3
     USE_OUTAUX
     %xdefine CMDS CMDS OUTAUX_ID+%1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_OUTAUX
     %endif
 %endmacro
@@ -75,7 +75,7 @@ endstruc
     db  %3
     USE_AUX
     %xdefine CMDS CMDS AUX_ID+%1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_AUX
     %endif
 %endmacro
@@ -109,7 +109,7 @@ endstruc
     %endif
     USE_SEND
     %xdefine CMDS CMDS SEND_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_SEND
     %endif    
 %endmacro

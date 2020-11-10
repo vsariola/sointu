@@ -19,7 +19,7 @@
     db  %6
     USE_ENVELOPE
     %xdefine CMDS CMDS ENVELOPE_ID+%1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_ENVELOPE
     %endif
 %endmacro
@@ -80,7 +80,7 @@ endstruc
     db  %8 + (LFOFLAG * %9) + %10 ; TYPE + LFO + UNISON
     USE_OSCILLAT
     %xdefine CMDS CMDS OSCILLAT_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_OSCILLAT
     %endif
     %if (%8) & SINE == SINE
@@ -173,7 +173,7 @@ endstruc
     db  %3
     USE_NOISE
     %xdefine CMDS CMDS NOISE_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_NOISE
     %endif
 %endmacro
@@ -200,7 +200,7 @@ endstruc
     db  %2
     USE_LOAD_VAL
     %xdefine CMDS CMDS LOADVAL_ID+%1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_LOADVAL
     %endif
 %endmacro
@@ -227,7 +227,7 @@ endstruc
 %macro  SU_RECEIVE 1
     USE_RECEIVE
     %xdefine CMDS CMDS RECEIVE_ID+%1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_RECEIVE
     %endif
 %endmacro
@@ -254,7 +254,7 @@ endstruc
     db %2
     USE_IN
     %xdefine CMDS CMDS IN_ID+%1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_IN
     %endif
 %endmacro

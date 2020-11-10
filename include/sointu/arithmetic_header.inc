@@ -14,7 +14,7 @@
 %macro SU_ADDP 1
     USE_ADDP
     %xdefine CMDS CMDS ADDP_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_ADDP
     %endif
 %endmacro
@@ -36,7 +36,7 @@
 %macro SU_ADD 1
     USE_ADD
     %xdefine CMDS CMDS ADD_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_ADD
     %endif
 %endmacro
@@ -57,7 +57,7 @@
 %macro SU_POP 1
     USE_POP
     %xdefine CMDS CMDS POP_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_POP
     %endif
 %endmacro
@@ -78,7 +78,7 @@
 %macro SU_LOADNOTE 1
     USE_LOADNOTE
     %xdefine CMDS CMDS LOADNOTE_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_LOADNOTE
     %endif
 %endmacro
@@ -99,7 +99,7 @@
 %macro SU_MUL 1
     USE_MUL
     %xdefine CMDS CMDS MUL_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_MUL
     %endif
 %endmacro
@@ -120,7 +120,7 @@
 %macro SU_MULP 1
     USE_MULP
     %xdefine CMDS CMDS MULP_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_MULP
     %endif
 %endmacro
@@ -141,7 +141,7 @@
 %macro SU_PUSH 1
     USE_PUSH
     %xdefine CMDS CMDS PUSH_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_PUSH
     %endif
 %endmacro
@@ -162,7 +162,7 @@
 %macro SU_XCH 1
     USE_XCH
     %xdefine CMDS CMDS XCH_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_XCH
     %endif
 %endmacro

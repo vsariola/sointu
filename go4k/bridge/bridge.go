@@ -100,18 +100,18 @@ func Synth(patch go4k.Patch) (*C.Synth, error) {
 		for unitid, unit := range instr.Units {
 			if val, ok := opcodeTable[unit.Type]; ok {
 				opCode := val.opcode
-				if unit.Stereo {
+				if unit.Parameters["stereo"] == 1 {
 					opCode++
 				}
 				commands = append(commands, byte(opCode))
 				for _, paramname := range val.parameterList {
 					if unit.Type == "delay" && paramname == "delaycount" {
-						if unit.Stereo && len(unit.DelayTimes)%2 != 0 {
+						if unit.Parameters["stereo"] == 1 && len(unit.DelayTimes)%2 != 0 {
 							return nil, errors.New("Stereo delays should have even number of delaytimes")
 						}
 						values = append(values, byte(delayIndices[insid][unitid]))
 						count := len(unit.DelayTimes)
-						if unit.Stereo {
+						if unit.Parameters["stereo"] == 1 {
 							count /= 2
 						}
 						count = count*2 - 1

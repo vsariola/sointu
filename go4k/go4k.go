@@ -8,7 +8,6 @@ import (
 // Unit is e.g. a filter, oscillator, envelope and its parameters
 type Unit struct {
 	Type       string
-	Stereo     bool
 	Parameters map[string]int
 	DelayTimes []int
 }
@@ -88,70 +87,66 @@ type UnitParameter struct {
 
 // UnitType documents the supported behaviour of one type of unit (oscillator, envelope etc.)
 type UnitType struct {
-	Name           string
-	SupportsStereo bool
-	Parameters     []UnitParameter
+	Name       string
+	Parameters []UnitParameter
 }
 
 // UnitTypes documents all the available unit types and if they support stereo variant
 // and what parameters they take.
 var UnitTypes = []UnitType{
 	{
-		Name:           "add",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{}},
+		Name:       "add",
+		Parameters: []UnitParameter{{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}}},
 	{
-		Name:           "addp",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{}},
+		Name:       "addp",
+		Parameters: []UnitParameter{{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}}},
 	{
-		Name:           "pop",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{}},
+		Name:       "pop",
+		Parameters: []UnitParameter{{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}}},
 	{
-		Name:           "loadnote",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{}},
+		Name:       "loadnote",
+		Parameters: []UnitParameter{{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}}},
 	{
-		Name:           "mul",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{}},
+		Name:       "mul",
+		Parameters: []UnitParameter{{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}}},
 	{
-		Name:           "mulp",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{}},
+		Name:       "mulp",
+		Parameters: []UnitParameter{{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}}},
 	{
-		Name:           "push",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{}},
+		Name:       "push",
+		Parameters: []UnitParameter{{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}}},
 	{
-		Name:           "xch",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{}},
+		Name:       "xch",
+		Parameters: []UnitParameter{{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}}},
 	{
-		Name:           "distort",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{{Name: "drive", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
-	{
-		Name:           "hold",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{{Name: "holdfreq", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
-	{
-		Name:           "crush",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{{Name: "resolution", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
-	{
-		Name:           "gain",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
-	{
-		Name:           "invgain",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{{Name: "invgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
-	{
-		Name:           "filter",
-		SupportsStereo: true,
+		Name: "distort",
 		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+			{Name: "drive", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
+	{
+		Name: "hold",
+		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+			{Name: "holdfreq", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
+	{
+		Name: "crush",
+		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+			{Name: "resolution", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
+	{
+		Name: "gain",
+		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+			{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
+	{
+		Name: "invgain",
+		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+			{Name: "invgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
+	{
+		Name: "filter",
+		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "frequency", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "resonance", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "lowpass", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
@@ -160,17 +155,17 @@ var UnitTypes = []UnitType{
 			{Name: "negbandpass", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "neghighpass", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}}},
 	{
-		Name:           "clip",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{}},
+		Name:       "clip",
+		Parameters: []UnitParameter{{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}}},
 	{
-		Name:           "pan",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{{Name: "panning", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
-	{
-		Name:           "delay",
-		SupportsStereo: true,
+		Name: "pan",
 		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+			{Name: "panning", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
+	{
+		Name: "delay",
+		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "pregain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "dry", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "feedback", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
@@ -179,9 +174,9 @@ var UnitTypes = []UnitType{
 			{Name: "delay", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true},
 		}},
 	{
-		Name:           "compressor",
-		SupportsStereo: true,
+		Name: "compressor",
 		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "invgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
@@ -189,31 +184,31 @@ var UnitTypes = []UnitType{
 			{Name: "ratio", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		}},
 	{
-		Name:           "speed",
-		SupportsStereo: false,
-		Parameters:     []UnitParameter{}},
+		Name:       "speed",
+		Parameters: []UnitParameter{}},
 	{
-		Name:           "out",
-		SupportsStereo: true,
-		Parameters:     []UnitParameter{{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
-	{
-		Name:           "outaux",
-		SupportsStereo: true,
+		Name: "out",
 		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+			{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}}},
+	{
+		Name: "outaux",
+		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "outgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "auxgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		}},
 	{
-		Name:           "aux",
-		SupportsStereo: true,
+		Name: "aux",
 		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false},
 		}},
 	{
-		Name:           "send",
-		SupportsStereo: true,
+		Name: "send",
 		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "amount", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "voice", MinValue: 0, MaxValue: 32, CanSet: true, CanModulate: false},
 			{Name: "unit", MinValue: 0, MaxValue: 63, CanSet: true, CanModulate: false},
@@ -221,9 +216,9 @@ var UnitTypes = []UnitType{
 			{Name: "sendpop", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		}},
 	{
-		Name:           "envelope",
-		SupportsStereo: true,
+		Name: "envelope",
 		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "decay", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "sustain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
@@ -231,16 +226,16 @@ var UnitTypes = []UnitType{
 			{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		}},
 	{
-		Name:           "noise",
-		SupportsStereo: true,
+		Name: "noise",
 		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "shape", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		}},
 	{
-		Name:           "oscillator",
-		SupportsStereo: true,
+		Name: "oscillator",
 		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "transpose", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "detune", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "phase", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
@@ -255,22 +250,22 @@ var UnitTypes = []UnitType{
 			{Name: "looplength", MinValue: 0, MaxValue: 65535, CanSet: true, CanModulate: false}, // if type is "sample", then the loop length is this i.e. loop ends at "start" + "loopstart" + "looplength"
 		}},
 	{
-		Name:           "loadval",
-		SupportsStereo: true,
+		Name: "loadval",
 		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "value", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		}},
 	{
-		Name:           "receive",
-		SupportsStereo: true,
+		Name: "receive",
 		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "left", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true},
 			{Name: "right", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true},
 		}},
 	{
-		Name:           "in",
-		SupportsStereo: true,
+		Name: "in",
 		Parameters: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false},
 		}},
 }

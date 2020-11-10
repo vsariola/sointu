@@ -24,7 +24,7 @@
     db  (%4*LOWPASSFLAG)+(%5*BANDPASSFLAG)+(%6*HIGHPASSFLAG)+(%7*NEGBANDPASSFLAG)+(%8*NEGHIGHPASSFLAG)
     USE_FILTER
     %xdefine CMDS CMDS FILTER_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_FILTER
     %endif
     %if %4 > 0
@@ -82,7 +82,7 @@ endstruc
     db  %2
     USE_PAN
     %xdefine CMDS CMDS PAN_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_PAN
     %endif
 %endmacro
@@ -111,7 +111,7 @@ endstruc
     db  %2
     USE_DISTORT
     %xdefine CMDS CMDS DISTORT_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_DISTORT
     %endif
 %endmacro
@@ -140,7 +140,7 @@ endstruc
     db  %2
     USE_HOLD
     %xdefine CMDS CMDS HOLD_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_HOLD
     %endif
 %endmacro
@@ -174,7 +174,7 @@ endstruc
     db  %2
     USE_CRUSH
     %xdefine CMDS CMDS CRUSH_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_CRUSH
     %endif
 %endmacro
@@ -203,7 +203,7 @@ endstruc
     db  %2
     USE_GAIN
     %xdefine CMDS CMDS GAIN_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_GAIN
     %endif
 %endmacro
@@ -232,7 +232,7 @@ endstruc
     db  %2
     USE_INVGAIN
     %xdefine CMDS CMDS INVGAIN_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_INVGAIN
     %endif
 %endmacro
@@ -260,7 +260,7 @@ endstruc
 %macro SU_CLIP 1
     USE_CLIP
     %xdefine CMDS CMDS CLIP_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_CLIP
     %endif
 %endmacro
@@ -291,7 +291,7 @@ endstruc
     USE_DELAY
     %xdefine CMDS CMDS DELAY_ID + %1,
     %assign NUM_DELAY_LINES NUM_DELAY_LINES + %7 * (1+%1)
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_DELAY
     %endif
     %if %8 > 0
@@ -364,7 +364,7 @@ endstruc
     db  %6
     USE_COMPRES
     %xdefine CMDS CMDS COMPRES_ID + %1,
-    %if %1 == STEREO
+    %if %1 == 1
         %define INCLUDE_STEREO_COMPRES
     %endif
 %endmacro

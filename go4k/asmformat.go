@@ -130,35 +130,30 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 			}
 			if inInstrument && strings.HasPrefix(word, "SU_") {
 				unittype := strings.ToLower(word[3:])
-				instrMatch := wordReg.FindStringSubmatch(rest)
-				if instrMatch != nil {
-					stereoMono, instrRest := instrMatch[1], instrMatch[2]
-					stereo := stereoMono == "STEREO"
-					parameters, err := parseParams(instrRest)
-					if err != nil {
-						return nil, fmt.Errorf("Error parsing parameters: %v", err)
-					}
-					if unittype == "oscillator" {
-						match := typeReg.FindStringSubmatch(instrRest)
-						if match == nil {
-							return nil, errors.New("Oscillator should define a type")
-						}
-						switch match[1] {
-						case "SINE":
-							parameters["type"] = Sine
-						case "TRISAW":
-							parameters["type"] = Trisaw
-						case "PULSE":
-							parameters["type"] = Pulse
-						case "GATE":
-							parameters["type"] = Gate
-						case "SAMPLE":
-							parameters["type"] = Sample
-						}
-					}
-					unit := Unit{Type: unittype, Stereo: stereo, Parameters: parameters}
-					instr.Units = append(instr.Units, unit)
+				parameters, err := parseParams(rest)
+				if err != nil {
+					return nil, fmt.Errorf("Error parsing parameters: %v", err)
 				}
+				if unittype == "oscillator" {
+					match := typeReg.FindStringSubmatch(rest)
+					if match == nil {
+						return nil, errors.New("Oscillator should define a type")
+					}
+					switch match[1] {
+					case "SINE":
+						parameters["type"] = Sine
+					case "TRISAW":
+						parameters["type"] = Trisaw
+					case "PULSE":
+						parameters["type"] = Pulse
+					case "GATE":
+						parameters["type"] = Gate
+					case "SAMPLE":
+						parameters["type"] = Sample
+					}
+				}
+				unit := Unit{Type: unittype, Parameters: parameters}
+				instr.Units = append(instr.Units, unit)
 			}
 		}
 	}
@@ -167,7 +162,7 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 			if patch[i].Units[u].Type == "delay" {
 				s := patch[i].Units[u].Parameters["delay"]
 				e := patch[i].Units[u].Parameters["count"]
-				if patch[i].Units[u].Stereo {
+				if patch[i].Units[u].Parameters["stereo"] == 1 {
 					e *= 2 // stereo delays use 'count' number of delaytimes, but for both channels
 				}
 				patch[i].Units[u].DelayTimes = append(patch[i].Units[u].DelayTimes, delayTimes[s:e]...)
@@ -188,35 +183,35 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 
 func SerializeAsm(song *Song) (string, error) {
 	paramorder := map[string][]string{
-		"add":        []string{},
-		"addp":       []string{},
-		"pop":        []string{},
-		"loadnote":   []string{},
-		"mul":        []string{},
-		"mulp":       []string{},
-		"push":       []string{},
-		"xch":        []string{},
-		"distort":    []string{"drive"},
-		"hold":       []string{"holdfreq"},
-		"crush":      []string{"resolution"},
-		"gain":       []string{"gain"},
-		"invgain":    []string{"invgain"},
-		"filter":     []string{"frequency", "resonance", "lowpass", "bandpass", "highpass", "negbandpass", "neghighpass"},
-		"clip":       []string{},
-		"pan":        []string{"panning"},
-		"delay":      []string{"pregain", "dry", "feedback", "damp", "delay", "count", "notetracking"},
-		"compressor": []string{"attack", "release", "invgain", "threshold", "ratio"},
+		"add":        []string{"stereo"},
+		"addp":       []string{"stereo"},
+		"pop":        []string{"stereo"},
+		"loadnote":   []string{"stereo"},
+		"mul":        []string{"stereo"},
+		"mulp":       []string{"stereo"},
+		"push":       []string{"stereo"},
+		"xch":        []string{"stereo"},
+		"distort":    []string{"stereo", "drive"},
+		"hold":       []string{"stereo", "holdfreq"},
+		"crush":      []string{"stereo", "resolution"},
+		"gain":       []string{"stereo", "gain"},
+		"invgain":    []string{"stereo", "invgain"},
+		"filter":     []string{"stereo", "frequency", "resonance", "lowpass", "bandpass", "highpass", "negbandpass", "neghighpass"},
+		"clip":       []string{"stereo"},
+		"pan":        []string{"stereo", "panning"},
+		"delay":      []string{"stereo", "pregain", "dry", "feedback", "damp", "delay", "count", "notetracking"},
+		"compressor": []string{"stereo", "attack", "release", "invgain", "threshold", "ratio"},
 		"speed":      []string{},
-		"out":        []string{"gain"},
-		"outaux":     []string{"outgain", "auxgain"},
-		"aux":        []string{"gain", "channel"},
-		"send":       []string{"amount", "voice", "unit", "port", "sendpop"},
-		"envelope":   []string{"attack", "decay", "sustain", "release", "gain"},
-		"noise":      []string{"shape", "gain"},
-		"oscillator": []string{"transpose", "detune", "phase", "color", "shape", "gain", "type", "lfo", "unison"},
-		"loadval":    []string{"value"},
-		"receive":    []string{},
-		"in":         []string{"channel"},
+		"out":        []string{"stereo", "gain"},
+		"outaux":     []string{"stereo", "outgain", "auxgain"},
+		"aux":        []string{"stereo", "gain", "channel"},
+		"send":       []string{"stereo", "amount", "voice", "unit", "port", "sendpop"},
+		"envelope":   []string{"stereo", "attack", "decay", "sustain", "release", "gain"},
+		"noise":      []string{"stereo", "shape", "gain"},
+		"oscillator": []string{"stereo", "transpose", "detune", "phase", "color", "shape", "gain", "type", "lfo", "unison"},
+		"loadval":    []string{"stereo", "value"},
+		"receive":    []string{"stereo"},
+		"in":         []string{"stereo", "channel"},
 	}
 	indentation := 0
 	indent := func() string {
@@ -338,17 +333,13 @@ func SerializeAsm(song *Song) (string, error) {
 	for i, instrument := range song.Patch {
 		var instrTable [][]string
 		for j, unit := range instrument.Units {
-			stereomono := "MONO"
-			if unit.Stereo {
-				stereomono = "STEREO"
-			}
-			row := []string{fmt.Sprintf("SU_%v", strings.ToUpper(unit.Type)), stereomono}
+			row := []string{fmt.Sprintf("SU_%v", strings.ToUpper(unit.Type))}
 			for _, parname := range paramorder[unit.Type] {
 				if unit.Type == "oscillator" && unit.Parameters["type"] == Sample && parname == "color" {
 					row = append(row, fmt.Sprintf("COLOR(%v)", strconv.Itoa(sampleIndices[i][j])))
 				} else if unit.Type == "delay" && parname == "count" {
 					count := len(unit.DelayTimes)
-					if unit.Stereo {
+					if unit.Parameters["stereo"] == 1 {
 						count /= 2
 					}
 					row = append(row, fmt.Sprintf("COUNT(%v)", strconv.Itoa(count)))

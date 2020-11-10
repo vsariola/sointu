@@ -24,9 +24,9 @@ const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
 func TestBridge(t *testing.T) {
 	patch := []go4k.Instrument{
 		go4k.Instrument{1, []go4k.Unit{
-			go4k.Unit{"envelope", false, map[string]int{"attack": 64, "decay": 64, "sustain": 64, "release": 80, "gain": 128}, []int{}},
-			go4k.Unit{"envelope", false, map[string]int{"attack": 95, "decay": 64, "sustain": 64, "release": 80, "gain": 128}, []int{}},
-			go4k.Unit{"out", true, map[string]int{"gain": 128}, []int{}},
+			go4k.Unit{"envelope", map[string]int{"stereo": 0, "attack": 64, "decay": 64, "sustain": 64, "release": 80, "gain": 128}, []int{}},
+			go4k.Unit{"envelope", map[string]int{"stereo": 0, "attack": 95, "decay": 64, "sustain": 64, "release": 80, "gain": 128}, []int{}},
+			go4k.Unit{"out", map[string]int{"stereo": 1, "gain": 128}, []int{}},
 		}}}
 	synth, err := bridge.Synth(patch)
 	if err != nil {

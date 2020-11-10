@@ -83,8 +83,7 @@
 %define OPCODES         MANGLE_FUNC(su_op_advance,0),
 %define NUMPARAMS       0,
 %define SU_ADVANCE_ID   0
-%define MONO            0
-%define STEREO          1
+%define STEREO(val)     val
 
 section .text ; yasm throws section redeclaration warnings if strucs are defined without a plain .text section
 
