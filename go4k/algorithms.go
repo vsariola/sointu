@@ -131,3 +131,36 @@ func ConstructDelayTimeTable(patch Patch) ([]int, [][]int) {
 	}
 	return delayTable, unitindices
 }
+
+// ConstructSampleOffsetTable collects the sample offests from
+// all sample-based oscillators and collects them in a table,
+// so that they appear in the table only once. Returns the collected
+// table and [][]int array where element [i][j] is the index in the
+// table by instrument i / unit j (units other than sample oscillators
+// have the value 0)
+func ConstructSampleOffsetTable(patch Patch) ([]SampleOffset, [][]int) {
+	unitindices := make([][]int, len(patch))
+	var offsetTable []SampleOffset
+	offsetMap := map[SampleOffset]int{}
+	for i, instr := range patch {
+		unitindices[i] = make([]int, len(instr.Units))
+		for j, unit := range instr.Units {
+			if unit.Type == "oscillator" && unit.Parameters["type"] == Sample {
+				offset := SampleOffset{
+					Start:      unit.Parameters["start"],
+					LoopStart:  unit.Parameters["loopstart"],
+					LoopLength: unit.Parameters["looplength"],
+				}
+				if ind, ok := offsetMap[offset]; ok {
+					unitindices[i][j] = ind // the sample has been already added to table, reuse the index
+				} else {
+					ind = len(offsetTable)
+					unitindices[i][j] = ind
+					offsetMap[offset] = ind
+					offsetTable = append(offsetTable, offset)
+				}
+			}
+		}
+	}
+	return offsetTable, unitindices
+}

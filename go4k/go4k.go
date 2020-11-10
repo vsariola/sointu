@@ -38,6 +38,20 @@ func (p Patch) TotalVoices() int {
 	return ret
 }
 
+func (patch Patch) InstrumentForVoice(voice int) (int, error) {
+	if voice < 0 {
+		return 0, errors.New("voice cannot be negative")
+	}
+	for i, instr := range patch {
+		if voice < instr.NumVoices {
+			return i, nil
+		} else {
+			voice -= instr.NumVoices
+		}
+	}
+	return 0, errors.New("voice number is beyond the total voices of an instrument")
+}
+
 type Track struct {
 	NumVoices int
 	Sequence  []byte
@@ -55,6 +69,12 @@ func Render(synth Synth, buffer []float32) error {
 		return errors.New("synth.Render should have filled the whole buffer")
 	}
 	return err
+}
+
+type SampleOffset struct {
+	Start      int
+	LoopStart  int
+	LoopLength int
 }
 
 // UnitParameter documents one parameter that an unit takes
