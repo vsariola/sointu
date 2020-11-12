@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdbool.h>
+#include <string.h>
 
 #if defined (_WIN32)
 #include <windows.h>
