@@ -28,6 +28,10 @@ func TestAllAsmFiles(t *testing.T) {
 		basename := filepath.Base(filename)
 		testname := strings.TrimSuffix(basename, path.Ext(basename))
 		t.Run(testname, func(t *testing.T) {
+			if runtime.GOOS != "windows" && strings.Contains(testname, "sample") {
+				t.Skip("Samples (gm.dls) available only on Windows")
+				return
+			}
 			asmcode, err := ioutil.ReadFile(filename)
 			if err != nil {
 				t.Fatalf("cannot read the .asm file: %v", filename)
@@ -81,6 +85,10 @@ func TestSerializingAllAsmFiles(t *testing.T) {
 		basename := filepath.Base(filename)
 		testname := strings.TrimSuffix(basename, path.Ext(basename))
 		t.Run(testname, func(t *testing.T) {
+			if runtime.GOOS != "windows" && strings.Contains(testname, "sample") {
+				t.Skip("Samples (gm.dls) available only on Windows")
+				return
+			}
 			asmcode, err := ioutil.ReadFile(filename)
 			if err != nil {
 				t.Fatalf("cannot read the .asm file: %v", filename)
