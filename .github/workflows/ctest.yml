@@ -1,0 +1,30 @@
+# Run unit tests using CTest
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+
+jobs:
+  test:	
+    runs-on: ubuntu-latest
+    steps:
+    - name: get-cmake
+      uses: lukka/get-cmake@v3.18.3
+    - uses: actions/checkout@v2
+    - uses: ilammy/setup-nasm@v1.1.0
+    - run: /home/runner/nasm/nasm -version
+    - env:
+        ASM_NASM: /home/runner/nasm/nasm
+      run: |
+        mkdir build
+        cd build
+        cmake -GNinja ..
+        ninja
+        ctest --output-on-failure
