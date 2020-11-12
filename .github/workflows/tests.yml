@@ -1,0 +1,50 @@
+# Run unit tests using CTest and go tests
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+
+jobs:
+  test:
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - os: ubuntu-latest
+            asmnasm: /home/runner/nasm/nasm
+            cmakeflags: -GNinja
+            maker: ninja
+            gotests: yes
+          - os: windows-latest
+            cmakeflags: -GNinja
+            maker: ninja
+            asmnasm: C:\Users\runneradmin\nasm\nasm
+            gotests: yes
+          # TODO: win32 builds didn't quite work out, complains gcc broken
+    steps:
+    - uses: lukka/get-cmake@v3.18.3
+    - uses: actions/setup-go@v2
+      if: ${{ matrix.config.gotests == 'yes' }}
+    - uses: actions/checkout@v2
+    - uses: ilammy/setup-nasm@v1.1.0
+    - name: Run ctest
+      env:
+        ASM_NASM: ${{ matrix.config.asmnasm }}
+      run: |
+        mkdir build
+        cd build
+        cmake ${{ matrix.config.cmakeflags }} ..
+        ${{ matrix.config.maker }}
+        ctest --output-on-failure
+    - name: Run go test
+      if: ${{ matrix.config.gotests == 'yes' }}
+      run: |
+        cd go4k
+        go test . ./bridge
