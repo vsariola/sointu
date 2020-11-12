@@ -70,7 +70,6 @@ USE_IN
 %define INCLUDE_SINE
 %define INCLUDE_PULSE
 %define INCLUDE_GATE
-%define INCLUDE_SAMPLES
 %define INCLUDE_UNISONS
 %define INCLUDE_POLYPHONY
 %define INCLUDE_MULTIVOICE_TRACKS
@@ -83,7 +82,15 @@ USE_IN
 %define INCLUDE_GLOBAL_SEND
 %define INCLUDE_DELAY_NOTETRACKING
 %define INCLUDE_DELAY_FLOAT_TIME
-%define INCLUDE_GMDLS
+
+%ifidn __OUTPUT_FORMAT__,win32
+    %define INCLUDE_SAMPLES
+    %define INCLUDE_GMDLS
+%endif
+%ifidn __OUTPUT_FORMAT__,win64
+    %define INCLUDE_SAMPLES
+    %define INCLUDE_GMDLS
+%endif
 
 %include "sointu/footer.inc"
 
