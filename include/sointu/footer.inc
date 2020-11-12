@@ -546,7 +546,7 @@ c_freq_normalize        dd      0.000092696138  ; // 220.0/(2^(69/12)) / 44100.0
 %endif
 
 %ifdef USE_C_BPMSCALE
-    c_bpmscale          dd      2.666666666666 ; 64/24, 24 values will be double speed, so you can go from ~ 1/2.5 speed to 2.5x speed
+    c_bpmscale          dd      2.206896551724138 ; 64/29, 29 values will be double speed, so you can go from ~ 1/2.2 speed to 2.2x speed
 %endif
 
 %ifdef USE_C_16

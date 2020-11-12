@@ -50,12 +50,14 @@ int main(int argc, char* argv[]) {
     float v;
     bufsize = su_max_samples * 2 * sizeof(float);
     buf = (float*)malloc(bufsize);
+    memset(buf, 0, bufsize);
 #else
     short* buf = NULL;
     short* filebuf = NULL;
     short v;
     bufsize = su_max_samples * 2 * sizeof(short);
     buf = (short*)malloc(bufsize);
+    memset(buf, 0, bufsize);
 #endif
 
     if (buf == NULL) {
