@@ -1,4 +1,6 @@
 # Sointu
+![Tests](https://github.com/vsariola/sointu/workflows/Tests/badge.svg)
+
 A cross-platform modular software synthesizer for small intros, forked from
 [4klang](https://github.com/hzdgopher/4klang).
 
