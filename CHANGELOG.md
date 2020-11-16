@@ -16,5 +16,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Support for 32 and 64 bit builds.
 - Regression tests for opcodes, using CTests.
 - Switch to CMake for builds.
+- Compiling as a static library & an API to call Sointu
+- Running all tests (win/linux/mac) in the cloud, using Github workflows
+- go4k: a Go package to call Sointu
+- go4k: Importing and exporting Sointu .asm songs
+- go4k: asmfmt, a command line utility to format/process Sointu .asm song files
 
 [Unreleased]: https://github.com/vsariola/sointu/compare/4klang-3.11...HEAD
