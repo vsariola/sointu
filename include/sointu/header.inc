@@ -10,46 +10,40 @@
 %endmacro
 
 %ifidn __OUTPUT_FORMAT__,win32
-    ; on win32, function f with n parameters is mangled as "_f@n"
-    %define MANGLE_FUNC(f,n) _ %+ f %+ @ %+ n
-    %define WIN_OR_MAC
+    %define WINDOWS
     %assign BITS 32
-    ; On windows and mac, data label d is mangled as "_d"
+    %define MANGLE_FUNC(f,n) _ %+ f %+ @ %+ n
     %define MANGLE_DATA(d) _ %+ d
 %endif
 
 %ifidn __OUTPUT_FORMAT__,win64
-    ; on win32, function f with n parameters is mangled as "_f@n"
-    %define MANGLE_FUNC(f,n) f
-    %define WIN_OR_MAC
+    %define WINDOWS
     %assign BITS 64
-    ; On windows and mac, data label d is mangled as "_d"
+    %define MANGLE_FUNC(f,n) f
     %define MANGLE_DATA(d) d
 %endif
 
+%ifidn __OUTPUT_FORMAT__,macho32
+    %define MACOS
+    %assign BITS 32
+%endif
+
+%ifidn __OUTPUT_FORMAT__,macho64
+    %define MACOS
+    %assign BITS 64
+%endif
+
 %ifidn __OUTPUT_FORMAT__,elf
-    ; on linux, function f with n parameters is mangled as "f"
-    %define MANGLE_FUNC(f,n) f
-    ; On linux, data label d is mangled as "d"
-    %define MANGLE_DATA(d) d
+    %define LINUX
     %assign BITS 32
 %endif
 
 %ifidn __OUTPUT_FORMAT__,elf64
-    %define MANGLE_FUNC(f,n) f
-    %define MANGLE_DATA(d) d
+    %define LINUX
     %assign BITS 64
 %endif
 
-%ifidn __OUTPUT_FORMAT__,macho32
-    ; on mac, function f with x parameters is mangled as "_f"
-    %define MANGLE_FUNC(f,n) _f
-    %define WIN_OR_MAC
-    ; On windows and mac, data label d is mangled as "_d"
-    %define MANGLE_DATA(d) _ %+ d
-%endif
-
-%ifdef WIN_OR_MAC
+%ifdef WINDOWS
     ; Windows has crinkler so one may put everything in custom sections to aid crinkler.
     ; Maybe mac users need it too
     %ifndef DISABLE_SECTIONS
@@ -61,8 +55,17 @@
         %define SECT_DATA(n) section .data align=1
         %define SECT_TEXT(n) section .code align=1
     %endif
-%else
-    ; Linux
+%elifdef MACOS
+    %define MANGLE_FUNC(f,n) _ %+ f
+    %define MANGLE_DATA(d) _ %+ d
+    ; macho does not seem to support named sections, so DISABLE_SECTIONS
+    ; is "always on" / ignored
+    %define SECT_BSS(n) section .bss align=1
+    %define SECT_DATA(n) section .data align=1
+    %define SECT_TEXT(n) section .text align=1
+%else ; Linux, or hopefully something similar
+    %define MANGLE_FUNC(f,n) f
+    %define MANGLE_DATA(d) d
     %ifndef DISABLE_SECTIONS
         %define SECT_BSS(n) section .bss. %+ n nobits alloc noexec write align=1
         %define SECT_DATA(n) section .data. %+ n progbits alloc noexec write align=1

@@ -24,6 +24,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest)
 endif()
 
+IF(APPLE)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-no_pie")
+endif()
+
 enable_language(ASM_NASM)
 
 # The normal NASM compile object does not include <DEFINES>

@@ -2,7 +2,7 @@
 ![Tests](https://github.com/vsariola/sointu/workflows/Tests/badge.svg)
 
 A cross-platform modular software synthesizer for small intros, forked from
-[4klang](https://github.com/hzdgopher/4klang).
+[4klang](https://github.com/hzdgopher/4klang). Supports win32/win64/linux/mac.
 
 Summary
 -------
@@ -21,8 +21,10 @@ Building
 
 Requires [CMake](https://cmake.org), [nasm](https://www.nasm.us/) or
 [yasm](https://yasm.tortall.net), and your favorite c-compiler & build tool.
-Results have been obtained using Visual Studio 2019, gcc&make on linux, and
-MinGW&mingw32-make.
+Results have been obtained using Visual Studio 2019, gcc&make on linux,
+MinGW&mingw32-make, and ninja&AppleClang.
+
+Additionally, building the tracker requires [go](https://golang.org/).
 
 ### Example: building and running CTests using MinGW32
 
@@ -136,11 +138,9 @@ New features since fork
     and right channels. See [this example](tests/test_oscillat_unison.asm).
   - **Supports 32 and 64 bit builds**. The 64-bit version is done with minimal
     changes to get it work, mainly for the future prospect of running the MIDI
-    instrument in 64-bit mode. All the tests are passing so it seems to work.
-  - **Supports both Windows and Linux**. Currently, all the tests are compiling
-    on Windows and Linux, both 32-bit and 64-bit, and the tests are passing on
-    64-bit Linux, tested on WSL. 32-bit executables don't run on WSL, so those
-    remain to be tested.
+    instrument in 64-bit mode. All tests are passing so it seems to work.
+  - **Supports Windows, Linux and MacOS**. On all three 64-bit platforms,
+    all tests are passing. Additionally, all tests are passing on windows 32.
   - **Compiling as a library**. The API is very rudimentary, a single function
     render, and between calls, the user is responsible for manipulating
     the synth state in a similar way as the actual player does (e.g. triggering/
@@ -151,9 +151,6 @@ New features since fork
 Future goals
 ------------
 
-  - **Support for mac**. This should be rather easy, as all the macros are
-    designed for cross-platform support, but as I don't have a mac, I cannot
-    test this.
   - **Find a more general solution for skipping opcodes / early outs**. It's
     probably a new opcode "skip" that skips from the opcode to the next out in
     case the signal entering skip and the signal leaving out are both close to

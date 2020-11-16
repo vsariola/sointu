@@ -22,18 +22,26 @@ jobs:
             cmakeflags: -GNinja
             maker: ninja
             gotests: yes
+            cgo_ldflags:
           - os: windows-latest
             cmakeflags: -GNinja
             maker: ninja
             asmnasm: C:\Users\runneradmin\nasm\nasm
             gotests: yes
+            cgo_ldflags:
+          - os: macos-latest
+            cmakeflags: -GNinja
+            maker: ninja
+            asmnasm: /Users/runner/nasm/nasm
+            gotests: yes
+            cgo_ldflags: -Wl,-no_pie # ld on mac is complaining about position dependent code
           # TODO: win32 builds didn't quite work out, complains gcc broken
     steps:
     - uses: lukka/get-cmake@v3.18.3
     - uses: actions/setup-go@v2
       if: ${{ matrix.config.gotests == 'yes' }}
     - uses: actions/checkout@v2
-    - uses: ilammy/setup-nasm@v1.1.0
+    - uses: ilammy/setup-nasm@v1.2.0
     - name: Run ctest
       env:
         ASM_NASM: ${{ matrix.config.asmnasm }}
@@ -45,6 +53,8 @@ jobs:
         ctest --output-on-failure
     - name: Run go test
       if: ${{ matrix.config.gotests == 'yes' }}
+      env:
+        CGO_LDFLAGS: ${{ matrix.config.cgo_ldflags }}
       run: |
         cd go4k
         go test . ./bridge
