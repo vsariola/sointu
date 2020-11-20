@@ -22,12 +22,16 @@ const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
 // const bufsize = su_max_samples * 2
 
 func TestBridge(t *testing.T) {
-	patch := []go4k.Instrument{
-		go4k.Instrument{1, []go4k.Unit{
-			go4k.Unit{"envelope", map[string]int{"stereo": 0, "attack": 64, "decay": 64, "sustain": 64, "release": 80, "gain": 128}, []int{}},
-			go4k.Unit{"envelope", map[string]int{"stereo": 0, "attack": 95, "decay": 64, "sustain": 64, "release": 80, "gain": 128}, []int{}},
-			go4k.Unit{"out", map[string]int{"stereo": 1, "gain": 128}, []int{}},
-		}}}
+	patch := go4k.Patch{
+		Instruments: []go4k.Instrument{
+			go4k.Instrument{1, []go4k.Unit{
+				go4k.Unit{"envelope", map[string]int{"stereo": 0, "attack": 64, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
+				go4k.Unit{"envelope", map[string]int{"stereo": 0, "attack": 95, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
+				go4k.Unit{"out", map[string]int{"stereo": 1, "gain": 128}},
+			}}},
+		SampleOffsets: []go4k.SampleOffset{},
+		DelayTimes:    []int{}}
+
 	synth, err := bridge.Synth(patch)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)

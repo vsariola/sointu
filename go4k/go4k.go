@@ -9,7 +9,6 @@ import (
 type Unit struct {
 	Type       string
 	Parameters map[string]int
-	DelayTimes []int
 }
 
 const (
@@ -26,12 +25,22 @@ type Instrument struct {
 	Units     []Unit
 }
 
+type SampleOffset struct {
+	Start      int
+	LoopStart  int
+	LoopLength int
+}
+
 // Patch is simply a list of instruments used in a song
-type Patch []Instrument
+type Patch struct {
+	Instruments   []Instrument
+	DelayTimes    []int
+	SampleOffsets []SampleOffset
+}
 
 func (p Patch) TotalVoices() int {
 	ret := 0
-	for _, i := range p {
+	for _, i := range p.Instruments {
 		ret += i.NumVoices
 	}
 	return ret
@@ -41,7 +50,7 @@ func (patch Patch) InstrumentForVoice(voice int) (int, error) {
 	if voice < 0 {
 		return 0, errors.New("voice cannot be negative")
 	}
-	for i, instr := range patch {
+	for i, instr := range patch.Instruments {
 		if voice < instr.NumVoices {
 			return i, nil
 		} else {
@@ -68,12 +77,6 @@ func Render(synth Synth, buffer []float32) error {
 		return errors.New("synth.Render should have filled the whole buffer")
 	}
 	return err
-}
-
-type SampleOffset struct {
-	Start      int
-	LoopStart  int
-	LoopLength int
 }
 
 // UnitParameter documents one parameter that an unit takes
@@ -171,7 +174,8 @@ var UnitTypes = []UnitType{
 			{Name: "feedback", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "damp", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 			{Name: "notetracking", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-			{Name: "delay", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true},
+			{Name: "delay", MinValue: 0, MaxValue: 255, CanSet: true, CanModulate: true},
+			{Name: "count", MinValue: 0, MaxValue: 255, CanSet: true, CanModulate: false},
 		}},
 	{
 		Name: "compressor",
@@ -245,9 +249,6 @@ var UnitTypes = []UnitType{
 			{Name: "type", MinValue: int(Sine), MaxValue: int(Sample), CanSet: true, CanModulate: false},
 			{Name: "lfo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "unison", MinValue: 0, MaxValue: 3, CanSet: true, CanModulate: false},
-			{Name: "start", MinValue: 0, MaxValue: 3440659, CanSet: true, CanModulate: false},    // if type is "sample", then the waveform starts at this position
-			{Name: "loopstart", MinValue: 0, MaxValue: 65535, CanSet: true, CanModulate: false},  // if type is "sample", then the loop starts at this position, relative to "start"
-			{Name: "looplength", MinValue: 0, MaxValue: 65535, CanSet: true, CanModulate: false}, // if type is "sample", then the loop length is this i.e. loop ends at "start" + "loopstart" + "looplength"
 		}},
 	{
 		Name: "loadval",

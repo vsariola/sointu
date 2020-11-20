@@ -16,8 +16,6 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 	tracks := make([]Track, 0)
 	var patch Patch
 	var instr Instrument
-	var delayTimes []int
-	var sampleOffsets [][]int
 	paramReg, err := regexp.Compile(`([a-zA-Z]\w*)\s*\(\s*([0-9]+)\s*\)`) // matches FOO(42), groups "FOO" and "42"
 	if err != nil {
 		return nil, err
@@ -111,7 +109,7 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 				instr = Instrument{NumVoices: ints[0], Units: []Unit{}}
 				inInstrument = true
 			case "END_INSTRUMENT":
-				patch = append(patch, instr)
+				patch.Instruments = append(patch.Instruments, instr)
 				inInstrument = false
 			case "DELTIME":
 				ints, err := parseNumbers(rest)
@@ -119,14 +117,17 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 					return nil, err
 				}
 				for _, v := range ints {
-					delayTimes = append(delayTimes, v)
+					patch.DelayTimes = append(patch.DelayTimes, v)
 				}
 			case "SAMPLE_OFFSET":
 				ints, err := parseNumbers(rest)
 				if err != nil {
 					return nil, err
 				}
-				sampleOffsets = append(sampleOffsets, ints)
+				patch.SampleOffsets = append(patch.SampleOffsets, SampleOffset{
+					Start:      ints[0],
+					LoopStart:  ints[1],
+					LoopLength: ints[2]})
 			}
 			if inInstrument && strings.HasPrefix(word, "SU_") {
 				unittype := strings.ToLower(word[3:])
@@ -154,26 +155,6 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 				}
 				unit := Unit{Type: unittype, Parameters: parameters}
 				instr.Units = append(instr.Units, unit)
-			}
-		}
-	}
-	for i := range patch {
-		for u := range patch[i].Units {
-			if patch[i].Units[u].Type == "delay" {
-				s := patch[i].Units[u].Parameters["delay"]
-				e := patch[i].Units[u].Parameters["count"]
-				if patch[i].Units[u].Parameters["stereo"] == 1 {
-					e *= 2 // stereo delays use 'count' number of delaytimes, but for both channels
-				}
-				patch[i].Units[u].DelayTimes = append(patch[i].Units[u].DelayTimes, delayTimes[s:e]...)
-				delete(patch[i].Units[u].Parameters, "delay")
-				delete(patch[i].Units[u].Parameters, "count")
-			} else if patch[i].Units[u].Type == "oscillator" && patch[i].Units[u].Parameters["type"] == Sample {
-				sampleno := patch[i].Units[u].Parameters["color"]
-				patch[i].Units[u].Parameters["start"] = sampleOffsets[sampleno][0]
-				patch[i].Units[u].Parameters["loopstart"] = sampleOffsets[sampleno][1]
-				patch[i].Units[u].Parameters["looplength"] = sampleOffsets[sampleno][2]
-				delete(patch[i].Units[u].Parameters, "color")
 			}
 		}
 	}
@@ -269,15 +250,13 @@ func SerializeAsm(song *Song) (string, error) {
 		}
 		indentation--
 	}
-	delayTable, delayIndices := ConstructDelayTimeTable(song.Patch)
-	sampleTable, sampleIndices := ConstructSampleOffsetTable(song.Patch)
 	// The actual printing starts here
 	println("%%define BPM %d", song.BPM)
 	// delay modulation is pretty much the only %define that the asm preprocessor cannot figure out
 	// as the preprocessor has no clue if a SEND modulates a delay unit. So, unfortunately, for the
 	// time being, we need to figure during export if INCLUDE_DELAY_MODULATION needs to be defined.
 	delaymod := false
-	for i, instrument := range song.Patch {
+	for i, instrument := range song.Patch.Instruments {
 		for j, unit := range instrument.Units {
 			if unit.Type == "send" {
 				targetInstrument := i
@@ -288,10 +267,10 @@ func SerializeAsm(song *Song) (string, error) {
 					}
 					targetInstrument = v
 				}
-				if unit.Parameters["unit"] < 0 || unit.Parameters["unit"] >= len(song.Patch[targetInstrument].Units) {
+				if unit.Parameters["unit"] < 0 || unit.Parameters["unit"] >= len(song.Patch.Instruments[targetInstrument].Units) {
 					return "", fmt.Errorf("INSTRUMENT #%v / SEND #%v target unit %v out of range", i, j, unit.Parameters["unit"])
 				}
-				if song.Patch[targetInstrument].Units[unit.Parameters["unit"]].Type == "delay" && unit.Parameters["port"] == 5 {
+				if song.Patch.Instruments[targetInstrument].Units[unit.Parameters["unit"]].Type == "delay" && unit.Parameters["port"] == 5 {
 					delaymod = true
 				}
 			}
@@ -330,22 +309,12 @@ func SerializeAsm(song *Song) (string, error) {
 	println("END_TRACKS\n")
 	println("BEGIN_PATCH")
 	indentation++
-	for i, instrument := range song.Patch {
+	for _, instrument := range song.Patch.Instruments {
 		var instrTable [][]string
-		for j, unit := range instrument.Units {
+		for _, unit := range instrument.Units {
 			row := []string{fmt.Sprintf("SU_%v", strings.ToUpper(unit.Type))}
 			for _, parname := range paramorder[unit.Type] {
-				if unit.Type == "oscillator" && unit.Parameters["type"] == Sample && parname == "color" {
-					row = append(row, fmt.Sprintf("COLOR(%v)", strconv.Itoa(sampleIndices[i][j])))
-				} else if unit.Type == "delay" && parname == "count" {
-					count := len(unit.DelayTimes)
-					if unit.Parameters["stereo"] == 1 {
-						count /= 2
-					}
-					row = append(row, fmt.Sprintf("COUNT(%v)", strconv.Itoa(count)))
-				} else if unit.Type == "delay" && parname == "delay" {
-					row = append(row, fmt.Sprintf("DELAY(%v)", strconv.Itoa(delayIndices[i][j])))
-				} else if unit.Type == "oscillator" && parname == "type" {
+				if unit.Type == "oscillator" && parname == "type" {
 					switch unit.Parameters["type"] {
 					case Sine:
 						row = append(row, "TYPE(SINE)")
@@ -372,9 +341,9 @@ func SerializeAsm(song *Song) (string, error) {
 	}
 	indentation--
 	println("END_PATCH\n")
-	if len(delayTable) > 0 {
+	if len(song.Patch.DelayTimes) > 0 {
 		var delStrTable [][]string
-		for _, v := range delayTable {
+		for _, v := range song.Patch.DelayTimes {
 			row := []string{"DELTIME", strconv.Itoa(int(v))}
 			delStrTable = append(delStrTable, row)
 		}
@@ -382,9 +351,9 @@ func SerializeAsm(song *Song) (string, error) {
 		printTable(align(delStrTable, "lr"))
 		println("END_DELTIMES\n")
 	}
-	if len(sampleTable) > 0 {
+	if len(song.Patch.SampleOffsets) > 0 {
 		var samStrTable [][]string
-		for _, v := range sampleTable {
+		for _, v := range song.Patch.SampleOffsets {
 			samStrTable = append(samStrTable, []string{
 				"SAMPLE_OFFSET",
 				fmt.Sprintf("START(%d)", v.Start),

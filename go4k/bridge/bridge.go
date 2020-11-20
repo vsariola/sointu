@@ -34,7 +34,7 @@ var opcodeTable = map[string]opTableEntry{
 	"filter":     opTableEntry{C.su_filter_id, []string{"frequency", "resonance"}},
 	"clip":       opTableEntry{C.su_clip_id, []string{}},
 	"pan":        opTableEntry{C.su_pan_id, []string{"panning"}},
-	"delay":      opTableEntry{C.su_delay_id, []string{"pregain", "dry", "feedback", "damp", "delaycount"}},
+	"delay":      opTableEntry{C.su_delay_id, []string{"pregain", "dry", "feedback", "damp", "delay", "count"}},
 	"compressor": opTableEntry{C.su_compres_id, []string{"attack", "release", "invgain", "threshold", "ratio"}},
 	"speed":      opTableEntry{C.su_speed_id, []string{}},
 	"out":        opTableEntry{C.su_out_id, []string{"gain"}},
@@ -81,16 +81,11 @@ func (synth *C.Synth) Render(buffer []float32, maxtime int) (int, int, error) {
 
 func Synth(patch go4k.Patch) (*C.Synth, error) {
 	s := new(C.Synth)
-	sampleno := 0
 	totalVoices := 0
 	commands := make([]byte, 0)
 	values := make([]byte, 0)
 	polyphonyBitmask := 0
-	delayTable, delayIndices := go4k.ConstructDelayTimeTable(patch)
-	for i, v := range delayTable {
-		s.DelayTimes[i] = C.ushort(v)
-	}
-	for insid, instr := range patch {
+	for insid, instr := range patch.Instruments {
 		if len(instr.Units) > 63 {
 			return nil, errors.New("An instrument can have a maximum of 63 units")
 		}
@@ -105,26 +100,12 @@ func Synth(patch go4k.Patch) (*C.Synth, error) {
 				}
 				commands = append(commands, byte(opCode))
 				for _, paramname := range val.parameterList {
-					if unit.Type == "delay" && paramname == "delaycount" {
-						if unit.Parameters["stereo"] == 1 && len(unit.DelayTimes)%2 != 0 {
-							return nil, errors.New("Stereo delays should have even number of delaytimes")
-						}
-						values = append(values, byte(delayIndices[insid][unitid]))
-						count := len(unit.DelayTimes)
-						if unit.Parameters["stereo"] == 1 {
-							count /= 2
-						}
-						count = count*2 - 1
+					if unit.Type == "delay" && paramname == "count" {
+						count := unit.Parameters["count"]*2 - 1
 						if unit.Parameters["notetracking"] == 1 {
 							count++
 						}
 						values = append(values, byte(count))
-					} else if unit.Type == "oscillator" && unit.Parameters["type"] == go4k.Sample && paramname == "color" {
-						values = append(values, byte(sampleno))
-						s.SampleOffsets[sampleno].Start = (C.uint)(unit.Parameters["start"])
-						s.SampleOffsets[sampleno].LoopStart = (C.ushort)(unit.Parameters["loopstart"])
-						s.SampleOffsets[sampleno].LoopLength = (C.ushort)(unit.Parameters["looplength"])
-						sampleno++
 					} else if pval, ok := unit.Parameters[paramname]; ok {
 						values = append(values, byte(pval))
 					} else {
@@ -203,6 +184,14 @@ func Synth(patch go4k.Patch) (*C.Synth, error) {
 	}
 	for i := range values {
 		s.Values[i] = (C.uchar)(values[i])
+	}
+	for i, deltime := range patch.DelayTimes {
+		s.DelayTimes[i] = (C.ushort)(deltime)
+	}
+	for i, samoff := range patch.SampleOffsets {
+		s.SampleOffsets[i].Start = (C.uint)(samoff.Start)
+		s.SampleOffsets[i].LoopStart = (C.ushort)(samoff.LoopStart)
+		s.SampleOffsets[i].LoopLength = (C.ushort)(samoff.LoopLength)
 	}
 	s.NumVoices = C.uint(totalVoices)
 	s.Polyphony = C.uint(polyphonyBitmask)

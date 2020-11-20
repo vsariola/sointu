@@ -102,26 +102,30 @@ func FindSuperIntArray(arrays [][]int) ([]int, []int) {
 // as possible. Especially: if two delay units use exactly the same
 // delay times, they appear in the table only once.
 func ConstructDelayTimeTable(patch Patch) ([]int, [][]int) {
-	ind := make([][]int, len(patch))
+	ind := make([][]int, len(patch.Instruments))
 	var subarrays [][]int
 	// flatten the delay times into one array of arrays
 	// saving the indices where they were placed
-	for i, instr := range patch {
+	for i, instr := range patch.Instruments {
 		ind[i] = make([]int, len(instr.Units))
 		for j, unit := range instr.Units {
 			// only include delay times for delays. Only delays
 			// should use delay times
 			if unit.Type == "delay" {
 				ind[i][j] = len(subarrays)
-				subarrays = append(subarrays, unit.DelayTimes)
+				end := unit.Parameters["count"]
+				if unit.Parameters["stereo"] > 0 {
+					end *= 2
+				}
+				subarrays = append(subarrays, patch.DelayTimes[unit.Parameters["delay"]:end])
 			}
 		}
 	}
 	delayTable, indices := FindSuperIntArray(subarrays)
 	// cancel the flattening, so unitindices can be used to
 	// to find the index of each delay in the delay table
-	unitindices := make([][]int, len(patch))
-	for i, instr := range patch {
+	unitindices := make([][]int, len(patch.Instruments))
+	for i, instr := range patch.Instruments {
 		unitindices[i] = make([]int, len(instr.Units))
 		for j, unit := range instr.Units {
 			if unit.Type == "delay" {
@@ -139,10 +143,10 @@ func ConstructDelayTimeTable(patch Patch) ([]int, [][]int) {
 // table by instrument i / unit j (units other than sample oscillators
 // have the value 0)
 func ConstructSampleOffsetTable(patch Patch) ([]SampleOffset, [][]int) {
-	unitindices := make([][]int, len(patch))
+	unitindices := make([][]int, len(patch.Instruments))
 	var offsetTable []SampleOffset
 	offsetMap := map[SampleOffset]int{}
-	for i, instr := range patch {
+	for i, instr := range patch.Instruments {
 		unitindices[i] = make([]int, len(instr.Units))
 		for j, unit := range instr.Units {
 			if unit.Type == "oscillator" && unit.Parameters["type"] == Sample {

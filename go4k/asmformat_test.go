@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -101,15 +102,18 @@ func TestSerializingAllAsmFiles(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Could not serialize asm file: %v", err)
 			}
-			song, err = go4k.DeserializeAsm(str) // deserialize again. The rendered song should still give same results.
+			song2, err := go4k.DeserializeAsm(str) // deserialize again. The rendered song should still give same results.
 			if err != nil {
 				t.Fatalf("could not parse the serialized asm code: %v", err)
 			}
-			synth, err := bridge.Synth(song.Patch)
+			if !reflect.DeepEqual(song, song2) {
+				t.Fatalf("serialize/deserialize does not result equal songs, before: %v, after %v", song, song2)
+			}
+			synth, err := bridge.Synth(song2.Patch)
 			if err != nil {
 				t.Fatalf("Compiling patch failed: %v", err)
 			}
-			buffer, err := go4k.Play(synth, *song)
+			buffer, err := go4k.Play(synth, *song2)
 			if err != nil {
 				t.Fatalf("Play failed: %v", err)
 			}
