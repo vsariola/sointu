@@ -34,7 +34,10 @@ jobs:
             maker: ninja
             asmnasm: /Users/runner/nasm/nasm
             gotests: yes
-            cgo_ldflags: -Wl,-no_pie # ld on mac is complaining about position dependent code
+            cgo_ldflags: # -Wl,-no_pie
+            # ld on mac is complaining about position dependent code so this would take the errors away, BUT
+            # suddenly this causes an error, even though worked last week. Let's accept the warnings rather
+            # than let the tests fail because of this.
           # TODO: win32 builds didn't quite work out, complains gcc broken
     steps:
     - uses: lukka/get-cmake@v3.18.3
