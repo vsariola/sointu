@@ -1,13 +1,15 @@
 package go4k
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type Song struct {
-	BPM        int
-	Patterns   [][]byte
-	Tracks     []Track
-	SongLength int // in samples, 0 means calculate automatically from BPM and Track lengths, but can also set manually
-	Patch      Patch
+	BPM      int
+	Patterns [][]byte
+	Tracks   []Track
+	Patch    Patch
 }
 
 func (s *Song) PatternRows() int {
@@ -74,13 +76,9 @@ func Play(synth Synth, song Song) ([]float32, error) {
 	for i := range curVoices {
 		curVoices[i] = song.FirstTrackVoice(i)
 	}
-	samples := song.SongLength
-	if samples <= 0 {
-		samples = song.TotalRows() * song.SamplesPerRow()
-	}
-	buffer := make([]float32, samples*2)
-	totaln := 0
-	rowtime := song.SamplesPerRow()
+	initialCapacity := song.TotalRows() * song.SamplesPerRow() * 2
+	buffer := make([]float32, 0, initialCapacity)
+	rowbuffer := make([]float32, song.SamplesPerRow()*2)
 	for row := 0; row < song.TotalRows(); row++ {
 		patternRow := row % song.PatternRows()
 		pattern := row / song.PatternRows()
@@ -100,8 +98,15 @@ func Play(synth Synth, song Song) ([]float32, error) {
 				synth.Trigger(curVoices[t], note)
 			}
 		}
-		samples, _, _ := synth.Render(buffer[2*totaln:], rowtime)
-		totaln += samples
+		tries := 0
+		for rowtime := 0; rowtime < song.SamplesPerRow(); {
+			samples, time, _ := synth.Render(rowbuffer, song.SamplesPerRow()-rowtime)
+			rowtime += time
+			buffer = append(buffer, rowbuffer[:samples*2]...)
+			if tries > 100 {
+				return nil, fmt.Errorf("Song speed modulation likely so slow that row never advances; error at pattern %v, row %v", pattern, patternRow)
+			}
+		}
 	}
 	return buffer, nil
 }

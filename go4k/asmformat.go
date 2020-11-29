@@ -158,7 +158,7 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 			}
 		}
 	}
-	s := Song{BPM: bpm, Patterns: patterns, Tracks: tracks, Patch: patch, SongLength: -1}
+	s := Song{BPM: bpm, Patterns: patterns, Tracks: tracks, Patch: patch}
 	return &s, nil
 }
 

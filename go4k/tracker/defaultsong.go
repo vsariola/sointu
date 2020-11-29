@@ -12,7 +12,6 @@ var defaultSong = go4k.Song{
 		{NumVoices: 1, Sequence: []byte{0}},
 		{NumVoices: 1, Sequence: []byte{1}},
 	},
-	SongLength: 0,
 	Patch: go4k.Patch{
 		Instruments: []go4k.Instrument{{NumVoices: 2, Units: []go4k.Unit{
 			{"envelope", map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},

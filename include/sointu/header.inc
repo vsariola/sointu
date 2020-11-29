@@ -115,7 +115,9 @@ section .text ; yasm throws section redeclaration warnings if strucs are defined
 
 %define TOTAL_ROWS (MAX_PATTERNS*PATTERN_SIZE)
 %define SAMPLES_PER_ROW (SAMPLE_RATE*4*60/(BPM*16))
-%define MAX_SAMPLES (SAMPLES_PER_ROW*TOTAL_ROWS)
+%ifndef MAX_SAMPLES
+    %define MAX_SAMPLES (SAMPLES_PER_ROW*TOTAL_ROWS)
+%endif
 
 %macro BEGIN_PATCH 0
     SECT_DATA(params)

@@ -159,6 +159,7 @@ target_compile_definitions(test_envelope_16bit PUBLIC SU_USE_16BIT_OUTPUT)
 regression_test(test_polyphony "ENVELOPE;VCO_SINE")
 regression_test(test_chords "ENVELOPE;VCO_SINE")
 regression_test(test_speed "ENVELOPE;VCO_SINE")
+target_compile_definitions(test_speed PUBLIC MAX_SAMPLES=211592)
 
 regression_test(test_render_samples ENVELOPE "" test_render_samples.c)
 target_link_libraries(test_render_samples ${STATICLIB})
