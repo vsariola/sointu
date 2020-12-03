@@ -6,10 +6,11 @@ import (
 )
 
 type Song struct {
-	BPM      int
-	Patterns [][]byte
-	Tracks   []Track
-	Patch    Patch
+	BPM         int
+	Patterns    [][]byte
+	Tracks      []Track
+	Patch       Patch
+	Output16Bit bool
 }
 
 func (s *Song) PatternRows() int {

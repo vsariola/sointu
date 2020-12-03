@@ -292,7 +292,7 @@ EXPORT MANGLE_FUNC(su_power,0)
 ;   Stack   :   sample row pushad output_ptr
 ;-------------------------------------------------------------------------------
 %macro output_sound 0
-    %ifndef SU_USE_16BIT_OUTPUT
+    %ifndef OUTPUT_16BIT
         %ifndef SU_CLIP_OUTPUT ; The modern way. No need to clip; OS can do it.
             mov     _DI, [_SP+su_stack.bufferptr - su_stack.output_sound] ; edi containts ptr
             mov     _SI, PTRWORD su_synth_obj + su_synthworkspace.left

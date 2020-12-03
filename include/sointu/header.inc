@@ -77,7 +77,7 @@
     %endif
 %endif
 
-%ifdef SU_USE_16BIT_OUTPUT
+%ifdef OUTPUT_16BIT
     %define SU_INCLUDE_CLIP
 %endif
 

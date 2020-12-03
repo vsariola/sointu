@@ -1,4 +1,4 @@
-%ifdef INCLUDE_GMDLS
+%ifdef INCLUDE_SAMPLES
 
 %define SAMPLE_TABLE_SIZE 3440660 ; size of gmdls
 

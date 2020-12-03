@@ -13,25 +13,7 @@
 #endif
 
 #include <math.h>
-
-#include <stdint.h>
-
-#if UINTPTR_MAX == 0xffffffff // are we 32-bit?
-    #if defined(__clang__) || defined(__GNUC__)
-        #define CALLCONV __attribute__ ((stdcall))
-    #elif defined(_WIN32)
-        #define CALLCONV __stdcall // on 32-bit platforms, we just use stdcall, as all know it
-    #endif
-#else // 64-bit
-    #define CALLCONV  // the asm will use honor honor correct x64 ABI on all 64-bit platforms
-#endif
-extern void CALLCONV su_render_song(void *);
-
-#ifdef INCLUDE_GMDLS
-extern void CALLCONV su_load_gmdls(void);
-#endif
-
-extern int su_max_samples;
+#include TEST_HEADER
 
 int main(int argc, char* argv[]) {
     FILE* f;
@@ -45,28 +27,19 @@ int main(int argc, char* argv[]) {
     long bufsize;
     float max_diff;
     float diff;
-#ifndef SU_USE_16BIT_OUTPUT
-    float* buf = NULL;
-    float* filebuf = NULL;
-    float v;
-    bufsize = su_max_samples * 2 * sizeof(float);
-    buf = (float*)malloc(bufsize);
+    SUsample* buf = NULL;
+    SUsample* filebuf = NULL;
+    SUsample v;
+    bufsize = SU_BUFFER_LENGTH * sizeof(SUsample);
+    buf = (SUsample*)malloc(bufsize);
     memset(buf, 0, bufsize);
-#else
-    short* buf = NULL;
-    short* filebuf = NULL;
-    short v;
-    bufsize = su_max_samples * 2 * sizeof(short);
-    buf = (short*)malloc(bufsize);
-    memset(buf, 0, bufsize);
-#endif
 
     if (buf == NULL) {
         printf("Could not allocate buffer for 4klang rendering\n");
         return 1;
     }
 
-    #ifdef INCLUDE_GMDLS
+    #ifdef SU_LOAD_GMDLS
     su_load_gmdls();
     #endif
 
@@ -95,27 +68,19 @@ int main(int argc, char* argv[]) {
         goto fail;
     }
 
-#ifndef SU_USE_16BIT_OUTPUT
-    filebuf = (float*)malloc(bufsize);
-#else
-    filebuf = (short*)malloc(bufsize);
-#endif
+    filebuf = (SUsample*)malloc(bufsize);
 
     if (filebuf == NULL) {
         printf("Could not allocate buffer for file contents\n");
         goto fail;
     }
 
-    fread((void*)filebuf, su_max_samples * 2, sizeof(*filebuf), f);
+    fread((void*)filebuf, fsize, 1, f);
 
     max_diff = 0.0f;
 
-    for (n = 0; n < su_max_samples * 2; n++) {
-        diff = buf[n] - filebuf[n];
-#ifdef SU_USE_16BIT_OUTPUT
-        diff = diff / 32768.0f;
-#endif
-        diff = fabs(diff);
+    for (n = 0; n < SU_BUFFER_LENGTH; n++) {
+        diff = fabs((float)(buf[n] - filebuf[n])/SU_SAMPLE_RANGE);
         if (diff > 1e-3f || isnan(diff)) {
             printf("4klang rendered different wave than expected\n");
             goto fail;
@@ -151,7 +116,7 @@ end:
 
     snprintf(filename, sizeof filename, "%s%s%s", actual_output_folder, test_name, ".raw");
     f = fopen(filename, "wb");
-    fwrite((void*)buf, sizeof(*buf), 2 * su_max_samples, f);
+    fwrite((void*)buf, 1, bufsize, f);
     fclose(f);
 
     if (buf != 0) {

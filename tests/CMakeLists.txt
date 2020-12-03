@@ -1,11 +1,19 @@
 function(regression_test testname)
     if(${ARGC} LESS 4)
         set(source ${testname}.asm)
+        set (headerfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.h)
+        add_custom_command(
+            PRE_BUILD
+            OUTPUT ${headerfile}
+            COMMAND go run ${PROJECT_SOURCE_DIR}/go4k/cmd/asmfmt/main.go -c -d -w -o ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
+            DEPENDS ${source}
+        )
+        add_executable(${testname} ${source} test_renderer.c  ${headerfile})
+        target_compile_definitions(${testname} PUBLIC TEST_HEADER=<${testname}.h>)
     else()
         set(source ${ARGV3})
+        add_executable(${testname} ${source} test_renderer.c)
     endif()
-
-    add_executable(${testname} ${source} test_renderer.c)
 
     # the tests include the entire ASM but we still want to rebuild when they change
     file(GLOB SOINTU ${PROJECT_SOURCE_DIR}/src/*.inc
@@ -20,7 +28,6 @@ function(regression_test testname)
     set_source_files_properties(${FOURKLANG} PROPERTIES HEADER_FILE_ONLY TRUE)
 
     add_test(${testname} ${testname})
-    target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}" SU_USE_INTROSPECTION SU_USE_PLAYER)
     target_link_libraries(${testname} ${HEADERLIB})
 
     set (rawinput ${CMAKE_CURRENT_SOURCE_DIR}/expected_output/${testname}.raw)
@@ -29,6 +36,9 @@ function(regression_test testname)
     add_custom_target(${testname}_rawcopy
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${rawinput} ${rawoutput}
     )
+
+    target_include_directories(${testname} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+    target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}")
 
     add_dependencies(${testname} ${testname}_rawcopy)
 
@@ -94,13 +104,7 @@ regression_test(test_oscillat_gate ENVELOPE)
 regression_test(test_oscillat_stereo ENVELOPE)
 if(WIN32) # The samples are currently only GMDLs based, and thus require Windows.
     regression_test(test_oscillat_sample ENVELOPE)
-    target_compile_definitions(test_oscillat_sample PUBLIC INCLUDE_GMDLS)
     regression_test(test_oscillat_sample_stereo ENVELOPE)
-    target_compile_definitions(test_oscillat_sample_stereo PUBLIC INCLUDE_GMDLS)
-    regression_test(test_oscillat_sample_rtables ENVELOPE "" test_oscillat_sample.asm)
-    target_compile_definitions(test_oscillat_sample_rtables PUBLIC INCLUDE_GMDLS RUNTIME_TABLES)
-    regression_test(test_oscillat_sample_stereo_rtables ENVELOPE "" test_oscillat_sample_stereo.asm)
-    target_compile_definitions(test_oscillat_sample_stereo_rtables PUBLIC INCLUDE_GMDLS RUNTIME_TABLES)
 endif()
 regression_test(test_oscillat_unison ENVELOPE)
 regression_test(test_oscillat_unison_stereo ENVELOPE)
@@ -147,22 +151,16 @@ regression_test(test_delay_dampmod "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;SEND")
 regression_test(test_delay_drymod "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;SEND")
 regression_test(test_delay_flanger "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;SEND")
 
-regression_test(test_delay_rtables "ENVELOPE;FOP_MULP;PANNING;VCO_SINE" "" test_delay.asm)
-target_compile_definitions(test_delay_rtables PUBLIC RUNTIME_TABLES)
-regression_test(test_delay_stereo_rtables "ENVELOPE;FOP_MULP;PANNING;VCO_SINE" "" test_delay_stereo.asm)
-target_compile_definitions(test_delay_stereo_rtables PUBLIC RUNTIME_TABLES)
-
 regression_test(test_envelope_mod "VCO_SINE;ENVELOPE;SEND")
-regression_test(test_envelope_16bit ENVELOPE "" test_envelope.asm)
-target_compile_definitions(test_envelope_16bit PUBLIC SU_USE_16BIT_OUTPUT)
+regression_test(test_envelope_16bit ENVELOPE)
 
 regression_test(test_polyphony "ENVELOPE;VCO_SINE")
 regression_test(test_chords "ENVELOPE;VCO_SINE")
 regression_test(test_speed "ENVELOPE;VCO_SINE")
-target_compile_definitions(test_speed PUBLIC MAX_SAMPLES=211592)
 
 regression_test(test_render_samples ENVELOPE "" test_render_samples.c)
 target_link_libraries(test_render_samples ${STATICLIB})
+target_compile_definitions(test_render_samples PUBLIC TEST_HEADER="test_render_samples.h")
 
 add_executable(test_render_samples_api test_render_samples_api.c)
 target_link_libraries(test_render_samples_api ${STATICLIB})

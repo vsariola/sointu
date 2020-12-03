@@ -46,6 +46,7 @@ func TestAllAsmFiles(t *testing.T) {
 				t.Fatalf("Compiling patch failed: %v", err)
 			}
 			buffer, err := go4k.Play(synth, *song)
+			buffer = buffer[:song.TotalRows()*song.SamplesPerRow()*2] // extend to the nominal length always.
 			if err != nil {
 				t.Fatalf("Play failed: %v", err)
 			}
@@ -70,7 +71,12 @@ func TestAllAsmFiles(t *testing.T) {
 					log.Fatal(err)
 				}
 			}
-			compareToRaw(t, buffer, testname+".raw")
+			if song.Output16Bit {
+				int16Buffer := convertToInt16Buffer(buffer)
+				compareToRawInt16(t, int16Buffer, testname+".raw")
+			} else {
+				compareToRawFloat32(t, buffer, testname+".raw")
+			}
 		})
 	}
 }
@@ -114,6 +120,7 @@ func TestSerializingAllAsmFiles(t *testing.T) {
 				t.Fatalf("Compiling patch failed: %v", err)
 			}
 			buffer, err := go4k.Play(synth, *song2)
+			buffer = buffer[:song.TotalRows()*song.SamplesPerRow()*2] // extend to the nominal length always.
 			if err != nil {
 				t.Fatalf("Play failed: %v", err)
 			}
@@ -138,12 +145,17 @@ func TestSerializingAllAsmFiles(t *testing.T) {
 					log.Fatal(err)
 				}
 			}
-			compareToRaw(t, buffer, testname+".raw")
+			if song.Output16Bit {
+				int16Buffer := convertToInt16Buffer(buffer)
+				compareToRawInt16(t, int16Buffer, testname+".raw")
+			} else {
+				compareToRawFloat32(t, buffer, testname+".raw")
+			}
 		})
 	}
 }
 
-func compareToRaw(t *testing.T, buffer []float32, rawname string) {
+func compareToRawFloat32(t *testing.T, buffer []float32, rawname string) {
 	_, filename, _, _ := runtime.Caller(0)
 	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "tests", "expected_output", rawname))
 	if err != nil {
@@ -163,4 +175,34 @@ func compareToRaw(t *testing.T, buffer []float32, rawname string) {
 			t.Fatalf("error bigger than 1e-6 detected, at sample position %v", i)
 		}
 	}
+}
+
+func compareToRawInt16(t *testing.T, buffer []int16, rawname string) {
+	_, filename, _, _ := runtime.Caller(0)
+	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "tests", "expected_output", rawname))
+	if err != nil {
+		t.Fatalf("cannot read expected: %v", err)
+	}
+	expected := make([]int16, len(expectedb)/2)
+	buf := bytes.NewReader(expectedb)
+	err = binary.Read(buf, binary.LittleEndian, &expected)
+	if err != nil {
+		t.Fatalf("error converting expected buffer: %v", err)
+	}
+	if len(expected) != len(buffer) {
+		t.Fatalf("buffer length mismatch, got %v, expected %v", len(buffer), len(expected))
+	}
+	for i, v := range expected {
+		if math.IsNaN(float64(buffer[i])) || v != buffer[i] {
+			t.Fatalf("error at sample position %v", i)
+		}
+	}
+}
+
+func convertToInt16Buffer(buffer []float32) []int16 {
+	int16Buffer := make([]int16, len(buffer))
+	for i, v := range buffer {
+		int16Buffer[i] = int16(math.Round(math.Min(math.Max(float64(v), -1.0), 1.0) * 32767))
+	}
+	return int16Buffer
 }
