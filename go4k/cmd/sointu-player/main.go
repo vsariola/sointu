@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/vsariola/sointu/go4k"
 	"github.com/vsariola/sointu/go4k/audio"
 	"github.com/vsariola/sointu/go4k/audio/oto"
 	"github.com/vsariola/sointu/go4k/bridge"
-	"io/ioutil"
-	"os"
 )
 
 func main() {
@@ -30,9 +31,15 @@ func main() {
 		fmt.Printf("Cannot read song file: %v", err)
 		os.Exit(1)
 	} else if err := json.Unmarshal(bytes, &song); err != nil {
-		fmt.Printf("Cannot unmarshal song file: %v", err)
-		os.Exit(1)
+		song2, err2 := go4k.DeserializeAsm(string(bytes))
+		if err2 != nil {
+			fmt.Printf("Cannot unmarshal / parse song file: %v / %v", err, err2)
+			os.Exit(1)
+		}
+		song = *song2
 	}
+
+	bridge.Init()
 
 	// set up synth
 	synth, err := bridge.Synth(song.Patch)
