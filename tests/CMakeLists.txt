@@ -5,7 +5,7 @@ function(regression_test testname)
         add_custom_command(
             PRE_BUILD
             OUTPUT ${headerfile}
-            COMMAND go run ${PROJECT_SOURCE_DIR}/go4k/cmd/asmfmt/main.go -c -d -w -o ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
+            COMMAND go run ${PROJECT_SOURCE_DIR}/go4k/cmd/sointu-cli/main.go -c -w -d ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
             DEPENDS ${source}
         )
         add_executable(${testname} ${source} test_renderer.c  ${headerfile})
