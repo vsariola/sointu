@@ -514,7 +514,6 @@ su_update_voices_skipadd:
 ; sources, as sources.asm defines SU_USE_WAVESHAPER
 ; if needed.
 %include "sointu/effects_footer.inc"
-%include "sointu/introspection_footer.inc"
 
 %ifidn __OUTPUT_FORMAT__,win64
     %include "sointu/win64/gmdls_win64_footer.inc"
