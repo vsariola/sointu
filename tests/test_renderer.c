@@ -4,7 +4,7 @@
 #include <sys/stat.h>
 #include <stdbool.h>
 #include <string.h>
-
+#include <math.h>
 #if defined (_WIN32)
 #include <windows.h>
 #else
@@ -12,8 +12,9 @@
 #include <sys/stat.h>
 #endif
 
-#include <math.h>
 #include TEST_HEADER
+SUsample buf[SU_BUFFER_LENGTH];
+SUsample filebuf[SU_BUFFER_LENGTH];
 
 int main(int argc, char* argv[]) {
     FILE* f;
@@ -24,20 +25,8 @@ int main(int argc, char* argv[]) {
     char expected_output_folder[] = "expected_output/";
     char actual_output_folder[] = "actual_output/";
     long fsize;
-    long bufsize;
     float max_diff;
     float diff;
-    SUsample* buf = NULL;
-    SUsample* filebuf = NULL;
-    SUsample v;
-    bufsize = SU_BUFFER_LENGTH * sizeof(SUsample);
-    buf = (SUsample*)malloc(bufsize);
-    memset(buf, 0, bufsize);
-
-    if (buf == NULL) {
-        printf("Could not allocate buffer for 4klang rendering\n");
-        return 1;
-    }
 
     #ifdef SU_LOAD_GMDLS
     su_load_gmdls();
@@ -58,54 +47,36 @@ int main(int argc, char* argv[]) {
     fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    if (bufsize < fsize) {
-        printf("4klang rendered shorter wave than expected\n");
+    if (SU_BUFFER_LENGTH * sizeof(SUsample) < fsize) {
+        printf("Sointu rendered shorter wave than expected\n");
         goto fail;
     }
 
-    if (bufsize > fsize) {
-        printf("4klang rendered longer wave than expected\n");
-        goto fail;
-    }
-
-    filebuf = (SUsample*)malloc(bufsize);
-
-    if (filebuf == NULL) {
-        printf("Could not allocate buffer for file contents\n");
+    if (SU_BUFFER_LENGTH * sizeof(SUsample) > fsize) {
+        printf("Sointu rendered longer wave than expected\n");
         goto fail;
     }
 
     fread((void*)filebuf, fsize, 1, f);
+    fclose(f);
+    f = NULL;
 
     max_diff = 0.0f;
 
     for (n = 0; n < SU_BUFFER_LENGTH; n++) {
         diff = fabs((float)(buf[n] - filebuf[n])/SU_SAMPLE_RANGE);
         if (diff > 1e-3f || isnan(diff)) {
-            printf("4klang rendered different wave than expected\n");
+            printf("Sointu rendered different wave than expected\n");
             goto fail;
         }
-        
+
         if (diff > max_diff) {
             max_diff = diff;
         }
     }
 
     if (max_diff > 1e-6) {
-        printf("4klang rendered almost correct wave, but a small maximum error of %f\n",max_diff);
-        goto fail;
-    }
-
-success:
-    retval = 0;
-    goto end;
-fail:
-    retval = 1;
-end:
-
-    if (f != 0) {
-        fclose(f);
-        f = 0;
+        printf("Warning: Sointu rendered almost correct wave, but a small maximum error of %f\n",max_diff);        
     }
 
 #if defined (_WIN32)
@@ -116,17 +87,14 @@ end:
 
     snprintf(filename, sizeof filename, "%s%s%s", actual_output_folder, test_name, ".raw");
     f = fopen(filename, "wb");
-    fwrite((void*)buf, 1, bufsize, f);
+    fwrite((void*)buf, sizeof(SUsample), SU_BUFFER_LENGTH, f);
     fclose(f);
+    return 0;
 
-    if (buf != 0) {
-        free(buf);
-        buf = 0;
+fail:
+    if (f != NULL) {
+        fclose(f);
+        f = NULL;
     }
-
-    if (filebuf != 0) {
-        free(filebuf);
-        filebuf = 0;
-    }
-    return retval;
+    return 1;
 }
