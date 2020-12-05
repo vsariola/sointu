@@ -292,7 +292,7 @@ EXPORT MANGLE_FUNC(su_power,0)
 ;   Stack   :   sample row pushad output_ptr
 ;-------------------------------------------------------------------------------
 %macro output_sound 0
-    %ifndef OUTPUT_16BIT
+    %ifndef SU_OUTPUT_16BIT
         %ifndef SU_CLIP_OUTPUT ; The modern way. No need to clip; OS can do it.
             mov     _DI, [_SP+su_stack.bufferptr - su_stack.output_sound] ; edi containts ptr
             mov     _SI, PTRWORD su_synth_obj + su_synthworkspace.left
@@ -316,6 +316,7 @@ EXPORT MANGLE_FUNC(su_power,0)
                 cmp     ecx,2
                 jl      %%loop
             mov     dword [_SP+su_stack.bufferptr - su_stack.output_sound], _SI ; save esi back to stack
+            %define SU_INCLUDE_CLIP
         %endif
     %else ; 16-bit output, always clipped. This is a bit legacy method.
         mov     _SI, [_SP+su_stack.bufferptr - su_stack.output_sound] ; esi points to the output buffer
@@ -335,6 +336,7 @@ EXPORT MANGLE_FUNC(su_power,0)
             loop    %%loop
         mov     [_SP+su_stack.bufferptr - su_stack.output_sound], _SI ; save esi back to stack
         %define USE_C_32767
+        %define SU_INCLUDE_CLIP
     %endif
 %endmacro
 

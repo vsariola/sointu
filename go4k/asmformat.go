@@ -77,20 +77,13 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 		if macroMatch != nil {
 			word, rest := macroMatch[1], macroMatch[2]
 			switch word {
-			case "define":
-				defineMatch := wordReg.FindStringSubmatch(rest)
-				if defineMatch != nil {
-					defineName, defineRest := defineMatch[1], defineMatch[2]
-					if defineName == "BPM" {
-						ints, err := parseNumbers(defineRest)
-						if err != nil {
-							return nil, err
-						}
-						bpm = ints[0]
-					} else if defineName == "OUTPUT_16BIT" {
-						output16Bit = true
-					}
+			case "BEGIN_SONG":
+				parameters, err := parseParams(rest)
+				if err != nil {
+					return nil, fmt.Errorf("Error parsing parameters: %v", err)
 				}
+				bpm = parameters["bpm"]
+				output16Bit = parameters["output_16bit"] == 1
 			case "PATTERN":
 				ints, err := parseNumbers(rest)
 				if err != nil {
@@ -253,15 +246,10 @@ func SerializeAsm(song *Song) (string, error) {
 		}
 		indentation--
 	}
-	// The actual printing starts here
-	println("%%define BPM %d", song.BPM)
-	if song.Output16Bit {
-		println("%%define OUTPUT_16BIT")
-	}
 	// delay modulation is pretty much the only %define that the asm preprocessor cannot figure out
 	// as the preprocessor has no clue if a SEND modulates a delay unit. So, unfortunately, for the
 	// time being, we need to figure during export if INCLUDE_DELAY_MODULATION needs to be defined.
-	delaymod := false
+	delaymod := 0
 	for i, instrument := range song.Patch.Instruments {
 		for j, unit := range instrument.Units {
 			if unit.Type == "send" {
@@ -277,16 +265,18 @@ func SerializeAsm(song *Song) (string, error) {
 					return "", fmt.Errorf("INSTRUMENT #%v / SEND #%v target unit %v out of range", i, j, unit.Parameters["unit"])
 				}
 				if song.Patch.Instruments[targetInstrument].Units[unit.Parameters["unit"]].Type == "delay" && unit.Parameters["port"] == 5 {
-					delaymod = true
+					delaymod = 1
 				}
 			}
 		}
 	}
-	if delaymod {
-		println("%%define INCLUDE_DELAY_MODULATION")
+	// The actual printing starts here
+	output_16bit := 0
+	if song.Output16Bit {
+		output_16bit = 1
 	}
-	println("")
 	println("%%include \"sointu/header.inc\"\n")
+	println("BEGIN_SONG BPM(%v),OUTPUT_16BIT(%v),CLIP_OUTPUT(0),DELAY_MODULATION(%v)\n", song.BPM, output_16bit, delaymod)
 	var patternTable [][]string
 	for _, pattern := range song.Patterns {
 		row := []string{"PATTERN"}
@@ -371,7 +361,7 @@ func SerializeAsm(song *Song) (string, error) {
 		printTable(align(samStrTable, "r"))
 		println("END_SAMPLE_OFFSETS\n")
 	}
-	println("%%include \"sointu/footer.inc\"")
+	println("END_SONG")
 	ret := b.String()
 	return ret, nil
 }

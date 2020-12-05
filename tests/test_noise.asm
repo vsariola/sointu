@@ -1,6 +1,6 @@
-%define BPM 100
-
 %include "sointu/header.inc"
+
+BEGIN_SONG BPM(100),OUTPUT_16BIT(0),CLIP_OUTPUT(0),DELAY_MODULATION(0)
 
 BEGIN_PATTERNS
     PATTERN 64,0,68,0,32,0,0,0,75,0,78,0,0,0,0,0
@@ -22,4 +22,4 @@ BEGIN_PATCH
     END_INSTRUMENT
 END_PATCH
 
-%include "sointu/footer.inc"
+END_SONG

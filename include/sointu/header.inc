@@ -1,9 +1,6 @@
 %ifndef SOINTU_INC
 %define SOINTU_INC
 
-; You will have to define a BPM for your song, e.g.
-; %define BPM 100
-
 %macro EXPORT 1
     global %1
     %1:
@@ -77,10 +74,6 @@
     %endif
 %endif
 
-%ifdef OUTPUT_16BIT
-    %define SU_INCLUDE_CLIP
-%endif
-
 %assign CUR_ID          2
 %define CMDS              ; CMDS is empty at first, no commands defined
 %define OPCODES         MANGLE_FUNC(su_op_advance,0),
@@ -114,7 +107,29 @@ section .text ; yasm throws section redeclaration warnings if strucs are defined
 %endif
 
 %define TOTAL_ROWS (MAX_PATTERNS*PATTERN_SIZE)
-%define SAMPLES_PER_ROW (SAMPLE_RATE*4*60/(BPM*16))
+%define SAMPLES_PER_ROW (SAMPLE_RATE*4*60/(SU_BPM*16))
+
+%macro BEGIN_SONG 4
+    %xdefine SU_BPM %1    
+    %if %2 == 1
+        %define SU_OUTPUT_16BIT        
+    %endif
+    %if %3 == 1
+        %define SU_CLIP_OUTPUT        
+    %endif
+    %if %4 == 1
+        %define INCLUDE_DELAY_MODULATION
+    %endif
+%endmacro
+
+%macro END_SONG 0
+    %include "sointu/footer.inc"
+%endmacro
+
+%define BPM(val)                val
+%define OUTPUT_16BIT(val)       val
+%define CLIP_OUTPUT(val)        val
+%define DELAY_MODULATION(val)   val
 
 %macro BEGIN_PATCH 0
     SECT_DATA(params)
