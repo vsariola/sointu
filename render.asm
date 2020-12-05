@@ -137,6 +137,8 @@ EXPORT MANGLE_FUNC(su_render,16)
         mov     rcx, rdi ; rcx = &Synthstate
     %endif
 %endif
+    sub     _SP,108     ; allocate space on stack for the FPU state
+    fsave   [_SP]       ; save the FPU state to stack & reset the FPU
     push    _SI         ; push the pointer to samples
     push    _BX         ; push the pointer to time
     xor     eax, eax    ; samplenumber starts at 0
@@ -208,6 +210,8 @@ su_render_samples_time_finish:
     mov     dword [_SI], edx  ; *samples = samples rendered
     mov     dword [_BX], eax  ; *time = time ticks rendered
     xor     eax, eax ; TODO: set eax to possible error code, now just 0
+    frstor  [_SP]               ; restore fpu state
+    add     _SP,108             ; rewind the stack allocate for FPU state
 %if BITS == 32  ; stdcall
     mov     [_SP + 28],eax ; we want to return eax, but popad pops everything, so put eax to stack for popad to pop 
     popad
