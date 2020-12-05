@@ -159,6 +159,12 @@ EXPORT MANGLE_FUNC(su_render,16)
     push    _BX                        ; the nominal rowlength should be time_in
     xor     eax, eax                   ; rowtick starts at 0
 su_render_samples_loop:
+        push    _DI
+        fnstsw  [_SP]                         ; store the FPU status flag to stack top
+        pop     _DI                           ; _DI = FPU status flag
+        and     _DI, 0011100001000101b        ; mask TOP pointer, stack error, zero divide and invalid operation
+        test    _DI,_DI                       ; all the aforementioned bits should be 0!
+        jne     su_render_samples_time_finish ; otherwise, we exit due to error
         cmp     eax, [_SP]                    ; if rowtick >= maxtime
         jge     su_render_samples_time_finish ;   goto finish
         mov     ecx, [_SP + PTRSIZE*7]        ; ecx = buffer length in samples
@@ -207,11 +213,9 @@ su_render_samples_time_finish:
     pop     _DX
     pop     _BX  ; pop the pointer to time
     pop     _SI  ; pop the pointer to samples
-    mov     dword [_SI], edx  ; *samples = samples rendered
-    mov     dword [_BX], eax  ; *time = time ticks rendered
-    xor     eax, eax        
-    fnstsw  ax                  ; store the FPU status flag in ax.     
-    and     ax, 0011100001000101b ; mask TOP pointer, stack error, zero divide and invalid operation
+    mov     dword [_SI], edx    ; *samples = samples rendered
+    mov     dword [_BX], eax    ; *time = time ticks rendered
+    mov     _AX,_DI             ; _DI was the masked FPU status flag, _AX is return value
     frstor  [_SP]               ; restore fpu state
     add     _SP,108             ; rewind the stack allocate for FPU state
 %if BITS == 32  ; stdcall
