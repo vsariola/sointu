@@ -67,3 +67,98 @@ func TestBridge(t *testing.T) {
 		}
 	}
 }
+
+func TestStackUnderflow(t *testing.T) {
+	patch := go4k.Patch{
+		Instruments: []go4k.Instrument{
+			go4k.Instrument{1, []go4k.Unit{
+				go4k.Unit{"pop", map[string]int{}},
+			}}},
+		SampleOffsets: []go4k.SampleOffset{},
+		DelayTimes:    []int{}}
+	synth, err := bridge.Synth(patch)
+	if err != nil {
+		t.Fatalf("bridge compile error: %v", err)
+	}
+	buffer := make([]float32, 2)
+	err = go4k.Render(synth, buffer)
+	if err == nil {
+		t.Fatalf("rendering should have failed due to stack underflow")
+	}
+}
+
+func TestStackBalancing(t *testing.T) {
+	patch := go4k.Patch{
+		Instruments: []go4k.Instrument{
+			go4k.Instrument{1, []go4k.Unit{
+				go4k.Unit{"push", map[string]int{}},
+			}}},
+		SampleOffsets: []go4k.SampleOffset{},
+		DelayTimes:    []int{}}
+	synth, err := bridge.Synth(patch)
+	if err != nil {
+		t.Fatalf("bridge compile error: %v", err)
+	}
+	buffer := make([]float32, 2)
+	err = go4k.Render(synth, buffer)
+	if err == nil {
+		t.Fatalf("rendering should have failed due to unbalanced stack push/pop")
+	}
+}
+
+func TestStackOverflow(t *testing.T) {
+	patch := go4k.Patch{
+		Instruments: []go4k.Instrument{
+			go4k.Instrument{1, []go4k.Unit{
+				go4k.Unit{"loadval", map[string]int{"value": 128}},
+				go4k.Unit{"loadval", map[string]int{"value": 128}},
+				go4k.Unit{"loadval", map[string]int{"value": 128}},
+				go4k.Unit{"loadval", map[string]int{"value": 128}},
+				go4k.Unit{"loadval", map[string]int{"value": 128}},
+				go4k.Unit{"loadval", map[string]int{"value": 128}},
+				go4k.Unit{"loadval", map[string]int{"value": 128}},
+				go4k.Unit{"loadval", map[string]int{"value": 128}},
+				go4k.Unit{"loadval", map[string]int{"value": 128}},
+				go4k.Unit{"pop", map[string]int{}},
+				go4k.Unit{"pop", map[string]int{}},
+				go4k.Unit{"pop", map[string]int{}},
+				go4k.Unit{"pop", map[string]int{}},
+				go4k.Unit{"pop", map[string]int{}},
+				go4k.Unit{"pop", map[string]int{}},
+				go4k.Unit{"pop", map[string]int{}},
+				go4k.Unit{"pop", map[string]int{}},
+				go4k.Unit{"pop", map[string]int{}},
+			}}},
+		SampleOffsets: []go4k.SampleOffset{},
+		DelayTimes:    []int{}}
+	synth, err := bridge.Synth(patch)
+	if err != nil {
+		t.Fatalf("bridge compile error: %v", err)
+	}
+	buffer := make([]float32, 2)
+	err = go4k.Render(synth, buffer)
+	if err == nil {
+		t.Fatalf("rendering should have failed due to stack overflow, despite balanced push/pops")
+	}
+}
+
+func TestDivideByZero(t *testing.T) {
+	patch := go4k.Patch{
+		Instruments: []go4k.Instrument{
+			go4k.Instrument{1, []go4k.Unit{
+				go4k.Unit{"loadval", map[string]int{"value": 128}},
+				go4k.Unit{"invgain", map[string]int{"invgain": 0}},
+				go4k.Unit{"pop", map[string]int{}},
+			}}},
+		SampleOffsets: []go4k.SampleOffset{},
+		DelayTimes:    []int{}}
+	synth, err := bridge.Synth(patch)
+	if err != nil {
+		t.Fatalf("bridge compile error: %v", err)
+	}
+	buffer := make([]float32, 2)
+	err = go4k.Render(synth, buffer)
+	if err == nil {
+		t.Fatalf("rendering should have failed due to divide by zero")
+	}
+}

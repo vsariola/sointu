@@ -3,6 +3,7 @@ package bridge
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/vsariola/sointu/go4k"
 )
@@ -49,6 +50,27 @@ var opcodeTable = map[string]opTableEntry{
 	"in":         opTableEntry{C.su_in_id, []string{"channel"}},
 }
 
+type RenderError struct {
+	errcode int
+}
+
+func (e *RenderError) Error() string {
+	var reasons []string
+	if e.errcode&0x40 != 0 {
+		reasons = append(reasons, "FPU stack over/underflow")
+	}
+	if e.errcode&0x04 != 0 {
+		reasons = append(reasons, "FPU divide by zero")
+	}
+	if e.errcode&0x01 != 0 {
+		reasons = append(reasons, "FPU invalid operation")
+	}
+	if e.errcode&0x3800 != 0 {
+		reasons = append(reasons, "FPU stack push/pops are not balanced")
+	}
+	return "RenderError: " + strings.Join(reasons, ", ")
+}
+
 // Render renders until the buffer is full or the modulated time is reached, whichever
 // happens first.
 // Parameters:
@@ -74,7 +96,7 @@ func (synth *C.Synth) Render(buffer []float32, maxtime int) (int, int, error) {
 	time := C.int(maxtime)
 	errcode := int(C.su_render(synth, (*C.float)(&buffer[0]), &samples, &time))
 	if errcode > 0 {
-		return -1, -1, errors.New("RenderTime failed")
+		return int(samples), int(time), &RenderError{errcode: errcode}
 	}
 	return int(samples), int(time), nil
 }
