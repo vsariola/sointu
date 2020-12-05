@@ -83,9 +83,13 @@ void CALLCONV su_load_gmdls(void);
 // time_out > time_in, as it is modulated and the time could advance by 2 or more, so the loop
 // exit condition would fire when the current time is already past time_in
 //
-// Returns error code:
-//      0   everything ok
-//      (no actual errors implemented yet)
+// Returns an error code, which is actually just masked version of the FPU Status Word
+// On a succesful run, the return value should be 0
+// Error code bits:
+//    bit  0        FPU invalid operation (stack over/underflow OR invalid arithmetic e.g. NaNs)
+//    bit  2        Divide by zero occurred
+//    bit  6        Stack overflow or underflow occurred
+//    bits 11-13    The top pointer of the fpu stack. Any other value than 0 indicates that some values were left on the stack.
 int CALLCONV su_render(Synth* synth, float* buffer, int* samples, int* time);
 
 // Arithmetic opcode ids

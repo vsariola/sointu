@@ -209,7 +209,9 @@ su_render_samples_time_finish:
     pop     _SI  ; pop the pointer to samples
     mov     dword [_SI], edx  ; *samples = samples rendered
     mov     dword [_BX], eax  ; *time = time ticks rendered
-    xor     eax, eax ; TODO: set eax to possible error code, now just 0
+    xor     eax, eax        
+    fnstsw  ax                  ; store the FPU status flag in ax.     
+    and     ax, 0011100001000101b ; mask TOP pointer, stack error, zero divide and invalid operation
     frstor  [_SP]               ; restore fpu state
     add     _SP,108             ; rewind the stack allocate for FPU state
 %if BITS == 32  ; stdcall

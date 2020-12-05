@@ -43,18 +43,15 @@ int main(int argc, char* argv[]) {
     time = 0;
     errcode = su_render(synth, buffer, &samples, &time);
     if (errcode != 0)
-    {
-        printf("su_render returned error");
         goto fail;
-    }
     if (samples > 0)
     {
-        printf("su_render rendered samples, despite it should not");
+        printf("su_render rendered samples, despite it should not\n");
         goto fail;
     }    
     if (time > 0)
     {
-        printf("su_render advanced time, despite it should not");
+        printf("su_render advanced time, despite it should not\n");
         goto fail;
     }
     // Then check that when we render using su_render with 0 samples,
@@ -62,19 +59,16 @@ int main(int argc, char* argv[]) {
     samples = 0;
     time = INT32_MAX;
     errcode = su_render(synth, buffer, &samples, &time);
-    if (errcode != 0)
-    {    
-        printf("su_render returned error");
+    if (errcode != 0)         
         goto fail;
-    }
     if (samples > 0)
     {
-        printf("su_render rendered samples, despite it should not");
+        printf("su_render rendered samples, despite it should not\n");
         goto fail;
     }
     if (time > 0)
     {
-        printf("su_render advanced time, despite it should not");
+        printf("su_render advanced time, despite it should not\n");
         goto fail;
     }
     // Then check that each time we call render, only SAMPLES_PER_ROW
@@ -84,7 +78,9 @@ int main(int argc, char* argv[]) {
         // check that buffer full
         samples = 1;
         time = INT32_MAX;
-        su_render(synth, &buffer[totalrendered*2], &samples, &time);
+        errcode = su_render(synth, &buffer[totalrendered*2], &samples, &time);
+        if (errcode != 0)
+            goto fail;
         totalrendered += samples;
         if (samples != 1)
         {
@@ -98,7 +94,9 @@ int main(int argc, char* argv[]) {
         }        
         samples = SAMPLES_PER_ROW - 1;
         time = INT32_MAX;
-        su_render(synth, &buffer[totalrendered * 2], &samples, &time);
+        errcode = su_render(synth, &buffer[totalrendered * 2], &samples, &time);
+        if (errcode != 0)
+            goto fail;
         totalrendered += samples;
         if (samples != SAMPLES_PER_ROW - 1)
         {
@@ -124,6 +122,16 @@ finish:
     free(buffer);
     return retval;
 fail:
+    if (errcode > 0) {
+        if ((errcode & 0xFF00) != 0)
+            printf("FPU stack was not empty on exit\n");
+        if ((errcode & 0x04) != 0)
+            printf("FPU zero divide\n");
+        if ((errcode & 0x01) != 0)
+            printf("FPU invalid operation\n");
+        if ((errcode & 0x40) != 0)
+            printf("FPU stack error\n");
+    }
     retval = 1;
     goto finish;
 }
