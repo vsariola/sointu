@@ -2,7 +2,6 @@ package go4k
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -32,10 +31,6 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 			ret[strings.ToLower(match[1])] = val
 		}
 		return ret, nil
-	}
-	typeReg, err := regexp.Compile(`TYPE\s*\(\s*(SINE|TRISAW|PULSE|GATE|SAMPLE)\s*\)`) // matches TYPE(TRISAW), groups "TRISAW"
-	if err != nil {
-		return nil, err
 	}
 	wordReg, err := regexp.Compile(`\s*([a-zA-Z_][a-zA-Z0-9_]*)([^;\n]*)`) // matches a word and "the rest", until newline or a comment
 	if err != nil {
@@ -130,24 +125,6 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 				parameters, err := parseParams(rest)
 				if err != nil {
 					return nil, fmt.Errorf("Error parsing parameters: %v", err)
-				}
-				if unittype == "oscillator" {
-					match := typeReg.FindStringSubmatch(rest)
-					if match == nil {
-						return nil, errors.New("Oscillator should define a type")
-					}
-					switch match[1] {
-					case "SINE":
-						parameters["type"] = Sine
-					case "TRISAW":
-						parameters["type"] = Trisaw
-					case "PULSE":
-						parameters["type"] = Pulse
-					case "GATE":
-						parameters["type"] = Gate
-					case "SAMPLE":
-						parameters["type"] = Sample
-					}
 				}
 				unit := Unit{Type: unittype, Parameters: parameters}
 				instr.Units = append(instr.Units, unit)
@@ -310,20 +287,7 @@ func SerializeAsm(song *Song) (string, error) {
 		for _, unit := range instrument.Units {
 			row := []string{fmt.Sprintf("SU_%v", strings.ToUpper(unit.Type))}
 			for _, parname := range paramorder[unit.Type] {
-				if unit.Type == "oscillator" && parname == "type" {
-					switch unit.Parameters["type"] {
-					case Sine:
-						row = append(row, "TYPE(SINE)")
-					case Trisaw:
-						row = append(row, "TYPE(TRISAW)")
-					case Pulse:
-						row = append(row, "TYPE(PULSE)")
-					case Gate:
-						row = append(row, "TYPE(GATE)")
-					case Sample:
-						row = append(row, "TYPE(SAMPLE)")
-					}
-				} else if v, ok := unit.Parameters[parname]; ok {
+				if v, ok := unit.Parameters[parname]; ok {
 					row = append(row, fmt.Sprintf("%v(%v)", strings.ToUpper(parname), strconv.Itoa(int(v))))
 				} else {
 					return "", fmt.Errorf("The parameter map for unit %v does not contain %v, even though it should", unit.Type, parname)

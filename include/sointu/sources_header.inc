@@ -76,27 +76,29 @@ endstruc
     db  %4
     db  %5
     db  %6
-    db  %7
-    db  %8 + (LFOFLAG * %9) + %10 ; TYPE + LFO + UNISON
+    db  %7    
     USE_OSCILLAT
     %xdefine CMDS CMDS OSCILLAT_ID + %1,
     %if %1 == 1
         %define INCLUDE_STEREO_OSCILLAT
     %endif
-    %if (%8) & SINE == SINE
+    %if %8 == 0 ; 0 = SINE
+        db SINE + (LFOFLAG * %9) + %10 ; TYPE + LFO + UNISON
         %define INCLUDE_SINE
-    %endif
-    %if (%8) & TRISAW == TRISAW
+    %elif %8 == 1 ; 1 = TRISAW
+        db TRISAW + (LFOFLAG * %9) + %10 ; TYPE + LFO + UNISON
         %define INCLUDE_TRISAW
-    %endif
-    %if (%8) & PULSE == PULSE
+    %elif %8 == 2
+        db PULSE + (LFOFLAG * %9) + %10 ; TYPE + LFO + UNISON
         %define INCLUDE_PULSE
-    %endif
-    %if (%8) & GATE == GATE
+    %elif %8 == 3
+        db GATE + (LFOFLAG * %9) + %10 ; TYPE + LFO + UNISON
         %define INCLUDE_GATE
-    %endif
-    %if (%8) & SAMPLE == SAMPLE
+    %elif %8 == 4
+        db SAMPLE + (LFOFLAG * %9) + %10 ; TYPE + LFO + UNISON
         %define INCLUDE_SAMPLES
+    %else
+        %error Unknown oscillator type!
     %endif
     %if (%10) > 0
         %define INCLUDE_UNISONS
