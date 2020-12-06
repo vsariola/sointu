@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -150,12 +149,19 @@ func main() {
 	retval := 0
 	for _, param := range flag.Args() {
 		if info, err := os.Stat(param); err == nil && info.IsDir() {
-			files, err := filepath.Glob(path.Join(param, "*.asm"))
+			asmfiles, err := filepath.Glob(filepath.Join(param, "*.asm"))
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Could not glob the path %v: %v\n", param, err)
+				fmt.Fprintf(os.Stderr, "Could not glob the path %v for asm files: %v\n", param, err)
 				retval = 1
 				continue
 			}
+			jsonfiles, err := filepath.Glob(filepath.Join(param, "*.json"))
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Could not glob the path %v for json files: %v\n", param, err)
+				retval = 1
+				continue
+			}
+			files := append(asmfiles, jsonfiles...)
 			for _, file := range files {
 				err := process(file)
 				if err != nil {
