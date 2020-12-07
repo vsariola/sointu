@@ -9,51 +9,34 @@ import (
 )
 
 func DeserializeAsm(asmcode string) (*Song, error) {
-	var bpm int
-	output16Bit := false
-	holdVal := 1
-	scanner := bufio.NewScanner(strings.NewReader(asmcode))
-	patterns := make([][]byte, 0)
-	tracks := make([]Track, 0)
-	var patch Patch
-	var instr Instrument
-	paramReg, err := regexp.Compile(`([a-zA-Z]\w*)\s*\(\s*([0-9]+)\s*\)`) // matches FOO(42), groups "FOO" and "42"
+	paramReg, err := regexp.Compile(`(?:([a-zA-Z]\w*)\s*\(\s*([0-9]+)\s*\)|([0-9]+))`) // matches FOO(42), groups "FOO" and "42" OR just numbers
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error compiling paramReg: %v", err)
 	}
-	parseParams := func(s string) (map[string]int, error) {
+	parseParams := func(s string) (map[string]int, []int, error) {
 		matches := paramReg.FindAllStringSubmatch(s, 256)
-		ret := map[string]int{}
+		namedParams := map[string]int{}
+		unnamedParams := make([]int, 0)
 		for _, match := range matches {
-			val, err := strconv.Atoi(match[2])
-			if err != nil {
-				return nil, fmt.Errorf("Error converting %v to integer, which is unexpected as regexp matches only numbers", match[2])
+			if match[1] == "" { // the second part of OR fired
+				val, err := strconv.Atoi(match[3])
+				if err != nil {
+					return nil, nil, fmt.Errorf("error converting %v to integer, which is unexpected as regexp matches only numbers: %v", match[3], err)
+				}
+				unnamedParams = append(unnamedParams, val)
+			} else {
+				val, err := strconv.Atoi(match[2])
+				if err != nil {
+					return nil, nil, fmt.Errorf("error converting %v to integer, which is unexpected as regexp matches only numbers: %v", match[2], err)
+				}
+				namedParams[strings.ToLower(match[1])] = val
 			}
-			ret[strings.ToLower(match[1])] = val
 		}
-		return ret, nil
+		return namedParams, unnamedParams, nil
 	}
 	wordReg, err := regexp.Compile(`\s*([a-zA-Z_][a-zA-Z0-9_]*)([^;\n]*)`) // matches a word and "the rest", until newline or a comment
 	if err != nil {
 		return nil, err
-	}
-	numberReg, err := regexp.Compile(`-?[0-9]+`) // finds integer numbers, possibly with a sign in front. HLD is the magic value used by sointu, will be interpreted as 1
-	if err != nil {
-		return nil, err
-	}
-	parseNumbers := func(s string) ([]int, error) {
-		matches := numberReg.FindAllString(s, 256)
-		ret := []int{}
-		for _, str := range matches {
-			var i int
-			var err error
-			i, err = strconv.Atoi(str)
-			if err != nil {
-				return nil, err
-			}
-			ret = append(ret, i)
-		}
-		return ret, nil
 	}
 	toBytes := func(ints []int) []byte {
 		ret := []byte{}
@@ -62,75 +45,48 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 		}
 		return ret
 	}
-	inInstrument := false
+	var song Song
+	scanner := bufio.NewScanner(strings.NewReader(asmcode))
 	for scanner.Scan() {
 		line := scanner.Text()
 		macroMatch := wordReg.FindStringSubmatch(line)
-		if macroMatch != nil {
-			word, rest := macroMatch[1], macroMatch[2]
-			switch word {
-			case "BEGIN_SONG":
-				parameters, err := parseParams(rest)
-				if err != nil {
-					return nil, fmt.Errorf("Error parsing parameters: %v", err)
-				}
-				bpm = parameters["bpm"]
-				output16Bit = parameters["output_16bit"] == 1
-				holdVal = parameters["hold"]
-			case "PATTERN":
-				ints, err := parseNumbers(rest)
-				if err != nil {
-					return nil, err
-				}
-				patterns = append(patterns, toBytes(ints))
-			case "TRACK":
-				ints, err := parseNumbers(rest)
-				if err != nil {
-					return nil, err
-				}
-				track := Track{ints[0], toBytes(ints[1:])}
-				tracks = append(tracks, track)
-			case "BEGIN_INSTRUMENT":
-				ints, err := parseNumbers(rest)
-				if err != nil {
-					return nil, err
-				}
-				instr = Instrument{NumVoices: ints[0], Units: []Unit{}}
-				inInstrument = true
-			case "END_INSTRUMENT":
-				patch.Instruments = append(patch.Instruments, instr)
-				inInstrument = false
-			case "DELTIME":
-				ints, err := parseNumbers(rest)
-				if err != nil {
-					return nil, err
-				}
-				for _, v := range ints {
-					patch.DelayTimes = append(patch.DelayTimes, v)
-				}
-			case "SAMPLE_OFFSET":
-				ints, err := parseNumbers(rest)
-				if err != nil {
-					return nil, err
-				}
-				patch.SampleOffsets = append(patch.SampleOffsets, SampleOffset{
-					Start:      ints[0],
-					LoopStart:  ints[1],
-					LoopLength: ints[2]})
-			}
-			if inInstrument && strings.HasPrefix(word, "SU_") {
-				unittype := strings.ToLower(word[3:])
-				parameters, err := parseParams(rest)
-				if err != nil {
-					return nil, fmt.Errorf("Error parsing parameters: %v", err)
-				}
-				unit := Unit{Type: unittype, Parameters: parameters}
-				instr.Units = append(instr.Units, unit)
-			}
+		if macroMatch == nil {
+			continue
 		}
+		word, rest := macroMatch[1], macroMatch[2]
+		namedParams, unnamedParams, err := parseParams(rest)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing parameters: %v", err)
+		}
+		switch word {
+		case "BEGIN_SONG":
+			song = Song{BPM: namedParams["bpm"], Patterns: nil, Tracks: nil, Patch: Patch{}, Output16Bit: namedParams["output_16bit"] == 1, Hold: byte(namedParams["hold"])}
+		case "PATTERN":
+			song.Patterns = append(song.Patterns, toBytes(unnamedParams))
+		case "TRACK":
+			song.Tracks = append(song.Tracks, Track{namedParams["voices"], toBytes(unnamedParams)})
+		case "BEGIN_INSTRUMENT":
+			song.Patch.Instruments = append(song.Patch.Instruments, Instrument{NumVoices: namedParams["voices"], Units: []Unit{}})
+		case "DELTIME":
+			song.Patch.DelayTimes = append(song.Patch.DelayTimes, unnamedParams...)
+		case "SAMPLE_OFFSET":
+			song.Patch.SampleOffsets = append(song.Patch.SampleOffsets, SampleOffset{
+				Start:      namedParams["start"],
+				LoopStart:  namedParams["loopstart"],
+				LoopLength: namedParams["looplength"]})
+		}
+		if strings.HasPrefix(word, "SU_") {
+			unittype := strings.ToLower(word[3:])
+			unit := Unit{Type: unittype, Parameters: namedParams}
+			lastIndex := len(song.Patch.Instruments) - 1
+			if lastIndex < 0 {
+				return nil, fmt.Errorf("opcode %v before BEGIN_INSTRUMENT", word)
+			}
+			song.Patch.Instruments[lastIndex].Units = append(song.Patch.Instruments[lastIndex].Units, unit)
+		}
+
 	}
-	s := Song{BPM: bpm, Patterns: patterns, Tracks: tracks, Patch: patch, Output16Bit: output16Bit, Hold: byte(holdVal)}
-	return &s, nil
+	return &song, nil
 }
 
 func SerializeAsm(song *Song) (string, error) {
