@@ -27,6 +27,7 @@ func main() {
 	exactLength := flag.Bool("e", false, "When outputting the C header file, calculate the exact length of song by rendering it once. Only useful when using SPEED opcodes.")
 	rawOut := flag.Bool("r", false, "Output the rendered song as .raw stereo float32 buffer, to standard output unless otherwise specified.")
 	directory := flag.String("d", "", "Directory where to output all files. The directory and its parents are created if needed. By default, everything is placed in the same directory where the original song file is.")
+	hold := flag.Int("o", -1, "New value to be used as the hold value")
 	flag.Usage = printUsage
 	flag.Parse()
 	if flag.NArg() == 0 || *help {
@@ -103,6 +104,12 @@ func main() {
 			defer player.Close()
 			if err := player.Play(buffer); err != nil {
 				return fmt.Errorf("Error playing: %v", err)
+			}
+		}
+		if *hold > -1 {
+			err = song.UpdateHold(byte(*hold))
+			if err != nil {
+				return fmt.Errorf("error updating the hold value of the song: %v", err)
 			}
 		}
 		if *headerOut {

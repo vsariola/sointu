@@ -112,3 +112,25 @@ func Play(synth Synth, song Song) ([]float32, error) {
 	}
 	return buffer, nil
 }
+
+func (s *Song) UpdateHold(newHold byte) error {
+	if newHold == 0 {
+		return errors.New("hold value cannot be 0, 0 is reserved for release")
+	}
+	for _, pat := range s.Patterns {
+		for _, v := range pat {
+			if v > s.Hold && v <= newHold {
+				return errors.New("song uses note values greater or equal to the new hold value")
+			}
+		}
+	}
+	for _, pat := range s.Patterns {
+		for i, v := range pat {
+			if v > 0 && v <= s.Hold {
+				pat[i] = newHold
+			}
+		}
+	}
+	s.Hold = newHold
+	return nil
+}
