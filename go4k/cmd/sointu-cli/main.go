@@ -78,7 +78,7 @@ func main() {
 		}
 		var song go4k.Song
 		if err := json.Unmarshal(inputBytes, &song); err != nil {
-			song2, err2 := go4k.DeserializeAsm(string(inputBytes))
+			song2, err2 := go4k.ParseAsm(string(inputBytes))
 			if err2 != nil {
 				return fmt.Errorf("The song could not be parsed as .json (%v) nor .asm (%v)", err, err2)
 			}
@@ -111,13 +111,13 @@ func main() {
 
 				maxSamples = len(buffer) / 2
 			}
-			header := go4k.ExportCHeader(&song, maxSamples)
+			header := go4k.CHeader(&song, maxSamples)
 			if err := output(".h", []byte(header)); err != nil {
 				return fmt.Errorf("Error outputting header file: %v", err)
 			}
 		}
 		if *asmOut {
-			asmCode, err := go4k.SerializeAsm(&song)
+			asmCode, err := go4k.FormatAsm(&song)
 			if err != nil {
 				return fmt.Errorf("Could not format the song as asm file: %v", err)
 			}

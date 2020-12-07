@@ -37,7 +37,7 @@ func TestAllAsmFiles(t *testing.T) {
 			if err != nil {
 				t.Fatalf("cannot read the .asm file: %v", filename)
 			}
-			song, err := go4k.DeserializeAsm(string(asmcode))
+			song, err := go4k.ParseAsm(string(asmcode))
 			if err != nil {
 				t.Fatalf("could not parse the .asm file: %v", err)
 			}
@@ -100,15 +100,15 @@ func TestSerializingAllAsmFiles(t *testing.T) {
 			if err != nil {
 				t.Fatalf("cannot read the .asm file: %v", filename)
 			}
-			song, err := go4k.DeserializeAsm(string(asmcode)) // read the asm
+			song, err := go4k.ParseAsm(string(asmcode)) // read the asm
 			if err != nil {
 				t.Fatalf("could not parse the .asm file: %v", err)
 			}
-			str, err := go4k.SerializeAsm(song) // serialize again
+			str, err := go4k.FormatAsm(song) // serialize again
 			if err != nil {
 				t.Fatalf("Could not serialize asm file: %v", err)
 			}
-			song2, err := go4k.DeserializeAsm(str) // deserialize again. The rendered song should still give same results.
+			song2, err := go4k.ParseAsm(str) // deserialize again. The rendered song should still give same results.
 			if err != nil {
 				t.Fatalf("could not parse the serialized asm code: %v", err)
 			}
