@@ -11,6 +11,7 @@ type Song struct {
 	Tracks      []Track
 	Patch       Patch
 	Output16Bit bool
+	Hold        byte
 }
 
 func (s *Song) PatternRows() int {
@@ -86,11 +87,11 @@ func Play(synth Synth, song Song) ([]float32, error) {
 		for t := range song.Tracks {
 			patternIndex := song.Tracks[t].Sequence[pattern]
 			note := song.Patterns[patternIndex][patternRow]
-			if note == 1 { // anything but hold causes an action.
-				continue // TODO: can hold be actually something else than 1?
+			if note > 0 && note <= song.Hold { // anything but hold causes an action.
+				continue
 			}
 			synth.Release(curVoices[t])
-			if note > 1 {
+			if note > song.Hold {
 				curVoices[t]++
 				first := song.FirstTrackVoice(t)
 				if curVoices[t] >= first+song.Tracks[t].NumVoices {

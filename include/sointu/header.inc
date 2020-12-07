@@ -102,14 +102,10 @@ section .text ; yasm throws section redeclaration warnings if strucs are defined
 %define SAMPLE_RATE 44100
 %endif
 
-%ifndef HLD
-%define HLD 1
-%endif
-
 %define TOTAL_ROWS (MAX_PATTERNS*PATTERN_SIZE)
 %define SAMPLES_PER_ROW (SAMPLE_RATE*4*60/(SU_BPM*16))
 
-%macro BEGIN_SONG 4
+%macro BEGIN_SONG 5
     %xdefine SU_BPM %1    
     %if %2 == 1
         %define SU_OUTPUT_16BIT        
@@ -120,6 +116,7 @@ section .text ; yasm throws section redeclaration warnings if strucs are defined
     %if %4 == 1
         %define INCLUDE_DELAY_MODULATION
     %endif
+    %xdefine SU_HOLDVALUE %5
 %endmacro
 
 %macro END_SONG 0
@@ -130,6 +127,7 @@ section .text ; yasm throws section redeclaration warnings if strucs are defined
 %define OUTPUT_16BIT(val)       val
 %define CLIP_OUTPUT(val)        val
 %define DELAY_MODULATION(val)   val
+%define HOLD(val)               val
 
 %macro BEGIN_PATCH 0
     SECT_DATA(params)

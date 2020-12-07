@@ -11,6 +11,7 @@ import (
 func DeserializeAsm(asmcode string) (*Song, error) {
 	var bpm int
 	output16Bit := false
+	holdVal := 1
 	scanner := bufio.NewScanner(strings.NewReader(asmcode))
 	patterns := make([][]byte, 0)
 	tracks := make([]Track, 0)
@@ -36,7 +37,7 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 	if err != nil {
 		return nil, err
 	}
-	numberReg, err := regexp.Compile(`-?[0-9]+|HLD`) // finds integer numbers, possibly with a sign in front. HLD is the magic value used by sointu, will be interpreted as 1
+	numberReg, err := regexp.Compile(`-?[0-9]+`) // finds integer numbers, possibly with a sign in front. HLD is the magic value used by sointu, will be interpreted as 1
 	if err != nil {
 		return nil, err
 	}
@@ -46,13 +47,9 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 		for _, str := range matches {
 			var i int
 			var err error
-			if str == "HLD" {
-				i = 1
-			} else {
-				i, err = strconv.Atoi(str)
-				if err != nil {
-					return nil, err
-				}
+			i, err = strconv.Atoi(str)
+			if err != nil {
+				return nil, err
 			}
 			ret = append(ret, i)
 		}
@@ -79,6 +76,7 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 				}
 				bpm = parameters["bpm"]
 				output16Bit = parameters["output_16bit"] == 1
+				holdVal = parameters["hold"]
 			case "PATTERN":
 				ints, err := parseNumbers(rest)
 				if err != nil {
@@ -131,7 +129,7 @@ func DeserializeAsm(asmcode string) (*Song, error) {
 			}
 		}
 	}
-	s := Song{BPM: bpm, Patterns: patterns, Tracks: tracks, Patch: patch, Output16Bit: output16Bit}
+	s := Song{BPM: bpm, Patterns: patterns, Tracks: tracks, Patch: patch, Output16Bit: output16Bit, Hold: byte(holdVal)}
 	return &s, nil
 }
 
@@ -253,16 +251,12 @@ func SerializeAsm(song *Song) (string, error) {
 		output_16bit = 1
 	}
 	println("%%include \"sointu/header.inc\"\n")
-	println("BEGIN_SONG BPM(%v),OUTPUT_16BIT(%v),CLIP_OUTPUT(0),DELAY_MODULATION(%v)\n", song.BPM, output_16bit, delaymod)
+	println("BEGIN_SONG BPM(%v),OUTPUT_16BIT(%v),CLIP_OUTPUT(0),DELAY_MODULATION(%v),HOLD(%v)\n", song.BPM, output_16bit, delaymod, song.Hold)
 	var patternTable [][]string
 	for _, pattern := range song.Patterns {
 		row := []string{"PATTERN"}
 		for _, v := range pattern {
-			if v == 1 {
-				row = append(row, "HLD")
-			} else {
-				row = append(row, strconv.Itoa(int(v)))
-			}
+			row = append(row, strconv.Itoa(int(v)))
 		}
 		patternTable = append(patternTable, row)
 	}

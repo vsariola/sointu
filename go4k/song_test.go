@@ -37,7 +37,7 @@ func TestPlayer(t *testing.T) {
 		SampleOffsets: []go4k.SampleOffset{}}
 	patterns := [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}}
 	tracks := []go4k.Track{go4k.Track{1, []byte{0}}}
-	song := go4k.Song{100, patterns, tracks, patch, false}
+	song := go4k.Song{100, patterns, tracks, patch, false, 1}
 	synth, err := bridge.Synth(patch)
 	if err != nil {
 		t.Fatalf("Compiling patch failed: %v", err)
