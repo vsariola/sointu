@@ -44,11 +44,11 @@
     ; Windows has crinkler so one may put everything in custom sections to aid crinkler.
     ; Maybe mac users need it too
     %ifndef DISABLE_SECTIONS
-        %define SECT_BSS(n) section . %+ n bss align=1
+        %define SECT_BSS(n) section . %+ n bss align=256 ; a high alignment on the uninitialized sections should compress better
         %define SECT_DATA(n) section . %+ n data align=1
         %define SECT_TEXT(n) section . %+ n code align=1
     %else
-        %define SECT_BSS(n) section .bss align=1
+        %define SECT_BSS(n) section .bss align=256
         %define SECT_DATA(n) section .data align=1
         %define SECT_TEXT(n) section .code align=1
     %endif
@@ -57,18 +57,18 @@
     %define MANGLE_DATA(d) _ %+ d
     ; macho does not seem to support named sections, so DISABLE_SECTIONS
     ; is "always on" / ignored
-    %define SECT_BSS(n) section .bss align=1
+    %define SECT_BSS(n) section .bss align=256
     %define SECT_DATA(n) section .data align=1
     %define SECT_TEXT(n) section .text align=1
 %else ; Linux, or hopefully something similar
     %define MANGLE_FUNC(f,n) f
     %define MANGLE_DATA(d) d
     %ifndef DISABLE_SECTIONS
-        %define SECT_BSS(n) section .bss. %+ n nobits alloc noexec write align=1
+        %define SECT_BSS(n) section .bss. %+ n nobits alloc noexec write align=256
         %define SECT_DATA(n) section .data. %+ n progbits alloc noexec write align=1
         %define SECT_TEXT(n) section .text. %+ n progbits alloc exec nowrite align=1
     %else
-        %define SECT_BSS(n) section .bss. nobits alloc noexec write align=1
+        %define SECT_BSS(n) section .bss. nobits alloc noexec write align=256
         %define SECT_DATA(n) section .data. progbits alloc noexec write align=1
         %define SECT_TEXT(n) section .text. progbits alloc exec nowrite align=1
     %endif
