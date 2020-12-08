@@ -8,7 +8,7 @@ import (
 // Unit is e.g. a filter, oscillator, envelope and its parameters
 type Unit struct {
 	Type       string
-	Parameters map[string]int
+	Parameters map[string]int `yaml:",flow"`
 }
 
 const (
@@ -34,7 +34,7 @@ type SampleOffset struct {
 // Patch is simply a list of instruments used in a song
 type Patch struct {
 	Instruments   []Instrument
-	DelayTimes    []int
+	DelayTimes    []int `yaml:",flow"`
 	SampleOffsets []SampleOffset
 }
 
@@ -62,7 +62,7 @@ func (patch Patch) InstrumentForVoice(voice int) (int, error) {
 
 type Track struct {
 	NumVoices int
-	Sequence  []byte
+	Sequence  []byte `yaml:",flow"`
 }
 
 type Synth interface {

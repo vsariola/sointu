@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/vsariola/sointu/go4k"
 	"github.com/vsariola/sointu/go4k/audio/oto"
 	"github.com/vsariola/sointu/go4k/bridge"
@@ -23,6 +25,7 @@ func main() {
 	play := flag.Bool("p", false, "Play the input songs.")
 	asmOut := flag.Bool("a", false, "Output the song as .asm file, to standard output unless otherwise specified.")
 	jsonOut := flag.Bool("j", false, "Output the song as .json file, to standard output unless otherwise specified.")
+	yamlOut := flag.Bool("y", false, "Output the song as .yml file, to standard output unless otherwise specified.")
 	headerOut := flag.Bool("c", false, "Output .h C header file, to standard output unless otherwise specified.")
 	exactLength := flag.Bool("e", false, "When outputting the C header file, calculate the exact length of song by rendering it once. Only useful when using SPEED opcodes.")
 	rawOut := flag.Bool("r", false, "Output the rendered song as .raw stereo float32 buffer, to standard output unless otherwise specified.")
@@ -34,7 +37,7 @@ func main() {
 		flag.Usage()
 		os.Exit(0)
 	}
-	if !*asmOut && !*jsonOut && !*rawOut && !*headerOut && !*play {
+	if !*asmOut && !*jsonOut && !*rawOut && !*headerOut && !*play && !*yamlOut {
 		*play = true // if the user gives nothing to output, then the default behaviour is just to play the file
 	}
 	needsRendering := *play || *exactLength || *rawOut
@@ -78,12 +81,14 @@ func main() {
 			return fmt.Errorf("Could not read file %v: %v", filename, err)
 		}
 		var song go4k.Song
-		if err := json.Unmarshal(inputBytes, &song); err != nil {
-			song2, err2 := go4k.ParseAsm(string(inputBytes))
-			if err2 != nil {
-				return fmt.Errorf("The song could not be parsed as .json (%v) nor .asm (%v)", err, err2)
+		if errJSON := json.Unmarshal(inputBytes, &song); errJSON != nil {
+			if errYaml := yaml.Unmarshal(inputBytes, &song); errYaml != nil {
+				song2, errAsm := go4k.ParseAsm(string(inputBytes))
+				if errAsm != nil {
+					return fmt.Errorf("The song could not be parsed as .json (%v), .yml (%v) nor .asm (%v)", errJSON, errYaml, errAsm)
+				}
+				song = *song2
 			}
-			song = *song2
 		}
 		var buffer []float32
 		if needsRendering {
@@ -141,6 +146,15 @@ func main() {
 				return fmt.Errorf("Error outputting JSON file: %v", err)
 			}
 		}
+		if *yamlOut {
+			yamlSong, err := yaml.Marshal(song)
+			if err != nil {
+				return fmt.Errorf("Could not marshal the song as yaml file: %v", err)
+			}
+			if err := output(".yml", yamlSong); err != nil {
+				return fmt.Errorf("Error outputting yaml file: %v", err)
+			}
+		}
 		if *rawOut {
 			buf := new(bytes.Buffer)
 			err := binary.Write(buf, binary.LittleEndian, buffer)
@@ -168,7 +182,14 @@ func main() {
 				retval = 1
 				continue
 			}
+			ymlfiles, err := filepath.Glob(filepath.Join(param, "*.yml"))
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Could not glob the path %v for yml files: %v\n", param, err)
+				retval = 1
+				continue
+			}
 			files := append(asmfiles, jsonfiles...)
+			files = append(files, ymlfiles...)
 			for _, file := range files {
 				err := process(file)
 				if err != nil {

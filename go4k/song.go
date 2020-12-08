@@ -7,11 +7,11 @@ import (
 
 type Song struct {
 	BPM         int
-	Patterns    [][]byte
-	Tracks      []Track
-	Patch       Patch
 	Output16Bit bool
 	Hold        byte
+	Patterns    [][]byte `yaml:",flow"`
+	Tracks      []Track
+	Patch       Patch
 }
 
 func (s *Song) PatternRows() int {
