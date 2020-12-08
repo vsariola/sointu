@@ -379,18 +379,17 @@ su_op_loadval_mono:
 SECT_TEXT(sureceiv)
 
 EXPORT MANGLE_FUNC(su_op_receive,0)
-    lea     _CX, [WRK+su_unit.ports]
+    lea     _DI, [WRK+su_unit.ports]
 %ifdef INCLUDE_STEREO_RECEIVE
     jnc     su_op_receive_mono
-    xor     eax,eax
-    fld     dword [_CX+su_receive_ports.right]
-    mov     dword [_CX+su_receive_ports.right],eax
+    xor     ecx,ecx
+    fld     dword [_DI+su_receive_ports.right]
+    mov     dword [_DI+su_receive_ports.right],ecx
 su_op_receive_mono:
-%else
-    xor     eax,eax
 %endif
-    fld     dword [_CX+su_receive_ports.left]
-    mov     dword [_CX+su_receive_ports.left],eax
+    xor     ecx,ecx
+    fld     dword [_DI+su_receive_ports.left]
+    mov     dword [_DI+su_receive_ports.left],ecx
     ret
 
 %endif ; RECEIVE_ID > -1
