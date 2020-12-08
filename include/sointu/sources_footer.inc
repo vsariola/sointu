@@ -407,22 +407,17 @@ SECT_TEXT(suopin)
 
 EXPORT MANGLE_FUNC(su_op_in,0)
     lodsb
-    %ifdef INCLUDE_STEREO_IN
-        mov     _DI, [_SP + su_stack.synth]
-        jnc     su_op_in_mono
-        call    su_op_in_right
-    su_op_in_mono:
-        sub     _DI, 4
-    su_op_in_right:
-        xor     ecx, ecx
+    mov     _DI, [_SP + su_stack.synth]
+    %ifdef INCLUDE_STEREO_IN               
+        jnc     su_op_in_mono                
+        xor     ecx, ecx ; we cannot xor before jnc, so we have to do it mono & stereo. LAHF / SAHF could do it, but is the same number of bytes with more entropy
         fld     dword [_DI + su_synthworkspace.right + _AX*4]
-        mov     dword [_DI + su_synthworkspace.right + _AX*4], ecx
-    %else
-        xor     ecx, ecx
-        mov     _DI, [_SP + su_stack.synth]
-        fld     dword [_DI + su_synthworkspace.left + _AX*4]
-        mov     dword [_DI + su_synthworkspace.left + _AX*4], ecx
+        mov     dword [_DI + su_synthworkspace.right + _AX*4], ecx        
+    su_op_in_mono:        
     %endif
+    xor     ecx, ecx        
+    fld     dword [_DI + su_synthworkspace.left + _AX*4]
+    mov     dword [_DI + su_synthworkspace.left + _AX*4], ecx            
     ret
 
 %endif ; SU_IN_ID > -1
