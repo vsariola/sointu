@@ -1,0 +1,23 @@
+bpm: 100
+output16bit: false
+hold: 1
+patterns: [[64, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]
+tracks:
+    - numvoices: 1
+      sequence: [0]
+patch:
+    instruments:
+        - numvoices: 1
+          units:
+            - type: envelope
+              parameters: {attack: 64, decay: 64, gain: 128, release: 80, stereo: 0, sustain: 64}
+            - type: hold
+              parameters: {holdfreq: 3, stereo: 0}
+            - type: envelope
+              parameters: {attack: 64, decay: 64, gain: 128, release: 80, stereo: 0, sustain: 64}
+            - type: hold
+              parameters: {holdfreq: 3, stereo: 0}
+            - type: out
+              parameters: {gain: 128, stereo: 1}
+    delaytimes: []
+    sampleoffsets: []

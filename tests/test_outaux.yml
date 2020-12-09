@@ -1,0 +1,29 @@
+bpm: 100
+output16bit: false
+hold: 1
+patterns: [[64, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]
+tracks:
+    - numvoices: 1
+      sequence: [0]
+patch:
+    instruments:
+        - numvoices: 1
+          units:
+            - type: loadval
+              parameters: {stereo: 0, value: 0}
+            - type: outaux
+              parameters: {auxgain: 64, outgain: 32, stereo: 0}
+            - type: in
+              parameters: {channel: 0, stereo: 0}
+            - type: in
+              parameters: {channel: 2, stereo: 0}
+            - type: loadval
+              parameters: {stereo: 0, value: 48}
+            - type: loadval
+              parameters: {stereo: 0, value: 128}
+            - type: addp
+              parameters: {stereo: 1}
+            - type: out
+              parameters: {gain: 128, stereo: 1}
+    delaytimes: []
+    sampleoffsets: []

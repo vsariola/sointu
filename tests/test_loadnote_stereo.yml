@@ -1,0 +1,17 @@
+bpm: 100
+output16bit: false
+hold: 1
+patterns: [[64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0]]
+tracks:
+    - numvoices: 1
+      sequence: [0]
+patch:
+    instruments:
+        - numvoices: 1
+          units:
+            - type: loadnote
+              parameters: {stereo: 1}
+            - type: out
+              parameters: {gain: 128, stereo: 1}
+    delaytimes: []
+    sampleoffsets: []

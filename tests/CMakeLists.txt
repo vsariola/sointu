@@ -1,6 +1,7 @@
 function(regression_test testname)
     if(${ARGC} LESS 4)
-        set(source ${testname}.asm)
+        set(source ${testname}.yml)
+        set(asmfile ${testname}.asm)
         set (headerfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.h)
         add_custom_command(
             PRE_BUILD
@@ -8,7 +9,13 @@ function(regression_test testname)
             COMMAND go run ${PROJECT_SOURCE_DIR}/go4k/cmd/sointu-cli/main.go -c -w -d ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
             DEPENDS ${source}
         )
-        add_executable(${testname} ${source} test_renderer.c  ${headerfile})
+        add_custom_command(
+            PRE_BUILD
+            OUTPUT ${asmfile}
+            COMMAND go run ${PROJECT_SOURCE_DIR}/go4k/cmd/sointu-cli/main.go -a -w -d ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
+            DEPENDS ${source}
+        )
+        add_executable(${testname} test_renderer.c ${headerfile} ${asmfile})
         target_compile_definitions(${testname} PUBLIC TEST_HEADER=<${testname}.h>)
     else()
         set(source ${ARGV3})
@@ -16,14 +23,9 @@ function(regression_test testname)
     endif()
 
     # the tests include the entire ASM but we still want to rebuild when they change
-    file(GLOB SOINTU ${PROJECT_SOURCE_DIR}/src/*.inc
-                     ${PROJECT_SOURCE_DIR}/src/*.asm
-                     ${PROJECT_SOURCE_DIR}/src/opcodes/*.asm
-                     ${PROJECT_SOURCE_DIR}/src/opcodes/*.inc
-                     ${PROJECT_SOURCE_DIR}/src/win32/*.asm
-                     ${PROJECT_SOURCE_DIR}/src/win32/*.inc
-                     ${PROJECT_SOURCE_DIR}/src/win64/*.asm
-                     ${PROJECT_SOURCE_DIR}/src/win64/*.inc)
+    file(GLOB SOINTU ${PROJECT_SOURCE_DIR}/include/sointu/*.inc                   
+                     ${PROJECT_SOURCE_DIR}/include/sointu/win32/*.inc
+                     ${PROJECT_SOURCE_DIR}/include/sointu/win64/*.inc)
     set_source_files_properties(${source}.asm PROPERTIES OBJECT_DEPENDS "${SOINTU}")
     set_source_files_properties(${FOURKLANG} PROPERTIES HEADER_FILE_ONLY TRUE)
 
