@@ -17,5 +17,3 @@ patch:
               parameters: {stereo: 0, value: 96}
             - type: aux
               parameters: {channel: 0, gain: 128, stereo: 0}
-    delaytimes: []
-    sampleoffsets: []

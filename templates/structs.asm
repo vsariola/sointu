@@ -41,3 +41,13 @@ struc   su_delayline_wrk
     .buffer     resd    65536
     .size:
 endstruc
+
+;-------------------------------------------------------------------------------
+;   su_sample_offset struct
+;-------------------------------------------------------------------------------
+struc   su_sample_offset  ; length conveniently 8 bytes, so easy to index
+    .start      resd    1
+    .loopstart  resw    1
+    .looplength resw    1
+    .size:
+endstruc

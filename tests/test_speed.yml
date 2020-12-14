@@ -29,5 +29,3 @@ patch:
               parameters: {stereo: 0}
             - type: speed
               parameters: {}
-    delaytimes: []
-    sampleoffsets: []

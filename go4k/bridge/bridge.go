@@ -1,74 +1,48 @@
 package bridge
 
+// #cgo CFLAGS: -I"${SRCDIR}/../../build/"
+// #cgo LDFLAGS: "${SRCDIR}/../../build/libsointu.a"
+// #include <sointu.h>
+import "C"
 import (
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/vsariola/sointu/go4k"
+	"github.com/vsariola/sointu/go4k/compiler"
 )
 
-// #cgo CFLAGS: -I"${SRCDIR}/../../include/sointu"
-// #cgo LDFLAGS: "${SRCDIR}/../../build/libsointu.a"
-// #include <sointu.h>
-import "C"
-
-type opTableEntry struct {
-	opcode        C.int
-	parameterList []string
-}
-
-var opcodeTable = map[string]opTableEntry{
-	"add":        opTableEntry{C.su_add_id, []string{}},
-	"addp":       opTableEntry{C.su_addp_id, []string{}},
-	"pop":        opTableEntry{C.su_pop_id, []string{}},
-	"loadnote":   opTableEntry{C.su_loadnote_id, []string{}},
-	"mul":        opTableEntry{C.su_mul_id, []string{}},
-	"mulp":       opTableEntry{C.su_mulp_id, []string{}},
-	"push":       opTableEntry{C.su_push_id, []string{}},
-	"xch":        opTableEntry{C.su_xch_id, []string{}},
-	"distort":    opTableEntry{C.su_distort_id, []string{"drive"}},
-	"hold":       opTableEntry{C.su_hold_id, []string{"holdfreq"}},
-	"crush":      opTableEntry{C.su_crush_id, []string{"resolution"}},
-	"gain":       opTableEntry{C.su_gain_id, []string{"gain"}},
-	"invgain":    opTableEntry{C.su_invgain_id, []string{"invgain"}},
-	"filter":     opTableEntry{C.su_filter_id, []string{"frequency", "resonance"}},
-	"clip":       opTableEntry{C.su_clip_id, []string{}},
-	"pan":        opTableEntry{C.su_pan_id, []string{"panning"}},
-	"delay":      opTableEntry{C.su_delay_id, []string{"pregain", "dry", "feedback", "damp", "delay", "count"}},
-	"compressor": opTableEntry{C.su_compres_id, []string{"attack", "release", "invgain", "threshold", "ratio"}},
-	"speed":      opTableEntry{C.su_speed_id, []string{}},
-	"out":        opTableEntry{C.su_out_id, []string{"gain"}},
-	"outaux":     opTableEntry{C.su_outaux_id, []string{"outgain", "auxgain"}},
-	"aux":        opTableEntry{C.su_aux_id, []string{"gain", "channel"}},
-	"send":       opTableEntry{C.su_send_id, []string{"amount"}},
-	"envelope":   opTableEntry{C.su_envelope_id, []string{"attack", "decay", "sustain", "release", "gain"}},
-	"noise":      opTableEntry{C.su_noise_id, []string{"shape", "gain"}},
-	"oscillator": opTableEntry{C.su_oscillat_id, []string{"transpose", "detune", "phase", "color", "shape", "gain"}},
-	"loadval":    opTableEntry{C.su_loadval_id, []string{"value"}},
-	"receive":    opTableEntry{C.su_receive_id, []string{}},
-	"in":         opTableEntry{C.su_in_id, []string{"channel"}},
-}
-
-type RenderError struct {
-	errcode int
-}
-
-func (e *RenderError) Error() string {
-	var reasons []string
-	if e.errcode&0x40 != 0 {
-		reasons = append(reasons, "FPU stack over/underflow")
+func Synth(patch go4k.Patch) (*C.Synth, error) {
+	s := new(C.Synth)
+	comPatch, err := compiler.Encode(&patch, compiler.AllFeatures{})
+	if err != nil {
+		return nil, fmt.Errorf("error compiling patch: %v", err)
 	}
-	if e.errcode&0x04 != 0 {
-		reasons = append(reasons, "FPU divide by zero")
+	if len(comPatch.Commands) > 2048 { // TODO: 2048 could probably be pulled automatically from cgo
+		return nil, errors.New("bridge supports at most 2048 commands; the compiled patch has more")
 	}
-	if e.errcode&0x01 != 0 {
-		reasons = append(reasons, "FPU invalid operation")
+	if len(comPatch.Values) > 16384 { // TODO: 16384 could probably be pulled automatically from cgo
+		return nil, errors.New("bridge supports at most 16384 values; the compiled patch has more")
 	}
-	if e.errcode&0x3800 != 0 {
-		reasons = append(reasons, "FPU stack push/pops are not balanced")
+	for i, v := range comPatch.Commands {
+		s.Commands[i] = (C.uchar)(v)
 	}
-	return "RenderError: " + strings.Join(reasons, ", ")
+	for i, v := range comPatch.Values {
+		s.Values[i] = (C.uchar)(v)
+	}
+	for i, v := range comPatch.DelayTimes {
+		s.DelayTimes[i] = (C.ushort)(v)
+	}
+	for i, v := range comPatch.SampleOffsets {
+		s.SampleOffsets[i].Start = (C.uint)(v.Start)
+		s.SampleOffsets[i].LoopStart = (C.ushort)(v.LoopStart)
+		s.SampleOffsets[i].LoopLength = (C.ushort)(v.LoopLength)
+	}
+	s.NumVoices = C.uint(comPatch.NumVoices)
+	s.Polyphony = C.uint(comPatch.PolyphonyBitmask)
+	s.RandSeed = 1
+	return s, nil
 }
 
 // Render renders until the buffer is full or the modulated time is reached, whichever
@@ -101,131 +75,37 @@ func (synth *C.Synth) Render(buffer []float32, maxtime int) (int, int, error) {
 	return int(samples), int(time), nil
 }
 
-func Synth(patch go4k.Patch) (*C.Synth, error) {
-	s := new(C.Synth)
-	totalVoices := 0
-	commands := make([]byte, 0)
-	values := make([]byte, 0)
-	polyphonyBitmask := 0
-	for insid, instr := range patch.Instruments {
-		if len(instr.Units) > 63 {
-			return nil, errors.New("An instrument can have a maximum of 63 units")
-		}
-		if instr.NumVoices < 1 {
-			return nil, errors.New("Each instrument must have at least 1 voice")
-		}
-		for unitid, unit := range instr.Units {
-			if val, ok := opcodeTable[unit.Type]; ok {
-				opCode := val.opcode
-				if unit.Parameters["stereo"] == 1 {
-					opCode++
-				}
-				commands = append(commands, byte(opCode))
-				for _, paramname := range val.parameterList {
-					if unit.Type == "delay" && paramname == "count" {
-						count := unit.Parameters["count"]*2 - 1
-						if unit.Parameters["notetracking"] == 1 {
-							count++
-						}
-						values = append(values, byte(count))
-					} else if pval, ok := unit.Parameters[paramname]; ok {
-						values = append(values, byte(pval))
-					} else {
-						return nil, fmt.Errorf("Unit parameter undefined: %v (at instrument %v, unit %v)", paramname, insid, unitid)
-					}
-				}
-				if unit.Type == "oscillator" {
-					flags := 0
-					switch unit.Parameters["type"] {
-					case go4k.Sine:
-						flags = 0x40
-					case go4k.Trisaw:
-						flags = 0x20
-					case go4k.Pulse:
-						flags = 0x10
-					case go4k.Gate:
-						flags = 0x04
-					case go4k.Sample:
-						flags = 0x80
-					}
-					if unit.Parameters["lfo"] == 1 {
-						flags += 0x08
-					}
-					flags += unit.Parameters["unison"]
-					values = append(values, byte(flags))
-				} else if unit.Type == "filter" {
-					flags := 0
-					if unit.Parameters["lowpass"] == 1 {
-						flags += 0x40
-					}
-					if unit.Parameters["bandpass"] == 1 {
-						flags += 0x20
-					}
-					if unit.Parameters["highpass"] == 1 {
-						flags += 0x10
-					}
-					if unit.Parameters["negbandpass"] == 1 {
-						flags += 0x08
-					}
-					if unit.Parameters["neghighpass"] == 1 {
-						flags += 0x04
-					}
-					values = append(values, byte(flags))
-				} else if unit.Type == "send" {
-					address := unit.Parameters["unit"]*16 + 24 + unit.Parameters["port"]
-					if unit.Parameters["voice"] > 0 {
-						address += 0x4000 + 16 + (unit.Parameters["voice"]-1)*1024 // global send, address is computed relative to synthworkspace
-					}
-					if unit.Parameters["sendpop"] == 1 {
-						address += 0x8000
-					}
-					values = append(values, byte(address&255), byte(address>>8))
-				}
-			} else {
-				return nil, fmt.Errorf("Unknown unit type: %v (at instrument %v, unit %v)", unit.Type, insid, unitid)
-			}
-		}
-		commands = append(commands, byte(C.su_advance_id))
-		totalVoices += instr.NumVoices
-		for k := 0; k < instr.NumVoices-1; k++ {
-			polyphonyBitmask = (polyphonyBitmask << 1) + 1
-		}
-		polyphonyBitmask <<= 1
-	}
-	if totalVoices > 32 {
-		return nil, errors.New("Sointu does not support more than 32 concurrent voices")
-	}
-	if len(commands) > 2048 { // TODO: 2048 could probably be pulled automatically from cgo
-		return nil, errors.New("The patch would result in more than 2048 commands")
-	}
-	if len(values) > 16384 { // TODO: 16384 could probably be pulled automatically from cgo
-		return nil, errors.New("The patch would result in more than 16384 values")
-	}
-	for i := range commands {
-		s.Commands[i] = (C.uchar)(commands[i])
-	}
-	for i := range values {
-		s.Values[i] = (C.uchar)(values[i])
-	}
-	for i, deltime := range patch.DelayTimes {
-		s.DelayTimes[i] = (C.ushort)(deltime)
-	}
-	for i, samoff := range patch.SampleOffsets {
-		s.SampleOffsets[i].Start = (C.uint)(samoff.Start)
-		s.SampleOffsets[i].LoopStart = (C.ushort)(samoff.LoopStart)
-		s.SampleOffsets[i].LoopLength = (C.ushort)(samoff.LoopLength)
-	}
-	s.NumVoices = C.uint(totalVoices)
-	s.Polyphony = C.uint(polyphonyBitmask)
-	s.RandSeed = 1
-	return s, nil
-}
-
+// Trigger is part of C.Synths' implementation of go4k.Synth interface
 func (s *C.Synth) Trigger(voice int, note byte) {
 	s.SynthWrk.Voices[voice] = C.Voice{}
 	s.SynthWrk.Voices[voice].Note = C.int(note)
 }
 
+// Release is part of C.Synths' implementation of go4k.Synth interface
 func (s *C.Synth) Release(voice int) {
 	s.SynthWrk.Voices[voice].Release = 1
+}
+
+// Render error stores the exact errorcode, which is actually just the x87 FPU flags,
+// with only the critical failure flags masked. Useful if you are interested exactly
+// what went wrong with the patch.
+type RenderError struct {
+	errcode int
+}
+
+func (e *RenderError) Error() string {
+	var reasons []string
+	if e.errcode&0x40 != 0 {
+		reasons = append(reasons, "FPU stack over/underflow")
+	}
+	if e.errcode&0x04 != 0 {
+		reasons = append(reasons, "FPU divide by zero")
+	}
+	if e.errcode&0x01 != 0 {
+		reasons = append(reasons, "FPU invalid operation")
+	}
+	if e.errcode&0x3800 != 0 {
+		reasons = append(reasons, "FPU stack push/pops are not balanced")
+	}
+	return "RenderError: " + strings.Join(reasons, ", ")
 }

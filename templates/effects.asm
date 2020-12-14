@@ -1,4 +1,4 @@
-{{- if .Opcode "distort"}}
+{{- if .HasOp "distort"}}
 ;-------------------------------------------------------------------------------
 ;   DISTORT opcode: apply distortion on the signal
 ;-------------------------------------------------------------------------------
@@ -14,7 +14,7 @@
 {{end}}
 
 
-{{- if .Opcode "hold"}}
+{{- if .HasOp "hold"}}
 ;-------------------------------------------------------------------------------
 ;   HOLD opcode: sample and hold the signal, reducing sample rate
 ;-------------------------------------------------------------------------------
@@ -46,7 +46,7 @@ su_op_hold_holding:
 {{end}}
 
 
-{{- if .Opcode "crush"}}
+{{- if .HasOp "crush"}}
 ;-------------------------------------------------------------------------------
 ;   CRUSH opcode: quantize the signal to finite number of levels
 ;-------------------------------------------------------------------------------
@@ -64,7 +64,7 @@ su_op_hold_holding:
 {{end}}
 
 
-{{- if .Opcode "gain"}}
+{{- if .HasOp "gain"}}
 ;-------------------------------------------------------------------------------
 ;   GAIN opcode: apply gain on the signal
 ;-------------------------------------------------------------------------------
@@ -88,7 +88,7 @@ su_op_gain_mono:
 {{end}}
 
 
-{{- if .Opcode "invgain"}}
+{{- if .HasOp "invgain"}}
 ;-------------------------------------------------------------------------------
 ;   INVGAIN opcode: apply inverse gain on the signal
 ;-------------------------------------------------------------------------------
@@ -112,7 +112,7 @@ su_op_invgain_mono:
 {{end}}
 
 
-{{- if .Opcode "filter"}}
+{{- if .HasOp "filter"}}
 ;-------------------------------------------------------------------------------
 ;   FILTER opcode: perform low/high/band-pass/notch etc. filtering on the signal
 ;-------------------------------------------------------------------------------
@@ -139,31 +139,31 @@ su_op_invgain_mono:
     fadd    dword [{{.WRK}}+8]  ; f2*h'+b
     fstp    dword [{{.WRK}}+8]  ; b'=f2*h'+b
     fldz                                    ; 0
-{{- if .HasParamValue "filter" "lowpass" 1}}
+{{- if .SupportsParamValue "filter" "lowpass" 1}}
     test    al, byte 0x40
     jz      short su_op_filter_skiplowpass
     fadd    dword [{{.WRK}}]
 su_op_filter_skiplowpass:
 {{- end}}
-{{- if .HasParamValue "filter" "bandpass" 1}}
+{{- if .SupportsParamValue "filter" "bandpass" 1}}
     test    al, byte 0x20
     jz      short su_op_filter_skipbandpass
     fadd    dword [{{.WRK}}+8]
 su_op_filter_skipbandpass:
 {{- end}}
-{{- if .HasParamValue "filter" "highpass" 1}}
+{{- if .SupportsParamValue "filter" "highpass" 1}}
     test    al, byte 0x10
     jz      short su_op_filter_skiphighpass
     fadd    dword [{{.WRK}}+4]
 su_op_filter_skiphighpass:
 {{- end}}
-{{- if .HasParamValue "filter" "negbandpass" 1}}
+{{- if .SupportsParamValue "filter" "negbandpass" 1}}
     test    al, byte 0x08
     jz      short su_op_filter_skipnegbandpass
     fsub    dword [{{.WRK}}+8]
 su_op_filter_skipnegbandpass:
 {{- end}}
-{{- if .HasParamValue "filter" "neghighpass" 1}}
+{{- if .SupportsParamValue "filter" "neghighpass" 1}}
     test    al, byte 0x04
     jz      short su_op_filter_skipneghighpass
     fsub    dword [{{.WRK}}+4]
@@ -173,7 +173,7 @@ su_op_filter_skipneghighpass:
 {{end}}
 
 
-{{- if .Opcode "clip"}}
+{{- if .HasOp "clip"}}
 ;-------------------------------------------------------------------------------
 ;   CLIP opcode: clips the signal into [-1,1] range
 ;-------------------------------------------------------------------------------
@@ -188,7 +188,7 @@ su_op_filter_skipneghighpass:
 {{end}}
 
 
-{{- if .Opcode "pan" -}}
+{{- if .HasOp "pan" -}}
 ;-------------------------------------------------------------------------------
 ;   PAN opcode: pan the signal
 ;-------------------------------------------------------------------------------
@@ -220,7 +220,7 @@ su_op_pan_do:
 {{end}}
 
 
-{{- if .Opcode "delay"}}
+{{- if .HasOp "delay"}}
 ;-------------------------------------------------------------------------------
 ;   DELAY opcode: adds delay effect to the signal
 ;-------------------------------------------------------------------------------
@@ -234,12 +234,13 @@ su_op_pan_do:
     lodsw                           ; al = delay index, ah = delay count
     {{- .PushRegs .VAL "DelayVal" .COM "DelayCom" | indent 4}}
     movzx   ebx, al
-    ; %ifdef RUNTIME_TABLES               ; when using runtime tables, delaytimes is pulled from the stack so can be a pointer to heap
-    ; mov     _SI, [{{.SP}} + su_stack.delaytimes + PUSH_REG_SIZE(2)]
-    ; lea     _BX, [_SI + _BX*2]
-    ; %else
-{{.Prepare "su_delay_times" | indent 4}}
+{{- if .Library}}
+    mov     {{.SI}}, [{{.Stack "DelayTable"}}] ; when using runtime tables, delaytimes is pulled from the stack so can be a pointer to heap
+    lea     {{.BX}}, [{{.SI}} + {{.BX}}*2]
+{{- else}}
+{{- .Prepare "su_delay_times" | indent 4}}
     lea     {{.BX}},[{{.Use "su_delay_times"}} + {{.BX}}*2]                  ; BX now points to the right position within delay time table
+{{- end}}
     movzx   esi, word [{{.Stack "GlobalTick"}}]          ; notice that we load word, so we wrap at 65536
     mov     {{.CX}}, {{.PTRWORD}} [{{.Stack "DelayWorkSpace"}}]   ; {{.WRK}} is now the separate delay workspace, as they require a lot more space
 {{- if .StereoAndMono "delay"}}
@@ -256,7 +257,7 @@ su_op_delay_mono:               ; flow into mono delay
     call    su_op_delay_do      ; when stereo delay is not enabled, we could inline this to save 5 bytes, but I expect stereo delay to be farely popular so maybe not worth the hassle
     mov     {{.PTRWORD}} [{{.Stack "DelayWorkSpace"}}],{{.CX}}   ; move delay workspace pointer back to stack.
     {{- .PopRegs .VAL .COM | indent 4}}
-{{- if .UsesDelayModulation}}
+{{- if .SupportsModulation "delay" "delaytime"}}
     xor     eax, eax
     mov     dword [{{.Modulation "delay" "delaytime"}}], eax
 {{- end}}
@@ -281,9 +282,9 @@ su_op_delay_mono:               ; flow into mono delay
     fxch                                        ; y p*p*x
     fmul    dword [{{.Input "delay" "dry"}}]      ; dr*y p*p*x
 su_op_delay_loop:
-        {{- if or .UsesDelayModulation (.HasParamValue "delay" "notetracking" 1)}} ; delaytime modulation or note syncing require computing the delay time in floats
+        {{- if or (.SupportsModulation "delay" "delaytime") (.SupportsParamValue "delay" "notetracking" 1)}} ; delaytime modulation or note syncing require computing the delay time in floats
         fild    word [{{.BX}}]         ; k dr*y p*p*x, where k = delay time
-        {{- if .HasParamValue "delay" "notetracking" 1}}
+        {{- if .SupportsParamValue "delay" "notetracking" 1}}
         test    ah, 1 ; note syncing is the least significant bit of ah, 0 = ON, 1 = OFF
         jne     su_op_delay_skipnotesync
         fild    dword [{{.INP}}-su_voice.inputs+su_voice.note]
@@ -293,7 +294,7 @@ su_op_delay_loop:
         fdivp   st1, st0                 ; use 10787 for delaytime to have neutral transpose
         su_op_delay_skipnotesync:
         {{- end}}
-        {{- if .UsesDelayModulation}}
+        {{- if .SupportsModulation "delay" "delaytime"}}
         fld     dword [{{.Modulation "delay" "delaytime"}}]
         {{- .Float 32767.0 | .Prepare | indent 8}}
         fmul    dword [{{.Float 32767.0 | .Use}}] ; scale it up, as the modulations would be too small otherwise
@@ -339,7 +340,7 @@ su_op_delay_loop:
 {{end}}
 
 
-{{- if .Opcode "compressor"}}
+{{- if .HasOp "compressor"}}
 ;-------------------------------------------------------------------------------
 ;   COMPRES opcode: push compressor gain to stack
 ;-------------------------------------------------------------------------------

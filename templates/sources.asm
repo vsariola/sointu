@@ -1,4 +1,4 @@
-{{if .Opcode "envelope" -}}
+{{if .HasOp "envelope" -}}
 ;-------------------------------------------------------------------------------
 ;   ENVELOPE opcode: pushes an ADSR envelope value on stack [0,1]
 ;-------------------------------------------------------------------------------
@@ -62,7 +62,7 @@ su_op_envelope_leave2:
 {{end}}
 
 
-{{- if .Opcode "noise"}}
+{{- if .HasOp "noise"}}
 ;-------------------------------------------------------------------------------
 ;   NOISE opcode: creates noise
 ;-------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ su_op_noise_mono:
 {{end}}
 
 
-{{- if .Opcode "oscillator"}}
+{{- if .HasOp "oscillator"}}
 ;-------------------------------------------------------------------------------
 ;   OSCILLAT opcode: oscillator, the heart of the synth
 ;-------------------------------------------------------------------------------
@@ -100,11 +100,10 @@ su_op_noise_mono:
 ;-------------------------------------------------------------------------------
 {{.Func "su_op_oscillator" "Opcode"}}
     lodsb                                   ; load the flags
-%ifdef RUNTIME_TABLES
-    %ifdef INCLUDE_SAMPLES
-    mov     {{.DI}}, [{{.SP}} + su_stack.sampleoffs]; we need to put this in a register, as the stereo & unisons screw the stack positions
-    %endif                                  ; ain't we lucky that {{.DI}} was unused throughout
-%endif
+{{- if .Library}}
+    mov     {{.DI}}, [{{.Stack "SampleTable"}}]; we need to put this in a register, as the stereo & unisons screw the stack positions
+                                 ; ain't we lucky that {{.DI}} was unused throughout
+{{- end}}
     fld     dword [{{.Input "oscillator" "detune"}}] ; e, where e is the detune [0,1]
 {{- .Prepare (.Float 0.5)}}
     fsub    dword [{{.Use (.Float 0.5)}}]                 ; e-.5
@@ -120,7 +119,7 @@ su_op_noise_mono:
     fchs                                    ; -d r, negate the detune for second round
 su_op_oscillat_mono:
 {{- end}}
-{{- if .HasParamValueOtherThan "oscillator" "unison" 0}}
+{{- if .SupportsParamValueOtherThan "oscillator" "unison" 0}}
     {{.PushRegs .AX "" .WRK "OscWRK" .AX "OscFlags"}}
     fldz                            ; 0 d
     fxch                            ; d a=0, "accumulated signal"
@@ -171,7 +170,7 @@ su_op_oscillat_normalized:
     fadd    dword [{{.WRK}}]
     fst     dword [{{.WRK}}]
     fadd    dword [{{.Input "oscillator" "phase"}}]
-{{- if .HasParamValue "oscillator" "type" .Sample}}
+{{- if .SupportsParamValue "oscillator" "type" .Sample}}
     test    al, byte 0x80
     jz      short su_op_oscillat_not_sample
     {{.Call "su_oscillat_sample"}}
@@ -185,25 +184,25 @@ su_op_oscillat_not_sample:
     fstp    st1
     fld     dword [{{.Input "oscillator" "color"}}]               ; // c      p
     ; every oscillator test included if needed
-{{- if .HasParamValue "oscillator" "type" .Sine}}
+{{- if .SupportsParamValue "oscillator" "type" .Sine}}
     test    al, byte 0x40
     jz      short su_op_oscillat_notsine
     {{.Call "su_oscillat_sine"}}
 su_op_oscillat_notsine:
 {{- end}}
-{{- if .HasParamValue "oscillator" "type" .Trisaw}}
+{{- if .SupportsParamValue "oscillator" "type" .Trisaw}}
     test    al, byte 0x20
     jz      short su_op_oscillat_not_trisaw
     {{.Call "su_oscillat_trisaw"}}
 su_op_oscillat_not_trisaw:
 {{- end}}
-{{- if .HasParamValue "oscillator" "type" .Pulse}}
+{{- if .SupportsParamValue "oscillator" "type" .Pulse}}
     test    al, byte 0x10
     jz      short su_op_oscillat_not_pulse
     {{.Call "su_oscillat_pulse"}}
 su_op_oscillat_not_pulse:
 {{- end}}
-{{- if .HasParamValue "oscillator" "type" .Gate}}
+{{- if .SupportsParamValue "oscillator" "type" .Gate}}
     test    al, byte 0x04
     jz      short su_op_oscillat_not_gate
     {{.Call "su_oscillat_gate"}}
@@ -300,12 +299,12 @@ go4kVCO_gate_bit:                           ; stack: 0/1, let's call it x
     {{- .PushRegs .AX "SampleAx" .DX "SampleDx" .CX "SampleCx" .BX "SampleBx" | indent 4}}                              ; edx must be saved, eax & ecx if this is stereo osc
     push    {{.AX}}
     mov     al, byte [{{.VAL}}-4]                                ; reuse "color" as the sample number
-%ifdef RUNTIME_TABLES                                       ; when using RUNTIME_TABLES, assumed the sample_offset ptr is in {{.DI}}
- do{lea     {{.DI}}, [}, {{.DI}}, {{.AX}}*8,]                           ; edi points now to the sample table entry
-%else
+{{- if .Library}}
+    lea     {{.DI}}, [{{.DI}} + {{.AX}}*8]                           ; edi points now to the sample table entry
+{{- else}}
 {{- .Prepare "su_sample_offsets" | indent 4}}
     lea     {{.DI}}, [{{.Use "su_sample_offsets"}} + {{.AX}}*8]; edi points now to the sample table entry
-%endif
+{{- end}}
 {{- .Float 84.28074964676522 | .Prepare | indent 4}}
     fmul    dword [{{.Float 84.28074964676522 | .Use}}]                  ; p*r
     fistp   dword [{{.SP}}]
@@ -329,7 +328,7 @@ su_oscillat_sample_not_looping:
 {{end}}
 
 
-{{- if .Opcode "loadval"}}
+{{- if .HasOp "loadval"}}
 ;-------------------------------------------------------------------------------
 ;   LOADVAL opcode
 ;-------------------------------------------------------------------------------
@@ -356,7 +355,7 @@ su_op_loadval_mono:
 {{end}}
 
 
-{{- if .Opcode "receive"}}
+{{- if .HasOp "receive"}}
 ;-------------------------------------------------------------------------------
 ;   RECEIVE opcode
 ;-------------------------------------------------------------------------------
@@ -387,7 +386,7 @@ su_op_receive_mono:
 {{end}}
 
 
-{{- if .Opcode "in"}}
+{{- if .HasOp "in"}}
 ;-------------------------------------------------------------------------------
 ;   IN opcode: inputs and clears a global port
 ;-------------------------------------------------------------------------------

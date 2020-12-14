@@ -25,5 +25,3 @@ patch:
               parameters: {amount: 68, port: 4, sendpop: 1, stereo: 0, unit: 1, voice: 0}
             - type: out
               parameters: {gain: 110, stereo: 1}
-    delaytimes: []
-    sampleoffsets: []

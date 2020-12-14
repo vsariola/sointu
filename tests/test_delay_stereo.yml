@@ -18,8 +18,7 @@ patch:
             - type: pan
               parameters: {panning: 64, stereo: 0}
             - type: delay
-              parameters: {count: 1, damp: 64, delay: 0, dry: 128, feedback: 125, notetracking: 0, pregain: 40, stereo: 1}
+              parameters: {damp: 64, dry: 128, feedback: 125, notetracking: 0, pregain: 40, stereo: 1}
+              varargs: [11025, 21025]
             - type: out
               parameters: {gain: 128, stereo: 1}
-    delaytimes: [11025, 21025]
-    sampleoffsets: []

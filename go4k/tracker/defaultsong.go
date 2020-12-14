@@ -14,15 +14,12 @@ var defaultSong = go4k.Song{
 	},
 	Patch: go4k.Patch{
 		Instruments: []go4k.Instrument{{NumVoices: 2, Units: []go4k.Unit{
-			{"envelope", map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
-			{"oscillator", map[string]int{"stereo": 0, "transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "type": go4k.Sine}},
-			{"mulp", map[string]int{"stereo": 0}},
-			{"envelope", map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
-			{"oscillator", map[string]int{"stereo": 0, "transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "type": go4k.Sine}},
-			{"mulp", map[string]int{"stereo": 0}},
-			{"out", map[string]int{"stereo": 1, "gain": 128}},
-		}}},
-		DelayTimes:    []int{},
-		SampleOffsets: []go4k.SampleOffset{},
-	},
+			{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
+			{Type: "oscillator", Parameters: map[string]int{"stereo": 0, "transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "type": go4k.Sine}},
+			{Type: "mulp", Parameters: map[string]int{"stereo": 0}},
+			{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
+			{Type: "oscillator", Parameters: map[string]int{"stereo": 0, "transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "type": go4k.Sine}},
+			{Type: "mulp", Parameters: map[string]int{"stereo": 0}},
+			{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
+		}}}},
 }

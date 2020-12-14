@@ -17,6 +17,7 @@ import (
 	"github.com/vsariola/sointu/go4k"
 	"github.com/vsariola/sointu/go4k/audio/oto"
 	"github.com/vsariola/sointu/go4k/bridge"
+	"github.com/vsariola/sointu/go4k/compiler"
 )
 
 func main() {
@@ -41,12 +42,21 @@ func main() {
 		flag.Usage()
 		os.Exit(0)
 	}
+	var comp *compiler.Compiler
 	if !*asmOut && !*jsonOut && !*rawOut && !*headerOut && !*play && !*yamlOut && *tmplDir == "" {
 		*play = true // if the user gives nothing to output, then the default behaviour is just to play the file
 	}
 	needsRendering := *play || *exactLength || *rawOut
-	if needsRendering {
-		bridge.Init()
+	needsCompile := *headerOut || *asmOut
+	if needsCompile {
+		var err error
+		comp, err = compiler.New()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, `error creating compiler: %v`, err)
+			os.Exit(1)
+		}
+		comp.Amd64 = *targetArch == "amd64"
+		comp.OS = *targetOs
 	}
 	process := func(filename string) error {
 		output := func(extension string, contents []byte) error {
@@ -87,11 +97,7 @@ func main() {
 		var song go4k.Song
 		if errJSON := json.Unmarshal(inputBytes, &song); errJSON != nil {
 			if errYaml := yaml.Unmarshal(inputBytes, &song); errYaml != nil {
-				song2, errAsm := go4k.ParseAsm(string(inputBytes))
-				if errAsm != nil {
-					return fmt.Errorf("The song could not be parsed as .json (%v), .yml (%v) nor .asm (%v)", errJSON, errYaml, errAsm)
-				}
-				song = *song2
+				return fmt.Errorf("The song could not be parsed as .json (%v) or .yml (%v)", errJSON, errYaml)
 			}
 		}
 		var buffer []float32
@@ -121,23 +127,26 @@ func main() {
 				return fmt.Errorf("error updating the hold value of the song: %v", err)
 			}
 		}
-		if *headerOut {
+		var compiledPlayer map[string]string
+		if needsCompile {
 			maxSamples := 0 // 0 means it is calculated automatically
 			if *exactLength {
 
 				maxSamples = len(buffer) / 2
 			}
-			header := go4k.CHeader(&song, maxSamples)
-			if err := output(".h", []byte(header)); err != nil {
+			var err error
+			compiledPlayer, err = comp.Player(&song, maxSamples)
+			if err != nil {
+				return fmt.Errorf("compiling player failed: %v", err)
+			}
+		}
+		if *headerOut {
+			if err := output(".h", []byte(compiledPlayer["h"])); err != nil {
 				return fmt.Errorf("Error outputting header file: %v", err)
 			}
 		}
 		if *asmOut {
-			asmCode, err := go4k.Compile(&song, *targetArch, *targetOs)
-			if err != nil {
-				return fmt.Errorf("Could not format the song as asm file: %v", err)
-			}
-			if err := output(".asm", []byte(asmCode)); err != nil {
+			if err := output(".asm", []byte(compiledPlayer["asm"])); err != nil {
 				return fmt.Errorf("Error outputting asm file: %v", err)
 			}
 		}

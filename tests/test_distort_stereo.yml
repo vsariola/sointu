@@ -15,5 +15,3 @@ patch:
               parameters: {drive: 96, stereo: 1}
             - type: out
               parameters: {gain: 128, stereo: 1}
-    delaytimes: []
-    sampleoffsets: []

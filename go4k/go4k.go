@@ -2,6 +2,7 @@ package go4k
 
 import (
 	"errors"
+	"fmt"
 	"math"
 )
 
@@ -9,6 +10,7 @@ import (
 type Unit struct {
 	Type       string
 	Parameters map[string]int `yaml:",flow"`
+	VarArgs    []int
 }
 
 const (
@@ -25,17 +27,9 @@ type Instrument struct {
 	Units     []Unit
 }
 
-type SampleOffset struct {
-	Start      int
-	LoopStart  int
-	LoopLength int
-}
-
 // Patch is simply a list of instruments used in a song
 type Patch struct {
-	Instruments   []Instrument
-	DelayTimes    []int `yaml:",flow"`
-	SampleOffsets []SampleOffset
+	Instruments []Instrument
 }
 
 func (p Patch) TotalVoices() int {
@@ -73,30 +67,13 @@ type Synth interface {
 
 func Render(synth Synth, buffer []float32) error {
 	s, _, err := synth.Render(buffer, math.MaxInt32)
+	if err != nil {
+		return fmt.Errorf("go4k.Render failed: %v", err)
+	}
 	if s != len(buffer)/2 {
-		return errors.New("synth.Render should have filled the whole buffer")
+		return errors.New("in go4k.Render, synth.Render should have filled the whole buffer but did not")
 	}
-	return err
-}
-
-func (p *Patch) Encode() ([]string, []byte, []byte) {
-	var code []byte
-	var values []byte
-	var jumpTable []string
-	assignedIds := map[string]byte{}
-	for _, instr := range p.Instruments {
-		for _, unit := range instr.Units {
-			if _, ok := assignedIds[unit.Type]; !ok {
-				jumpTable = append(jumpTable, unit.Type)
-				assignedIds[unit.Type] = byte(len(jumpTable) * 2)
-			}
-			stereo, unitValues := Encode(unit)
-			code = append(code, stereo+assignedIds[unit.Type])
-			values = append(values, unitValues...)
-		}
-		code = append(code, 0)
-	}
-	return jumpTable, code, values
+	return nil
 }
 
 // UnitParameter documents one parameter that an unit takes
@@ -106,70 +83,6 @@ type UnitParameter struct {
 	MaxValue    int    // maximum value of the parameter, inclusive
 	CanSet      bool   // if this parameter can be set before hand i.e. through the gui
 	CanModulate bool   // if this parameter can be modulated i.e. has a port number in "send" unit
-}
-
-func Encode(unit Unit) (byte, []byte) {
-	var values []byte
-	for _, v := range UnitTypes[unit.Type] {
-		if v.CanSet && v.CanModulate {
-			values = append(values, byte(unit.Parameters[v.Name]))
-		}
-	}
-	if unit.Type == "aux" {
-		values = append(values, byte(unit.Parameters["channel"]))
-	} else if unit.Type == "in" {
-		values = append(values, byte(unit.Parameters["channel"]))
-	} else if unit.Type == "oscillator" {
-		flags := 0
-		switch unit.Parameters["type"] {
-		case Sine:
-			flags = 0x40
-		case Trisaw:
-			flags = 0x20
-		case Pulse:
-			flags = 0x10
-		case Gate:
-			flags = 0x04
-		case Sample:
-			flags = 0x80
-		}
-		if unit.Parameters["lfo"] == 1 {
-			flags += 0x08
-		}
-		flags += unit.Parameters["unison"]
-		values = append(values, byte(flags))
-	} else if unit.Type == "filter" {
-		flags := 0
-		if unit.Parameters["lowpass"] == 1 {
-			flags += 0x40
-		}
-		if unit.Parameters["bandpass"] == 1 {
-			flags += 0x20
-		}
-		if unit.Parameters["highpass"] == 1 {
-			flags += 0x10
-		}
-		if unit.Parameters["negbandpass"] == 1 {
-			flags += 0x08
-		}
-		if unit.Parameters["neghighpass"] == 1 {
-			flags += 0x04
-		}
-		values = append(values, byte(flags))
-	} else if unit.Type == "send" {
-		address := ((unit.Parameters["unit"] + 1) << 4) + unit.Parameters["port"] // each unit is 16 dwords, 8 workspace followed by 8 ports. +1 is for skipping the note/release/inputs
-		if unit.Parameters["voice"] > 0 {
-			address += 0x8000 + 16 + (unit.Parameters["voice"]-1)*1024 // global send, +16 is for skipping the out/aux ports
-		}
-		if unit.Parameters["sendpop"] == 1 {
-			address += 0x8
-		}
-		values = append(values, byte(address&255), byte(address>>8))
-	} else if unit.Type == "delay" {
-		countTrack := (unit.Parameters["count"] << 1) - 1 + unit.Parameters["notetracking"] // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
-		values = append(values, byte(unit.Parameters["delay"]), byte(countTrack))
-	}
-	return byte(unit.Parameters["stereo"]), values
 }
 
 // UnitTypes documents all the available unit types and if they support stereo variant
@@ -218,8 +131,6 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "feedback", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "damp", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "notetracking", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "delay", MinValue: 0, MaxValue: 255, CanSet: true, CanModulate: false},
-		{Name: "count", MinValue: 0, MaxValue: 255, CanSet: true, CanModulate: false},
 		{Name: "delaytime", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true}},
 	"compressor": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
@@ -268,7 +179,10 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "type", MinValue: int(Sine), MaxValue: int(Sample), CanSet: true, CanModulate: false},
 		{Name: "lfo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "unison", MinValue: 0, MaxValue: 3, CanSet: true, CanModulate: false}},
+		{Name: "unison", MinValue: 0, MaxValue: 3, CanSet: true, CanModulate: false},
+		{Name: "samplestart", MinValue: 0, MaxValue: 3440659, CanSet: true, CanModulate: false},
+		{Name: "loopstart", MinValue: 0, MaxValue: 65535, CanSet: true, CanModulate: false},
+		{Name: "looplength", MinValue: 0, MaxValue: 65535, CanSet: true, CanModulate: false}},
 	"loadval": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "value", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
@@ -279,4 +193,134 @@ var UnitTypes = map[string]([]UnitParameter){
 	"in": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false}},
+}
+
+type Song struct {
+	BPM         int
+	Output16Bit bool
+	Hold        byte
+	Patterns    [][]byte `yaml:",flow"`
+	Tracks      []Track
+	Patch       Patch
+}
+
+func (s *Song) PatternRows() int {
+	return len(s.Patterns[0])
+}
+
+func (s *Song) SequenceLength() int {
+	return len(s.Tracks[0].Sequence)
+}
+
+func (s *Song) TotalRows() int {
+	return s.PatternRows() * s.SequenceLength()
+}
+
+func (s *Song) SamplesPerRow() int {
+	return 44100 * 60 / (s.BPM * 4)
+}
+
+func (s *Song) FirstTrackVoice(track int) int {
+	ret := 0
+	for _, t := range s.Tracks[:track] {
+		ret += t.NumVoices
+	}
+	return ret
+}
+
+// TBD: Where shall we put methods that work on pure domain types and have no dependencies
+// e.g. Validate here
+func (s *Song) Validate() error {
+	if s.BPM < 1 {
+		return errors.New("BPM should be > 0")
+	}
+	for i := range s.Patterns[:len(s.Patterns)-1] {
+		if len(s.Patterns[i]) != len(s.Patterns[i+1]) {
+			return errors.New("Every pattern should have the same length")
+		}
+	}
+	for i := range s.Tracks[:len(s.Tracks)-1] {
+		if len(s.Tracks[i].Sequence) != len(s.Tracks[i+1].Sequence) {
+			return errors.New("Every track should have the same sequence length")
+		}
+	}
+	totalTrackVoices := 0
+	for _, track := range s.Tracks {
+		totalTrackVoices += track.NumVoices
+		for _, p := range track.Sequence {
+			if p < 0 || int(p) >= len(s.Patterns) {
+				return errors.New("Tracks use a non-existing pattern")
+			}
+		}
+	}
+	if totalTrackVoices > s.Patch.TotalVoices() {
+		return errors.New("Tracks use too many voices")
+	}
+	return nil
+}
+
+func Play(synth Synth, song Song) ([]float32, error) {
+	err := song.Validate()
+	if err != nil {
+		return nil, err
+	}
+	curVoices := make([]int, len(song.Tracks))
+	for i := range curVoices {
+		curVoices[i] = song.FirstTrackVoice(i)
+	}
+	initialCapacity := song.TotalRows() * song.SamplesPerRow() * 2
+	buffer := make([]float32, 0, initialCapacity)
+	rowbuffer := make([]float32, song.SamplesPerRow()*2)
+	for row := 0; row < song.TotalRows(); row++ {
+		patternRow := row % song.PatternRows()
+		pattern := row / song.PatternRows()
+		for t := range song.Tracks {
+			patternIndex := song.Tracks[t].Sequence[pattern]
+			note := song.Patterns[patternIndex][patternRow]
+			if note > 0 && note <= song.Hold { // anything but hold causes an action.
+				continue
+			}
+			synth.Release(curVoices[t])
+			if note > song.Hold {
+				curVoices[t]++
+				first := song.FirstTrackVoice(t)
+				if curVoices[t] >= first+song.Tracks[t].NumVoices {
+					curVoices[t] = first
+				}
+				synth.Trigger(curVoices[t], note)
+			}
+		}
+		tries := 0
+		for rowtime := 0; rowtime < song.SamplesPerRow(); {
+			samples, time, _ := synth.Render(rowbuffer, song.SamplesPerRow()-rowtime)
+			rowtime += time
+			buffer = append(buffer, rowbuffer[:samples*2]...)
+			if tries > 100 {
+				return nil, fmt.Errorf("Song speed modulation likely so slow that row never advances; error at pattern %v, row %v", pattern, patternRow)
+			}
+		}
+	}
+	return buffer, nil
+}
+
+func (s *Song) UpdateHold(newHold byte) error {
+	if newHold == 0 {
+		return errors.New("hold value cannot be 0, 0 is reserved for release")
+	}
+	for _, pat := range s.Patterns {
+		for _, v := range pat {
+			if v > s.Hold && v <= newHold {
+				return errors.New("song uses note values greater or equal to the new hold value")
+			}
+		}
+	}
+	for _, pat := range s.Patterns {
+		for i, v := range pat {
+			if v > 0 && v <= s.Hold {
+				pat[i] = newHold
+			}
+		}
+	}
+	s.Hold = newHold
+	return nil
 }

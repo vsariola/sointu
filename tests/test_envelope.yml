@@ -15,5 +15,3 @@ patch:
               parameters: {attack: 95, decay: 64, gain: 128, release: 80, stereo: 0, sustain: 64}
             - type: out
               parameters: {gain: 128, stereo: 1}
-    delaytimes: []
-    sampleoffsets: []

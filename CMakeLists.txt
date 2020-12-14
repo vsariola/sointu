@@ -34,17 +34,38 @@ enable_language(ASM_NASM)
 # By putting them there, we can pass the same compile definitions to C and ASM
 set(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <INCLUDES> <DEFINES> <FLAGS> -f ${CMAKE_ASM_NASM_OBJECT_FORMAT} -o <OBJECT> <SOURCE>")
 
-# Sointu as a header-only library 
-set(HEADERLIB sointuinterface)
-add_library(${HEADERLIB} INTERFACE)
-target_include_directories(${HEADERLIB} INTERFACE ${PROJECT_SOURCE_DIR}/include)
+if(WIN32)
+    set(sointuexe ${CMAKE_CURRENT_BINARY_DIR}/sointu-cli.exe)
+else()
+    set(sointuexe ${CMAKE_CURRENT_BINARY_DIR}/sointu-cli)
+endif()
+
+# the tests include the entire ASM but we still want to rebuild when they change
+file(GLOB templates ${PROJECT_SOURCE_DIR}/templates/*.asm)
+file(GLOB go4k "${PROJECT_SOURCE_DIR}/go4k/*.go" "${PROJECT_SOURCE_DIR}/go4k/cmd/sointu-cli/*.go")
+file(GLOB compilersrc "${PROJECT_SOURCE_DIR}/go4k/compiler/*.go")
+
+if(DEFINED CMAKE_C_SIZEOF_DATA_PTR AND CMAKE_C_SIZEOF_DATA_PTR EQUAL 8)
+    set(arch "amd64")
+elseif(DEFINED CMAKE_CXX_SIZEOF_DATA_PTR AND CMAKE_CXX_SIZEOF_DATA_PTR EQUAL 8)
+    set(arch "amd64")
+else()
+    set(arch "386")
+endif()
 
 # Sointu as static library
 set(STATICLIB sointu)
-add_library(${STATICLIB} render.asm)
+set(sointuasm sointu.asm)
+
+add_custom_command(            
+    OUTPUT ${sointuasm}
+    COMMAND go run ${PROJECT_SOURCE_DIR}/go4k/compiler/generate.go -arch=${arch} ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS "${templates}" "${go4k}" "${compilersrc}"
+)
+
+add_library(${STATICLIB} ${sointuasm})
 set_target_properties(${STATICLIB} PROPERTIES LINKER_LANGUAGE C)
-target_link_libraries(${STATICLIB} ${HEADERLIB})
-target_compile_definitions(${STATICLIB} PUBLIC SU_USE_INTROSPECTION RUNTIME_TABLES)
+target_include_directories(${STATICLIB} INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 
 # We should put examples here
 # add_subdirectory(examples)

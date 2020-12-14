@@ -1,3 +1,5 @@
+{{- if .SupportsParamValue "oscillator" "type" .Sample}}
+
 {{- if eq .OS "windows"}}
 {{.ExportFunc "su_load_gmdls"}}
 {{- if .Amd64}}
@@ -24,7 +26,7 @@
     call    ReadFile                ; Readfile(handle,&su_sample_table,SAMPLE_TABLE_SIZE,&bytes_read,NULL)
     add     rsp, 40         ; shadow space, as required by Win64 ABI
     ret
-{{- else}}
+{{else}}
     mov     edx, su_sample_table
     mov     ecx, su_gmdls_path1
     su_gmdls_pathloop:
@@ -50,9 +52,9 @@ extern _ReadFile@20 ; requires windows
     db 'drivers/gm.dls',0
 su_gmdls_path2:
     db 'drivers/etc/gm.dls',0
+{{end}}
 
 {{.SectBss "susamtable"}}
 su_sample_table:
     resb    3440660    ; size of gmdls.
-
 {{end}}

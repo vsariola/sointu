@@ -1,4 +1,4 @@
-{{- if .Opcode "out"}}
+{{- if .HasOp "out"}}
 ;-------------------------------------------------------------------------------
 ;   OUT opcode: outputs and pops the signal
 ;-------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ su_op_out_mono:
 {{end}}
 
 
-{{- if .Opcode "outaux"}}
+{{- if .HasOp "outaux"}}
 ;-------------------------------------------------------------------------------
 ;   OUTAUX opcode: outputs to main and aux1 outputs and pops the signal
 ;-------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ su_op_outaux_mono:
 {{end}}
 
 
-{{- if .Opcode "aux"}}
+{{- if .HasOp "aux"}}
 ;-------------------------------------------------------------------------------
 ;   AUX opcode: outputs the signal to aux (or main) port and pops the signal
 ;-------------------------------------------------------------------------------
@@ -79,7 +79,7 @@ su_op_aux_mono:
 {{end}}
 
 
-{{- if .Opcode "send"}}
+{{- if .HasOp "send"}}
 ;-------------------------------------------------------------------------------
 ;   SEND opcode: adds the signal to a port
 ;-------------------------------------------------------------------------------
@@ -103,7 +103,7 @@ su_op_aux_mono:
     fxch                        ; swap them back: l r
 su_op_send_mono:
 {{- end}}
-{{- if .HasParamValueOtherThan "send" "voice" 0}}
+{{- if .SupportsParamValueOtherThan "send" "voice" 0}}
     test    {{.AX}}, 0x8000
     jz      su_op_send_skipglobal
     mov     {{.CX}}, [{{.Stack "Synth"}}]

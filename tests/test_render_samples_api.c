@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <sointu/sointu.h>
+#include <sointu.h>
 
 #define BPM 100
 #define SAMPLE_RATE 44100
@@ -13,10 +13,10 @@ const int su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS;
 int main(int argc, char* argv[]) {
     Synth* synth;
     float* buffer;
-    const unsigned char commands[] = { su_envelope_id, // MONO
-                                       su_envelope_id, // MONO
-                                       su_out_id + 1,  // STEREO
-                                       su_advance_id };// MONO
+    const unsigned char commands[] = { SU_ENVELOPE_ID, // MONO
+                                       SU_ENVELOPE_ID, // MONO
+                                       SU_OUT_ID + 1,  // STEREO
+                                       SU_ADVANCE_ID };// MONO
     const unsigned char values[] = { 64, 64, 64, 80, 128, // envelope 1
                                      95, 64, 64, 80, 128, // envelope 2
                                      128 };    

@@ -25,8 +25,8 @@ su_run_vm_loop:                                     ; loop until all voices done
     xor     ecx, ecx                                ; counter = 0
     xor     eax, eax                                ; clear out high bits of eax, as lodsb only sets al
 su_transform_values_loop:
-    {{- .Prepare "su_vm_transformcounts" | indent 4}}
-    cmp     cl, byte [{{.Use "su_vm_transformcounts"}}+{{.DI}}]   ; compare the counter to the value in the param count table
+    {{- .Prepare "su_vm_transformcounts-1" | indent 4}}
+    cmp     cl, byte [{{.Use "su_vm_transformcounts-1"}}+{{.DI}}]   ; compare the counter to the value in the param count table
     je      su_transform_values_out
     lodsb                                           ; load the byte value from VAL stream
     push    {{.AX}}                                     ; push it to memory so FPU can read it
@@ -43,11 +43,12 @@ su_transform_values_loop:
 su_transform_values_out:
     bt      dword [{{.COM}}-1],0                         ; LSB of COM = stereo bit => carry
     {{- .SaveStack "Opcode"}}
-    {{- .Prepare "su_vm_jumptable" | indent 4}}
-    call    [{{.Use "su_vm_jumptable"}}+{{.DI}}*{{.PTRSIZE}}]       ; call the function corresponding to the instruction
+    {{- $x := printf "su_vm_jumptable-%v" .PTRSIZE}}
+    {{- .Prepare $x | indent 4}}
+    call    [{{.Use $x}}+{{.DI}}*{{.PTRSIZE}}]       ; call the function corresponding to the instruction
     jmp     su_run_vm_loop
 su_run_vm_advance:
-    {{- if .Polyphony}}
+    {{- if .SupportsPolyphony}}
     mov     {{.WRK}}, [{{.Stack "Voice"}}]         ; WRK points to start of current voice
     add     {{.WRK}}, su_voice.size              ; move to next voice
     mov     [{{.Stack "Voice"}}], {{.WRK}}         ; update the pointer in the stack to point to the new voice
@@ -173,18 +174,15 @@ su_clip_do:
 ; The opcode table jump table. This is constructed to only include the opcodes
 ; that are used so that the jump table is as small as possible.
 ;-------------------------------------------------------------------------------
-{{.Data "su_vm_jumptable_offset"}}
-su_vm_jumptable   equ     $ - {{.PTRSIZE}} ; Advance is not in the opcode table
-{{- $x := .}}
-{{- range .Opcodes}}
-    {{$x.DPTR}}    su_op_{{.Type}}
+{{.Data "su_vm_jumptable"}}
+{{- range .Instructions}}
+    {{$.DPTR}}    su_op_{{.}}
 {{- end}}
 
 ;-------------------------------------------------------------------------------
 ; The number of transformed parameters each opcode takes
 ;-------------------------------------------------------------------------------
-{{.Data "su_vm_transformcounts_offset"}}
-su_vm_transformcounts  equ     $ - 1 ; Advance is not in the opcode table
-{{- range .Opcodes}}
-    db    {{.NumParams}}
+{{.Data "su_vm_transformcounts"}}
+{{- range .Instructions}}
+    db    {{$.TransformCount .}}
 {{- end}}

@@ -38,11 +38,11 @@ typedef struct SampleOffset {
 
 typedef struct Synth {
     struct SynthWorkspace SynthWrk;
-    struct DelayWorkspace DelayWrks[64]; // let's keep this as 64 for now, so the delays take 16 meg. If that's too little or too much, we can change this in future.    
+    struct DelayWorkspace DelayWrks[64]; // let's keep this as 64 for now, so the delays take 16 meg. If that's too little or too much, we can change this in future.
     unsigned short DelayTimes[768];
     struct SampleOffset SampleOffsets[256];
     unsigned int RandSeed;
-    unsigned int GlobalTick;    
+    unsigned int GlobalTick;
     unsigned char Commands[32 * 64];
     unsigned char Values[32 * 64 * 8];
     unsigned int Polyphony;
@@ -69,7 +69,7 @@ void CALLCONV su_load_gmdls(void);
 //      actually rendered and how many time ticks were actually advanced.
 //
 // Parameters:
-//      synth       pointer to the synthesizer used. RandSeed should be > 0 e.g. 1                  
+//      synth       pointer to the synthesizer used. RandSeed should be > 0 e.g. 1
 //      buffer      audio sample buffer, L R L R ...
 //      samples     pointer to the maximum number of samples to be rendered.
 //                  buffer should have a length of 2 * maxsamples as the audio
@@ -92,44 +92,9 @@ void CALLCONV su_load_gmdls(void);
 //    bits 11-13    The top pointer of the fpu stack. Any other value than 0 indicates that some values were left on the stack.
 int CALLCONV su_render(Synth* synth, float* buffer, int* samples, int* time);
 
-// Arithmetic opcode ids
-extern const int su_add_id;
-extern const int su_addp_id;
-extern const int su_pop_id;
-extern const int su_loadnote_id;
-extern const int su_mul_id;
-extern const int su_mulp_id;
-extern const int su_push_id;
-extern const int su_xch_id;
-
-// Effect opcode ids
-extern const int su_distort_id;
-extern const int su_hold_id;
-extern const int su_crush_id;
-extern const int su_gain_id;
-extern const int su_invgain_id;
-extern const int su_filter_id;
-extern const int su_clip_id;
-extern const int su_pan_id;
-extern const int su_delay_id;
-extern const int su_compres_id;
-
-// Flowcontrol opcode ids
-extern const int su_advance_id;
-extern const int su_speed_id;
-
-// Sink opcode ids
-extern const int su_out_id;
-extern const int su_outaux_id;
-extern const int su_aux_id;
-extern const int su_send_id;
-
-// Source opcode ids
-extern const int su_envelope_id;
-extern const int su_noise_id;
-extern const int su_oscillat_id;
-extern const int su_loadval_id;
-extern const int su_receive_id;
-extern const int su_in_id;
+#define SU_ADVANCE_ID       0
+{{- range $index, $element := .Instructions}}
+#define {{printf "su_%v_id" $element | upper | printf "%-20v"}}{{add1 $index | mul 2}}
+{{- end}}
 
 #endif // _SOINTU_H

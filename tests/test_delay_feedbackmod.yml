@@ -16,7 +16,8 @@ patch:
             - type: mulp
               parameters: {stereo: 0}
             - type: delay
-              parameters: {count: 1, damp: 64, delay: 0, dry: 128, feedback: 125, notetracking: 0, pregain: 40, stereo: 0}
+              parameters: {damp: 64, dry: 128, feedback: 125, notetracking: 0, pregain: 40, stereo: 0}
+              varargs: [11025]
             - type: pan
               parameters: {panning: 64, stereo: 0}
             - type: out
@@ -25,5 +26,3 @@ patch:
               parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 64, shape: 64, stereo: 0, transpose: 70, type: 0, unison: 0}
             - type: send
               parameters: {amount: 32, port: 2, sendpop: 1, stereo: 0, unit: 3, voice: 0}
-    delaytimes: [11025]
-    sampleoffsets: []

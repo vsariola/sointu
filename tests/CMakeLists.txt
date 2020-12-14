@@ -5,17 +5,9 @@ function(regression_test testname)
         set(asmfile ${testname}.asm)
         set (headerfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.h)
 
-        if(DEFINED CMAKE_C_SIZEOF_DATA_PTR AND CMAKE_C_SIZEOF_DATA_PTR EQUAL 8)
-            set(arch "-arch=amd64")
-        elseif(DEFINED CMAKE_CXX_SIZEOF_DATA_PTR AND CMAKE_CXX_SIZEOF_DATA_PTR EQUAL 8)
-            set(arch "-arch=amd64")
-        else()
-            set(arch "-arch=386")
-        endif()
-
         add_custom_command(            
             OUTPUT ${asmfile}
-            COMMAND ${sointuexe} -a -c -w ${arch} -d ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
+            COMMAND ${sointuexe} -a -c -w -arch=${arch} -d ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
             DEPENDS ${source} ${sointuexe}
         )
 
@@ -56,25 +48,13 @@ function(regression_test testname)
     endif()
 endfunction(regression_test)
 
-if(WIN32)
-    set(sointuexe ${CMAKE_CURRENT_BINARY_DIR}/sointu-cli.exe)
-else()
-    set(sointuexe ${CMAKE_CURRENT_BINARY_DIR}/sointu-cli)
-endif()
-
-# the tests include the entire ASM but we still want to rebuild when they change
-file(GLOB templates ${PROJECT_SOURCE_DIR}/templates/*.asm)
-file(GLOB go4k "${PROJECT_SOURCE_DIR}/go4k/*.go" "${PROJECT_SOURCE_DIR}/go4k/cmd/sointu-cli/*.go")
-
-message("templates=${templates}")
-message("go4k=${go4k}")
 
 # Build sointu-cli only once because go run has everytime quite a bit of delay when 
 # starting
 add_custom_command(            
     OUTPUT ${sointuexe}
     COMMAND go build -o ${sointuexe} ${PROJECT_SOURCE_DIR}/go4k/cmd/sointu-cli/main.go
-    DEPENDS "${templates}" "${go4k}"
+    DEPENDS "${templates}" "${go4k}" "${compilersrc}" ${STATICLIB}
 )
 
 regression_test(test_envelope "" ENVELOPE)

@@ -1,16 +1,11 @@
-package go4k
+package compiler
 
 import (
-	"bytes"
 	"fmt"
 	"math"
-	"path"
-	"path/filepath"
-	"runtime"
 	"strings"
-	"text/template"
 
-	"github.com/Masterminds/sprig"
+	"github.com/vsariola/sointu/go4k"
 )
 
 type OplistEntry struct {
@@ -19,141 +14,56 @@ type OplistEntry struct {
 }
 
 type Macros struct {
-	Opcodes          []OplistEntry
-	Polyphony        bool
-	MultivoiceTracks bool
-	PolyphonyBitmask int
-	Stacklocs        []string
-	Output16Bit      bool
-	Clip             bool
-	Amd64            bool
-	OS               string
-	DisableSections  bool
-	Sine             int // TODO: how can we elegantly access global constants in template, without wrapping each one by one
-	Trisaw           int
-	Pulse            int
-	Gate             int
-	Sample           int
-	usesFloatConst   map[float32]bool
-	usesIntConst     map[int]bool
-	floatConsts      []float32
-	intConsts        []int
-	calls            map[string]bool
-	stereo           map[string]bool
-	mono             map[string]bool
-	ops              map[string]bool
-	stackframes      map[string][]string
-	unitInputMap     map[string](map[string]int)
+	Stacklocs      []string
+	Output16Bit    bool
+	Clip           bool
+	Library        bool
+	Sine           int // TODO: how can we elegantly access global constants in template, without wrapping each one by one
+	Trisaw         int
+	Pulse          int
+	Gate           int
+	Sample         int
+	usesFloatConst map[float32]bool
+	usesIntConst   map[int]bool
+	floatConsts    []float32
+	intConsts      []int
+	calls          map[string]bool
+	stackframes    map[string][]string
+	FeatureSet
+	Compiler
 }
 
-type PlayerMacros struct {
-	Song              *Song
-	VoiceTrackBitmask int
-	JumpTable         []string
-	Code              []byte
-	Values            []byte
-	Macros
-}
-
-func NewPlayerMacros(song *Song, targetArch string, targetOS string) *PlayerMacros {
-	unitInputMap := map[string](map[string]int){}
-	for k, v := range UnitTypes {
-		inputMap := map[string]int{}
-		inputCount := 0
-		for _, t := range v {
-			if t.CanModulate {
-				inputMap[t.Name] = inputCount
-				inputCount++
-			}
-		}
-		unitInputMap[k] = inputMap
+func NewMacros(c Compiler, f FeatureSet) *Macros {
+	return &Macros{
+		calls:          map[string]bool{},
+		usesFloatConst: map[float32]bool{},
+		usesIntConst:   map[int]bool{},
+		stackframes:    map[string][]string{},
+		Sine:           go4k.Sine,
+		Trisaw:         go4k.Trisaw,
+		Pulse:          go4k.Pulse,
+		Gate:           go4k.Gate,
+		Sample:         go4k.Sample,
+		Compiler:       c,
+		FeatureSet:     f,
 	}
-	jumpTable, code, values := song.Patch.Encode()
-	amd64 := targetArch == "amd64"
-	p := &PlayerMacros{
-		Song:      song,
-		JumpTable: jumpTable,
-		Code:      code,
-		Values:    values,
-		Macros: Macros{
-			mono:           map[string]bool{},
-			stereo:         map[string]bool{},
-			calls:          map[string]bool{},
-			ops:            map[string]bool{},
-			usesFloatConst: map[float32]bool{},
-			usesIntConst:   map[int]bool{},
-			stackframes:    map[string][]string{},
-			unitInputMap:   unitInputMap,
-			Amd64:          amd64,
-			OS:             targetOS,
-			Sine:           Sine,
-			Trisaw:         Trisaw,
-			Pulse:          Pulse,
-			Gate:           Gate,
-			Sample:         Sample,
-		}}
-	for _, track := range song.Tracks {
-		if track.NumVoices > 1 {
-			p.MultivoiceTracks = true
-		}
-	}
-	trackVoiceNumber := 0
-	for _, t := range song.Tracks {
-		for b := 0; b < t.NumVoices-1; b++ {
-			p.VoiceTrackBitmask += 1 << trackVoiceNumber
-			trackVoiceNumber++
-		}
-		trackVoiceNumber++ // set all bits except last one
-	}
-	totalVoices := 0
-	for _, instr := range song.Patch.Instruments {
-		if instr.NumVoices > 1 {
-			p.Polyphony = true
-		}
-		for _, unit := range instr.Units {
-			if !p.ops[unit.Type] {
-				p.ops[unit.Type] = true
-				numParams := 0
-				for _, v := range UnitTypes[unit.Type] {
-					if v.CanSet && v.CanModulate {
-						numParams++
-					}
-				}
-				p.Opcodes = append(p.Opcodes, OplistEntry{
-					Type:      unit.Type,
-					NumParams: numParams,
-				})
-			}
-			if unit.Parameters["stereo"] == 1 {
-				p.stereo[unit.Type] = true
-			} else {
-				p.mono[unit.Type] = true
-			}
-		}
-		totalVoices += instr.NumVoices
-		for k := 0; k < instr.NumVoices-1; k++ {
-			p.PolyphonyBitmask = (p.PolyphonyBitmask << 1) + 1
-		}
-		p.PolyphonyBitmask <<= 1
-	}
-	p.Output16Bit = song.Output16Bit
-	return p
 }
 
-func (p *Macros) Opcode(t string) bool {
-	return p.ops[t]
+func (p *Macros) HasOp(instruction string) bool {
+	_, ok := p.Opcode(instruction)
+	return ok
 }
 
-func (p *Macros) Stereo(t string) bool {
-	return p.stereo[t]
+func (p *Macros) Stereo(unitType string) bool {
+	return p.SupportsParamValue(unitType, "stereo", 1)
 }
 
-func (p *Macros) Mono(t string) bool {
-	return p.mono[t]
+func (p *Macros) Mono(unitType string) bool {
+	return p.SupportsParamValue(unitType, "stereo", 0)
 }
 
-func (p *Macros) StereoAndMono(t string) bool {
-	return p.stereo[t] && p.mono[t]
+func (p *Macros) StereoAndMono(unitType string) bool {
+	return p.Stereo(unitType) && p.Mono(unitType)
 }
 
 // Macros and functions to accumulate constants automagically
@@ -431,6 +341,22 @@ func (p *Macros) Pop(register string) string {
 	return fmt.Sprintf("pop     %v      ; %v = %v, Stack: %v ", register, register, last, p.FmtStack())
 }
 
+func (p *Macros) SaveFPUState() string {
+	i := 0
+	for ; i < 108; i += p.PTRSIZE() {
+		p.Stacklocs = append(p.Stacklocs, fmt.Sprintf("F%v", i))
+	}
+	return fmt.Sprintf("sub     %[1]v, %[2]v\nfsave   [%[1]v]", p.SP(), i)
+}
+
+func (p *Macros) LoadFPUState() string {
+	i := 0
+	for ; i < 108; i += p.PTRSIZE() {
+		p.Stacklocs = p.Stacklocs[:len(p.Stacklocs)-1]
+	}
+	return fmt.Sprintf("frstor   [%[1]v]\nadd     %[1]v, %[2]v", p.SP(), i)
+}
+
 func (p *Macros) Stack(name string) (string, error) {
 	for i, k := range p.Stacklocs {
 		if k == name {
@@ -463,7 +389,11 @@ func (p *Macros) FmtStack() string {
 
 func (p *Macros) ExportFunc(name string, params ...string) string {
 	if !p.Amd64 {
-		p.Stacklocs = append(params, "retaddr_"+name) // in 32-bit, we use stdcall and parameters are in the stack
+		reverseParams := make([]string, len(params))
+		for i, param := range params {
+			reverseParams[len(params)-1-i] = param
+		}
+		p.Stacklocs = append(reverseParams, "retaddr_"+name) // in 32-bit, we use stdcall and parameters are in the stack
 		if p.OS == "windows" {
 			return fmt.Sprintf("%[1]v\nglobal _%[2]v@%[3]v\n_%[2]v@%[3]v:", p.SectText(name), name, len(params)*4)
 		}
@@ -474,54 +404,16 @@ func (p *Macros) ExportFunc(name string, params ...string) string {
 	return fmt.Sprintf("%[1]v\nglobal %[2]v\n%[2]v:", p.SectText(name), name)
 }
 
-func (p *Macros) Count(count int) []int {
-	s := make([]int, count)
-	for i := range s {
-		s[i] = i
-	}
-	return s
-}
-
-func (p *Macros) Sub(a int, b int) int {
-	return a - b
-}
-
 func (p *Macros) Input(unit string, port string) (string, error) {
-	umap, ok := p.unitInputMap[unit]
-	if !ok {
-		return "", fmt.Errorf(`trying to find input for unknown unit "%v"`, unit)
-	}
-	i, ok := umap[port]
-	if !ok {
-		return "", fmt.Errorf(`trying to find input for unknown input "%v" for unit "%v"`, port, unit)
-	}
+	i := p.InputNumber(unit, port)
 	if i != 0 {
 		return fmt.Sprintf("%v + %v", p.INP(), i*4), nil
 	}
 	return p.INP(), nil
 }
 
-func (p *Macros) InputNumber(unit string, port string) (string, error) {
-	umap, ok := p.unitInputMap[unit]
-	if !ok {
-		return "", fmt.Errorf(`trying to find InputNumber for unknown unit "%v"`, unit)
-	}
-	i, ok := umap[port]
-	if !ok {
-		return "", fmt.Errorf(`trying to find InputNumber for unknown input "%v" for unit "%v"`, port, unit)
-	}
-	return fmt.Sprintf("%v", i), nil
-}
-
 func (p *Macros) Modulation(unit string, port string) (string, error) {
-	umap, ok := p.unitInputMap[unit]
-	if !ok {
-		return "", fmt.Errorf(`trying to find input for unknown unit "%v"`, unit)
-	}
-	i, ok := umap[port]
-	if !ok {
-		return "", fmt.Errorf(`trying to find input for unknown input "%v" for unit "%v"`, port, unit)
-	}
+	i := p.InputNumber(unit, port)
 	return fmt.Sprintf("%v + %v", p.WRK(), i*4+32), nil
 }
 
@@ -549,6 +441,32 @@ func (p *Macros) Use(value string, regs ...string) (string, error) {
 	return value, nil
 }
 
+type PlayerMacros struct {
+	Song              *go4k.Song
+	VoiceTrackBitmask int
+	MaxSamples        int
+	Macros
+	EncodedPatch
+}
+
+func NewPlayerMacros(c Compiler, f FeatureSet, s *go4k.Song, e *EncodedPatch, maxSamples int) *PlayerMacros {
+	if maxSamples == 0 {
+		maxSamples = s.SamplesPerRow() * s.TotalRows()
+	}
+	macros := *NewMacros(c, f)
+	macros.Output16Bit = s.Output16Bit // TODO: should we actually store output16bit in Songs or not?
+	p := PlayerMacros{Song: s, Macros: macros, MaxSamples: maxSamples, EncodedPatch: *e}
+	trackVoiceNumber := 0
+	for _, t := range s.Tracks {
+		for b := 0; b < t.NumVoices-1; b++ {
+			p.VoiceTrackBitmask += 1 << trackVoiceNumber
+			trackVoiceNumber++
+		}
+		trackVoiceNumber++ // set all bits except last one
+	}
+	return &p
+}
+
 func (p *PlayerMacros) NumDelayLines() string {
 	total := 0
 	for _, instr := range p.Song.Patch.Instruments {
@@ -559,69 +477,4 @@ func (p *PlayerMacros) NumDelayLines() string {
 		}
 	}
 	return fmt.Sprintf("%v", total)
-}
-
-func (p *PlayerMacros) UsesDelayModulation() (bool, error) {
-	for i, instrument := range p.Song.Patch.Instruments {
-		for j, unit := range instrument.Units {
-			if unit.Type == "send" {
-				targetInstrument := i
-				if unit.Parameters["voice"] > 0 {
-					v, err := p.Song.Patch.InstrumentForVoice(unit.Parameters["voice"] - 1)
-					if err != nil {
-						return false, fmt.Errorf("INSTRUMENT #%v / SEND #%v targets voice %v, which does not exist", i, j, unit.Parameters["voice"])
-					}
-					targetInstrument = v
-				}
-				if unit.Parameters["unit"] < 0 || unit.Parameters["unit"] >= len(p.Song.Patch.Instruments[targetInstrument].Units) {
-					return false, fmt.Errorf("INSTRUMENT #%v / SEND #%v target unit %v out of range", i, j, unit.Parameters["unit"])
-				}
-				if p.Song.Patch.Instruments[targetInstrument].Units[unit.Parameters["unit"]].Type == "delay" && unit.Parameters["port"] == 4 {
-					return true, nil
-				}
-			}
-		}
-	}
-	return false, nil
-}
-
-func (p *PlayerMacros) HasParamValue(unitType string, paramName string, value int) bool {
-	for _, instr := range p.Song.Patch.Instruments {
-		for _, unit := range instr.Units {
-			if unit.Type == unitType {
-				if unit.Parameters[paramName] == value {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-func (p *PlayerMacros) HasParamValueOtherThan(unitType string, paramName string, value int) bool {
-	for _, instr := range p.Song.Patch.Instruments {
-		for _, unit := range instr.Units {
-			if unit.Type == unitType {
-				if unit.Parameters[paramName] != value {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-func Compile(song *Song, targetArch string, targetOs string) (string, error) {
-	_, myname, _, _ := runtime.Caller(0)
-	templateDir := filepath.Join(path.Dir(myname), "..", "templates", "*.asm")
-	tmpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).ParseGlob(templateDir)
-	if err != nil {
-		return "", fmt.Errorf(`could not create template based on dir "%v": %v`, templateDir, err)
-	}
-	b := bytes.NewBufferString("")
-	err = tmpl.ExecuteTemplate(b, "player.asm", NewPlayerMacros(song, targetArch, targetOs))
-	if err != nil {
-		return "", fmt.Errorf(`could not execute template "player.asm": %v`, err)
-	}
-	return b.String(), nil
 }

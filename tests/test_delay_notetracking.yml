@@ -20,7 +20,8 @@ patch:
             - type: filter
               parameters: {bandpass: 1, frequency: 32, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
             - type: delay
-              parameters: {count: 1, damp: 16, delay: 0, dry: 128, feedback: 128, notetracking: 1, pregain: 128, stereo: 0}
+              parameters: {damp: 16, dry: 128, feedback: 128, notetracking: 1, pregain: 128, stereo: 0}
+              varargs: [10787]
             - type: filter
               parameters: {bandpass: 1, frequency: 24, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
             - type: mulp
@@ -29,5 +30,3 @@ patch:
               parameters: {panning: 64, stereo: 0}
             - type: out
               parameters: {gain: 128, stereo: 1}
-    delaytimes: [10787]
-    sampleoffsets: []

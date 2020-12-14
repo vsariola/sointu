@@ -26,7 +26,7 @@ su_synth_obj:
     {{- end}}
     {{- $prologsize := len .Stacklocs}}
     xor     eax, eax
-    {{- if .MultivoiceTracks}}
+    {{- if ne .VoiceTrackBitmask 0}}
     {{.Push (.VoiceTrackBitmask | printf "%v") "VoiceTrackBitmask"}}
     {{- end}}
     {{.Push "1" "RandSeed"}}
@@ -37,20 +37,20 @@ su_render_rowloop:                      ; loop through every row in the song
         xor     eax, eax                ; ecx is the current sample within row
 su_render_sampleloop:                   ; loop through every sample in the row
             {{.Push .AX "Sample"}}
-            {{- if .Polyphony}}
+            {{- if .SupportsPolyphony}}
             {{.Push (.PolyphonyBitmask | printf "%v") "PolyphonyBitmask"}} ; does the next voice reuse the current opcodes?
             {{- end}}
             {{.Push (.Song.Patch.TotalVoices | printf "%v") "VoicesRemain"}}
             mov     {{.DX}}, {{.PTRWORD}} su_synth_obj                       ; {{.DX}} points to the synth object
             mov     {{.COM}}, {{.PTRWORD}} su_patch_code           ; COM points to vm code
             mov     {{.VAL}}, {{.PTRWORD}} su_patch_parameters             ; VAL points to unit params
-            {{- if .Opcode "delay"}}
+            {{- if .HasOp "delay"}}
             lea     {{.CX}}, [{{.DX}} + su_synthworkspace.size - su_delayline_wrk.filtstate]
             {{- end}}
             lea     {{.WRK}}, [{{.DX}} + su_synthworkspace.voices]            ; WRK points to the first voice
             {{.Call "su_run_vm"}} ; run through the VM code
             {{.Pop .AX}}
-            {{- if .Polyphony}}
+            {{- if .SupportsPolyphony}}
             {{.Pop .AX}}
             {{- end}}
             {{- template "output_sound.asm" .}}                ; *ptr++ = left, *ptr++ = right
@@ -64,9 +64,8 @@ su_render_sampleloop:                   ; loop through every sample in the row
         cmp     eax, {{.Song.TotalRows}}
         jl      su_render_rowloop
     ; rewind the stack the entropy of multiple pop {{.AX}} is probably lower than add
-    {{- $x := .}}
-    {{- range (.Sub (len .Stacklocs) $prologsize | .Count)}}
-    {{$x.Pop $x.AX}}
+    {{- range slice .Stacklocs $prologsize}}
+    {{$.Pop $.AX}}
     {{- end}}
     {{-  if .Amd64}}
     {{- if eq .OS "windows"}}
@@ -89,7 +88,7 @@ su_render_sampleloop:                   ; loop through every sample in the row
 ;   Dirty:      pretty much everything
 ;-------------------------------------------------------------------------------
 {{.Func "su_update_voices"}}
-{{- if .MultivoiceTracks}}
+{{- if ne .VoiceTrackBitmask 0}}
 ; The more complicated implementation: one track can trigger multiple voices
     xor     edx, edx
     mov     ebx, {{.Song.PatternRows}}                   ; we could do xor ebx,ebx; mov bl,PATTERN_SIZE, but that would limit patternsize to 256...
@@ -198,31 +197,31 @@ su_update_voices_skipadd:
     db {{.Sequence | toStrings | join ","}}
 {{- end}}
 
-{{- if gt (.Song.Patch.SampleOffsets | len) 0}}
+{{- if gt (.SampleOffsets | len) 0}}
 ;-------------------------------------------------------------------------------
 ;    Sample offsets
 ;-------------------------------------------------------------------------------
 {{.Data "su_sample_offsets"}}
-{{- range .Song.Patch.SampleOffsets}}
+{{- range .SampleOffsets}}
     dd {{.Start}}
     dw {{.LoopStart}}
     dw {{.LoopLength}}
 {{- end}}
 {{end}}
 
-{{- if gt (.Song.Patch.DelayTimes | len ) 0}}
+{{- if gt (.DelayTimes | len ) 0}}
 ;-------------------------------------------------------------------------------
 ;    Delay times
 ;-------------------------------------------------------------------------------
 {{.Data "su_delay_times"}}
-    dw {{.Song.Patch.DelayTimes | toStrings | join ","}}
+    dw {{.DelayTimes | toStrings | join ","}}
 {{end}}
 
 ;-------------------------------------------------------------------------------
 ;    The code for this patch, basically indices to vm jump table
 ;-------------------------------------------------------------------------------
 {{.Data "su_patch_code"}}
-    db {{.Code | toStrings | join ","}}
+    db {{.Commands | toStrings | join ","}}
 
 ;-------------------------------------------------------------------------------
 ;    The parameters / inputs to each opcode

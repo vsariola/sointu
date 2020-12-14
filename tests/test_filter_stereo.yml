@@ -21,5 +21,3 @@ patch:
               parameters: {bandpass: 1, frequency: 32, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 64, stereo: 1}
             - type: out
               parameters: {gain: 128, stereo: 1}
-    delaytimes: []
-    sampleoffsets: []

@@ -1,4 +1,4 @@
-package go4k_test
+package bridge_test
 
 import (
 	"bytes"
@@ -9,19 +9,18 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"reflect"
 	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/vsariola/sointu/go4k"
 	"github.com/vsariola/sointu/go4k/bridge"
+	"gopkg.in/yaml.v2"
 )
 
 func TestAllAsmFiles(t *testing.T) {
-	bridge.Init()
 	_, myname, _, _ := runtime.Caller(0)
-	files, err := filepath.Glob(path.Join(path.Dir(myname), "..", "tests", "*.asm"))
+	files, err := filepath.Glob(path.Join(path.Dir(myname), "..", "..", "tests", "*.yml"))
 	if err != nil {
 		t.Fatalf("cannot glob files in the test directory: %v", err)
 	}
@@ -37,89 +36,16 @@ func TestAllAsmFiles(t *testing.T) {
 			if err != nil {
 				t.Fatalf("cannot read the .asm file: %v", filename)
 			}
-			song, err := go4k.ParseAsm(string(asmcode))
+			var song go4k.Song
+			err = yaml.Unmarshal(asmcode, &song)
 			if err != nil {
-				t.Fatalf("could not parse the .asm file: %v", err)
+				t.Fatalf("could not parse the .yml file: %v", err)
 			}
 			synth, err := bridge.Synth(song.Patch)
 			if err != nil {
 				t.Fatalf("Compiling patch failed: %v", err)
 			}
-			buffer, err := go4k.Play(synth, *song)
-			buffer = buffer[:song.TotalRows()*song.SamplesPerRow()*2] // extend to the nominal length always.
-			if err != nil {
-				t.Fatalf("Play failed: %v", err)
-			}
-			if os.Getenv("GO4K_TEST_SAVE_OUTPUT") == "YES" {
-				outputpath := path.Join(path.Dir(myname), "actual_output")
-				if _, err := os.Stat(outputpath); os.IsNotExist(err) {
-					os.Mkdir(outputpath, 0755)
-				}
-				outFileName := path.Join(path.Dir(myname), "actual_output", testname+".raw")
-				outfile, err := os.OpenFile(outFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
-				defer outfile.Close()
-				if err != nil {
-					t.Fatalf("Creating file failed: %v", err)
-				}
-				var createdbuf bytes.Buffer
-				err = binary.Write(&createdbuf, binary.LittleEndian, buffer)
-				if err != nil {
-					t.Fatalf("error converting buffer: %v", err)
-				}
-				_, err = outfile.Write(createdbuf.Bytes())
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
-			if song.Output16Bit {
-				int16Buffer := convertToInt16Buffer(buffer)
-				compareToRawInt16(t, int16Buffer, testname+".raw")
-			} else {
-				compareToRawFloat32(t, buffer, testname+".raw")
-			}
-		})
-	}
-}
-
-func TestSerializingAllAsmFiles(t *testing.T) {
-	bridge.Init()
-	_, myname, _, _ := runtime.Caller(0)
-	files, err := filepath.Glob(path.Join(path.Dir(myname), "..", "tests", "*.asm"))
-	if err != nil {
-		t.Fatalf("cannot glob files in the test directory: %v", err)
-	}
-	for _, filename := range files {
-		basename := filepath.Base(filename)
-		testname := strings.TrimSuffix(basename, path.Ext(basename))
-		t.Run(testname, func(t *testing.T) {
-			if runtime.GOOS != "windows" && strings.Contains(testname, "sample") {
-				t.Skip("Samples (gm.dls) available only on Windows")
-				return
-			}
-			asmcode, err := ioutil.ReadFile(filename)
-			if err != nil {
-				t.Fatalf("cannot read the .asm file: %v", filename)
-			}
-			song, err := go4k.ParseAsm(string(asmcode)) // read the asm
-			if err != nil {
-				t.Fatalf("could not parse the .asm file: %v", err)
-			}
-			str, err := go4k.FormatAsm(song) // serialize again
-			if err != nil {
-				t.Fatalf("Could not serialize asm file: %v", err)
-			}
-			song2, err := go4k.ParseAsm(str) // deserialize again. The rendered song should still give same results.
-			if err != nil {
-				t.Fatalf("could not parse the serialized asm code: %v", err)
-			}
-			if !reflect.DeepEqual(song, song2) {
-				t.Fatalf("serialize/deserialize does not result equal songs, before: %v, after %v", song, song2)
-			}
-			synth, err := bridge.Synth(song2.Patch)
-			if err != nil {
-				t.Fatalf("Compiling patch failed: %v", err)
-			}
-			buffer, err := go4k.Play(synth, *song2)
+			buffer, err := go4k.Play(synth, song)
 			buffer = buffer[:song.TotalRows()*song.SamplesPerRow()*2] // extend to the nominal length always.
 			if err != nil {
 				t.Fatalf("Play failed: %v", err)
@@ -157,7 +83,7 @@ func TestSerializingAllAsmFiles(t *testing.T) {
 
 func compareToRawFloat32(t *testing.T, buffer []float32, rawname string) {
 	_, filename, _, _ := runtime.Caller(0)
-	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "tests", "expected_output", rawname))
+	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "..", "tests", "expected_output", rawname))
 	if err != nil {
 		t.Fatalf("cannot read expected: %v", err)
 	}
@@ -179,7 +105,7 @@ func compareToRawFloat32(t *testing.T, buffer []float32, rawname string) {
 
 func compareToRawInt16(t *testing.T, buffer []int16, rawname string) {
 	_, filename, _, _ := runtime.Caller(0)
-	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "tests", "expected_output", rawname))
+	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "..", "tests", "expected_output", rawname))
 	if err != nil {
 		t.Fatalf("cannot read expected: %v", err)
 	}

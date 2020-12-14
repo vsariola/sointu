@@ -12,25 +12,14 @@ import (
 	"github.com/vsariola/sointu/go4k/bridge"
 )
 
-const BPM = 100
-const SAMPLE_RATE = 44100
-const TOTAL_ROWS = 16
-const SAMPLES_PER_ROW = SAMPLE_RATE * 4 * 60 / (BPM * 16)
-
-const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
-
-// const bufsize = su_max_samples * 2
-
 func TestBridge(t *testing.T) {
 	patch := go4k.Patch{
 		Instruments: []go4k.Instrument{
 			go4k.Instrument{1, []go4k.Unit{
-				go4k.Unit{"envelope", map[string]int{"stereo": 0, "attack": 64, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
-				go4k.Unit{"envelope", map[string]int{"stereo": 0, "attack": 95, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
-				go4k.Unit{"out", map[string]int{"stereo": 1, "gain": 128}},
-			}}},
-		SampleOffsets: []go4k.SampleOffset{},
-		DelayTimes:    []int{}}
+				go4k.Unit{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 64, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
+				go4k.Unit{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 95, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
+				go4k.Unit{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
+			}}}}
 
 	synth, err := bridge.Synth(patch)
 	if err != nil {
@@ -64,6 +53,7 @@ func TestBridge(t *testing.T) {
 	for i, v := range createdb {
 		if expectedb[i] != v {
 			t.Errorf("byte mismatch @ %v, got %v, expected %v", i, v, expectedb[i])
+			break
 		}
 	}
 }
@@ -72,10 +62,8 @@ func TestStackUnderflow(t *testing.T) {
 	patch := go4k.Patch{
 		Instruments: []go4k.Instrument{
 			go4k.Instrument{1, []go4k.Unit{
-				go4k.Unit{"pop", map[string]int{}},
-			}}},
-		SampleOffsets: []go4k.SampleOffset{},
-		DelayTimes:    []int{}}
+				go4k.Unit{Type: "pop", Parameters: map[string]int{}},
+			}}}}
 	synth, err := bridge.Synth(patch)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
@@ -91,10 +79,8 @@ func TestStackBalancing(t *testing.T) {
 	patch := go4k.Patch{
 		Instruments: []go4k.Instrument{
 			go4k.Instrument{1, []go4k.Unit{
-				go4k.Unit{"push", map[string]int{}},
-			}}},
-		SampleOffsets: []go4k.SampleOffset{},
-		DelayTimes:    []int{}}
+				go4k.Unit{Type: "push", Parameters: map[string]int{}},
+			}}}}
 	synth, err := bridge.Synth(patch)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
@@ -110,27 +96,25 @@ func TestStackOverflow(t *testing.T) {
 	patch := go4k.Patch{
 		Instruments: []go4k.Instrument{
 			go4k.Instrument{1, []go4k.Unit{
-				go4k.Unit{"loadval", map[string]int{"value": 128}},
-				go4k.Unit{"loadval", map[string]int{"value": 128}},
-				go4k.Unit{"loadval", map[string]int{"value": 128}},
-				go4k.Unit{"loadval", map[string]int{"value": 128}},
-				go4k.Unit{"loadval", map[string]int{"value": 128}},
-				go4k.Unit{"loadval", map[string]int{"value": 128}},
-				go4k.Unit{"loadval", map[string]int{"value": 128}},
-				go4k.Unit{"loadval", map[string]int{"value": 128}},
-				go4k.Unit{"loadval", map[string]int{"value": 128}},
-				go4k.Unit{"pop", map[string]int{}},
-				go4k.Unit{"pop", map[string]int{}},
-				go4k.Unit{"pop", map[string]int{}},
-				go4k.Unit{"pop", map[string]int{}},
-				go4k.Unit{"pop", map[string]int{}},
-				go4k.Unit{"pop", map[string]int{}},
-				go4k.Unit{"pop", map[string]int{}},
-				go4k.Unit{"pop", map[string]int{}},
-				go4k.Unit{"pop", map[string]int{}},
-			}}},
-		SampleOffsets: []go4k.SampleOffset{},
-		DelayTimes:    []int{}}
+				go4k.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
+				go4k.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
+				go4k.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
+				go4k.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
+				go4k.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
+				go4k.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
+				go4k.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
+				go4k.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
+				go4k.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
+				go4k.Unit{Type: "pop", Parameters: map[string]int{}},
+				go4k.Unit{Type: "pop", Parameters: map[string]int{}},
+				go4k.Unit{Type: "pop", Parameters: map[string]int{}},
+				go4k.Unit{Type: "pop", Parameters: map[string]int{}},
+				go4k.Unit{Type: "pop", Parameters: map[string]int{}},
+				go4k.Unit{Type: "pop", Parameters: map[string]int{}},
+				go4k.Unit{Type: "pop", Parameters: map[string]int{}},
+				go4k.Unit{Type: "pop", Parameters: map[string]int{}},
+				go4k.Unit{Type: "pop", Parameters: map[string]int{}},
+			}}}}
 	synth, err := bridge.Synth(patch)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
@@ -146,12 +130,10 @@ func TestDivideByZero(t *testing.T) {
 	patch := go4k.Patch{
 		Instruments: []go4k.Instrument{
 			go4k.Instrument{1, []go4k.Unit{
-				go4k.Unit{"loadval", map[string]int{"value": 128}},
-				go4k.Unit{"invgain", map[string]int{"invgain": 0}},
-				go4k.Unit{"pop", map[string]int{}},
-			}}},
-		SampleOffsets: []go4k.SampleOffset{},
-		DelayTimes:    []int{}}
+				go4k.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
+				go4k.Unit{Type: "invgain", Parameters: map[string]int{"invgain": 0}},
+				go4k.Unit{Type: "pop", Parameters: map[string]int{}},
+			}}}}
 	synth, err := bridge.Synth(patch)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)

@@ -1,15 +1,15 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sointu/sointu.h>
+#include <sointu.h>
 #include "test_render_samples.h"
 
 void SU_CALLCONV su_render_song(float* buffer) {
     Synth* synth;
-    const unsigned char commands[] = { su_envelope_id, // MONO
-                                       su_envelope_id, // MONO
-                                       su_out_id + 1,  // STEREO
-                                       su_advance_id };// MONO
+    const unsigned char commands[] = { SU_ENVELOPE_ID, // MONO
+                                       SU_ENVELOPE_ID, // MONO
+                                       SU_OUT_ID + 1,  // STEREO
+                                       SU_ADVANCE_ID };// MONO
     const unsigned char values[] = { 64, 64, 64, 80, 128, // envelope 1
                                      95, 64, 64, 80, 128, // envelope 2
                                      128};

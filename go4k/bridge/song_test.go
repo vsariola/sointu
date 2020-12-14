@@ -1,4 +1,4 @@
-package go4k_test
+package bridge_test
 
 import (
 	"bytes"
@@ -25,16 +25,14 @@ const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
 func TestPlayer(t *testing.T) {
 	patch := go4k.Patch{
 		Instruments: []go4k.Instrument{go4k.Instrument{1, []go4k.Unit{
-			go4k.Unit{"envelope", map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
-			go4k.Unit{"oscillator", map[string]int{"stereo": 0, "transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "type": go4k.Sine, "lfo": 0, "unison": 0}},
-			go4k.Unit{"mulp", map[string]int{"stereo": 0}},
-			go4k.Unit{"envelope", map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
-			go4k.Unit{"oscillator", map[string]int{"stereo": 0, "transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "type": go4k.Sine, "lfo": 0, "unison": 0}},
-			go4k.Unit{"mulp", map[string]int{"stereo": 0}},
-			go4k.Unit{"out", map[string]int{"stereo": 1, "gain": 128}},
-		}}},
-		DelayTimes:    []int{},
-		SampleOffsets: []go4k.SampleOffset{}}
+			go4k.Unit{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
+			go4k.Unit{Type: "oscillator", Parameters: map[string]int{"stereo": 0, "transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "type": go4k.Sine, "lfo": 0, "unison": 0}},
+			go4k.Unit{Type: "mulp", Parameters: map[string]int{"stereo": 0}},
+			go4k.Unit{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
+			go4k.Unit{Type: "oscillator", Parameters: map[string]int{"stereo": 0, "transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "type": go4k.Sine, "lfo": 0, "unison": 0}},
+			go4k.Unit{Type: "mulp", Parameters: map[string]int{"stereo": 0}},
+			go4k.Unit{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
+		}}}}
 	patterns := [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}}
 	tracks := []go4k.Track{go4k.Track{1, []byte{0}}}
 	song := go4k.Song{BPM: 100, Patterns: patterns, Tracks: tracks, Patch: patch, Output16Bit: false, Hold: 1}
@@ -47,7 +45,7 @@ func TestPlayer(t *testing.T) {
 		t.Fatalf("Render failed: %v", err)
 	}
 	_, filename, _, _ := runtime.Caller(0)
-	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "tests", "expected_output", "test_oscillat_sine.raw"))
+	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "..", "tests", "expected_output", "test_oscillat_sine.raw"))
 	if err != nil {
 		t.Fatalf("cannot read expected: %v", err)
 	}
