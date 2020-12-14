@@ -1,33 +1,30 @@
-function(regression_test testname)
+function(regression_test testname)    
+   
     if(${ARGC} LESS 4)
         set(source ${testname}.yml)
         set(asmfile ${testname}.asm)
         set (headerfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.h)
-        add_custom_command(
-            PRE_BUILD
-            OUTPUT ${headerfile}
-            COMMAND go run ${PROJECT_SOURCE_DIR}/go4k/cmd/sointu-cli/main.go -c -w -d ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
-            DEPENDS ${source}
-        )
-        add_custom_command(
-            PRE_BUILD
+
+        if(DEFINED CMAKE_C_SIZEOF_DATA_PTR AND CMAKE_C_SIZEOF_DATA_PTR EQUAL 8)
+            set(arch "-arch=amd64")
+        elseif(DEFINED CMAKE_CXX_SIZEOF_DATA_PTR AND CMAKE_CXX_SIZEOF_DATA_PTR EQUAL 8)
+            set(arch "-arch=amd64")
+        else()
+            set(arch "-arch=386")
+        endif()
+
+        add_custom_command(            
             OUTPUT ${asmfile}
-            COMMAND go run ${PROJECT_SOURCE_DIR}/go4k/cmd/sointu-cli/main.go -a -w -d ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
-            DEPENDS ${source}
+            COMMAND ${sointuexe} -a -c -w ${arch} -d ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
+            DEPENDS ${source} ${sointuexe}
         )
-        add_executable(${testname} test_renderer.c ${headerfile} ${asmfile})
+
+        add_executable(${testname} test_renderer.c ${asmfile})
         target_compile_definitions(${testname} PUBLIC TEST_HEADER=<${testname}.h>)
     else()
         set(source ${ARGV3})
         add_executable(${testname} ${source} test_renderer.c)
-    endif()
-
-    # the tests include the entire ASM but we still want to rebuild when they change
-    file(GLOB SOINTU ${PROJECT_SOURCE_DIR}/include/sointu/*.inc                   
-                     ${PROJECT_SOURCE_DIR}/include/sointu/win32/*.inc
-                     ${PROJECT_SOURCE_DIR}/include/sointu/win64/*.inc)
-    set_source_files_properties(${source}.asm PROPERTIES OBJECT_DEPENDS "${SOINTU}")
-    set_source_files_properties(${FOURKLANG} PROPERTIES HEADER_FILE_ONLY TRUE)
+    endif()    
 
     add_test(${testname} ${testname})
     target_link_libraries(${testname} ${HEADERLIB})
@@ -39,10 +36,10 @@ function(regression_test testname)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${rawinput} ${rawoutput}
     )
 
-    target_include_directories(${testname} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-    target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}")
-
     add_dependencies(${testname} ${testname}_rawcopy)
+
+    target_include_directories(${testname} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+    target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}")    
 
     if(ARGC GREATER 1)
         if (ARGV1)
@@ -58,6 +55,27 @@ function(regression_test testname)
         endif()
     endif()
 endfunction(regression_test)
+
+if(WIN32)
+    set(sointuexe ${CMAKE_CURRENT_BINARY_DIR}/sointu-cli.exe)
+else()
+    set(sointuexe ${CMAKE_CURRENT_BINARY_DIR}/sointu-cli)
+endif()
+
+# the tests include the entire ASM but we still want to rebuild when they change
+file(GLOB templates ${PROJECT_SOURCE_DIR}/templates/*.asm)
+file(GLOB go4k "${PROJECT_SOURCE_DIR}/go4k/*.go" "${PROJECT_SOURCE_DIR}/go4k/cmd/sointu-cli/*.go")
+
+message("templates=${templates}")
+message("go4k=${go4k}")
+
+# Build sointu-cli only once because go run has everytime quite a bit of delay when 
+# starting
+add_custom_command(            
+    OUTPUT ${sointuexe}
+    COMMAND go build -o ${sointuexe} ${PROJECT_SOURCE_DIR}/go4k/cmd/sointu-cli/main.go
+    DEPENDS "${templates}" "${go4k}"
+)
 
 regression_test(test_envelope "" ENVELOPE)
 regression_test(test_envelope_stereo ENVELOPE)

@@ -24,6 +24,6 @@ patch:
             - type: oscillator
               parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 64, shape: 64, stereo: 0, transpose: 50, type: 0, unison: 0}
             - type: send
-              parameters: {amount: 65, port: 5, sendpop: 1, stereo: 0, unit: 3, voice: 0}
+              parameters: {amount: 65, port: 4, sendpop: 1, stereo: 0, unit: 3, voice: 0}
     delaytimes: [1000]
     sampleoffsets: []

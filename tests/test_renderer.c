@@ -1,16 +1,17 @@
-#include <stdio.h>
+#if defined (_WIN32)
+#define _CRT_SECURE_NO_DEPRECATE
+#include <windows.h>
+#else
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
-#if defined (_WIN32)
-#include <windows.h>
-#else
-#include <sys/types.h>
-#include <sys/stat.h>
-#endif
+#include <stdio.h>
 
 #include TEST_HEADER
 SUsample buf[SU_BUFFER_LENGTH];
@@ -20,7 +21,6 @@ int main(int argc, char* argv[]) {
     FILE* f;
     char filename[256];
     int n;
-    int retval;
     char test_name[] = TEST_NAME;
     char expected_output_folder[] = "expected_output/";
     char actual_output_folder[] = "actual_output/";
@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
     max_diff = 0.0f;
 
     for (n = 0; n < SU_BUFFER_LENGTH; n++) {
-        diff = fabs((float)(buf[n] - filebuf[n])/SU_SAMPLE_RANGE);
+        diff = (float)fabs((float)(buf[n] - filebuf[n])/SU_SAMPLE_RANGE);
         if (diff > 1e-3f || isnan(diff)) {
             printf("Sointu rendered different wave than expected\n");
             goto fail;

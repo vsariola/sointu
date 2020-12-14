@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -24,6 +25,7 @@ func main() {
 	help := flag.Bool("h", false, "Show help.")
 	play := flag.Bool("p", false, "Play the input songs.")
 	asmOut := flag.Bool("a", false, "Output the song as .asm file, to standard output unless otherwise specified.")
+	tmplDir := flag.String("t", "", "Output the song as by parsing the templates in directory, to standard output unless otherwise specified.")
 	jsonOut := flag.Bool("j", false, "Output the song as .json file, to standard output unless otherwise specified.")
 	yamlOut := flag.Bool("y", false, "Output the song as .yml file, to standard output unless otherwise specified.")
 	headerOut := flag.Bool("c", false, "Output .h C header file, to standard output unless otherwise specified.")
@@ -31,13 +33,15 @@ func main() {
 	rawOut := flag.Bool("r", false, "Output the rendered song as .raw stereo float32 buffer, to standard output unless otherwise specified.")
 	directory := flag.String("d", "", "Directory where to output all files. The directory and its parents are created if needed. By default, everything is placed in the same directory where the original song file is.")
 	hold := flag.Int("o", -1, "New value to be used as the hold value")
+	targetArch := flag.String("arch", runtime.GOARCH, "Target architecture. Defaults to OS architecture. Possible values: 386, amd64")
+	targetOs := flag.String("os", runtime.GOOS, "Target OS. Defaults to current OS. Possible values: windows, darwin, linux (anything else is assumed linuxy)")
 	flag.Usage = printUsage
 	flag.Parse()
 	if flag.NArg() == 0 || *help {
 		flag.Usage()
 		os.Exit(0)
 	}
-	if !*asmOut && !*jsonOut && !*rawOut && !*headerOut && !*play && !*yamlOut {
+	if !*asmOut && !*jsonOut && !*rawOut && !*headerOut && !*play && !*yamlOut && *tmplDir == "" {
 		*play = true // if the user gives nothing to output, then the default behaviour is just to play the file
 	}
 	needsRendering := *play || *exactLength || *rawOut
@@ -129,7 +133,7 @@ func main() {
 			}
 		}
 		if *asmOut {
-			asmCode, err := go4k.FormatAsm(&song)
+			asmCode, err := go4k.Compile(&song, *targetArch, *targetOs)
 			if err != nil {
 				return fmt.Errorf("Could not format the song as asm file: %v", err)
 			}
