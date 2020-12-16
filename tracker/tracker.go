@@ -3,14 +3,14 @@ package tracker
 import (
 	"fmt"
 	"gioui.org/widget"
-	"github.com/vsariola/sointu/go4k"
-	"github.com/vsariola/sointu/go4k/audio"
-	"github.com/vsariola/sointu/go4k/bridge"
+	"github.com/vsariola/sointu"
+	"github.com/vsariola/sointu/audio"
+	"github.com/vsariola/sointu/bridge"
 )
 
 type Tracker struct {
 	QuitButton     *widget.Clickable
-	song           go4k.Song
+	song           sointu.Song
 	CursorRow      int
 	CursorColumn   int
 	DisplayPattern int
@@ -24,12 +24,12 @@ type Tracker struct {
 	rowJump        chan int
 	patternJump    chan int
 	player         audio.Player
-	synth          go4k.Synth
+	synth          sointu.Synth
 	playBuffer     []float32
 	closer         chan struct{}
 }
 
-func (t *Tracker) LoadSong(song go4k.Song) error {
+func (t *Tracker) LoadSong(song sointu.Song) error {
 	if err := song.Validate(); err != nil {
 		return fmt.Errorf("invalid song: %w", err)
 	}

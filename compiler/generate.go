@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/vsariola/sointu/go4k/compiler"
+	"github.com/vsariola/sointu/compiler"
 )
 
 func main() {

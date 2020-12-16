@@ -3,7 +3,7 @@ package oto
 import (
 	"fmt"
 	"github.com/hajimehoshi/oto"
-	"github.com/vsariola/sointu/go4k/audio"
+	"github.com/vsariola/sointu/audio"
 )
 
 // OtoPlayer wraps github.com/hajimehoshi/oto to play sointu-style float32[] audio

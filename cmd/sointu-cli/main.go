@@ -14,10 +14,10 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/vsariola/sointu/go4k"
-	"github.com/vsariola/sointu/go4k/audio/oto"
-	"github.com/vsariola/sointu/go4k/bridge"
-	"github.com/vsariola/sointu/go4k/compiler"
+	"github.com/vsariola/sointu"
+	"github.com/vsariola/sointu/audio/oto"
+	"github.com/vsariola/sointu/bridge"
+	"github.com/vsariola/sointu/compiler"
 )
 
 func main() {
@@ -94,7 +94,7 @@ func main() {
 		if err != nil {
 			return fmt.Errorf("Could not read file %v: %v", filename, err)
 		}
-		var song go4k.Song
+		var song sointu.Song
 		if errJSON := json.Unmarshal(inputBytes, &song); errJSON != nil {
 			if errYaml := yaml.Unmarshal(inputBytes, &song); errYaml != nil {
 				return fmt.Errorf("The song could not be parsed as .json (%v) or .yml (%v)", errJSON, errYaml)
@@ -106,9 +106,9 @@ func main() {
 			if err != nil {
 				return fmt.Errorf("Could not create synth based on the patch: %v", err)
 			}
-			buffer, err = go4k.Play(synth, song) // render the song to calculate its length
+			buffer, err = sointu.Play(synth, song) // render the song to calculate its length
 			if err != nil {
-				return fmt.Errorf("go4k.Play failed: %v", err)
+				return fmt.Errorf("sointu.Play failed: %v", err)
 			}
 		}
 		if *play {

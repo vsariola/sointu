@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/vsariola/sointu/go4k"
+	"github.com/vsariola/sointu"
 )
 
 type EncodedPatch struct {
@@ -22,7 +22,7 @@ type SampleOffset struct {
 	LoopLength uint16
 }
 
-func Encode(patch *go4k.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
+func Encode(patch *sointu.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
 	var c EncodedPatch
 	sampleOffsetMap := map[SampleOffset]int{}
 	for _, instr := range patch.Instruments {
@@ -75,13 +75,13 @@ func Encode(patch *go4k.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
 	return &c, nil
 }
 
-func EncodeUnit(unit go4k.Unit, featureSet FeatureSet) (byte, []byte, error) {
+func EncodeUnit(unit sointu.Unit, featureSet FeatureSet) (byte, []byte, error) {
 	opcode, ok := featureSet.Opcode(unit.Type)
 	if !ok {
 		return 0, nil, fmt.Errorf(`the targeted virtual machine is not configured to support unit type "%v"`, unit.Type)
 	}
 	var values []byte
-	for _, v := range go4k.UnitTypes[unit.Type] {
+	for _, v := range sointu.UnitTypes[unit.Type] {
 		if v.CanModulate && v.CanSet {
 			values = append(values, byte(unit.Parameters[v.Name]))
 		}
@@ -93,15 +93,15 @@ func EncodeUnit(unit go4k.Unit, featureSet FeatureSet) (byte, []byte, error) {
 	} else if unit.Type == "oscillator" {
 		flags := 0
 		switch unit.Parameters["type"] {
-		case go4k.Sine:
+		case sointu.Sine:
 			flags = 0x40
-		case go4k.Trisaw:
+		case sointu.Trisaw:
 			flags = 0x20
-		case go4k.Pulse:
+		case sointu.Pulse:
 			flags = 0x10
-		case go4k.Gate:
+		case sointu.Gate:
 			flags = 0x04
-		case go4k.Sample:
+		case sointu.Sample:
 			flags = 0x80
 		}
 		if unit.Parameters["lfo"] == 1 {

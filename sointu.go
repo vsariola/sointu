@@ -1,4 +1,4 @@
-package go4k
+package sointu
 
 import (
 	"errors"
@@ -68,10 +68,10 @@ type Synth interface {
 func Render(synth Synth, buffer []float32) error {
 	s, _, err := synth.Render(buffer, math.MaxInt32)
 	if err != nil {
-		return fmt.Errorf("go4k.Render failed: %v", err)
+		return fmt.Errorf("sointu.Render failed: %v", err)
 	}
 	if s != len(buffer)/2 {
-		return errors.New("in go4k.Render, synth.Render should have filled the whole buffer but did not")
+		return errors.New("in sointu.Render, synth.Render should have filled the whole buffer but did not")
 	}
 	return nil
 }

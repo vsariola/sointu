@@ -5,7 +5,7 @@ import (
 	"math"
 	"strings"
 
-	"github.com/vsariola/sointu/go4k"
+	"github.com/vsariola/sointu"
 )
 
 type OplistEntry struct {
@@ -39,11 +39,11 @@ func NewMacros(c Compiler, f FeatureSet) *Macros {
 		usesFloatConst: map[float32]bool{},
 		usesIntConst:   map[int]bool{},
 		stackframes:    map[string][]string{},
-		Sine:           go4k.Sine,
-		Trisaw:         go4k.Trisaw,
-		Pulse:          go4k.Pulse,
-		Gate:           go4k.Gate,
-		Sample:         go4k.Sample,
+		Sine:           sointu.Sine,
+		Trisaw:         sointu.Trisaw,
+		Pulse:          sointu.Pulse,
+		Gate:           sointu.Gate,
+		Sample:         sointu.Sample,
 		Compiler:       c,
 		FeatureSet:     f,
 	}
@@ -442,14 +442,14 @@ func (p *Macros) Use(value string, regs ...string) (string, error) {
 }
 
 type PlayerMacros struct {
-	Song              *go4k.Song
+	Song              *sointu.Song
 	VoiceTrackBitmask int
 	MaxSamples        int
 	Macros
 	EncodedPatch
 }
 
-func NewPlayerMacros(c Compiler, f FeatureSet, s *go4k.Song, e *EncodedPatch, maxSamples int) *PlayerMacros {
+func NewPlayerMacros(c Compiler, f FeatureSet, s *sointu.Song, e *EncodedPatch, maxSamples int) *PlayerMacros {
 	if maxSamples == 0 {
 		maxSamples = s.SamplesPerRow() * s.TotalRows()
 	}

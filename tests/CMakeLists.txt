@@ -1,11 +1,11 @@
-function(regression_test testname)    
-   
+function(regression_test testname)
+
     if(${ARGC} LESS 4)
         set(source ${testname}.yml)
         set(asmfile ${testname}.asm)
         set (headerfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.h)
 
-        add_custom_command(            
+        add_custom_command(
             OUTPUT ${asmfile}
             COMMAND ${sointuexe} -a -c -w -arch=${arch} -d ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
             DEPENDS ${source} ${sointuexe}
@@ -16,7 +16,7 @@ function(regression_test testname)
     else()
         set(source ${ARGV3})
         add_executable(${testname} ${source} test_renderer.c)
-    endif()    
+    endif()
 
     add_test(${testname} ${testname})
     target_link_libraries(${testname} ${HEADERLIB})
@@ -31,7 +31,7 @@ function(regression_test testname)
     add_dependencies(${testname} ${testname}_rawcopy)
 
     target_include_directories(${testname} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-    target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}")    
+    target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}")
 
     if(ARGC GREATER 1)
         if (ARGV1)
@@ -49,12 +49,12 @@ function(regression_test testname)
 endfunction(regression_test)
 
 
-# Build sointu-cli only once because go run has everytime quite a bit of delay when 
+# Build sointu-cli only once because go run has everytime quite a bit of delay when
 # starting
-add_custom_command(            
+add_custom_command(
     OUTPUT ${sointuexe}
-    COMMAND go build -o ${sointuexe} ${PROJECT_SOURCE_DIR}/go4k/cmd/sointu-cli/main.go
-    DEPENDS "${templates}" "${go4k}" "${compilersrc}" ${STATICLIB}
+    COMMAND go build -o ${sointuexe} ${PROJECT_SOURCE_DIR}/cmd/sointu-cli/main.go
+    DEPENDS "${templates}" "${sointu}" "${compilersrc}" ${STATICLIB}
 )
 
 regression_test(test_envelope "" ENVELOPE)

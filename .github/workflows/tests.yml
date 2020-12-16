@@ -61,5 +61,4 @@ jobs:
       env:
         CGO_LDFLAGS: ${{ matrix.config.cgo_ldflags }}
       run: |
-        cd go4k
         go test . ./bridge

@@ -42,8 +42,8 @@ endif()
 
 # the tests include the entire ASM but we still want to rebuild when they change
 file(GLOB templates ${PROJECT_SOURCE_DIR}/templates/*.asm)
-file(GLOB go4k "${PROJECT_SOURCE_DIR}/go4k/*.go" "${PROJECT_SOURCE_DIR}/go4k/cmd/sointu-cli/*.go")
-file(GLOB compilersrc "${PROJECT_SOURCE_DIR}/go4k/compiler/*.go")
+file(GLOB go4k "${PROJECT_SOURCE_DIR}/*.go" "${PROJECT_SOURCE_DIR}/cmd/sointu-cli/*.go")
+file(GLOB compilersrc "${PROJECT_SOURCE_DIR}/compiler/*.go")
 
 if(DEFINED CMAKE_C_SIZEOF_DATA_PTR AND CMAKE_C_SIZEOF_DATA_PTR EQUAL 8)
     set(arch "amd64")
@@ -59,7 +59,7 @@ set(sointuasm sointu.asm)
 
 add_custom_command(            
     OUTPUT ${sointuasm}
-    COMMAND go run ${PROJECT_SOURCE_DIR}/go4k/compiler/generate.go -arch=${arch} ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND go run ${PROJECT_SOURCE_DIR}/compiler/generate.go -arch=${arch} ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS "${templates}" "${go4k}" "${compilersrc}"
 )
 

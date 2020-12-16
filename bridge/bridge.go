@@ -1,7 +1,7 @@
 package bridge
 
-// #cgo CFLAGS: -I"${SRCDIR}/../../build/"
-// #cgo LDFLAGS: "${SRCDIR}/../../build/libsointu.a"
+// #cgo CFLAGS: -I"${SRCDIR}/../build/"
+// #cgo LDFLAGS: "${SRCDIR}/../build/libsointu.a"
 // #include <sointu.h>
 import "C"
 import (
@@ -9,11 +9,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/vsariola/sointu/go4k"
-	"github.com/vsariola/sointu/go4k/compiler"
+	"github.com/vsariola/sointu"
+	"github.com/vsariola/sointu/compiler"
 )
 
-func Synth(patch go4k.Patch) (*C.Synth, error) {
+func Synth(patch sointu.Patch) (*C.Synth, error) {
 	s := new(C.Synth)
 	comPatch, err := compiler.Encode(&patch, compiler.AllFeatures{})
 	if err != nil {
@@ -75,13 +75,13 @@ func (synth *C.Synth) Render(buffer []float32, maxtime int) (int, int, error) {
 	return int(samples), int(time), nil
 }
 
-// Trigger is part of C.Synths' implementation of go4k.Synth interface
+// Trigger is part of C.Synths' implementation of sointu.Synth interface
 func (s *C.Synth) Trigger(voice int, note byte) {
 	s.SynthWrk.Voices[voice] = C.Voice{}
 	s.SynthWrk.Voices[voice].Note = C.int(note)
 }
 
-// Release is part of C.Synths' implementation of go4k.Synth interface
+// Release is part of C.Synths' implementation of sointu.Synth interface
 func (s *C.Synth) Release(voice int) {
 	s.SynthWrk.Voices[voice].Release = 1
 }

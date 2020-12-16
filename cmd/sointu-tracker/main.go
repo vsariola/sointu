@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"gioui.org/app"
 	"gioui.org/unit"
-	"github.com/vsariola/sointu/go4k/audio/oto"
-	"github.com/vsariola/sointu/go4k/tracker"
+	"github.com/vsariola/sointu/audio/oto"
+	"github.com/vsariola/sointu/tracker"
 	"os"
 )
 

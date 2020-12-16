@@ -279,9 +279,9 @@ su_oscillat_sine_do:
     pop     {{.AX}}
     and     al, 0xf                         ; ax=int(16*p) & 15, stack: 1
     bt      word [{{.VAL}}-4],ax                 ; if bit ax of the gate word is set
-    jc      go4kVCO_gate_bit                ;   goto gate_bit
+    jc      su_oscillat_gate_bit                ;   goto gate_bit
     fsub    st0, st0                        ; stack: 0
-go4kVCO_gate_bit:                           ; stack: 0/1, let's call it x
+su_oscillat_gate_bit:                           ; stack: 0/1, let's call it x
     fld     dword [{{.WRK}}+16] ; g x, g is gatestate, x is the input to this filter 0/1
     fsub    st1                             ; g-x x
 {{- .Float 0.99609375 | .Prepare | indent 4}}

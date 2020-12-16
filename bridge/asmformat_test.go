@@ -13,14 +13,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vsariola/sointu/go4k"
-	"github.com/vsariola/sointu/go4k/bridge"
+	"github.com/vsariola/sointu"
+	"github.com/vsariola/sointu/bridge"
 	"gopkg.in/yaml.v2"
 )
 
 func TestAllAsmFiles(t *testing.T) {
 	_, myname, _, _ := runtime.Caller(0)
-	files, err := filepath.Glob(path.Join(path.Dir(myname), "..", "..", "tests", "*.yml"))
+	files, err := filepath.Glob(path.Join(path.Dir(myname), "..", "tests", "*.yml"))
 	if err != nil {
 		t.Fatalf("cannot glob files in the test directory: %v", err)
 	}
@@ -36,7 +36,7 @@ func TestAllAsmFiles(t *testing.T) {
 			if err != nil {
 				t.Fatalf("cannot read the .asm file: %v", filename)
 			}
-			var song go4k.Song
+			var song sointu.Song
 			err = yaml.Unmarshal(asmcode, &song)
 			if err != nil {
 				t.Fatalf("could not parse the .yml file: %v", err)
@@ -45,12 +45,12 @@ func TestAllAsmFiles(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Compiling patch failed: %v", err)
 			}
-			buffer, err := go4k.Play(synth, song)
+			buffer, err := sointu.Play(synth, song)
 			buffer = buffer[:song.TotalRows()*song.SamplesPerRow()*2] // extend to the nominal length always.
 			if err != nil {
 				t.Fatalf("Play failed: %v", err)
 			}
-			if os.Getenv("GO4K_TEST_SAVE_OUTPUT") == "YES" {
+			if os.Getenv("SOINTU_TEST_SAVE_OUTPUT") == "YES" {
 				outputpath := path.Join(path.Dir(myname), "actual_output")
 				if _, err := os.Stat(outputpath); os.IsNotExist(err) {
 					os.Mkdir(outputpath, 0755)
@@ -83,7 +83,7 @@ func TestAllAsmFiles(t *testing.T) {
 
 func compareToRawFloat32(t *testing.T, buffer []float32, rawname string) {
 	_, filename, _, _ := runtime.Caller(0)
-	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "..", "tests", "expected_output", rawname))
+	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "tests", "expected_output", rawname))
 	if err != nil {
 		t.Fatalf("cannot read expected: %v", err)
 	}
@@ -105,7 +105,7 @@ func compareToRawFloat32(t *testing.T, buffer []float32, rawname string) {
 
 func compareToRawInt16(t *testing.T, buffer []int16, rawname string) {
 	_, filename, _, _ := runtime.Caller(0)
-	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "..", "tests", "expected_output", rawname))
+	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "tests", "expected_output", rawname))
 	if err != nil {
 		t.Fatalf("cannot read expected: %v", err)
 	}

@@ -9,7 +9,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
-	"github.com/vsariola/sointu/go4k"
+	"github.com/vsariola/sointu"
 )
 
 //go:generate go run generate.go
@@ -24,7 +24,7 @@ type Compiler struct {
 // New returns a new compiler using the default .asm templates
 func New() (*Compiler, error) {
 	_, myname, _, _ := runtime.Caller(0)
-	templateDir := filepath.Join(path.Dir(myname), "..", "..", "templates")
+	templateDir := filepath.Join(path.Dir(myname), "..", "templates")
 	compiler, err := NewFromTemplates(templateDir)
 	return compiler, err
 }
@@ -62,7 +62,7 @@ func (com *Compiler) Library() (map[string]string, error) {
 	return map[string]string{"asm": asmCode, "h": header}, nil
 }
 
-func (com *Compiler) Player(song *go4k.Song, maxSamples int) (map[string]string, error) {
+func (com *Compiler) Player(song *sointu.Song, maxSamples int) (map[string]string, error) {
 	features := NecessaryFeaturesFor(song.Patch)
 	encodedPatch, err := Encode(&song.Patch, features)
 	if err != nil {

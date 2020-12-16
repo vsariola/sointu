@@ -3,7 +3,7 @@ package compiler
 import (
 	"sort"
 
-	"github.com/vsariola/sointu/go4k"
+	"github.com/vsariola/sointu"
 )
 
 // FeatureSet defines what opcodes / parameters are included in the compiled virtual machine
@@ -81,12 +81,12 @@ var allInputs map[paramKey]int
 var allTransformCounts map[string]int
 
 func init() {
-	allInstructions = make([]string, len(go4k.UnitTypes))
+	allInstructions = make([]string, len(sointu.UnitTypes))
 	allOpcodes = map[string]int{}
 	allTransformCounts = map[string]int{}
 	allInputs = map[paramKey]int{}
 	i := 0
-	for k, v := range go4k.UnitTypes {
+	for k, v := range sointu.UnitTypes {
 		inputCount := 0
 		transformCount := 0
 		for _, t := range v {
@@ -117,7 +117,7 @@ type NecessaryFeatures struct {
 	polyphony          bool
 }
 
-func NecessaryFeaturesFor(patch go4k.Patch) NecessaryFeatures {
+func NecessaryFeaturesFor(patch sointu.Patch) NecessaryFeatures {
 	features := NecessaryFeatures{opcodes: map[string]int{}, supportsParamValue: map[paramKey](map[int]bool){}, supportsModulation: map[paramKey]bool{}}
 	for instrNo, instrument := range patch.Instruments {
 		for _, unit := range instrument.Units {
@@ -146,7 +146,7 @@ func NecessaryFeaturesFor(patch go4k.Patch) NecessaryFeatures {
 				}
 				targetUnit := patch.Instruments[targetInstrument].Units[unit.Parameters["unit"]]
 				modulatedPortNo := 0
-				for _, v := range go4k.UnitTypes[targetUnit.Type] {
+				for _, v := range sointu.UnitTypes[targetUnit.Type] {
 					if v.CanModulate {
 						if modulatedPortNo == unit.Parameters["port"] {
 							features.supportsModulation[paramKey{targetUnit.Type, v.Name}] = true
