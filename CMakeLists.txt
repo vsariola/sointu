@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # This policy is needed so that we can set the MSVC_RUNTIME to statically linked
 # i.e. set_property(TARGET 4klang PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-cmake_policy(SET CMP0091 NEW) 
+cmake_policy(SET CMP0091 NEW)
 
 project(sointu
     VERSION 0.0.0
@@ -42,7 +42,7 @@ endif()
 
 # the tests include the entire ASM but we still want to rebuild when they change
 file(GLOB templates ${PROJECT_SOURCE_DIR}/templates/*.asm)
-file(GLOB go4k "${PROJECT_SOURCE_DIR}/*.go" "${PROJECT_SOURCE_DIR}/cmd/sointu-cli/*.go")
+file(GLOB sointu "${PROJECT_SOURCE_DIR}/*.go" "${PROJECT_SOURCE_DIR}/cmd/sointu-cli/*.go")
 file(GLOB compilersrc "${PROJECT_SOURCE_DIR}/compiler/*.go")
 
 if(DEFINED CMAKE_C_SIZEOF_DATA_PTR AND CMAKE_C_SIZEOF_DATA_PTR EQUAL 8)
@@ -57,10 +57,10 @@ endif()
 set(STATICLIB sointu)
 set(sointuasm sointu.asm)
 
-add_custom_command(            
+add_custom_command(
     OUTPUT ${sointuasm}
     COMMAND go run ${PROJECT_SOURCE_DIR}/compiler/generate.go -arch=${arch} ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS "${templates}" "${go4k}" "${compilersrc}"
+    DEPENDS "${templates}" "${sointu}" "${compilersrc}"
 )
 
 add_library(${STATICLIB} ${sointuasm})
