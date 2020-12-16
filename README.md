@@ -96,7 +96,7 @@ New features since fork
     `text/template` package, effectively working as a preprocessor. This allows
     quite powerful combination: we can handcraft the assembly code to keep the
     entropy as low as possible, yet we can call arbitrary go functions as
-    "macros".
+    "macros". The templates are [here](templates/) and the compiler lives [here](compiler/).
   - **Tracker**. Written in go. A prototype exists.
   - **Supports 32 and 64 bit builds**. The 64-bit version is done with minimal
     changes to get it work, using template macros to change the lines between
@@ -110,7 +110,7 @@ New features since fork
     any number of voices, meaning in practice that multiple voices can reuse the
     same opcodes. So, you can have a single instrument with three voices, and
     three tracks that use this instrument, to make chords. See
-    [here](tests/test_chords.asm) for an example and [here](templates/patch.yml)
+    [here](tests/test_chords.yml) for an example and [here](templates/patch.asm)
     for the implementation. The maximum total number of voices will be 32: you
     can have 32 monophonic instruments or any combination of polyphonic
     instruments adding up to 32.
