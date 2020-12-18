@@ -1,0 +1,4 @@
+# Declare files that will always have LF line endings on checkout.
+# Necessary on windows, as the sointu-compiler formats .yml using only lf so
+# this would trigger changes in the files, even when they didn't really change.
+*.yml text eol=lf

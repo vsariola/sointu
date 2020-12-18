@@ -7,8 +7,8 @@ function(regression_test testname)
 
         add_custom_command(
             OUTPUT ${asmfile}
-            COMMAND ${sointuexe} -a -c -w -arch=${arch} -d ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
-            DEPENDS ${source} ${sointuexe}
+            COMMAND ${compilecmd} -arch=${arch} -o ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
+            DEPENDS ${source} ${compilecmd} ${templates}
         )
 
         add_executable(${testname} test_renderer.c ${asmfile})
@@ -47,15 +47,6 @@ function(regression_test testname)
         endif()
     endif()
 endfunction(regression_test)
-
-
-# Build sointu-cli only once because go run has everytime quite a bit of delay when
-# starting
-add_custom_command(
-    OUTPUT ${sointuexe}
-    COMMAND go build -o ${sointuexe} ${PROJECT_SOURCE_DIR}/cmd/sointu-cli/main.go
-    DEPENDS "${templates}" "${sointu}" "${compilersrc}" ${STATICLIB}
-)
 
 regression_test(test_envelope "" ENVELOPE)
 regression_test(test_envelope_stereo ENVELOPE)

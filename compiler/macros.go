@@ -14,21 +14,23 @@ type OplistEntry struct {
 }
 
 type Macros struct {
-	Stacklocs      []string
-	Output16Bit    bool
-	Clip           bool
-	Library        bool
-	Sine           int // TODO: how can we elegantly access global constants in template, without wrapping each one by one
-	Trisaw         int
-	Pulse          int
-	Gate           int
-	Sample         int
-	usesFloatConst map[float32]bool
-	usesIntConst   map[int]bool
-	floatConsts    []float32
-	intConsts      []int
-	calls          map[string]bool
-	stackframes    map[string][]string
+	Stacklocs       []string
+	Output16Bit     bool
+	Clip            bool
+	Library         bool
+	Amd64           bool
+	DisableSections bool
+	Sine            int // TODO: how can we elegantly access global constants in template, without wrapping each one by one
+	Trisaw          int
+	Pulse           int
+	Gate            int
+	Sample          int
+	usesFloatConst  map[float32]bool
+	usesIntConst    map[int]bool
+	floatConsts     []float32
+	intConsts       []int
+	calls           map[string]bool
+	stackframes     map[string][]string
 	FeatureSet
 	Compiler
 }
@@ -44,6 +46,7 @@ func NewMacros(c Compiler, f FeatureSet) *Macros {
 		Pulse:          sointu.Pulse,
 		Gate:           sointu.Gate,
 		Sample:         sointu.Sample,
+		Amd64:          c.Arch == "amd64",
 		Compiler:       c,
 		FeatureSet:     f,
 	}
@@ -449,10 +452,8 @@ type PlayerMacros struct {
 	EncodedPatch
 }
 
-func NewPlayerMacros(c Compiler, f FeatureSet, s *sointu.Song, e *EncodedPatch, maxSamples int) *PlayerMacros {
-	if maxSamples == 0 {
-		maxSamples = s.SamplesPerRow() * s.TotalRows()
-	}
+func NewPlayerMacros(c Compiler, f FeatureSet, s *sointu.Song, e *EncodedPatch) *PlayerMacros {
+	maxSamples := s.SamplesPerRow() * s.TotalRows()
 	macros := *NewMacros(c, f)
 	macros.Output16Bit = s.Output16Bit // TODO: should we actually store output16bit in Songs or not?
 	p := PlayerMacros{Song: s, Macros: macros, MaxSamples: maxSamples, EncodedPatch: *e}
