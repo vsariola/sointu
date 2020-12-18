@@ -21,7 +21,7 @@ bytes for the patch and pattern data.
 Sointu consists of two core elements:
 - A cross-platform synth-tracker app for composing music, written in
   [go](https://golang.org/). The app is not working yet, but a prototype is
-  existing. The app exports (will export) the projects .yml files.
+  existing. The app exports (will export) the projects as .yml files.
 - A compiler, likewise written in go, which can be invoked from the command line
   to compile these .yml files into .asm code. The resulting single file .asm can
   be then compiled by [nasm](https://www.nasm.us/) or
@@ -30,12 +30,41 @@ Sointu consists of two core elements:
 Building
 --------
 
-Requires [go](https://golang.org/), [CMake](https://cmake.org),
-[nasm](https://www.nasm.us/) or [yasm](https://yasm.tortall.net), and your
-favorite c-compiler & build tool. Results have been obtained using Visual Studio
-2019, gcc&make on linux, MinGW&mingw32-make, and ninja&AppleClang.
+Various aspects of the project have different tool dependencies, which are
+listed below.
 
-### Example: building and running CTests using MinGW32
+### Building the compiler
+
+The [compiler](compiler/) package is an ordinary [go](https://golang.org/)
+package with no other tool dependencies. The command line interface to it is
+[sointu-compile](cmd/sointu-compile).
+
+```
+go build -o sointu-compile cmd/sointu-compile/main.go
+```
+
+On windows, replace `-o sointu-compile` with `-o sointu-compile.exe`.
+
+The compiler can then be used to compile a .yml song into .asm and .h files. For
+example:
+
+```
+sointu-compile -o . -arch=386 tests/test_chords.yml
+nasm -f win32 test_chords.asm
+```
+
+### Building and running the tests as executables
+
+Building the [regression tests](tests/) as executables (testing that they work
+the same way when you would link them in an intro) requires:
+- [go](https://golang.org/)
+- [CMake](https://cmake.org) with CTest
+- [nasm](https://www.nasm.us/) or [yasm](https://yasm.tortall.net)
+- Your favorite CMake compatible c-compiler & build tool. Results have been
+  obtained using Visual Studio 2019, gcc&make on linux, MinGW&mingw32-make, and
+  ninja&AppleClang.
+
+For example, using MinGW:
 
 ```
 mkdir build
@@ -52,33 +81,55 @@ binaries on 64-bit Windows, replace in above:
 cmake .. -DCMAKE_C_FLAGS="-m32" -DCMAKE_ASM_NASM_OBJECT_FORMAT="win32" -G"MinGW Makefiles"
 ```
 
-### Example: building and running go tests using MinGW32
+Another example: on Visual Studio 2019 Community, just open the folder, choose
+either Debug or Release and either x86 or x64 build, and hit build all.
+
+### Building and running command line player, tracker, and go tests
+
+This is a bit trickier, but not much. Building these requires:
+- [go](https://golang.org/)
+- [CMake](https://cmake.org)
+- [nasm](https://www.nasm.us/) or [yasm](https://yasm.tortall.net)
+- *cgo compatible compiler* e.g. [gcc](https://gcc.gnu.org/). On windows, you
+  best bet is [MinGW](http://www.mingw.org/). We use the
+  [tdm-gcc](https://jmeubank.github.io/tdm-gcc/)
+
+The last point is because the command line player and the tracker use
+[cgo](https://golang.org/cmd/cgo/) to interface with the synth core, which is
+compiled into a library. The cgo bridge resides in the package
+[bridge](bridge/).
+
+A critical thing here is that *you must build the library inside a directory
+called build at the root of the project*. This is because the path where cgo
+looks for the library is hard coded to point to build/ in the go files.
+
+So, to build the library, run:
 
 ```
 mkdir build
 cd build
 cmake .. -G"MinGW Makefiles"
 mingw32-make sointu
-cd ..
-go test ./...
 ```
 
 Running `mingw32-make sointu` only builds the static library that go needs. This
 is a lot faster than building all the CTests.
 
-If you plan to build the Sointu library for using it from the Go side, you
-*must* build in the build/ directory, as bridge.go assumes the library can be
-found from build/.
+Running all go tests (run from the project root folder)
 
-> :warning: At the moment, you must have gcc (e.g. mingw32 on Windows) to build
-the project. This is because cgo (the bridge to call c from go) requires gcc
-compiler, and the rest of the project uses the go code to automatically build
-the .asm from the .yml test cases. A solution that drops the need for CMake and
-gcc is in the works; it likely involves dropping precompiled binaries for the
-most popular platforms in the repository, which should also allow `go get` the
-project. Regardless, it is possible to build the test cases using Visual Studio,
-after building the library using mingw32. Luckily, the prebuilt binaries will be
-only few tens of KB; this is a 4k synth project after all.
+```
+go test ./...
+```
+
+Play a song from the command line:
+```
+go run cmd/sointu-play/main.go tests/test_chords.yml
+```
+
+Run the tracker
+```
+go run cmd/sointu-track/main.go
+```
 
 > :warning: **If you are using MinGW and Yasm**: Yasm 1.3.0 (currently still the
 latest stable release) and GNU linker do not play nicely along, trashing the BSS
@@ -96,7 +147,8 @@ New features since fork
     `text/template` package, effectively working as a preprocessor. This allows
     quite powerful combination: we can handcraft the assembly code to keep the
     entropy as low as possible, yet we can call arbitrary go functions as
-    "macros". The templates are [here](templates/) and the compiler lives [here](compiler/).
+    "macros". The templates are [here](templates/) and the compiler lives
+    [here](compiler/).
   - **Tracker**. Written in go. A prototype exists.
   - **Supports 32 and 64 bit builds**. The 64-bit version is done with minimal
     changes to get it work, using template macros to change the lines between
@@ -245,7 +297,7 @@ Design philosophy
   - Make sure the assembly code is readable after compiling: it should have
     liberally comments *in the outputted .asm file*. This allows humans to study
     the outputted code and figure out more easily if there's still way to
-    squueze out instructions from the code.
+    squeeze out instructions from the code.
   - Instead of prematurely adding %ifdef toggles to optimize away unused
     features, start with the most advanced featureset and see if you can
     implement it in a generalized way. For example, all the modulations are now
@@ -272,19 +324,19 @@ helpful for anyone looking to understand how 4klang and Sointu use the FPU stack
 to manipulate the signals. Since then, 4klang has been used in countless of
 scene productions and people use it even today.
 
-However, 4klang is not actively developed anymore and the polyphonism was never
-implemented in a very well engineered way (you can have exactly 2 voices per
-instrument if you enable it). Also, reading through the code, I spotted several
-avenues to squeeze away more bytes. These observations triggered project Sointu.
-That, and I just wanted to learn x86 assembly, and needed a real-world project
-to work on.
+However, 4klang seems not to be actively developed anymore and the polyphonism
+was never implemented in a very well engineered way (you can have exactly 2
+voices per instrument if you enable it). Also, reading through the code, I
+spotted several avenues to squeeze away more bytes. These observations triggered
+project Sointu. That, and I just wanted to learn x86 assembly, and needed a
+real-world project to work on.
 
 What's with the name
 --------------------
 
 "Sointu" means a chord, in Finnish; a reference to the polyphonic capabilities
-of the synth. Also, I assume we have all learned by now what "klang" means in
-German, so I thought it would fun to learn some Finnish for a change. And
+of the synth. I assume we have all learned by now what "klang" means in German,
+so I thought it would fun to learn some Finnish for a change. And
 [there's](https://www.pouet.net/prod.php?which=53398)
 [enough](https://www.pouet.net/prod.php?which=75814)
 [klangs](https://www.pouet.net/prod.php?which=85351) already.
@@ -302,4 +354,4 @@ Apollo/bC! put the project on the path to Go, and wrote the prototype of the
 tracker GUI.
 
 PoroCYon's [4klang fork](https://github.com/PoroCYon/4klang) inspired the macros
-to better support cross-platform asm.
+for better cross-platform support.
