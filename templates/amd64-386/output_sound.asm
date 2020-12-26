@@ -1,4 +1,4 @@
-{{- if not .Output16Bit }}
+{{- if not .Song.Output16Bit }}
     {{- if not .Clip }}
             mov     {{.DI}}, [{{.Stack "OutputBufPtr"}}] ; edi containts ptr
             mov     {{.SI}}, {{.PTRWORD}} su_synth_obj + su_synthworkspace.left

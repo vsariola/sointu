@@ -28,6 +28,27 @@ IF(APPLE)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-no_pie")
 endif()
 
+find_program(GO NAMES go)
+if(NOT GO)
+  message(FATAL_ERROR "go not found. Get it from: https://golang.org")
+else()
+  message("go found at: ${GO}")
+endif()
+
+find_program(NODE NAMES node)
+if(NOT NODE)
+  message( WARNING "node not found, cannot run WebAssembly tests. Get it from: https://nodejs.org/" )
+else()
+  message("node found at: ${NODE}")
+endif()
+
+find_program(WAT2WASM NAMES wat2wasm)
+if(NOT WAT2WASM )
+  message( WARNING "wat2wasm not found, cannot build wasm tests. Get it from: https://github.com/WebAssembly/wabt)" )
+else()
+  message("wat2wasm found at: ${WAT2WASM}")
+endif()
+
 enable_language(ASM_NASM)
 
 # The normal NASM compile object does not include <DEFINES>
@@ -41,7 +62,8 @@ else()
 endif()
 
 # the tests include the entire ASM but we still want to rebuild when they change
-file(GLOB templates ${PROJECT_SOURCE_DIR}/templates/*.asm)
+file(GLOB x86templates ${PROJECT_SOURCE_DIR}/templates/amd64-386/*.asm)
+file(GLOB wasmtemplates ${PROJECT_SOURCE_DIR}/templates/wasm/*.wat)
 file(GLOB sointusrc "${PROJECT_SOURCE_DIR}/*.go")
 file(GLOB compilersrc "${PROJECT_SOURCE_DIR}/compiler/*.go")
 file(GLOB compilecmdsrc "${PROJECT_SOURCE_DIR}/cmd/sointu-compile/*.go")
@@ -61,16 +83,16 @@ set(sointuasm sointu.asm)
 
 # Build sointu-cli only once because go run has everytime quite a bit of delay when
 # starting
-add_custom_command(
-    OUTPUT ${compilecmd}
-    COMMAND go build -o ${compilecmd} ${PROJECT_SOURCE_DIR}/cmd/sointu-compile/main.go
-    DEPENDS "${sointusrc}" "${compilersrc}" "${compilecmdsrc}"
+add_custom_target(
+    sointu-compiler
+    COMMAND ${GO} build -o ${compilecmd} ${PROJECT_SOURCE_DIR}/cmd/sointu-compile/main.go
+    SOURCES "${sointusrc}" "${compilersrc}" "${compilecmdsrc}"
 )
 
 add_custom_command(
     OUTPUT ${sointuasm}
     COMMAND ${compilecmd} -arch=${arch} -a -o ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS "${templates}" ${compilecmd}
+    DEPENDS "${templates}" sointu-compiler
 )
 
 add_library(${STATICLIB} ${sointuasm})

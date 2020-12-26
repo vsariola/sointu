@@ -42,6 +42,7 @@ jobs:
     steps:
     - uses: lukka/get-cmake@v3.18.3
     - uses: actions/setup-go@v2
+    - uses: actions/setup-node@v1
     - uses: actions/checkout@v2
     - uses: ilammy/setup-nasm@v1.2.0
     - name: Install libasound2-dev                   # sointu-cli has alsa as dependency for playing sound and

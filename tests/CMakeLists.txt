@@ -8,11 +8,23 @@ function(regression_test testname)
         add_custom_command(
             OUTPUT ${asmfile}
             COMMAND ${compilecmd} -arch=${arch} -o ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
-            DEPENDS ${source} ${compilecmd} ${templates}
+            DEPENDS ${source} ${x86templates} sointu-compiler
         )
 
         add_executable(${testname} test_renderer.c ${asmfile})
         target_compile_definitions(${testname} PUBLIC TEST_HEADER=<${testname}.h>)
+
+        if (NODE AND WAT2WASM AND NOT ${testname} MATCHES "sample")
+            set(wasmfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.wasm)
+            set(watfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.wat)
+            set(wasmtarget wasm_${testname})
+            add_custom_target(${wasmtarget} ALL
+                COMMAND ${compilecmd} -arch=wasm -o ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source} && ${WAT2WASM} --enable-bulk-memory -o ${wasmfile} ${watfile}
+                SOURCES "${source}" "${wasmtemplates}"
+                DEPENDS sointu-compiler
+            )
+            add_test(${wasmtarget} ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/wasm_test_renderer.es6 ${wasmfile} ${CMAKE_CURRENT_SOURCE_DIR}/expected_output/${testname}.raw)
+        endif()
     else()
         set(source ${ARGV3})
         add_executable(${testname} ${source} test_renderer.c)

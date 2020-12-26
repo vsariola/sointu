@@ -23,7 +23,7 @@
     #define SU_CALLCONV
 #endif
 
-{{- if .Output16Bit}}
+{{- if .Song.Output16Bit}}
 typedef short SUsample;
 #define SU_SAMPLE_RANGE 32767.0
 {{- else}}

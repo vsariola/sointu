@@ -34,6 +34,17 @@ int main(int argc, char* argv[]) {
 
     su_render_song(buf);
 
+#if defined (_WIN32)
+    CreateDirectory(actual_output_folder, NULL);
+#else
+    mkdir(actual_output_folder, 0777);
+#endif
+
+    snprintf(filename, sizeof filename, "%s%s%s", actual_output_folder, test_name, ".raw");
+    f = fopen(filename, "wb");
+    fwrite((void*)buf, sizeof(SUsample), SU_BUFFER_LENGTH, f);
+    fclose(f);
+
     snprintf(filename, sizeof filename, "%s%s%s", expected_output_folder, test_name, ".raw");
 
     f = fopen(filename, "rb");
@@ -79,16 +90,6 @@ int main(int argc, char* argv[]) {
         printf("Warning: Sointu rendered almost correct wave, but a small maximum error of %f\n",max_diff);        
     }
 
-#if defined (_WIN32)
-    CreateDirectory(actual_output_folder, NULL);
-#else
-    mkdir(actual_output_folder, 0777);
-#endif
-
-    snprintf(filename, sizeof filename, "%s%s%s", actual_output_folder, test_name, ".raw");
-    f = fopen(filename, "wb");
-    fwrite((void*)buf, sizeof(SUsample), SU_BUFFER_LENGTH, f);
-    fclose(f);
     return 0;
 
 fail:

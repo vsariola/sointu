@@ -1,8 +1,10 @@
 # Sointu
 ![Tests](https://github.com/vsariola/sointu/workflows/Tests/badge.svg)
 
-A cross-platform modular software synthesizer for small intros, forked from
-[4klang](https://github.com/hzdgopher/4klang). Supports win32/win64/linux/mac.
+A cross-architecture and cross-platform modular software synthesizer for small
+intros, forked from [4klang](https://github.com/hzdgopher/4klang). Targetable
+architectures include 386, amd64, and WebAssembly; targetable platforms include
+Windows, Mac, Linux (and related) + browser.
 
 Summary
 -------
@@ -15,17 +17,18 @@ sound is produced by a virtual machine that executes small bytecode to produce
 the audio; however, by now the internal virtual machine has been heavily
 rewritten and extended. It is actually extended so much that you will never fit
 all the features at the same time in a 4k intro, but a fairly capable synthesis
-engine can already be fitted in 600 bytes (compressed), with another few hundred
-bytes for the patch and pattern data.
+engine can already be fitted in 600 bytes (386, compressed), with another few
+hundred bytes for the patch and pattern data.
 
 Sointu consists of two core elements:
 - A cross-platform synth-tracker app for composing music, written in
   [go](https://golang.org/). The app is not working yet, but a prototype is
   existing. The app exports (will export) the projects as .yml files.
 - A compiler, likewise written in go, which can be invoked from the command line
-  to compile these .yml files into .asm code. The resulting single file .asm can
-  be then compiled by [nasm](https://www.nasm.us/) or
-  [yasm](https://yasm.tortall.net).
+  to compile these .yml files into .asm or .wat code. For x86 platforms, the
+  resulting .asm can be then compiled by [nasm](https://www.nasm.us/) or
+  [yasm](https://yasm.tortall.net). For browsers, the resulting .wat can be
+  compiled by [wat2wasm](https://github.com/WebAssembly/wabt).
 
 Building
 --------
@@ -51,6 +54,13 @@ example:
 ```
 sointu-compile -o . -arch=386 tests/test_chords.yml
 nasm -f win32 test_chords.asm
+```
+
+WebAssembly example:
+
+```
+sointu-compile -o . -arch=wasm tests/test_chords.yml
+wat2wasm --enable-bulk-memory test_chords.wat
 ```
 
 ### Building and running the tests as executables
@@ -140,6 +150,11 @@ and the fix
 Use a newer nightly build of yasm that includes the fix. The linker had placed
 our synth object overlapping with DLL call addresses; very funny stuff to debug.
 
+### Building and running the WebAssembly tests
+
+These are automatically invoked by CTest if [node](https://nodejs.org) and
+[wat2wasm](https://github.com/WebAssembly/wabt) are found in the path.
+
 New features since fork
 -----------------------
   - **Compiler**. Written in go. The input is a .yml file and the output is an
@@ -154,6 +169,8 @@ New features since fork
     changes to get it work, using template macros to change the lines between
     32-bit and 64-bit modes. Mostly, it's as easy as writing {{.AX}} instead of
     eax; the macro {{.AX}} compiles to eax in 32-bit and rax in 64-bit.
+  - **Supports compiling into WebAssembly**. This is a complete reimplementation
+    of the core, written in WebAssembly text format (.wat).
   - **Supports Windows, Linux and MacOS**. On all three 64-bit platforms, all
     tests are passing. Additionally, all tests are passing on windows 32.
   - **New units**. For example: bit-crusher, gain, inverse gain, clip, modulate
@@ -270,10 +287,6 @@ Crazy ideas
     uniforms to shader. A track with two voices, triggering an instrument with a
     single envelope and a slow filter can even be used as a cheap smooth
     interpolation mechanism.
-  - **Support WASM targets with the compiler**. It should not be impossible to
-    reimplement the x86 core with WAT equivalent. It would be nice to make it
-    work (almost) exactly like the x86 version, so one could just track the song
-    with Sointu tools and export the song to WAT using sointu-cli.
   - **Hack deeper into audio sources from the OS**. Speech synthesis, I'm eyeing
     at you.
 
