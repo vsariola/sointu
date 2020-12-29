@@ -76,6 +76,21 @@ func Render(synth Synth, buffer []float32) error {
 	return nil
 }
 
+type AudioSink interface {
+	WriteAudio(buffer []float32) (err error)
+	Close() error
+}
+
+type AudioSource interface {
+	ReadAudio(buffer []float32) (n int, err error)
+	Close() error
+}
+
+type AudioContext interface {
+	Output() AudioSink
+	Close() error
+}
+
 // UnitParameter documents one parameter that an unit takes
 type UnitParameter struct {
 	Name        string // thould be found with this name in the Unit.Parameters map

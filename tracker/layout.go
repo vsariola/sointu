@@ -13,6 +13,8 @@ func (t *Tracker) Layout(gtx layout.Context) {
 
 func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 	flexTracks := make([]layout.FlexChild, len(t.song.Tracks))
+	t.playRowPatMutex.RLock()
+	defer t.playRowPatMutex.RUnlock()
 	for i, trk := range t.song.Tracks {
 		flexTracks[i] = layout.Rigid(Lowered(t.layoutTrack(
 			t.song.Patterns[trk.Sequence[t.DisplayPattern]],

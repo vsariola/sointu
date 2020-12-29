@@ -77,12 +77,18 @@ func (synth *C.Synth) Render(buffer []float32, maxtime int) (int, int, error) {
 
 // Trigger is part of C.Synths' implementation of sointu.Synth interface
 func (s *C.Synth) Trigger(voice int, note byte) {
+	if voice < 0 || voice >= len(s.SynthWrk.Voices) {
+		return
+	}
 	s.SynthWrk.Voices[voice] = C.Voice{}
 	s.SynthWrk.Voices[voice].Note = C.int(note)
 }
 
 // Release is part of C.Synths' implementation of sointu.Synth interface
 func (s *C.Synth) Release(voice int) {
+	if voice < 0 || voice >= len(s.SynthWrk.Voices) {
+		return
+	}
 	s.SynthWrk.Voices[voice].Release = 1
 }
 

@@ -1,4 +1,4 @@
-package audio
+package oto
 
 import (
 	"bytes"
@@ -13,7 +13,14 @@ import (
 func FloatBufferTo16BitLE(buff []float32) ([]byte, error) {
 	var buf bytes.Buffer
 	for i, v := range buff {
-		uv := int16(v * math.MaxInt16)
+		var uv int16
+		if v < -1.0 {
+			uv = -math.MaxInt16
+		} else if v > 1.0 {
+			uv = math.MaxInt16
+		} else {
+			uv = int16(v * math.MaxInt16)
+		}
 		if err := binary.Write(&buf, binary.LittleEndian, uv); err != nil {
 			return nil, fmt.Errorf("error converting buffer (@ %v, value %v) to bytes: %w", i, v, err)
 		}

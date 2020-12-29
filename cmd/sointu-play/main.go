@@ -15,8 +15,8 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/audio/oto"
 	"github.com/vsariola/sointu/bridge"
+	"github.com/vsariola/sointu/oto"
 )
 
 func main() {
@@ -38,6 +38,15 @@ func main() {
 	}
 	if !*rawOut && !*wavOut {
 		*play = true // if the user gives nothing to output, then the default behaviour is just to play the file
+	}
+	var audioContext sointu.AudioContext
+	if *play {
+		audioContext, err := oto.NewContext()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "could not acquire oto AudioContext: %v\n", err)
+			os.Exit(1)
+		}
+		defer audioContext.Close()
 	}
 	process := func(filename string) error {
 		output := func(extension string, contents []byte) error {
@@ -81,12 +90,9 @@ func main() {
 			return fmt.Errorf("sointu.Play failed: %v", err)
 		}
 		if *play {
-			player, err := oto.NewPlayer()
-			if err != nil {
-				return fmt.Errorf("error creating oto player: %v", err)
-			}
-			defer player.Close()
-			if err := player.Play(buffer); err != nil {
+			output := audioContext.Output()
+			defer output.Close()
+			if err := output.WriteAudio(buffer); err != nil {
 				return fmt.Errorf("error playing: %v", err)
 			}
 		}
