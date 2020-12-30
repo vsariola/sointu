@@ -315,6 +315,9 @@ su_op_delay_loop:
         fld     dword [{{.Input "delay" "damp"}}]         ; da s*(1-da) dr*y+s p*p*x
         fmul    dword [{{.CX}}+su_delayline_wrk.filtstate]  ; o*da s*(1-da) dr*y+s p*p*x, where o is stored
         faddp   st1, st0                                ; o*da+s*(1-da) dr*y+s p*p*x
+        {{- .Float 0.5 | .Prepare | indent 4}}
+        fadd    dword [{{.Float 0.5 | .Use}}]           ; add and sub small offset to prevent denormalization. WARNING: this is highly important, as the damp filters might denormalize and give 100x CPU penalty
+        fsub    dword [{{.Float 0.5 | .Use}}]           ; See for example: https://stackoverflow.com/questions/36781881/why-denormalized-floats-are-so-much-slower-than-other-floats-from-hardware-arch
         fst     dword [{{.CX}}+su_delayline_wrk.filtstate]  ; o'=o*da+s*(1-da), o' dr*y+s p*p*x
         fmul    dword [{{.Input "delay" "feedback"}}]     ; f*o' dr*y+s p*p*x
         fadd    st0, st2                                ; f*o'+p*p*x dr*y+s p*p*x
@@ -333,8 +336,8 @@ su_op_delay_loop:
     fst     dword [{{.CX}}+su_delayline_wrk.dcin]   ; i'=s, s c*o-i
     faddp   st1                                 ; s+c*o-i
 {{- .Float 0.5 | .Prepare | indent 4}}
-    fadd    dword [{{.Float 0.5 | .Use}}]                     ; add and sub small offset to prevent denormalization
-    fsub    dword [{{.Float 0.5 | .Use}}]
+    fadd    dword [{{.Float 0.5 | .Use}}]          ; add and sub small offset to prevent denormalization. WARNING: this is highly important, as low pass filters might denormalize and give 100x CPU penalty
+    fsub    dword [{{.Float 0.5 | .Use}}]          ; See for example: https://stackoverflow.com/questions/36781881/why-denormalized-floats-are-so-much-slower-than-other-floats-from-hardware-arch
     fst     dword [{{.CX}}+su_delayline_wrk.dcout]  ; o'=s+c*o-i
     ret
 {{end}}

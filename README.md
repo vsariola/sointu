@@ -274,6 +274,14 @@ Future goals
     combining multiple signals into one sync. Oh, and we probably should dump
     the whole thing also as a texture to the shader; to fly through the song, in
     a very literal way.
+  - **Find a solution for denormalized signals**. Denormalized floating point
+    numbers (floating point numbers that are very very small) can result in 100x
+    CPU slow down. We got hit by this already: the damp filters in delay units
+    were denormalizing, resulting in the synth being unusable in real time. Need
+    to investigate a) where denormalization can happen; b) how to prevent it:
+    add & substract value; c) make this optional to the user. For quick
+    explanation about the potential massive CPU hit, see
+    https://stackoverflow.com/questions/36781881/why-denormalized-floats-are-so-much-slower-than-other-floats-from-hardware-arch
 
 Crazy ideas
 -----------
