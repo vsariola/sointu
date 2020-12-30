@@ -21,10 +21,16 @@ var notes = []string{
 
 // valueAsNote returns the textual representation of a note value
 func valueAsNote(val byte) string {
+	if val == 1 {
+		return "..." // hold
+	}
+	if val == 0 {
+		return "---" // release
+	}
 	octave := (val - baseNote) / 12
 	oNote := (val - baseNote) % 12
 	if octave < 0 || oNote < 0 || octave > 10 {
-		return "..."
+		return "???"
 	}
 	return fmt.Sprintf("%s%d", notes[oNote], octave)
 }
