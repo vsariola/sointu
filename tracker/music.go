@@ -36,6 +36,6 @@ func valueAsNote(val byte) string {
 }
 
 // noteValue return the note value for a particular note and octave combination
-func getNoteValue(octave, note byte) byte {
-	return baseNote + (octave * 12) + note
+func getNoteValue(octave, note int) byte {
+	return byte(baseNote + (octave * 12) + note)
 }

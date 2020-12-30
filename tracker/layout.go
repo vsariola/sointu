@@ -1,6 +1,8 @@
 package tracker
 
 import (
+	"fmt"
+
 	"gioui.org/layout"
 )
 
@@ -34,6 +36,6 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	gtx.Constraints.Max.Y = 400
 	return layout.Stack{Alignment: layout.NW}.Layout(gtx,
 		layout.Expanded(t.QuitButton.Layout),
-		layout.Stacked(Raised(Label("Hello", white))),
+		layout.Stacked(Raised(Label(fmt.Sprintf("Current octave: %v", t.CurrentOctave), white))),
 	)
 }

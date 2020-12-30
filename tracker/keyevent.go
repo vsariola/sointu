@@ -7,31 +7,39 @@ import (
 	"gioui.org/io/key"
 )
 
-var noteMap = map[string]byte{
-	"Z": 0,
-	"S": 1,
-	"X": 2,
-	"D": 3,
-	"C": 4,
-	"V": 5,
-	"G": 6,
-	"B": 7,
-	"H": 8,
-	"N": 9,
-	"J": 10,
-	"M": 11,
-	"Q": 12,
-	"2": 13,
-	"W": 14,
-	"3": 15,
-	"E": 16,
-	"R": 17,
-	"5": 18,
-	"T": 19,
-	"6": 20,
-	"Y": 21,
-	"7": 22,
-	"U": 23,
+var noteMap = map[string]int{
+	"Z": -12,
+	"S": -11,
+	"X": -10,
+	"D": -9,
+	"C": -8,
+	"V": -7,
+	"G": -6,
+	"B": -5,
+	"H": -4,
+	"N": -3,
+	"J": -2,
+	"M": -1,
+	",": 0,
+	"L": 1,
+	".": 2,
+	"Q": 0,
+	"2": 1,
+	"W": 2,
+	"3": 3,
+	"E": 4,
+	"R": 5,
+	"5": 6,
+	"T": 7,
+	"6": 8,
+	"Y": 9,
+	"7": 10,
+	"U": 11,
+	"I": 12,
+	"9": 13,
+	"O": 14,
+	"0": 15,
+	"P": 16,
 }
 
 // KeyEvent handles incoming key events and returns true if repaint is needed.
@@ -58,6 +66,18 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 		case "Space":
 			t.TogglePlay()
 			return true
+		case `\`:
+			if e.Modifiers.Contain(key.ModShift) {
+				if t.CurrentOctave < 9 {
+					t.CurrentOctave++
+					return true
+				}
+			} else {
+				if t.CurrentOctave > 0 {
+					t.CurrentOctave--
+					return true
+				}
+			}
 		case key.NameUpArrow:
 			t.CursorRow = (t.CursorRow + t.song.PatternRows() - 1) % t.song.PatternRows()
 			return true
@@ -104,8 +124,8 @@ func (t *Tracker) getCurrent() byte {
 }
 
 // NotePressed handles incoming key presses while in the note column
-func (t *Tracker) NotePressed(val byte) {
-	t.setCurrent(getNoteValue(t.CurrentOctave, val))
+func (t *Tracker) NotePressed(val int) {
+	t.setCurrent(getNoteValue(int(t.CurrentOctave), val))
 }
 
 // NumberPressed handles incoming presses while in either of the hex number columns
