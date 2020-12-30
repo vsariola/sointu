@@ -172,20 +172,31 @@ su_op_oscillat_normalize_note:
     fmul    dword [{{.Float 0.000092696138 | .Use}}]   ; // st0 is now frequency
 su_op_oscillat_normalized:
     fadd    dword [{{.WRK}}]
-    fst     dword [{{.WRK}}]
-    fadd    dword [{{.Input "oscillator" "phase"}}]
 {{- if .SupportsParamValue "oscillator" "type" .Sample}}
     test    al, byte 0x80
     jz      short su_op_oscillat_not_sample
+    fst     dword [{{.WRK}}]  ; for samples, we store the phase without mod(p,1)
+{{- if or (.SupportsParamValueOtherThan "oscillator" "phase" 0) (.SupportsModulation "oscillator" "phase")}}
+    fadd    dword [{{.Input "oscillator" "phase"}}]
+{{- end}}
     {{.Call "su_oscillat_sample"}}
     jmp     su_op_oscillat_shaping ; skip the rest to avoid color phase normalization and colorloading
 su_op_oscillat_not_sample:
 {{- end}}
-    fld1
-    fadd    st1, st0
+    fld1                     ; we need to take mod(p,1) so the frequency does not drift as the float
+    fadd    st1, st0         ; make no mistake: without this, there is audible drifts in oscillator pitch
+    fxch                     ; as the actual period changes once the phase becomes too big
+    fprem                    ; we actually computed mod(p+1,1) instead of mod(p,1) as the fprem takes mod
+    fstp    st1              ; towards zero
+    fst     dword [{{.WRK}}] ; store back the updated phase
+{{- if or (.SupportsParamValueOtherThan "oscillator" "phase" 0) (.SupportsModulation "oscillator" "phase")}}
+    fadd    dword [{{.Input "oscillator" "phase"}}]
+    fld1                    ; this is a bit stupid, but we need to take mod(x,1) again after phase modulations
+    fadd    st1, st0        ; as the actual oscillator functions expect x in [0,1]
     fxch
     fprem
     fstp    st1
+{{- end}}
     fld     dword [{{.Input "oscillator" "color"}}]               ; // c      p
     ; every oscillator test included if needed
 {{- if .SupportsParamValue "oscillator" "type" .Sine}}

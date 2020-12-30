@@ -121,27 +121,34 @@
 {{- end}}
     (f32.store ;; update phase
         (global.get $WRK)
-        ;; Transpose calculation starts
-        (f32.div
-            (call $inputSigned (i32.const {{.InputNumber "oscillator" "transpose"}}))
-            (f32.const 0.015625)
-        ) ;; scale back to 0 - 128
-        (f32.add (local.get $detune)) ;; add detune. detune is -1 to 1 so can detune a full note up or down at max
-        (f32.add (select
-            (f32.const 0)
-            (f32.convert_i32_u (i32.load (global.get $voice)))
-            (i32.and (local.get $flags) (i32.const 0x8))
-        ))  ;; if lfo is not enabled, add the note number to it
-        (f32.mul (f32.const 0.0833333)) ;; /12, in full octaves
-        (call $pow2)
-        (f32.mul (select
-            (f32.const 0.000038) ;; pretty random scaling constant to get LFOs into reasonable range. Historical reasons, goes all the way back to 4klang
-            (f32.const 0.000092696138) ;; scaling constant to get middle-C to where it should be
-            (i32.and (local.get $flags) (i32.const 0x8))
-        ))
-        (f32.add (f32.load (global.get $WRK))) ;; add the current phase of the oscillator
+        (local.tee $phase
+            (f32.sub
+                (local.tee $phase
+                    ;; Transpose calculation starts
+                    (f32.div
+                        (call $inputSigned (i32.const {{.InputNumber "oscillator" "transpose"}}))
+                        (f32.const 0.015625)
+                    ) ;; scale back to 0 - 128
+                    (f32.add (local.get $detune)) ;; add detune. detune is -1 to 1 so can detune a full note up or down at max
+                    (f32.add (select
+                        (f32.const 0)
+                        (f32.convert_i32_u (i32.load (global.get $voice)))
+                        (i32.and (local.get $flags) (i32.const 0x8))
+                    ))  ;; if lfo is not enabled, add the note number to it
+                    (f32.mul (f32.const 0.0833333)) ;; /12, in full octaves
+                    (call $pow2)
+                    (f32.mul (select
+                        (f32.const 0.000038) ;; pretty random scaling constant to get LFOs into reasonable range. Historical reasons, goes all the way back to 4klang
+                        (f32.const 0.000092696138) ;; scaling constant to get middle-C to where it should be
+                        (i32.and (local.get $flags) (i32.const 0x8))
+                    ))
+                    (f32.add (f32.load (global.get $WRK))) ;; add the current phase of the oscillator
+                )
+                (f32.floor (local.get $phase))
+            )
+        )
     )
-    (f32.add (f32.load (global.get $WRK)) (call $input (i32.const {{.InputNumber "oscillator" "phase"}})))
+    (f32.add (local.get $phase) (call $input (i32.const {{.InputNumber "oscillator" "phase"}})))
     (local.set $phase (f32.sub (local.tee $phase) (f32.floor (local.get $phase)))) ;; phase = phase mod 1.0
     (local.set $color (call $input (i32.const {{.InputNumber "oscillator" "color"}})))
 {{- if .SupportsParamValue "oscillator" "type" .Sine}}

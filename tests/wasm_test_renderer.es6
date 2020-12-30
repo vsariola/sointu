@@ -85,7 +85,7 @@ if (process.argv.length <= 3) {
         }
         errorCount++
     }
-    if (errorCount > 100) {
+    if (errorCount > 200) {
         console.error("got different buffer than expected. First error at: "+(firstErrorPos/2|0)+(firstErrorPos%1," right"," left"));
         return 1;
     }
