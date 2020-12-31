@@ -8,10 +8,13 @@ import (
 )
 
 type OtoContext oto.Context
-type OtoOutput oto.Player
+type OtoOutput struct {
+	player    *oto.Player
+	tmpBuffer []byte
+}
 
 func (c *OtoContext) Output() sointu.AudioSink {
-	return (*OtoOutput)((*oto.Context)(c).NewPlayer())
+	return &OtoOutput{player: (*oto.Context)(c).NewPlayer(), tmpBuffer: make([]byte, 0)}
 }
 
 const otoBufferSize = 8192
@@ -34,9 +37,10 @@ func (c *OtoContext) Close() error {
 
 // Play implements the audio.Player interface for OtoPlayer
 func (o *OtoOutput) WriteAudio(floatBuffer []float32) (err error) {
-	if byteBuffer, err := FloatBufferTo16BitLE(floatBuffer); err != nil {
-		return fmt.Errorf("cannot convert buffer to bytes: %w", err)
-	} else if _, err := (*oto.Player)(o).Write(byteBuffer); err != nil {
+	// we reuse the old capacity tmpBuffer by setting its length to zero. then,
+	// we save the tmpBuffer so we can reuse it next time
+	o.tmpBuffer = FloatBufferTo16BitLE(floatBuffer, o.tmpBuffer[:0])
+	if _, err := o.player.Write(o.tmpBuffer); err != nil {
 		return fmt.Errorf("cannot write to player: %w", err)
 	}
 	return nil
@@ -44,7 +48,7 @@ func (o *OtoOutput) WriteAudio(floatBuffer []float32) (err error) {
 
 // Close disposes of resources
 func (o *OtoOutput) Close() error {
-	if err := (*oto.Player)(o).Close(); err != nil {
+	if err := o.player.Close(); err != nil {
 		return fmt.Errorf("cannot close oto player: %w", err)
 	}
 	return nil
