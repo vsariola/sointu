@@ -30,7 +30,7 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 	}
 	for i, trk := range t.song.Tracks {
 		flexTracks[i] = layout.Rigid(Lowered(t.layoutTrack(
-			t.song.Patterns[trk.Sequence[t.DisplayPattern]],
+			trk.Patterns[trk.Sequence[t.DisplayPattern]],
 			t.ActiveTrack == i,
 			t.CursorRow,
 			t.CursorColumn,

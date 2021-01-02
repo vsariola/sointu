@@ -7,7 +7,7 @@
 */}}
 {{- .SetLabel "su_patterns"}}
 {{- $m := .}}
-{{- range .Song.Patterns}}
+{{- range .EncodedSong.Patterns}}
     {{- range .}}
         {{- $.DataB .}}
     {{- end}}
@@ -20,8 +20,8 @@
 */}}
 {{- .SetLabel "su_tracks"}}
 {{- $m := .}}
-{{- range .Song.Tracks}}
-    {{- range .Sequence}}
+{{- range .EncodedSong.Sequences}}
+    {{- range .}}
         {{- $.DataB .}}
     {{- end}}
 {{- end}}
@@ -111,7 +111,7 @@
 ;; TODO: only export start and length with certain compiler options; in demo use, they can be hard coded
 ;; in the intro
 (global $outputStart (export "s") i32 (i32.const 8388608)) ;; TODO: do not hard code, layout memory somehow intelligently
-(global $outputLength (export "l") i32 (i32.const {{if .Song.Output16Bit}}{{mul .Song.TotalRows .Song.SamplesPerRow 4}}{{else}}{{mul .Song.TotalRows .Song.SamplesPerRow 8}}{{end}}))
+(global $outputLength (export "l") i32 (i32.const {{if .Song.Output16Bit}}{{mul .EncodedSong.TotalRows .Song.SamplesPerRow 4}}{{else}}{{mul .EncodedSong.TotalRows .Song.SamplesPerRow 8}}{{end}}))
 (global $output16bit (export "t") i32 (i32.const {{if .Song.Output16Bit}}1{{else}}0{{end}}))
 
 
@@ -183,17 +183,17 @@
                 (br_if $sample_loop (i32.lt_s (global.get $sample) (i32.const {{.Song.SamplesPerRow}})))
             end
             (global.set $row (i32.add (global.get $row) (i32.const 1)))
-            (br_if $row_loop (i32.lt_s (global.get $row) (i32.const {{.Song.PatternRows}})))
+            (br_if $row_loop (i32.lt_s (global.get $row) (i32.const {{.EncodedSong.PatternLength}})))
         end
         (global.set $pattern (i32.add (global.get $pattern) (i32.const 1)))
-        (br_if $pattern_loop (i32.lt_s (global.get $pattern) (i32.const {{.Song.SequenceLength}})))
+        (br_if $pattern_loop (i32.lt_s (global.get $pattern) (i32.const {{.EncodedSong.SequenceLength}})))
     end
 )
 
 {{- if ne .VoiceTrackBitmask 0}}
 ;; the complex implementation of update_voices: at least one track has more than one voice
 (func $su_update_voices (local $si i32) (local $di i32) (local $tracksRemaining i32) (local $note i32) (local $firstVoice i32) (local $nextTrackStartsAt i32) (local $numVoices i32) (local $voiceNo i32)
-    (local.set $tracksRemaining (i32.const {{len .Song.Tracks}}))
+    (local.set $tracksRemaining (i32.const {{len .EncodedSong.Sequences}}))
     (local.set $si (global.get $pattern))
     (local.set $nextTrackStartsAt (i32.const 0))
     loop $track_loop
@@ -212,7 +212,7 @@
             br_if $voiceLoop
         end
         (i32.load8_u offset={{index .Labels "su_tracks"}} (local.get $si))
-        (i32.mul (i32.const {{.Song.PatternRows}}))
+        (i32.mul (i32.const {{.EncodedSong.PatternLength}}))
         (i32.add (global.get $row))
         (i32.load8_u offset={{index .Labels "su_patterns"}})
         (local.tee $note)
@@ -246,7 +246,7 @@
                 (i32.store8 offset=768 (local.get $tracksRemaining) (local.get $voiceNo))
             ))
         ))
-        (local.set $si (i32.add (local.get $si) (i32.const {{.Song.SequenceLength}})))
+        (local.set $si (i32.add (local.get $si) (i32.const {{.EncodedSong.SequenceLength}})))
         (br_if $track_loop (local.tee $tracksRemaining (i32.sub (local.get $tracksRemaining) (i32.const 1))))
     end
 )
@@ -254,12 +254,12 @@
 {{- else}}
 ;; the simple implementation of update_voices: each track has exactly one voice
 (func $su_update_voices (local $si i32) (local $di i32) (local $tracksRemaining i32) (local $note i32)
-    (local.set $tracksRemaining (i32.const {{len .Song.Tracks}}))
+    (local.set $tracksRemaining (i32.const {{len .EncodedSong.Sequences}}))
     (local.set $si (global.get $pattern))
     (local.set $di (i32.const 4160))
     loop $track_loop
         (i32.load8_u offset={{index .Labels "su_tracks"}} (local.get $si))
-        (i32.mul (i32.const {{.Song.PatternRows}}))
+        (i32.mul (i32.const {{.EncodedSong.PatternLength}}))
         (i32.add (global.get $row))
         (i32.load8_u offset={{index .Labels "su_patterns"}})
         (local.tee $note)
@@ -271,7 +271,7 @@
             ))
         ))
         (local.set $di (i32.add (local.get $di) (i32.const 4096)))
-        (local.set $si (i32.add (local.get $si) (i32.const {{.Song.SequenceLength}})))
+        (local.set $si (i32.add (local.get $si) (i32.const {{.EncodedSong.SequenceLength}})))
         (br_if $track_loop (local.tee $tracksRemaining (i32.sub (local.get $tracksRemaining) (i32.const 1))))
     end
 )

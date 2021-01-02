@@ -33,9 +33,8 @@ func TestPlayer(t *testing.T) {
 			sointu.Unit{Type: "mulp", Parameters: map[string]int{"stereo": 0}},
 			sointu.Unit{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
 		}}}}
-	patterns := [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}}
-	tracks := []sointu.Track{sointu.Track{1, []byte{0}}}
-	song := sointu.Song{BPM: 100, Patterns: patterns, Tracks: tracks, Patch: patch, Output16Bit: false, Hold: 1}
+	tracks := []sointu.Track{{NumVoices: 1, Sequence: []byte{0}, Patterns: [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}}}}
+	song := sointu.Song{BPM: 100, Tracks: tracks, Patch: patch, Output16Bit: false, Hold: 1}
 	synth, err := bridge.Synth(patch)
 	if err != nil {
 		t.Fatalf("Compiling patch failed: %v", err)

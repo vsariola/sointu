@@ -56,7 +56,8 @@ func (patch Patch) InstrumentForVoice(voice int) (int, error) {
 
 type Track struct {
 	NumVoices int
-	Sequence  []byte `yaml:",flow"`
+	Sequence  []byte   `yaml:",flow"`
+	Patterns  [][]byte `yaml:",flow"`
 }
 
 type Synth interface {
@@ -214,13 +215,12 @@ type Song struct {
 	BPM         int
 	Output16Bit bool
 	Hold        byte
-	Patterns    [][]byte `yaml:",flow"`
 	Tracks      []Track
 	Patch       Patch
 }
 
 func (s *Song) PatternRows() int {
-	return len(s.Patterns[0])
+	return len(s.Tracks[0].Patterns[0])
 }
 
 func (s *Song) SequenceLength() int {
@@ -249,9 +249,16 @@ func (s *Song) Validate() error {
 	if s.BPM < 1 {
 		return errors.New("BPM should be > 0")
 	}
-	for i := range s.Patterns[:len(s.Patterns)-1] {
-		if len(s.Patterns[i]) != len(s.Patterns[i+1]) {
-			return errors.New("Every pattern should have the same length")
+	var patternLen int
+	for i, t := range s.Tracks {
+		for j, pat := range t.Patterns {
+			if i == 0 && j == 0 {
+				patternLen = len(pat)
+			} else {
+				if len(pat) != patternLen {
+					return errors.New("Every pattern should have the same length")
+				}
+			}
 		}
 	}
 	for i := range s.Tracks[:len(s.Tracks)-1] {
@@ -263,7 +270,7 @@ func (s *Song) Validate() error {
 	for _, track := range s.Tracks {
 		totalTrackVoices += track.NumVoices
 		for _, p := range track.Sequence {
-			if p < 0 || int(p) >= len(s.Patterns) {
+			if p < 0 || int(p) >= len(track.Patterns) {
 				return errors.New("Tracks use a non-existing pattern")
 			}
 		}
@@ -291,7 +298,7 @@ func Play(synth Synth, song Song) ([]float32, error) {
 		pattern := row / song.PatternRows()
 		for t := range song.Tracks {
 			patternIndex := song.Tracks[t].Sequence[pattern]
-			note := song.Patterns[patternIndex][patternRow]
+			note := song.Tracks[t].Patterns[patternIndex][patternRow]
 			if note > 0 && note <= song.Hold { // anything but hold causes an action.
 				continue
 			}
@@ -322,17 +329,21 @@ func (s *Song) UpdateHold(newHold byte) error {
 	if newHold == 0 {
 		return errors.New("hold value cannot be 0, 0 is reserved for release")
 	}
-	for _, pat := range s.Patterns {
-		for _, v := range pat {
-			if v > s.Hold && v <= newHold {
-				return errors.New("song uses note values greater or equal to the new hold value")
+	for _, track := range s.Tracks {
+		for _, pat := range track.Patterns {
+			for _, v := range pat {
+				if v > s.Hold && v <= newHold {
+					return errors.New("song uses note values greater or equal to the new hold value")
+				}
 			}
 		}
 	}
-	for _, pat := range s.Patterns {
-		for i, v := range pat {
-			if v > 0 && v <= s.Hold {
-				pat[i] = newHold
+	for _, track := range s.Tracks {
+		for _, pat := range track.Patterns {
+			for i, v := range pat {
+				if v > 0 && v <= s.Hold {
+					pat[i] = newHold
+				}
 			}
 		}
 	}

@@ -96,7 +96,7 @@ func (t *Tracker) sequencerLoop(closer <-chan struct{}) {
 		notes := make([]Note, 0, 32)
 		for track := range t.song.Tracks {
 			patternIndex := t.song.Tracks[track].Sequence[t.PlayPattern]
-			note := t.song.Patterns[patternIndex][t.PlayRow]
+			note := t.song.Tracks[track].Patterns[patternIndex][t.PlayRow]
 			if note == 1 { // anything but hold causes an action.
 				continue
 			}

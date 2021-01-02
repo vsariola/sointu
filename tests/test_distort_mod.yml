@@ -1,10 +1,10 @@
 bpm: 100
 output16bit: false
 hold: 1
-patterns: [[64, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]
 tracks:
     - numvoices: 1
       sequence: [0]
+      patterns: [[64, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]
 patch:
     instruments:
         - numvoices: 1

@@ -117,12 +117,12 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 
 // setCurrent sets the (note) value in current pattern under cursor to iv
 func (t *Tracker) setCurrent(iv byte) {
-	t.song.Patterns[t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern]][t.CursorRow] = iv
+	t.song.Tracks[t.ActiveTrack].Patterns[t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern]][t.CursorRow] = iv
 }
 
 // getCurrent returns the current (note) value in current pattern under the cursor
 func (t *Tracker) getCurrent() byte {
-	return t.song.Patterns[t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern]][t.CursorRow]
+	return t.song.Tracks[t.ActiveTrack].Patterns[t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern]][t.CursorRow]
 }
 
 // NotePressed handles incoming key presses while in the note column
