@@ -23,6 +23,7 @@ type Tracker struct {
 	DisplayPattern  int
 	ActiveTrack     int
 	CurrentOctave   byte
+	NoteTracking    bool
 
 	ticked       chan struct{}
 	setPlaying   chan bool
@@ -59,6 +60,9 @@ func (t *Tracker) TogglePlay() {
 	t.songPlayMutex.Lock()
 	defer t.songPlayMutex.Unlock()
 	t.Playing = !t.Playing
+	if t.Playing {
+		t.NoteTracking = true
+	}
 }
 
 func (t *Tracker) sequencerLoop(closer <-chan struct{}) {
@@ -84,6 +88,10 @@ func (t *Tracker) sequencerLoop(closer <-chan struct{}) {
 		}
 		if t.PlayPattern >= t.song.SequenceLength() {
 			t.PlayPattern = 0
+		}
+		if t.NoteTracking {
+			t.DisplayPattern = t.PlayPattern
+			t.CursorRow = t.PlayRow
 		}
 		notes := make([]Note, 0, 32)
 		for track := range t.song.Tracks {

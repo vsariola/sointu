@@ -1,10 +1,11 @@
 package tracker
 
 import (
+	"image/color"
+
 	"gioui.org/font/gofont"
 	"gioui.org/text"
 	"gioui.org/unit"
-	"image/color"
 )
 
 var fontCollection []text.FontFace = gofont.Collection()
@@ -33,3 +34,10 @@ var trackerFontSize = unit.Px(16)
 var trackerTextColor = white
 var trackerActiveTextColor = yellow
 var trackerPlayColor = red
+
+var patternBgColor = black
+var patternPlayColor = red
+var patternTextColor = white
+var patternActiveTextColor = yellow
+var patternFont = fontCollection[6].Font
+var patternFontSize = unit.Px(12)
