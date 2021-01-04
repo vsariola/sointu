@@ -10,7 +10,7 @@ import (
 type Unit struct {
 	Type       string
 	Parameters map[string]int `yaml:",flow"`
-	VarArgs    []int          `,omitempty`
+	VarArgs    []int          `yaml:",flow,omitempty"`
 }
 
 const (
