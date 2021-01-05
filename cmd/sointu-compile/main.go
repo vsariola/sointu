@@ -39,7 +39,6 @@ func main() {
 	tmplDir := flag.String("t", "", "When compiling, use the templates in this directory instead of the standard templates.")
 	directory := flag.String("o", "", "Directory where to output all files. The directory and its parents are created if needed. By default, everything is placed in the same directory where the original song file is.")
 	extensionsOut := flag.String("e", "", "Output only the compiled files with these comma separated extensions. For example: h,asm")
-	hold := flag.Int("hold", -1, "New value to be used as the hold value. -1 = do not change.")
 	targetArch := flag.String("arch", runtime.GOARCH, "Target architecture. Defaults to OS architecture. Possible values: 386, amd64")
 	targetOs := flag.String("os", runtime.GOOS, "Target OS. Defaults to current OS. Possible values: windows, darwin, linux. Anything else is assumed linuxy.")
 	flag.Usage = printUsage
@@ -106,12 +105,6 @@ func main() {
 		if errJSON := json.Unmarshal(inputBytes, &song); errJSON != nil {
 			if errYaml := yaml.Unmarshal(inputBytes, &song); errYaml != nil {
 				return fmt.Errorf("song could not be unmarshaled as a .json (%v) or .yml (%v)", errJSON, errYaml)
-			}
-		}
-		if *hold > -1 {
-			err = song.UpdateHold(byte(*hold))
-			if err != nil {
-				return fmt.Errorf("error updating the hold value of the song: %v", err)
 			}
 		}
 		var compiledPlayer map[string]string

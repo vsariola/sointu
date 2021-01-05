@@ -214,7 +214,6 @@ var UnitTypes = map[string]([]UnitParameter){
 type Song struct {
 	BPM         int
 	Output16Bit bool
-	Hold        byte
 	Tracks      []Track
 	Patch       Patch
 }
@@ -299,11 +298,11 @@ func Play(synth Synth, song Song) ([]float32, error) {
 		for t := range song.Tracks {
 			patternIndex := song.Tracks[t].Sequence[pattern]
 			note := song.Tracks[t].Patterns[patternIndex][patternRow]
-			if note > 0 && note <= song.Hold { // anything but hold causes an action.
+			if note > 0 && note <= 1 { // anything but hold causes an action.
 				continue
 			}
 			synth.Release(curVoices[t])
-			if note > song.Hold {
+			if note > 1 {
 				curVoices[t]++
 				first := song.FirstTrackVoice(t)
 				if curVoices[t] >= first+song.Tracks[t].NumVoices {
@@ -323,30 +322,4 @@ func Play(synth Synth, song Song) ([]float32, error) {
 		}
 	}
 	return buffer, nil
-}
-
-func (s *Song) UpdateHold(newHold byte) error {
-	if newHold == 0 {
-		return errors.New("hold value cannot be 0, 0 is reserved for release")
-	}
-	for _, track := range s.Tracks {
-		for _, pat := range track.Patterns {
-			for _, v := range pat {
-				if v > s.Hold && v <= newHold {
-					return errors.New("song uses note values greater or equal to the new hold value")
-				}
-			}
-		}
-	}
-	for _, track := range s.Tracks {
-		for _, pat := range track.Patterns {
-			for i, v := range pat {
-				if v > 0 && v <= s.Hold {
-					pat[i] = newHold
-				}
-			}
-		}
-	}
-	s.Hold = newHold
-	return nil
 }

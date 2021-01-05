@@ -104,7 +104,8 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 				SongMacros
 				*EncodedPatch
 				EncodedSong *EncodedSong
-			}{compilerMacros, featureSetMacros, x86Macros, songMacros, encodedPatch, encodedSong}
+				Hold        int
+			}{compilerMacros, featureSetMacros, x86Macros, songMacros, encodedPatch, encodedSong, 1}
 			populatedTemplate, extension, err = com.compile(templateName, &data)
 		} else if com.Arch == "wasm" {
 			wasmMacros := *NewWasmMacros()
@@ -115,7 +116,8 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 				SongMacros
 				*EncodedPatch
 				EncodedSong *EncodedSong
-			}{compilerMacros, featureSetMacros, wasmMacros, songMacros, encodedPatch, encodedSong}
+				Hold        int
+			}{compilerMacros, featureSetMacros, wasmMacros, songMacros, encodedPatch, encodedSong, 1}
 			populatedTemplate, extension, err = com.compile(templateName, &data)
 		}
 		if err != nil {

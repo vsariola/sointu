@@ -112,7 +112,7 @@ su_calculate_voices_loop:                           ; do {
         inc     ecx                                 ;   ecx++   // ecx=the first voice of next track
         jc      su_calculate_voices_loop            ; } while bit ecx-1 of bitmask is on
         push    {{.CX}}                                 ; Stack: next_instr ptrnrow
-        cmp     al, {{.Song.Hold}}                    ; anything but hold causes action
+        cmp     al, {{.Hold}}                    ; anything but hold causes action
         je      short su_update_voices_nexttrack
         mov     cl, byte [{{.BP}}]
         mov     edi, ecx
@@ -120,7 +120,7 @@ su_calculate_voices_loop:                           ; do {
         shl     edi, 12           ; each unit = 64 bytes and there are 1<<MAX_UNITS_SHIFT units + small header
 {{- .Prepare "su_synth_obj" | indent 4}}
         inc     dword [{{.Use "su_synth_obj"}} + su_synthworkspace.voices + su_voice.release + {{.DI}}] ; set the voice currently active to release; notice that it could increment any number of times
-        cmp     al, {{.Song.Hold}}                    ; if cl < HLD (no new note triggered)
+        cmp     al, {{.Hold}}                    ; if cl < HLD (no new note triggered)
         jl      su_update_voices_nexttrack          ;   goto nexttrack
         inc     ecx                                 ; curvoice++
         cmp     ecx, edx                            ; if (curvoice >= num_voices)
@@ -160,7 +160,7 @@ su_update_voices_trackloop:
         imul    eax, {{.EncodedSong.PatternLength}}           ; multiply by rows per pattern, eax = offset to current pattern data
 {{- .Prepare "su_patterns" .AX | indent 8}}
         movzx   eax, byte [{{.Use "su_patterns" .AX}} + {{.DX}}]  ; ecx = note
-        cmp     al, {{.Song.Hold}}                   ; anything but hold causes action
+        cmp     al, {{.Hold}}                   ; anything but hold causes action
         je      short su_update_voices_nexttrack
         inc     dword [{{.DI}}+su_voice.release]        ; set the voice currently active to release; notice that it could increment any number of times
         jb      su_update_voices_nexttrack          ; if cl < HLD (no new note triggered)  goto nexttrack
