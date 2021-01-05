@@ -35,17 +35,8 @@ function(regression_test testname)
         add_executable(${testname} ${source} test_renderer.c)
     endif()
 
-    add_test(${testname} ${testname})
+    add_test(${testname} ${testname} ${CMAKE_CURRENT_SOURCE_DIR}/expected_output/${testname}.raw)
     target_link_libraries(${testname} ${HEADERLIB})
-
-    set (rawinput ${CMAKE_CURRENT_SOURCE_DIR}/expected_output/${testname}.raw)
-    set (rawoutput ${CMAKE_CURRENT_BINARY_DIR}/expected_output/${testname}.raw)
-
-    add_custom_target(${testname}_rawcopy
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${rawinput} ${rawoutput}
-    )
-
-    add_dependencies(${testname} ${testname}_rawcopy)
 
     target_include_directories(${testname} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
     target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}")

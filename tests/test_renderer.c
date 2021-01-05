@@ -28,6 +28,10 @@ int main(int argc, char* argv[]) {
     float max_diff;
     float diff;
 
+    if (argc < 2) {
+        fprintf(stderr, "usage: [test] path/to/expected_wave.raw");
+    }
+
     #ifdef SU_LOAD_GMDLS
     su_load_gmdls();
     #endif
@@ -45,9 +49,7 @@ int main(int argc, char* argv[]) {
     fwrite((void*)buf, sizeof(SUsample), SU_BUFFER_LENGTH, f);
     fclose(f);
 
-    snprintf(filename, sizeof filename, "%s%s%s", expected_output_folder, test_name, ".raw");
-
-    f = fopen(filename, "rb");
+    f = fopen(argv[1], "rb");
 
     if (f == NULL) {
         printf("No expected waveform found!\n");
