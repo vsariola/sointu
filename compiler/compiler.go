@@ -86,7 +86,7 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf(`could not encode patch: %v`, err)
 	}
-	encodedSong, err := EncodeSong(song)
+	patterns, sequences, err := ConstructPatterns(song)
 	if err != nil {
 		return nil, fmt.Errorf(`could not encode song: %v`, err)
 	}
@@ -104,9 +104,12 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 				X86Macros
 				SongMacros
 				*EncodedPatch
-				EncodedSong *EncodedSong
-				Hold        int
-			}{compilerMacros, featureSetMacros, x86Macros, songMacros, encodedPatch, encodedSong, 1}
+				Patterns       [][]byte
+				Sequences      [][]byte
+				PatternLength  int
+				SequenceLength int
+				Hold           int
+			}{compilerMacros, featureSetMacros, x86Macros, songMacros, encodedPatch, patterns, sequences, len(patterns[0]), len(sequences[0]), 1}
 			populatedTemplate, extension, err = com.compile(templateName, &data)
 		} else if com.Arch == "wasm" {
 			wasmMacros := *NewWasmMacros()
@@ -116,9 +119,12 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 				WasmMacros
 				SongMacros
 				*EncodedPatch
-				EncodedSong *EncodedSong
-				Hold        int
-			}{compilerMacros, featureSetMacros, wasmMacros, songMacros, encodedPatch, encodedSong, 1}
+				Patterns       [][]byte
+				Sequences      [][]byte
+				PatternLength  int
+				SequenceLength int
+				Hold           int
+			}{compilerMacros, featureSetMacros, wasmMacros, songMacros, encodedPatch, patterns, sequences, len(patterns[0]), len(sequences[0]), 1}
 			populatedTemplate, extension, err = com.compile(templateName, &data)
 		}
 		if err != nil {

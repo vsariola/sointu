@@ -7,14 +7,6 @@ import (
 	"github.com/vsariola/sointu"
 )
 
-// EncodedSong has a single global pattern table and all track sequences are
-// indices to this table. This is in contrast with sointu. Song, which has one
-// pattern table per track.
-type EncodedSong struct {
-	Patterns  [][]byte
-	Sequences [][]byte
-}
-
 // fixPatternLength makes sure that every pattern is the same length. During
 // composing. Patterns shorter than the given length are padded with 1 / "hold";
 // patterns longer than the given length are cropped.
@@ -174,19 +166,7 @@ func bytesToInts(array []byte) []int {
 	return ret
 }
 
-func (e *EncodedSong) PatternLength() int {
-	return len(e.Patterns[0])
-}
-
-func (e *EncodedSong) SequenceLength() int {
-	return len(e.Sequences[0])
-}
-
-func (e *EncodedSong) TotalRows() int {
-	return e.SequenceLength() * e.PatternLength()
-}
-
-func EncodeSong(song *sointu.Song) (*EncodedSong, error) {
+func ConstructPatterns(song *sointu.Song) ([][]byte, [][]byte, error) {
 	patLength := song.PatternRows()
 	sequences := make([][]byte, len(song.Tracks))
 	var patterns [][]int
@@ -201,7 +181,7 @@ func EncodeSong(song *sointu.Song) (*EncodedSong, error) {
 		var err error
 		sequences[i], err = intsToBytes(sequence)
 		if err != nil {
-			return nil, errors.New("the constructed pattern table would result in > 256 unique patterns; only 256 unique patterns are supported")
+			return nil, nil, errors.New("the constructed pattern table would result in > 256 unique patterns; only 256 unique patterns are supported")
 		}
 	}
 	bytePatterns := make([][]byte, len(patterns))
@@ -210,8 +190,8 @@ func EncodeSong(song *sointu.Song) (*EncodedSong, error) {
 		replaceInts(pat, -1, 0) // replace don't cares with releases
 		bytePatterns[i], err = intsToBytes(pat)
 		if err != nil {
-			return nil, fmt.Errorf("invalid note in pattern, notes should be 0 .. 255: %v", err)
+			return nil, nil, fmt.Errorf("invalid note in pattern, notes should be 0 .. 255: %v", err)
 		}
 	}
-	return &EncodedSong{Patterns: bytePatterns, Sequences: sequences}, nil
+	return bytePatterns, sequences, nil
 }

@@ -61,7 +61,7 @@ su_render_sampleloop:                   ; loop through every sample in the row
             jl      su_render_sampleloop
         {{.Pop .AX}}                  ; Stack: pushad ptr
         inc     eax
-        cmp     eax, {{.EncodedSong.TotalRows}}
+        cmp     eax, {{mul .PatternLength .SequenceLength}}
         jl      su_render_rowloop
     ; rewind the stack the entropy of multiple pop {{.AX}} is probably lower than add
     {{- range slice .Stacklocs $prologsize}}
@@ -91,7 +91,7 @@ su_render_sampleloop:                   ; loop through every sample in the row
 {{- if ne .VoiceTrackBitmask 0}}
 ; The more complicated implementation: one track can trigger multiple voices
     xor     edx, edx
-    mov     ebx, {{.EncodedSong.PatternLength}}                   ; we could do xor ebx,ebx; mov bl,PATTERN_SIZE, but that would limit patternsize to 256...
+    mov     ebx, {{.PatternLength}}                   ; we could do xor ebx,ebx; mov bl,PATTERN_SIZE, but that would limit patternsize to 256...
     div     ebx                                 ; eax = current pattern, edx = current row in pattern
     {{.Prepare "su_tracks"}}
     lea     {{.SI}}, [{{.Use "su_tracks"}}+{{.AX}}]  ; esi points to the pattern data for current track
@@ -100,7 +100,7 @@ su_render_sampleloop:                   ; loop through every sample in the row
     mov     {{.BP}}, {{.PTRWORD}} su_synth_obj           ; ebp points to the current_voiceno array
 su_update_voices_trackloop:
         movzx   eax, byte [{{.SI}}]                     ; eax = current pattern
-        imul    eax, {{.EncodedSong.PatternLength}}                   ; eax = offset to current pattern data
+        imul    eax, {{.PatternLength}}                   ; eax = offset to current pattern data
 {{- .Prepare "su_patterns" .AX | indent 4}}
         movzx   eax,byte [{{.Use "su_patterns" .AX}},{{.DX}}]  ; eax = note
         push    {{.DX}}                                 ; Stack: ptrnrow
@@ -138,7 +138,7 @@ su_update_voices_skipreset:
 su_update_voices_nexttrack:
         pop     {{.BX}}                                 ; ebx=first voice of next instrument, Stack: ptrnrow
         pop     {{.DX}}                                 ; edx=patrnrow
-        add     {{.SI}}, {{.EncodedSong.SequenceLength}}
+        add     {{.SI}}, {{.SequenceLength}}
         inc     {{.BP}}
 {{- $addrname := len .Song.Tracks | printf "su_synth_obj + %v"}}
 {{- .Prepare $addrname | indent 8}}
@@ -149,7 +149,7 @@ su_update_voices_nexttrack:
 ; The simple implementation: each track triggers always the same voice
     xor     edx, edx
     xor     ebx, ebx
-    mov     bl, {{.EncodedSong.PatternLength}}           ; rows per pattern
+    mov     bl, {{.PatternLength}}           ; rows per pattern
     div     ebx                                 ; eax = current pattern, edx = current row in pattern
 {{- .Prepare "su_tracks" | indent 4}}
     lea     {{.SI}}, [{{.Use "su_tracks"}}+{{.AX}}]; esi points to the pattern data for current track
@@ -157,7 +157,7 @@ su_update_voices_nexttrack:
     mov     bl, {{len .Song.Tracks}}                      ; MAX_TRACKS is always <= 32 so this is ok
 su_update_voices_trackloop:
         movzx   eax, byte [{{.SI}}]                     ; eax = current pattern
-        imul    eax, {{.EncodedSong.PatternLength}}           ; multiply by rows per pattern, eax = offset to current pattern data
+        imul    eax, {{.PatternLength}}           ; multiply by rows per pattern, eax = offset to current pattern data
 {{- .Prepare "su_patterns" .AX | indent 8}}
         movzx   eax, byte [{{.Use "su_patterns" .AX}} + {{.DX}}]  ; ecx = note
         cmp     al, {{.Hold}}                   ; anything but hold causes action
@@ -173,7 +173,7 @@ su_update_voices_retrigger:
 su_update_voices_nexttrack:
         add     {{.DI}}, su_voice.size
 su_update_voices_skipadd:
-        add     {{.SI}}, {{.EncodedSong.SequenceLength}}
+        add     {{.SI}}, {{.SequenceLength}}
         dec     ebx
         jnz     short su_update_voices_trackloop
     ret
@@ -185,7 +185,7 @@ su_update_voices_skipadd:
 ;    Patterns
 ;-------------------------------------------------------------------------------
 {{.Data "su_patterns"}}
-{{- range .EncodedSong.Patterns}}
+{{- range .Patterns}}
     db {{. | toStrings | join ","}}
 {{- end}}
 
@@ -193,7 +193,7 @@ su_update_voices_skipadd:
 ;    Tracks
 ;-------------------------------------------------------------------------------
 {{.Data "su_tracks"}}
-{{- range .EncodedSong.Sequences}}
+{{- range .Sequences}}
     db {{. | toStrings | join ","}}
 {{- end}}
 
