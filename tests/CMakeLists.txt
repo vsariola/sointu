@@ -1,13 +1,18 @@
 function(regression_test testname)
 
-    if(${ARGC} LESS 4)
-        set(source ${testname}.yml)
+    if(${ARGC} LESS 6)
+        if(${ARGC} LESS 4)
+            set(source ${testname}.yml)
+        else()
+            set(source ${ARGV3}.yml)
+        endif()
+        
         set(asmfile ${testname}.asm)
         set (headerfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.h)
 
         add_custom_command(
             OUTPUT ${asmfile}
-            COMMAND ${compilecmd} -arch=${arch} -o ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
+            COMMAND ${compilecmd} ${ARGV4} -arch=${arch} -o ${CMAKE_CURRENT_BINARY_DIR}/${asmfile} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
             DEPENDS ${source} ${x86templates} sointu-compiler
         )
 
@@ -19,14 +24,14 @@ function(regression_test testname)
             set(watfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.wat)
             set(wasmtarget wasm_${testname})
             add_custom_target(${wasmtarget} ALL
-                COMMAND ${compilecmd} -arch=wasm -o ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source} && ${WAT2WASM} --enable-bulk-memory -o ${wasmfile} ${watfile}
+                COMMAND ${compilecmd} -arch=wasm -o ${CMAKE_CURRENT_BINARY_DIR}/ ${CMAKE_CURRENT_SOURCE_DIR}/${source} && ${WAT2WASM} --enable-bulk-memory -o ${wasmfile} ${watfile}
                 SOURCES "${source}" "${wasmtemplates}"
                 DEPENDS sointu-compiler
             )
             add_test(${wasmtarget} ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/wasm_test_renderer.es6 ${wasmfile} ${CMAKE_CURRENT_SOURCE_DIR}/expected_output/${testname}.raw)
         endif()
     else()
-        set(source ${ARGV3})
+        set(source ${ARGV5})
         add_executable(${testname} ${source} test_renderer.c)
     endif()
 
@@ -155,13 +160,13 @@ regression_test(test_delay_drymod "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;SEND")
 regression_test(test_delay_flanger "ENVELOPE;FOP_MULP;PANNING;VCO_SINE;SEND")
 
 regression_test(test_envelope_mod "VCO_SINE;ENVELOPE;SEND")
-regression_test(test_envelope_16bit ENVELOPE)
+regression_test(test_envelope_16bit ENVELOPE "" test_envelope "-i")
 
 regression_test(test_polyphony "ENVELOPE;VCO_SINE")
 regression_test(test_chords "ENVELOPE;VCO_SINE")
 regression_test(test_speed "ENVELOPE;VCO_SINE")
 
-regression_test(test_render_samples ENVELOPE "" test_render_samples.c)
+regression_test(test_render_samples ENVELOPE "" "" "" test_render_samples.c)
 target_link_libraries(test_render_samples ${STATICLIB})
 target_compile_definitions(test_render_samples PUBLIC TEST_HEADER="test_render_samples.h")
 

@@ -212,10 +212,9 @@ var UnitTypes = map[string]([]UnitParameter){
 }
 
 type Song struct {
-	BPM         int
-	Output16Bit bool
-	Tracks      []Track
-	Patch       Patch
+	BPM    int
+	Tracks []Track
+	Patch  Patch
 }
 
 func (s *Song) PatternRows() int {

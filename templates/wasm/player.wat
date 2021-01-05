@@ -111,8 +111,8 @@
 ;; TODO: only export start and length with certain compiler options; in demo use, they can be hard coded
 ;; in the intro
 (global $outputStart (export "s") i32 (i32.const 8388608)) ;; TODO: do not hard code, layout memory somehow intelligently
-(global $outputLength (export "l") i32 (i32.const {{if .Song.Output16Bit}}{{mul .EncodedSong.TotalRows .Song.SamplesPerRow 4}}{{else}}{{mul .EncodedSong.TotalRows .Song.SamplesPerRow 8}}{{end}}))
-(global $output16bit (export "t") i32 (i32.const {{if .Song.Output16Bit}}1{{else}}0{{end}}))
+(global $outputLength (export "l") i32 (i32.const {{if .Output16Bit}}{{mul .EncodedSong.TotalRows .Song.SamplesPerRow 4}}{{else}}{{mul .EncodedSong.TotalRows .Song.SamplesPerRow 8}}{{end}}))
+(global $output16bit (export "t") i32 (i32.const {{if .Output16Bit}}1{{else}}0{{end}}))
 
 
 ;;------------------------------------------------------------------------------
@@ -155,7 +155,7 @@
 (start $render) ;; we run render automagically when the module is instantiated
 
 (func $render (param)
-{{- if  .Song.Output16Bit }} (local $channel i32) {{- end }}
+{{- if  .Output16Bit }} (local $channel i32) {{- end }}
     loop $pattern_loop
         (global.set $row (i32.const 0))
         loop $row_loop

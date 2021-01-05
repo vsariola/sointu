@@ -40,7 +40,7 @@ func TestOscillatSine(t *testing.T) {
 			sointu.Unit{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
 		}}}}
 	tracks := []sointu.Track{{NumVoices: 1, Sequence: []byte{0}, Patterns: [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}}}}
-	song := sointu.Song{BPM: 100, Tracks: tracks, Patch: patch, Output16Bit: false}
+	song := sointu.Song{BPM: 100, Tracks: tracks, Patch: patch}
 	synth, err := bridge.Synth(patch)
 	if err != nil {
 		t.Fatalf("Compiling patch failed: %v", err)
@@ -132,12 +132,7 @@ func TestAllRegressionTests(t *testing.T) {
 					log.Fatal(err)
 				}
 			}
-			if song.Output16Bit {
-				int16Buffer := convertToInt16Buffer(buffer)
-				compareToRawInt16(t, int16Buffer, testname+".raw")
-			} else {
-				compareToRawFloat32(t, buffer, testname+".raw")
-			}
+			compareToRawFloat32(t, buffer, testname+".raw")
 		})
 	}
 }

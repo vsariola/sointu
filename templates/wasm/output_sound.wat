@@ -1,4 +1,4 @@
-{{- if not .Song.Output16Bit }}
+{{- if not .Output16Bit }}
             (i64.store (global.get $outputBufPtr) (i64.load (i32.const 4128))) ;; load the sample from left & right channels as one 64bit int and store it in the address pointed by outputBufPtr
             (global.set $outputBufPtr (i32.add (global.get $outputBufPtr) (i32.const 8)))      ;; advance outputbufptr
 {{- else }}

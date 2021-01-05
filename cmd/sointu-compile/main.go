@@ -37,9 +37,10 @@ func main() {
 	jsonOut := flag.Bool("j", false, "Output the song as .json file instead of compiling.")
 	yamlOut := flag.Bool("y", false, "Output the song as .yml file instead of compiling.")
 	tmplDir := flag.String("t", "", "When compiling, use the templates in this directory instead of the standard templates.")
-	directory := flag.String("o", "", "Directory where to output all files. The directory and its parents are created if needed. By default, everything is placed in the same directory where the original song file is.")
+	outPath := flag.String("o", "", "Directory or filename where to write compiled code. Extension is ignored. Directory and its parents are created if needed. By default, everything is placed in the same directory where the original song file is.")
 	extensionsOut := flag.String("e", "", "Output only the compiled files with these comma separated extensions. For example: h,asm")
 	targetArch := flag.String("arch", runtime.GOARCH, "Target architecture. Defaults to OS architecture. Possible values: 386, amd64")
+	output16bit := flag.Bool("i", false, "Compiled song should output 16-bit integers, instead of floats.")
 	targetOs := flag.String("os", runtime.GOOS, "Target OS. Defaults to current OS. Possible values: windows, darwin, linux. Anything else is assumed linuxy.")
 	flag.Usage = printUsage
 	flag.Parse()
@@ -52,9 +53,9 @@ func main() {
 	if compile || *library {
 		var err error
 		if *tmplDir != "" {
-			comp, err = compiler.NewFromTemplates(*targetOs, *targetArch, *tmplDir)
+			comp, err = compiler.NewFromTemplates(*targetOs, *targetArch, *output16bit, *tmplDir)
 		} else {
-			comp, err = compiler.New(*targetOs, *targetArch)
+			comp, err = compiler.New(*targetOs, *targetArch, *output16bit)
 		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, `error creating compiler: %v`, err)
@@ -67,8 +68,19 @@ func main() {
 			return nil
 		}
 		dir, name := filepath.Split(filename)
-		if *directory != "" {
-			dir = *directory
+		if *outPath != "" {
+			// check if it's an already existing directory and the user just forgot trailing slash
+			if info, err := os.Stat(*outPath); err == nil && info.IsDir() {
+				dir = *outPath
+			} else {
+				outdir, outname := filepath.Split(*outPath)
+				if outdir != "" {
+					dir = outdir
+				}
+				if outname != "" {
+					name = outname
+				}
+			}
 		}
 		name = strings.TrimSuffix(name, filepath.Ext(name)) + extension
 		f := filepath.Join(dir, name)

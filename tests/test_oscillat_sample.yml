@@ -1,5 +1,4 @@
 bpm: 100
-output16bit: false
 tracks:
     - numvoices: 1
       sequence: [1, 0, 2, 0, 3, 0, 4, 0]
