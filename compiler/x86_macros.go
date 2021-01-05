@@ -210,7 +210,7 @@ func (p *X86Macros) SectData(name string) string {
 		if !p.DisableSections {
 			return fmt.Sprintf("section .data.%v progbits alloc noexec write align=1", name)
 		}
-		return "section .data. progbits alloc exec nowrite align=1"
+		return "section .data progbits alloc exec nowrite align=1"
 	}
 }
 
@@ -219,13 +219,12 @@ func (p *X86Macros) SectBss(name string) string {
 		if p.OS == "windows" && !p.DisableSections {
 			return fmt.Sprintf("section .%v bss align=256", name)
 		}
-		return "section .bss align=256"
 	} else {
 		if !p.DisableSections {
-			return fmt.Sprintf("section .bss.%v progbits alloc noexec write align=256", name)
+			return fmt.Sprintf("section .bss.%v nobits alloc noexec write align=256", name)
 		}
-		return "section .bss. progbits alloc exec nowrite align=256"
 	}
+	return "section .bss align=256"
 }
 
 func (p *X86Macros) Data(label string) string {
