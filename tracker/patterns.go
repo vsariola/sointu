@@ -54,3 +54,10 @@ func (t *Tracker) layoutPatterns(tracks []sointu.Track, activeTrack, cursorPatte
 		return layout.Dimensions{Size: gtx.Constraints.Max}
 	}
 }
+
+func patternIndexToString(index byte) string {
+	if index < 10 {
+		return string([]byte{'0' + index})
+	}
+	return string([]byte{'A' + index - 10})
+}

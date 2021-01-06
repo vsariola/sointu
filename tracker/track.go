@@ -14,7 +14,8 @@ import (
 )
 
 const trackRowHeight = 16
-const trackWidth = 100
+const trackWidth = 84
+const patmarkWidth = 16
 
 func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, cursorRow, cursorPattern, cursorCol, playRow, playPattern int) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
@@ -55,6 +56,10 @@ func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, c
 				if songRow == playSongRow {
 					paint.FillShape(gtx.Ops, trackerPlayColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight)}.Op())
 				}
+				if j == 0 {
+					paint.ColorOp{Color: trackerPatMarker}.Add(gtx.Ops)
+					widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(s))
+				}
 				if songRow == cursorSongRow {
 					paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
 				} else {
@@ -64,10 +69,11 @@ func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, c
 						paint.ColorOp{Color: trackerInactiveTextColor}.Add(gtx.Ops)
 					}
 				}
+				op.Offset(f32.Pt(patmarkWidth, 0)).Add(gtx.Ops)
 				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, valueAsNote(c))
 				op.Offset(f32.Pt(trackWidth/2, 0)).Add(gtx.Ops)
 				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", c)))
-				op.Offset(f32.Pt(-trackWidth/2, trackRowHeight)).Add(gtx.Ops)
+				op.Offset(f32.Pt(-trackWidth/2-patmarkWidth, trackRowHeight)).Add(gtx.Ops)
 			}
 		}
 		return layout.Dimensions{Size: gtx.Constraints.Max}
