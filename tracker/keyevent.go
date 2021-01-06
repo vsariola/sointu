@@ -79,19 +79,19 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 				}
 			}
 		case key.NameUpArrow:
+			delta := -1
 			if e.Modifiers.Contain(key.ModCtrl) {
-				t.DisplayPattern = (t.DisplayPattern + t.song.SequenceLength() - 1) % t.song.SequenceLength()
-			} else {
-				t.CursorRow = (t.CursorRow + t.song.PatternRows() - 1) % t.song.PatternRows()
+				delta = -t.song.PatternRows()
 			}
+			t.moveCursor(delta)
 			t.NoteTracking = false
 			return true
 		case key.NameDownArrow:
+			delta := 1
 			if e.Modifiers.Contain(key.ModCtrl) {
-				t.DisplayPattern = (t.DisplayPattern + 1) % t.song.SequenceLength()
-			} else {
-				t.CursorRow = (t.CursorRow + 1) % t.song.PatternRows()
+				delta = t.song.PatternRows()
 			}
+			t.moveCursor(delta)
 			t.NoteTracking = false
 			return true
 		case key.NameLeftArrow:
@@ -121,6 +121,21 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 		}
 	}
 	return false
+}
+
+func (t *Tracker) moveCursor(delta int) {
+	newRow := t.CursorRow + delta
+	remainder := (newRow + t.song.PatternRows()) % t.song.PatternRows()
+	t.DisplayPattern += (newRow - remainder) / t.song.PatternRows()
+	if t.DisplayPattern < 0 {
+		t.CursorRow = 0
+		t.DisplayPattern = 0
+	} else if t.DisplayPattern >= t.song.SequenceLength() {
+		t.CursorRow = t.song.PatternRows() - 1
+		t.DisplayPattern = t.song.SequenceLength() - 1
+	} else {
+		t.CursorRow = remainder
+	}
 }
 
 // setCurrent sets the (note) value in current pattern under cursor to iv
