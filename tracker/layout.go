@@ -2,14 +2,19 @@ package tracker
 
 import (
 	"fmt"
+	"image"
 
 	"gioui.org/layout"
+	"gioui.org/op"
+	"gioui.org/op/clip"
+	"gioui.org/op/paint"
 )
 
 func (t *Tracker) Layout(gtx layout.Context) {
 	layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(t.layoutControls),
-		layout.Flexed(1, Lowered(t.layoutTracker)),
+		layout.Rigid(t.darkLine(true)),
+		layout.Flexed(1, Raised(t.layoutTracker)),
 	)
 }
 
@@ -39,13 +44,30 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	gtx.Constraints.Min.Y = 200
 	gtx.Constraints.Max.Y = 200
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		layout.Rigid(Lowered(t.layoutPatterns(
+		layout.Rigid(Raised(t.layoutPatterns(
 			t.song.Tracks,
 			t.ActiveTrack,
 			t.DisplayPattern,
 			t.CursorColumn,
 			t.PlayPattern,
 		))),
+		layout.Rigid(t.darkLine(false)),
 		layout.Flexed(1, Raised(Label(fmt.Sprintf("Current octave: %v", t.CurrentOctave), white))),
 	)
+}
+
+func (t *Tracker) darkLine(horizontal bool) layout.Widget {
+	return func(gtx layout.Context) layout.Dimensions {
+		if horizontal {
+			gtx.Constraints.Min.Y = 1
+			gtx.Constraints.Max.Y = 1
+		} else {
+			gtx.Constraints.Min.X = 1
+			gtx.Constraints.Max.X = 1
+		}
+		defer op.Push(gtx.Ops).Pop()
+		clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
+		paint.FillShape(gtx.Ops, black, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
+		return layout.Dimensions{Size: gtx.Constraints.Max}
+	}
 }

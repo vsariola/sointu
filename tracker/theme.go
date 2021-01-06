@@ -20,7 +20,7 @@ var yellow = color.RGBA{R: 255, G: 255, B: 130, A: 255}
 var red = color.RGBA{R: 255, G: 0, B: 0, A: 255}
 
 var panelColor = neutral
-var panelShadeColor = dark
+var panelShadeColor = neutral
 var panelLightColor = light
 
 var labelFont = fontCollection[6].Font
