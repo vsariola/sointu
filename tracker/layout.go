@@ -9,13 +9,6 @@ import (
 func (t *Tracker) Layout(gtx layout.Context) {
 	layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(t.layoutControls),
-		layout.Rigid(Lowered(t.layoutPatterns(
-			t.song.Tracks,
-			t.ActiveTrack,
-			t.DisplayPattern,
-			t.CursorColumn,
-			t.PlayPattern,
-		))),
 		layout.Flexed(1, Lowered(t.layoutTracker)),
 	)
 }
@@ -45,8 +38,14 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	gtx.Constraints.Min.Y = 200
 	gtx.Constraints.Max.Y = 200
-	return layout.Stack{Alignment: layout.NW}.Layout(gtx,
-		layout.Expanded(t.QuitButton.Layout),
-		layout.Stacked(Raised(Label(fmt.Sprintf("Current octave: %v", t.CurrentOctave), white))),
+	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+		layout.Rigid(Lowered(t.layoutPatterns(
+			t.song.Tracks,
+			t.ActiveTrack,
+			t.DisplayPattern,
+			t.CursorColumn,
+			t.PlayPattern,
+		))),
+		layout.Flexed(1, Raised(Label(fmt.Sprintf("Current octave: %v", t.CurrentOctave), white))),
 	)
 }
