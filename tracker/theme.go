@@ -15,6 +15,7 @@ var neutral = color.RGBA{R: 73, G: 117, B: 130, A: 255}
 var light = color.RGBA{R: 138, G: 219, B: 243, A: 255}
 var dark = color.RGBA{R: 24, G: 40, B: 44, A: 255}
 var white = color.RGBA{R: 255, G: 255, B: 255, A: 255}
+var gray = color.RGBA{R: 127, G: 127, B: 127, A: 255}
 var black = color.RGBA{R: 0, G: 0, B: 0, A: 255}
 var yellow = color.RGBA{R: 255, G: 255, B: 130, A: 255}
 var red = color.RGBA{R: 255, G: 0, B: 0, A: 255}
@@ -31,6 +32,7 @@ var inactiveTrackColor = black
 
 var trackerFont = fontCollection[6].Font
 var trackerFontSize = unit.Px(16)
+var trackerInactiveTextColor = gray
 var trackerTextColor = white
 var trackerActiveTextColor = yellow
 var trackerPlayColor = red

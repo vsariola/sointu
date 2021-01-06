@@ -2,20 +2,21 @@ package tracker
 
 import (
 	"fmt"
+	"image"
+	"strings"
+
 	"gioui.org/f32"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/widget"
-	"image"
-	"strings"
 )
 
 const trackRowHeight = 16
 const trackWidth = 100
 
-func (t *Tracker) layoutTrack(notes []byte, active bool, cursorRow, cursorCol, playingRow int) layout.Widget {
+func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, cursorRow, cursorPattern, cursorCol, playRow, playPattern int) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		gtx.Constraints.Min.X = trackWidth
 		gtx.Constraints.Max.X = trackWidth
@@ -43,20 +44,31 @@ func (t *Tracker) layoutTrack(notes []byte, active bool, cursorRow, cursorCol, p
 				s.Pop()
 			}
 		}
-		op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorRow))).Add(gtx.Ops)
-		for i, c := range notes {
-			if i == playingRow {
-				paint.FillShape(gtx.Ops, trackerPlayColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight)}.Op())
+		// TODO: this is a time bomb; as soon as one of the patterns is not the same length as rest. Find a solution
+		// to fix the pattern lengths to a constant value
+		cursorSongRow := cursorPattern*len(patterns[0]) + cursorRow
+		playSongRow := playPattern*len(patterns[0]) + playRow
+		op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorSongRow))).Add(gtx.Ops)
+		for i, s := range sequence {
+			for j, c := range patterns[s] {
+				songRow := i*len(patterns[0]) + j
+				if songRow == playSongRow {
+					paint.FillShape(gtx.Ops, trackerPlayColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight)}.Op())
+				}
+				if songRow == cursorSongRow {
+					paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
+				} else {
+					if cursorPattern == i {
+						paint.ColorOp{Color: trackerTextColor}.Add(gtx.Ops)
+					} else {
+						paint.ColorOp{Color: trackerInactiveTextColor}.Add(gtx.Ops)
+					}
+				}
+				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, valueAsNote(c))
+				op.Offset(f32.Pt(trackWidth/2, 0)).Add(gtx.Ops)
+				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", c)))
+				op.Offset(f32.Pt(-trackWidth/2, trackRowHeight)).Add(gtx.Ops)
 			}
-			if i == cursorRow {
-				paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
-			} else {
-				paint.ColorOp{Color: trackerTextColor}.Add(gtx.Ops)
-			}
-			widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, valueAsNote(c))
-			op.Offset(f32.Pt(trackWidth/2, 0)).Add(gtx.Ops)
-			widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", c)))
-			op.Offset(f32.Pt(-trackWidth/2, trackRowHeight)).Add(gtx.Ops)
 		}
 		return layout.Dimensions{Size: gtx.Constraints.Max}
 	}
