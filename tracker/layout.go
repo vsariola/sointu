@@ -26,13 +26,26 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 	if t.DisplayPattern != t.PlayPattern {
 		playRow = -1
 	}
+
 	for i, trk := range t.song.Tracks {
+		sumLen := 0
+		for _, patIndex := range trk.Sequence {
+			sumLen += len(trk.Patterns[patIndex])
+		}
+		notes := make([]byte, sumLen)
+		window := notes
+		for _, patIndex := range trk.Sequence {
+			elementsCopied := copy(window, trk.Patterns[patIndex])
+			window = window[elementsCopied:]
+		}
+		songCursorRow := t.CursorRow + t.DisplayPattern*t.song.PatternRows()
+		songPlayRow := playRow + t.PlayPattern*t.song.PatternRows()
 		flexTracks[i] = layout.Rigid(Lowered(t.layoutTrack(
-			trk.Patterns[trk.Sequence[t.DisplayPattern]],
+			notes,
 			t.ActiveTrack == i,
-			t.CursorRow,
+			songCursorRow,
 			t.CursorColumn,
-			playRow,
+			songPlayRow,
 		)))
 	}
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
