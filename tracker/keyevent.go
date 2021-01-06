@@ -79,11 +79,19 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 				}
 			}
 		case key.NameUpArrow:
-			t.CursorRow = (t.CursorRow + t.song.PatternRows() - 1) % t.song.PatternRows()
+			if e.Modifiers.Contain(key.ModCtrl) {
+				t.DisplayPattern = (t.DisplayPattern + t.song.SequenceLength() - 1) % t.song.SequenceLength()
+			} else {
+				t.CursorRow = (t.CursorRow + t.song.PatternRows() - 1) % t.song.PatternRows()
+			}
 			t.NoteTracking = false
 			return true
 		case key.NameDownArrow:
-			t.CursorRow = (t.CursorRow + 1) % t.song.PatternRows()
+			if e.Modifiers.Contain(key.ModCtrl) {
+				t.DisplayPattern = (t.DisplayPattern + 1) % t.song.SequenceLength()
+			} else {
+				t.CursorRow = (t.CursorRow + 1) % t.song.PatternRows()
+			}
 			t.NoteTracking = false
 			return true
 		case key.NameLeftArrow:
