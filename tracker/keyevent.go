@@ -59,8 +59,10 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 		switch e.Name {
 		case "A":
 			t.setCurrent(0)
+			return true
 		case key.NameDeleteForward:
 			t.setCurrent(1)
+			return true
 		case key.NameEscape:
 			os.Exit(0)
 		case "Space":
