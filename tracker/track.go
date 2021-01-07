@@ -33,18 +33,6 @@ func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, c
 		defer op.Push(gtx.Ops).Pop()
 		clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
 		op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y/2)-trackRowHeight)).Add(gtx.Ops)
-		paint.FillShape(gtx.Ops, panelColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, trackRowHeight)}.Op())
-		/*if active {
-			switch cursorCol {
-			case 0:
-				//paint.FillShape(gtx.Ops, panelShadeColor, clip.Rect{Max: image.Pt(36, trackRowHeight)}.Op())
-			case 1, 2:
-				s := op.Push(gtx.Ops)
-				op.Offset(f32.Pt(trackWidth/2+float32(cursorCol-1)*10, 0)).Add(gtx.Ops)
-				//paint.FillShape(gtx.Ops, panelShadeColor, clip.Rect{Max: image.Pt(10, trackRowHeight)}.Op())
-				s.Pop()
-			}
-		}*/
 		// TODO: this is a time bomb; as soon as one of the patterns is not the same length as rest. Find a solution
 		// to fix the pattern lengths to a constant value
 		cursorSongRow := cursorPattern*len(patterns[0]) + cursorRow
@@ -71,8 +59,14 @@ func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, c
 				}
 				op.Offset(f32.Pt(patmarkWidth, 0)).Add(gtx.Ops)
 				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, valueAsNote(c))
+				if active && cursorCol == 0 && songRow == cursorSongRow {
+					paint.FillShape(gtx.Ops, trackerCursorColor, clip.Rect{Max: image.Pt(30, trackRowHeight)}.Op())
+				}
 				op.Offset(f32.Pt(trackWidth/2, 0)).Add(gtx.Ops)
 				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", c)))
+				if active && cursorCol > 0 && songRow == cursorSongRow {
+					paint.FillShape(gtx.Ops, trackerCursorColor, clip.Rect{Min: image.Pt((cursorCol-1)*10, 0), Max: image.Pt((cursorCol-1)*10+10, trackRowHeight)}.Op())
+				}
 				op.Offset(f32.Pt(-trackWidth/2-patmarkWidth, trackRowHeight)).Add(gtx.Ops)
 			}
 		}

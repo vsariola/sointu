@@ -38,6 +38,7 @@ var trackerTextColor = white
 var trackerActiveTextColor = yellow
 var trackerPlayColor = red
 var trackerPatMarker = blue
+var trackerCursorColor = color.RGBA{R: 64, G: 64, B: 64, A: 64}
 
 var patternBgColor = black
 var patternPlayColor = red
