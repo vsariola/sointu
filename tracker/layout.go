@@ -3,13 +3,33 @@ package tracker
 import (
 	"fmt"
 	"image"
+	"log"
 
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
+	"gioui.org/widget"
+	"gioui.org/widget/material"
+
+	"golang.org/x/exp/shiny/materialdesign/icons"
 )
+
+var upIcon *widget.Icon
+var downIcon *widget.Icon
+
+func init() {
+	var err error
+	upIcon, err = widget.NewIcon(icons.NavigationArrowUpward)
+	if err != nil {
+		log.Fatal(err)
+	}
+	downIcon, err = widget.NewIcon(icons.NavigationArrowDownward)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 func (t *Tracker) Layout(gtx layout.Context) {
 	paint.FillShape(gtx.Ops, black, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
@@ -56,6 +76,20 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	if !t.Playing {
 		playPat = -1
 	}
+	in := layout.UniformInset(unit.Dp(8))
+
+	for t.OctaveUpBtn.Clicked() {
+		t.ChangeOctave(1)
+	}
+	for t.OctaveDownBtn.Clicked() {
+		t.ChangeOctave(-1)
+	}
+	for t.BPMUpBtn.Clicked() {
+		t.ChangeBPM(1)
+	}
+	for t.BPMDownBtn.Clicked() {
+		t.ChangeBPM(-1)
+	}
 
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 		layout.Rigid(Raised(t.layoutPatterns(
@@ -66,7 +100,25 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 			playPat,
 		))),
 		layout.Rigid(t.darkLine(false)),
-		layout.Flexed(1, Raised(Label(fmt.Sprintf("Current octave: %v", t.CurrentOctave), white))),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return in.Layout(gtx, material.IconButton(t.Theme, t.OctaveUpBtn, upIcon).Layout)
+		}),
+		layout.Rigid(t.darkLine(false)),
+		layout.Rigid(Raised(Label(fmt.Sprintf("OCT: %v", t.CurrentOctave), white))),
+		layout.Rigid(t.darkLine(false)),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return in.Layout(gtx, material.IconButton(t.Theme, t.OctaveDownBtn, downIcon).Layout)
+		}),
+		layout.Rigid(t.darkLine(false)),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return in.Layout(gtx, material.IconButton(t.Theme, t.BPMUpBtn, upIcon).Layout)
+		}),
+		layout.Rigid(t.darkLine(false)),
+		layout.Rigid(Raised(Label(fmt.Sprintf("BPM: %3v", t.song.BPM), white))),
+		layout.Rigid(t.darkLine(false)),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return in.Layout(gtx, material.IconButton(t.Theme, t.BPMDownBtn, downIcon).Layout)
+		}),
 	)
 }
 

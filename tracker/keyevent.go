@@ -70,16 +70,9 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 			return true
 		case `\`:
 			if e.Modifiers.Contain(key.ModShift) {
-				if t.CurrentOctave < 9 {
-					t.CurrentOctave++
-					return true
-				}
-			} else {
-				if t.CurrentOctave > 0 {
-					t.CurrentOctave--
-					return true
-				}
+				return t.ChangeBPM(1)
 			}
+			return t.ChangeBPM(-1)
 		case key.NameUpArrow:
 			delta := -1
 			if e.Modifiers.Contain(key.ModCtrl) {

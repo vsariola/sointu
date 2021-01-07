@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"sync"
 
+	"gioui.org/font/gofont"
 	"gioui.org/widget"
+	"gioui.org/widget/material"
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/bridge"
 )
@@ -24,7 +26,13 @@ type Tracker struct {
 	ActiveTrack     int
 	CurrentOctave   byte
 	NoteTracking    bool
+	Theme           *material.Theme
+	OctaveUpBtn     *widget.Clickable
+	OctaveDownBtn   *widget.Clickable
+	BPMUpBtn        *widget.Clickable
+	BPMDownBtn      *widget.Clickable
 
+	sequencer    *Sequencer
 	ticked       chan struct{}
 	setPlaying   chan bool
 	rowJump      chan int
@@ -75,9 +83,7 @@ func (t *Tracker) sequencerLoop(closer <-chan struct{}) {
 		panic("cannot create a synth with the default patch")
 	}
 	curVoices := make([]int, 32)
-	sequencer := NewSequencer(synth, 44100*60/(4*t.song.BPM), func() ([]Note, bool) {
-		t.songPlayMutex.RLock()
-		defer t.songPlayMutex.RUnlock()
+	t.sequencer = NewSequencer(synth, 44100*60/(4*t.song.BPM), func() ([]Note, bool) {
 		if !t.Playing {
 			return nil, false
 		}
@@ -121,17 +127,53 @@ func (t *Tracker) sequencerLoop(closer <-chan struct{}) {
 		case <-closer:
 			return
 		default:
-			sequencer.ReadAudio(buffer)
+			t.sequencer.ReadAudio(buffer)
 			output.WriteAudio(buffer)
 		}
 	}
 }
 
+func (t *Tracker) ChangeOctave(delta int) bool {
+	newOctave := int(t.CurrentOctave) + delta
+	if newOctave < 0 {
+		newOctave = 0
+	}
+	if newOctave > 9 {
+		newOctave = 9
+	}
+	if newOctave != int(t.CurrentOctave) {
+		t.CurrentOctave = byte(newOctave)
+		return true
+	}
+	return false
+}
+
+func (t *Tracker) ChangeBPM(delta int) bool {
+	newBPM := t.song.BPM + delta
+	if newBPM < 1 {
+		newBPM = 1
+	}
+	if newBPM > 999 {
+		newBPM = 999
+	}
+	if newBPM != int(t.song.BPM) {
+		t.song.BPM = newBPM
+		t.sequencer.SetRowLength(44100 * 60 / (4 * t.song.BPM))
+		return true
+	}
+	return false
+}
+
 func New(audioContext sointu.AudioContext) *Tracker {
 	t := &Tracker{
+		Theme:         material.NewTheme(gofont.Collection()),
 		QuitButton:    new(widget.Clickable),
 		CurrentOctave: 4,
 		audioContext:  audioContext,
+		OctaveUpBtn:   new(widget.Clickable),
+		OctaveDownBtn: new(widget.Clickable),
+		BPMUpBtn:      new(widget.Clickable),
+		BPMDownBtn:    new(widget.Clickable),
 		setPlaying:    make(chan bool),
 		rowJump:       make(chan int),
 		patternJump:   make(chan int),
