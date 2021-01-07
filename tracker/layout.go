@@ -23,6 +23,11 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 	t.playRowPatMutex.RLock()
 	defer t.playRowPatMutex.RUnlock()
 
+	playPat := t.PlayPattern
+	if !t.Playing {
+		playPat = -1
+	}
+
 	for i, trk := range t.song.Tracks {
 		flexTracks[i] = layout.Rigid(Lowered(t.layoutTrack(
 			trk.Patterns,
@@ -32,7 +37,7 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 			t.DisplayPattern,
 			t.CursorColumn,
 			t.PlayRow,
-			t.PlayPattern,
+			playPat,
 		)))
 	}
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
@@ -43,13 +48,19 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	gtx.Constraints.Min.Y = 200
 	gtx.Constraints.Max.Y = 200
+
+	playPat := t.PlayPattern
+	if !t.Playing {
+		playPat = -1
+	}
+
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 		layout.Rigid(Raised(t.layoutPatterns(
 			t.song.Tracks,
 			t.ActiveTrack,
 			t.DisplayPattern,
 			t.CursorColumn,
-			t.PlayPattern,
+			playPat,
 		))),
 		layout.Rigid(t.darkLine(false)),
 		layout.Flexed(1, Raised(Label(fmt.Sprintf("Current octave: %v", t.CurrentOctave), white))),

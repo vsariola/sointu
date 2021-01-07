@@ -62,6 +62,8 @@ func (t *Tracker) TogglePlay() {
 	t.Playing = !t.Playing
 	if t.Playing {
 		t.NoteTracking = true
+		t.PlayPattern = t.DisplayPattern
+		t.PlayRow = t.CursorRow - 1
 	}
 }
 
