@@ -8,14 +8,17 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
+	"gioui.org/unit"
 )
 
 func (t *Tracker) Layout(gtx layout.Context) {
-	layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(t.layoutControls),
-		layout.Rigid(t.darkLine(true)),
-		layout.Flexed(1, Raised(t.layoutTracker)),
-	)
+	paint.FillShape(gtx.Ops, black, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
+	layout.UniformInset(unit.Dp(2)).Layout(gtx, func(gtx2 layout.Context) layout.Dimensions {
+		return layout.Flex{Axis: layout.Vertical}.Layout(gtx2,
+			layout.Rigid(t.layoutControls),
+			layout.Rigid(t.darkLine(true)),
+			layout.Flexed(1, Raised(t.layoutTracker)))
+	})
 }
 
 func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
