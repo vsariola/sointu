@@ -20,7 +20,6 @@ func (t *Tracker) layoutPatterns(tracks []sointu.Track, activeTrack, cursorPatte
 	return func(gtx layout.Context) layout.Dimensions {
 		gtx.Constraints.Min.X = patternCellWidth * len(tracks)
 		gtx.Constraints.Max.X = patternCellWidth * len(tracks)
-		gtx.Constraints.Max.Y = 50
 		defer op.Push(gtx.Ops).Pop()
 		clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
 		paint.FillShape(gtx.Ops, panelColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, trackRowHeight)}.Op())
