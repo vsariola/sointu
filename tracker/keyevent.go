@@ -45,18 +45,17 @@ var noteMap = map[string]int{
 // KeyEvent handles incoming key events and returns true if repaint is needed.
 func (t *Tracker) KeyEvent(e key.Event) bool {
 	if e.State == key.Press {
-		if t.CursorColumn == 0 {
-			if val, ok := noteMap[e.Name]; ok {
-				t.NotePressed(val)
-				return true
-			}
-		} else {
-			if iv, err := strconv.ParseInt(e.Name, 16, 8); err == nil {
-				t.NumberPressed(byte(iv))
-				return true
-			}
-		}
 		switch e.Name {
+		case "Z":
+			if e.Modifiers.Contain(key.ModCtrl) {
+				t.Undo()
+				return true
+			}
+		case "Y":
+			if e.Modifiers.Contain(key.ModCtrl) {
+				t.Redo()
+				return true
+			}
 		case "A":
 			t.setCurrent(0)
 			return true
@@ -114,6 +113,17 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 			t.CursorColumn = 0
 			return true
 		}
+		if t.CursorColumn == 0 {
+			if val, ok := noteMap[e.Name]; ok {
+				t.NotePressed(val)
+				return true
+			}
+		} else {
+			if iv, err := strconv.ParseInt(e.Name, 16, 8); err == nil {
+				t.NumberPressed(byte(iv))
+				return true
+			}
+		}
 	}
 	return false
 }
@@ -135,6 +145,7 @@ func (t *Tracker) moveCursor(delta int) {
 
 // setCurrent sets the (note) value in current pattern under cursor to iv
 func (t *Tracker) setCurrent(iv byte) {
+	t.SaveUndo()
 	t.song.Tracks[t.ActiveTrack].Patterns[t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern]][t.CursorRow] = iv
 }
 

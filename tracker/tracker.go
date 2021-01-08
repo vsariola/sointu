@@ -44,6 +44,8 @@ type Tracker struct {
 	synth        sointu.Synth
 	playBuffer   []float32
 	closer       chan struct{}
+	undoStack    []sointu.Song
+	redoStack    []sointu.Song
 }
 
 func (t *Tracker) LoadSong(song sointu.Song) error {
@@ -58,6 +60,21 @@ func (t *Tracker) LoadSong(song sointu.Song) error {
 		t.synth = nil
 	} else {
 		t.synth = synth
+	}
+	if t.DisplayPattern >= song.SequenceLength() {
+		t.DisplayPattern = song.SequenceLength() - 1
+	}
+	if t.CursorRow >= song.PatternRows() {
+		t.CursorRow = song.PatternRows() - 1
+	}
+	if t.PlayPattern >= song.SequenceLength() {
+		t.PlayPattern = song.SequenceLength() - 1
+	}
+	if t.PlayRow >= song.PatternRows() {
+		t.PlayRow = song.PatternRows() - 1
+	}
+	if t.ActiveTrack >= len(song.Tracks) {
+		t.ActiveTrack = len(song.Tracks) - 1
 	}
 	return nil
 }
@@ -153,6 +170,7 @@ func (t *Tracker) ChangeOctave(delta int) bool {
 }
 
 func (t *Tracker) ChangeBPM(delta int) bool {
+	t.SaveUndo()
 	newBPM := t.song.BPM + delta
 	if newBPM < 1 {
 		newBPM = 1
@@ -169,6 +187,7 @@ func (t *Tracker) ChangeBPM(delta int) bool {
 }
 
 func (t *Tracker) AddTrack() {
+	t.SaveUndo()
 	if t.song.TotalTrackVoices() < t.song.Patch.TotalVoices() {
 		seq := make([]byte, t.song.SequenceLength())
 		patterns := [][]byte{make([]byte, t.song.PatternRows())}
@@ -181,6 +200,7 @@ func (t *Tracker) AddTrack() {
 }
 
 func (t *Tracker) AddInstrument() {
+	t.SaveUndo()
 	if t.song.Patch.TotalVoices() < 32 {
 		units := make([]sointu.Unit, len(defaultInstrument.Units))
 		for i, defUnit := range defaultInstrument.Units {
@@ -220,6 +240,8 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		patternJump:      make(chan int),
 		ticked:           make(chan struct{}),
 		closer:           make(chan struct{}),
+		undoStack:        []sointu.Song{},
+		redoStack:        []sointu.Song{},
 	}
 	t.Theme.Color.Primary = color.RGBA{R: 64, G: 64, B: 64, A: 255}
 	go t.sequencerLoop(t.closer)
