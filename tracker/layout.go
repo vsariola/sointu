@@ -42,7 +42,7 @@ func (t *Tracker) Layout(gtx layout.Context) {
 }
 
 func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
-	flexTracks := make([]layout.FlexChild, len(t.song.Tracks))
+	flexTracks := make([]layout.FlexChild, len(t.song.Tracks)+1)
 	t.playRowPatMutex.RLock()
 	defer t.playRowPatMutex.RUnlock()
 
@@ -51,8 +51,17 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		playPat = -1
 	}
 
+	flexTracks[0] = layout.Rigid(Lowered(t.layoutRowMarkers(
+		len(t.song.Tracks[0].Patterns[0]),
+		len(t.song.Tracks[0].Sequence),
+		t.CursorRow,
+		t.DisplayPattern,
+		t.CursorColumn,
+		t.PlayRow,
+		playPat,
+	)))
 	for i, trk := range t.song.Tracks {
-		flexTracks[i] = layout.Rigid(Lowered(t.layoutTrack(
+		flexTracks[i+1] = layout.Rigid(Lowered(t.layoutTrack(
 			trk.Patterns,
 			trk.Sequence,
 			t.ActiveTrack == i,
