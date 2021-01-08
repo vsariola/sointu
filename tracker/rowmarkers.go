@@ -41,7 +41,7 @@ func (t *Tracker) layoutRowMarkers(patternRows, sequenceLength, cursorRow, curso
 				if songRow == cursorSongRow {
 					paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
 				} else {
-					paint.ColorOp{Color: trackerInactiveTextColor}.Add(gtx.Ops)
+					paint.ColorOp{Color: trackerPatternRowTextColor}.Add(gtx.Ops)
 				}
 				op.Offset(f32.Pt(rowMarkerWidth/2, 0)).Add(gtx.Ops)
 				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)))

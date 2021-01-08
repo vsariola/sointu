@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"fmt"
+	"image/color"
 	"sync"
 
 	"gioui.org/font/gofont"
@@ -180,6 +181,7 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		ticked:        make(chan struct{}),
 		closer:        make(chan struct{}),
 	}
+	t.Theme.Color.Primary = color.RGBA{R: 64, G: 64, B: 64, A: 255}
 	go t.sequencerLoop(t.closer)
 	if err := t.LoadSong(defaultSong); err != nil {
 		panic(fmt.Errorf("cannot load default song: %w", err))

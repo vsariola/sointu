@@ -21,15 +21,9 @@ func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, c
 	return func(gtx layout.Context) layout.Dimensions {
 		gtx.Constraints.Min.X = trackWidth
 		gtx.Constraints.Max.X = trackWidth
-		if active {
-			paint.FillShape(gtx.Ops, activeTrackColor, clip.Rect{
-				Max: gtx.Constraints.Max,
-			}.Op())
-		} else {
-			paint.FillShape(gtx.Ops, inactiveTrackColor, clip.Rect{
-				Max: gtx.Constraints.Max,
-			}.Op())
-		}
+		paint.FillShape(gtx.Ops, inactiveTrackColor, clip.Rect{
+			Max: gtx.Constraints.Max,
+		}.Op())
 		defer op.Push(gtx.Ops).Pop()
 		clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
 		op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y/2)-trackRowHeight)).Add(gtx.Ops)
@@ -39,6 +33,9 @@ func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, c
 		playSongRow := playPattern*len(patterns[0]) + playRow
 		op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorSongRow))).Add(gtx.Ops)
 		for i, s := range sequence {
+			if cursorPattern == i && active {
+				paint.FillShape(gtx.Ops, activeTrackColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight*len(patterns[0]))}.Op())
+			}
 			for j, c := range patterns[s] {
 				songRow := i*len(patterns[0]) + j
 				if songRow == playSongRow {
@@ -51,11 +48,7 @@ func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, c
 				if songRow == cursorSongRow {
 					paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
 				} else {
-					if cursorPattern == i {
-						paint.ColorOp{Color: trackerTextColor}.Add(gtx.Ops)
-					} else {
-						paint.ColorOp{Color: trackerInactiveTextColor}.Add(gtx.Ops)
-					}
+					paint.ColorOp{Color: trackerInactiveTextColor}.Add(gtx.Ops)
 				}
 				op.Offset(f32.Pt(patmarkWidth, 0)).Add(gtx.Ops)
 				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, valueAsNote(c))
