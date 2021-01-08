@@ -13,6 +13,16 @@ type Unit struct {
 	VarArgs    []int          `yaml:",flow,omitempty"`
 }
 
+func (u *Unit) Copy() Unit {
+	parameters := make(map[string]int)
+	for k, v := range u.Parameters {
+		parameters[k] = v
+	}
+	varArgs := make([]int, len(u.VarArgs))
+	copy(varArgs, u.VarArgs)
+	return Unit{Type: u.Type, Parameters: parameters, VarArgs: varArgs}
+}
+
 const (
 	Sine   = iota
 	Trisaw = iota
@@ -27,9 +37,25 @@ type Instrument struct {
 	Units     []Unit
 }
 
+func (instr *Instrument) Copy() Instrument {
+	units := make([]Unit, len(instr.Units))
+	for i, u := range instr.Units {
+		units[i] = u.Copy()
+	}
+	return Instrument{NumVoices: instr.NumVoices, Units: units}
+}
+
 // Patch is simply a list of instruments used in a song
 type Patch struct {
 	Instruments []Instrument
+}
+
+func (p *Patch) Copy() Patch {
+	instruments := make([]Instrument, len(p.Instruments))
+	for i, instr := range p.Instruments {
+		instruments[i] = instr.Copy()
+	}
+	return Patch{Instruments: instruments}
 }
 
 func (p Patch) TotalVoices() int {
@@ -58,6 +84,22 @@ type Track struct {
 	NumVoices int
 	Sequence  []byte   `yaml:",flow"`
 	Patterns  [][]byte `yaml:",flow"`
+}
+
+func (t *Track) Copy() Track {
+	sequence := make([]byte, len(t.Sequence))
+	copy(sequence, t.Sequence)
+	patterns := make([][]byte, len(t.Patterns))
+	for i, oldPat := range t.Patterns {
+		newPat := make([]byte, len(oldPat))
+		copy(newPat, oldPat)
+		patterns[i] = newPat
+	}
+	return Track{
+		NumVoices: t.NumVoices,
+		Sequence:  sequence,
+		Patterns:  patterns,
+	}
 }
 
 type Synth interface {
@@ -215,6 +257,14 @@ type Song struct {
 	BPM    int
 	Tracks []Track
 	Patch  Patch
+}
+
+func (s *Song) Copy() Song {
+	tracks := make([]Track, len(s.Tracks))
+	for i, t := range s.Tracks {
+		tracks[i] = t.Copy()
+	}
+	return Song{BPM: s.BPM, Tracks: tracks, Patch: s.Patch.Copy()}
 }
 
 func (s *Song) PatternRows() int {
