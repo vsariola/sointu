@@ -57,7 +57,9 @@ func (s *Sequencer) ReadAudio(buffer []float32) (int, error) {
 		gotRow := true
 		if s.rowTime >= s.rowLength {
 			var row []Note
+			s.mutex.Unlock()
 			row, gotRow = s.iterator()
+			s.mutex.Lock()
 			if gotRow {
 				for _, n := range row {
 					s.doNote(n.Voice, n.Note)

@@ -11,7 +11,7 @@ import (
 var fontCollection []text.FontFace = gofont.Collection()
 var textShaper = text.NewCache(fontCollection)
 
-var neutral = color.RGBA{R: 64, G: 64, B: 64, A: 255}
+var neutral = color.RGBA{R: 38, G: 38, B: 38, A: 255}
 var light = color.RGBA{R: 128, G: 128, B: 128, A: 255}
 var dark = color.RGBA{R: 15, G: 15, B: 15, A: 255}
 var white = color.RGBA{R: 255, G: 255, B: 255, A: 255}
@@ -48,3 +48,5 @@ var patternTextColor = white
 var patternActiveTextColor = yellow
 var patternFont = fontCollection[6].Font
 var patternFontSize = unit.Px(12)
+
+var inactiveBtnColor = color.RGBA{R: 61, G: 55, B: 55, A: 255}

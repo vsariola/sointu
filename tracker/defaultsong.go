@@ -2,6 +2,16 @@ package tracker
 
 import "github.com/vsariola/sointu"
 
+var defaultInstrument = sointu.Instrument{
+	NumVoices: 1,
+	Units: []sointu.Unit{
+		{Type: "envelope", Parameters: map[string]int{"stereo": 1, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 64}},
+		{Type: "oscillator", Parameters: map[string]int{"stereo": 1, "transpose": 64, "detune": 64, "phase": 0, "color": 128, "shape": 64, "gain": 64, "type": sointu.Sine}},
+		{Type: "mulp", Parameters: map[string]int{"stereo": 1}},
+		{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 64}},
+	},
+}
+
 var defaultSong = sointu.Song{
 	BPM: 100,
 	Tracks: []sointu.Track{

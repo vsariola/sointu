@@ -241,6 +241,14 @@ func (s *Song) FirstTrackVoice(track int) int {
 	return ret
 }
 
+func (s *Song) TotalTrackVoices() int {
+	ret := 0
+	for _, t := range s.Tracks {
+		ret += t.NumVoices
+	}
+	return ret
+}
+
 // TBD: Where shall we put methods that work on pure domain types and have no dependencies
 // e.g. Validate here
 func (s *Song) Validate() error {

@@ -18,20 +18,22 @@ type Tracker struct {
 	song          sointu.Song
 	Playing       bool
 	// protects PlayPattern and PlayRow
-	playRowPatMutex sync.RWMutex // protects song and playing
-	PlayPattern     int
-	PlayRow         int
-	CursorRow       int
-	CursorColumn    int
-	DisplayPattern  int
-	ActiveTrack     int
-	CurrentOctave   byte
-	NoteTracking    bool
-	Theme           *material.Theme
-	OctaveUpBtn     *widget.Clickable
-	OctaveDownBtn   *widget.Clickable
-	BPMUpBtn        *widget.Clickable
-	BPMDownBtn      *widget.Clickable
+	playRowPatMutex  sync.RWMutex // protects song and playing
+	PlayPattern      int
+	PlayRow          int
+	CursorRow        int
+	CursorColumn     int
+	DisplayPattern   int
+	ActiveTrack      int
+	CurrentOctave    byte
+	NoteTracking     bool
+	Theme            *material.Theme
+	OctaveUpBtn      *widget.Clickable
+	OctaveDownBtn    *widget.Clickable
+	BPMUpBtn         *widget.Clickable
+	BPMDownBtn       *widget.Clickable
+	NewTrackBtn      *widget.Clickable
+	NewInstrumentBtn *widget.Clickable
 
 	sequencer    *Sequencer
 	ticked       chan struct{}
@@ -85,11 +87,11 @@ func (t *Tracker) sequencerLoop(closer <-chan struct{}) {
 	}
 	curVoices := make([]int, 32)
 	t.sequencer = NewSequencer(synth, 44100*60/(4*t.song.BPM), func() ([]Note, bool) {
+		t.playRowPatMutex.Lock()
 		if !t.Playing {
+			t.playRowPatMutex.Unlock()
 			return nil, false
 		}
-		t.playRowPatMutex.Lock()
-		defer t.playRowPatMutex.Unlock()
 		t.PlayRow++
 		if t.PlayRow >= t.song.PatternRows() {
 			t.PlayRow = 0
@@ -109,16 +111,17 @@ func (t *Tracker) sequencerLoop(closer <-chan struct{}) {
 			if note == 1 { // anything but hold causes an action.
 				continue
 			}
-			notes = append(notes, Note{curVoices[track], 0})
+			first := t.song.FirstTrackVoice(track)
+			notes = append(notes, Note{first + curVoices[track], 0})
 			if note > 1 {
 				curVoices[track]++
-				first := t.song.FirstTrackVoice(track)
-				if curVoices[track] >= first+t.song.Tracks[track].NumVoices {
-					curVoices[track] = first
+				if curVoices[track] >= t.song.Tracks[track].NumVoices {
+					curVoices[track] = 0
 				}
-				notes = append(notes, Note{curVoices[track], note})
+				notes = append(notes, Note{first + curVoices[track], note})
 			}
 		}
+		t.playRowPatMutex.Unlock()
 		t.ticked <- struct{}{}
 		return notes, true
 	})
@@ -165,21 +168,58 @@ func (t *Tracker) ChangeBPM(delta int) bool {
 	return false
 }
 
+func (t *Tracker) AddTrack() {
+	if t.song.TotalTrackVoices() < t.song.Patch.TotalVoices() {
+		seq := make([]byte, t.song.SequenceLength())
+		patterns := [][]byte{make([]byte, t.song.PatternRows())}
+		t.song.Tracks = append(t.song.Tracks, sointu.Track{
+			NumVoices: 1,
+			Patterns:  patterns,
+			Sequence:  seq,
+		})
+	}
+}
+
+func (t *Tracker) AddInstrument() {
+	if t.song.Patch.TotalVoices() < 32 {
+		units := make([]sointu.Unit, len(defaultInstrument.Units))
+		for i, defUnit := range defaultInstrument.Units {
+			units[i].Type = defUnit.Type
+			units[i].Parameters = make(map[string]int)
+			for k, v := range defUnit.Parameters {
+				units[i].Parameters[k] = v
+			}
+		}
+		t.song.Patch.Instruments = append(t.song.Patch.Instruments, sointu.Instrument{
+			NumVoices: defaultInstrument.NumVoices,
+			Units:     units,
+		})
+	}
+	synth, err := bridge.Synth(t.song.Patch)
+	if err == nil {
+		t.sequencer.SetSynth(synth)
+	} else {
+		fmt.Printf("%v", err)
+	}
+}
+
 func New(audioContext sointu.AudioContext) *Tracker {
 	t := &Tracker{
-		Theme:         material.NewTheme(gofont.Collection()),
-		QuitButton:    new(widget.Clickable),
-		CurrentOctave: 4,
-		audioContext:  audioContext,
-		OctaveUpBtn:   new(widget.Clickable),
-		OctaveDownBtn: new(widget.Clickable),
-		BPMUpBtn:      new(widget.Clickable),
-		BPMDownBtn:    new(widget.Clickable),
-		setPlaying:    make(chan bool),
-		rowJump:       make(chan int),
-		patternJump:   make(chan int),
-		ticked:        make(chan struct{}),
-		closer:        make(chan struct{}),
+		Theme:            material.NewTheme(gofont.Collection()),
+		QuitButton:       new(widget.Clickable),
+		CurrentOctave:    4,
+		audioContext:     audioContext,
+		OctaveUpBtn:      new(widget.Clickable),
+		OctaveDownBtn:    new(widget.Clickable),
+		BPMUpBtn:         new(widget.Clickable),
+		BPMDownBtn:       new(widget.Clickable),
+		NewTrackBtn:      new(widget.Clickable),
+		NewInstrumentBtn: new(widget.Clickable),
+		setPlaying:       make(chan bool),
+		rowJump:          make(chan int),
+		patternJump:      make(chan int),
+		ticked:           make(chan struct{}),
+		closer:           make(chan struct{}),
 	}
 	t.Theme.Color.Primary = color.RGBA{R: 64, G: 64, B: 64, A: 255}
 	go t.sequencerLoop(t.closer)

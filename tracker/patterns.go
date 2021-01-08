@@ -13,7 +13,7 @@ import (
 	"github.com/vsariola/sointu"
 )
 
-const patternCellHeight = 12
+const patternCellHeight = 16
 const patternCellWidth = 16
 
 func (t *Tracker) layoutPatterns(tracks []sointu.Track, activeTrack, cursorPattern, cursorCol, playingPattern int) layout.Widget {

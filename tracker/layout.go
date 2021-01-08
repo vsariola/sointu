@@ -18,6 +18,7 @@ import (
 
 var upIcon *widget.Icon
 var downIcon *widget.Icon
+var addIcon *widget.Icon
 
 func init() {
 	var err error
@@ -26,6 +27,10 @@ func init() {
 		log.Fatal(err)
 	}
 	downIcon, err = widget.NewIcon(icons.NavigationArrowDownward)
+	if err != nil {
+		log.Fatal(err)
+	}
+	addIcon, err = widget.NewIcon(icons.ContentAdd)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,7 +47,7 @@ func (t *Tracker) Layout(gtx layout.Context) {
 }
 
 func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
-	flexTracks := make([]layout.FlexChild, len(t.song.Tracks)+1)
+	flexTracks := make([]layout.FlexChild, len(t.song.Tracks))
 	t.playRowPatMutex.RLock()
 	defer t.playRowPatMutex.RUnlock()
 
@@ -51,7 +56,7 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		playPat = -1
 	}
 
-	flexTracks[0] = layout.Rigid(Lowered(t.layoutRowMarkers(
+	rowMarkers := layout.Rigid(Lowered(t.layoutRowMarkers(
 		len(t.song.Tracks[0].Patterns[0]),
 		len(t.song.Tracks[0].Sequence),
 		t.CursorRow,
@@ -61,7 +66,7 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		playPat,
 	)))
 	for i, trk := range t.song.Tracks {
-		flexTracks[i+1] = layout.Rigid(Lowered(t.layoutTrack(
+		flexTracks[i] = layout.Rigid(Lowered(t.layoutTrack(
 			trk.Patterns,
 			trk.Sequence,
 			t.ActiveTrack == i,
@@ -72,8 +77,31 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 			playPat,
 		)))
 	}
+	in := layout.UniformInset(unit.Dp(8))
+	buttons := layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+		iconBtn := material.IconButton(t.Theme, t.NewTrackBtn, addIcon)
+		if t.song.TotalTrackVoices() >= t.song.Patch.TotalVoices() {
+			iconBtn.Color = inactiveBtnColor
+		}
+		return in.Layout(gtx, iconBtn.Layout)
+	})
+	go func() {
+		for t.NewTrackBtn.Clicked() {
+			t.AddTrack()
+		}
+	}()
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		flexTracks...,
+		rowMarkers,
+		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+			defer op.Push(gtx.Ops).Pop()
+			clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
+			dims := layout.Flex{Axis: layout.Horizontal}.Layout(gtx, flexTracks...)
+			if dims.Size.X > gtx.Constraints.Max.X {
+				dims.Size.X = gtx.Constraints.Max.X
+			}
+			return dims
+		}),
+		buttons,
 	)
 }
 
@@ -87,18 +115,23 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	}
 	in := layout.UniformInset(unit.Dp(8))
 
-	for t.OctaveUpBtn.Clicked() {
-		t.ChangeOctave(1)
-	}
-	for t.OctaveDownBtn.Clicked() {
-		t.ChangeOctave(-1)
-	}
-	for t.BPMUpBtn.Clicked() {
-		t.ChangeBPM(1)
-	}
-	for t.BPMDownBtn.Clicked() {
-		t.ChangeBPM(-1)
-	}
+	go func() {
+		for t.OctaveUpBtn.Clicked() {
+			t.ChangeOctave(1)
+		}
+		for t.OctaveDownBtn.Clicked() {
+			t.ChangeOctave(-1)
+		}
+		for t.BPMUpBtn.Clicked() {
+			t.ChangeBPM(1)
+		}
+		for t.BPMDownBtn.Clicked() {
+			t.ChangeBPM(-1)
+		}
+		for t.NewInstrumentBtn.Clicked() {
+			t.AddInstrument()
+		}
+	}()
 
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 		layout.Rigid(Raised(t.layoutPatterns(
@@ -127,6 +160,10 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 		layout.Rigid(t.darkLine(false)),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			return in.Layout(gtx, material.IconButton(t.Theme, t.BPMDownBtn, downIcon).Layout)
+		}),
+		layout.Rigid(t.darkLine(false)),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return in.Layout(gtx, material.IconButton(t.Theme, t.NewInstrumentBtn, addIcon).Layout)
 		}),
 	)
 }
