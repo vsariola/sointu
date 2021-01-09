@@ -43,6 +43,14 @@ func smallButton(icStyle material.IconButtonStyle) material.IconButtonStyle {
 	return icStyle
 }
 
+func enableButton(icStyle material.IconButtonStyle, enabled bool) material.IconButtonStyle {
+	if !enabled {
+		icStyle.Background = disabledContainerColor
+		icStyle.Color = disabledTextColor
+	}
+	return icStyle
+}
+
 func (t *Tracker) Layout(gtx layout.Context) {
 	paint.FillShape(gtx.Ops, backgroundColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 	layout.UniformInset(unit.Dp(2)).Layout(gtx, func(gtx2 layout.Context) layout.Dimensions {
@@ -101,12 +109,7 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 			paint.FillShape(gtx.Ops, trackMenuSurfaceColor, clip.Rect{
 				Max: gtx.Constraints.Max,
 			}.Op())
-			iconBtn := material.IconButton(t.Theme, t.NewTrackBtn, addIcon)
-			if t.song.TotalTrackVoices() >= t.song.Patch.TotalVoices() {
-				iconBtn.Background = disabledContainerColor
-				iconBtn.Color = disabledTextColor
-			}
-			return in2.Layout(gtx, iconBtn.Layout)
+			return in2.Layout(gtx, enableButton(material.IconButton(t.Theme, t.NewTrackBtn, addIcon), t.song.TotalTrackVoices() < t.song.Patch.TotalVoices()).Layout)
 		})
 		octLabel := layout.Rigid(Label("OCT:", white))
 		in := layout.UniformInset(unit.Dp(1))
@@ -114,11 +117,11 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(
 				gtx,
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return in.Layout(gtx, smallButton(material.IconButton(t.Theme, t.OctaveUpBtn, upIcon)).Layout)
+					return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.OctaveUpBtn, upIcon)), t.CurrentOctave < 9).Layout)
 				}),
 				layout.Rigid(Label(fmt.Sprintf("%v", t.CurrentOctave), white)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return in.Layout(gtx, smallButton(material.IconButton(t.Theme, t.OctaveDownBtn, downIcon)).Layout)
+					return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.OctaveDownBtn, downIcon)), t.CurrentOctave > 0).Layout)
 				}),
 			)
 		})
@@ -176,17 +179,13 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 		)),
 		layout.Rigid(Label(fmt.Sprintf("BPM: %3v", t.song.BPM), white)),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return in.Layout(gtx, smallButton(material.IconButton(t.Theme, t.BPMUpBtn, upIcon)).Layout)
+			return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.BPMUpBtn, upIcon)), t.song.BPM < 999).Layout)
 		}),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return in.Layout(gtx, smallButton(material.IconButton(t.Theme, t.BPMDownBtn, downIcon)).Layout)
+			return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.BPMDownBtn, downIcon)), t.song.BPM > 1).Layout)
 		}),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			iconBtn := material.IconButton(t.Theme, t.NewInstrumentBtn, addIcon)
-			if t.song.Patch.TotalVoices() >= 32 {
-				iconBtn.Background = disabledContainerColor
-				iconBtn.Color = disabledTextColor
-			}
+			iconBtn := enableButton(material.IconButton(t.Theme, t.NewInstrumentBtn, addIcon), t.song.Patch.TotalVoices() < 32)
 			return in.Layout(gtx, iconBtn.Layout)
 		}),
 	)
