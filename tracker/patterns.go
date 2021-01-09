@@ -22,16 +22,12 @@ func (t *Tracker) layoutPatterns(tracks []sointu.Track, activeTrack, cursorPatte
 		gtx.Constraints.Max.X = patternCellWidth * len(tracks)
 		defer op.Push(gtx.Ops).Pop()
 		clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
-		paint.FillShape(gtx.Ops, panelColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, trackRowHeight)}.Op())
+		paint.FillShape(gtx.Ops, patternSurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, trackRowHeight)}.Op())
 		for i, track := range tracks {
 			pop := op.Push(gtx.Ops)
 			clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
 			if activeTrack == i {
 				paint.FillShape(gtx.Ops, activeTrackColor, clip.Rect{
-					Max: gtx.Constraints.Max,
-				}.Op())
-			} else {
-				paint.FillShape(gtx.Ops, inactiveTrackColor, clip.Rect{
 					Max: gtx.Constraints.Max,
 				}.Op())
 			}

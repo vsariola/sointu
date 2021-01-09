@@ -21,7 +21,7 @@ func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, c
 	return func(gtx layout.Context) layout.Dimensions {
 		gtx.Constraints.Min.X = trackWidth
 		gtx.Constraints.Max.X = trackWidth
-		paint.FillShape(gtx.Ops, inactiveTrackColor, clip.Rect{
+		paint.FillShape(gtx.Ops, trackSurfaceColor, clip.Rect{
 			Max: gtx.Constraints.Max,
 		}.Op())
 		defer op.Push(gtx.Ops).Pop()

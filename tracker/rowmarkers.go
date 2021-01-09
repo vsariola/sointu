@@ -19,7 +19,7 @@ func (t *Tracker) layoutRowMarkers(patternRows, sequenceLength, cursorRow, curso
 	return func(gtx layout.Context) layout.Dimensions {
 		gtx.Constraints.Min.X = rowMarkerWidth
 		gtx.Constraints.Max.X = rowMarkerWidth
-		paint.FillShape(gtx.Ops, inactiveTrackColor, clip.Rect{
+		paint.FillShape(gtx.Ops, rowMarkerSurfaceColor, clip.Rect{
 			Max: gtx.Constraints.Max,
 		}.Op())
 		defer op.Push(gtx.Ops).Pop()
@@ -35,13 +35,13 @@ func (t *Tracker) layoutRowMarkers(patternRows, sequenceLength, cursorRow, curso
 					paint.FillShape(gtx.Ops, trackerPlayColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight)}.Op())
 				}
 				if j == 0 {
-					paint.ColorOp{Color: trackerPatMarker}.Add(gtx.Ops)
+					paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)
 					widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", i)))
 				}
 				if songRow == cursorSongRow {
 					paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
 				} else {
-					paint.ColorOp{Color: trackerPatternRowTextColor}.Add(gtx.Ops)
+					paint.ColorOp{Color: rowMarkerRowTextColor}.Add(gtx.Ops)
 				}
 				op.Offset(f32.Pt(rowMarkerWidth/2, 0)).Add(gtx.Ops)
 				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)))

@@ -36,13 +36,18 @@ func init() {
 	}
 }
 
+func smallButton(icStyle material.IconButtonStyle) material.IconButtonStyle {
+	icStyle.Size = unit.Dp(14)
+	icStyle.Inset = layout.UniformInset(unit.Dp(1))
+	return icStyle
+}
+
 func (t *Tracker) Layout(gtx layout.Context) {
-	paint.FillShape(gtx.Ops, black, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
+	paint.FillShape(gtx.Ops, backgroundColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 	layout.UniformInset(unit.Dp(2)).Layout(gtx, func(gtx2 layout.Context) layout.Dimensions {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx2,
 			layout.Rigid(t.layoutControls),
-			layout.Rigid(t.darkLine(true)),
-			layout.Flexed(1, Raised(t.layoutTracker)))
+			layout.Flexed(1, t.layoutTracker))
 	})
 }
 
@@ -56,7 +61,7 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		playPat = -1
 	}
 
-	rowMarkers := layout.Rigid(Lowered(t.layoutRowMarkers(
+	rowMarkers := layout.Rigid(t.layoutRowMarkers(
 		len(t.song.Tracks[0].Patterns[0]),
 		len(t.song.Tracks[0].Sequence),
 		t.CursorRow,
@@ -64,26 +69,35 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		t.CursorColumn,
 		t.PlayRow,
 		playPat,
-	)))
+	))
+	leftInset := layout.Inset{Left: unit.Dp(4)}
 	for i, trk := range t.song.Tracks {
-		flexTracks[i] = layout.Rigid(Lowered(t.layoutTrack(
-			trk.Patterns,
-			trk.Sequence,
-			t.ActiveTrack == i,
-			t.CursorRow,
-			t.DisplayPattern,
-			t.CursorColumn,
-			t.PlayRow,
-			playPat,
-		)))
+		i2 := i     // avoids i being updated in the closure
+		trk2 := trk // avoids trk being updated in the closure
+		flexTracks[i] = layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return leftInset.Layout(gtx, t.layoutTrack(
+				trk2.Patterns,
+				trk2.Sequence,
+				t.ActiveTrack == i2,
+				t.CursorRow,
+				t.DisplayPattern,
+				t.CursorColumn,
+				t.PlayRow,
+				playPat,
+			))
+		})
 	}
-	in := layout.UniformInset(unit.Dp(8))
+	in2 := layout.UniformInset(unit.Dp(8))
 	buttons := layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+		paint.FillShape(gtx.Ops, trackMenuSurfaceColor, clip.Rect{
+			Max: gtx.Constraints.Max,
+		}.Op())
 		iconBtn := material.IconButton(t.Theme, t.NewTrackBtn, addIcon)
 		if t.song.TotalTrackVoices() >= t.song.Patch.TotalVoices() {
-			iconBtn.Color = inactiveBtnColor
+			iconBtn.Background = disabledContainerColor
+			iconBtn.Color = disabledTextColor
 		}
-		return in.Layout(gtx, iconBtn.Layout)
+		return in2.Layout(gtx, iconBtn.Layout)
 	})
 	go func() {
 		for t.NewTrackBtn.Clicked() {
@@ -113,7 +127,7 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	if !t.Playing {
 		playPat = -1
 	}
-	in := layout.UniformInset(unit.Dp(8))
+	in := layout.UniformInset(unit.Dp(1))
 
 	go func() {
 		for t.OctaveUpBtn.Clicked() {
@@ -134,36 +148,34 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	}()
 
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		layout.Rigid(Raised(t.layoutPatterns(
+		layout.Rigid(t.layoutPatterns(
 			t.song.Tracks,
 			t.ActiveTrack,
 			t.DisplayPattern,
 			t.CursorColumn,
 			playPat,
-		))),
-		layout.Rigid(t.darkLine(false)),
+		)),
+		layout.Rigid(Label(fmt.Sprintf("OCT: %v", t.CurrentOctave), white)),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return in.Layout(gtx, material.IconButton(t.Theme, t.OctaveUpBtn, upIcon).Layout)
+			return in.Layout(gtx, smallButton(material.IconButton(t.Theme, t.OctaveUpBtn, upIcon)).Layout)
 		}),
-		layout.Rigid(t.darkLine(false)),
-		layout.Rigid(Raised(Label(fmt.Sprintf("OCT: %v", t.CurrentOctave), white))),
-		layout.Rigid(t.darkLine(false)),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return in.Layout(gtx, material.IconButton(t.Theme, t.OctaveDownBtn, downIcon).Layout)
+			return in.Layout(gtx, smallButton(material.IconButton(t.Theme, t.OctaveDownBtn, downIcon)).Layout)
 		}),
-		layout.Rigid(t.darkLine(false)),
+		layout.Rigid(Label(fmt.Sprintf("BPM: %3v", t.song.BPM), white)),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return in.Layout(gtx, material.IconButton(t.Theme, t.BPMUpBtn, upIcon).Layout)
+			return in.Layout(gtx, smallButton(material.IconButton(t.Theme, t.BPMUpBtn, upIcon)).Layout)
 		}),
-		layout.Rigid(t.darkLine(false)),
-		layout.Rigid(Raised(Label(fmt.Sprintf("BPM: %3v", t.song.BPM), white))),
-		layout.Rigid(t.darkLine(false)),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return in.Layout(gtx, material.IconButton(t.Theme, t.BPMDownBtn, downIcon).Layout)
+			return in.Layout(gtx, smallButton(material.IconButton(t.Theme, t.BPMDownBtn, downIcon)).Layout)
 		}),
-		layout.Rigid(t.darkLine(false)),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return in.Layout(gtx, material.IconButton(t.Theme, t.NewInstrumentBtn, addIcon).Layout)
+			iconBtn := material.IconButton(t.Theme, t.NewInstrumentBtn, addIcon)
+			if t.song.Patch.TotalVoices() >= 32 {
+				iconBtn.Background = disabledContainerColor
+				iconBtn.Color = disabledTextColor
+			}
+			return in.Layout(gtx, iconBtn.Layout)
 		}),
 	)
 }
