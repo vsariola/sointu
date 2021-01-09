@@ -46,6 +46,8 @@ var backgroundColor = color.RGBA{R: 18, G: 18, B: 18, A: 255}
 var labelFont = fontCollection[6].Font
 var labelFontSize = unit.Px(18)
 
+var separatorLineColor = color.RGBA{R: 97, G: 97, B: 97, A: 97}
+
 var activeTrackColor = focusedContainerColor
 var trackSurfaceColor = color.RGBA{R: 18, G: 18, B: 18, A: 18}
 

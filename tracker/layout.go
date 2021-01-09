@@ -3,6 +3,7 @@ package tracker
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"log"
 
 	"gioui.org/layout"
@@ -47,6 +48,7 @@ func (t *Tracker) Layout(gtx layout.Context) {
 	layout.UniformInset(unit.Dp(2)).Layout(gtx, func(gtx2 layout.Context) layout.Dimensions {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx2,
 			layout.Rigid(t.layoutControls),
+			layout.Rigid(t.line(true, separatorLineColor)),
 			layout.Flexed(1, t.layoutTracker))
 	})
 }
@@ -190,7 +192,7 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	)
 }
 
-func (t *Tracker) darkLine(horizontal bool) layout.Widget {
+func (t *Tracker) line(horizontal bool, color color.RGBA) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		if horizontal {
 			gtx.Constraints.Min.Y = 1
@@ -201,7 +203,7 @@ func (t *Tracker) darkLine(horizontal bool) layout.Widget {
 		}
 		defer op.Push(gtx.Ops).Pop()
 		clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
-		paint.FillShape(gtx.Ops, black, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
+		paint.FillShape(gtx.Ops, color, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
 		return layout.Dimensions{Size: gtx.Constraints.Max}
 	}
 }
