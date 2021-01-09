@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"gioui.org/font/gofont"
+	"gioui.org/layout"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/vsariola/sointu"
@@ -17,22 +18,28 @@ type Tracker struct {
 	song          sointu.Song
 	Playing       bool
 	// protects PlayPattern and PlayRow
-	playRowPatMutex  sync.RWMutex // protects song and playing
-	PlayPattern      int
-	PlayRow          int
-	CursorRow        int
-	CursorColumn     int
-	DisplayPattern   int
-	ActiveTrack      int
-	CurrentOctave    byte
-	NoteTracking     bool
-	Theme            *material.Theme
-	OctaveUpBtn      *widget.Clickable
-	OctaveDownBtn    *widget.Clickable
-	BPMUpBtn         *widget.Clickable
-	BPMDownBtn       *widget.Clickable
-	NewTrackBtn      *widget.Clickable
-	NewInstrumentBtn *widget.Clickable
+	playRowPatMutex   sync.RWMutex // protects song and playing
+	PlayPattern       int
+	PlayRow           int
+	CursorRow         int
+	CursorColumn      int
+	DisplayPattern    int
+	ActiveTrack       int
+	CurrentInstrument int
+	CurrentUnit       int
+	CurrentOctave     byte
+	NoteTracking      bool
+	Theme             *material.Theme
+	OctaveUpBtn       *widget.Clickable
+	OctaveDownBtn     *widget.Clickable
+	BPMUpBtn          *widget.Clickable
+	BPMDownBtn        *widget.Clickable
+	NewTrackBtn       *widget.Clickable
+	NewInstrumentBtn  *widget.Clickable
+	ParameterSliders  []*widget.Float
+	UnitBtns          []*widget.Clickable
+	InstrumentBtns    []*widget.Clickable
+	InstrumentList    *layout.List
 
 	sequencer    *Sequencer
 	ticked       chan struct{}
@@ -74,6 +81,9 @@ func (t *Tracker) LoadSong(song sointu.Song) error {
 	}
 	if t.ActiveTrack >= len(song.Tracks) {
 		t.ActiveTrack = len(song.Tracks) - 1
+	}
+	if t.sequencer != nil {
+		t.sequencer.SetSynth(t.synth)
 	}
 	return nil
 }
@@ -241,6 +251,7 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		closer:           make(chan struct{}),
 		undoStack:        []sointu.Song{},
 		redoStack:        []sointu.Song{},
+		InstrumentList:   &layout.List{Axis: layout.Horizontal},
 	}
 	t.Theme.Color.Primary = primaryColor
 	t.Theme.Color.InvText = black

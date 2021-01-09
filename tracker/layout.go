@@ -59,6 +59,7 @@ func (t *Tracker) Layout(gtx layout.Context) {
 			layout.Rigid(t.line(true, separatorLineColor)),
 			layout.Flexed(1, t.layoutTracker))
 	})
+	t.updateInstrumentScroll()
 }
 
 func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
@@ -184,6 +185,7 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.BPMDownBtn, downIcon)), t.song.BPM > 1).Layout)
 		}),
+		layout.Flexed(1, t.layoutInstruments()),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			iconBtn := enableButton(material.IconButton(t.Theme, t.NewInstrumentBtn, addIcon), t.song.Patch.TotalVoices() < 32)
 			return in.Layout(gtx, iconBtn.Layout)

@@ -22,6 +22,8 @@ var black = color.RGBA{R: 0, G: 0, B: 0, A: 255}
 var yellow = color.RGBA{R: 255, G: 255, B: 130, A: 255}
 var red = color.RGBA{R: 255, G: 0, B: 0, A: 255}
 
+var transparent = color.RGBA{A: 0}
+
 var primaryColorLight = color.RGBA{R: 243, G: 229, B: 245, A: 255}
 var primaryColor = color.RGBA{R: 206, G: 147, B: 216, A: 255}
 var primaryColorDark = color.RGBA{R: 123, G: 31, B: 162, A: 255}
