@@ -36,6 +36,8 @@ type Tracker struct {
 	BPMDownBtn        *widget.Clickable
 	NewTrackBtn       *widget.Clickable
 	NewInstrumentBtn  *widget.Clickable
+	LoadSongFileBtn   *widget.Clickable
+	SaveSongFileBtn   *widget.Clickable
 	ParameterSliders  []*widget.Float
 	UnitBtns          []*widget.Clickable
 	InstrumentBtns    []*widget.Clickable
@@ -263,6 +265,8 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		BPMDownBtn:       new(widget.Clickable),
 		NewTrackBtn:      new(widget.Clickable),
 		NewInstrumentBtn: new(widget.Clickable),
+		LoadSongFileBtn:  new(widget.Clickable),
+		SaveSongFileBtn:  new(widget.Clickable),
 		setPlaying:       make(chan bool),
 		rowJump:          make(chan int),
 		patternJump:      make(chan int),

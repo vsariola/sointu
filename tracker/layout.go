@@ -20,6 +20,8 @@ import (
 var upIcon *widget.Icon
 var downIcon *widget.Icon
 var addIcon *widget.Icon
+var loadIcon *widget.Icon
+var saveIcon *widget.Icon
 
 func init() {
 	var err error
@@ -32,6 +34,14 @@ func init() {
 		log.Fatal(err)
 	}
 	addIcon, err = widget.NewIcon(icons.ContentAdd)
+	if err != nil {
+		log.Fatal(err)
+	}
+	loadIcon, err = widget.NewIcon(icons.FileFolder)
+	if err != nil {
+		log.Fatal(err)
+	}
+	saveIcon, err = widget.NewIcon(icons.ContentSave)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -170,6 +180,14 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 		}
 	}()
 
+	for t.LoadSongFileBtn.Clicked() {
+		t.LoadSongFile()
+	}
+
+	for t.SaveSongFileBtn.Clicked() {
+		t.SaveSongFile()
+	}
+
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 		layout.Rigid(t.layoutPatterns(
 			t.song.Tracks,
@@ -188,6 +206,14 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 		layout.Flexed(1, t.layoutInstruments()),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			iconBtn := enableButton(material.IconButton(t.Theme, t.NewInstrumentBtn, addIcon), t.song.Patch.TotalVoices() < 32)
+			return in.Layout(gtx, iconBtn.Layout)
+		}),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			iconBtn := material.IconButton(t.Theme, t.LoadSongFileBtn, loadIcon)
+			return in.Layout(gtx, iconBtn.Layout)
+		}),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			iconBtn := material.IconButton(t.Theme, t.SaveSongFileBtn, saveIcon)
 			return in.Layout(gtx, iconBtn.Layout)
 		}),
 	)
