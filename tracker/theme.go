@@ -77,6 +77,7 @@ var patternTextColor = white
 var patternActiveTextColor = yellow
 var patternFont = fontCollection[6].Font
 var patternFontSize = unit.Px(12)
+var patternCursorColor = color.RGBA{R: 38, G: 79, B: 120, A: 64}
 
 var inactiveBtnColor = color.RGBA{R: 61, G: 55, B: 55, A: 255}
 

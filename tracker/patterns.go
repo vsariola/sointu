@@ -3,6 +3,7 @@ package tracker
 import (
 	"fmt"
 	"image"
+	"strings"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
@@ -15,36 +16,34 @@ import (
 
 const patternCellHeight = 16
 const patternCellWidth = 16
+const patternVisibleTracks = 8
+const patternRowMarkerWidth = 30
 
 func (t *Tracker) layoutPatterns(tracks []sointu.Track, activeTrack, cursorPattern, cursorCol, playingPattern int) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
-		gtx.Constraints.Min.X = patternCellWidth * len(tracks)
-		gtx.Constraints.Max.X = patternCellWidth * len(tracks)
+		gtx.Constraints.Min.X = patternCellWidth*patternVisibleTracks + patternRowMarkerWidth
+		gtx.Constraints.Max.X = patternCellWidth*patternVisibleTracks + patternRowMarkerWidth
 		defer op.Push(gtx.Ops).Pop()
 		clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
-		paint.FillShape(gtx.Ops, patternSurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, trackRowHeight)}.Op())
-		for i, track := range tracks {
-			pop := op.Push(gtx.Ops)
-			clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
-			if activeTrack == i {
-				paint.FillShape(gtx.Ops, activeTrackColor, clip.Rect{
-					Max: gtx.Constraints.Max,
-				}.Op())
+		paint.FillShape(gtx.Ops, patternSurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
+		for j := range tracks[0].Sequence {
+			if j == playingPattern {
+				paint.FillShape(gtx.Ops, patternPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, patternCellHeight)}.Op())
 			}
-			for j, p := range track.Sequence {
-				if j == playingPattern {
-					paint.FillShape(gtx.Ops, patternPlayColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight)}.Op())
+			paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)
+			widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)))
+			stack := op.Push(gtx.Ops)
+			op.Offset(f32.Pt(patternRowMarkerWidth, 0)).Add(gtx.Ops)
+			for i, track := range tracks {
+				paint.ColorOp{Color: trackerTextColor}.Add(gtx.Ops)
+				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, fmt.Sprintf("%d", track.Sequence[j]))
+				if activeTrack == i && j == cursorPattern {
+					paint.FillShape(gtx.Ops, patternCursorColor, clip.Rect{Max: image.Pt(patternCellWidth, patternCellHeight)}.Op())
 				}
-				if j == cursorPattern {
-					paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
-				} else {
-					paint.ColorOp{Color: trackerTextColor}.Add(gtx.Ops)
-				}
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, fmt.Sprintf("%d", p))
-				op.Offset(f32.Pt(0, patternCellHeight)).Add(gtx.Ops)
+				op.Offset(f32.Pt(patternCellWidth, 0)).Add(gtx.Ops)
 			}
-			pop.Pop()
-			op.Offset(f32.Pt(patternCellWidth, 0)).Add(gtx.Ops)
+			stack.Pop()
+			op.Offset(f32.Pt(0, patternCellHeight)).Add(gtx.Ops)
 		}
 		return layout.Dimensions{Size: gtx.Constraints.Max}
 	}
