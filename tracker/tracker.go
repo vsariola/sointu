@@ -232,6 +232,25 @@ func (t *Tracker) AddInstrument() {
 	}
 }
 
+// SetCurrentNote sets the (note) value in current pattern under cursor to iv
+func (t *Tracker) SetCurrentNote(iv byte) {
+	t.SaveUndo()
+	t.song.Tracks[t.ActiveTrack].Patterns[t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern]][t.CursorRow] = iv
+}
+
+func (t *Tracker) SetCurrentPattern(pat byte) {
+	t.SaveUndo()
+	length := len(t.song.Tracks[t.ActiveTrack].Patterns)
+	if int(pat) >= length {
+		tail := make([][]byte, int(pat)-length+1)
+		for i := range tail {
+			tail[i] = make([]byte, t.song.PatternRows())
+		}
+		t.song.Tracks[t.ActiveTrack].Patterns = append(t.song.Tracks[t.ActiveTrack].Patterns, tail...)
+	}
+	t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern] = pat
+}
+
 func New(audioContext sointu.AudioContext) *Tracker {
 	t := &Tracker{
 		Theme:            material.NewTheme(gofont.Collection()),

@@ -57,10 +57,10 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 				return true
 			}
 		case "A":
-			t.setCurrent(0)
+			t.SetCurrentNote(0)
 			return true
 		case key.NameDeleteForward:
-			t.setCurrent(1)
+			t.SetCurrentNote(1)
 			return true
 		case key.NameEscape:
 			os.Exit(0)
@@ -113,15 +113,22 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 			t.CursorColumn = 0
 			return true
 		}
-		if t.CursorColumn == 0 {
-			if val, ok := noteMap[e.Name]; ok {
-				t.NotePressed(val)
+		if e.Modifiers.Contain(key.ModCtrl) {
+			if iv, err := strconv.ParseInt(e.Name, 16, 8); err == nil {
+				t.SetCurrentPattern(byte(iv))
 				return true
 			}
 		} else {
-			if iv, err := strconv.ParseInt(e.Name, 16, 8); err == nil {
-				t.NumberPressed(byte(iv))
-				return true
+			if t.CursorColumn == 0 {
+				if val, ok := noteMap[e.Name]; ok {
+					t.NotePressed(val)
+					return true
+				}
+			} else {
+				if iv, err := strconv.ParseInt(e.Name, 16, 8); err == nil {
+					t.NumberPressed(byte(iv))
+					return true
+				}
 			}
 		}
 	}
@@ -143,12 +150,6 @@ func (t *Tracker) moveCursor(delta int) {
 	}
 }
 
-// setCurrent sets the (note) value in current pattern under cursor to iv
-func (t *Tracker) setCurrent(iv byte) {
-	t.SaveUndo()
-	t.song.Tracks[t.ActiveTrack].Patterns[t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern]][t.CursorRow] = iv
-}
-
 // getCurrent returns the current (note) value in current pattern under the cursor
 func (t *Tracker) getCurrent() byte {
 	return t.song.Tracks[t.ActiveTrack].Patterns[t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern]][t.CursorRow]
@@ -156,7 +157,7 @@ func (t *Tracker) getCurrent() byte {
 
 // NotePressed handles incoming key presses while in the note column
 func (t *Tracker) NotePressed(val int) {
-	t.setCurrent(getNoteValue(int(t.CurrentOctave), val))
+	t.SetCurrentNote(getNoteValue(int(t.CurrentOctave), val))
 }
 
 // NumberPressed handles incoming presses while in either of the hex number columns
@@ -167,5 +168,5 @@ func (t *Tracker) NumberPressed(iv byte) {
 	} else if t.CursorColumn == 2 {
 		val = (val & 0xF0) | (iv & 0xF)
 	}
-	t.setCurrent(val)
+	t.SetCurrentNote(val)
 }
