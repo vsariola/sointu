@@ -149,8 +149,8 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 }
 
 func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
-	gtx.Constraints.Min.Y = 200
-	gtx.Constraints.Max.Y = 200
+	gtx.Constraints.Min.Y = 250
+	gtx.Constraints.Max.Y = 250
 
 	playPat := t.PlayPattern
 	if !t.Playing {

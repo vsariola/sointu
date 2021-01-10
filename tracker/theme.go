@@ -79,3 +79,5 @@ var patternFont = fontCollection[6].Font
 var patternFontSize = unit.Px(12)
 
 var inactiveBtnColor = color.RGBA{R: 61, G: 55, B: 55, A: 255}
+
+var instrumentSurfaceColor = color.RGBA{R: 31, G: 31, B: 31, A: 31}

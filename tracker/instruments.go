@@ -5,6 +5,9 @@ import (
 	"sort"
 
 	"gioui.org/layout"
+	"gioui.org/op/clip"
+	"gioui.org/op/paint"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 )
@@ -43,13 +46,21 @@ func (t *Tracker) layoutInstrumentNames() layout.Widget {
 				t.CurrentInstrument = index
 			}
 			btnStyle := material.Button(t.Theme, t.InstrumentBtns[index], fmt.Sprintf("%v", index))
-			btnStyle.Background = transparent
+			btnStyle.CornerRadius = unit.Dp(0)
+			if t.CurrentInstrument == index {
+				btnStyle.Background = instrumentSurfaceColor
+			} else {
+				btnStyle.Background = transparent
+			}
 			return btnStyle.Layout(gtx)
 		})
 	}
 }
 func (t *Tracker) layoutInstrumentEditor() layout.Widget {
 	return func(gtx C) D {
+		paint.FillShape(gtx.Ops, instrumentSurfaceColor, clip.Rect{
+			Max: gtx.Constraints.Max,
+		}.Op())
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 			layout.Rigid(t.layoutUnitList()),
 			layout.Rigid(t.layoutUnitControls()))
