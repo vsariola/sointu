@@ -188,6 +188,14 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 		t.SaveSongFile()
 	}
 
+	for t.SongLengthUpBtn.Clicked() {
+		t.IncreaseSongLength()
+	}
+
+	for t.SongLengthDownBtn.Clicked() {
+		t.DecreaseSongLength()
+	}
+
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 		layout.Rigid(t.layoutPatterns(
 			t.song.Tracks,
@@ -196,6 +204,12 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 			t.CursorColumn,
 			playPat,
 		)),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return in.Layout(gtx, smallButton(material.IconButton(t.Theme, t.SongLengthUpBtn, upIcon)).Layout)
+		}),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.SongLengthDownBtn, downIcon)), t.song.SequenceLength() > 1).Layout)
+		}),
 		layout.Rigid(Label(fmt.Sprintf("BPM: %3v", t.song.BPM), white)),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.BPMUpBtn, upIcon)), t.song.BPM < 999).Layout)

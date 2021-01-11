@@ -37,6 +37,8 @@ type Tracker struct {
 	NewTrackBtn       *widget.Clickable
 	NewInstrumentBtn  *widget.Clickable
 	LoadSongFileBtn   *widget.Clickable
+	SongLengthUpBtn   *widget.Clickable
+	SongLengthDownBtn *widget.Clickable
 	SaveSongFileBtn   *widget.Clickable
 	ParameterSliders  []*widget.Float
 	UnitBtns          []*widget.Clickable
@@ -253,28 +255,47 @@ func (t *Tracker) SetCurrentPattern(pat byte) {
 	t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern] = pat
 }
 
+func (t *Tracker) IncreaseSongLength() {
+	t.SaveUndo()
+	for i := range t.song.Tracks {
+		seq := t.song.Tracks[i].Sequence
+		t.song.Tracks[i].Sequence = append(seq, seq[len(seq)-1])
+	}
+}
+
+func (t *Tracker) DecreaseSongLength() {
+	t.SaveUndo()
+	for i := range t.song.Tracks {
+		if len(t.song.Tracks[i].Sequence) > 0 {
+			t.song.Tracks[i].Sequence = t.song.Tracks[i].Sequence[0 : len(t.song.Tracks[i].Sequence)-1]
+		}
+	}
+}
+
 func New(audioContext sointu.AudioContext) *Tracker {
 	t := &Tracker{
-		Theme:            material.NewTheme(gofont.Collection()),
-		QuitButton:       new(widget.Clickable),
-		CurrentOctave:    4,
-		audioContext:     audioContext,
-		OctaveUpBtn:      new(widget.Clickable),
-		OctaveDownBtn:    new(widget.Clickable),
-		BPMUpBtn:         new(widget.Clickable),
-		BPMDownBtn:       new(widget.Clickable),
-		NewTrackBtn:      new(widget.Clickable),
-		NewInstrumentBtn: new(widget.Clickable),
-		LoadSongFileBtn:  new(widget.Clickable),
-		SaveSongFileBtn:  new(widget.Clickable),
-		setPlaying:       make(chan bool),
-		rowJump:          make(chan int),
-		patternJump:      make(chan int),
-		ticked:           make(chan struct{}),
-		closer:           make(chan struct{}),
-		undoStack:        []sointu.Song{},
-		redoStack:        []sointu.Song{},
-		InstrumentList:   &layout.List{Axis: layout.Horizontal},
+		Theme:             material.NewTheme(gofont.Collection()),
+		QuitButton:        new(widget.Clickable),
+		CurrentOctave:     4,
+		audioContext:      audioContext,
+		OctaveUpBtn:       new(widget.Clickable),
+		OctaveDownBtn:     new(widget.Clickable),
+		BPMUpBtn:          new(widget.Clickable),
+		BPMDownBtn:        new(widget.Clickable),
+		NewTrackBtn:       new(widget.Clickable),
+		NewInstrumentBtn:  new(widget.Clickable),
+		LoadSongFileBtn:   new(widget.Clickable),
+		SaveSongFileBtn:   new(widget.Clickable),
+		SongLengthUpBtn:   new(widget.Clickable),
+		SongLengthDownBtn: new(widget.Clickable),
+		setPlaying:        make(chan bool),
+		rowJump:           make(chan int),
+		patternJump:       make(chan int),
+		ticked:            make(chan struct{}),
+		closer:            make(chan struct{}),
+		undoStack:         []sointu.Song{},
+		redoStack:         []sointu.Song{},
+		InstrumentList:    &layout.List{Axis: layout.Horizontal},
 	}
 	t.Theme.Color.Primary = primaryColor
 	t.Theme.Color.InvText = black
