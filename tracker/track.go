@@ -14,10 +14,10 @@ import (
 )
 
 const trackRowHeight = 16
-const trackWidth = 84
+const trackWidth = 54
 const patmarkWidth = 16
 
-func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, cursorRow, cursorPattern, cursorCol, playRow, playPattern int) layout.Widget {
+func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, hex bool, cursorRow, cursorPattern, cursorCol, playRow, playPattern int) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		gtx.Constraints.Min.X = trackWidth
 		gtx.Constraints.Max.X = trackWidth
@@ -51,16 +51,27 @@ func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, c
 					paint.ColorOp{Color: trackerInactiveTextColor}.Add(gtx.Ops)
 				}
 				op.Offset(f32.Pt(patmarkWidth, 0)).Add(gtx.Ops)
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, valueAsNote(c))
-				if active && cursorCol == 0 && songRow == cursorSongRow {
-					paint.FillShape(gtx.Ops, trackerCursorColor, clip.Rect{Max: image.Pt(30, trackRowHeight)}.Op())
+				if hex {
+					var text string
+					switch c {
+					case 0:
+						text = "--"
+					case 1:
+						text = ".."
+					default:
+						text = fmt.Sprintf("%02x", c)
+					}
+					widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(text))
+					if active && songRow == cursorSongRow {
+						paint.FillShape(gtx.Ops, trackerCursorColor, clip.Rect{Min: image.Pt(cursorCol*10, 0), Max: image.Pt(cursorCol*10+10, trackRowHeight)}.Op())
+					}
+				} else {
+					widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, valueAsNote(c))
+					if active && cursorCol == 0 && songRow == cursorSongRow {
+						paint.FillShape(gtx.Ops, trackerCursorColor, clip.Rect{Max: image.Pt(30, trackRowHeight)}.Op())
+					}
 				}
-				op.Offset(f32.Pt(trackWidth/2, 0)).Add(gtx.Ops)
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", c)))
-				if active && cursorCol > 0 && songRow == cursorSongRow {
-					paint.FillShape(gtx.Ops, trackerCursorColor, clip.Rect{Min: image.Pt((cursorCol-1)*10, 0), Max: image.Pt((cursorCol-1)*10+10, trackRowHeight)}.Op())
-				}
-				op.Offset(f32.Pt(-trackWidth/2-patmarkWidth, trackRowHeight)).Add(gtx.Ops)
+				op.Offset(f32.Pt(-patmarkWidth, trackRowHeight)).Add(gtx.Ops)
 			}
 		}
 		return layout.Dimensions{Size: gtx.Constraints.Max}

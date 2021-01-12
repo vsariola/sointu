@@ -18,32 +18,34 @@ type Tracker struct {
 	song          sointu.Song
 	Playing       bool
 	// protects PlayPattern and PlayRow
-	playRowPatMutex   sync.RWMutex // protects song and playing
-	PlayPattern       int
-	PlayRow           int
-	CursorRow         int
-	CursorColumn      int
-	DisplayPattern    int
-	ActiveTrack       int
-	CurrentInstrument int
-	CurrentUnit       int
-	CurrentOctave     byte
-	NoteTracking      bool
-	Theme             *material.Theme
-	OctaveUpBtn       *widget.Clickable
-	OctaveDownBtn     *widget.Clickable
-	BPMUpBtn          *widget.Clickable
-	BPMDownBtn        *widget.Clickable
-	NewTrackBtn       *widget.Clickable
-	NewInstrumentBtn  *widget.Clickable
-	LoadSongFileBtn   *widget.Clickable
-	SongLengthUpBtn   *widget.Clickable
-	SongLengthDownBtn *widget.Clickable
-	SaveSongFileBtn   *widget.Clickable
-	ParameterSliders  []*widget.Float
-	UnitBtns          []*widget.Clickable
-	InstrumentBtns    []*widget.Clickable
-	InstrumentList    *layout.List
+	playRowPatMutex    sync.RWMutex // protects song and playing
+	PlayPattern        int
+	PlayRow            int
+	CursorRow          int
+	CursorColumn       int
+	DisplayPattern     int
+	ActiveTrack        int
+	CurrentInstrument  int
+	CurrentUnit        int
+	CurrentOctave      byte
+	NoteTracking       bool
+	Theme              *material.Theme
+	OctaveUpBtn        *widget.Clickable
+	OctaveDownBtn      *widget.Clickable
+	BPMUpBtn           *widget.Clickable
+	BPMDownBtn         *widget.Clickable
+	NewTrackBtn        *widget.Clickable
+	NewInstrumentBtn   *widget.Clickable
+	LoadSongFileBtn    *widget.Clickable
+	SongLengthUpBtn    *widget.Clickable
+	SongLengthDownBtn  *widget.Clickable
+	SaveSongFileBtn    *widget.Clickable
+	ParameterSliders   []*widget.Float
+	UnitBtns           []*widget.Clickable
+	InstrumentBtns     []*widget.Clickable
+	InstrumentList     *layout.List
+	TrackHexCheckBoxes []*widget.Bool
+	TrackShowHex       []bool
 
 	sequencer    *Sequencer
 	ticked       chan struct{}

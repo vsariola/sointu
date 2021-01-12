@@ -89,15 +89,19 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 			t.NoteTracking = false
 			return true
 		case key.NameLeftArrow:
-			if t.CursorColumn == 0 {
+			if t.CursorColumn == 0 || !t.TrackShowHex[t.ActiveTrack] || e.Modifiers.Contain(key.ModCtrl) {
 				t.ActiveTrack = (t.ActiveTrack + len(t.song.Tracks) - 1) % len(t.song.Tracks)
-				t.CursorColumn = 2
+				if t.TrackShowHex[t.ActiveTrack] {
+					t.CursorColumn = 1
+				} else {
+					t.CursorColumn = 0
+				}
 			} else {
 				t.CursorColumn--
 			}
 			return true
 		case key.NameRightArrow:
-			if t.CursorColumn == 2 {
+			if t.CursorColumn == 1 || !t.TrackShowHex[t.ActiveTrack] || e.Modifiers.Contain(key.ModCtrl) {
 				t.ActiveTrack = (t.ActiveTrack + 1) % len(t.song.Tracks)
 				t.CursorColumn = 0
 			} else {
@@ -119,7 +123,7 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 				return true
 			}
 		} else {
-			if t.CursorColumn == 0 {
+			if !t.TrackShowHex[t.ActiveTrack] {
 				if val, ok := noteMap[e.Name]; ok {
 					t.NotePressed(val)
 					return true
@@ -163,9 +167,9 @@ func (t *Tracker) NotePressed(val int) {
 // NumberPressed handles incoming presses while in either of the hex number columns
 func (t *Tracker) NumberPressed(iv byte) {
 	val := t.getCurrent()
-	if t.CursorColumn == 1 {
+	if t.CursorColumn == 0 {
 		val = ((iv & 0xF) << 4) | (val & 0xF)
-	} else if t.CursorColumn == 2 {
+	} else if t.CursorColumn == 1 {
 		val = (val & 0xF0) | (iv & 0xF)
 	}
 	t.SetCurrentNote(val)

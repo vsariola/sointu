@@ -61,6 +61,15 @@ func enableButton(icStyle material.IconButtonStyle, enabled bool) material.IconB
 	return icStyle
 }
 
+func trackButton(t *material.Theme, w *widget.Clickable, text string, enabled bool) material.ButtonStyle {
+	ret := material.Button(t, w, text)
+	if !enabled {
+		ret.Background = disabledContainerColor
+		ret.Color = disabledTextColor
+	}
+	return ret
+}
+
 func (t *Tracker) Layout(gtx layout.Context) {
 	paint.FillShape(gtx.Ops, backgroundColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 	layout.UniformInset(unit.Dp(2)).Layout(gtx, func(gtx2 layout.Context) layout.Dimensions {
@@ -95,17 +104,34 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 	for i, trk := range t.song.Tracks {
 		i2 := i     // avoids i being updated in the closure
 		trk2 := trk // avoids trk being updated in the closure
+		if len(t.TrackHexCheckBoxes) <= i {
+			t.TrackHexCheckBoxes = append(t.TrackHexCheckBoxes, new(widget.Bool))
+		}
+		if len(t.TrackShowHex) <= i {
+			t.TrackShowHex = append(t.TrackShowHex, false)
+		}
 		flexTracks[i] = layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return leftInset.Layout(gtx, t.layoutTrack(
-				trk2.Patterns,
-				trk2.Sequence,
-				t.ActiveTrack == i2,
-				t.CursorRow,
-				t.DisplayPattern,
-				t.CursorColumn,
-				t.PlayRow,
-				playPat,
-			))
+			t.TrackHexCheckBoxes[i2].Value = t.TrackShowHex[i2]
+			cbStyle := material.CheckBox(t.Theme, t.TrackHexCheckBoxes[i2], "hex")
+			cbStyle.Color = white
+			ret := layout.Stack{}.Layout(gtx,
+				layout.Stacked(func(gtx layout.Context) D {
+					return leftInset.Layout(gtx, t.layoutTrack(
+						trk2.Patterns,
+						trk2.Sequence,
+						t.ActiveTrack == i2,
+						t.TrackShowHex[i2],
+						t.CursorRow,
+						t.DisplayPattern,
+						t.CursorColumn,
+						t.PlayRow,
+						playPat,
+					))
+				}),
+				layout.Stacked(cbStyle.Layout),
+			)
+			t.TrackShowHex[i2] = t.TrackHexCheckBoxes[i2].Value
+			return ret
 		})
 	}
 	in2 := layout.UniformInset(unit.Dp(8))
