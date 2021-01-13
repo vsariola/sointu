@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"gioui.org/layout"
+	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
@@ -24,15 +25,34 @@ func (t *Tracker) updateInstrumentScroll() {
 }
 
 func (t *Tracker) layoutInstruments() layout.Widget {
+	btnStyle := material.IconButton(t.Theme, t.NewInstrumentBtn, addIcon)
+	btnStyle.Background = transparent
+	btnStyle.Inset = layout.UniformInset(unit.Dp(6))
+	if t.song.Patch.TotalVoices() < 32 {
+		btnStyle.Color = primaryColor
+	} else {
+		btnStyle.Color = disabledTextColor
+	}
 	return func(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-			layout.Rigid(t.layoutInstrumentNames()),
+			layout.Rigid(func(gtx C) D {
+				return layout.Flex{}.Layout(
+					gtx,
+					layout.Flexed(1, t.layoutInstrumentNames()),
+					layout.Rigid(func(gtx C) D {
+						return layout.E.Layout(gtx, btnStyle.Layout)
+					}),
+				)
+			}),
 			layout.Flexed(1, t.layoutInstrumentEditor()))
 	}
 }
 
 func (t *Tracker) layoutInstrumentNames() layout.Widget {
 	return func(gtx C) D {
+		gtx.Constraints.Max.Y = gtx.Px(unit.Dp(36))
+		gtx.Constraints.Min.Y = gtx.Px(unit.Dp(36))
+
 		count := len(t.song.Patch.Instruments)
 		if len(t.InstrumentBtns) < count {
 			tail := make([]*widget.Clickable, count-len(t.InstrumentBtns))
@@ -41,7 +61,10 @@ func (t *Tracker) layoutInstrumentNames() layout.Widget {
 			}
 			t.InstrumentBtns = append(t.InstrumentBtns, tail...)
 		}
-		return t.InstrumentList.Layout(gtx, count, func(gtx C, index int) D {
+
+		defer op.Push(gtx.Ops).Pop()
+
+		t.InstrumentList.Layout(gtx, count, func(gtx C, index int) D {
 			for t.InstrumentBtns[index].Clicked() {
 				t.CurrentInstrument = index
 			}
@@ -54,6 +77,8 @@ func (t *Tracker) layoutInstrumentNames() layout.Widget {
 			}
 			return btnStyle.Layout(gtx)
 		})
+
+		return layout.Dimensions{Size: gtx.Constraints.Max}
 	}
 }
 func (t *Tracker) layoutInstrumentEditor() layout.Widget {

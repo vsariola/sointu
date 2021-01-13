@@ -206,8 +206,6 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	gtx.Constraints.Min.Y = 250
 	gtx.Constraints.Max.Y = 250
 
-	in := layout.UniformInset(unit.Dp(1))
-
 	go func() {
 		for t.BPMUpBtn.Clicked() {
 			t.ChangeBPM(1)
@@ -230,15 +228,7 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 
 	return t.TopSplit.Layout(gtx,
 		t.layoutSongPanel,
-		func(gtx C) D {
-			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Flexed(1, t.layoutInstruments()),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					iconBtn := enableButton(material.IconButton(t.Theme, t.NewInstrumentBtn, addIcon), t.song.Patch.TotalVoices() < 32)
-					return in.Layout(gtx, iconBtn.Layout)
-				}),
-			)
-		},
+		t.layoutInstruments(),
 	)
 
 }
