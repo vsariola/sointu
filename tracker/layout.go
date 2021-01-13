@@ -76,12 +76,29 @@ func (t *Tracker) Layout(gtx layout.Context) {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx2,
 			layout.Rigid(t.layoutControls),
 			layout.Rigid(t.line(true, separatorLineColor)),
-			layout.Flexed(1, t.layoutTracker))
+			layout.Flexed(1, t.layoutTracksAndPatterns))
 	})
 	t.updateInstrumentScroll()
 }
 
-func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
+func (t *Tracker) layoutTracksAndPatterns(gtx layout.Context) layout.Dimensions {
+	playPat := t.PlayPattern
+	if !t.Playing {
+		playPat = -1
+	}
+	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+		layout.Rigid(t.layoutPatterns(
+			t.song.Tracks,
+			t.ActiveTrack,
+			t.DisplayPattern,
+			t.CursorColumn,
+			playPat,
+		)), layout.Flexed(1, t.layoutTracks))
+}
+
+func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
+	paint.FillShape(gtx.Ops, trackerSurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
+
 	flexTracks := make([]layout.FlexChild, len(t.song.Tracks))
 	t.playRowPatMutex.RLock()
 	defer t.playRowPatMutex.RUnlock()
@@ -188,10 +205,6 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	gtx.Constraints.Min.Y = 250
 	gtx.Constraints.Max.Y = 250
 
-	playPat := t.PlayPattern
-	if !t.Playing {
-		playPat = -1
-	}
 	in := layout.UniformInset(unit.Dp(1))
 
 	go func() {
@@ -223,13 +236,6 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	}
 
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		layout.Rigid(t.layoutPatterns(
-			t.song.Tracks,
-			t.ActiveTrack,
-			t.DisplayPattern,
-			t.CursorColumn,
-			playPat,
-		)),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			return in.Layout(gtx, smallButton(material.IconButton(t.Theme, t.SongLengthUpBtn, upIcon)).Layout)
 		}),

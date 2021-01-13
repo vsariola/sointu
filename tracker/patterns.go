@@ -35,7 +35,7 @@ func (t *Tracker) layoutPatterns(tracks []sointu.Track, activeTrack, cursorPatte
 			stack := op.Push(gtx.Ops)
 			op.Offset(f32.Pt(patternRowMarkerWidth, 0)).Add(gtx.Ops)
 			for i, track := range tracks {
-				paint.ColorOp{Color: trackerTextColor}.Add(gtx.Ops)
+				paint.ColorOp{Color: patternTextColor}.Add(gtx.Ops)
 				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, fmt.Sprintf("%d", track.Sequence[j]))
 				if activeTrack == i && j == cursorPattern {
 					paint.FillShape(gtx.Ops, patternCursorColor, clip.Rect{Max: image.Pt(patternCellWidth, patternCellHeight)}.Op())

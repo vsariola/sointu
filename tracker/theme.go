@@ -51,11 +51,11 @@ var labelFontSize = unit.Px(18)
 var separatorLineColor = color.RGBA{R: 97, G: 97, B: 97, A: 97}
 
 var activeTrackColor = focusedContainerColor
-var trackSurfaceColor = color.RGBA{R: 18, G: 18, B: 18, A: 18}
+var trackSurfaceColor = color.RGBA{R: 31, G: 31, B: 31, A: 31}
 
-var patternSurfaceColor = color.RGBA{R: 31, G: 31, B: 31, A: 31}
+var patternSurfaceColor = color.RGBA{R: 0, G: 0, B: 0, A: 0}
 
-var rowMarkerSurfaceColor = color.RGBA{R: 31, G: 31, B: 31, A: 31}
+var rowMarkerSurfaceColor = color.RGBA{R: 0, G: 0, B: 0, A: 0}
 var rowMarkerPatternTextColor = secondaryColor
 var rowMarkerRowTextColor = mediumEmphasisTextColor
 
@@ -70,10 +70,10 @@ var trackerPatternRowTextColor = color.RGBA{R: 198, G: 198, B: 198, A: 255}
 var trackerPlayColor = color.RGBA{R: 55, G: 55, B: 61, A: 255}
 var trackerPatMarker = primaryColor
 var trackerCursorColor = color.RGBA{R: 38, G: 79, B: 120, A: 64}
+var trackerSurfaceColor = color.RGBA{R: 18, G: 18, B: 18, A: 18}
 
-var patternBgColor = black
 var patternPlayColor = color.RGBA{R: 55, G: 55, B: 61, A: 255}
-var patternTextColor = white
+var patternTextColor = primaryColor
 var patternActiveTextColor = yellow
 var patternFont = fontCollection[6].Font
 var patternFontSize = unit.Px(12)
