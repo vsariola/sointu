@@ -75,7 +75,6 @@ func (t *Tracker) Layout(gtx layout.Context) {
 	layout.UniformInset(unit.Dp(2)).Layout(gtx, func(gtx2 layout.Context) layout.Dimensions {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx2,
 			layout.Rigid(t.layoutControls),
-			layout.Rigid(t.line(true, separatorLineColor)),
 			layout.Flexed(1, t.layoutTracksAndPatterns))
 	})
 	t.updateInstrumentScroll()
@@ -86,14 +85,16 @@ func (t *Tracker) layoutTracksAndPatterns(gtx layout.Context) layout.Dimensions 
 	if !t.Playing {
 		playPat = -1
 	}
-	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		layout.Rigid(t.layoutPatterns(
+	return t.BottomSplit.Layout(gtx,
+		t.layoutPatterns(
 			t.song.Tracks,
 			t.ActiveTrack,
 			t.DisplayPattern,
 			t.CursorColumn,
 			playPat,
-		)), layout.Flexed(1, t.layoutTracks))
+		),
+		t.layoutTracks,
+	)
 }
 
 func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
@@ -219,14 +220,6 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 		}
 	}()
 
-	for t.LoadSongFileBtn.Clicked() {
-		t.LoadSongFile()
-	}
-
-	for t.SaveSongFileBtn.Clicked() {
-		t.SaveSongFile()
-	}
-
 	for t.SongLengthUpBtn.Clicked() {
 		t.IncreaseSongLength()
 	}
@@ -235,34 +228,19 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 		t.DecreaseSongLength()
 	}
 
-	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return in.Layout(gtx, smallButton(material.IconButton(t.Theme, t.SongLengthUpBtn, upIcon)).Layout)
-		}),
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.SongLengthDownBtn, downIcon)), t.song.SequenceLength() > 1).Layout)
-		}),
-		layout.Rigid(Label(fmt.Sprintf("BPM: %3v", t.song.BPM), white)),
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.BPMUpBtn, upIcon)), t.song.BPM < 999).Layout)
-		}),
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.BPMDownBtn, downIcon)), t.song.BPM > 1).Layout)
-		}),
-		layout.Flexed(1, t.layoutInstruments()),
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			iconBtn := enableButton(material.IconButton(t.Theme, t.NewInstrumentBtn, addIcon), t.song.Patch.TotalVoices() < 32)
-			return in.Layout(gtx, iconBtn.Layout)
-		}),
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			iconBtn := material.IconButton(t.Theme, t.LoadSongFileBtn, loadIcon)
-			return in.Layout(gtx, iconBtn.Layout)
-		}),
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			iconBtn := material.IconButton(t.Theme, t.SaveSongFileBtn, saveIcon)
-			return in.Layout(gtx, iconBtn.Layout)
-		}),
+	return t.TopSplit.Layout(gtx,
+		t.layoutSongPanel,
+		func(gtx C) D {
+			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+				layout.Flexed(1, t.layoutInstruments()),
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					iconBtn := enableButton(material.IconButton(t.Theme, t.NewInstrumentBtn, addIcon), t.song.Patch.TotalVoices() < 32)
+					return in.Layout(gtx, iconBtn.Layout)
+				}),
+			)
+		},
 	)
+
 }
 
 func (t *Tracker) line(horizontal bool, color color.RGBA) layout.Widget {

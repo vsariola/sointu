@@ -82,3 +82,5 @@ var patternCursorColor = color.RGBA{R: 38, G: 79, B: 120, A: 64}
 var inactiveBtnColor = color.RGBA{R: 61, G: 55, B: 55, A: 255}
 
 var instrumentSurfaceColor = color.RGBA{R: 31, G: 31, B: 31, A: 31}
+
+var songSurfaceColor = color.RGBA{R: 31, G: 31, B: 31, A: 31}

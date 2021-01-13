@@ -37,6 +37,7 @@ type Tracker struct {
 	NewTrackBtn        *widget.Clickable
 	NewInstrumentBtn   *widget.Clickable
 	LoadSongFileBtn    *widget.Clickable
+	NewSongFileBtn     *widget.Clickable
 	SongLengthUpBtn    *widget.Clickable
 	SongLengthDownBtn  *widget.Clickable
 	SaveSongFileBtn    *widget.Clickable
@@ -46,6 +47,8 @@ type Tracker struct {
 	InstrumentList     *layout.List
 	TrackHexCheckBoxes []*widget.Bool
 	TrackShowHex       []bool
+	TopSplit           *Split
+	BottomSplit        *Split
 
 	sequencer    *Sequencer
 	ticked       chan struct{}
@@ -286,6 +289,7 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		BPMDownBtn:        new(widget.Clickable),
 		NewTrackBtn:       new(widget.Clickable),
 		NewInstrumentBtn:  new(widget.Clickable),
+		NewSongFileBtn:    new(widget.Clickable),
 		LoadSongFileBtn:   new(widget.Clickable),
 		SaveSongFileBtn:   new(widget.Clickable),
 		SongLengthUpBtn:   new(widget.Clickable),
@@ -298,7 +302,10 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		undoStack:         []sointu.Song{},
 		redoStack:         []sointu.Song{},
 		InstrumentList:    &layout.List{Axis: layout.Horizontal},
+		TopSplit:          new(Split),
+		BottomSplit:       new(Split),
 	}
+	t.BottomSplit.Ratio = -.5
 	t.Theme.Color.Primary = primaryColor
 	t.Theme.Color.InvText = black
 	go t.sequencerLoop(t.closer)
