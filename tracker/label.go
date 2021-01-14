@@ -1,20 +1,24 @@
 package tracker
 
 import (
+	"image"
+	"image/color"
+
 	"gioui.org/f32"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/paint"
 	"gioui.org/text"
+	"gioui.org/unit"
 	"gioui.org/widget"
-	"image"
-	"image/color"
 )
 
 type LabelStyle struct {
 	Text       string
 	Color      color.RGBA
 	ShadeColor color.RGBA
+	Font       text.Font
+	FontSize   unit.Value
 }
 
 func (l LabelStyle) Layout(gtx layout.Context) layout.Dimensions {
@@ -26,7 +30,7 @@ func (l LabelStyle) Layout(gtx layout.Context) layout.Dimensions {
 			dims := widget.Label{
 				Alignment: text.Start,
 				MaxLines:  1,
-			}.Layout(gtx, textShaper, labelFont, labelFontSize, l.Text)
+			}.Layout(gtx, textShaper, l.Font, l.FontSize, l.Text)
 			return layout.Dimensions{
 				Size:     dims.Size.Add(image.Pt(2, 2)),
 				Baseline: dims.Baseline,
@@ -37,11 +41,11 @@ func (l LabelStyle) Layout(gtx layout.Context) layout.Dimensions {
 			return widget.Label{
 				Alignment: text.Start,
 				MaxLines:  1,
-			}.Layout(gtx, textShaper, labelFont, labelFontSize, l.Text)
+			}.Layout(gtx, textShaper, l.Font, l.FontSize, l.Text)
 		}),
 	)
 }
 
 func Label(text string, color color.RGBA) layout.Widget {
-	return LabelStyle{Text: text, Color: color, ShadeColor: black}.Layout
+	return LabelStyle{Text: text, Color: color, ShadeColor: black, Font: labelDefaultFont, FontSize: labelDefaultFontSize}.Layout
 }

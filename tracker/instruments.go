@@ -108,9 +108,14 @@ func (t *Tracker) layoutUnitList() layout.Widget {
 			for t.UnitBtns[i].Clicked() {
 				t.CurrentUnit = i
 			}
-			btnStyle := material.Button(t.Theme, t.UnitBtns[i], u.Type)
-			btnStyle.Background = transparent
-			children[i] = layout.Rigid(btnStyle.Layout)
+			i2 := i
+			labelStyle := LabelStyle{Text: u.Type, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
+			children[i] = layout.Rigid(func(gtx C) D {
+				dims := labelStyle.Layout(gtx)
+				gtx.Constraints = layout.Exact(dims.Size)
+				t.UnitBtns[i2].Layout(gtx)
+				return dims
+			})
 		}
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx, children...)
 	}
