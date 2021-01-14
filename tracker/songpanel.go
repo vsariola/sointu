@@ -24,6 +24,10 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 
 	//paint.FillShape(gtx.Ops, primaryColorDark, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 
+	for t.NewSongFileBtn.Clicked() {
+		t.LoadSong(defaultSong)
+	}
+
 	for t.LoadSongFileBtn.Clicked() {
 		t.LoadSongFile()
 	}
@@ -32,7 +36,7 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 		t.SaveSongFile()
 	}
 
-	newBtnStyle := material.IconButton(t.Theme, t.NewSongFileBtn, addIcon)
+	newBtnStyle := material.IconButton(t.Theme, t.NewSongFileBtn, clearIcon)
 	newBtnStyle.Background = transparent
 	newBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 	newBtnStyle.Color = primaryColor
