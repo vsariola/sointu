@@ -1,8 +1,8 @@
 package tracker
 
 import (
-	"fmt"
 	"image"
+	"math"
 
 	"gioui.org/layout"
 	"gioui.org/op/clip"
@@ -68,23 +68,30 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label(fmt.Sprintf("LEN: %3v", t.song.SequenceLength()), white)),
+				layout.Rigid(Label("LEN:", white)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return in.Layout(gtx, smallButton(material.IconButton(t.Theme, t.SongLengthUpBtn, upIcon)).Layout)
-				}),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.SongLengthDownBtn, downIcon)), t.song.SequenceLength() > 1).Layout)
+					t.SongLength.Value = t.song.SequenceLength()
+					numStyle := NumericUpDown(t.Theme, t.SongLength, 1, math.MaxInt32)
+					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					dims := in.Layout(gtx, numStyle.Layout)
+					t.SetSongLength(t.SongLength.Value)
+					return dims
 				}),
 			)
 		}),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label(fmt.Sprintf("BPM: %3v", t.song.BPM), white)),
+				layout.Rigid(Label("BPM:", white)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.BPMUpBtn, upIcon)), t.song.BPM < 999).Layout)
-				}),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.BPMDownBtn, downIcon)), t.song.BPM > 1).Layout)
+					t.BPM.Value = t.song.BPM
+					numStyle := NumericUpDown(t.Theme, t.BPM, 1, 999)
+					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					dims := in.Layout(gtx, numStyle.Layout)
+					t.SetBPM(t.BPM.Value)
+					return dims
+					//return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.BPMUpBtn, upIcon)), t.song.BPM < 999).Layout)
 				}),
 			)
 		}),

@@ -69,9 +69,9 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 			return true
 		case `\`:
 			if e.Modifiers.Contain(key.ModShift) {
-				return t.ChangeBPM(1)
+				return t.ChangeOctave(1)
 			}
-			return t.ChangeBPM(-1)
+			return t.ChangeOctave(-1)
 		case key.NameUpArrow:
 			delta := -1
 			if e.Modifiers.Contain(key.ModCtrl) {
@@ -161,7 +161,7 @@ func (t *Tracker) getCurrent() byte {
 
 // NotePressed handles incoming key presses while in the note column
 func (t *Tracker) NotePressed(val int) {
-	t.SetCurrentNote(getNoteValue(int(t.CurrentOctave), val))
+	t.SetCurrentNote(getNoteValue(int(t.Octave.Value), val))
 }
 
 // NumberPressed handles incoming presses while in either of the hex number columns

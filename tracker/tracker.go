@@ -27,19 +27,15 @@ type Tracker struct {
 	ActiveTrack           int
 	CurrentInstrument     int
 	CurrentUnit           int
-	CurrentOctave         byte
 	NoteTracking          bool
 	Theme                 *material.Theme
-	OctaveUpBtn           *widget.Clickable
-	OctaveDownBtn         *widget.Clickable
-	BPMUpBtn              *widget.Clickable
-	BPMDownBtn            *widget.Clickable
+	Octave                *NumberInput
+	BPM                   *NumberInput
 	NewTrackBtn           *widget.Clickable
 	NewInstrumentBtn      *widget.Clickable
 	LoadSongFileBtn       *widget.Clickable
 	NewSongFileBtn        *widget.Clickable
-	SongLengthUpBtn       *widget.Clickable
-	SongLengthDownBtn     *widget.Clickable
+	SongLength            *NumberInput
 	SaveSongFileBtn       *widget.Clickable
 	ParameterSliders      []*widget.Float
 	UnitBtns              []*widget.Clickable
@@ -174,31 +170,30 @@ func (t *Tracker) sequencerLoop(closer <-chan struct{}) {
 }
 
 func (t *Tracker) ChangeOctave(delta int) bool {
-	newOctave := int(t.CurrentOctave) + delta
+	newOctave := t.Octave.Value + delta
 	if newOctave < 0 {
 		newOctave = 0
 	}
 	if newOctave > 9 {
 		newOctave = 9
 	}
-	if newOctave != int(t.CurrentOctave) {
-		t.CurrentOctave = byte(newOctave)
+	if newOctave != t.Octave.Value {
+		t.Octave.Value = newOctave
 		return true
 	}
 	return false
 }
 
-func (t *Tracker) ChangeBPM(delta int) bool {
-	t.SaveUndo()
-	newBPM := t.song.BPM + delta
-	if newBPM < 1 {
-		newBPM = 1
+func (t *Tracker) SetBPM(value int) bool {
+	if value < 1 {
+		value = 1
 	}
-	if newBPM > 999 {
-		newBPM = 999
+	if value > 999 {
+		value = 999
 	}
-	if newBPM != int(t.song.BPM) {
-		t.song.BPM = newBPM
+	if value != int(t.song.BPM) {
+		t.SaveUndo()
+		t.song.BPM = value
 		t.sequencer.SetRowLength(44100 * 60 / (4 * t.song.BPM))
 		return true
 	}
@@ -261,19 +256,22 @@ func (t *Tracker) SetCurrentPattern(pat byte) {
 	t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern] = pat
 }
 
-func (t *Tracker) IncreaseSongLength() {
-	t.SaveUndo()
-	for i := range t.song.Tracks {
-		seq := t.song.Tracks[i].Sequence
-		t.song.Tracks[i].Sequence = append(seq, seq[len(seq)-1])
+func (t *Tracker) SetSongLength(value int) {
+	if value < 1 {
+		value = 1
 	}
-}
+	if value != t.song.SequenceLength() {
+		t.SaveUndo()
+		for i := range t.song.Tracks {
+			seq := t.song.Tracks[i].Sequence
+			if len(t.song.Tracks[i].Sequence) > value {
+				t.song.Tracks[i].Sequence = t.song.Tracks[i].Sequence[:value]
+			} else if len(t.song.Tracks[i].Sequence) < value {
+				for k := len(t.song.Tracks[i].Sequence); k < value; k++ {
+					t.song.Tracks[i].Sequence = append(seq, seq[len(seq)-1])
+				}
+			}
 
-func (t *Tracker) DecreaseSongLength() {
-	t.SaveUndo()
-	for i := range t.song.Tracks {
-		if len(t.song.Tracks[i].Sequence) > 0 {
-			t.song.Tracks[i].Sequence = t.song.Tracks[i].Sequence[0 : len(t.song.Tracks[i].Sequence)-1]
 		}
 	}
 }
@@ -282,19 +280,15 @@ func New(audioContext sointu.AudioContext) *Tracker {
 	t := &Tracker{
 		Theme:                 material.NewTheme(gofont.Collection()),
 		QuitButton:            new(widget.Clickable),
-		CurrentOctave:         4,
 		audioContext:          audioContext,
-		OctaveUpBtn:           new(widget.Clickable),
-		OctaveDownBtn:         new(widget.Clickable),
-		BPMUpBtn:              new(widget.Clickable),
-		BPMDownBtn:            new(widget.Clickable),
+		BPM:                   new(NumberInput),
+		Octave:                new(NumberInput),
+		SongLength:            new(NumberInput),
 		NewTrackBtn:           new(widget.Clickable),
 		NewInstrumentBtn:      new(widget.Clickable),
 		NewSongFileBtn:        new(widget.Clickable),
 		LoadSongFileBtn:       new(widget.Clickable),
 		SaveSongFileBtn:       new(widget.Clickable),
-		SongLengthUpBtn:       new(widget.Clickable),
-		SongLengthDownBtn:     new(widget.Clickable),
 		setPlaying:            make(chan bool),
 		rowJump:               make(chan int),
 		patternJump:           make(chan int),
@@ -307,6 +301,7 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		BottomHorizontalSplit: new(Split),
 		VerticalSplit:         new(Split),
 	}
+	t.Octave.Value = 4
 	t.VerticalSplit.Axis = layout.Vertical
 	t.BottomHorizontalSplit.Ratio = -.5
 	t.Theme.Color.Primary = primaryColor

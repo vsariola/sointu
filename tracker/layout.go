@@ -1,7 +1,6 @@
 package tracker
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"log"
@@ -156,12 +155,6 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 		})
 	}
 	in2 := layout.UniformInset(unit.Dp(8))
-	for t.OctaveUpBtn.Clicked() {
-		t.ChangeOctave(1)
-	}
-	for t.OctaveDownBtn.Clicked() {
-		t.ChangeOctave(-1)
-	}
 	menu := layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 		newTrack := layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			paint.FillShape(gtx.Ops, trackMenuSurfaceColor, clip.Rect{
@@ -175,11 +168,10 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(
 				gtx,
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.OctaveUpBtn, upIcon)), t.CurrentOctave < 9).Layout)
-				}),
-				layout.Rigid(Label(fmt.Sprintf("%v", t.CurrentOctave), white)),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.OctaveDownBtn, downIcon)), t.CurrentOctave > 0).Layout)
+					numStyle := NumericUpDown(t.Theme, t.Octave, 0, 9)
+					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					return in.Layout(gtx, numStyle.Layout)
 				}),
 			)
 		})
@@ -207,24 +199,16 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 
 func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	go func() {
-		for t.BPMUpBtn.Clicked() {
+		/*for t.BPMUpBtn.Clicked() {
 			t.ChangeBPM(1)
 		}
 		for t.BPMDownBtn.Clicked() {
 			t.ChangeBPM(-1)
-		}
+		}*/
 		for t.NewInstrumentBtn.Clicked() {
 			t.AddInstrument()
 		}
 	}()
-
-	for t.SongLengthUpBtn.Clicked() {
-		t.IncreaseSongLength()
-	}
-
-	for t.SongLengthDownBtn.Clicked() {
-		t.DecreaseSongLength()
-	}
 
 	return t.TopHorizontalSplit.Layout(gtx,
 		t.layoutSongPanel,
