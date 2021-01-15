@@ -16,25 +16,35 @@ type Split struct {
 	Ratio float32
 	// Bar is the width for resizing the layout
 	Bar unit.Value
+	// Axis is the split direction: layout.Horizontal splits the view in left
+	// and right, layout.Vertical splits the view in top and bottom
+	Axis layout.Axis
 
-	drag   bool
-	dragID pointer.ID
-	dragX  float32
+	drag      bool
+	dragID    pointer.ID
+	dragCoord float32
 }
 
 var defaultBarWidth = unit.Dp(10)
 
-func (s *Split) Layout(gtx layout.Context, left, right layout.Widget) layout.Dimensions {
+func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.Dimensions {
 	bar := gtx.Px(s.Bar)
 	if bar <= 1 {
 		bar = gtx.Px(defaultBarWidth)
 	}
 
-	proportion := (s.Ratio + 1) / 2
-	leftsize := int(proportion*float32(gtx.Constraints.Max.X) - float32(bar))
+	var coord int
+	if s.Axis == layout.Horizontal {
+		coord = gtx.Constraints.Max.X
+	} else {
+		coord = gtx.Constraints.Max.Y
+	}
 
-	rightoffset := leftsize + bar
-	rightsize := gtx.Constraints.Max.X - rightoffset
+	proportion := (s.Ratio + 1) / 2
+	firstSize := int(proportion*float32(coord) - float32(bar))
+
+	secondOffset := firstSize + bar
+	secondSize := coord - secondOffset
 
 	{ // handle input
 		// Avoid affecting the input tree with pointer events.
@@ -53,17 +63,28 @@ func (s *Split) Layout(gtx layout.Context, left, right layout.Widget) layout.Dim
 				}
 
 				s.dragID = e.PointerID
-				s.dragX = e.Position.X
+				if s.Axis == layout.Horizontal {
+					s.dragCoord = e.Position.X
+				} else {
+					s.dragCoord = e.Position.Y
+				}
 
 			case pointer.Drag:
 				if s.dragID != e.PointerID {
 					break
 				}
 
-				deltaX := e.Position.X - s.dragX
-				s.dragX = e.Position.X
+				var deltaCoord, deltaRatio float32
+				if s.Axis == layout.Horizontal {
+					deltaCoord = e.Position.X - s.dragCoord
+					s.dragCoord = e.Position.X
+					deltaRatio = deltaCoord * 2 / float32(gtx.Constraints.Max.X)
+				} else {
+					deltaCoord = e.Position.Y - s.dragCoord
+					s.dragCoord = e.Position.Y
+					deltaRatio = deltaCoord * 2 / float32(gtx.Constraints.Max.Y)
+				}
 
-				deltaRatio := deltaX * 2 / float32(gtx.Constraints.Max.X)
 				s.Ratio += deltaRatio
 
 			case pointer.Release:
@@ -74,7 +95,12 @@ func (s *Split) Layout(gtx layout.Context, left, right layout.Widget) layout.Dim
 		}
 
 		// register for input
-		barRect := image.Rect(leftsize, 0, rightoffset, gtx.Constraints.Max.X)
+		var barRect image.Rectangle
+		if s.Axis == layout.Horizontal {
+			barRect = image.Rect(firstSize, 0, secondOffset, gtx.Constraints.Max.X)
+		} else {
+			barRect = image.Rect(0, firstSize, gtx.Constraints.Max.Y, secondOffset)
+		}
 		pointer.Rect(barRect).Add(gtx.Ops)
 		pointer.InputOp{Tag: s,
 			Types: pointer.Press | pointer.Drag | pointer.Release,
@@ -85,22 +111,31 @@ func (s *Split) Layout(gtx layout.Context, left, right layout.Widget) layout.Dim
 	}
 
 	{
+		gtx := gtx
 		stack := op.Push(gtx.Ops)
 
-		gtx := gtx
-		gtx.Constraints = layout.Exact(image.Pt(leftsize, gtx.Constraints.Max.Y))
-		left(gtx)
+		if s.Axis == layout.Horizontal {
+			gtx.Constraints = layout.Exact(image.Pt(firstSize, gtx.Constraints.Max.Y))
+		} else {
+			gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, firstSize))
+		}
+		first(gtx)
 
 		stack.Pop()
 	}
 
 	{
-		stack := op.Push(gtx.Ops)
-
-		op.Offset(f32.Pt(float32(rightoffset), 0)).Add(gtx.Ops)
 		gtx := gtx
-		gtx.Constraints = layout.Exact(image.Pt(rightsize, gtx.Constraints.Max.Y))
-		right(gtx)
+		stack := op.Push(gtx.Ops)
+		if s.Axis == layout.Horizontal {
+			op.Offset(f32.Pt(float32(secondOffset), 0)).Add(gtx.Ops)
+			gtx.Constraints = layout.Exact(image.Pt(secondSize, gtx.Constraints.Max.Y))
+		} else {
+			op.Offset(f32.Pt(0, float32(secondOffset))).Add(gtx.Ops)
+			gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, secondSize))
+		}
+
+		second(gtx)
 
 		stack.Pop()
 	}

@@ -77,11 +77,9 @@ func trackButton(t *material.Theme, w *widget.Clickable, text string, enabled bo
 
 func (t *Tracker) Layout(gtx layout.Context) {
 	paint.FillShape(gtx.Ops, backgroundColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
-	layout.UniformInset(unit.Dp(2)).Layout(gtx, func(gtx2 layout.Context) layout.Dimensions {
-		return layout.Flex{Axis: layout.Vertical}.Layout(gtx2,
-			layout.Rigid(t.layoutControls),
-			layout.Flexed(1, t.layoutTracksAndPatterns))
-	})
+	t.VerticalSplit.Layout(gtx,
+		t.layoutControls,
+		t.layoutTracksAndPatterns)
 	t.updateInstrumentScroll()
 }
 
@@ -90,7 +88,7 @@ func (t *Tracker) layoutTracksAndPatterns(gtx layout.Context) layout.Dimensions 
 	if !t.Playing {
 		playPat = -1
 	}
-	return t.BottomSplit.Layout(gtx,
+	return t.BottomHorizontalSplit.Layout(gtx,
 		t.layoutPatterns(
 			t.song.Tracks,
 			t.ActiveTrack,
@@ -208,9 +206,6 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 }
 
 func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
-	gtx.Constraints.Min.Y = 250
-	gtx.Constraints.Max.Y = 250
-
 	go func() {
 		for t.BPMUpBtn.Clicked() {
 			t.ChangeBPM(1)
@@ -231,7 +226,7 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 		t.DecreaseSongLength()
 	}
 
-	return t.TopSplit.Layout(gtx,
+	return t.TopHorizontalSplit.Layout(gtx,
 		t.layoutSongPanel,
 		t.layoutInstruments(),
 	)

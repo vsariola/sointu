@@ -18,37 +18,38 @@ type Tracker struct {
 	song          sointu.Song
 	Playing       bool
 	// protects PlayPattern and PlayRow
-	playRowPatMutex    sync.RWMutex // protects song and playing
-	PlayPattern        int
-	PlayRow            int
-	CursorRow          int
-	CursorColumn       int
-	DisplayPattern     int
-	ActiveTrack        int
-	CurrentInstrument  int
-	CurrentUnit        int
-	CurrentOctave      byte
-	NoteTracking       bool
-	Theme              *material.Theme
-	OctaveUpBtn        *widget.Clickable
-	OctaveDownBtn      *widget.Clickable
-	BPMUpBtn           *widget.Clickable
-	BPMDownBtn         *widget.Clickable
-	NewTrackBtn        *widget.Clickable
-	NewInstrumentBtn   *widget.Clickable
-	LoadSongFileBtn    *widget.Clickable
-	NewSongFileBtn     *widget.Clickable
-	SongLengthUpBtn    *widget.Clickable
-	SongLengthDownBtn  *widget.Clickable
-	SaveSongFileBtn    *widget.Clickable
-	ParameterSliders   []*widget.Float
-	UnitBtns           []*widget.Clickable
-	InstrumentBtns     []*widget.Clickable
-	InstrumentList     *layout.List
-	TrackHexCheckBoxes []*widget.Bool
-	TrackShowHex       []bool
-	TopSplit           *Split
-	BottomSplit        *Split
+	playRowPatMutex       sync.RWMutex // protects song and playing
+	PlayPattern           int
+	PlayRow               int
+	CursorRow             int
+	CursorColumn          int
+	DisplayPattern        int
+	ActiveTrack           int
+	CurrentInstrument     int
+	CurrentUnit           int
+	CurrentOctave         byte
+	NoteTracking          bool
+	Theme                 *material.Theme
+	OctaveUpBtn           *widget.Clickable
+	OctaveDownBtn         *widget.Clickable
+	BPMUpBtn              *widget.Clickable
+	BPMDownBtn            *widget.Clickable
+	NewTrackBtn           *widget.Clickable
+	NewInstrumentBtn      *widget.Clickable
+	LoadSongFileBtn       *widget.Clickable
+	NewSongFileBtn        *widget.Clickable
+	SongLengthUpBtn       *widget.Clickable
+	SongLengthDownBtn     *widget.Clickable
+	SaveSongFileBtn       *widget.Clickable
+	ParameterSliders      []*widget.Float
+	UnitBtns              []*widget.Clickable
+	InstrumentBtns        []*widget.Clickable
+	InstrumentList        *layout.List
+	TrackHexCheckBoxes    []*widget.Bool
+	TrackShowHex          []bool
+	TopHorizontalSplit    *Split
+	BottomHorizontalSplit *Split
+	VerticalSplit         *Split
 
 	sequencer    *Sequencer
 	ticked       chan struct{}
@@ -279,33 +280,35 @@ func (t *Tracker) DecreaseSongLength() {
 
 func New(audioContext sointu.AudioContext) *Tracker {
 	t := &Tracker{
-		Theme:             material.NewTheme(gofont.Collection()),
-		QuitButton:        new(widget.Clickable),
-		CurrentOctave:     4,
-		audioContext:      audioContext,
-		OctaveUpBtn:       new(widget.Clickable),
-		OctaveDownBtn:     new(widget.Clickable),
-		BPMUpBtn:          new(widget.Clickable),
-		BPMDownBtn:        new(widget.Clickable),
-		NewTrackBtn:       new(widget.Clickable),
-		NewInstrumentBtn:  new(widget.Clickable),
-		NewSongFileBtn:    new(widget.Clickable),
-		LoadSongFileBtn:   new(widget.Clickable),
-		SaveSongFileBtn:   new(widget.Clickable),
-		SongLengthUpBtn:   new(widget.Clickable),
-		SongLengthDownBtn: new(widget.Clickable),
-		setPlaying:        make(chan bool),
-		rowJump:           make(chan int),
-		patternJump:       make(chan int),
-		ticked:            make(chan struct{}),
-		closer:            make(chan struct{}),
-		undoStack:         []sointu.Song{},
-		redoStack:         []sointu.Song{},
-		InstrumentList:    &layout.List{Axis: layout.Horizontal},
-		TopSplit:          new(Split),
-		BottomSplit:       new(Split),
+		Theme:                 material.NewTheme(gofont.Collection()),
+		QuitButton:            new(widget.Clickable),
+		CurrentOctave:         4,
+		audioContext:          audioContext,
+		OctaveUpBtn:           new(widget.Clickable),
+		OctaveDownBtn:         new(widget.Clickable),
+		BPMUpBtn:              new(widget.Clickable),
+		BPMDownBtn:            new(widget.Clickable),
+		NewTrackBtn:           new(widget.Clickable),
+		NewInstrumentBtn:      new(widget.Clickable),
+		NewSongFileBtn:        new(widget.Clickable),
+		LoadSongFileBtn:       new(widget.Clickable),
+		SaveSongFileBtn:       new(widget.Clickable),
+		SongLengthUpBtn:       new(widget.Clickable),
+		SongLengthDownBtn:     new(widget.Clickable),
+		setPlaying:            make(chan bool),
+		rowJump:               make(chan int),
+		patternJump:           make(chan int),
+		ticked:                make(chan struct{}),
+		closer:                make(chan struct{}),
+		undoStack:             []sointu.Song{},
+		redoStack:             []sointu.Song{},
+		InstrumentList:        &layout.List{Axis: layout.Horizontal},
+		TopHorizontalSplit:    new(Split),
+		BottomHorizontalSplit: new(Split),
+		VerticalSplit:         new(Split),
 	}
-	t.BottomSplit.Ratio = -.5
+	t.VerticalSplit.Axis = layout.Vertical
+	t.BottomHorizontalSplit.Ratio = -.5
 	t.Theme.Color.Primary = primaryColor
 	t.Theme.Color.InvText = black
 	go t.sequencerLoop(t.closer)
