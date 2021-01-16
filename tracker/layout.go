@@ -154,46 +154,59 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 			return ret
 		})
 	}
-	in2 := layout.UniformInset(unit.Dp(8))
-	menu := layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-		newTrack := layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			paint.FillShape(gtx.Ops, trackMenuSurfaceColor, clip.Rect{
-				Max: gtx.Constraints.Max,
-			}.Op())
-			return in2.Layout(gtx, enableButton(material.IconButton(t.Theme, t.NewTrackBtn, addIcon), t.song.TotalTrackVoices() < t.song.Patch.TotalVoices()).Layout)
-		})
-		octLabel := layout.Rigid(Label("OCT:", white))
+	menuBg := func(gtx C) D {
+		paint.FillShape(gtx.Ops, trackMenuSurfaceColor, clip.Rect{
+			Max: gtx.Constraints.Min,
+		}.Op())
+		return layout.Dimensions{Size: gtx.Constraints.Min}
+	}
+	menu := func(gtx C) D {
+		newTrackBtnStyle := material.IconButton(t.Theme, t.NewTrackBtn, addIcon)
+		newTrackBtnStyle.Background = transparent
+		newTrackBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		if t.song.TotalTrackVoices() < t.song.Patch.TotalVoices() {
+			newTrackBtnStyle.Color = primaryColor
+		} else {
+			newTrackBtnStyle.Color = disabledTextColor
+		}
 		in := layout.UniformInset(unit.Dp(1))
-		octRow := layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return layout.Flex{Axis: layout.Horizontal}.Layout(
-				gtx,
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					numStyle := NumericUpDown(t.Theme, t.Octave, 0, 9)
-					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
-					return in.Layout(gtx, numStyle.Layout)
-				}),
-			)
-		})
-		return layout.Flex{Axis: layout.Vertical}.Layout(gtx, newTrack, octLabel, octRow)
-	})
+		octave := func(gtx C) D {
+			numStyle := NumericUpDown(t.Theme, t.Octave, 0, 9)
+			gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
+			gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+			return in.Layout(gtx, numStyle.Layout)
+		}
+		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+			layout.Rigid(Label("OCT:", white)),
+			layout.Rigid(octave),
+			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+			layout.Rigid(newTrackBtnStyle.Layout))
+	}
 	go func() {
 		for t.NewTrackBtn.Clicked() {
 			t.AddTrack()
 		}
 	}()
-	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		rowMarkers,
-		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-			defer op.Push(gtx.Ops).Pop()
-			clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
-			dims := layout.Flex{Axis: layout.Horizontal}.Layout(gtx, flexTracks...)
-			if dims.Size.X > gtx.Constraints.Max.X {
-				dims.Size.X = gtx.Constraints.Max.X
-			}
-			return dims
+	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+		layout.Rigid(func(gtx C) D {
+			return layout.Stack{Alignment: layout.Center}.Layout(gtx,
+				layout.Expanded(menuBg),
+				layout.Stacked(menu),
+			)
 		}),
-		menu,
+		layout.Flexed(1, func(gtx C) D {
+			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+				rowMarkers,
+				layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+					defer op.Push(gtx.Ops).Pop()
+					clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
+					dims := layout.Flex{Axis: layout.Horizontal}.Layout(gtx, flexTracks...)
+					if dims.Size.X > gtx.Constraints.Max.X {
+						dims.Size.X = gtx.Constraints.Max.X
+					}
+					return dims
+				}))
+		}),
 	)
 }
 
