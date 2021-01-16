@@ -83,18 +83,8 @@ func (t *Tracker) Layout(gtx layout.Context) {
 }
 
 func (t *Tracker) layoutTracksAndPatterns(gtx layout.Context) layout.Dimensions {
-	playPat := t.PlayPattern
-	if !t.Playing {
-		playPat = -1
-	}
 	return t.BottomHorizontalSplit.Layout(gtx,
-		t.layoutPatterns(
-			t.song.Tracks,
-			t.ActiveTrack,
-			t.DisplayPattern,
-			t.CursorColumn,
-			playPat,
-		),
+		t.layoutPatterns,
 		t.layoutTracks,
 	)
 }
@@ -106,7 +96,7 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 	t.playRowPatMutex.RLock()
 	defer t.playRowPatMutex.RUnlock()
 
-	playPat := t.PlayPattern
+	playPat := t.PlayPosition.Pattern
 	if !t.Playing {
 		playPat = -1
 	}
@@ -114,16 +104,15 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 	rowMarkers := layout.Rigid(t.layoutRowMarkers(
 		len(t.song.Tracks[0].Patterns[0]),
 		len(t.song.Tracks[0].Sequence),
-		t.CursorRow,
-		t.DisplayPattern,
+		t.Cursor.Row,
+		t.Cursor.Pattern,
 		t.CursorColumn,
-		t.PlayRow,
+		t.PlayPosition.Row,
 		playPat,
 	))
 	leftInset := layout.Inset{Left: unit.Dp(4)}
-	for i, trk := range t.song.Tracks {
-		i2 := i     // avoids i being updated in the closure
-		trk2 := trk // avoids trk being updated in the closure
+	for i := range t.song.Tracks {
+		i2 := i // avoids i being updated in the closure
 		if len(t.TrackHexCheckBoxes) <= i {
 			t.TrackHexCheckBoxes = append(t.TrackHexCheckBoxes, new(widget.Bool))
 		}
@@ -136,17 +125,7 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 			cbStyle.Color = white
 			ret := layout.Stack{}.Layout(gtx,
 				layout.Stacked(func(gtx layout.Context) D {
-					return leftInset.Layout(gtx, t.layoutTrack(
-						trk2.Patterns,
-						trk2.Sequence,
-						t.ActiveTrack == i2,
-						t.TrackShowHex[i2],
-						t.CursorRow,
-						t.DisplayPattern,
-						t.CursorColumn,
-						t.PlayRow,
-						playPat,
-					))
+					return leftInset.Layout(gtx, t.layoutTrack(i2))
 				}),
 				layout.Stacked(cbStyle.Layout),
 			)

@@ -17,7 +17,7 @@ const trackRowHeight = 16
 const trackWidth = 54
 const patmarkWidth = 16
 
-func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, hex bool, cursorRow, cursorPattern, cursorCol, playRow, playPattern int) layout.Widget {
+func (t *Tracker) layoutTrack(trackNo int) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		gtx.Constraints.Min.X = trackWidth
 		gtx.Constraints.Max.X = trackWidth
@@ -26,29 +26,37 @@ func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, h
 		op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y/2)-trackRowHeight)).Add(gtx.Ops)
 		// TODO: this is a time bomb; as soon as one of the patterns is not the same length as rest. Find a solution
 		// to fix the pattern lengths to a constant value
-		cursorSongRow := cursorPattern*len(patterns[0]) + cursorRow
-		playSongRow := playPattern*len(patterns[0]) + playRow
+		cursorSongRow := t.Cursor.Pattern*t.song.PatternRows() + t.Cursor.Row
 		op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorSongRow))).Add(gtx.Ops)
-		for i, s := range sequence {
-			if cursorPattern == i && active {
-				paint.FillShape(gtx.Ops, activeTrackColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight*len(patterns[0]))}.Op())
+		patternRect := SongRect{
+			Corner1: SongPoint{SongRow: SongRow{Pattern: t.Cursor.Pattern}, Track: t.Cursor.Track},
+			Corner2: SongPoint{SongRow: SongRow{Pattern: t.SelectionCorner.Pattern}, Track: t.SelectionCorner.Track},
+		}
+		pointRect := SongRect{
+			Corner1: t.Cursor,
+			Corner2: t.SelectionCorner,
+		}
+		for i, s := range t.song.Tracks[trackNo].Sequence {
+			if patternRect.Contains(SongPoint{Track: trackNo, SongRow: SongRow{Pattern: i}}) {
+				paint.FillShape(gtx.Ops, activeTrackColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight*t.song.PatternRows())}.Op())
 			}
-			for j, c := range patterns[s] {
-				songRow := i*len(patterns[0]) + j
-				if songRow == playSongRow {
+			for j, c := range t.song.Tracks[trackNo].Patterns[s] {
+				songRow := SongRow{Pattern: i, Row: j}
+				songPoint := SongPoint{Track: trackNo, SongRow: songRow}
+				if songRow == t.PlayPosition && t.Playing {
 					paint.FillShape(gtx.Ops, trackerPlayColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight)}.Op())
 				}
 				if j == 0 {
 					paint.ColorOp{Color: trackerPatMarker}.Add(gtx.Ops)
 					widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(s))
 				}
-				if songRow == cursorSongRow {
+				if songRow == t.Cursor.SongRow {
 					paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
 				} else {
 					paint.ColorOp{Color: trackerInactiveTextColor}.Add(gtx.Ops)
 				}
 				op.Offset(f32.Pt(patmarkWidth, 0)).Add(gtx.Ops)
-				if hex {
+				if t.TrackShowHex[trackNo] {
 					var text string
 					switch c {
 					case 0:
@@ -59,13 +67,23 @@ func (t *Tracker) layoutTrack(patterns [][]byte, sequence []byte, active bool, h
 						text = fmt.Sprintf("%02x", c)
 					}
 					widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(text))
-					if active && songRow == cursorSongRow {
-						paint.FillShape(gtx.Ops, trackerCursorColor, clip.Rect{Min: image.Pt(cursorCol*10, 0), Max: image.Pt(cursorCol*10+10, trackRowHeight)}.Op())
+					if pointRect.Contains(songPoint) {
+						for col := 0; col < 2; col++ {
+							color := trackerSelectionColor
+							if songPoint == t.Cursor && t.CursorColumn == col {
+								color = trackerCursorColor
+							}
+							paint.FillShape(gtx.Ops, color, clip.Rect{Min: image.Pt(col*10, 0), Max: image.Pt(col*10+10, trackRowHeight)}.Op())
+						}
 					}
 				} else {
 					widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, valueAsNote(c))
-					if active && cursorCol == 0 && songRow == cursorSongRow {
-						paint.FillShape(gtx.Ops, trackerCursorColor, clip.Rect{Max: image.Pt(30, trackRowHeight)}.Op())
+					if pointRect.Contains(songPoint) {
+						color := trackerSelectionColor
+						if songPoint == t.Cursor {
+							color = trackerCursorColor
+						}
+						paint.FillShape(gtx.Ops, color, clip.Rect{Max: image.Pt(30, trackRowHeight)}.Op())
 					}
 				}
 				op.Offset(f32.Pt(-patmarkWidth, trackRowHeight)).Add(gtx.Ops)

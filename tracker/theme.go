@@ -72,6 +72,7 @@ var trackerPatternRowTextColor = color.RGBA{R: 198, G: 198, B: 198, A: 255}
 var trackerPlayColor = color.RGBA{R: 55, G: 55, B: 61, A: 255}
 var trackerPatMarker = primaryColor
 var trackerCursorColor = color.RGBA{R: 38, G: 79, B: 120, A: 64}
+var trackerSelectionColor = color.RGBA{R: 19, G: 40, B: 60, A: 128}
 var trackerSurfaceColor = color.RGBA{R: 18, G: 18, B: 18, A: 18}
 
 var patternPlayColor = color.RGBA{R: 55, G: 55, B: 61, A: 255}
@@ -80,6 +81,7 @@ var patternActiveTextColor = yellow
 var patternFont = fontCollection[6].Font
 var patternFontSize = unit.Px(12)
 var patternCursorColor = color.RGBA{R: 38, G: 79, B: 120, A: 64}
+var patternSelectionColor = color.RGBA{R: 19, G: 40, B: 60, A: 128}
 
 var inactiveBtnColor = color.RGBA{R: 61, G: 55, B: 55, A: 255}
 

@@ -19,12 +19,10 @@ type Tracker struct {
 	Playing       bool
 	// protects PlayPattern and PlayRow
 	playRowPatMutex       sync.RWMutex // protects song and playing
-	PlayPattern           int
-	PlayRow               int
-	CursorRow             int
+	PlayPosition          SongRow
+	SelectionCorner       SongPoint
+	Cursor                SongPoint
 	CursorColumn          int
-	DisplayPattern        int
-	ActiveTrack           int
 	CurrentInstrument     int
 	CurrentUnit           int
 	NoteTracking          bool
@@ -73,21 +71,9 @@ func (t *Tracker) LoadSong(song sointu.Song) error {
 	} else {
 		t.synth = synth
 	}
-	if t.DisplayPattern >= song.SequenceLength() {
-		t.DisplayPattern = song.SequenceLength() - 1
-	}
-	if t.CursorRow >= song.PatternRows() {
-		t.CursorRow = song.PatternRows() - 1
-	}
-	if t.PlayPattern >= song.SequenceLength() {
-		t.PlayPattern = song.SequenceLength() - 1
-	}
-	if t.PlayRow >= song.PatternRows() {
-		t.PlayRow = song.PatternRows() - 1
-	}
-	if t.ActiveTrack >= len(song.Tracks) {
-		t.ActiveTrack = len(song.Tracks) - 1
-	}
+	t.PlayPosition.Clamp(song)
+	t.Cursor.Clamp(song)
+	t.SelectionCorner.Clamp(song)
 	if t.sequencer != nil {
 		t.sequencer.SetSynth(t.synth)
 	}
@@ -105,8 +91,8 @@ func (t *Tracker) TogglePlay() {
 	t.Playing = !t.Playing
 	if t.Playing {
 		t.NoteTracking = true
-		t.PlayPattern = t.DisplayPattern
-		t.PlayRow = t.CursorRow - 1
+		t.PlayPosition = t.Cursor.SongRow
+		t.PlayPosition.Row-- // TODO: we advance soon to make up for this -1, but this is not very elegant way to do it
 	}
 }
 
@@ -124,22 +110,16 @@ func (t *Tracker) sequencerLoop(closer <-chan struct{}) {
 			t.playRowPatMutex.Unlock()
 			return nil, false
 		}
-		t.PlayRow++
-		if t.PlayRow >= t.song.PatternRows() {
-			t.PlayRow = 0
-			t.PlayPattern++
-		}
-		if t.PlayPattern >= t.song.SequenceLength() {
-			t.PlayPattern = 0
-		}
+		t.PlayPosition.Row++
+		t.PlayPosition.Wrap(t.song)
 		if t.NoteTracking {
-			t.DisplayPattern = t.PlayPattern
-			t.CursorRow = t.PlayRow
+			t.Cursor.SongRow = t.PlayPosition
+			t.SelectionCorner.SongRow = t.PlayPosition
 		}
 		notes := make([]Note, 0, 32)
 		for track := range t.song.Tracks {
-			patternIndex := t.song.Tracks[track].Sequence[t.PlayPattern]
-			note := t.song.Tracks[track].Patterns[patternIndex][t.PlayRow]
+			patternIndex := t.song.Tracks[track].Sequence[t.PlayPosition.Pattern]
+			note := t.song.Tracks[track].Patterns[patternIndex][t.PlayPosition.Row]
 			if note == 1 { // anything but hold causes an action.
 				continue
 			}
@@ -240,20 +220,20 @@ func (t *Tracker) AddInstrument() {
 // SetCurrentNote sets the (note) value in current pattern under cursor to iv
 func (t *Tracker) SetCurrentNote(iv byte) {
 	t.SaveUndo()
-	t.song.Tracks[t.ActiveTrack].Patterns[t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern]][t.CursorRow] = iv
+	t.song.Tracks[t.Cursor.Track].Patterns[t.song.Tracks[t.Cursor.Track].Sequence[t.Cursor.Pattern]][t.Cursor.Row] = iv
 }
 
 func (t *Tracker) SetCurrentPattern(pat byte) {
 	t.SaveUndo()
-	length := len(t.song.Tracks[t.ActiveTrack].Patterns)
+	length := len(t.song.Tracks[t.Cursor.Track].Patterns)
 	if int(pat) >= length {
 		tail := make([][]byte, int(pat)-length+1)
 		for i := range tail {
 			tail[i] = make([]byte, t.song.PatternRows())
 		}
-		t.song.Tracks[t.ActiveTrack].Patterns = append(t.song.Tracks[t.ActiveTrack].Patterns, tail...)
+		t.song.Tracks[t.Cursor.Track].Patterns = append(t.song.Tracks[t.Cursor.Track].Patterns, tail...)
 	}
-	t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern] = pat
+	t.song.Tracks[t.Cursor.Track].Sequence[t.Cursor.Pattern] = pat
 }
 
 func (t *Tracker) SetSongLength(value int) {
@@ -272,6 +252,28 @@ func (t *Tracker) SetSongLength(value int) {
 				}
 			}
 
+		}
+	}
+}
+
+func (t *Tracker) DeleteSelection() {
+	t.SaveUndo()
+	r1 := t.Cursor.Pattern*t.song.PatternRows() + t.Cursor.Row
+	r2 := t.SelectionCorner.Pattern*t.song.PatternRows() + t.SelectionCorner.Row
+	if r2 < r1 {
+		r1, r2 = r2, r1
+	}
+	t1 := t.Cursor.Track
+	t2 := t.SelectionCorner.Track
+	if t2 < t1 {
+		t1, t2 = t2, t1
+	}
+	for r := r1; r <= r2; r++ {
+		for c := t1; c <= t2; c++ {
+			s := SongRow{Row: r}
+			s.Wrap(t.song)
+			p := t.song.Tracks[c].Sequence[s.Pattern]
+			t.song.Tracks[c].Patterns[p][s.Row] = 1
 		}
 	}
 }

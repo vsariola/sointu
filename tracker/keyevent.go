@@ -60,7 +60,7 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 			t.SetCurrentNote(0)
 			return true
 		case key.NameDeleteForward:
-			t.SetCurrentNote(1)
+			t.DeleteSelection()
 			return true
 		case key.NameEscape:
 			os.Exit(0)
@@ -77,7 +77,11 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 			if e.Modifiers.Contain(key.ModCtrl) {
 				delta = -t.song.PatternRows()
 			}
-			t.moveCursor(delta)
+			t.Cursor.Row += delta
+			t.Cursor.Clamp(t.song)
+			if !e.Modifiers.Contain(key.ModShift) {
+				t.SelectionCorner = t.Cursor
+			}
 			t.NoteTracking = false
 			return true
 		case key.NameDownArrow:
@@ -85,36 +89,40 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 			if e.Modifiers.Contain(key.ModCtrl) {
 				delta = t.song.PatternRows()
 			}
-			t.moveCursor(delta)
+			t.Cursor.Row += delta
+			t.Cursor.Clamp(t.song)
+			if !e.Modifiers.Contain(key.ModShift) {
+				t.SelectionCorner = t.Cursor
+			}
 			t.NoteTracking = false
 			return true
 		case key.NameLeftArrow:
-			if t.CursorColumn == 0 || !t.TrackShowHex[t.ActiveTrack] || e.Modifiers.Contain(key.ModCtrl) {
-				t.ActiveTrack = (t.ActiveTrack + len(t.song.Tracks) - 1) % len(t.song.Tracks)
-				if t.TrackShowHex[t.ActiveTrack] {
+			if t.CursorColumn == 0 || !t.TrackShowHex[t.Cursor.Track] || e.Modifiers.Contain(key.ModCtrl) {
+				t.Cursor.Track--
+				t.Cursor.Clamp(t.song)
+				if t.TrackShowHex[t.Cursor.Track] {
 					t.CursorColumn = 1
 				} else {
 					t.CursorColumn = 0
+				}
+				if !e.Modifiers.Contain(key.ModShift) {
+					t.SelectionCorner = t.Cursor
 				}
 			} else {
 				t.CursorColumn--
 			}
 			return true
 		case key.NameRightArrow:
-			if t.CursorColumn == 1 || !t.TrackShowHex[t.ActiveTrack] || e.Modifiers.Contain(key.ModCtrl) {
-				t.ActiveTrack = (t.ActiveTrack + 1) % len(t.song.Tracks)
+			if t.CursorColumn == 1 || !t.TrackShowHex[t.Cursor.Track] || e.Modifiers.Contain(key.ModCtrl) {
+				t.Cursor.Track++
+				t.Cursor.Clamp(t.song)
+				if !e.Modifiers.Contain(key.ModShift) {
+					t.SelectionCorner = t.Cursor
+				}
 				t.CursorColumn = 0
 			} else {
 				t.CursorColumn++
 			}
-			return true
-		case key.NameTab:
-			if e.Modifiers.Contain(key.ModShift) {
-				t.ActiveTrack = (t.ActiveTrack + len(t.song.Tracks) - 1) % len(t.song.Tracks)
-			} else {
-				t.ActiveTrack = (t.ActiveTrack + 1) % len(t.song.Tracks)
-			}
-			t.CursorColumn = 0
 			return true
 		}
 		if e.Modifiers.Contain(key.ModCtrl) {
@@ -123,7 +131,7 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 				return true
 			}
 		} else {
-			if !t.TrackShowHex[t.ActiveTrack] {
+			if !t.TrackShowHex[t.Cursor.Track] {
 				if val, ok := noteMap[e.Name]; ok {
 					t.NotePressed(val)
 					return true
@@ -139,24 +147,9 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 	return false
 }
 
-func (t *Tracker) moveCursor(delta int) {
-	newRow := t.CursorRow + delta
-	remainder := (newRow + t.song.PatternRows()) % t.song.PatternRows()
-	t.DisplayPattern += (newRow - remainder) / t.song.PatternRows()
-	if t.DisplayPattern < 0 {
-		t.CursorRow = 0
-		t.DisplayPattern = 0
-	} else if t.DisplayPattern >= t.song.SequenceLength() {
-		t.CursorRow = t.song.PatternRows() - 1
-		t.DisplayPattern = t.song.SequenceLength() - 1
-	} else {
-		t.CursorRow = remainder
-	}
-}
-
 // getCurrent returns the current (note) value in current pattern under the cursor
 func (t *Tracker) getCurrent() byte {
-	return t.song.Tracks[t.ActiveTrack].Patterns[t.song.Tracks[t.ActiveTrack].Sequence[t.DisplayPattern]][t.CursorRow]
+	return t.song.Tracks[t.Cursor.Track].Patterns[t.song.Tracks[t.Cursor.Track].Sequence[t.Cursor.Pattern]][t.Cursor.Row]
 }
 
 // NotePressed handles incoming key presses while in the note column
