@@ -33,6 +33,10 @@ type Tracker struct {
 	NewInstrumentBtn      *widget.Clickable
 	LoadSongFileBtn       *widget.Clickable
 	NewSongFileBtn        *widget.Clickable
+	AddSemitoneBtn        *widget.Clickable
+	SubtractSemitoneBtn   *widget.Clickable
+	AddOctaveBtn          *widget.Clickable
+	SubtractOctaveBtn     *widget.Clickable
 	SongLength            *NumberInput
 	SaveSongFileBtn       *widget.Clickable
 	ParameterSliders      []*widget.Float
@@ -256,8 +260,7 @@ func (t *Tracker) SetSongLength(value int) {
 	}
 }
 
-func (t *Tracker) DeleteSelection() {
-	t.SaveUndo()
+func (t *Tracker) getSelectionRange() (int, int, int, int) {
 	r1 := t.Cursor.Pattern*t.song.PatternRows() + t.Cursor.Row
 	r2 := t.SelectionCorner.Pattern*t.song.PatternRows() + t.SelectionCorner.Row
 	if r2 < r1 {
@@ -268,10 +271,48 @@ func (t *Tracker) DeleteSelection() {
 	if t2 < t1 {
 		t1, t2 = t2, t1
 	}
-	for r := r1; r <= r2; r++ {
-		for c := t1; c <= t2; c++ {
+	return r1, r2, t1, t2
+}
+
+func (t *Tracker) AdjustSelectionPitch(delta int) {
+	t.SaveUndo()
+	r1, r2, t1, t2 := t.getSelectionRange()
+	for c := t1; c <= t2; c++ {
+		adjustedNotes := map[struct {
+			Pat byte
+			Row int
+		}]bool{}
+		for r := r1; r <= r2; r++ {
 			s := SongRow{Row: r}
 			s.Wrap(t.song)
+			p := t.song.Tracks[c].Sequence[s.Pattern]
+			noteIndex := struct {
+				Pat byte
+				Row int
+			}{p, s.Row}
+			if !adjustedNotes[noteIndex] {
+				if val := t.song.Tracks[c].Patterns[p][s.Row]; val > 1 {
+					newVal := int(val) + delta
+					if newVal < 2 {
+						newVal = 2
+					} else if newVal > 255 {
+						newVal = 255
+					}
+					t.song.Tracks[c].Patterns[p][s.Row] = byte(newVal)
+				}
+				adjustedNotes[noteIndex] = true
+			}
+		}
+	}
+}
+
+func (t *Tracker) DeleteSelection() {
+	t.SaveUndo()
+	r1, r2, t1, t2 := t.getSelectionRange()
+	for r := r1; r <= r2; r++ {
+		s := SongRow{Row: r}
+		s.Wrap(t.song)
+		for c := t1; c <= t2; c++ {
 			p := t.song.Tracks[c].Sequence[s.Pattern]
 			t.song.Tracks[c].Patterns[p][s.Row] = 1
 		}
@@ -291,6 +332,10 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		NewSongFileBtn:        new(widget.Clickable),
 		LoadSongFileBtn:       new(widget.Clickable),
 		SaveSongFileBtn:       new(widget.Clickable),
+		AddSemitoneBtn:        new(widget.Clickable),
+		SubtractSemitoneBtn:   new(widget.Clickable),
+		AddOctaveBtn:          new(widget.Clickable),
+		SubtractOctaveBtn:     new(widget.Clickable),
 		setPlaying:            make(chan bool),
 		rowJump:               make(chan int),
 		patternJump:           make(chan int),

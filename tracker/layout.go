@@ -139,7 +139,40 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 		}.Op())
 		return layout.Dimensions{Size: gtx.Constraints.Min}
 	}
+
+	for t.AddSemitoneBtn.Clicked() {
+		t.AdjustSelectionPitch(1)
+	}
+
+	for t.SubtractSemitoneBtn.Clicked() {
+		t.AdjustSelectionPitch(-1)
+	}
+
+	for t.AddOctaveBtn.Clicked() {
+		t.AdjustSelectionPitch(12)
+	}
+
+	for t.SubtractOctaveBtn.Clicked() {
+		t.AdjustSelectionPitch(-12)
+	}
+
 	menu := func(gtx C) D {
+		addSemitoneBtnStyle := material.Button(t.Theme, t.AddSemitoneBtn, "+1")
+		addSemitoneBtnStyle.Color = primaryColor
+		addSemitoneBtnStyle.Background = transparent
+		addSemitoneBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		subtractSemitoneBtnStyle := material.Button(t.Theme, t.SubtractSemitoneBtn, "-1")
+		subtractSemitoneBtnStyle.Color = primaryColor
+		subtractSemitoneBtnStyle.Background = transparent
+		subtractSemitoneBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		addOctaveBtnStyle := material.Button(t.Theme, t.AddOctaveBtn, "+12")
+		addOctaveBtnStyle.Color = primaryColor
+		addOctaveBtnStyle.Background = transparent
+		addOctaveBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		subtractOctaveBtnStyle := material.Button(t.Theme, t.SubtractOctaveBtn, "-12")
+		subtractOctaveBtnStyle.Color = primaryColor
+		subtractOctaveBtnStyle.Background = transparent
+		subtractOctaveBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 		newTrackBtnStyle := material.IconButton(t.Theme, t.NewTrackBtn, addIcon)
 		newTrackBtnStyle.Background = transparent
 		newTrackBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
@@ -158,6 +191,11 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(Label("OCT:", white)),
 			layout.Rigid(octave),
+			layout.Rigid(Label(" PITCH:", white)),
+			layout.Rigid(addSemitoneBtnStyle.Layout),
+			layout.Rigid(subtractSemitoneBtnStyle.Layout),
+			layout.Rigid(addOctaveBtnStyle.Layout),
+			layout.Rigid(subtractOctaveBtnStyle.Layout),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(newTrackBtnStyle.Layout))
 	}
@@ -191,12 +229,6 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 
 func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 	go func() {
-		/*for t.BPMUpBtn.Clicked() {
-			t.ChangeBPM(1)
-		}
-		for t.BPMDownBtn.Clicked() {
-			t.ChangeBPM(-1)
-		}*/
 		for t.NewInstrumentBtn.Clicked() {
 			t.AddInstrument()
 		}
