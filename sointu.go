@@ -254,9 +254,10 @@ var UnitTypes = map[string]([]UnitParameter){
 }
 
 type Song struct {
-	BPM    int
-	Tracks []Track
-	Patch  Patch
+	BPM            int
+	RowsPerPattern int
+	Tracks         []Track
+	Patch          Patch
 }
 
 func (s *Song) Copy() Song {
@@ -267,16 +268,12 @@ func (s *Song) Copy() Song {
 	return Song{BPM: s.BPM, Tracks: tracks, Patch: s.Patch.Copy()}
 }
 
-func (s *Song) PatternRows() int {
-	return len(s.Tracks[0].Patterns[0])
-}
-
 func (s *Song) SequenceLength() int {
 	return len(s.Tracks[0].Sequence)
 }
 
 func (s *Song) TotalRows() int {
-	return s.PatternRows() * s.SequenceLength()
+	return s.RowsPerPattern * s.SequenceLength()
 }
 
 func (s *Song) SamplesPerRow() int {
@@ -350,8 +347,8 @@ func Play(synth Synth, song Song) ([]float32, error) {
 	buffer := make([]float32, 0, initialCapacity)
 	rowbuffer := make([]float32, song.SamplesPerRow()*2)
 	for row := 0; row < song.TotalRows(); row++ {
-		patternRow := row % song.PatternRows()
-		pattern := row / song.PatternRows()
+		patternRow := row % song.RowsPerPattern
+		pattern := row / song.RowsPerPattern
 		for t := range song.Tracks {
 			patternIndex := song.Tracks[t].Sequence[pattern]
 			note := song.Tracks[t].Patterns[patternIndex][patternRow]

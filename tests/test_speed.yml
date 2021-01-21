@@ -1,4 +1,5 @@
 bpm: 100
+rowsperpattern: 16
 tracks:
     - numvoices: 1
       sequence: [0, 0]

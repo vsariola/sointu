@@ -26,7 +26,7 @@ func (t *Tracker) layoutTrack(trackNo int) layout.Widget {
 		op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y/2)-trackRowHeight)).Add(gtx.Ops)
 		// TODO: this is a time bomb; as soon as one of the patterns is not the same length as rest. Find a solution
 		// to fix the pattern lengths to a constant value
-		cursorSongRow := t.Cursor.Pattern*t.song.PatternRows() + t.Cursor.Row
+		cursorSongRow := t.Cursor.Pattern*t.song.RowsPerPattern + t.Cursor.Row
 		op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorSongRow))).Add(gtx.Ops)
 		patternRect := SongRect{
 			Corner1: SongPoint{SongRow: SongRow{Pattern: t.Cursor.Pattern}, Track: t.Cursor.Track},
@@ -38,7 +38,7 @@ func (t *Tracker) layoutTrack(trackNo int) layout.Widget {
 		}
 		for i, s := range t.song.Tracks[trackNo].Sequence {
 			if patternRect.Contains(SongPoint{Track: trackNo, SongRow: SongRow{Pattern: i}}) {
-				paint.FillShape(gtx.Ops, activeTrackColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight*t.song.PatternRows())}.Op())
+				paint.FillShape(gtx.Ops, activeTrackColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight*t.song.RowsPerPattern)}.Op())
 			}
 			for j, c := range t.song.Tracks[trackNo].Patterns[s] {
 				songRow := SongRow{Pattern: i, Row: j}

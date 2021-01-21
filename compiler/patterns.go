@@ -167,7 +167,7 @@ func bytesToInts(array []byte) []int {
 }
 
 func ConstructPatterns(song *sointu.Song) ([][]byte, [][]byte, error) {
-	patLength := song.PatternRows()
+	patLength := song.RowsPerPattern
 	sequences := make([][]byte, len(song.Tracks))
 	var patterns [][]int
 	for i, t := range song.Tracks {

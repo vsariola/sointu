@@ -75,7 +75,7 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 		case key.NameUpArrow:
 			delta := -1
 			if e.Modifiers.Contain(key.ModCtrl) {
-				delta = -t.song.PatternRows()
+				delta = -t.song.RowsPerPattern
 			}
 			t.Cursor.Row += delta
 			t.Cursor.Clamp(t.song)
@@ -87,7 +87,7 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 		case key.NameDownArrow:
 			delta := 1
 			if e.Modifiers.Contain(key.ModCtrl) {
-				delta = t.song.PatternRows()
+				delta = t.song.RowsPerPattern
 			}
 			t.Cursor.Row += delta
 			t.Cursor.Clamp(t.song)

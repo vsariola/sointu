@@ -18,21 +18,21 @@ type SongRect struct {
 }
 
 func (r *SongRow) Wrap(song sointu.Song) {
-	totalRow := r.Pattern*song.PatternRows() + r.Row
-	r.Row = mod(totalRow, song.PatternRows())
-	r.Pattern = mod((totalRow-r.Row)/song.PatternRows(), song.SequenceLength())
+	totalRow := r.Pattern*song.RowsPerPattern + r.Row
+	r.Row = mod(totalRow, song.RowsPerPattern)
+	r.Pattern = mod((totalRow-r.Row)/song.RowsPerPattern, song.SequenceLength())
 }
 
 func (r *SongRow) Clamp(song sointu.Song) {
-	totalRow := r.Pattern*song.PatternRows() + r.Row
+	totalRow := r.Pattern*song.RowsPerPattern + r.Row
 	if totalRow < 0 {
 		totalRow = 0
 	}
 	if totalRow >= song.TotalRows() {
 		totalRow = song.TotalRows() - 1
 	}
-	r.Row = totalRow % song.PatternRows()
-	r.Pattern = ((totalRow - r.Row) / song.PatternRows()) % song.SequenceLength()
+	r.Row = totalRow % song.RowsPerPattern
+	r.Pattern = ((totalRow - r.Row) / song.RowsPerPattern) % song.SequenceLength()
 }
 
 func (p *SongPoint) Wrap(song sointu.Song) {

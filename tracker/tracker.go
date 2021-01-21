@@ -188,7 +188,7 @@ func (t *Tracker) AddTrack() {
 	t.SaveUndo()
 	if t.song.TotalTrackVoices() < t.song.Patch.TotalVoices() {
 		seq := make([]byte, t.song.SequenceLength())
-		patterns := [][]byte{make([]byte, t.song.PatternRows())}
+		patterns := [][]byte{make([]byte, t.song.RowsPerPattern)}
 		t.song.Tracks = append(t.song.Tracks, sointu.Track{
 			NumVoices: 1,
 			Patterns:  patterns,
@@ -233,7 +233,7 @@ func (t *Tracker) SetCurrentPattern(pat byte) {
 	if int(pat) >= length {
 		tail := make([][]byte, int(pat)-length+1)
 		for i := range tail {
-			tail[i] = make([]byte, t.song.PatternRows())
+			tail[i] = make([]byte, t.song.RowsPerPattern)
 		}
 		t.song.Tracks[t.Cursor.Track].Patterns = append(t.song.Tracks[t.Cursor.Track].Patterns, tail...)
 	}
@@ -261,8 +261,8 @@ func (t *Tracker) SetSongLength(value int) {
 }
 
 func (t *Tracker) getSelectionRange() (int, int, int, int) {
-	r1 := t.Cursor.Pattern*t.song.PatternRows() + t.Cursor.Row
-	r2 := t.SelectionCorner.Pattern*t.song.PatternRows() + t.SelectionCorner.Row
+	r1 := t.Cursor.Pattern*t.song.RowsPerPattern + t.Cursor.Row
+	r2 := t.SelectionCorner.Pattern*t.song.RowsPerPattern + t.SelectionCorner.Row
 	if r2 < r1 {
 		r1, r2 = r2, r1
 	}

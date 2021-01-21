@@ -13,7 +13,8 @@ var defaultInstrument = sointu.Instrument{
 }
 
 var defaultSong = sointu.Song{
-	BPM: 100,
+	BPM:            100,
+	RowsPerPattern: 16,
 	Tracks: []sointu.Track{
 		{NumVoices: 2, Sequence: []byte{0, 0, 0, 1}, Patterns: [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}, {64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 75, 0, 75, 0, 80, 0}}},
 		{NumVoices: 2, Sequence: []byte{0, 0, 0, 1}, Patterns: [][]byte{{0, 0, 64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0}, {32, 0, 64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 68, 0, 68, 0}}},
