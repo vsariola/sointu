@@ -104,6 +104,7 @@ func (t *Track) Copy() Track {
 
 type Synth interface {
 	Render(buffer []float32, maxtime int) (int, int, error)
+	Update(patch Patch) error
 	Trigger(voice int, note byte)
 	Release(voice int)
 }

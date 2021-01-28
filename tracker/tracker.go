@@ -69,17 +69,11 @@ func (t *Tracker) LoadSong(song sointu.Song) error {
 	t.songPlayMutex.Lock()
 	defer t.songPlayMutex.Unlock()
 	t.song = song
-	if synth, err := bridge.Synth(song.Patch); err != nil {
-		fmt.Printf("error loading synth: %v\n", err)
-		t.synth = nil
-	} else {
-		t.synth = synth
-	}
 	t.PlayPosition.Clamp(song)
 	t.Cursor.Clamp(song)
 	t.SelectionCorner.Clamp(song)
 	if t.sequencer != nil {
-		t.sequencer.SetSynth(t.synth)
+		t.sequencer.SetPatch(song.Patch)
 	}
 	return nil
 }
@@ -213,12 +207,7 @@ func (t *Tracker) AddInstrument() {
 			Units:     units,
 		})
 	}
-	synth, err := bridge.Synth(t.song.Patch)
-	if err == nil {
-		t.sequencer.SetSynth(synth)
-	} else {
-		fmt.Printf("%v", err)
-	}
+	t.sequencer.SetPatch(t.song.Patch)
 }
 
 // SetCurrentNote sets the (note) value in current pattern under cursor to iv

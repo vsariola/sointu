@@ -88,11 +88,12 @@ func (s *Sequencer) ReadAudio(buffer []float32) (int, error) {
 	return totalRendered * 2, fmt.Errorf("despite %v attempts, Sequencer.ReadAudio could not fill the buffer (rowLength was %v, should be >> 0)", SEQUENCER_MAX_READ_TRIES, s.rowLength)
 }
 
-// Sets the synth used by the sequencer. This takes ownership of the synth: the
-// synth should not be called by anyone else than the sequencer afterwards
-func (s *Sequencer) SetSynth(synth sointu.Synth) {
+// Updates the patch of the synth
+func (s *Sequencer) SetPatch(patch sointu.Patch) {
 	s.mutex.Lock()
-	s.synth = synth
+	if s.synth != nil {
+		s.synth.Update(patch)
+	} // TODO: what is s.synth is nil?
 	s.mutex.Unlock()
 }
 

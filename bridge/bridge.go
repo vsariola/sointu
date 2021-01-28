@@ -92,6 +92,50 @@ func (s *C.Synth) Release(voice int) {
 	s.SynthWrk.Voices[voice].Release = 1
 }
 
+// Update
+func (s *C.Synth) Update(patch sointu.Patch) error {
+	comPatch, err := compiler.Encode(&patch, compiler.AllFeatures{})
+	if err != nil {
+		return fmt.Errorf("error compiling patch: %v", err)
+	}
+	if len(comPatch.Commands) > 2048 { // TODO: 2048 could probably be pulled automatically from cgo
+		return errors.New("bridge supports at most 2048 commands; the compiled patch has more")
+	}
+	if len(comPatch.Values) > 16384 { // TODO: 16384 could probably be pulled automatically from cgo
+		return errors.New("bridge supports at most 16384 values; the compiled patch has more")
+	}
+	needsRefresh := false
+	for i, v := range comPatch.Commands {
+		if cmdChar := (C.uchar)(v); s.Commands[i] != cmdChar {
+			s.Commands[i] = cmdChar
+			needsRefresh = true // if any of the commands change, we retrigger all units
+		}
+	}
+	for i, v := range comPatch.Values {
+		s.Values[i] = (C.uchar)(v)
+	}
+	for i, v := range comPatch.DelayTimes {
+		s.DelayTimes[i] = (C.ushort)(v)
+	}
+	for i, v := range comPatch.SampleOffsets {
+		s.SampleOffsets[i].Start = (C.uint)(v.Start)
+		s.SampleOffsets[i].LoopStart = (C.ushort)(v.LoopStart)
+		s.SampleOffsets[i].LoopLength = (C.ushort)(v.LoopLength)
+	}
+	s.NumVoices = C.uint(comPatch.NumVoices)
+	s.Polyphony = C.uint(comPatch.PolyphonyBitmask)
+	if needsRefresh {
+		for i := range s.SynthWrk.Voices {
+			// if any of the commands change, we retrigger all units
+			// note that we don't change the notes or release states, just the units
+			for j := range s.SynthWrk.Voices[i].Units {
+				s.SynthWrk.Voices[i].Units[j] = C.Unit{}
+			}
+		}
+	}
+	return nil
+}
+
 // Render error stores the exact errorcode, which is actually just the x87 FPU flags,
 // with only the critical failure flags masked. Useful if you are interested exactly
 // what went wrong with the patch.
