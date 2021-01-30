@@ -40,7 +40,8 @@ func (t *Tracker) layoutTrack(trackNo int) layout.Widget {
 			if patternRect.Contains(SongPoint{Track: trackNo, SongRow: SongRow{Pattern: i}}) {
 				paint.FillShape(gtx.Ops, activeTrackColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight*t.song.RowsPerPattern)}.Op())
 			}
-			for j, c := range t.song.Tracks[trackNo].Patterns[s] {
+			for j := 0; j < t.song.RowsPerPattern; j++ {
+				c := t.song.Tracks[trackNo].Patterns[s][j]
 				songRow := SongRow{Pattern: i, Row: j}
 				songPoint := SongPoint{Track: trackNo, SongRow: songRow}
 				if songRow == t.PlayPosition && t.Playing {

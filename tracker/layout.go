@@ -107,7 +107,7 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 	}
 
 	rowMarkers := layout.Rigid(t.layoutRowMarkers(
-		len(t.song.Tracks[0].Patterns[0]),
+		t.song.RowsPerPattern,
 		len(t.song.Tracks[0].Sequence),
 		t.Cursor.Row,
 		t.Cursor.Pattern,

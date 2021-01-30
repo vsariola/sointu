@@ -95,5 +95,19 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 				}),
 			)
 		}),
+		layout.Rigid(func(gtx C) D {
+			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+				layout.Rigid(Label("RPP:", white)),
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					t.RowsPerPattern.Value = t.song.RowsPerPattern
+					numStyle := NumericUpDown(t.Theme, t.RowsPerPattern, 1, 255)
+					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					dims := in.Layout(gtx, numStyle.Layout)
+					t.SetRowsPerPattern(t.RowsPerPattern.Value)
+					return dims
+				}),
+			)
+		}),
 	)
 }

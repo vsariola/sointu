@@ -29,6 +29,7 @@ type Tracker struct {
 	Theme                 *material.Theme
 	Octave                *NumberInput
 	BPM                   *NumberInput
+	RowsPerPattern        *NumberInput
 	NewTrackBtn           *widget.Clickable
 	NewInstrumentBtn      *widget.Clickable
 	DeleteInstrumentBtn   *widget.Clickable
@@ -70,9 +71,7 @@ func (t *Tracker) LoadSong(song sointu.Song) error {
 	t.songPlayMutex.Lock()
 	defer t.songPlayMutex.Unlock()
 	t.song = song
-	t.PlayPosition.Clamp(song)
-	t.Cursor.Clamp(song)
-	t.SelectionCorner.Clamp(song)
+	t.ClampPositions()
 	if t.sequencer != nil {
 		t.sequencer.SetPatch(song.Patch)
 	}
@@ -259,7 +258,40 @@ func (t *Tracker) SetSongLength(value int) {
 			}
 
 		}
+		t.ClampPositions()
 	}
+}
+
+func (t *Tracker) SetRowsPerPattern(value int) {
+	if value < 1 {
+		value = 1
+	}
+	if value > 255 {
+		value = 255
+	}
+	if value != t.song.RowsPerPattern {
+		t.SaveUndo()
+		for i := range t.song.Tracks {
+			for j := range t.song.Tracks[i].Patterns {
+				pat := t.song.Tracks[i].Patterns[j]
+				if l := len(pat); l < value {
+					tail := make([]byte, value-l)
+					for k := range tail {
+						tail[k] = 1
+					}
+					t.song.Tracks[i].Patterns[j] = append(pat, tail...)
+				}
+			}
+		}
+		t.song.RowsPerPattern = value
+		t.ClampPositions()
+	}
+}
+
+func (t *Tracker) ClampPositions() {
+	t.PlayPosition.Clamp(t.song)
+	t.Cursor.Clamp(t.song)
+	t.SelectionCorner.Clamp(t.song)
 }
 
 func (t *Tracker) getSelectionRange() (int, int, int, int) {
@@ -329,6 +361,7 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		BPM:                   new(NumberInput),
 		Octave:                new(NumberInput),
 		SongLength:            new(NumberInput),
+		RowsPerPattern:        new(NumberInput),
 		NewTrackBtn:           new(widget.Clickable),
 		NewInstrumentBtn:      new(widget.Clickable),
 		DeleteInstrumentBtn:   new(widget.Clickable),
