@@ -266,7 +266,7 @@ func (s *Song) Copy() Song {
 	for i, t := range s.Tracks {
 		tracks[i] = t.Copy()
 	}
-	return Song{BPM: s.BPM, Tracks: tracks, Patch: s.Patch.Copy()}
+	return Song{BPM: s.BPM, RowsPerPattern: s.RowsPerPattern, Tracks: tracks, Patch: s.Patch.Copy()}
 }
 
 func (s *Song) SequenceLength() int {
