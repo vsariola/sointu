@@ -44,7 +44,38 @@ func (t *Tracker) layoutInstruments() layout.Widget {
 					}),
 				)
 			}),
+			layout.Rigid(t.layoutInstrumentHeader()),
 			layout.Flexed(1, t.layoutInstrumentEditor()))
+	}
+}
+
+func (t *Tracker) layoutInstrumentHeader() layout.Widget {
+	headerBg := func(gtx C) D {
+		paint.FillShape(gtx.Ops, trackMenuSurfaceColor, clip.Rect{
+			Max: gtx.Constraints.Min,
+		}.Op())
+		return layout.Dimensions{Size: gtx.Constraints.Min}
+	}
+	header := func(gtx C) D {
+		deleteInstrumentBtnStyle := material.IconButton(t.Theme, t.DeleteInstrumentBtn, deleteIcon)
+		deleteInstrumentBtnStyle.Background = transparent
+		deleteInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		if len(t.song.Patch.Instruments) > 1 {
+			deleteInstrumentBtnStyle.Color = primaryColor
+		} else {
+			deleteInstrumentBtnStyle.Color = disabledTextColor
+		}
+		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+			layout.Rigid(deleteInstrumentBtnStyle.Layout))
+	}
+	for t.DeleteInstrumentBtn.Clicked() {
+		t.DeleteInstrument()
+	}
+	return func(gtx C) D {
+		return layout.Stack{Alignment: layout.Center}.Layout(gtx,
+			layout.Expanded(headerBg),
+			layout.Stacked(header))
 	}
 }
 

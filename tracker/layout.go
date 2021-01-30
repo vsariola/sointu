@@ -22,6 +22,7 @@ var addIcon *widget.Icon
 var loadIcon *widget.Icon
 var saveIcon *widget.Icon
 var clearIcon *widget.Icon
+var deleteIcon *widget.Icon
 
 func init() {
 	var err error
@@ -46,6 +47,10 @@ func init() {
 		log.Fatal(err)
 	}
 	clearIcon, err = widget.NewIcon(icons.ContentClear)
+	if err != nil {
+		log.Fatal(err)
+	}
+	deleteIcon, err = widget.NewIcon(icons.ActionDelete)
 	if err != nil {
 		log.Fatal(err)
 	}

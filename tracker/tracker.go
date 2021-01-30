@@ -31,6 +31,7 @@ type Tracker struct {
 	BPM                   *NumberInput
 	NewTrackBtn           *widget.Clickable
 	NewInstrumentBtn      *widget.Clickable
+	DeleteInstrumentBtn   *widget.Clickable
 	LoadSongFileBtn       *widget.Clickable
 	NewSongFileBtn        *widget.Clickable
 	AddSemitoneBtn        *widget.Clickable
@@ -210,6 +211,17 @@ func (t *Tracker) AddInstrument() {
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
+func (t *Tracker) DeleteInstrument() {
+	if len(t.song.Patch.Instruments) <= 1 {
+		return
+	}
+	t.SaveUndo()
+	t.song.Patch.Instruments = append(t.song.Patch.Instruments[:t.CurrentInstrument], t.song.Patch.Instruments[t.CurrentInstrument+1:]...)
+	if t.CurrentInstrument >= len(t.song.Patch.Instruments) {
+		t.CurrentInstrument = len(t.song.Patch.Instruments) - 1
+	}
+}
+
 // SetCurrentNote sets the (note) value in current pattern under cursor to iv
 func (t *Tracker) SetCurrentNote(iv byte) {
 	t.SaveUndo()
@@ -318,6 +330,7 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		SongLength:            new(NumberInput),
 		NewTrackBtn:           new(widget.Clickable),
 		NewInstrumentBtn:      new(widget.Clickable),
+		DeleteInstrumentBtn:   new(widget.Clickable),
 		NewSongFileBtn:        new(widget.Clickable),
 		LoadSongFileBtn:       new(widget.Clickable),
 		SaveSongFileBtn:       new(widget.Clickable),
