@@ -220,6 +220,7 @@ func (t *Tracker) DeleteInstrument() {
 	if t.CurrentInstrument >= len(t.song.Patch.Instruments) {
 		t.CurrentInstrument = len(t.song.Patch.Instruments) - 1
 	}
+	t.sequencer.SetPatch(t.song.Patch)
 }
 
 // SetCurrentNote sets the (note) value in current pattern under cursor to iv
