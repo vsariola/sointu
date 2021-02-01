@@ -29,7 +29,6 @@ var defaultNumericDownIcon *widget.Icon
 
 type NumberInput struct {
 	Value          int
-	drag           gesture.Drag
 	dragStartValue int
 	dragStartXY    float32
 	clickDecrease  gesture.Click
@@ -40,7 +39,6 @@ type NumericUpDownStyle struct {
 	NumberInput     *NumberInput
 	Min             int
 	Max             int
-	Axis            layout.Axis
 	Color           color.RGBA
 	Font            text.Font
 	TextSize        unit.Value
@@ -63,7 +61,6 @@ func NumericUpDown(th *material.Theme, number *NumberInput, min, max int) Numeri
 		NumberInput:     number,
 		Min:             min,
 		Max:             max,
-		Axis:            layout.Horizontal,
 		Color:           white,
 		BorderColor:     th.Color.Primary,
 		IconColor:       th.Color.InvText,
@@ -152,25 +149,18 @@ func (s NumericUpDownStyle) layoutText(gtx C) D {
 func (s NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
 	{ // handle dragging
 		pxPerStep := float32(gtx.Px(s.UnitsPerStep))
-		for _, e := range s.NumberInput.drag.Events(gtx.Metric, gtx, gesture.Axis(s.Axis)) {
-			switch e.Type {
-			case pointer.Press:
-				s.NumberInput.dragStartValue = s.NumberInput.Value
-				if s.Axis == layout.Horizontal {
-					s.NumberInput.dragStartXY = e.Position.X
-				} else {
-					s.NumberInput.dragStartXY = e.Position.Y
-				}
+		for _, ev := range gtx.Events(s.NumberInput) {
+			if e, ok := ev.(pointer.Event); ok {
+				switch e.Type {
+				case pointer.Press:
+					s.NumberInput.dragStartValue = s.NumberInput.Value
+					s.NumberInput.dragStartXY = e.Position.X - e.Position.Y
 
-			case pointer.Drag:
-				var deltaCoord float32
-				if s.Axis == layout.Horizontal {
-					deltaCoord = e.Position.X - s.NumberInput.dragStartXY
-				} else {
-					deltaCoord = e.Position.Y - s.NumberInput.dragStartXY
+				case pointer.Drag:
+					var deltaCoord float32
+					deltaCoord = e.Position.X - e.Position.Y - s.NumberInput.dragStartXY
+					s.NumberInput.Value = s.NumberInput.dragStartValue + int(deltaCoord/pxPerStep+0.5)
 				}
-
-				s.NumberInput.Value = s.NumberInput.dragStartValue + int(deltaCoord/pxPerStep+0.5)
 			}
 		}
 
@@ -179,7 +169,10 @@ func (s NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
 		// register for input
 		dragRect := image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
 		pointer.Rect(dragRect).Add(gtx.Ops)
-		s.NumberInput.drag.Add(gtx.Ops)
+		pointer.InputOp{
+			Tag:   s.NumberInput,
+			Types: pointer.Press | pointer.Drag | pointer.Release,
+		}.Add(gtx.Ops)
 		stack.Pop()
 	}
 	return layout.Dimensions{Size: gtx.Constraints.Min}
