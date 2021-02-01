@@ -119,6 +119,9 @@ func main() {
 				return fmt.Errorf("song could not be unmarshaled as a .json (%v) or .yml (%v)", errJSON, errYaml)
 			}
 		}
+		if song.RowsPerBeat == 0 {
+			song.RowsPerBeat = 4
+		}
 		var compiledPlayer map[string]string
 		if compile {
 			var err error

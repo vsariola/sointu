@@ -110,5 +110,19 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 				}),
 			)
 		}),
+		layout.Rigid(func(gtx C) D {
+			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+				layout.Rigid(Label("RPB:", white)),
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					t.RowsPerBeat.Value = t.song.RowsPerBeat
+					numStyle := NumericUpDown(t.Theme, t.RowsPerBeat, 1, 32)
+					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					dims := in.Layout(gtx, numStyle.Layout)
+					t.SetRowsPerBeat(t.RowsPerBeat.Value)
+					return dims
+				}),
+			)
+		}),
 	)
 }

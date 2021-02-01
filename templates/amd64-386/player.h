@@ -7,10 +7,11 @@
 
 #define SU_SAMPLE_RATE     44100
 #define SU_BPM             {{.Song.BPM}}
+#define SU_ROWS_PER_BEAT  {{.Song.RowsPerBeat}}
 #define SU_PATTERN_SIZE    {{.Song.RowsPerPattern}}
 #define SU_MAX_PATTERNS    {{.Song.SequenceLength}}
 #define SU_TOTAL_ROWS      (SU_MAX_PATTERNS*SU_PATTERN_SIZE)
-#define SU_SAMPLES_PER_ROW (SU_SAMPLE_RATE*4*60/(SU_BPM*16))
+#define SU_SAMPLES_PER_ROW (SU_SAMPLE_RATE*60/(SU_BPM*SU_ROWS_PER_BEAT))
 
 #include <stdint.h>
 #if UINTPTR_MAX == 0xffffffff

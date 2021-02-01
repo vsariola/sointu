@@ -40,7 +40,7 @@ func TestOscillatSine(t *testing.T) {
 			sointu.Unit{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
 		}}}}
 	tracks := []sointu.Track{{NumVoices: 1, Sequence: []byte{0}, Patterns: [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}}}}
-	song := sointu.Song{BPM: 100, RowsPerPattern: 16, Tracks: tracks, Patch: patch}
+	song := sointu.Song{BPM: 100, RowsPerPattern: 16, RowsPerBeat: 4, Tracks: tracks, Patch: patch}
 	synth, err := bridge.Synth(patch)
 	if err != nil {
 		t.Fatalf("Compiling patch failed: %v", err)

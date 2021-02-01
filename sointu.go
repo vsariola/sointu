@@ -257,6 +257,7 @@ var UnitTypes = map[string]([]UnitParameter){
 type Song struct {
 	BPM            int
 	RowsPerPattern int
+	RowsPerBeat    int
 	Tracks         []Track
 	Patch          Patch
 }
@@ -266,7 +267,7 @@ func (s *Song) Copy() Song {
 	for i, t := range s.Tracks {
 		tracks[i] = t.Copy()
 	}
-	return Song{BPM: s.BPM, RowsPerPattern: s.RowsPerPattern, Tracks: tracks, Patch: s.Patch.Copy()}
+	return Song{BPM: s.BPM, RowsPerPattern: s.RowsPerPattern, RowsPerBeat: s.RowsPerBeat, Tracks: tracks, Patch: s.Patch.Copy()}
 }
 
 func (s *Song) SequenceLength() int {
@@ -278,7 +279,7 @@ func (s *Song) TotalRows() int {
 }
 
 func (s *Song) SamplesPerRow() int {
-	return 44100 * 60 / (s.BPM * 4)
+	return 44100 * 60 / (s.BPM * s.RowsPerBeat)
 }
 
 func (s *Song) FirstTrackVoice(track int) int {

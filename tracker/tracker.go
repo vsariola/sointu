@@ -30,6 +30,7 @@ type Tracker struct {
 	Octave                *NumberInput
 	BPM                   *NumberInput
 	RowsPerPattern        *NumberInput
+	RowsPerBeat           *NumberInput
 	NewTrackBtn           *widget.Clickable
 	NewInstrumentBtn      *widget.Clickable
 	DeleteInstrumentBtn   *widget.Clickable
@@ -102,7 +103,7 @@ func (t *Tracker) sequencerLoop(closer <-chan struct{}) {
 		panic("cannot create a synth with the default patch")
 	}
 	curVoices := make([]int, 32)
-	t.sequencer = NewSequencer(synth, 44100*60/(4*t.song.BPM), func() ([]Note, bool) {
+	t.sequencer = NewSequencer(synth, t.song.SamplesPerRow(), func() ([]Note, bool) {
 		t.playRowPatMutex.Lock()
 		if !t.Playing {
 			t.playRowPatMutex.Unlock()
@@ -172,7 +173,23 @@ func (t *Tracker) SetBPM(value int) bool {
 	if value != int(t.song.BPM) {
 		t.SaveUndo()
 		t.song.BPM = value
-		t.sequencer.SetRowLength(44100 * 60 / (4 * t.song.BPM))
+		t.sequencer.SetRowLength(t.song.SamplesPerRow())
+		return true
+	}
+	return false
+}
+
+func (t *Tracker) SetRowsPerBeat(value int) bool {
+	if value < 1 {
+		value = 1
+	}
+	if value > 32 {
+		value = 32
+	}
+	if value != int(t.song.RowsPerBeat) {
+		t.SaveUndo()
+		t.song.RowsPerBeat = value
+		t.sequencer.SetRowLength(t.song.SamplesPerRow())
 		return true
 	}
 	return false
@@ -362,6 +379,7 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		Octave:                new(NumberInput),
 		SongLength:            new(NumberInput),
 		RowsPerPattern:        new(NumberInput),
+		RowsPerBeat:           new(NumberInput),
 		NewTrackBtn:           new(widget.Clickable),
 		NewInstrumentBtn:      new(widget.Clickable),
 		DeleteInstrumentBtn:   new(widget.Clickable),

@@ -1,5 +1,6 @@
 bpm: 100
 rowsperpattern: 8
+rowsperbeat: 4
 tracks:
     - numvoices: 1
       sequence: [1, 0, 2, 0, 3, 0, 4, 0]
