@@ -9,6 +9,7 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget/material"
+	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
 func (t *Tracker) layoutSongPanel(gtx C) D {
@@ -36,17 +37,17 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 		t.SaveSongFile()
 	}
 
-	newBtnStyle := material.IconButton(t.Theme, t.NewSongFileBtn, clearIcon)
+	newBtnStyle := material.IconButton(t.Theme, t.NewSongFileBtn, widgetForIcon(icons.ContentClear))
 	newBtnStyle.Background = transparent
 	newBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 	newBtnStyle.Color = primaryColor
 
-	loadBtnStyle := material.IconButton(t.Theme, t.LoadSongFileBtn, loadIcon)
+	loadBtnStyle := material.IconButton(t.Theme, t.LoadSongFileBtn, widgetForIcon(icons.FileFolder))
 	loadBtnStyle.Background = transparent
 	loadBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 	loadBtnStyle.Color = primaryColor
 
-	saveBtnStyle := material.IconButton(t.Theme, t.SaveSongFileBtn, saveIcon)
+	saveBtnStyle := material.IconButton(t.Theme, t.SaveSongFileBtn, widgetForIcon(icons.ContentSave))
 	saveBtnStyle.Background = transparent
 	saveBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 	saveBtnStyle.Color = primaryColor

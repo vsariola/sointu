@@ -3,7 +3,6 @@ package tracker
 import (
 	"image"
 	"image/color"
-	"log"
 
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -12,49 +11,8 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
-
-var upIcon *widget.Icon
-var downIcon *widget.Icon
-var addIcon *widget.Icon
-var loadIcon *widget.Icon
-var saveIcon *widget.Icon
-var clearIcon *widget.Icon
-var deleteIcon *widget.Icon
-
-func init() {
-	var err error
-	upIcon, err = widget.NewIcon(icons.NavigationArrowUpward)
-	if err != nil {
-		log.Fatal(err)
-	}
-	downIcon, err = widget.NewIcon(icons.NavigationArrowDownward)
-	if err != nil {
-		log.Fatal(err)
-	}
-	addIcon, err = widget.NewIcon(icons.ContentAdd)
-	if err != nil {
-		log.Fatal(err)
-	}
-	loadIcon, err = widget.NewIcon(icons.FileFolder)
-	if err != nil {
-		log.Fatal(err)
-	}
-	saveIcon, err = widget.NewIcon(icons.ContentSave)
-	if err != nil {
-		log.Fatal(err)
-	}
-	clearIcon, err = widget.NewIcon(icons.ContentClear)
-	if err != nil {
-		log.Fatal(err)
-	}
-	deleteIcon, err = widget.NewIcon(icons.ActionDelete)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
 func smallButton(icStyle material.IconButtonStyle) material.IconButtonStyle {
 	icStyle.Size = unit.Dp(14)
@@ -178,7 +136,7 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 		subtractOctaveBtnStyle.Color = primaryColor
 		subtractOctaveBtnStyle.Background = transparent
 		subtractOctaveBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		newTrackBtnStyle := material.IconButton(t.Theme, t.NewTrackBtn, addIcon)
+		newTrackBtnStyle := material.IconButton(t.Theme, t.NewTrackBtn, widgetForIcon(icons.ContentAdd))
 		newTrackBtnStyle.Background = transparent
 		newTrackBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 		if t.song.TotalTrackVoices() < t.song.Patch.TotalVoices() {

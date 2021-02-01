@@ -11,6 +11,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
 type C = layout.Context
@@ -25,7 +26,7 @@ func (t *Tracker) updateInstrumentScroll() {
 }
 
 func (t *Tracker) layoutInstruments() layout.Widget {
-	btnStyle := material.IconButton(t.Theme, t.NewInstrumentBtn, addIcon)
+	btnStyle := material.IconButton(t.Theme, t.NewInstrumentBtn, widgetForIcon(icons.ContentAdd))
 	btnStyle.Background = transparent
 	btnStyle.Inset = layout.UniformInset(unit.Dp(6))
 	if t.song.Patch.TotalVoices() < 32 {
@@ -57,7 +58,7 @@ func (t *Tracker) layoutInstrumentHeader() layout.Widget {
 		return layout.Dimensions{Size: gtx.Constraints.Min}
 	}
 	header := func(gtx C) D {
-		deleteInstrumentBtnStyle := material.IconButton(t.Theme, t.DeleteInstrumentBtn, deleteIcon)
+		deleteInstrumentBtnStyle := material.IconButton(t.Theme, t.DeleteInstrumentBtn, widgetForIcon(icons.ActionDelete))
 		deleteInstrumentBtnStyle.Background = transparent
 		deleteInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 		if len(t.song.Patch.Instruments) > 1 {
