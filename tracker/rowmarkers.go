@@ -22,7 +22,7 @@ func (t *Tracker) layoutRowMarkers(patternRows, sequenceLength, cursorRow, curso
 		paint.FillShape(gtx.Ops, rowMarkerSurfaceColor, clip.Rect{
 			Max: gtx.Constraints.Max,
 		}.Op())
-		defer op.Push(gtx.Ops).Pop()
+		defer op.Save(gtx.Ops).Load()
 		clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
 		op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y/2)-trackRowHeight)).Add(gtx.Ops)
 		cursorSongRow := cursorPattern*patternRows + cursorRow

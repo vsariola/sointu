@@ -86,6 +86,7 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 			t.TrackHexCheckBoxes[i2].Value = t.TrackShowHex[i2]
 			cbStyle := material.CheckBox(t.Theme, t.TrackHexCheckBoxes[i2], "hex")
 			cbStyle.Color = white
+			cbStyle.IconColor = t.Theme.Fg
 			ret := layout.Stack{}.Layout(gtx,
 				layout.Stacked(func(gtx layout.Context) D {
 					return leftInset.Layout(gtx, t.layoutTrack(i2))
@@ -178,7 +179,7 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 				rowMarkers,
 				layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-					defer op.Push(gtx.Ops).Pop()
+					defer op.Save(gtx.Ops).Load()
 					clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
 					dims := layout.Flex{Axis: layout.Horizontal}.Layout(gtx, flexTracks...)
 					if dims.Size.X > gtx.Constraints.Max.X {
@@ -204,7 +205,7 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 
 }
 
-func (t *Tracker) line(horizontal bool, color color.RGBA) layout.Widget {
+func (t *Tracker) line(horizontal bool, color color.NRGBA) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		if horizontal {
 			gtx.Constraints.Min.Y = 1
@@ -213,7 +214,7 @@ func (t *Tracker) line(horizontal bool, color color.RGBA) layout.Widget {
 			gtx.Constraints.Min.X = 1
 			gtx.Constraints.Max.X = 1
 		}
-		defer op.Push(gtx.Ops).Pop()
+		defer op.Save(gtx.Ops).Load()
 		clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
 		paint.FillShape(gtx.Ops, color, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
 		return layout.Dimensions{Size: gtx.Constraints.Max}

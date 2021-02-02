@@ -21,7 +21,7 @@ func (t *Tracker) layoutTrack(trackNo int) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		gtx.Constraints.Min.X = trackWidth
 		gtx.Constraints.Max.X = trackWidth
-		defer op.Push(gtx.Ops).Pop()
+		defer op.Save(gtx.Ops).Load()
 		clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
 		op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y/2)-trackRowHeight)).Add(gtx.Ops)
 		// TODO: this is a time bomb; as soon as one of the patterns is not the same length as rest. Find a solution

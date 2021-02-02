@@ -94,7 +94,7 @@ func (t *Tracker) layoutInstrumentNames() layout.Widget {
 			t.InstrumentBtns = append(t.InstrumentBtns, tail...)
 		}
 
-		defer op.Push(gtx.Ops).Pop()
+		defer op.Save(gtx.Ops).Load()
 
 		t.InstrumentList.Layout(gtx, count, func(gtx C, index int) D {
 			for t.InstrumentBtns[index].Clicked() {
@@ -102,6 +102,7 @@ func (t *Tracker) layoutInstrumentNames() layout.Widget {
 			}
 			btnStyle := material.Button(t.Theme, t.InstrumentBtns[index], fmt.Sprintf("%v", index))
 			btnStyle.CornerRadius = unit.Dp(0)
+			btnStyle.Color = t.Theme.Fg
 			if t.CurrentInstrument == index {
 				btnStyle.Background = instrumentSurfaceColor
 			} else {
@@ -179,6 +180,7 @@ func (t *Tracker) layoutUnitControls() layout.Widget {
 			}
 			t.ParameterSliders[i].Value = float32(params[k])
 			sliderStyle := material.Slider(t.Theme, t.ParameterSliders[i], 0, 128)
+			sliderStyle.Color = t.Theme.Fg
 			k2 := k // avoid k changing in the closure
 			children = append(children, layout.Rigid(func(gtx C) D {
 				return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,

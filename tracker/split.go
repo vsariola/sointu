@@ -48,7 +48,7 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 
 	{ // handle input
 		// Avoid affecting the input tree with pointer events.
-		stack := op.Push(gtx.Ops)
+		stack := op.Save(gtx.Ops)
 
 		for _, ev := range gtx.Events(s) {
 			e, ok := ev.(pointer.Event)
@@ -107,12 +107,12 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 			Grab:  s.drag,
 		}.Add(gtx.Ops)
 
-		stack.Pop()
+		stack.Load()
 	}
 
 	{
 		gtx := gtx
-		stack := op.Push(gtx.Ops)
+		stack := op.Save(gtx.Ops)
 
 		if s.Axis == layout.Horizontal {
 			gtx.Constraints = layout.Exact(image.Pt(firstSize, gtx.Constraints.Max.Y))
@@ -121,12 +121,12 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 		}
 		first(gtx)
 
-		stack.Pop()
+		stack.Load()
 	}
 
 	{
 		gtx := gtx
-		stack := op.Push(gtx.Ops)
+		stack := op.Save(gtx.Ops)
 		if s.Axis == layout.Horizontal {
 			op.Offset(f32.Pt(float32(secondOffset), 0)).Add(gtx.Ops)
 			gtx.Constraints = layout.Exact(image.Pt(secondSize, gtx.Constraints.Max.Y))
@@ -137,7 +137,7 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 
 		second(gtx)
 
-		stack.Pop()
+		stack.Load()
 	}
 
 	return layout.Dimensions{Size: gtx.Constraints.Max}

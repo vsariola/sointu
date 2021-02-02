@@ -39,12 +39,12 @@ type NumericUpDownStyle struct {
 	NumberInput     *NumberInput
 	Min             int
 	Max             int
-	Color           color.RGBA
+	Color           color.NRGBA
 	Font            text.Font
 	TextSize        unit.Value
-	BorderColor     color.RGBA
-	IconColor       color.RGBA
-	BackgroundColor color.RGBA
+	BorderColor     color.NRGBA
+	IconColor       color.NRGBA
+	BackgroundColor color.NRGBA
 	CornerRadius    unit.Value
 	Border          unit.Value
 	ButtonWidth     unit.Value
@@ -53,7 +53,7 @@ type NumericUpDownStyle struct {
 }
 
 func NumericUpDown(th *material.Theme, number *NumberInput, min, max int) NumericUpDownStyle {
-	bgColor := th.Color.Primary
+	bgColor := th.Palette.Fg
 	bgColor.R /= 4
 	bgColor.G /= 4
 	bgColor.B /= 4
@@ -62,8 +62,8 @@ func NumericUpDown(th *material.Theme, number *NumberInput, min, max int) Numeri
 		Min:             min,
 		Max:             max,
 		Color:           white,
-		BorderColor:     th.Color.Primary,
-		IconColor:       th.Color.InvText,
+		BorderColor:     th.Palette.Fg,
+		IconColor:       th.Palette.ContrastFg,
 		BackgroundColor: bgColor,
 		CornerRadius:    unit.Dp(4),
 		ButtonWidth:     unit.Dp(16),
@@ -76,7 +76,7 @@ func NumericUpDown(th *material.Theme, number *NumberInput, min, max int) Numeri
 
 func (s NumericUpDownStyle) Layout(gtx C) D {
 	size := gtx.Constraints.Min
-	defer op.Push(gtx.Ops).Pop()
+	defer op.Save(gtx.Ops).Load()
 	rr := float32(gtx.Px(s.CornerRadius))
 	border := float32(gtx.Px(s.Border))
 	clip.UniformRRect(f32.Rectangle{Max: f32.Point{
@@ -165,7 +165,7 @@ func (s NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
 		}
 
 		// Avoid affecting the input tree with pointer events.
-		stack := op.Push(gtx.Ops)
+		stack := op.Save(gtx.Ops)
 		// register for input
 		dragRect := image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
 		pointer.Rect(dragRect).Add(gtx.Ops)
@@ -173,7 +173,7 @@ func (s NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
 			Tag:   s.NumberInput,
 			Types: pointer.Press | pointer.Drag | pointer.Release,
 		}.Add(gtx.Ops)
-		stack.Pop()
+		stack.Load()
 	}
 	return layout.Dimensions{Size: gtx.Constraints.Min}
 }
@@ -187,12 +187,12 @@ func (s NumericUpDownStyle) layoutClick(gtx layout.Context, delta int, click *ge
 		}
 	}
 	// Avoid affecting the input tree with pointer events.
-	stack := op.Push(gtx.Ops)
+	stack := op.Save(gtx.Ops)
 	// register for input
 	clickRect := image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
 	pointer.Rect(clickRect).Add(gtx.Ops)
 	click.Add(gtx.Ops)
-	stack.Pop()
+	stack.Load()
 	return layout.Dimensions{Size: gtx.Constraints.Min}
 }
 

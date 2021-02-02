@@ -21,7 +21,7 @@ const patternRowMarkerWidth = 30
 func (t *Tracker) layoutPatterns(gtx C) D {
 	gtx.Constraints.Min.X = patternCellWidth*patternVisibleTracks + patternRowMarkerWidth
 	gtx.Constraints.Max.X = patternCellWidth*patternVisibleTracks + patternRowMarkerWidth
-	defer op.Push(gtx.Ops).Pop()
+	defer op.Save(gtx.Ops).Load()
 	clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
 	paint.FillShape(gtx.Ops, patternSurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
 	patternRect := SongRect{
@@ -34,7 +34,7 @@ func (t *Tracker) layoutPatterns(gtx C) D {
 		}
 		paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)
 		widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)))
-		stack := op.Push(gtx.Ops)
+		stack := op.Save(gtx.Ops)
 		op.Offset(f32.Pt(patternRowMarkerWidth, 0)).Add(gtx.Ops)
 		for i, track := range t.song.Tracks {
 			paint.ColorOp{Color: patternTextColor}.Add(gtx.Ops)
@@ -49,7 +49,7 @@ func (t *Tracker) layoutPatterns(gtx C) D {
 			}
 			op.Offset(f32.Pt(patternCellWidth, 0)).Add(gtx.Ops)
 		}
-		stack.Pop()
+		stack.Load()
 		op.Offset(f32.Pt(0, patternCellHeight)).Add(gtx.Ops)
 	}
 	return layout.Dimensions{Size: gtx.Constraints.Max}

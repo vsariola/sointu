@@ -19,9 +19,9 @@ func Lowered(w layout.Widget) layout.Widget {
 	return Beveled(w, panelColor, panelShadeColor, panelLightColor)
 }
 
-func Beveled(w layout.Widget, base, light, shade color.RGBA) layout.Widget {
+func Beveled(w layout.Widget, base, light, shade color.NRGBA) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
-		stack := op.Push(gtx.Ops)
+		stack := op.Save(gtx.Ops)
 		gtx.Constraints.Max.X -= 2
 		if gtx.Constraints.Max.X < 0 {
 			gtx.Constraints.Max.X = 0
@@ -40,7 +40,7 @@ func Beveled(w layout.Widget, base, light, shade color.RGBA) layout.Widget {
 		op.Offset(f32.Pt(1, 1)).Add(gtx.Ops)
 		dims := w(gtx)
 		c := macro.Stop()
-		stack.Pop()
+		stack.Load()
 		paint.FillShape(gtx.Ops, light, clip.Rect(image.Rect(0, 0, dims.Size.X+2, 1)).Op())
 		paint.FillShape(gtx.Ops, light, clip.Rect(image.Rect(0, 0, 1, dims.Size.Y+2)).Op())
 		paint.FillShape(gtx.Ops, base, clip.Rect(image.Rect(1, 1, dims.Size.X+1, dims.Size.Y+1)).Op())
