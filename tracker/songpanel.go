@@ -4,7 +4,9 @@ import (
 	"image"
 	"math"
 
+	"gioui.org/f32"
 	"gioui.org/layout"
+	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
@@ -26,11 +28,13 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 	//paint.FillShape(gtx.Ops, primaryColorDark, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 
 	for t.NewSongFileBtn.Clicked() {
-		t.LoadSong(defaultSong)
+		t.LoadSong(defaultSong.Copy())
+		t.FileMenuVisible = false
 	}
 
 	for t.LoadSongFileBtn.Clicked() {
 		t.LoadSongFile()
+		t.FileMenuVisible = false
 	}
 
 	for t.SaveSongFileBtn.Clicked() {
@@ -47,15 +51,42 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 	loadBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 	loadBtnStyle.Color = primaryColor
 
+	menuContents := func(gtx C) D {
+		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+			layout.Rigid(newBtnStyle.Layout),
+			layout.Rigid(loadBtnStyle.Layout),
+		)
+	}
+
+	fileMenu := Popup(&t.FileMenuVisible, menuContents)
+
 	saveBtnStyle := material.IconButton(t.Theme, t.SaveSongFileBtn, widgetForIcon(icons.ContentSave))
 	saveBtnStyle.Background = transparent
 	saveBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 	saveBtnStyle.Color = primaryColor
 
+	fileMenuBtnStyle := material.IconButton(t.Theme, t.FileMenuBtn, widgetForIcon(icons.NavigationMoreVert))
+	fileMenuBtnStyle.Background = transparent
+	fileMenuBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+	fileMenuBtnStyle.Color = primaryColor
+
+	for t.FileMenuBtn.Clicked() {
+		t.FileMenuVisible = true
+	}
+
+	popupWidget := func(gtx C) D {
+		defer op.Save(gtx.Ops).Load()
+		dims := fileMenuBtnStyle.Layout(gtx)
+		op.Offset(f32.Pt(0, float32(dims.Size.Y))).Add(gtx.Ops)
+		gtx.Constraints.Max.X = 160
+		gtx.Constraints.Max.Y = 300
+		fileMenu.Layout(gtx)
+		return dims
+	}
+
 	layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		layout.Rigid(newBtnStyle.Layout),
-		layout.Rigid(loadBtnStyle.Layout),
 		layout.Rigid(saveBtnStyle.Layout),
+		layout.Rigid(popupWidget),
 	)
 
 	return layout.Dimensions{Size: gtx.Constraints.Max}

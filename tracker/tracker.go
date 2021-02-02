@@ -42,6 +42,8 @@ type Tracker struct {
 	SubtractOctaveBtn     *widget.Clickable
 	SongLength            *NumberInput
 	SaveSongFileBtn       *widget.Clickable
+	FileMenuBtn           *widget.Clickable
+	FileMenuVisible       bool
 	ParameterSliders      []*widget.Float
 	UnitBtns              []*widget.Clickable
 	InstrumentBtns        []*widget.Clickable
@@ -384,6 +386,7 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		NewInstrumentBtn:      new(widget.Clickable),
 		DeleteInstrumentBtn:   new(widget.Clickable),
 		NewSongFileBtn:        new(widget.Clickable),
+		FileMenuBtn:           new(widget.Clickable),
 		LoadSongFileBtn:       new(widget.Clickable),
 		SaveSongFileBtn:       new(widget.Clickable),
 		AddSemitoneBtn:        new(widget.Clickable),
@@ -408,7 +411,7 @@ func New(audioContext sointu.AudioContext) *Tracker {
 	t.Theme.Palette.Fg = primaryColor
 	t.Theme.Palette.ContrastFg = black
 	go t.sequencerLoop(t.closer)
-	if err := t.LoadSong(defaultSong); err != nil {
+	if err := t.LoadSong(defaultSong.Copy()); err != nil {
 		panic(fmt.Errorf("cannot load default song: %w", err))
 	}
 	return t

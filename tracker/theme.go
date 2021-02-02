@@ -88,3 +88,5 @@ var inactiveBtnColor = color.NRGBA{R: 61, G: 55, B: 55, A: 255}
 var instrumentSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
 
 var songSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
+
+var popupSurfaceColor = color.NRGBA{R: 45, G: 45, B: 46, A: 255}
