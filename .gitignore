@@ -28,3 +28,4 @@ build64/
 out/
 .cache/
 actual_output/
+**/__debug_bin
