@@ -163,11 +163,9 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(newTrackBtnStyle.Layout))
 	}
-	go func() {
-		for t.NewTrackBtn.Clicked() {
-			t.AddTrack()
-		}
-	}()
+	for t.NewTrackBtn.Clicked() {
+		t.AddTrack()
+	}
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Stack{Alignment: layout.Center}.Layout(gtx,
@@ -192,11 +190,9 @@ func (t *Tracker) layoutTracks(gtx layout.Context) layout.Dimensions {
 }
 
 func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
-	go func() {
-		for t.NewInstrumentBtn.Clicked() {
-			t.AddInstrument()
-		}
-	}()
+	for t.NewInstrumentBtn.Clicked() {
+		t.AddInstrument()
+	}
 
 	return t.TopHorizontalSplit.Layout(gtx,
 		t.layoutSongPanel,
