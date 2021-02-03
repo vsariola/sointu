@@ -31,6 +31,7 @@ type Tracker struct {
 	BPM                   *NumberInput
 	RowsPerPattern        *NumberInput
 	RowsPerBeat           *NumberInput
+	InstrumentVoices      *NumberInput
 	NewTrackBtn           *widget.Clickable
 	NewInstrumentBtn      *widget.Clickable
 	DeleteInstrumentBtn   *widget.Clickable
@@ -161,6 +162,26 @@ func (t *Tracker) ChangeOctave(delta int) bool {
 	}
 	if newOctave != t.Octave.Value {
 		t.Octave.Value = newOctave
+		return true
+	}
+	return false
+}
+
+func (t *Tracker) SetInstrumentVoices(value int) bool {
+	if value < 1 {
+		value = 1
+	}
+	maxRemain := 32 - t.song.Patch.TotalVoices() + t.song.Patch.Instruments[t.CurrentInstrument].NumVoices
+	if maxRemain < 1 {
+		maxRemain = 1
+	}
+	if value > maxRemain {
+		value = maxRemain
+	}
+	if value != int(t.song.Patch.Instruments[t.CurrentInstrument].NumVoices) {
+		t.SaveUndo()
+		t.song.Patch.Instruments[t.CurrentInstrument].NumVoices = value
+		t.sequencer.SetPatch(t.song.Patch)
 		return true
 	}
 	return false
@@ -383,6 +404,7 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		SongLength:            new(NumberInput),
 		RowsPerPattern:        new(NumberInput),
 		RowsPerBeat:           new(NumberInput),
+		InstrumentVoices:      new(NumberInput),
 		NewTrackBtn:           new(widget.Clickable),
 		NewInstrumentBtn:      new(widget.Clickable),
 		DeleteInstrumentBtn:   new(widget.Clickable),

@@ -67,6 +67,20 @@ func (t *Tracker) layoutInstrumentHeader() layout.Widget {
 			deleteInstrumentBtnStyle.Color = disabledTextColor
 		}
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+			layout.Rigid(Label("Voices:", white)),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				maxRemain := 32 - t.song.Patch.TotalVoices() + t.song.Patch.Instruments[t.CurrentInstrument].NumVoices
+				if maxRemain < 0 {
+					maxRemain = 0
+				}
+				t.InstrumentVoices.Value = t.song.Patch.Instruments[t.CurrentInstrument].NumVoices
+				numStyle := NumericUpDown(t.Theme, t.InstrumentVoices, 0, maxRemain)
+				gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
+				gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+				dims := numStyle.Layout(gtx)
+				t.SetInstrumentVoices(t.InstrumentVoices.Value)
+				return dims
+			}),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(deleteInstrumentBtnStyle.Layout))
 	}
