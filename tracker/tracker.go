@@ -77,6 +77,7 @@ func (t *Tracker) LoadSong(song sointu.Song) error {
 	t.ClampPositions()
 	if t.sequencer != nil {
 		t.sequencer.SetPatch(song.Patch)
+		t.sequencer.SetRowLength(song.SamplesPerRow())
 	}
 	return nil
 }
