@@ -59,6 +59,9 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 	}
 
 	fileMenu := Popup(&t.FileMenuVisible, menuContents)
+	fileMenu.NE = unit.Dp(0)
+	fileMenu.ShadowN = unit.Dp(0)
+	fileMenu.NW = unit.Dp(0)
 
 	saveBtnStyle := material.IconButton(t.Theme, t.SaveSongFileBtn, widgetForIcon(icons.ContentSave))
 	saveBtnStyle.Background = transparent

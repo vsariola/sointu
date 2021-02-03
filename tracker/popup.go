@@ -16,6 +16,11 @@ type PopupStyle struct {
 	Visible        *bool
 	Contents       layout.Widget
 	SurfaceColor   color.NRGBA
+	ShadowColor    color.NRGBA
+	ShadowN        unit.Value
+	ShadowE        unit.Value
+	ShadowW        unit.Value
+	ShadowS        unit.Value
 	SE, SW, NW, NE unit.Value
 }
 
@@ -24,6 +29,11 @@ func Popup(visible *bool, contents layout.Widget) PopupStyle {
 		Visible:      visible,
 		Contents:     contents,
 		SurfaceColor: popupSurfaceColor,
+		ShadowColor:  popupShadowColor,
+		ShadowN:      unit.Dp(2),
+		ShadowE:      unit.Dp(2),
+		ShadowS:      unit.Dp(2),
+		ShadowW:      unit.Dp(2),
 		SE:           unit.Dp(6),
 		SW:           unit.Dp(6),
 		NW:           unit.Dp(6),
@@ -58,6 +68,10 @@ func (s PopupStyle) Layout(gtx C) D {
 			NW:   float32(gtx.Px(s.NW)),
 			NE:   float32(gtx.Px(s.NE)),
 		}
+		rrect2 := rrect
+		rrect2.Rect.Min = rrect2.Rect.Min.Sub(f32.Pt(float32(gtx.Px(s.ShadowW)), float32(gtx.Px(s.ShadowN))))
+		rrect2.Rect.Max = rrect2.Rect.Max.Add(f32.Pt(float32(gtx.Px(s.ShadowE)), float32(gtx.Px(s.ShadowS))))
+		paint.FillShape(gtx.Ops, s.ShadowColor, rrect2.Op(gtx.Ops))
 		paint.FillShape(gtx.Ops, s.SurfaceColor, rrect.Op(gtx.Ops))
 		return D{Size: gtx.Constraints.Min}
 	}
