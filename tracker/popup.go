@@ -14,7 +14,6 @@ import (
 
 type PopupStyle struct {
 	Visible        *bool
-	Contents       layout.Widget
 	SurfaceColor   color.NRGBA
 	ShadowColor    color.NRGBA
 	ShadowN        unit.Value
@@ -24,10 +23,9 @@ type PopupStyle struct {
 	SE, SW, NW, NE unit.Value
 }
 
-func Popup(visible *bool, contents layout.Widget) PopupStyle {
+func Popup(visible *bool) PopupStyle {
 	return PopupStyle{
 		Visible:      visible,
-		Contents:     contents,
 		SurfaceColor: popupSurfaceColor,
 		ShadowColor:  popupShadowColor,
 		ShadowN:      unit.Dp(2),
@@ -41,7 +39,7 @@ func Popup(visible *bool, contents layout.Widget) PopupStyle {
 	}
 }
 
-func (s PopupStyle) Layout(gtx C) D {
+func (s PopupStyle) Layout(gtx C, contents layout.Widget) D {
 	if !*s.Visible {
 		return D{}
 	}
@@ -78,7 +76,7 @@ func (s PopupStyle) Layout(gtx C) D {
 	macro := op.Record(gtx.Ops)
 	dims := layout.Stack{}.Layout(gtx,
 		layout.Expanded(bg),
-		layout.Stacked(s.Contents),
+		layout.Stacked(contents),
 	)
 	callop := macro.Stop()
 	op.Defer(gtx.Ops, callop)

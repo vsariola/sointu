@@ -58,7 +58,7 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 		)
 	}
 
-	fileMenu := Popup(&t.FileMenuVisible, menuContents)
+	fileMenu := Popup(&t.FileMenuVisible)
 	fileMenu.NE = unit.Dp(0)
 	fileMenu.ShadowN = unit.Dp(0)
 	fileMenu.NW = unit.Dp(0)
@@ -83,7 +83,7 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 		op.Offset(f32.Pt(0, float32(dims.Size.Y))).Add(gtx.Ops)
 		gtx.Constraints.Max.X = 160
 		gtx.Constraints.Max.Y = 300
-		fileMenu.Layout(gtx)
+		fileMenu.Layout(gtx, menuContents)
 		return dims
 	}
 
