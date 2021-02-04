@@ -33,6 +33,9 @@ func Encode(patch *sointu.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
 			return nil, errors.New("Each instrument must have at least 1 voice")
 		}
 		for _, unit := range instr.Units {
+			if unit.Type == "" { // empty units are just ignored & skipped
+				continue
+			}
 			if unit.Type == "oscillator" && unit.Parameters["type"] == 4 {
 				s := SampleOffset{Start: uint32(unit.Parameters["start"]), LoopStart: uint16(unit.Parameters["loopstart"]), LoopLength: uint16(unit.Parameters["looplength"])}
 				index, ok := sampleOffsetMap[s]

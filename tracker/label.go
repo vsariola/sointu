@@ -17,12 +17,13 @@ type LabelStyle struct {
 	Text       string
 	Color      color.NRGBA
 	ShadeColor color.NRGBA
+	Alignment  layout.Direction
 	Font       text.Font
 	FontSize   unit.Value
 }
 
 func (l LabelStyle) Layout(gtx layout.Context) layout.Dimensions {
-	return layout.Stack{Alignment: layout.Center}.Layout(gtx,
+	return layout.Stack{Alignment: l.Alignment}.Layout(gtx,
 		layout.Stacked(func(gtx layout.Context) layout.Dimensions {
 			defer op.Save(gtx.Ops).Load()
 			paint.ColorOp{Color: l.ShadeColor}.Add(gtx.Ops)
@@ -46,6 +47,6 @@ func (l LabelStyle) Layout(gtx layout.Context) layout.Dimensions {
 	)
 }
 
-func Label(text string, color color.NRGBA) layout.Widget {
-	return LabelStyle{Text: text, Color: color, ShadeColor: black, Font: labelDefaultFont, FontSize: labelDefaultFontSize}.Layout
+func Label(str string, color color.NRGBA) layout.Widget {
+	return LabelStyle{Text: str, Color: color, ShadeColor: black, Font: labelDefaultFont, FontSize: labelDefaultFontSize, Alignment: layout.W}.Layout
 }

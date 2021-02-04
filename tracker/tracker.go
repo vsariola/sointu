@@ -25,6 +25,9 @@ type Tracker struct {
 	CursorColumn          int
 	CurrentInstrument     int
 	CurrentUnit           int
+	UnitGroupMenuVisible  bool
+	UnitGroupMenuIndex    int
+	UnitSubMenuIndex      int
 	NoteTracking          bool
 	Theme                 *material.Theme
 	Octave                *NumberInput
@@ -47,7 +50,13 @@ type Tracker struct {
 	FileMenuVisible       bool
 	ParameterSliders      []*widget.Float
 	UnitBtns              []*widget.Clickable
+	UnitList              *layout.List
+	DeleteUnitBtn         *widget.Clickable
+	ClearUnitBtn          *widget.Clickable
+	ChooseUnitTypeList    *layout.List
+	ChooseUnitTypeBtns    []*widget.Clickable
 	InstrumentBtns        []*widget.Clickable
+	AddUnitBtn            *widget.Clickable
 	InstrumentList        *layout.List
 	TrackHexCheckBoxes    []*widget.Bool
 	TrackShowHex          []bool
@@ -329,6 +338,51 @@ func (t *Tracker) SetRowsPerPattern(value int) {
 	}
 }
 
+func (t *Tracker) SetUnit(typ string) {
+	unit, ok := defaultUnits[typ]
+	if !ok {
+		return
+	}
+	if unit.Type == t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type {
+		return
+	}
+	t.SaveUndo()
+	t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit] = unit.Copy()
+	t.sequencer.SetPatch(t.song.Patch)
+}
+
+func (t *Tracker) AddUnit() {
+	t.SaveUndo()
+	units := make([]sointu.Unit, len(t.song.Patch.Instruments[t.CurrentInstrument].Units)+1)
+	copy(units, t.song.Patch.Instruments[t.CurrentInstrument].Units[:t.CurrentUnit+1])
+	copy(units[t.CurrentUnit+2:], t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit+1:])
+	t.song.Patch.Instruments[t.CurrentInstrument].Units = units
+	t.CurrentUnit++
+	t.sequencer.SetPatch(t.song.Patch)
+}
+
+func (t *Tracker) ClearUnit() {
+	t.SaveUndo()
+	t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type = ""
+	t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Parameters = make(map[string]int)
+	t.sequencer.SetPatch(t.song.Patch)
+}
+
+func (t *Tracker) DeleteUnit() {
+	if len(t.song.Patch.Instruments[t.CurrentInstrument].Units) <= 1 {
+		return
+	}
+	t.SaveUndo()
+	units := make([]sointu.Unit, len(t.song.Patch.Instruments[t.CurrentInstrument].Units)-1)
+	copy(units, t.song.Patch.Instruments[t.CurrentInstrument].Units[:t.CurrentUnit])
+	copy(units[t.CurrentUnit:], t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit+1:])
+	t.song.Patch.Instruments[t.CurrentInstrument].Units = units
+	if t.CurrentUnit > 0 {
+		t.CurrentUnit--
+	}
+	t.sequencer.SetPatch(t.song.Patch)
+}
+
 func (t *Tracker) ClampPositions() {
 	t.PlayPosition.Clamp(t.song)
 	t.Cursor.Clamp(t.song)
@@ -416,6 +470,10 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		SubtractSemitoneBtn:   new(widget.Clickable),
 		AddOctaveBtn:          new(widget.Clickable),
 		SubtractOctaveBtn:     new(widget.Clickable),
+		AddUnitBtn:            new(widget.Clickable),
+		DeleteUnitBtn:         new(widget.Clickable),
+		ClearUnitBtn:          new(widget.Clickable),
+		UnitList:              &layout.List{Axis: layout.Vertical},
 		setPlaying:            make(chan bool),
 		rowJump:               make(chan int),
 		patternJump:           make(chan int),
@@ -427,12 +485,16 @@ func New(audioContext sointu.AudioContext) *Tracker {
 		TopHorizontalSplit:    new(Split),
 		BottomHorizontalSplit: new(Split),
 		VerticalSplit:         new(Split),
+		ChooseUnitTypeList:    &layout.List{Axis: layout.Vertical},
 	}
 	t.Octave.Value = 4
 	t.VerticalSplit.Axis = layout.Vertical
 	t.BottomHorizontalSplit.Ratio = -.5
 	t.Theme.Palette.Fg = primaryColor
 	t.Theme.Palette.ContrastFg = black
+	for range allUnits {
+		t.ChooseUnitTypeBtns = append(t.ChooseUnitTypeBtns, new(widget.Clickable))
+	}
 	go t.sequencerLoop(t.closer)
 	if err := t.LoadSong(defaultSong.Copy()); err != nil {
 		panic(fmt.Errorf("cannot load default song: %w", err))

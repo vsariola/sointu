@@ -2,7 +2,8 @@ package tracker
 
 import (
 	"fmt"
-	"sort"
+	"image"
+	"image/color"
 
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -52,7 +53,7 @@ func (t *Tracker) layoutInstruments() layout.Widget {
 
 func (t *Tracker) layoutInstrumentHeader() layout.Widget {
 	headerBg := func(gtx C) D {
-		paint.FillShape(gtx.Ops, trackMenuSurfaceColor, clip.Rect{
+		paint.FillShape(gtx.Ops, instrumentSurfaceColor, clip.Rect{
 			Max: gtx.Constraints.Min,
 		}.Op())
 		return layout.Dimensions{Size: gtx.Constraints.Min}
@@ -129,82 +130,65 @@ func (t *Tracker) layoutInstrumentNames() layout.Widget {
 	}
 }
 func (t *Tracker) layoutInstrumentEditor() layout.Widget {
+	for t.AddUnitBtn.Clicked() {
+		t.AddUnit()
+	}
+	addUnitBtnStyle := material.IconButton(t.Theme, t.AddUnitBtn, widgetForIcon(icons.ContentAdd))
+	addUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(4))
+	margin := layout.UniformInset(unit.Dp(2))
+
 	return func(gtx C) D {
-		paint.FillShape(gtx.Ops, instrumentSurfaceColor, clip.Rect{
-			Max: gtx.Constraints.Max,
-		}.Op())
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-			layout.Rigid(t.layoutUnitList()),
-			layout.Rigid(t.layoutUnitControls()))
+			layout.Rigid(func(gtx C) D {
+				return layout.Stack{Alignment: layout.SE}.Layout(gtx,
+					layout.Expanded(t.layoutUnitList()),
+					layout.Stacked(func(gtx C) D {
+						return margin.Layout(gtx, addUnitBtnStyle.Layout)
+					}))
+			}),
+			layout.Rigid(t.layoutUnitEditor()))
 	}
 }
 
 func (t *Tracker) layoutUnitList() layout.Widget {
 	return func(gtx C) D {
+		paint.FillShape(gtx.Ops, unitListSurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
+		defer op.Save(gtx.Ops).Load()
+
+		gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
 		units := t.song.Patch.Instruments[t.CurrentInstrument].Units
 		count := len(units)
-		if len(t.UnitBtns) < count {
-			tail := make([]*widget.Clickable, count-len(t.UnitBtns))
-			for t := range tail {
-				tail[t] = new(widget.Clickable)
-			}
-			t.UnitBtns = append(t.UnitBtns, tail...)
+		for len(t.UnitBtns) < count {
+			t.UnitBtns = append(t.UnitBtns, new(widget.Clickable))
 		}
-		children := make([]layout.FlexChild, len(t.song.Patch.Instruments[t.CurrentInstrument].Units))
-		for i, u := range t.song.Patch.Instruments[t.CurrentInstrument].Units {
+
+		listElem := func(gtx C, i int) D {
 			for t.UnitBtns[i].Clicked() {
 				t.CurrentUnit = i
+				op.InvalidateOp{}.Add(gtx.Ops)
 			}
-			i2 := i
+			u := t.song.Patch.Instruments[t.CurrentInstrument].Units[i]
 			labelStyle := LabelStyle{Text: u.Type, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
-			children[i] = layout.Rigid(func(gtx C) D {
-				dims := labelStyle.Layout(gtx)
-				gtx.Constraints = layout.Exact(dims.Size)
-				t.UnitBtns[i2].Layout(gtx)
-				return dims
-			})
-		}
-		return layout.Flex{Axis: layout.Vertical}.Layout(gtx, children...)
-	}
-}
-
-func (t *Tracker) layoutUnitControls() layout.Widget {
-	return func(gtx C) D {
-		params := t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Parameters
-		count := len(params)
-		children := make([]layout.FlexChild, 0, count)
-		if len(t.ParameterSliders) < count {
-			tail := make([]*widget.Float, count-len(t.ParameterSliders))
-			for t := range tail {
-				tail[t] = new(widget.Float)
+			if labelStyle.Text == "" {
+				labelStyle.Text = "---"
+				labelStyle.Alignment = layout.Center
 			}
-			t.ParameterSliders = append(t.ParameterSliders, tail...)
-		}
-		keys := make([]string, 0, len(params))
-		for k := range params {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for i, k := range keys {
-			for t.ParameterSliders[i].Changed() {
-				params[k] = int(t.ParameterSliders[i].Value)
-				// TODO: tracker should have functions to update parameters and
-				// to do this efficiently i.e. not compile the whole patch again
-				t.LoadSong(t.song)
+			bg := func(gtx C) D {
+				gtx.Constraints = layout.Exact(image.Pt(120, 20))
+				var color color.NRGBA
+				if t.CurrentUnit == i {
+					color = unitListSelectedColor
+				} else if t.UnitBtns[i].Hovered() {
+					color = unitListHighlightColor
+				}
+				paint.FillShape(gtx.Ops, color, clip.Rect{Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
+				return D{Size: gtx.Constraints.Min}
 			}
-			t.ParameterSliders[i].Value = float32(params[k])
-			sliderStyle := material.Slider(t.Theme, t.ParameterSliders[i], 0, 128)
-			sliderStyle.Color = t.Theme.Fg
-			k2 := k // avoid k changing in the closure
-			children = append(children, layout.Rigid(func(gtx C) D {
-				return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-					layout.Rigid(Label(k2, white)),
-					layout.Rigid(func(gtx C) D {
-						gtx.Constraints.Min.X = 200
-						return sliderStyle.Layout(gtx)
-					}))
-			}))
+			return layout.Stack{Alignment: layout.W}.Layout(gtx,
+				layout.Stacked(bg),
+				layout.Expanded(labelStyle.Layout),
+				layout.Expanded(t.UnitBtns[i].Layout))
 		}
-		return layout.Flex{Axis: layout.Vertical}.Layout(gtx, children...)
+		return t.UnitList.Layout(gtx, len(t.song.Patch.Instruments[t.CurrentInstrument].Units), listElem)
 	}
 }

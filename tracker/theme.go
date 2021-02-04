@@ -85,9 +85,16 @@ var patternSelectionColor = color.NRGBA{R: 19, G: 40, B: 60, A: 128}
 
 var inactiveBtnColor = color.NRGBA{R: 61, G: 55, B: 55, A: 255}
 
-var instrumentSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
+var instrumentSurfaceColor = color.NRGBA{R: 45, G: 45, B: 45, A: 255}
 
 var songSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
 
-var popupSurfaceColor = color.NRGBA{R: 45, G: 45, B: 46, A: 255}
+var popupSurfaceColor = color.NRGBA{R: 50, G: 50, B: 51, A: 255}
 var popupShadowColor = color.NRGBA{R: 0, G: 0, B: 0, A: 192}
+
+var unitListSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
+var unitListSelectedColor = color.NRGBA{R: 55, G: 55, B: 61, A: 255}
+var unitListHighlightColor = color.NRGBA{R: 42, G: 45, B: 61, A: 255}
+
+var unitSurfaceColor = color.NRGBA{R: 30, G: 30, B: 30, A: 255}
+var unitTypeListHighlightColor = color.NRGBA{R: 42, G: 45, B: 61, A: 255}
