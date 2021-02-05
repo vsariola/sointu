@@ -109,8 +109,7 @@ func (t *Tracker) layoutUnitTypeChooser() layout.Widget {
 		paint.FillShape(gtx.Ops, unitSurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
 		listElem := func(gtx C, i int) D {
 			for t.ChooseUnitTypeBtns[i].Clicked() {
-				u := defaultUnits[allUnits[i]]
-				t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit] = (&u).Copy()
+				t.SetUnit(allUnits[i])
 			}
 			labelStyle := LabelStyle{Text: allUnits[i], ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
 			bg := func(gtx C) D {
