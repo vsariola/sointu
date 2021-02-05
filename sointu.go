@@ -120,6 +120,10 @@ func Render(synth Synth, buffer []float32) error {
 	return nil
 }
 
+type SynthService interface {
+	Compile(patch Patch) (Synth, error)
+}
+
 type AudioSink interface {
 	WriteAudio(buffer []float32) (err error)
 	Close() error

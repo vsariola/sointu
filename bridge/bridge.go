@@ -13,6 +13,14 @@ import (
 	"github.com/vsariola/sointu/compiler"
 )
 
+type BridgeService struct {
+}
+
+func (s BridgeService) Compile(patch sointu.Patch) (sointu.Synth, error) {
+	synth, err := Synth(patch)
+	return synth, err
+}
+
 func Synth(patch sointu.Patch) (*C.Synth, error) {
 	s := new(C.Synth)
 	comPatch, err := compiler.Encode(&patch, compiler.AllFeatures{})

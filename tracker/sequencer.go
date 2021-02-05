@@ -1,7 +1,6 @@
 package tracker
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"sync"
@@ -22,8 +21,9 @@ const SEQUENCER_MAX_READ_TRIES = 1000
 type Sequencer struct {
 	// we use mutex to ensure that voices are not triggered during readaudio or
 	// that the synth is not changed when audio is being read
-	mutex sync.Mutex
-	synth sointu.Synth
+	mutex   sync.Mutex
+	synth   sointu.Synth
+	service sointu.SynthService
 	// this iterator is a bit unconventional in the sense that it might return
 	// hasNext false, but might still return hasNext true in future attempts if
 	// new rows become available.
@@ -37,11 +37,11 @@ type Note struct {
 	Note  byte
 }
 
-func NewSequencer(synth sointu.Synth, rowLength int, iterator func() ([]Note, bool)) *Sequencer {
+func NewSequencer(service sointu.SynthService, iterator func() ([]Note, bool)) *Sequencer {
 	return &Sequencer{
-		synth:     synth,
+		service:   service,
 		iterator:  iterator,
-		rowLength: rowLength,
+		rowLength: math.MaxInt32,
 		rowTime:   math.MaxInt32,
 	}
 }
@@ -49,9 +49,6 @@ func NewSequencer(synth sointu.Synth, rowLength int, iterator func() ([]Note, bo
 func (s *Sequencer) ReadAudio(buffer []float32) (int, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if s.synth == nil {
-		return 0, errors.New("cannot Sequencer.ReadAudio; synth is nil")
-	}
 	totalRendered := 0
 	for i := 0; i < SEQUENCER_MAX_READ_TRIES; i++ {
 		gotRow := true
@@ -75,11 +72,21 @@ func (s *Sequencer) ReadAudio(buffer []float32) (int, error) {
 		if !gotRow {
 			rowTimeRemaining = math.MaxInt32
 		}
-		rendered, timeAdvanced, err := s.synth.Render(buffer[totalRendered*2:], rowTimeRemaining)
-		totalRendered += rendered
-		s.rowTime += timeAdvanced
-		if err != nil {
-			return totalRendered * 2, fmt.Errorf("synth.Render failed: %v", err)
+		if s.synth != nil {
+			rendered, timeAdvanced, err := s.synth.Render(buffer[totalRendered*2:], rowTimeRemaining)
+			if err != nil {
+				s.synth = nil
+			}
+			totalRendered += rendered
+			s.rowTime += timeAdvanced
+		} else {
+			for totalRendered*2 < len(buffer) && rowTimeRemaining > 0 {
+				buffer[totalRendered*2] = 0
+				buffer[totalRendered*2+1] = 0
+				totalRendered++
+				s.rowTime++
+				rowTimeRemaining--
+			}
 		}
 		if totalRendered*2 >= len(buffer) {
 			return totalRendered * 2, nil
@@ -93,7 +100,9 @@ func (s *Sequencer) SetPatch(patch sointu.Patch) {
 	s.mutex.Lock()
 	if s.synth != nil {
 		s.synth.Update(patch)
-	} // TODO: what is s.synth is nil?
+	} else {
+		s.synth, _ = s.service.Compile(patch)
+	}
 	s.mutex.Unlock()
 }
 
@@ -119,9 +128,11 @@ func (s *Sequencer) Release(voice int) {
 
 // doNote is the internal trigger/release function that is not thread safe
 func (s *Sequencer) doNote(voice int, note byte) {
-	if note == 0 {
-		s.synth.Release(voice)
-	} else {
-		s.synth.Trigger(voice, note)
+	if s.synth != nil {
+		if note == 0 {
+			s.synth.Release(voice)
+		} else {
+			s.synth.Trigger(voice, note)
+		}
 	}
 }

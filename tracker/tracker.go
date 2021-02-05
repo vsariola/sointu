@@ -9,7 +9,6 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/bridge"
 )
 
 type Tracker struct {
@@ -70,7 +69,6 @@ type Tracker struct {
 	rowJump      chan int
 	patternJump  chan int
 	audioContext sointu.AudioContext
-	synth        sointu.Synth
 	playBuffer   []float32
 	closer       chan struct{}
 	undoStack    []sointu.Song
@@ -111,51 +109,17 @@ func (t *Tracker) TogglePlay() {
 func (t *Tracker) sequencerLoop(closer <-chan struct{}) {
 	output := t.audioContext.Output()
 	defer output.Close()
-	synth, err := bridge.Synth(t.song.Patch)
-	if err != nil {
-		panic("cannot create a synth with the default patch")
-	}
-	curVoices := make([]int, 32)
-	t.sequencer = NewSequencer(synth, t.song.SamplesPerRow(), func() ([]Note, bool) {
-		t.playRowPatMutex.Lock()
-		if !t.Playing {
-			t.playRowPatMutex.Unlock()
-			return nil, false
-		}
-		t.PlayPosition.Row++
-		t.PlayPosition.Wrap(t.song)
-		if t.NoteTracking {
-			t.Cursor.SongRow = t.PlayPosition
-			t.SelectionCorner.SongRow = t.PlayPosition
-		}
-		notes := make([]Note, 0, 32)
-		for track := range t.song.Tracks {
-			patternIndex := t.song.Tracks[track].Sequence[t.PlayPosition.Pattern]
-			note := t.song.Tracks[track].Patterns[patternIndex][t.PlayPosition.Row]
-			if note == 1 { // anything but hold causes an action.
-				continue
-			}
-			first := t.song.FirstTrackVoice(track)
-			notes = append(notes, Note{first + curVoices[track], 0})
-			if note > 1 {
-				curVoices[track]++
-				if curVoices[track] >= t.song.Tracks[track].NumVoices {
-					curVoices[track] = 0
-				}
-				notes = append(notes, Note{first + curVoices[track], note})
-			}
-		}
-		t.playRowPatMutex.Unlock()
-		t.ticked <- struct{}{}
-		return notes, true
-	})
 	buffer := make([]float32, 8192)
 	for {
 		select {
 		case <-closer:
 			return
 		default:
-			t.sequencer.ReadAudio(buffer)
+			read, _ := t.sequencer.ReadAudio(buffer)
+			for read < len(buffer) {
+				buffer[read] = 0
+				read++
+			}
 			output.WriteAudio(buffer)
 		}
 	}
@@ -448,7 +412,7 @@ func (t *Tracker) DeleteSelection() {
 	}
 }
 
-func New(audioContext sointu.AudioContext) *Tracker {
+func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tracker {
 	t := &Tracker{
 		Theme:                 material.NewTheme(gofont.Collection()),
 		QuitButton:            new(widget.Clickable),
@@ -495,6 +459,40 @@ func New(audioContext sointu.AudioContext) *Tracker {
 	for range allUnits {
 		t.ChooseUnitTypeBtns = append(t.ChooseUnitTypeBtns, new(widget.Clickable))
 	}
+	curVoices := make([]int, 32)
+	t.sequencer = NewSequencer(synthService, func() ([]Note, bool) {
+		t.playRowPatMutex.Lock()
+		if !t.Playing {
+			t.playRowPatMutex.Unlock()
+			return nil, false
+		}
+		t.PlayPosition.Row++
+		t.PlayPosition.Wrap(t.song)
+		if t.NoteTracking {
+			t.Cursor.SongRow = t.PlayPosition
+			t.SelectionCorner.SongRow = t.PlayPosition
+		}
+		notes := make([]Note, 0, 32)
+		for track := range t.song.Tracks {
+			patternIndex := t.song.Tracks[track].Sequence[t.PlayPosition.Pattern]
+			note := t.song.Tracks[track].Patterns[patternIndex][t.PlayPosition.Row]
+			if note == 1 { // anything but hold causes an action.
+				continue
+			}
+			first := t.song.FirstTrackVoice(track)
+			notes = append(notes, Note{first + curVoices[track], 0})
+			if note > 1 {
+				curVoices[track]++
+				if curVoices[track] >= t.song.Tracks[track].NumVoices {
+					curVoices[track] = 0
+				}
+				notes = append(notes, Note{first + curVoices[track], note})
+			}
+		}
+		t.playRowPatMutex.Unlock()
+		t.ticked <- struct{}{}
+		return notes, true
+	})
 	go t.sequencerLoop(t.closer)
 	if err := t.LoadSong(defaultSong.Copy()); err != nil {
 		panic(fmt.Errorf("cannot load default song: %w", err))
