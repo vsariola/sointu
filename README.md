@@ -30,6 +30,10 @@ Sointu consists of two core elements:
   [yasm](https://yasm.tortall.net). For browsers, the resulting .wat can be
   compiled by [wat2wasm](https://github.com/WebAssembly/wabt).
 
+This is how the current prototype tracker looks like:
+  
+![Screenshot of the tracker](screenshot.png)
+  
 Building
 --------
 
