@@ -112,6 +112,9 @@ func (t *Tracker) layoutInstrumentNames(gtx C) D {
 	dims := instrumentList.Layout(gtx)
 	if t.CurrentInstrument != t.InstrumentDragList.SelectedItem {
 		t.CurrentInstrument = t.InstrumentDragList.SelectedItem
+		if l := len(t.song.Patch.Instruments[t.CurrentInstrument].Units); t.CurrentUnit >= l {
+			t.CurrentUnit = l - 1
+		}
 		op.InvalidateOp{}.Add(gtx.Ops)
 	}
 	return dims
