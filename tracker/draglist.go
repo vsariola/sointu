@@ -61,7 +61,6 @@ func (s *FilledDragListStyle) Layout(gtx C) D {
 			s.dragList.tags = append(s.dragList.tags, false)
 		}
 		bg := func(gtx C) D {
-			gtx.Constraints = layout.Exact(image.Pt(120, 20))
 			var color color.NRGBA
 			if s.dragList.SelectedItem == index {
 				color = s.SelectedColor

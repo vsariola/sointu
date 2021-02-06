@@ -53,9 +53,8 @@ type Tracker struct {
 	ClearUnitBtn          *widget.Clickable
 	ChooseUnitTypeList    *layout.List
 	ChooseUnitTypeBtns    []*widget.Clickable
-	InstrumentBtns        []*widget.Clickable
 	AddUnitBtn            *widget.Clickable
-	InstrumentList        *layout.List
+	InstrumentDragList    *DragList
 	TrackHexCheckBoxes    []*widget.Bool
 	TrackShowHex          []bool
 	TopHorizontalSplit    *Split
@@ -82,7 +81,7 @@ func (t *Tracker) LoadSong(song sointu.Song) error {
 	defer t.songPlayMutex.Unlock()
 	t.song = song
 	t.ClampPositions()
-	if l := len(t.song.Patch.Instruments); t.CurrentInstrument >= len(t.song.Patch.Instruments) {
+	if l := len(t.song.Patch.Instruments); t.CurrentInstrument >= l {
 		t.CurrentInstrument = l - 1
 	}
 	if l := len(t.song.Patch.Instruments[t.CurrentInstrument].Units); t.CurrentUnit >= l {
@@ -226,6 +225,16 @@ func (t *Tracker) AddInstrument() {
 			Units:     units,
 		})
 	}
+	t.sequencer.SetPatch(t.song.Patch)
+}
+
+func (t *Tracker) SwapInstruments(i, j int) {
+	if i < 0 || j < 0 || i >= len(t.song.Patch.Instruments) || j >= len(t.song.Patch.Instruments) {
+		return
+	}
+	t.SaveUndo()
+	instruments := t.song.Patch.Instruments
+	instruments[i], instruments[j] = instruments[j], instruments[i]
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
@@ -460,7 +469,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		closer:                make(chan struct{}),
 		undoStack:             []sointu.Song{},
 		redoStack:             []sointu.Song{},
-		InstrumentList:        &layout.List{Axis: layout.Horizontal},
+		InstrumentDragList:    &DragList{List: &layout.List{Axis: layout.Horizontal}},
 		TopHorizontalSplit:    new(Split),
 		BottomHorizontalSplit: new(Split),
 		VerticalSplit:         new(Split),

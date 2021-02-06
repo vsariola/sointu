@@ -196,7 +196,7 @@ func (t *Tracker) layoutControls(gtx layout.Context) layout.Dimensions {
 
 	return t.TopHorizontalSplit.Layout(gtx,
 		t.layoutSongPanel,
-		t.layoutInstruments(),
+		t.layoutInstruments,
 	)
 
 }

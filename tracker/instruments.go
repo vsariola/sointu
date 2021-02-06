@@ -9,7 +9,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
-	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
@@ -19,13 +18,13 @@ type D = layout.Dimensions
 
 func (t *Tracker) updateInstrumentScroll() {
 	if t.CurrentInstrument > 7 {
-		t.InstrumentList.Position.First = t.CurrentInstrument - 7
+		t.InstrumentDragList.List.Position.First = t.CurrentInstrument - 7
 	} else {
-		t.InstrumentList.Position.First = 0
+		t.InstrumentDragList.List.Position.First = 0
 	}
 }
 
-func (t *Tracker) layoutInstruments() layout.Widget {
+func (t *Tracker) layoutInstruments(gtx C) D {
 	btnStyle := material.IconButton(t.Theme, t.NewInstrumentBtn, widgetForIcon(icons.ContentAdd))
 	btnStyle.Background = transparent
 	btnStyle.Inset = layout.UniformInset(unit.Dp(6))
@@ -34,23 +33,21 @@ func (t *Tracker) layoutInstruments() layout.Widget {
 	} else {
 		btnStyle.Color = disabledTextColor
 	}
-	return func(gtx C) D {
-		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-			layout.Rigid(func(gtx C) D {
-				return layout.Flex{}.Layout(
-					gtx,
-					layout.Flexed(1, t.layoutInstrumentNames()),
-					layout.Rigid(func(gtx C) D {
-						return layout.E.Layout(gtx, btnStyle.Layout)
-					}),
-				)
-			}),
-			layout.Rigid(t.layoutInstrumentHeader()),
-			layout.Flexed(1, t.layoutInstrumentEditor()))
-	}
+	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+		layout.Rigid(func(gtx C) D {
+			return layout.Flex{}.Layout(
+				gtx,
+				layout.Flexed(1, t.layoutInstrumentNames),
+				layout.Rigid(func(gtx C) D {
+					return layout.E.Layout(gtx, btnStyle.Layout)
+				}),
+			)
+		}),
+		layout.Rigid(t.layoutInstrumentHeader),
+		layout.Flexed(1, t.layoutInstrumentEditor))
 }
 
-func (t *Tracker) layoutInstrumentHeader() layout.Widget {
+func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 	headerBg := func(gtx C) D {
 		paint.FillShape(gtx.Ops, instrumentSurfaceColor, clip.Rect{
 			Max: gtx.Constraints.Min,
@@ -87,48 +84,35 @@ func (t *Tracker) layoutInstrumentHeader() layout.Widget {
 	for t.DeleteInstrumentBtn.Clicked() {
 		t.DeleteInstrument()
 	}
-	return func(gtx C) D {
-		return layout.Stack{Alignment: layout.Center}.Layout(gtx,
-			layout.Expanded(headerBg),
-			layout.Stacked(header))
-	}
+	return layout.Stack{Alignment: layout.Center}.Layout(gtx,
+		layout.Expanded(headerBg),
+		layout.Stacked(header))
 }
 
-func (t *Tracker) layoutInstrumentNames() layout.Widget {
-	return func(gtx C) D {
-		gtx.Constraints.Max.Y = gtx.Px(unit.Dp(36))
+func (t *Tracker) layoutInstrumentNames(gtx C) D {
+
+	element := func(gtx C, i int) D {
 		gtx.Constraints.Min.Y = gtx.Px(unit.Dp(36))
-
-		count := len(t.song.Patch.Instruments)
-		if len(t.InstrumentBtns) < count {
-			tail := make([]*widget.Clickable, count-len(t.InstrumentBtns))
-			for t := range tail {
-				tail[t] = new(widget.Clickable)
-			}
-			t.InstrumentBtns = append(t.InstrumentBtns, tail...)
-		}
-
-		defer op.Save(gtx.Ops).Load()
-
-		t.InstrumentList.Layout(gtx, count, func(gtx C, index int) D {
-			for t.InstrumentBtns[index].Clicked() {
-				t.CurrentInstrument = index
-			}
-			btnStyle := material.Button(t.Theme, t.InstrumentBtns[index], fmt.Sprintf("%v", index))
-			btnStyle.CornerRadius = unit.Dp(0)
-			btnStyle.Color = t.Theme.Fg
-			if t.CurrentInstrument == index {
-				btnStyle.Background = instrumentSurfaceColor
-			} else {
-				btnStyle.Background = transparent
-			}
-			return btnStyle.Layout(gtx)
+		labelStyle := LabelStyle{Text: fmt.Sprintf("%v", i), ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
+		return layout.Inset{Left: unit.Dp(10), Right: unit.Dp(10)}.Layout(gtx, func(gtx C) D {
+			return layout.Center.Layout(gtx, labelStyle.Layout)
 		})
-
-		return layout.Dimensions{Size: gtx.Constraints.Max}
 	}
+
+	instrumentList := FilledDragList(t.Theme, t.InstrumentDragList, len(t.song.Patch.Instruments), element, t.SwapInstruments)
+	instrumentList.SelectedColor = instrumentSurfaceColor
+	instrumentList.HoverColor = instrumentHoverColor
+	instrumentList.SurfaceColor = transparent
+
+	t.InstrumentDragList.SelectedItem = t.CurrentInstrument
+	dims := instrumentList.Layout(gtx)
+	if t.CurrentInstrument != t.InstrumentDragList.SelectedItem {
+		t.CurrentInstrument = t.InstrumentDragList.SelectedItem
+		op.InvalidateOp{}.Add(gtx.Ops)
+	}
+	return dims
 }
-func (t *Tracker) layoutInstrumentEditor() layout.Widget {
+func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 	for t.AddUnitBtn.Clicked() {
 		t.AddUnit()
 	}
@@ -149,23 +133,21 @@ func (t *Tracker) layoutInstrumentEditor() layout.Widget {
 
 	unitList := FilledDragList(t.Theme, t.UnitDragList, len(t.song.Patch.Instruments[t.CurrentInstrument].Units), element, t.SwapUnits)
 
-	return func(gtx C) D {
-		t.UnitDragList.SelectedItem = t.CurrentUnit
-		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-			layout.Rigid(func(gtx C) D {
-				return layout.Stack{Alignment: layout.SE}.Layout(gtx,
-					layout.Expanded(func(gtx C) D {
-						dims := unitList.Layout(gtx)
-						if t.CurrentUnit != t.UnitDragList.SelectedItem {
-							t.CurrentUnit = t.UnitDragList.SelectedItem
-							op.InvalidateOp{}.Add(gtx.Ops)
-						}
-						return dims
-					}),
-					layout.Stacked(func(gtx C) D {
-						return margin.Layout(gtx, addUnitBtnStyle.Layout)
-					}))
-			}),
-			layout.Rigid(t.layoutUnitEditor()))
-	}
+	t.UnitDragList.SelectedItem = t.CurrentUnit
+	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+		layout.Rigid(func(gtx C) D {
+			return layout.Stack{Alignment: layout.SE}.Layout(gtx,
+				layout.Expanded(func(gtx C) D {
+					dims := unitList.Layout(gtx)
+					if t.CurrentUnit != t.UnitDragList.SelectedItem {
+						t.CurrentUnit = t.UnitDragList.SelectedItem
+						op.InvalidateOp{}.Add(gtx.Ops)
+					}
+					return dims
+				}),
+				layout.Stacked(func(gtx C) D {
+					return margin.Layout(gtx, addUnitBtnStyle.Layout)
+				}))
+		}),
+		layout.Rigid(t.layoutUnitEditor))
 }
