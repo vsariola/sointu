@@ -2,10 +2,12 @@ package tracker
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"gioui.org/font/gofont"
 	"gioui.org/layout"
+	"gioui.org/text"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/vsariola/sointu"
@@ -34,6 +36,7 @@ type Tracker struct {
 	RowsPerPattern        *NumberInput
 	RowsPerBeat           *NumberInput
 	InstrumentVoices      *NumberInput
+	InstrumentNameEditor  *widget.Editor
 	NewTrackBtn           *widget.Clickable
 	NewInstrumentBtn      *widget.Clickable
 	DeleteInstrumentBtn   *widget.Clickable
@@ -162,6 +165,14 @@ func (t *Tracker) SetInstrumentVoices(value int) bool {
 		return true
 	}
 	return false
+}
+
+func (t *Tracker) SetInstrumentName(name string) {
+	name = strings.TrimSpace(name)
+	if name != t.song.Patch.Instruments[t.CurrentInstrument].Name {
+		t.SaveUndo()
+		t.song.Patch.Instruments[t.CurrentInstrument].Name = name
+	}
 }
 
 func (t *Tracker) SetBPM(value int) bool {
@@ -442,6 +453,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		RowsPerPattern:        new(NumberInput),
 		RowsPerBeat:           new(NumberInput),
 		InstrumentVoices:      new(NumberInput),
+		InstrumentNameEditor:  &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle},
 		NewTrackBtn:           new(widget.Clickable),
 		NewInstrumentBtn:      new(widget.Clickable),
 		DeleteInstrumentBtn:   new(widget.Clickable),

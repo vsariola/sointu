@@ -1,14 +1,16 @@
 package tracker
 
 import (
-	"fmt"
 	"image"
 
+	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
+	"gioui.org/text"
 	"gioui.org/unit"
+	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
@@ -63,8 +65,9 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 		} else {
 			deleteInstrumentBtnStyle.Color = disabledTextColor
 		}
-		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-			layout.Rigid(Label("Voices:", white)),
+
+		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+			layout.Rigid(Label("Voices: ", white)),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				maxRemain := 32 - t.song.Patch.TotalVoices() + t.song.Patch.Instruments[t.CurrentInstrument].NumVoices
 				if maxRemain < 0 {
@@ -90,16 +93,45 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 }
 
 func (t *Tracker) layoutInstrumentNames(gtx C) D {
-
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Min.Y = gtx.Px(unit.Dp(36))
-		text := t.song.Patch.Instruments[i].Name
-		if text == "" {
-			text = fmt.Sprintf("%v", i)
+		gtx.Constraints.Min.X = gtx.Px(unit.Dp(30))
+		grabhandle := LabelStyle{Text: "", ShadeColor: black, Color: white, FontSize: unit.Sp(10), Alignment: layout.Center}
+		if i == t.CurrentInstrument {
+			grabhandle.Text = ":::"
 		}
-		labelStyle := LabelStyle{Text: text, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
-		return layout.Inset{Left: unit.Dp(10), Right: unit.Dp(10)}.Layout(gtx, func(gtx C) D {
+		label := func(gtx C) D {
+			if i == t.CurrentInstrument {
+				for _, ev := range t.InstrumentNameEditor.Events() {
+					_, ok := ev.(widget.SubmitEvent)
+					if ok {
+						t.InstrumentNameEditor = &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle} // TODO: is there any other way to defocus the editor
+						break
+					}
+				}
+				if n := t.song.Patch.Instruments[t.CurrentInstrument].Name; n != t.InstrumentNameEditor.Text() {
+					t.InstrumentNameEditor.SetText(n)
+				}
+				editor := material.Editor(t.Theme, t.InstrumentNameEditor, "Instr")
+				editor.Color = instrumentNameColor
+				editor.HintColor = instrumentNameHintColor
+				editor.TextSize = unit.Dp(12)
+				dims := layout.Center.Layout(gtx, editor.Layout)
+				t.SetInstrumentName(t.InstrumentNameEditor.Text())
+				return dims
+			}
+			text := t.song.Patch.Instruments[i].Name
+			if text == "" {
+				text = "Instr"
+			}
+			labelStyle := LabelStyle{Text: text, ShadeColor: black, Color: white, FontSize: unit.Sp(12)}
 			return layout.Center.Layout(gtx, labelStyle.Layout)
+		}
+		return layout.Inset{Left: unit.Dp(6), Right: unit.Dp(6)}.Layout(gtx, func(gtx C) D {
+			return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(grabhandle.Layout),
+				layout.Rigid(label),
+			)
 		})
 	}
 
@@ -109,6 +141,8 @@ func (t *Tracker) layoutInstrumentNames(gtx C) D {
 	instrumentList.SurfaceColor = transparent
 
 	t.InstrumentDragList.SelectedItem = t.CurrentInstrument
+	defer op.Save(gtx.Ops).Load()
+	pointer.PassOp{Pass: true}.Add(gtx.Ops)
 	dims := instrumentList.Layout(gtx)
 	if t.CurrentInstrument != t.InstrumentDragList.SelectedItem {
 		t.CurrentInstrument = t.InstrumentDragList.SelectedItem

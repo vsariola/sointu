@@ -45,6 +45,9 @@ var noteMap = map[string]int{
 // KeyEvent handles incoming key events and returns true if repaint is needed.
 func (t *Tracker) KeyEvent(e key.Event) bool {
 	if e.State == key.Press {
+		if t.InstrumentNameEditor.Focused() {
+			return false
+		}
 		switch e.Name {
 		case "Z":
 			if e.Modifiers.Contain(key.ModCtrl) {

@@ -87,6 +87,8 @@ var inactiveBtnColor = color.NRGBA{R: 61, G: 55, B: 55, A: 255}
 
 var instrumentSurfaceColor = color.NRGBA{R: 45, G: 45, B: 45, A: 255}
 var instrumentHoverColor = color.NRGBA{R: 30, G: 31, B: 38, A: 255}
+var instrumentNameColor = color.NRGBA{R: 255, G: 255, B: 255, A: 255}
+var instrumentNameHintColor = color.NRGBA{R: 200, G: 200, B: 200, A: 255}
 
 var songSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
 
