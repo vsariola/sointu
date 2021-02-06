@@ -48,8 +48,7 @@ type Tracker struct {
 	FileMenuBtn           *widget.Clickable
 	FileMenuVisible       bool
 	ParameterSliders      []*widget.Float
-	UnitBtns              []*widget.Clickable
-	UnitList              *layout.List
+	UnitDragList          *DragList
 	DeleteUnitBtn         *widget.Clickable
 	ClearUnitBtn          *widget.Clickable
 	ChooseUnitTypeList    *layout.List
@@ -347,6 +346,16 @@ func (t *Tracker) DeleteUnit() {
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
+func (t *Tracker) SwapUnits(i, j int) {
+	if i < 0 || j < 0 || i >= len(t.song.Patch.Instruments[t.CurrentInstrument].Units) || j >= len(t.song.Patch.Instruments[t.CurrentInstrument].Units) {
+		return
+	}
+	t.SaveUndo()
+	units := t.song.Patch.Instruments[t.CurrentInstrument].Units
+	units[i], units[j] = units[j], units[i]
+	t.sequencer.SetPatch(t.song.Patch)
+}
+
 func (t *Tracker) ClampPositions() {
 	t.PlayPosition.Clamp(t.song)
 	t.Cursor.Clamp(t.song)
@@ -437,7 +446,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		AddUnitBtn:            new(widget.Clickable),
 		DeleteUnitBtn:         new(widget.Clickable),
 		ClearUnitBtn:          new(widget.Clickable),
-		UnitList:              &layout.List{Axis: layout.Vertical},
+		UnitDragList:          &DragList{List: &layout.List{Axis: layout.Vertical}},
 		setPlaying:            make(chan bool),
 		rowJump:               make(chan int),
 		patternJump:           make(chan int),

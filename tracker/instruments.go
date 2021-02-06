@@ -3,7 +3,6 @@ package tracker
 import (
 	"fmt"
 	"image"
-	"image/color"
 
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -137,58 +136,36 @@ func (t *Tracker) layoutInstrumentEditor() layout.Widget {
 	addUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(4))
 	margin := layout.UniformInset(unit.Dp(2))
 
+	element := func(gtx C, i int) D {
+		gtx.Constraints = layout.Exact(image.Pt(gtx.Px(unit.Dp(120)), gtx.Px(unit.Dp(20))))
+		u := t.song.Patch.Instruments[t.CurrentInstrument].Units[i]
+		labelStyle := LabelStyle{Text: u.Type, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
+		if labelStyle.Text == "" {
+			labelStyle.Text = "---"
+			labelStyle.Alignment = layout.Center
+		}
+		return labelStyle.Layout(gtx)
+	}
+
+	unitList := FilledDragList(t.Theme, t.UnitDragList, len(t.song.Patch.Instruments[t.CurrentInstrument].Units), element, t.SwapUnits)
+
 	return func(gtx C) D {
+		t.UnitDragList.SelectedItem = t.CurrentUnit
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
 				return layout.Stack{Alignment: layout.SE}.Layout(gtx,
-					layout.Expanded(t.layoutUnitList()),
+					layout.Expanded(func(gtx C) D {
+						dims := unitList.Layout(gtx)
+						if t.CurrentUnit != t.UnitDragList.SelectedItem {
+							t.CurrentUnit = t.UnitDragList.SelectedItem
+							op.InvalidateOp{}.Add(gtx.Ops)
+						}
+						return dims
+					}),
 					layout.Stacked(func(gtx C) D {
 						return margin.Layout(gtx, addUnitBtnStyle.Layout)
 					}))
 			}),
 			layout.Rigid(t.layoutUnitEditor()))
-	}
-}
-
-func (t *Tracker) layoutUnitList() layout.Widget {
-	return func(gtx C) D {
-		paint.FillShape(gtx.Ops, unitListSurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
-		defer op.Save(gtx.Ops).Load()
-
-		gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
-		units := t.song.Patch.Instruments[t.CurrentInstrument].Units
-		count := len(units)
-		for len(t.UnitBtns) < count {
-			t.UnitBtns = append(t.UnitBtns, new(widget.Clickable))
-		}
-
-		listElem := func(gtx C, i int) D {
-			for t.UnitBtns[i].Clicked() {
-				t.CurrentUnit = i
-				op.InvalidateOp{}.Add(gtx.Ops)
-			}
-			u := t.song.Patch.Instruments[t.CurrentInstrument].Units[i]
-			labelStyle := LabelStyle{Text: u.Type, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
-			if labelStyle.Text == "" {
-				labelStyle.Text = "---"
-				labelStyle.Alignment = layout.Center
-			}
-			bg := func(gtx C) D {
-				gtx.Constraints = layout.Exact(image.Pt(120, 20))
-				var color color.NRGBA
-				if t.CurrentUnit == i {
-					color = unitListSelectedColor
-				} else if t.UnitBtns[i].Hovered() {
-					color = unitListHighlightColor
-				}
-				paint.FillShape(gtx.Ops, color, clip.Rect{Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
-				return D{Size: gtx.Constraints.Min}
-			}
-			return layout.Stack{Alignment: layout.W}.Layout(gtx,
-				layout.Stacked(bg),
-				layout.Expanded(labelStyle.Layout),
-				layout.Expanded(t.UnitBtns[i].Layout))
-		}
-		return t.UnitList.Layout(gtx, len(t.song.Patch.Instruments[t.CurrentInstrument].Units), listElem)
 	}
 }

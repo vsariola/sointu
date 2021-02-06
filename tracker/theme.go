@@ -92,9 +92,9 @@ var songSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
 var popupSurfaceColor = color.NRGBA{R: 50, G: 50, B: 51, A: 255}
 var popupShadowColor = color.NRGBA{R: 0, G: 0, B: 0, A: 192}
 
-var unitListSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
-var unitListSelectedColor = color.NRGBA{R: 55, G: 55, B: 61, A: 255}
-var unitListHighlightColor = color.NRGBA{R: 42, G: 45, B: 61, A: 255}
+var dragListSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
+var dragListSelectedColor = color.NRGBA{R: 55, G: 55, B: 61, A: 255}
+var dragListHoverColor = color.NRGBA{R: 42, G: 45, B: 61, A: 255}
 
 var unitSurfaceColor = color.NRGBA{R: 30, G: 30, B: 30, A: 255}
 var unitTypeListHighlightColor = color.NRGBA{R: 42, G: 45, B: 61, A: 255}
