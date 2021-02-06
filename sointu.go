@@ -33,6 +33,7 @@ const (
 
 // Instrument includes a list of units consisting of the instrument, and the number of polyphonic voices for this instrument
 type Instrument struct {
+	Name      string
 	NumVoices int
 	Units     []Unit
 }
@@ -42,7 +43,7 @@ func (instr *Instrument) Copy() Instrument {
 	for i, u := range instr.Units {
 		units[i] = u.Copy()
 	}
-	return Instrument{NumVoices: instr.NumVoices, Units: units}
+	return Instrument{Name: instr.Name, NumVoices: instr.NumVoices, Units: units}
 }
 
 // Patch is simply a list of instruments used in a song

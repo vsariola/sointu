@@ -210,21 +210,16 @@ func (t *Tracker) AddTrack() {
 }
 
 func (t *Tracker) AddInstrument() {
-	t.SaveUndo()
-	if t.song.Patch.TotalVoices() < 32 {
-		units := make([]sointu.Unit, len(defaultInstrument.Units))
-		for i, defUnit := range defaultInstrument.Units {
-			units[i].Type = defUnit.Type
-			units[i].Parameters = make(map[string]int)
-			for k, v := range defUnit.Parameters {
-				units[i].Parameters[k] = v
-			}
-		}
-		t.song.Patch.Instruments = append(t.song.Patch.Instruments, sointu.Instrument{
-			NumVoices: defaultInstrument.NumVoices,
-			Units:     units,
-		})
+	if t.song.Patch.TotalVoices() >= 32 {
+		return
 	}
+	t.SaveUndo()
+	instr := make([]sointu.Instrument, len(t.song.Patch.Instruments)+1)
+	copy(instr, t.song.Patch.Instruments[:t.CurrentInstrument+1])
+	instr[t.CurrentInstrument+1] = defaultInstrument.Copy()
+	copy(instr[t.CurrentInstrument+2:], t.song.Patch.Instruments[t.CurrentInstrument+1:])
+	t.song.Patch.Instruments = instr
+	t.CurrentInstrument++
 	t.sequencer.SetPatch(t.song.Patch)
 }
 

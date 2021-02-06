@@ -93,7 +93,11 @@ func (t *Tracker) layoutInstrumentNames(gtx C) D {
 
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Min.Y = gtx.Px(unit.Dp(36))
-		labelStyle := LabelStyle{Text: fmt.Sprintf("%v", i), ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
+		text := t.song.Patch.Instruments[i].Name
+		if text == "" {
+			text = fmt.Sprintf("%v", i)
+		}
+		labelStyle := LabelStyle{Text: text, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
 		return layout.Inset{Left: unit.Dp(10), Right: unit.Dp(10)}.Layout(gtx, func(gtx C) D {
 			return layout.Center.Layout(gtx, labelStyle.Layout)
 		})

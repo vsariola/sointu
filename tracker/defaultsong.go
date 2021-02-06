@@ -33,9 +33,7 @@ var defaultUnits = map[string]sointu.Unit{
 	"aux":        {Type: "aux", Parameters: map[string]int{"stereo": 1, "gain": 64, "channel": 2}},
 	"delay": {Type: "delay",
 		Parameters: map[string]int{"damp": 0, "dry": 128, "feedback": 96, "notetracking": 0, "pregain": 40, "stereo": 0},
-		VarArgs: []int{1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618,
-			1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642,
-		}},
+		VarArgs:    []int{6615 * 2}},
 	"in":         {Type: "in", Parameters: map[string]int{"stereo": 1, "channel": 2}},
 	"speed":      {Type: "speed", Parameters: map[string]int{}},
 	"compressor": {Type: "compressor", Parameters: map[string]int{"stereo": 0, "attack": 64, "release": 64, "invgain": 64, "threshold": 64, "ratio": 64}},
@@ -52,6 +50,7 @@ func init() {
 }
 
 var defaultInstrument = sointu.Instrument{
+	Name:      "Instr",
 	NumVoices: 1,
 	Units: []sointu.Unit{
 		defaultUnits["envelope"],
@@ -59,7 +58,7 @@ var defaultInstrument = sointu.Instrument{
 		defaultUnits["mulp"],
 		defaultUnits["delay"],
 		defaultUnits["pan"],
-		defaultUnits["out"],
+		defaultUnits["outaux"],
 	},
 }
 
@@ -68,8 +67,17 @@ var defaultSong = sointu.Song{
 	RowsPerPattern: 16,
 	RowsPerBeat:    4,
 	Tracks: []sointu.Track{
-		{NumVoices: 2, Sequence: []byte{0, 0, 0, 1}, Patterns: [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}, {64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 75, 0, 75, 0, 80, 0}}},
-		{NumVoices: 2, Sequence: []byte{0, 0, 0, 1}, Patterns: [][]byte{{0, 0, 64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0}, {32, 0, 64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 68, 0, 68, 0}}},
+		{NumVoices: 1, Sequence: []byte{0, 0, 0, 1}, Patterns: [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}, {64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 75, 0, 75, 0, 80, 0}}},
 	},
-	Patch: sointu.Patch{Instruments: []sointu.Instrument{{NumVoices: 4, Units: defaultInstrument.Units}}},
+	Patch: sointu.Patch{Instruments: []sointu.Instrument{
+		defaultInstrument,
+		{Name: "Global", NumVoices: 1, Units: []sointu.Unit{
+			defaultUnits["in"],
+			{Type: "delay",
+				Parameters: map[string]int{"damp": 0, "dry": 128, "feedback": 96, "notetracking": 0, "pregain": 40, "stereo": 1},
+				VarArgs: []int{1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618,
+					1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642,
+				}},
+			defaultUnits["out"],
+		}}}},
 }
