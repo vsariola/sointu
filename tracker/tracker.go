@@ -82,6 +82,12 @@ func (t *Tracker) LoadSong(song sointu.Song) error {
 	defer t.songPlayMutex.Unlock()
 	t.song = song
 	t.ClampPositions()
+	if l := len(t.song.Patch.Instruments); t.CurrentInstrument >= len(t.song.Patch.Instruments) {
+		t.CurrentInstrument = l - 1
+	}
+	if l := len(t.song.Patch.Instruments[t.CurrentInstrument].Units); t.CurrentUnit >= l {
+		t.CurrentUnit = l - 1
+	}
 	if t.sequencer != nil {
 		t.sequencer.SetPatch(song.Patch)
 		t.sequencer.SetRowLength(song.SamplesPerRow())
