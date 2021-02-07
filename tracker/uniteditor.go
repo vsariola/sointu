@@ -52,8 +52,9 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 		sliderStyle.Color = t.Theme.Fg
 		var valueText string
 		value := params[ut[index].Name]
-		if ut[index].ToString != nil {
-			valueText = fmt.Sprintf("%v / %v", value, ut[index].ToString(value))
+		hint := t.song.ParamHintString(t.CurrentInstrument, t.CurrentUnit, ut[index].Name)
+		if hint != "" {
+			valueText = fmt.Sprintf("%v / %v", value, hint)
 		} else {
 			valueText = fmt.Sprintf("%v", value)
 		}

@@ -147,7 +147,6 @@ type UnitParameter struct {
 	MaxValue    int    // maximum value of the parameter, inclusive
 	CanSet      bool   // if this parameter can be set before hand i.e. through the gui
 	CanModulate bool   // if this parameter can be modulated i.e. has a port number in "send" unit
-	ToString    func(value int) string
 }
 
 func engineeringTime(sec float64) string {
@@ -157,17 +156,6 @@ func engineeringTime(sec float64) string {
 		return fmt.Sprintf("%.2f ms", sec*1e3)
 	}
 	return fmt.Sprintf("%.2f s", sec)
-}
-
-func nonLinearMapToString(value int) string {
-	sec := math.Pow(2, 24*float64(value)/128) / 44100
-	return engineeringTime(sec)
-}
-
-func compressorToString(value int) string {
-	alpha := math.Pow(2, -24*float64(value)/128) // alpha is the "smoothing factor" of first order low pass iir
-	sec := -1 / (44100 * math.Log(1-alpha))      // from smoothing factor to time constant, https://en.wikipedia.org/wiki/Exponential_smoothing
-	return engineeringTime(sec)
 }
 
 // UnitTypes documents all the available unit types and if they support stereo variant
@@ -219,13 +207,11 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "delaytime", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true}},
 	"compressor": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: compressorToString},
-		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: compressorToString},
+		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "invgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "threshold", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "ratio", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: func(value int) string {
-			return fmt.Sprintf("1 : %.3f", 1-float64(value)/128)
-		}}},
+		{Name: "ratio", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"speed": []UnitParameter{},
 	"out": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
@@ -247,10 +233,10 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "sendpop", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}},
 	"envelope": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: nonLinearMapToString},
-		{Name: "decay", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: nonLinearMapToString},
+		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "decay", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "sustain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: nonLinearMapToString},
+		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"noise": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
@@ -258,38 +244,13 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"oscillator": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "transpose", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: func(value int) string {
-			value -= 64
-			octaves := value / 12
-			semitones := value % 12
-			if octaves != 0 {
-				return fmt.Sprintf("%v octaves, %v semitones", octaves, semitones)
-			}
-			return fmt.Sprintf("%v semitones", semitones)
-		}},
-		{Name: "detune", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: func(value int) string {
-			return fmt.Sprintf("%v semitones", float32(value-64)/64.0)
-		}},
+		{Name: "transpose", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "detune", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "phase", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "color", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "shape", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "type", MinValue: int(Sine), MaxValue: int(Sample), CanSet: true, CanModulate: false, ToString: func(value int) string {
-			switch value {
-			case Sine:
-				return "Sine"
-			case Trisaw:
-				return "Trisaw"
-			case Pulse:
-				return "Pulse"
-			case Gate:
-				return "Gate"
-			case Sample:
-				return "Sample"
-			default:
-				return "Unknown"
-			}
-		}},
+		{Name: "type", MinValue: int(Sine), MaxValue: int(Sample), CanSet: true, CanModulate: false},
 		{Name: "lfo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "unison", MinValue: 0, MaxValue: 3, CanSet: true, CanModulate: false},
 		{Name: "samplestart", MinValue: 0, MaxValue: 3440659, CanSet: true, CanModulate: false},
@@ -387,6 +348,108 @@ func (s *Song) Validate() error {
 		return errors.New("Tracks use too many voices")
 	}
 	return nil
+}
+
+func (s *Song) ParamHintString(instrIndex, unitIndex int, param string) string {
+	if instrIndex < 0 || instrIndex >= len(s.Patch.Instruments) {
+		return ""
+	}
+	instr := s.Patch.Instruments[instrIndex]
+	if unitIndex < 0 || unitIndex >= len(instr.Units) {
+		return ""
+	}
+	unit := instr.Units[unitIndex]
+	value := unit.Parameters[param]
+	switch unit.Type {
+	case "envelope":
+		switch param {
+		case "attack":
+			return engineeringTime(math.Pow(2, 24*float64(value)/128) / 44100)
+		case "decay":
+			return engineeringTime(math.Pow(2, 24*float64(value)/128) / 44100 * (1 - float64(unit.Parameters["sustain"])/128))
+		case "release":
+			return engineeringTime(math.Pow(2, 24*float64(value)/128) / 44100 * float64(unit.Parameters["sustain"]) / 128)
+		}
+	case "oscillator":
+		switch param {
+		case "type":
+			switch value {
+			case Sine:
+				return "Sine"
+			case Trisaw:
+				return "Trisaw"
+			case Pulse:
+				return "Pulse"
+			case Gate:
+				return "Gate"
+			case Sample:
+				return "Sample"
+			default:
+				return "Unknown"
+			}
+		case "transpose":
+			relvalue := value - 64
+			octaves := relvalue / 12
+			semitones := relvalue % 12
+			if octaves != 0 {
+				return fmt.Sprintf("%v oct, %v st", octaves, semitones)
+			}
+			return fmt.Sprintf("%v st", semitones)
+		case "detune":
+			return fmt.Sprintf("%v st", float32(value-64)/64.0)
+		}
+	case "compressor":
+		switch param {
+		case "attack":
+			fallthrough
+		case "release":
+			alpha := math.Pow(2, -24*float64(value)/128) // alpha is the "smoothing factor" of first order low pass iir
+			sec := -1 / (44100 * math.Log(1-alpha))      // from smoothing factor to time constant, https://en.wikipedia.org/wiki/Exponential_smoothing
+			return engineeringTime(sec)
+		case "ratio":
+			return fmt.Sprintf("1 : %.3f", 1-float64(value)/128)
+		}
+	case "send":
+		if param == "voice" || param == "unit" || param == "port" {
+			targetVoice := unit.Parameters["voice"]
+			if param == "voice" && targetVoice == 0 {
+				return "self"
+			}
+			targetInstrument := instrIndex
+			if targetVoice > 0 { // global send, find the instrument
+				if targetVoice > s.Patch.TotalVoices() {
+					return ""
+				}
+				targetVoice--
+				targetInstrument = 0
+				for targetVoice >= s.Patch.Instruments[targetInstrument].NumVoices {
+					targetVoice -= s.Patch.Instruments[targetInstrument].NumVoices
+					targetInstrument++
+				}
+			}
+			if param == "voice" {
+				return fmt.Sprintf("%v (voice %v)", s.Patch.Instruments[targetInstrument].Name, targetVoice)
+			}
+			targetUnitIndex := unit.Parameters["unit"]
+			units := s.Patch.Instruments[targetInstrument].Units
+			if targetUnitIndex < 0 || targetUnitIndex >= len(units) {
+				return ""
+			}
+			if param == "unit" {
+				return fmt.Sprintf("%v#%v", units[targetUnitIndex].Type, targetUnitIndex)
+			}
+			port := value
+			for _, param := range UnitTypes[units[targetUnitIndex].Type] {
+				if param.CanModulate {
+					port--
+					if port < 0 {
+						return param.Name
+					}
+				}
+			}
+		}
+	}
+	return ""
 }
 
 func Play(synth Synth, song Song) ([]float32, error) {
