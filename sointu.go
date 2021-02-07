@@ -147,6 +147,27 @@ type UnitParameter struct {
 	MaxValue    int    // maximum value of the parameter, inclusive
 	CanSet      bool   // if this parameter can be set before hand i.e. through the gui
 	CanModulate bool   // if this parameter can be modulated i.e. has a port number in "send" unit
+	ToString    func(value int) string
+}
+
+func engineeringTime(sec float64) string {
+	if sec < 1e-3 {
+		return fmt.Sprintf("%.2f us", sec*1e6)
+	} else if sec < 1 {
+		return fmt.Sprintf("%.2f ms", sec*1e3)
+	}
+	return fmt.Sprintf("%.2f s", sec)
+}
+
+func nonLinearMapToString(value int) string {
+	sec := math.Pow(2, 24*float64(value)/128) / 44100
+	return engineeringTime(sec)
+}
+
+func compressorToString(value int) string {
+	alpha := math.Pow(2, -24*float64(value)/128) // alpha is the "smoothing factor" of first order low pass iir
+	sec := -1 / (44100 * math.Log(1-alpha))      // from smoothing factor to time constant, https://en.wikipedia.org/wiki/Exponential_smoothing
+	return engineeringTime(sec)
 }
 
 // UnitTypes documents all the available unit types and if they support stereo variant
@@ -198,11 +219,13 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "delaytime", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true}},
 	"compressor": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: compressorToString},
+		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: compressorToString},
 		{Name: "invgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "threshold", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "ratio", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "ratio", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: func(value int) string {
+			return fmt.Sprintf("1 : %.3f", 1-float64(value)/128)
+		}}},
 	"speed": []UnitParameter{},
 	"out": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
@@ -224,10 +247,10 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "sendpop", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}},
 	"envelope": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "decay", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: nonLinearMapToString},
+		{Name: "decay", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: nonLinearMapToString},
 		{Name: "sustain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: nonLinearMapToString},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"noise": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
@@ -235,13 +258,38 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"oscillator": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "transpose", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "detune", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "transpose", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: func(value int) string {
+			value -= 64
+			octaves := value / 12
+			semitones := value % 12
+			if octaves != 0 {
+				return fmt.Sprintf("%v octaves, %v semitones", octaves, semitones)
+			}
+			return fmt.Sprintf("%v semitones", semitones)
+		}},
+		{Name: "detune", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, ToString: func(value int) string {
+			return fmt.Sprintf("%v semitones", float32(value-64)/64.0)
+		}},
 		{Name: "phase", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "color", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "shape", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "type", MinValue: int(Sine), MaxValue: int(Sample), CanSet: true, CanModulate: false},
+		{Name: "type", MinValue: int(Sine), MaxValue: int(Sample), CanSet: true, CanModulate: false, ToString: func(value int) string {
+			switch value {
+			case Sine:
+				return "Sine"
+			case Trisaw:
+				return "Trisaw"
+			case Pulse:
+				return "Pulse"
+			case Gate:
+				return "Gate"
+			case Sample:
+				return "Sample"
+			default:
+				return "Unknown"
+			}
+		}},
 		{Name: "lfo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "unison", MinValue: 0, MaxValue: 3, CanSet: true, CanModulate: false},
 		{Name: "samplestart", MinValue: 0, MaxValue: 3440659, CanSet: true, CanModulate: false},

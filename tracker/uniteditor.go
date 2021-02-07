@@ -50,6 +50,13 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 		t.ParameterSliders[index].Value = float32(params[ut[index].Name])
 		sliderStyle := material.Slider(t.Theme, t.ParameterSliders[index], float32(ut[index].MinValue), float32(ut[index].MaxValue))
 		sliderStyle.Color = t.Theme.Fg
+		var valueText string
+		value := params[ut[index].Name]
+		if ut[index].ToString != nil {
+			valueText = fmt.Sprintf("%v / %v", value, ut[index].ToString(value))
+		} else {
+			valueText = fmt.Sprintf("%v", value)
+		}
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
 				gtx.Constraints.Min.X = gtx.Px(unit.Dp(110))
@@ -59,7 +66,7 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 				gtx.Constraints.Min.X = gtx.Px(unit.Dp(200))
 				return sliderStyle.Layout(gtx)
 			}),
-			layout.Rigid(Label(fmt.Sprintf("%v", params[ut[index].Name]), white)),
+			layout.Rigid(Label(valueText, white)),
 		)
 	}
 	return t.ParameterList.Layout(gtx, len(ut), listElements)
