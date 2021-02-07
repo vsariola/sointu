@@ -37,6 +37,7 @@ var defaultUnits = map[string]sointu.Unit{
 	"in":         {Type: "in", Parameters: map[string]int{"stereo": 1, "channel": 2}},
 	"speed":      {Type: "speed", Parameters: map[string]int{}},
 	"compressor": {Type: "compressor", Parameters: map[string]int{"stereo": 0, "attack": 64, "release": 64, "invgain": 64, "threshold": 64, "ratio": 64}},
+	"send":       {Type: "send", Parameters: map[string]int{"stereo": 0, "amount": 128, "voice": 0, "unit": 0, "port": 0, "sendpop": 1}},
 }
 
 var allUnits []string
