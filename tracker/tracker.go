@@ -51,6 +51,7 @@ type Tracker struct {
 	FileMenuBtn           *widget.Clickable
 	FileMenuVisible       bool
 	ParameterSliders      []*widget.Float
+	ParameterList         *layout.List
 	UnitDragList          *DragList
 	DeleteUnitBtn         *widget.Clickable
 	ClearUnitBtn          *widget.Clickable
@@ -477,6 +478,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		undoStack:             []sointu.Song{},
 		redoStack:             []sointu.Song{},
 		InstrumentDragList:    &DragList{List: &layout.List{Axis: layout.Horizontal}},
+		ParameterList:         &layout.List{Axis: layout.Vertical},
 		TopHorizontalSplit:    new(Split),
 		BottomHorizontalSplit: new(Split),
 		VerticalSplit:         new(Split),

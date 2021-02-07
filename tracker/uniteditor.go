@@ -1,9 +1,9 @@
 package tracker
 
 import (
+	"fmt"
 	"image"
 	"image/color"
-	"sort"
 
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -12,6 +12,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"github.com/vsariola/sointu"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
@@ -28,42 +29,40 @@ func (t *Tracker) layoutUnitEditor(gtx C) D {
 }
 
 func (t *Tracker) layoutUnitSliders(gtx C) D {
-	params := t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Parameters
-	count := len(params)
-	children := make([]layout.FlexChild, 0, count)
-	if len(t.ParameterSliders) < count {
-		tail := make([]*widget.Float, count-len(t.ParameterSliders))
-		for t := range tail {
-			tail[t] = new(widget.Float)
+	ut, ok := sointu.UnitTypes[t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type]
+	if !ok {
+		return layout.Dimensions{}
+	}
+	listElements := func(gtx C, index int) D {
+		if ut[index].MaxValue < ut[index].MinValue {
+			return layout.Dimensions{}
 		}
-		t.ParameterSliders = append(t.ParameterSliders, tail...)
-	}
-	keys := make([]string, 0, len(params))
-	for k := range params {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for i, k := range keys {
-		for t.ParameterSliders[i].Changed() {
-			params[k] = int(t.ParameterSliders[i].Value)
+		for len(t.ParameterSliders) <= index {
+			t.ParameterSliders = append(t.ParameterSliders, new(widget.Float))
+		}
+		params := t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Parameters
+		for t.ParameterSliders[index].Changed() {
+			params[ut[index].Name] = int(t.ParameterSliders[index].Value)
 			// TODO: tracker should have functions to update parameters and
 			// to do this efficiently i.e. not compile the whole patch again
 			t.LoadSong(t.song)
 		}
-		t.ParameterSliders[i].Value = float32(params[k])
-		sliderStyle := material.Slider(t.Theme, t.ParameterSliders[i], 0, 128)
+		t.ParameterSliders[index].Value = float32(params[ut[index].Name])
+		sliderStyle := material.Slider(t.Theme, t.ParameterSliders[index], float32(ut[index].MinValue), float32(ut[index].MaxValue))
 		sliderStyle.Color = t.Theme.Fg
-		k2 := k // avoid k changing in the closure
-		children = append(children, layout.Rigid(func(gtx C) D {
-			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label(k2, white)),
-				layout.Rigid(func(gtx C) D {
-					gtx.Constraints.Min.X = 200
-					return sliderStyle.Layout(gtx)
-				}))
-		}))
+		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+			layout.Rigid(func(gtx C) D {
+				gtx.Constraints.Min.X = gtx.Px(unit.Dp(110))
+				return layout.E.Layout(gtx, Label(ut[index].Name, white))
+			}),
+			layout.Rigid(func(gtx C) D {
+				gtx.Constraints.Min.X = gtx.Px(unit.Dp(200))
+				return sliderStyle.Layout(gtx)
+			}),
+			layout.Rigid(Label(fmt.Sprintf("%v", params[ut[index].Name]), white)),
+		)
 	}
-	return layout.Flex{Axis: layout.Vertical}.Layout(gtx, children...)
+	return t.ParameterList.Layout(gtx, len(ut), listElements)
 }
 
 func (t *Tracker) layoutUnitFooter() layout.Widget {
