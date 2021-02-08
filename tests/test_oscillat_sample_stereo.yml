@@ -17,7 +17,7 @@ patch:
             - type: envelope
               parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
             - type: oscillator
-              parameters: {color: 0, detune: 32, gain: 128, lfo: 0, looplength: 106, loopstart: 1341, phase: 64, shape: 64, start: 1678611, stereo: 1, transpose: 68, type: 4, unison: 0}
+              parameters: {color: 0, detune: 32, gain: 128, lfo: 0, looplength: 106, loopstart: 1341, phase: 64, shape: 64, samplestart: 1678611, stereo: 1, transpose: 68, type: 4, unison: 0}
             - type: mulp
               parameters: {stereo: 1}
             - type: out
