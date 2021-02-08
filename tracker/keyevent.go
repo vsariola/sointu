@@ -1,8 +1,8 @@
 package tracker
 
 import (
-	"os"
 	"strconv"
+	"strings"
 
 	"gioui.org/io/key"
 )
@@ -42,6 +42,38 @@ var noteMap = map[string]int{
 	"P": 16,
 }
 
+var unitKeyMap = map[string]string{
+	"e": "envelope",
+	"o": "oscillator",
+	"m": "mulp",
+	"M": "mul",
+	"a": "addp",
+	"A": "add",
+	"p": "pan",
+	"S": "push",
+	"P": "pop",
+	"O": "out",
+	"l": "loadnote",
+	"L": "loadval",
+	"h": "xch",
+	"d": "delay",
+	"D": "distort",
+	"H": "hold",
+	"b": "crush",
+	"g": "gain",
+	"i": "invgain",
+	"f": "filter",
+	"I": "clip",
+	"E": "speed",
+	"r": "compressor",
+	"u": "outaux",
+	"U": "aux",
+	"s": "send",
+	"n": "noise",
+	"N": "in",
+	"R": "receive",
+}
+
 // KeyEvent handles incoming key events and returns true if repaint is needed.
 func (t *Tracker) KeyEvent(e key.Event) bool {
 	if e.State == key.Press {
@@ -59,14 +91,15 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 				t.Redo()
 				return true
 			}
-		case "A":
-			t.SetCurrentNote(0)
-			return true
 		case key.NameDeleteForward:
-			t.DeleteSelection()
-			return true
-		case key.NameEscape:
-			os.Exit(0)
+			switch t.EditMode {
+			case EditTracks:
+				t.DeleteSelection()
+				return true
+			case EditUnits:
+				t.DeleteUnit()
+				return true
+			}
 		case "Space":
 			t.TogglePlay()
 			return true
@@ -75,75 +108,161 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 				return t.ChangeOctave(1)
 			}
 			return t.ChangeOctave(-1)
+		case key.NameTab:
+			if e.Modifiers.Contain(key.ModShift) {
+				t.EditMode = (t.EditMode - 1 + 4) % 4
+			} else {
+				t.EditMode = (t.EditMode + 1) % 4
+			}
+			return true
 		case key.NameUpArrow:
-			delta := -1
-			if e.Modifiers.Contain(key.ModCtrl) {
-				delta = -t.song.RowsPerPattern
+			switch t.EditMode {
+			case EditPatterns:
+				if e.Modifiers.Contain(key.ModCtrl) {
+					t.Cursor.SongRow = SongRow{}
+				} else {
+					t.Cursor.Row -= t.song.RowsPerPattern
+				}
+				t.NoteTracking = false
+			case EditTracks:
+				if e.Modifiers.Contain(key.ModCtrl) {
+					t.Cursor.Row -= t.song.RowsPerPattern
+				} else {
+					t.Cursor.Row--
+				}
+				t.NoteTracking = false
+			case EditUnits:
+				t.CurrentUnit--
+			case EditParameters:
+				t.CurrentParam--
 			}
-			t.Cursor.Row += delta
-			t.Cursor.Clamp(t.song)
+			t.ClampPositions()
 			if !e.Modifiers.Contain(key.ModShift) {
-				t.SelectionCorner = t.Cursor
+				t.Unselect()
 			}
-			t.NoteTracking = false
 			return true
 		case key.NameDownArrow:
-			delta := 1
-			if e.Modifiers.Contain(key.ModCtrl) {
-				delta = t.song.RowsPerPattern
+			switch t.EditMode {
+			case EditPatterns:
+				if e.Modifiers.Contain(key.ModCtrl) {
+					t.Cursor.Row = t.song.TotalRows() - 1
+				} else {
+					t.Cursor.Row += t.song.RowsPerPattern
+				}
+				t.NoteTracking = false
+			case EditTracks:
+				if e.Modifiers.Contain(key.ModCtrl) {
+					t.Cursor.Row += t.song.RowsPerPattern
+				} else {
+					t.Cursor.Row++
+				}
+				t.NoteTracking = false
+			case EditUnits:
+				t.CurrentUnit++
+			case EditParameters:
+				t.CurrentParam++
 			}
-			t.Cursor.Row += delta
-			t.Cursor.Clamp(t.song)
+			t.ClampPositions()
 			if !e.Modifiers.Contain(key.ModShift) {
-				t.SelectionCorner = t.Cursor
+				t.Unselect()
 			}
-			t.NoteTracking = false
 			return true
 		case key.NameLeftArrow:
-			if t.CursorColumn == 0 || !t.TrackShowHex[t.Cursor.Track] || e.Modifiers.Contain(key.ModCtrl) {
-				t.Cursor.Track--
-				t.Cursor.Clamp(t.song)
-				if t.TrackShowHex[t.Cursor.Track] {
+			switch t.EditMode {
+			case EditPatterns:
+				if e.Modifiers.Contain(key.ModCtrl) {
+					t.Cursor.Track = 0
+				} else {
+					t.Cursor.Track--
+				}
+			case EditTracks:
+				if t.CursorColumn == 0 || !t.TrackShowHex[t.Cursor.Track] || e.Modifiers.Contain(key.ModCtrl) {
+					t.Cursor.Track--
 					t.CursorColumn = 1
 				} else {
-					t.CursorColumn = 0
+					t.CursorColumn--
 				}
-				if !e.Modifiers.Contain(key.ModShift) {
-					t.SelectionCorner = t.Cursor
+			case EditUnits:
+				t.CurrentInstrument--
+			case EditParameters:
+				if e.Modifiers.Contain(key.ModShift) {
+					t.SetUnitParam(t.GetUnitParam() - 16)
+				} else {
+					t.SetUnitParam(t.GetUnitParam() - 1)
 				}
-			} else {
-				t.CursorColumn--
+			}
+			t.ClampPositions()
+			if !e.Modifiers.Contain(key.ModShift) {
+				t.Unselect()
 			}
 			return true
 		case key.NameRightArrow:
-			if t.CursorColumn == 1 || !t.TrackShowHex[t.Cursor.Track] || e.Modifiers.Contain(key.ModCtrl) {
-				t.Cursor.Track++
-				t.Cursor.Clamp(t.song)
-				if !e.Modifiers.Contain(key.ModShift) {
-					t.SelectionCorner = t.Cursor
+			switch t.EditMode {
+			case EditPatterns:
+				if e.Modifiers.Contain(key.ModCtrl) {
+					t.Cursor.Track = len(t.song.Tracks) - 1
+				} else {
+					t.Cursor.Track++
 				}
-				t.CursorColumn = 0
-			} else {
-				t.CursorColumn++
+			case EditTracks:
+				if t.CursorColumn == 0 || !t.TrackShowHex[t.Cursor.Track] || e.Modifiers.Contain(key.ModCtrl) {
+					t.Cursor.Track++
+					t.CursorColumn = 0
+				} else {
+					t.CursorColumn++
+				}
+			case EditUnits:
+				t.CurrentInstrument++
+			case EditParameters:
+				if e.Modifiers.Contain(key.ModShift) {
+					t.SetUnitParam(t.GetUnitParam() + 16)
+				} else {
+					t.SetUnitParam(t.GetUnitParam() + 1)
+				}
+			}
+			t.ClampPositions()
+			if !e.Modifiers.Contain(key.ModShift) {
+				t.Unselect()
 			}
 			return true
 		}
-		if e.Modifiers.Contain(key.ModCtrl) {
-			if iv, err := strconv.ParseInt(e.Name, 16, 8); err == nil {
+		switch t.EditMode {
+		case EditPatterns:
+			if iv, err := strconv.Atoi(e.Name); err == nil {
 				t.SetCurrentPattern(byte(iv))
 				return true
 			}
-		} else {
-			if !t.TrackShowHex[t.Cursor.Track] {
-				if val, ok := noteMap[e.Name]; ok {
-					t.NotePressed(val)
-					return true
-				}
-			} else {
+			if b := byte(e.Name[0]) - 'A'; len(e.Name) == 1 && b >= 0 && b < 26 {
+				t.SetCurrentPattern(b + 10)
+				return true
+			}
+		case EditTracks:
+			if t.TrackShowHex[t.Cursor.Track] {
 				if iv, err := strconv.ParseInt(e.Name, 16, 8); err == nil {
 					t.NumberPressed(byte(iv))
 					return true
 				}
+			} else {
+				if e.Name == "A" {
+					t.SetCurrentNote(0)
+					return true
+				}
+				if val, ok := noteMap[e.Name]; ok {
+					t.NotePressed(val)
+					return true
+				}
+			}
+		case EditUnits:
+			name := e.Name
+			if !e.Modifiers.Contain(key.ModShift) {
+				name = strings.ToLower(name)
+			}
+			if val, ok := unitKeyMap[name]; ok {
+				if e.Modifiers.Contain(key.ModCtrl) {
+					t.AddUnit()
+				}
+				t.SetUnit(val)
+				return true
 			}
 		}
 	}

@@ -13,6 +13,15 @@ import (
 	"github.com/vsariola/sointu"
 )
 
+type EditMode int
+
+const (
+	EditPatterns EditMode = iota
+	EditTracks
+	EditUnits
+	EditParameters
+)
+
 type Tracker struct {
 	QuitButton    *widget.Clickable
 	songPlayMutex sync.RWMutex // protects song and playing
@@ -21,11 +30,13 @@ type Tracker struct {
 	// protects PlayPattern and PlayRow
 	playRowPatMutex       sync.RWMutex // protects song and playing
 	PlayPosition          SongRow
+	EditMode              EditMode
 	SelectionCorner       SongPoint
 	Cursor                SongPoint
 	CursorColumn          int
 	CurrentInstrument     int
 	CurrentUnit           int
+	CurrentParam          int
 	UnitGroupMenuVisible  bool
 	UnitGroupMenuIndex    int
 	UnitSubMenuIndex      int
@@ -85,17 +96,21 @@ func (t *Tracker) LoadSong(song sointu.Song) error {
 	defer t.songPlayMutex.Unlock()
 	t.song = song
 	t.ClampPositions()
-	if l := len(t.song.Patch.Instruments); t.CurrentInstrument >= l {
-		t.CurrentInstrument = l - 1
-	}
-	if l := len(t.song.Patch.Instruments[t.CurrentInstrument].Units); t.CurrentUnit >= l {
-		t.CurrentUnit = l - 1
-	}
 	if t.sequencer != nil {
 		t.sequencer.SetPatch(song.Patch)
 		t.sequencer.SetRowLength(song.SamplesPerRow())
 	}
 	return nil
+}
+
+func clamp(a, min, max int) int {
+	if a < min {
+		return min
+	}
+	if a >= max {
+		return max - 1
+	}
+	return a
 }
 
 func (t *Tracker) Close() {
@@ -232,6 +247,7 @@ func (t *Tracker) AddInstrument() {
 	copy(instr[t.CurrentInstrument+2:], t.song.Patch.Instruments[t.CurrentInstrument+1:])
 	t.song.Patch.Instruments = instr
 	t.CurrentInstrument++
+	t.ClampPositions()
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
@@ -242,6 +258,7 @@ func (t *Tracker) SwapInstruments(i, j int) {
 	t.SaveUndo()
 	instruments := t.song.Patch.Instruments
 	instruments[i], instruments[j] = instruments[j], instruments[i]
+	t.ClampPositions()
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
@@ -254,6 +271,7 @@ func (t *Tracker) DeleteInstrument() {
 	if t.CurrentInstrument >= len(t.song.Patch.Instruments) {
 		t.CurrentInstrument = len(t.song.Patch.Instruments) - 1
 	}
+	t.ClampPositions()
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
@@ -343,6 +361,7 @@ func (t *Tracker) AddUnit() {
 	copy(units[t.CurrentUnit+2:], t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit+1:])
 	t.song.Patch.Instruments[t.CurrentInstrument].Units = units
 	t.CurrentUnit++
+	t.ClampPositions()
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
@@ -350,6 +369,7 @@ func (t *Tracker) ClearUnit() {
 	t.SaveUndo()
 	t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type = ""
 	t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Parameters = make(map[string]int)
+	t.ClampPositions()
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
@@ -365,6 +385,30 @@ func (t *Tracker) DeleteUnit() {
 	if t.CurrentUnit > 0 {
 		t.CurrentUnit--
 	}
+	t.ClampPositions()
+	t.sequencer.SetPatch(t.song.Patch)
+}
+
+func (t *Tracker) GetUnitParam() int {
+	unit := t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit]
+	paramtype := sointu.UnitTypes[unit.Type][t.CurrentParam]
+	return unit.Parameters[paramtype.Name]
+}
+
+func (t *Tracker) SetUnitParam(value int) {
+	unit := t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit]
+	unittype := sointu.UnitTypes[unit.Type][t.CurrentParam]
+	if value < unittype.MinValue {
+		value = unittype.MinValue
+	} else if value > unittype.MaxValue {
+		value = unittype.MaxValue
+	}
+	if unit.Parameters[unittype.Name] == value {
+		return
+	}
+	t.SaveUndo()
+	unit.Parameters[unittype.Name] = value
+	t.ClampPositions()
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
@@ -375,6 +419,7 @@ func (t *Tracker) SwapUnits(i, j int) {
 	t.SaveUndo()
 	units := t.song.Patch.Instruments[t.CurrentInstrument].Units
 	units[i], units[j] = units[j], units[i]
+	t.ClampPositions()
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
@@ -382,6 +427,38 @@ func (t *Tracker) ClampPositions() {
 	t.PlayPosition.Clamp(t.song)
 	t.Cursor.Clamp(t.song)
 	t.SelectionCorner.Clamp(t.song)
+	if t.Cursor.Track >= len(t.TrackShowHex) || !t.TrackShowHex[t.Cursor.Track] {
+		t.CursorColumn = 0
+	}
+	t.CurrentInstrument = clamp(t.CurrentInstrument, 0, len(t.song.Patch.Instruments))
+	t.CurrentUnit = clamp(t.CurrentUnit, 0, len(t.song.Patch.Instruments[t.CurrentInstrument].Units))
+	numSettableParams := 0
+	for _, t := range sointu.UnitTypes[t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type] {
+		if t.CanSet {
+			numSettableParams++
+		}
+	}
+	if t.CurrentParam < 0 && t.CurrentUnit > 0 {
+		t.CurrentUnit--
+		numSettableParams = 0
+		for _, t := range sointu.UnitTypes[t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type] {
+			if t.CanSet {
+				numSettableParams++
+			}
+		}
+		t.CurrentParam = numSettableParams - 1
+	}
+	if t.CurrentParam >= numSettableParams && t.CurrentUnit < len(t.song.Patch.Instruments[t.CurrentInstrument].Units)-1 {
+		t.CurrentUnit++
+		numSettableParams = 0
+		for _, t := range sointu.UnitTypes[t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type] {
+			if t.CanSet {
+				numSettableParams++
+			}
+		}
+		t.CurrentParam = 0
+	}
+	t.CurrentParam = clamp(t.CurrentParam, 0, numSettableParams)
 }
 
 func (t *Tracker) getSelectionRange() (int, int, int, int) {
@@ -443,6 +520,10 @@ func (t *Tracker) DeleteSelection() {
 	}
 }
 
+func (t *Tracker) Unselect() {
+	t.SelectionCorner = t.Cursor
+}
+
 func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tracker {
 	t := &Tracker{
 		Theme:                 material.NewTheme(gofont.Collection()),
@@ -484,6 +565,8 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		VerticalSplit:         new(Split),
 		ChooseUnitTypeList:    &layout.List{Axis: layout.Vertical},
 	}
+	t.UnitDragList.HoverItem = -1
+	t.InstrumentDragList.HoverItem = -1
 	t.Octave.Value = 4
 	t.VerticalSplit.Axis = layout.Vertical
 	t.BottomHorizontalSplit.Ratio = -.5

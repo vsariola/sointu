@@ -21,11 +21,12 @@ func (t *Tracker) layoutUnitEditor(gtx C) D {
 	if t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type == "" {
 		editorFunc = t.layoutUnitTypeChooser
 	}
-	paint.FillShape(gtx.Ops, unitSurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
-	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Flexed(1, editorFunc),
-		layout.Rigid(t.layoutUnitFooter()),
-	)
+	return Surface{Gray: 24, Focus: t.EditMode == EditUnits || t.EditMode == EditParameters}.Layout(gtx, func(gtx C) D {
+		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+			layout.Flexed(1, editorFunc),
+			layout.Rigid(t.layoutUnitFooter()))
+	})
+
 }
 
 func (t *Tracker) layoutUnitSliders(gtx C) D {
@@ -41,12 +42,6 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 			t.ParameterSliders = append(t.ParameterSliders, new(widget.Float))
 		}
 		params := t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Parameters
-		for t.ParameterSliders[index].Changed() {
-			params[ut[index].Name] = int(t.ParameterSliders[index].Value)
-			// TODO: tracker should have functions to update parameters and
-			// to do this efficiently i.e. not compile the whole patch again
-			t.LoadSong(t.song)
-		}
 		t.ParameterSliders[index].Value = float32(params[ut[index].Name])
 		sliderStyle := material.Slider(t.Theme, t.ParameterSliders[index], float32(ut[index].MinValue), float32(ut[index].MaxValue))
 		sliderStyle.Color = t.Theme.Fg
@@ -65,7 +60,19 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 			}),
 			layout.Rigid(func(gtx C) D {
 				gtx.Constraints.Min.X = gtx.Px(unit.Dp(200))
-				return sliderStyle.Layout(gtx)
+				gtx.Constraints.Min.Y = gtx.Px(unit.Dp(40))
+				if t.EditMode == EditParameters && t.CurrentParam == index {
+					paint.FillShape(gtx.Ops, cursorColor, clip.Rect{
+						Max: gtx.Constraints.Min,
+					}.Op())
+				}
+				dims := sliderStyle.Layout(gtx)
+				for sliderStyle.Float.Changed() {
+					t.EditMode = EditParameters
+					t.CurrentParam = index
+					t.SetUnitParam(int(t.ParameterSliders[index].Value))
+				}
+				return dims
 			}),
 			layout.Rigid(Label(valueText, white)),
 		)
@@ -108,7 +115,6 @@ func (t *Tracker) layoutUnitFooter() layout.Widget {
 }
 
 func (t *Tracker) layoutUnitTypeChooser(gtx C) D {
-	paint.FillShape(gtx.Ops, unitSurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
 	listElem := func(gtx C, i int) D {
 		for t.ChooseUnitTypeBtns[i].Clicked() {
 			t.SetUnit(allUnits[i])

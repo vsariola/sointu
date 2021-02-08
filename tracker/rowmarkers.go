@@ -24,7 +24,7 @@ func (t *Tracker) layoutRowMarkers(patternRows, sequenceLength, cursorRow, curso
 		}.Op())
 		defer op.Save(gtx.Ops).Load()
 		clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
-		op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y/2)-trackRowHeight)).Add(gtx.Ops)
+		op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y-trackRowHeight)/2)).Add(gtx.Ops)
 		cursorSongRow := cursorPattern*patternRows + cursorRow
 		playSongRow := playPattern*patternRows + playRow
 		op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorSongRow))).Add(gtx.Ops)
@@ -32,13 +32,13 @@ func (t *Tracker) layoutRowMarkers(patternRows, sequenceLength, cursorRow, curso
 			for j := 0; j < patternRows; j++ {
 				songRow := i*patternRows + j
 				if songRow == playSongRow {
-					paint.FillShape(gtx.Ops, trackerPlayColor, clip.Rect{Max: image.Pt(trackWidth, trackRowHeight)}.Op())
+					paint.FillShape(gtx.Ops, trackerPlayColor, clip.Rect{Max: image.Pt(trackColWidth, trackRowHeight)}.Op())
 				}
 				if j == 0 {
 					paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)
 					widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", i)))
 				}
-				if songRow == cursorSongRow {
+				if t.EditMode == EditTracks && songRow == cursorSongRow {
 					paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
 				} else {
 					paint.ColorOp{Color: rowMarkerRowTextColor}.Add(gtx.Ops)

@@ -24,7 +24,6 @@ type DragList struct {
 
 type FilledDragListStyle struct {
 	dragList      *DragList
-	SurfaceColor  color.NRGBA
 	HoverColor    color.NRGBA
 	SelectedColor color.NRGBA
 	Count         int
@@ -38,7 +37,6 @@ func FilledDragList(th *material.Theme, dragList *DragList, count int, element f
 		element:       element,
 		swap:          swap,
 		Count:         count,
-		SurfaceColor:  dragListSurfaceColor,
 		HoverColor:    dragListHoverColor,
 		SelectedColor: dragListSelectedColor,
 	}
@@ -47,7 +45,6 @@ func FilledDragList(th *material.Theme, dragList *DragList, count int, element f
 func (s *FilledDragListStyle) Layout(gtx C) D {
 	swap := 0
 
-	paint.FillShape(gtx.Ops, s.SurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
 	defer op.Save(gtx.Ops).Load()
 
 	if s.dragList.List.Axis == layout.Horizontal {

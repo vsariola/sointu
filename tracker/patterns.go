@@ -20,7 +20,6 @@ const patternRowMarkerWidth = 30
 func (t *Tracker) layoutPatterns(gtx C) D {
 	defer op.Save(gtx.Ops).Load()
 	clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
-	paint.FillShape(gtx.Ops, patternSurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
 	patternRect := SongRect{
 		Corner1: SongPoint{SongRow: SongRow{Pattern: t.Cursor.Pattern}, Track: t.Cursor.Track},
 		Corner2: SongPoint{SongRow: SongRow{Pattern: t.SelectionCorner.Pattern}, Track: t.SelectionCorner.Track},
@@ -35,14 +34,19 @@ func (t *Tracker) layoutPatterns(gtx C) D {
 		op.Offset(f32.Pt(patternRowMarkerWidth, 0)).Add(gtx.Ops)
 		for i, track := range t.song.Tracks {
 			paint.ColorOp{Color: patternTextColor}.Add(gtx.Ops)
-			widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, fmt.Sprintf("%d", track.Sequence[j]))
+			widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(track.Sequence[j]))
 			point := SongPoint{Track: i, SongRow: SongRow{Pattern: j}}
-			if patternRect.Contains(point) {
-				color := patternSelectionColor
-				if point.Pattern == t.Cursor.Pattern && point.Track == t.Cursor.Track {
-					color = patternCursorColor
+			if t.EditMode == EditPatterns || t.EditMode == EditTracks {
+				if patternRect.Contains(point) {
+					color := inactiveSelectionColor
+					if t.EditMode == EditPatterns {
+						color = selectionColor
+						if point.Pattern == t.Cursor.Pattern && point.Track == t.Cursor.Track {
+							color = cursorColor
+						}
+					}
+					paint.FillShape(gtx.Ops, color, clip.Rect{Max: image.Pt(patternCellWidth, patternCellHeight)}.Op())
 				}
-				paint.FillShape(gtx.Ops, color, clip.Rect{Max: image.Pt(patternCellWidth, patternCellHeight)}.Op())
 			}
 			op.Offset(f32.Pt(patternCellWidth, 0)).Add(gtx.Ops)
 		}

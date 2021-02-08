@@ -56,6 +56,7 @@ var activeTrackColor = focusedContainerColor
 var trackSurfaceColor = color.NRGBA{R: 255, G: 255, B: 255, A: 31}
 
 var patternSurfaceColor = color.NRGBA{R: 24, G: 24, B: 24, A: 255}
+var patternSurfaceActiveColor = color.NRGBA{R: 30, G: 30, B: 30, A: 255}
 
 var rowMarkerSurfaceColor = color.NRGBA{R: 0, G: 0, B: 0, A: 0}
 var rowMarkerPatternTextColor = secondaryColor
@@ -101,3 +102,10 @@ var dragListHoverColor = color.NRGBA{R: 42, G: 45, B: 61, A: 255}
 
 var unitSurfaceColor = color.NRGBA{R: 30, G: 30, B: 30, A: 255}
 var unitTypeListHighlightColor = color.NRGBA{R: 42, G: 45, B: 61, A: 255}
+
+var inactiveLightSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
+var activeLightSurfaceColor = color.NRGBA{R: 45, G: 45, B: 45, A: 255}
+
+var cursorColor = color.NRGBA{R: 100, G: 140, B: 255, A: 48}
+var selectionColor = color.NRGBA{R: 100, G: 140, B: 255, A: 8}
+var inactiveSelectionColor = color.NRGBA{R: 140, G: 140, B: 140, A: 16}

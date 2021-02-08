@@ -255,7 +255,7 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "unison", MinValue: 0, MaxValue: 3, CanSet: true, CanModulate: false},
 		{Name: "samplestart", MinValue: 0, MaxValue: 1720329, CanSet: true, CanModulate: false},
 		{Name: "loopstart", MinValue: 0, MaxValue: 65535, CanSet: true, CanModulate: false},
-		{Name: "looplength", MinValue: 1, MaxValue: 65535, CanSet: true, CanModulate: false}},
+		{Name: "looplength", MinValue: 0, MaxValue: 65535, CanSet: true, CanModulate: false}},
 	"loadval": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "value", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},

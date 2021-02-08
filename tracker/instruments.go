@@ -6,8 +6,6 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
-	"gioui.org/op/clip"
-	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
@@ -50,12 +48,6 @@ func (t *Tracker) layoutInstruments(gtx C) D {
 }
 
 func (t *Tracker) layoutInstrumentHeader(gtx C) D {
-	headerBg := func(gtx C) D {
-		paint.FillShape(gtx.Ops, instrumentSurfaceColor, clip.Rect{
-			Max: gtx.Constraints.Min,
-		}.Op())
-		return layout.Dimensions{Size: gtx.Constraints.Min}
-	}
 	header := func(gtx C) D {
 		deleteInstrumentBtnStyle := material.IconButton(t.Theme, t.DeleteInstrumentBtn, widgetForIcon(icons.ActionDelete))
 		deleteInstrumentBtnStyle.Background = transparent
@@ -87,9 +79,7 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 	for t.DeleteInstrumentBtn.Clicked() {
 		t.DeleteInstrument()
 	}
-	return layout.Stack{Alignment: layout.Center}.Layout(gtx,
-		layout.Expanded(headerBg),
-		layout.Stacked(header))
+	return Surface{Gray: 37, Focus: t.EditMode == EditUnits || t.EditMode == EditParameters}.Layout(gtx, header)
 }
 
 func (t *Tracker) layoutInstrumentNames(gtx C) D {
@@ -135,10 +125,13 @@ func (t *Tracker) layoutInstrumentNames(gtx C) D {
 		})
 	}
 
+	color := inactiveLightSurfaceColor
+	if t.EditMode == EditUnits || t.EditMode == EditParameters {
+		color = activeLightSurfaceColor
+	}
 	instrumentList := FilledDragList(t.Theme, t.InstrumentDragList, len(t.song.Patch.Instruments), element, t.SwapInstruments)
-	instrumentList.SelectedColor = instrumentSurfaceColor
+	instrumentList.SelectedColor = color
 	instrumentList.HoverColor = instrumentHoverColor
-	instrumentList.SurfaceColor = transparent
 
 	t.InstrumentDragList.SelectedItem = t.CurrentInstrument
 	defer op.Save(gtx.Ops).Load()
@@ -174,21 +167,28 @@ func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 
 	unitList := FilledDragList(t.Theme, t.UnitDragList, len(t.song.Patch.Instruments[t.CurrentInstrument].Units), element, t.SwapUnits)
 
+	if t.EditMode == EditUnits {
+		unitList.SelectedColor = cursorColor
+	}
+
 	t.UnitDragList.SelectedItem = t.CurrentUnit
-	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		layout.Rigid(func(gtx C) D {
-			return layout.Stack{Alignment: layout.SE}.Layout(gtx,
-				layout.Expanded(func(gtx C) D {
-					dims := unitList.Layout(gtx)
-					if t.CurrentUnit != t.UnitDragList.SelectedItem {
-						t.CurrentUnit = t.UnitDragList.SelectedItem
-						op.InvalidateOp{}.Add(gtx.Ops)
-					}
-					return dims
-				}),
-				layout.Stacked(func(gtx C) D {
-					return margin.Layout(gtx, addUnitBtnStyle.Layout)
-				}))
-		}),
-		layout.Rigid(t.layoutUnitEditor))
+	return Surface{Gray: 30, Focus: t.EditMode == EditUnits || t.EditMode == EditParameters}.Layout(gtx, func(gtx C) D {
+		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+			layout.Rigid(func(gtx C) D {
+				return layout.Stack{Alignment: layout.SE}.Layout(gtx,
+					layout.Expanded(func(gtx C) D {
+						dims := unitList.Layout(gtx)
+						if t.CurrentUnit != t.UnitDragList.SelectedItem {
+							t.CurrentUnit = t.UnitDragList.SelectedItem
+							t.EditMode = EditUnits
+							op.InvalidateOp{}.Add(gtx.Ops)
+						}
+						return dims
+					}),
+					layout.Stacked(func(gtx C) D {
+						return margin.Layout(gtx, addUnitBtnStyle.Layout)
+					}))
+			}),
+			layout.Rigid(t.layoutUnitEditor))
+	})
 }
