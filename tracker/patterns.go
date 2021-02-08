@@ -15,12 +15,9 @@ import (
 
 const patternCellHeight = 16
 const patternCellWidth = 16
-const patternVisibleTracks = 8
 const patternRowMarkerWidth = 30
 
 func (t *Tracker) layoutPatterns(gtx C) D {
-	gtx.Constraints.Min.X = patternCellWidth*patternVisibleTracks + patternRowMarkerWidth
-	gtx.Constraints.Max.X = patternCellWidth*patternVisibleTracks + patternRowMarkerWidth
 	defer op.Save(gtx.Ops).Load()
 	clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
 	paint.FillShape(gtx.Ops, patternSurfaceColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Op())
