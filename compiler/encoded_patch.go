@@ -37,7 +37,7 @@ func Encode(patch *sointu.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
 				continue
 			}
 			if unit.Type == "oscillator" && unit.Parameters["type"] == 4 {
-				s := SampleOffset{Start: uint32(unit.Parameters["start"]), LoopStart: uint16(unit.Parameters["loopstart"]), LoopLength: uint16(unit.Parameters["looplength"])}
+				s := SampleOffset{Start: uint32(unit.Parameters["samplestart"]), LoopStart: uint16(unit.Parameters["loopstart"]), LoopLength: uint16(unit.Parameters["looplength"])}
 				index, ok := sampleOffsetMap[s]
 				if !ok {
 					index = len(c.SampleOffsets)
