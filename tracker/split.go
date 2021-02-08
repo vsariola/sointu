@@ -97,9 +97,9 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 		// register for input
 		var barRect image.Rectangle
 		if s.Axis == layout.Horizontal {
-			barRect = image.Rect(firstSize, 0, secondOffset, gtx.Constraints.Max.X)
+			barRect = image.Rect(firstSize, 0, secondOffset, gtx.Constraints.Max.Y)
 		} else {
-			barRect = image.Rect(0, firstSize, gtx.Constraints.Max.Y, secondOffset)
+			barRect = image.Rect(0, firstSize, gtx.Constraints.Max.X, secondOffset)
 		}
 		pointer.Rect(barRect).Add(gtx.Ops)
 		pointer.InputOp{Tag: s,
