@@ -76,6 +76,7 @@ type Tracker struct {
 	TopHorizontalSplit    *Split
 	BottomHorizontalSplit *Split
 	VerticalSplit         *Split
+	StackUse              []int
 
 	sequencer    *Sequencer
 	ticked       chan struct{}

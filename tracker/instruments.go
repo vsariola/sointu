@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"image"
+	"strconv"
 
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
@@ -154,15 +155,41 @@ func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 	addUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(4))
 	margin := layout.UniformInset(unit.Dp(2))
 
+	for len(t.StackUse) < len(t.song.Patch.Instruments[t.CurrentInstrument].Units) {
+		t.StackUse = append(t.StackUse, 0)
+	}
+
+	stackHeight := 0
+	for i, u := range t.song.Patch.Instruments[t.CurrentInstrument].Units {
+		stackHeight += u.StackChange()
+		t.StackUse[i] = stackHeight
+	}
+
 	element := func(gtx C, i int) D {
 		gtx.Constraints = layout.Exact(image.Pt(gtx.Px(unit.Dp(120)), gtx.Px(unit.Dp(20))))
 		u := t.song.Patch.Instruments[t.CurrentInstrument].Units[i]
-		labelStyle := LabelStyle{Text: u.Type, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
-		if labelStyle.Text == "" {
-			labelStyle.Text = "---"
-			labelStyle.Alignment = layout.Center
+		unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
+		if unitNameLabel.Text == "" {
+			unitNameLabel.Text = "---"
+			unitNameLabel.Alignment = layout.Center
 		}
-		return labelStyle.Layout(gtx)
+		var stackText string
+		if i < len(t.StackUse) {
+			stackText = strconv.FormatInt(int64(t.StackUse[i]), 10)
+			var prevStackUse int
+			if i > 0 {
+				prevStackUse = t.StackUse[i-1]
+			}
+			if u.StackNeed() > prevStackUse || (i == len(t.StackUse)-1 && t.StackUse[i] > 0) {
+				unitNameLabel.Color = errorColor
+			}
+		}
+		stackLabel := LabelStyle{Text: stackText, ShadeColor: black, Color: mediumEmphasisTextColor, Font: labelDefaultFont, FontSize: unit.Sp(12)}
+
+		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+			layout.Flexed(1, unitNameLabel.Layout),
+			layout.Rigid(stackLabel.Layout),
+		)
 	}
 
 	unitList := FilledDragList(t.Theme, t.UnitDragList, len(t.song.Patch.Instruments[t.CurrentInstrument].Units), element, t.SwapUnits)

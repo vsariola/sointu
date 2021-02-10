@@ -452,6 +452,34 @@ func (s *Song) ParamHintString(instrIndex, unitIndex int, param string) string {
 	return ""
 }
 
+func (u *Unit) StackChange() int {
+	switch u.Type {
+	case "addp", "mulp", "pop", "out", "outaux", "aux":
+		return -1 - u.Parameters["stereo"]
+	case "envelope", "oscillator", "push", "noise", "receive", "loadnote", "loadval", "in", "compressor":
+		return 1 + u.Parameters["stereo"]
+	case "pan":
+		return 1 - u.Parameters["stereo"]
+	case "speed":
+		return -1
+	case "send":
+		return (-1 - u.Parameters["stereo"]) * u.Parameters["sendpop"]
+	}
+	return 0
+}
+
+func (u *Unit) StackNeed() int {
+	switch u.Type {
+	case "envelope", "oscillator", "noise", "receive", "loadnote", "loadval", "in":
+		return 0
+	case "mulp", "mul", "add", "addp", "xch":
+		return 2 * (1 + u.Parameters["stereo"])
+	case "speed":
+		return 1
+	}
+	return 1 + u.Parameters["stereo"]
+}
+
 func Play(synth Synth, song Song) ([]float32, error) {
 	err := song.Validate()
 	if err != nil {
