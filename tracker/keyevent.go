@@ -225,6 +225,26 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 				t.Unselect()
 			}
 			return true
+		case "+":
+			switch t.EditMode {
+			case EditTracks:
+				if e.Modifiers.Contain(key.ModCtrl) {
+					t.AdjustSelectionPitch(12)
+				} else {
+					t.AdjustSelectionPitch(1)
+				}
+				return true
+			}
+		case "-":
+			switch t.EditMode {
+			case EditTracks:
+				if e.Modifiers.Contain(key.ModCtrl) {
+					t.AdjustSelectionPitch(-12)
+				} else {
+					t.AdjustSelectionPitch(-1)
+				}
+				return true
+			}
 		}
 		switch t.EditMode {
 		case EditPatterns:
