@@ -17,7 +17,7 @@ import (
 func (t *Tracker) layoutSongPanel(gtx C) D {
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(t.layoutSongButtons),
-		layout.Flexed(1, t.layoutSongOptions),
+		layout.Rigid(t.layoutSongOptions),
 	)
 }
 
@@ -100,6 +100,23 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 
 	in := layout.UniformInset(unit.Dp(1))
 
+	panicBtnStyle := material.Button(t.Theme, t.PanicBtn, "Panic")
+	if t.sequencer.Enabled() {
+		panicBtnStyle.Background = transparent
+		panicBtnStyle.Color = t.Theme.Palette.Fg
+	} else {
+		panicBtnStyle.Background = t.Theme.Palette.Fg
+		panicBtnStyle.Color = t.Theme.Palette.ContrastFg
+	}
+
+	for t.PanicBtn.Clicked() {
+		if t.sequencer.Enabled() {
+			t.sequencer.Disable()
+		} else {
+			t.sequencer.SetPatch(t.song.Patch)
+		}
+	}
+
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
@@ -157,6 +174,10 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 					return dims
 				}),
 			)
+		}),
+		layout.Rigid(func(gtx C) D {
+			gtx.Constraints.Min = image.Pt(0, 0)
+			return panicBtnStyle.Layout(gtx)
 		}),
 	)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"sync/atomic"
 
 	"github.com/vsariola/sointu"
 )
@@ -21,9 +22,10 @@ const SEQUENCER_MAX_READ_TRIES = 1000
 type Sequencer struct {
 	// we use mutex to ensure that voices are not triggered during readaudio or
 	// that the synth is not changed when audio is being read
-	mutex   sync.Mutex
-	synth   sointu.Synth
-	service sointu.SynthService
+	mutex      sync.Mutex
+	synth      sointu.Synth
+	validSynth int32
+	service    sointu.SynthService
 	// this iterator is a bit unconventional in the sense that it might return
 	// hasNext false, but might still return hasNext true in future attempts if
 	// new rows become available.
@@ -72,10 +74,10 @@ func (s *Sequencer) ReadAudio(buffer []float32) (int, error) {
 		if !gotRow {
 			rowTimeRemaining = math.MaxInt32
 		}
-		if s.synth != nil {
+		if s.Enabled() {
 			rendered, timeAdvanced, err := s.synth.Render(buffer[totalRendered*2:], rowTimeRemaining)
 			if err != nil {
-				s.synth = nil
+				s.Disable()
 			}
 			totalRendered += rendered
 			s.rowTime += timeAdvanced
@@ -98,12 +100,24 @@ func (s *Sequencer) ReadAudio(buffer []float32) (int, error) {
 // Updates the patch of the synth
 func (s *Sequencer) SetPatch(patch sointu.Patch) {
 	s.mutex.Lock()
-	if s.synth != nil {
-		s.synth.Update(patch)
+	var err error
+	if s.Enabled() {
+		err = s.synth.Update(patch)
 	} else {
-		s.synth, _ = s.service.Compile(patch)
+		s.synth, err = s.service.Compile(patch)
+	}
+	if err == nil {
+		atomic.StoreInt32(&s.validSynth, 1)
 	}
 	s.mutex.Unlock()
+}
+
+func (s *Sequencer) Enabled() bool {
+	return atomic.LoadInt32(&s.validSynth) == 1
+}
+
+func (s *Sequencer) Disable() {
+	atomic.StoreInt32(&s.validSynth, 0)
 }
 
 func (s *Sequencer) SetRowLength(rowLength int) {
