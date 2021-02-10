@@ -27,10 +27,13 @@ func valueAsNote(val byte) string {
 	if val == 0 {
 		return "---" // release
 	}
-	octave := (val - baseNote) / 12
-	oNote := (val - baseNote) % 12
-	if octave < 0 || oNote < 0 || octave > 10 {
-		return "???"
+	oNote := mod(int(val-baseNote), 12)
+	octave := (int(val) - oNote - baseNote) / 12
+	if octave < 0 {
+		return fmt.Sprintf("%s%s", notes[oNote], string(byte('Z'+1+octave)))
+	}
+	if octave >= 10 {
+		return fmt.Sprintf("%s%s", notes[oNote], string(byte('A'+octave-10)))
 	}
 	return fmt.Sprintf("%s%d", notes[oNote], octave)
 }
