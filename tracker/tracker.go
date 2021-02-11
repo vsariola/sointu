@@ -77,9 +77,10 @@ type Tracker struct {
 	BottomHorizontalSplit *Split
 	VerticalSplit         *Split
 	StackUse              []int
+	KeyPlaying            map[string]func()
 
 	sequencer    *Sequencer
-	ticked       chan struct{}
+	refresh      chan struct{}
 	setPlaying   chan bool
 	rowJump      chan int
 	patternJump  chan int
@@ -128,25 +129,6 @@ func (t *Tracker) TogglePlay() {
 		t.NoteTracking = true
 		t.PlayPosition = t.Cursor.SongRow
 		t.PlayPosition.Row-- // TODO: we advance soon to make up for this -1, but this is not very elegant way to do it
-	}
-}
-
-func (t *Tracker) sequencerLoop(closer <-chan struct{}) {
-	output := t.audioContext.Output()
-	defer output.Close()
-	buffer := make([]float32, 8192)
-	for {
-		select {
-		case <-closer:
-			return
-		default:
-			read, _ := t.sequencer.ReadAudio(buffer)
-			for read < len(buffer) {
-				buffer[read] = 0
-				read++
-			}
-			output.WriteAudio(buffer)
-		}
 	}
 }
 
@@ -557,7 +539,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		setPlaying:            make(chan bool),
 		rowJump:               make(chan int),
 		patternJump:           make(chan int),
-		ticked:                make(chan struct{}),
+		refresh:               make(chan struct{}, 1), // use non-blocking sends; no need to queue extra ticks if one is queued already
 		closer:                make(chan struct{}),
 		undoStack:             []sointu.Song{},
 		redoStack:             []sointu.Song{},
@@ -567,6 +549,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		BottomHorizontalSplit: new(Split),
 		VerticalSplit:         new(Split),
 		ChooseUnitTypeList:    &layout.List{Axis: layout.Vertical},
+		KeyPlaying:            make(map[string]func()),
 	}
 	t.UnitDragList.HoverItem = -1
 	t.InstrumentDragList.HoverItem = -1
@@ -578,12 +561,11 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 	for range allUnits {
 		t.ChooseUnitTypeBtns = append(t.ChooseUnitTypeBtns, new(widget.Clickable))
 	}
-	curVoices := make([]int, 32)
-	t.sequencer = NewSequencer(synthService, func() ([]Note, bool) {
+	t.sequencer = NewSequencer(2048, synthService, audioContext, func(row []RowNote) []RowNote {
 		t.playRowPatMutex.Lock()
 		if !t.Playing {
 			t.playRowPatMutex.Unlock()
-			return nil, false
+			return nil
 		}
 		t.PlayPosition.Row++
 		t.PlayPosition.Wrap(t.song)
@@ -591,28 +573,20 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 			t.Cursor.SongRow = t.PlayPosition
 			t.SelectionCorner.SongRow = t.PlayPosition
 		}
-		notes := make([]Note, 0, 32)
-		for track := range t.song.Tracks {
-			patternIndex := t.song.Tracks[track].Sequence[t.PlayPosition.Pattern]
-			note := t.song.Tracks[track].Patterns[patternIndex][t.PlayPosition.Row]
-			if note == 1 { // anything but hold causes an action.
-				continue
-			}
-			first := t.song.FirstTrackVoice(track)
-			notes = append(notes, Note{first + curVoices[track], 0})
-			if note > 1 {
-				curVoices[track]++
-				if curVoices[track] >= t.song.Tracks[track].NumVoices {
-					curVoices[track] = 0
-				}
-				notes = append(notes, Note{first + curVoices[track], note})
-			}
+		for _, track := range t.song.Tracks {
+			patternIndex := track.Sequence[t.PlayPosition.Pattern]
+			note := track.Patterns[patternIndex][t.PlayPosition.Row]
+			row = append(row, RowNote{Note: note, NumVoices: track.NumVoices})
 		}
 		t.playRowPatMutex.Unlock()
-		t.ticked <- struct{}{}
-		return notes, true
+		select {
+		case t.refresh <- struct{}{}:
+		default:
+			// message dropped, there's already a tick queued, so no need to queue extra
+		}
+
+		return row
 	})
-	go t.sequencerLoop(t.closer)
 	if err := t.LoadSong(defaultSong.Copy()); err != nil {
 		panic(fmt.Errorf("cannot load default song: %w", err))
 	}

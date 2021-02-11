@@ -1,19 +1,20 @@
 package tracker
 
 import (
+	"os"
+
 	"gioui.org/app"
 	"gioui.org/io/key"
 	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/op"
-	"os"
 )
 
 func (t *Tracker) Run(w *app.Window) error {
 	var ops op.Ops
 	for {
 		select {
-		case <-t.ticked:
+		case <-t.refresh:
 			w.Invalidate()
 		case e := <-w.Events():
 			switch e := e.(type) {

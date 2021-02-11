@@ -268,8 +268,15 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 					return true
 				}
 				if val, ok := noteMap[e.Name]; ok {
-					t.NotePressed(val)
-					return true
+					if _, ok := t.KeyPlaying[e.Name]; !ok {
+						n := getNoteValue(int(t.Octave.Value), val)
+						t.SetCurrentNote(n)
+						trk := t.Cursor.Track
+						start := t.song.FirstTrackVoice(trk)
+						end := start + t.song.Tracks[trk].NumVoices
+						t.KeyPlaying[e.Name] = t.sequencer.Trigger(start, end, n)
+						return true
+					}
 				}
 			}
 		case EditUnits:
@@ -279,10 +286,30 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 			}
 			if val, ok := unitKeyMap[name]; ok {
 				if e.Modifiers.Contain(key.ModCtrl) {
-					t.AddUnit()
+					t.SetUnit(val)
+					return true
 				}
-				t.SetUnit(val)
-				return true
+			}
+			fallthrough
+		case EditParameters:
+			if val, ok := noteMap[e.Name]; ok {
+				if _, ok := t.KeyPlaying[e.Name]; !ok {
+					note := getNoteValue(int(t.Octave.Value), val)
+					instr := t.CurrentInstrument
+					start := t.song.FirstInstrumentVoice(instr)
+					end := start + t.song.Patch.Instruments[instr].NumVoices
+					t.KeyPlaying[e.Name] = t.sequencer.Trigger(start, end, note)
+					return false
+				}
+			}
+		}
+	}
+	if e.State == key.Release {
+		if f, ok := t.KeyPlaying[e.Name]; ok {
+			f()
+			delete(t.KeyPlaying, e.Name)
+			if t.EditMode == EditTracks && t.Playing && t.getCurrent() == 1 {
+				t.SetCurrentNote(0)
 			}
 		}
 	}
@@ -292,11 +319,6 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 // getCurrent returns the current (note) value in current pattern under the cursor
 func (t *Tracker) getCurrent() byte {
 	return t.song.Tracks[t.Cursor.Track].Patterns[t.song.Tracks[t.Cursor.Track].Sequence[t.Cursor.Pattern]][t.Cursor.Row]
-}
-
-// NotePressed handles incoming key presses while in the note column
-func (t *Tracker) NotePressed(val int) {
-	t.SetCurrentNote(getNoteValue(int(t.Octave.Value), val))
 }
 
 // NumberPressed handles incoming presses while in either of the hex number columns

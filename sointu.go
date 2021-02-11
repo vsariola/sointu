@@ -304,6 +304,14 @@ func (s *Song) FirstTrackVoice(track int) int {
 	return ret
 }
 
+func (s *Song) FirstInstrumentVoice(instrument int) int {
+	ret := 0
+	for _, i := range s.Patch.Instruments[:instrument] {
+		ret += i.NumVoices
+	}
+	return ret
+}
+
 func (s *Song) TotalTrackVoices() int {
 	ret := 0
 	for _, t := range s.Tracks {
