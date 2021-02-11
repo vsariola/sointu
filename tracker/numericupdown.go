@@ -119,6 +119,9 @@ func (s NumericUpDownStyle) button(height int, icon *widget.Icon, delta int, cli
 				if height < size {
 					size = height
 				}
+				if size < 1 {
+					size = 1
+				}
 				if icon != nil {
 					icon.Color = s.IconColor
 					return icon.Layout(gtx, unit.Px(float32(size)))
