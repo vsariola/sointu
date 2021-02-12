@@ -25,7 +25,7 @@ type SampleOffset struct {
 func Encode(patch *sointu.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
 	var c EncodedPatch
 	sampleOffsetMap := map[SampleOffset]int{}
-	for _, instr := range patch.Instruments {
+	for instrIndex, instr := range patch.Instruments {
 		if len(instr.Units) > 63 {
 			return nil, errors.New("An instrument can have a maximum of 63 units")
 		}
@@ -61,11 +61,93 @@ func Encode(patch *sointu.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
 					c.DelayTimes = append(c.DelayTimes, uint16(v))
 				}
 			}
-			command, values, err := EncodeUnit(unit, featureSet)
-			if err != nil {
-				return nil, fmt.Errorf(`encoding unit failed: %v`, err)
+			opcode, ok := featureSet.Opcode(unit.Type)
+			if !ok {
+				return nil, fmt.Errorf(`the targeted virtual machine is not configured to support unit type "%v"`, unit.Type)
 			}
-			c.Commands = append(c.Commands, command)
+			var values []byte
+			for _, v := range sointu.UnitTypes[unit.Type] {
+				if v.CanModulate && v.CanSet {
+					values = append(values, byte(unit.Parameters[v.Name]))
+				}
+			}
+			if unit.Type == "aux" {
+				values = append(values, byte(unit.Parameters["channel"]))
+			} else if unit.Type == "in" {
+				values = append(values, byte(unit.Parameters["channel"]))
+			} else if unit.Type == "oscillator" {
+				flags := 0
+				switch unit.Parameters["type"] {
+				case sointu.Sine:
+					flags = 0x40
+				case sointu.Trisaw:
+					flags = 0x20
+				case sointu.Pulse:
+					flags = 0x10
+				case sointu.Gate:
+					flags = 0x04
+				case sointu.Sample:
+					flags = 0x80
+				}
+				if unit.Parameters["lfo"] == 1 {
+					flags += 0x08
+				}
+				flags += unit.Parameters["unison"]
+				values = append(values, byte(flags))
+			} else if unit.Type == "filter" {
+				flags := 0
+				if unit.Parameters["lowpass"] == 1 {
+					flags += 0x40
+				}
+				if unit.Parameters["bandpass"] == 1 {
+					flags += 0x20
+				}
+				if unit.Parameters["highpass"] == 1 {
+					flags += 0x10
+				}
+				if unit.Parameters["negbandpass"] == 1 {
+					flags += 0x08
+				}
+				if unit.Parameters["neghighpass"] == 1 {
+					flags += 0x04
+				}
+				values = append(values, byte(flags))
+			} else if unit.Type == "send" {
+				targetVoice := unit.Parameters["voice"]
+				var targetInstrument int
+				if targetVoice == 0 {
+					targetInstrument = instrIndex
+				} else {
+					var err error
+					targetInstrument, err = patch.InstrumentForVoice(targetVoice - 1)
+					if err != nil {
+						return nil, fmt.Errorf("send targeted a voice %v, which out of the range of instruments", targetVoice-1)
+					}
+				}
+				origTarget := unit.Parameters["unit"]
+				targetUnit := origTarget
+				for k := 0; k < origTarget; k++ {
+					units := patch.Instruments[targetInstrument].Units
+					if k >= len(units) {
+						break
+					}
+					if units[k].Type == "" {
+						targetUnit--
+					}
+				}
+				address := ((targetUnit + 1) << 4) + unit.Parameters["port"] // each unit is 16 dwords, 8 workspace followed by 8 ports. +1 is for skipping the note/release/inputs
+				if unit.Parameters["voice"] > 0 {
+					address += 0x8000 + 16 + (unit.Parameters["voice"]-1)*1024 // global send, +16 is for skipping the out/aux ports
+				}
+				if unit.Parameters["sendpop"] == 1 {
+					address += 0x8
+				}
+				values = append(values, byte(address&255), byte(address>>8))
+			} else if unit.Type == "delay" {
+				countTrack := (unit.Parameters["count"] << 1) - 1 + unit.Parameters["notetracking"] // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
+				values = append(values, byte(unit.Parameters["delay"]), byte(countTrack))
+			}
+			c.Commands = append(c.Commands, byte(opcode+unit.Parameters["stereo"]))
 			c.Values = append(c.Values, values...)
 		}
 		c.Commands = append(c.Commands, byte(0)) // advance
@@ -80,72 +162,4 @@ func Encode(patch *sointu.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
 	}
 
 	return &c, nil
-}
-
-func EncodeUnit(unit sointu.Unit, featureSet FeatureSet) (byte, []byte, error) {
-	opcode, ok := featureSet.Opcode(unit.Type)
-	if !ok {
-		return 0, nil, fmt.Errorf(`the targeted virtual machine is not configured to support unit type "%v"`, unit.Type)
-	}
-	var values []byte
-	for _, v := range sointu.UnitTypes[unit.Type] {
-		if v.CanModulate && v.CanSet {
-			values = append(values, byte(unit.Parameters[v.Name]))
-		}
-	}
-	if unit.Type == "aux" {
-		values = append(values, byte(unit.Parameters["channel"]))
-	} else if unit.Type == "in" {
-		values = append(values, byte(unit.Parameters["channel"]))
-	} else if unit.Type == "oscillator" {
-		flags := 0
-		switch unit.Parameters["type"] {
-		case sointu.Sine:
-			flags = 0x40
-		case sointu.Trisaw:
-			flags = 0x20
-		case sointu.Pulse:
-			flags = 0x10
-		case sointu.Gate:
-			flags = 0x04
-		case sointu.Sample:
-			flags = 0x80
-		}
-		if unit.Parameters["lfo"] == 1 {
-			flags += 0x08
-		}
-		flags += unit.Parameters["unison"]
-		values = append(values, byte(flags))
-	} else if unit.Type == "filter" {
-		flags := 0
-		if unit.Parameters["lowpass"] == 1 {
-			flags += 0x40
-		}
-		if unit.Parameters["bandpass"] == 1 {
-			flags += 0x20
-		}
-		if unit.Parameters["highpass"] == 1 {
-			flags += 0x10
-		}
-		if unit.Parameters["negbandpass"] == 1 {
-			flags += 0x08
-		}
-		if unit.Parameters["neghighpass"] == 1 {
-			flags += 0x04
-		}
-		values = append(values, byte(flags))
-	} else if unit.Type == "send" {
-		address := ((unit.Parameters["unit"] + 1) << 4) + unit.Parameters["port"] // each unit is 16 dwords, 8 workspace followed by 8 ports. +1 is for skipping the note/release/inputs
-		if unit.Parameters["voice"] > 0 {
-			address += 0x8000 + 16 + (unit.Parameters["voice"]-1)*1024 // global send, +16 is for skipping the out/aux ports
-		}
-		if unit.Parameters["sendpop"] == 1 {
-			address += 0x8
-		}
-		values = append(values, byte(address&255), byte(address>>8))
-	} else if unit.Type == "delay" {
-		countTrack := (unit.Parameters["count"] << 1) - 1 + unit.Parameters["notetracking"] // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
-		values = append(values, byte(unit.Parameters["delay"]), byte(countTrack))
-	}
-	return byte(opcode + unit.Parameters["stereo"]), values, nil
 }
