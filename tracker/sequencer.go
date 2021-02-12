@@ -86,6 +86,10 @@ func (s *Sequencer) loop(bufferSize int, service sointu.SynthService, context so
 				s.synth, err = service.Compile(patch)
 				if err == nil {
 					s.enable()
+					for i := range s.voiceReleased {
+						s.voiceReleased[i] = true
+						s.synth.Release(i)
+					}
 					break
 				}
 			}
