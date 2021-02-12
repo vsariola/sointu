@@ -260,6 +260,32 @@ func (t *Tracker) SwapInstruments(i, j int) {
 		return
 	}
 	t.SaveUndo()
+	if j < i {
+		i, j = j, i
+	}
+	startI := t.song.FirstInstrumentVoice(i)
+	voicesI := t.song.Patch.Instruments[i].NumVoices
+	endI := startI + voicesI
+	startJ := t.song.FirstInstrumentVoice(j)
+	voicesJ := t.song.Patch.Instruments[j].NumVoices
+	endJ := startI + voicesJ
+	for _, instr := range t.song.Patch.Instruments {
+		for _, u := range instr.Units {
+			if u.Type == "send" {
+				v := u.Parameters["voice"]
+				if v == 0 {
+					continue
+				}
+				if v > startI && v <= endI { // voice belonged to the instrument I
+					u.Parameters["voice"] = v + endJ - endI
+				} else if v > startJ && v <= endJ { // voice belonged to the instrument J
+					u.Parameters["voice"] = v - startJ + startI
+				} else if v > endI && v <= startJ { // voice was between the two instruments
+					u.Parameters["voice"] = v - voicesI + voicesJ
+				}
+			}
+		}
+	}
 	instruments := t.song.Patch.Instruments
 	instruments[i], instruments[j] = instruments[j], instruments[i]
 	t.ClampPositions()
@@ -271,6 +297,23 @@ func (t *Tracker) DeleteInstrument() {
 		return
 	}
 	t.SaveUndo()
+	start := t.song.FirstInstrumentVoice(t.CurrentInstrument)
+	numVoices := t.song.Patch.Instruments[t.CurrentInstrument].NumVoices
+	end := start + numVoices
+	for _, i := range t.song.Patch.Instruments {
+		for _, u := range i.Units {
+			if u.Type == "send" {
+				if v := u.Parameters["voice"]; v > 0 {
+					if v > start && v <= end {
+						u.Parameters["voice"] = 0
+						u.Parameters["unit"] = 63
+					} else if v > end {
+						u.Parameters["voice"] -= numVoices
+					}
+				}
+			}
+		}
+	}
 	t.song.Patch.Instruments = append(t.song.Patch.Instruments[:t.CurrentInstrument], t.song.Patch.Instruments[t.CurrentInstrument+1:]...)
 	if t.CurrentInstrument >= len(t.song.Patch.Instruments) {
 		t.CurrentInstrument = len(t.song.Patch.Instruments) - 1
@@ -360,6 +403,19 @@ func (t *Tracker) SetUnit(typ string) {
 
 func (t *Tracker) AddUnit() {
 	t.SaveUndo()
+	start := t.song.FirstInstrumentVoice(t.CurrentInstrument)
+	end := start + t.song.Patch.Instruments[t.CurrentInstrument].NumVoices
+	for ind, i := range t.song.Patch.Instruments {
+		for _, u := range i.Units {
+			if u.Type == "send" {
+				if v := u.Parameters["voice"]; (ind == t.CurrentInstrument && v == 0) || (v > 0 && v > start && v <= end) {
+					if u.Parameters["unit"] > t.CurrentUnit {
+						u.Parameters["unit"]++
+					}
+				}
+			}
+		}
+	}
 	units := make([]sointu.Unit, len(t.song.Patch.Instruments[t.CurrentInstrument].Units)+1)
 	copy(units, t.song.Patch.Instruments[t.CurrentInstrument].Units[:t.CurrentUnit+1])
 	copy(units[t.CurrentUnit+2:], t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit+1:])
@@ -382,6 +438,21 @@ func (t *Tracker) DeleteUnit() {
 		return
 	}
 	t.SaveUndo()
+	start := t.song.FirstInstrumentVoice(t.CurrentInstrument)
+	end := start + t.song.Patch.Instruments[t.CurrentInstrument].NumVoices
+	for ind, i := range t.song.Patch.Instruments {
+		for _, u := range i.Units {
+			if u.Type == "send" {
+				if v := u.Parameters["voice"]; (ind == t.CurrentInstrument && v == 0) || (v > 0 && v > start && v <= end) {
+					if u.Parameters["unit"] > t.CurrentUnit {
+						u.Parameters["unit"]--
+					} else if u.Parameters["unit"] == t.CurrentUnit {
+						u.Parameters["unit"] = 63
+					}
+				}
+			}
+		}
+	}
 	units := make([]sointu.Unit, len(t.song.Patch.Instruments[t.CurrentInstrument].Units)-1)
 	copy(units, t.song.Patch.Instruments[t.CurrentInstrument].Units[:t.CurrentUnit])
 	copy(units[t.CurrentUnit:], t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit+1:])
@@ -421,6 +492,21 @@ func (t *Tracker) SwapUnits(i, j int) {
 		return
 	}
 	t.SaveUndo()
+	start := t.song.FirstInstrumentVoice(t.CurrentInstrument)
+	end := start + t.song.Patch.Instruments[t.CurrentInstrument].NumVoices
+	for ind, instr := range t.song.Patch.Instruments {
+		for _, u := range instr.Units {
+			if u.Type == "send" {
+				if v := u.Parameters["voice"]; (ind == t.CurrentInstrument && v == 0) || (v > 0 && v > start && v <= end) {
+					if u.Parameters["unit"] == i {
+						u.Parameters["unit"] = j
+					} else if u.Parameters["unit"] == j {
+						u.Parameters["unit"] = i
+					}
+				}
+			}
+		}
+	}
 	units := t.song.Patch.Instruments[t.CurrentInstrument].Units
 	units[i], units[j] = units[j], units[i]
 	t.ClampPositions()
