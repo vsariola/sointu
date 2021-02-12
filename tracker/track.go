@@ -104,7 +104,19 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 			gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
 			return in.Layout(gtx, numStyle.Layout)
 		}
-		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+		n := t.song.Tracks[t.Cursor.Track].NumVoices
+		maxRemain := t.song.Patch.TotalVoices() - t.song.TotalTrackVoices() + n
+		if maxRemain < 1 {
+			maxRemain = 1
+		}
+		t.TrackVoices.Value = n
+		voiceUpDown := func(gtx C) D {
+			numStyle := NumericUpDown(t.Theme, t.TrackVoices, 1, maxRemain)
+			gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
+			gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+			return in.Layout(gtx, numStyle.Layout)
+		}
+		dims := layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(Label("OCT:", white)),
 			layout.Rigid(octave),
 			layout.Rigid(Label(" PITCH:", white)),
@@ -112,8 +124,12 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 			layout.Rigid(subtractSemitoneBtnStyle.Layout),
 			layout.Rigid(addOctaveBtnStyle.Layout),
 			layout.Rigid(subtractOctaveBtnStyle.Layout),
+			layout.Rigid(Label("Voices:", white)),
+			layout.Rigid(voiceUpDown),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(newTrackBtnStyle.Layout))
+		t.SetTrackVoices(t.TrackVoices.Value)
+		return dims
 	}
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,

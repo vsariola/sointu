@@ -47,6 +47,7 @@ type Tracker struct {
 	RowsPerPattern        *NumberInput
 	RowsPerBeat           *NumberInput
 	InstrumentVoices      *NumberInput
+	TrackVoices           *NumberInput
 	InstrumentNameEditor  *widget.Editor
 	NewTrackBtn           *widget.Clickable
 	NewInstrumentBtn      *widget.Clickable
@@ -218,6 +219,25 @@ func (t *Tracker) AddTrack() {
 			Sequence:  seq,
 		})
 	}
+}
+
+func (t *Tracker) SetTrackVoices(value int) bool {
+	if value < 1 {
+		value = 1
+	}
+	maxRemain := t.song.Patch.TotalVoices() - t.song.TotalTrackVoices() + t.song.Tracks[t.Cursor.Track].NumVoices
+	if maxRemain < 1 {
+		maxRemain = 1
+	}
+	if value > maxRemain {
+		value = maxRemain
+	}
+	if value != int(t.song.Tracks[t.Cursor.Track].NumVoices) {
+		t.SaveUndo()
+		t.song.Tracks[t.Cursor.Track].NumVoices = value
+		return true
+	}
+	return false
 }
 
 func (t *Tracker) AddInstrument() {
@@ -519,6 +539,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		RowsPerPattern:        new(NumberInput),
 		RowsPerBeat:           new(NumberInput),
 		InstrumentVoices:      new(NumberInput),
+		TrackVoices:           new(NumberInput),
 		InstrumentNameEditor:  &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle},
 		NewTrackBtn:           new(widget.Clickable),
 		NewInstrumentBtn:      new(widget.Clickable),
