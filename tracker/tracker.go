@@ -1,6 +1,8 @@
 package tracker
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -11,6 +13,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/vsariola/sointu"
+	"gopkg.in/yaml.v3"
 )
 
 type EditMode int
@@ -50,6 +53,7 @@ type Tracker struct {
 	TrackVoices           *NumberInput
 	InstrumentNameEditor  *widget.Editor
 	NewTrackBtn           *widget.Clickable
+	CopySongBtn           *widget.Clickable
 	NewInstrumentBtn      *widget.Clickable
 	DeleteInstrumentBtn   *widget.Clickable
 	LoadSongFileBtn       *widget.Clickable
@@ -105,6 +109,20 @@ func (t *Tracker) LoadSong(song sointu.Song) error {
 		t.sequencer.SetRowLength(song.SamplesPerRow())
 	}
 	return nil
+}
+
+func (t *Tracker) UnmarshalSong(bytes []byte) error {
+	var song sointu.Song
+	if errJSON := json.Unmarshal(bytes, &song); errJSON != nil {
+		if errYaml := yaml.Unmarshal(bytes, &song); errYaml != nil {
+			return fmt.Errorf("the song could not be parsed as .json (%v) or .yml (%v)", errJSON, errYaml)
+		}
+	}
+	if song.BPM > 0 {
+		t.LoadSong(song)
+		return nil
+	}
+	return errors.New("was able to unmarshal a song, but the bpm was 0")
 }
 
 func clamp(a, min, max int) int {
@@ -631,6 +649,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		NewInstrumentBtn:      new(widget.Clickable),
 		DeleteInstrumentBtn:   new(widget.Clickable),
 		NewSongFileBtn:        new(widget.Clickable),
+		CopySongBtn:           new(widget.Clickable),
 		FileMenuBtn:           new(widget.Clickable),
 		LoadSongFileBtn:       new(widget.Clickable),
 		SaveSongFileBtn:       new(widget.Clickable),

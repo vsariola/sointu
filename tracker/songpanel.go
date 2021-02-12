@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"gioui.org/f32"
+	"gioui.org/io/clipboard"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
@@ -12,6 +13,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget/material"
 	"golang.org/x/exp/shiny/materialdesign/icons"
+	"gopkg.in/yaml.v3"
 )
 
 func (t *Tracker) layoutSongPanel(gtx C) D {
@@ -41,6 +43,12 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 		t.SaveSongFile()
 	}
 
+	for t.CopySongBtn.Clicked() {
+		if contents, err := yaml.Marshal(t.song); err == nil {
+			clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+		}
+	}
+
 	newBtnStyle := material.IconButton(t.Theme, t.NewSongFileBtn, widgetForIcon(icons.ContentClear))
 	newBtnStyle.Background = transparent
 	newBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
@@ -51,10 +59,16 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 	loadBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 	loadBtnStyle.Color = primaryColor
 
+	copySongBtnStyle := material.IconButton(t.Theme, t.CopySongBtn, widgetForIcon(icons.ContentContentCopy))
+	copySongBtnStyle.Background = transparent
+	copySongBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+	copySongBtnStyle.Color = primaryColor
+
 	menuContents := func(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 			layout.Rigid(newBtnStyle.Layout),
 			layout.Rigid(loadBtnStyle.Layout),
+			layout.Rigid(copySongBtnStyle.Layout),
 		)
 	}
 

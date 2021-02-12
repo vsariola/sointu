@@ -4,7 +4,9 @@ import (
 	"strconv"
 	"strings"
 
+	"gioui.org/app"
 	"gioui.org/io/key"
+	"gopkg.in/yaml.v3"
 )
 
 var noteMap = map[string]int{
@@ -75,19 +77,32 @@ var unitKeyMap = map[string]string{
 }
 
 // KeyEvent handles incoming key events and returns true if repaint is needed.
-func (t *Tracker) KeyEvent(e key.Event) bool {
+func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 	if e.State == key.Press {
 		if t.InstrumentNameEditor.Focused() {
 			return false
 		}
 		switch e.Name {
+		case "C":
+			if e.Modifiers.Contain(key.ModShortcut) {
+				contents, err := yaml.Marshal(t.song)
+				if err == nil {
+					w.WriteClipboard(string(contents))
+				}
+				return true
+			}
+		case "V":
+			if e.Modifiers.Contain(key.ModShortcut) {
+				w.ReadClipboard()
+				return true
+			}
 		case "Z":
-			if e.Modifiers.Contain(key.ModCtrl) {
+			if e.Modifiers.Contain(key.ModShortcut) {
 				t.Undo()
 				return true
 			}
 		case "Y":
-			if e.Modifiers.Contain(key.ModCtrl) {
+			if e.Modifiers.Contain(key.ModShortcut) {
 				t.Redo()
 				return true
 			}
@@ -118,14 +133,14 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 		case key.NameUpArrow:
 			switch t.EditMode {
 			case EditPatterns:
-				if e.Modifiers.Contain(key.ModCtrl) {
+				if e.Modifiers.Contain(key.ModShortcut) {
 					t.Cursor.SongRow = SongRow{}
 				} else {
 					t.Cursor.Row -= t.song.RowsPerPattern
 				}
 				t.NoteTracking = false
 			case EditTracks:
-				if e.Modifiers.Contain(key.ModCtrl) {
+				if e.Modifiers.Contain(key.ModShortcut) {
 					t.Cursor.Row -= t.song.RowsPerPattern
 				} else {
 					t.Cursor.Row--
@@ -144,14 +159,14 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 		case key.NameDownArrow:
 			switch t.EditMode {
 			case EditPatterns:
-				if e.Modifiers.Contain(key.ModCtrl) {
+				if e.Modifiers.Contain(key.ModShortcut) {
 					t.Cursor.Row = t.song.TotalRows() - 1
 				} else {
 					t.Cursor.Row += t.song.RowsPerPattern
 				}
 				t.NoteTracking = false
 			case EditTracks:
-				if e.Modifiers.Contain(key.ModCtrl) {
+				if e.Modifiers.Contain(key.ModShortcut) {
 					t.Cursor.Row += t.song.RowsPerPattern
 				} else {
 					t.Cursor.Row++
@@ -170,13 +185,13 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 		case key.NameLeftArrow:
 			switch t.EditMode {
 			case EditPatterns:
-				if e.Modifiers.Contain(key.ModCtrl) {
+				if e.Modifiers.Contain(key.ModShortcut) {
 					t.Cursor.Track = 0
 				} else {
 					t.Cursor.Track--
 				}
 			case EditTracks:
-				if t.CursorColumn == 0 || !t.TrackShowHex[t.Cursor.Track] || e.Modifiers.Contain(key.ModCtrl) {
+				if t.CursorColumn == 0 || !t.TrackShowHex[t.Cursor.Track] || e.Modifiers.Contain(key.ModShortcut) {
 					t.Cursor.Track--
 					t.CursorColumn = 1
 				} else {
@@ -199,13 +214,13 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 		case key.NameRightArrow:
 			switch t.EditMode {
 			case EditPatterns:
-				if e.Modifiers.Contain(key.ModCtrl) {
+				if e.Modifiers.Contain(key.ModShortcut) {
 					t.Cursor.Track = len(t.song.Tracks) - 1
 				} else {
 					t.Cursor.Track++
 				}
 			case EditTracks:
-				if t.CursorColumn == 0 || !t.TrackShowHex[t.Cursor.Track] || e.Modifiers.Contain(key.ModCtrl) {
+				if t.CursorColumn == 0 || !t.TrackShowHex[t.Cursor.Track] || e.Modifiers.Contain(key.ModShortcut) {
 					t.Cursor.Track++
 					t.CursorColumn = 0
 				} else {
@@ -228,7 +243,7 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 		case "+":
 			switch t.EditMode {
 			case EditTracks:
-				if e.Modifiers.Contain(key.ModCtrl) {
+				if e.Modifiers.Contain(key.ModShortcut) {
 					t.AdjustSelectionPitch(12)
 				} else {
 					t.AdjustSelectionPitch(1)
@@ -238,7 +253,7 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 		case "-":
 			switch t.EditMode {
 			case EditTracks:
-				if e.Modifiers.Contain(key.ModCtrl) {
+				if e.Modifiers.Contain(key.ModShortcut) {
 					t.AdjustSelectionPitch(-12)
 				} else {
 					t.AdjustSelectionPitch(-1)
@@ -285,7 +300,7 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 				name = strings.ToLower(name)
 			}
 			if val, ok := unitKeyMap[name]; ok {
-				if e.Modifiers.Contain(key.ModCtrl) {
+				if e.Modifiers.Contain(key.ModShortcut) {
 					t.SetUnit(val)
 					return true
 				}

@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"gioui.org/app"
+	"gioui.org/io/clipboard"
 	"gioui.org/io/key"
 	"gioui.org/io/system"
 	"gioui.org/layout"
@@ -21,7 +22,12 @@ func (t *Tracker) Run(w *app.Window) error {
 			case system.DestroyEvent:
 				return e.Err
 			case key.Event:
-				if t.KeyEvent(e) {
+				if t.KeyEvent(w, e) {
+					w.Invalidate()
+				}
+			case clipboard.Event:
+				err := t.UnmarshalSong([]byte(e.Text))
+				if err == nil {
 					w.Invalidate()
 				}
 			case system.FrameEvent:
