@@ -14,7 +14,23 @@ import (
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
+var instrumentPointerTag = false
+
 func (t *Tracker) layoutInstruments(gtx C) D {
+	for _, ev := range gtx.Events(&instrumentPointerTag) {
+		e, ok := ev.(pointer.Event)
+		if !ok {
+			continue
+		}
+		if e.Type == pointer.Press {
+			t.EditMode = EditUnits
+		}
+	}
+	rect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
+	pointer.Rect(rect).Add(gtx.Ops)
+	pointer.InputOp{Tag: &instrumentPointerTag,
+		Types: pointer.Press,
+	}.Add(gtx.Ops)
 	if t.CurrentInstrument > 7 {
 		t.InstrumentDragList.List.Position.First = t.CurrentInstrument - 7
 	} else {

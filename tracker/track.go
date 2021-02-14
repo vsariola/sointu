@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"gioui.org/f32"
+	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
@@ -19,6 +20,9 @@ import (
 const trackRowHeight = 16
 const trackColWidth = 54
 const patmarkWidth = 16
+
+var trackPointerTag bool
+var trackJumpPointerTag bool
 
 func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 	t.playRowPatMutex.RLock()
@@ -132,6 +136,21 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		return dims
 	}
 
+	for _, ev := range gtx.Events(&trackPointerTag) {
+		e, ok := ev.(pointer.Event)
+		if !ok {
+			continue
+		}
+		if e.Type == pointer.Press {
+			t.EditMode = EditTracks
+		}
+	}
+	rect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
+	pointer.Rect(rect).Add(gtx.Ops)
+	pointer.InputOp{Tag: &trackPointerTag,
+		Types: pointer.Press,
+	}.Add(gtx.Ops)
+
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return Surface{Gray: 37, Focus: t.EditMode == 1, FitSize: true}.Layout(gtx, menu)
@@ -169,9 +188,29 @@ func (t *Tracker) layoutTrackTitles(gtx C) D {
 func (t *Tracker) layoutTracks(gtx C) D {
 	defer op.Save(gtx.Ops).Load()
 	clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
-	op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y-trackRowHeight)/2)).Add(gtx.Ops)
 	cursorSongRow := t.Cursor.Pattern*t.song.RowsPerPattern + t.Cursor.Row
+	for _, ev := range gtx.Events(&trackJumpPointerTag) {
+		e, ok := ev.(pointer.Event)
+		if !ok {
+			continue
+		}
+		if e.Type == pointer.Press {
+			t.EditMode = EditTracks
+			t.Cursor.Track = int(e.Position.X) / trackColWidth
+			t.Cursor.Pattern = 0
+			t.Cursor.Row = int(e.Position.Y) / trackRowHeight
+			t.Cursor.Clamp(t.song)
+			t.SelectionCorner = t.Cursor
+			cursorSongRow = t.Cursor.Pattern*t.song.RowsPerPattern + t.Cursor.Row
+		}
+	}
+	op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y-trackRowHeight)/2)).Add(gtx.Ops)
 	op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorSongRow))).Add(gtx.Ops)
+	rect := image.Rect(0, 0, trackColWidth*len(t.song.Tracks), trackRowHeight*t.song.TotalRows())
+	pointer.Rect(rect).Add(gtx.Ops)
+	pointer.InputOp{Tag: &trackJumpPointerTag,
+		Types: pointer.Press,
+	}.Add(gtx.Ops)
 	if t.EditMode == EditPatterns || t.EditMode == EditTracks {
 		x1, y1 := t.Cursor.Track, t.Cursor.Pattern
 		x2, y2 := t.SelectionCorner.Track, t.SelectionCorner.Pattern

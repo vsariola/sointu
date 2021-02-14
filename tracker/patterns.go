@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"gioui.org/f32"
+	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
@@ -17,9 +18,25 @@ const patternCellHeight = 16
 const patternCellWidth = 16
 const patternRowMarkerWidth = 30
 
+var patternPointerTag = false
+
 func (t *Tracker) layoutPatterns(gtx C) D {
 	defer op.Save(gtx.Ops).Load()
 	clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
+	for _, ev := range gtx.Events(&patternPointerTag) {
+		e, ok := ev.(pointer.Event)
+		if !ok {
+			continue
+		}
+		if e.Type == pointer.Press {
+			t.EditMode = EditPatterns
+		}
+	}
+	rect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
+	pointer.Rect(rect).Add(gtx.Ops)
+	pointer.InputOp{Tag: &patternPointerTag,
+		Types: pointer.Press,
+	}.Add(gtx.Ops)
 	patternRect := SongRect{
 		Corner1: SongPoint{SongRow: SongRow{Pattern: t.Cursor.Pattern}, Track: t.Cursor.Track},
 		Corner2: SongPoint{SongRow: SongRow{Pattern: t.SelectionCorner.Pattern}, Track: t.SelectionCorner.Track},
