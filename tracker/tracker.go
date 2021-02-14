@@ -505,6 +505,26 @@ func (t *Tracker) SetUnitParam(value int) {
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
+func (t *Tracker) SetGmDlsEntry(index int) {
+	if index < 0 || index >= len(gmDlsEntries) {
+		return
+	}
+	entry := gmDlsEntries[index]
+	unit := t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit]
+	if unit.Type != "oscillator" || unit.Parameters["type"] != sointu.Sample {
+		return
+	}
+	if unit.Parameters["samplestart"] == entry.Start && unit.Parameters["loopstart"] == entry.LoopStart && unit.Parameters["looplength"] == entry.LoopLength {
+		return
+	}
+	t.SaveUndo()
+	unit.Parameters["samplestart"] = entry.Start
+	unit.Parameters["loopstart"] = entry.LoopStart
+	unit.Parameters["looplength"] = entry.LoopLength
+	unit.Parameters["transpose"] = 64 + entry.SuggestedTranspose
+	t.sequencer.SetPatch(t.song.Patch)
+}
+
 func (t *Tracker) SwapUnits(i, j int) {
 	if i < 0 || j < 0 || i >= len(t.song.Patch.Instruments[t.CurrentInstrument].Units) || j >= len(t.song.Patch.Instruments[t.CurrentInstrument].Units) {
 		return

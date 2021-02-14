@@ -13,6 +13,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/vsariola/sointu"
+	"github.com/vsariola/sointu/compiler"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
@@ -30,33 +31,56 @@ func (t *Tracker) layoutUnitEditor(gtx C) D {
 }
 
 func (t *Tracker) layoutUnitSliders(gtx C) D {
-	ut, ok := sointu.UnitTypes[t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type]
+	u := t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit]
+	ut, ok := sointu.UnitTypes[u.Type]
 	if !ok {
 		return layout.Dimensions{}
 	}
 	listElements := func(gtx C, index int) D {
-		if ut[index].MaxValue < ut[index].MinValue {
-			return layout.Dimensions{}
-		}
 		for len(t.ParameterSliders) <= index {
 			t.ParameterSliders = append(t.ParameterSliders, new(widget.Float))
 		}
-		params := t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Parameters
-		t.ParameterSliders[index].Value = float32(params[ut[index].Name])
-		sliderStyle := material.Slider(t.Theme, t.ParameterSliders[index], float32(ut[index].MinValue), float32(ut[index].MaxValue))
-		sliderStyle.Color = t.Theme.Fg
+		params := u.Parameters
+		var name string
+		var value, min, max int
 		var valueText string
-		value := params[ut[index].Name]
-		hint := t.song.ParamHintString(t.CurrentInstrument, t.CurrentUnit, ut[index].Name)
-		if hint != "" {
-			valueText = fmt.Sprintf("%v / %v", value, hint)
+		if u.Type == "oscillator" && index == len(ut) {
+			name = "sample"
+			key := compiler.SampleOffset{Start: uint32(params["samplestart"]), LoopStart: uint16(params["loopstart"]), LoopLength: uint16(params["looplength"])}
+			if v, ok := gmDlsEntryMap[key]; ok {
+				value = v + 1
+				valueText = fmt.Sprintf("%v / %v", value, gmDlsEntries[v].Name)
+			} else {
+				value = 0
+				valueText = "0 / custom"
+			}
+			min, max = 0, len(gmDlsEntries)
 		} else {
-			valueText = fmt.Sprintf("%v", value)
+			if ut[index].MaxValue < ut[index].MinValue {
+				return layout.Dimensions{}
+			}
+			name = ut[index].Name
+			if u.Type == "oscillator" && (name == "samplestart" || name == "loopstart" || name == "looplength") {
+				if params["type"] != sointu.Sample {
+					return layout.Dimensions{}
+				}
+			}
+			value = params[name]
+			min, max = ut[index].MinValue, ut[index].MaxValue
+			hint := t.song.ParamHintString(t.CurrentInstrument, t.CurrentUnit, name)
+			if hint != "" {
+				valueText = fmt.Sprintf("%v / %v", value, hint)
+			} else {
+				valueText = fmt.Sprintf("%v", value)
+			}
 		}
+		t.ParameterSliders[index].Value = float32(value)
+		sliderStyle := material.Slider(t.Theme, t.ParameterSliders[index], float32(min), float32(max))
+		sliderStyle.Color = t.Theme.Fg
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
 				gtx.Constraints.Min.X = gtx.Px(unit.Dp(110))
-				return layout.E.Layout(gtx, Label(ut[index].Name, white))
+				return layout.E.Layout(gtx, Label(name, white))
 			}),
 			layout.Rigid(func(gtx C) D {
 				gtx.Constraints.Min.X = gtx.Px(unit.Dp(200))
@@ -70,14 +94,25 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 				for sliderStyle.Float.Changed() {
 					t.EditMode = EditParameters
 					t.CurrentParam = index
-					t.SetUnitParam(int(t.ParameterSliders[index].Value))
+					if u.Type == "oscillator" && name == "sample" {
+						v := int(t.ParameterSliders[index].Value) - 1
+						if v >= 0 {
+							t.SetGmDlsEntry(v)
+						}
+					} else {
+						t.SetUnitParam(int(t.ParameterSliders[index].Value))
+					}
 				}
 				return dims
 			}),
 			layout.Rigid(Label(valueText, white)),
 		)
 	}
-	return t.ParameterList.Layout(gtx, len(ut), listElements)
+	l := len(ut)
+	if u.Type == "oscillator" && u.Parameters["type"] == sointu.Sample {
+		l++
+	}
+	return t.ParameterList.Layout(gtx, l, listElements)
 }
 
 func (t *Tracker) layoutUnitFooter() layout.Widget {
