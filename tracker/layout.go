@@ -16,7 +16,6 @@ func (t *Tracker) Layout(gtx layout.Context) {
 	t.VerticalSplit.Layout(gtx,
 		t.layoutTop,
 		t.layoutBottom)
-	t.updateInstrumentScroll()
 }
 
 func (t *Tracker) layoutBottom(gtx layout.Context) layout.Dimensions {
@@ -31,13 +30,8 @@ func (t *Tracker) layoutBottom(gtx layout.Context) layout.Dimensions {
 }
 
 func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
-	for t.NewInstrumentBtn.Clicked() {
-		t.AddInstrument()
-	}
-
 	return t.TopHorizontalSplit.Layout(gtx,
 		t.layoutSongPanel,
 		t.layoutInstruments,
 	)
-
 }

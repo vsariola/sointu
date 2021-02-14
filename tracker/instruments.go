@@ -14,15 +14,15 @@ import (
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
-func (t *Tracker) updateInstrumentScroll() {
+func (t *Tracker) layoutInstruments(gtx C) D {
 	if t.CurrentInstrument > 7 {
 		t.InstrumentDragList.List.Position.First = t.CurrentInstrument - 7
 	} else {
 		t.InstrumentDragList.List.Position.First = 0
 	}
-}
-
-func (t *Tracker) layoutInstruments(gtx C) D {
+	for t.NewInstrumentBtn.Clicked() {
+		t.AddInstrument()
+	}
 	btnStyle := material.IconButton(t.Theme, t.NewInstrumentBtn, widgetForIcon(icons.ContentAdd))
 	btnStyle.Background = transparent
 	btnStyle.Inset = layout.UniformInset(unit.Dp(6))
