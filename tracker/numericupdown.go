@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"log"
 
 	"golang.org/x/exp/shiny/materialdesign/icons"
 
@@ -21,11 +20,6 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget/material"
 )
-
-var defaultNumericLeftIcon *widget.Icon
-var defaultNumericRightIcon *widget.Icon
-var defaultNumericUpIcon *widget.Icon
-var defaultNumericDownIcon *widget.Icon
 
 type NumberInput struct {
 	Value          int
@@ -93,9 +87,9 @@ func (s NumericUpDownStyle) Layout(gtx C) D {
 	gtx.Constraints.Min.Y -= int(border * 2)
 	gtx.Constraints.Max = gtx.Constraints.Min
 	layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-		layout.Rigid(s.button(gtx.Constraints.Max.Y, defaultNumericLeftIcon, -1, &s.NumberInput.clickDecrease)),
+		layout.Rigid(s.button(gtx.Constraints.Max.Y, widgetForIcon(icons.NavigationArrowBack), -1, &s.NumberInput.clickDecrease)),
 		layout.Flexed(1, s.layoutText),
-		layout.Rigid(s.button(gtx.Constraints.Max.Y, defaultNumericRightIcon, 1, &s.NumberInput.clickIncrease)),
+		layout.Rigid(s.button(gtx.Constraints.Max.Y, widgetForIcon(icons.NavigationArrowForward), 1, &s.NumberInput.clickIncrease)),
 	)
 	if s.NumberInput.Value < s.Min {
 		s.NumberInput.Value = s.Min
@@ -197,24 +191,4 @@ func (s NumericUpDownStyle) layoutClick(gtx layout.Context, delta int, click *ge
 	click.Add(gtx.Ops)
 	stack.Load()
 	return layout.Dimensions{Size: gtx.Constraints.Min}
-}
-
-func init() {
-	var err error
-	defaultNumericLeftIcon, err = widget.NewIcon(icons.NavigationArrowBack)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defaultNumericRightIcon, err = widget.NewIcon(icons.NavigationArrowForward)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defaultNumericUpIcon, err = widget.NewIcon(icons.NavigationArrowDropUp)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defaultNumericDownIcon, err = widget.NewIcon(icons.NavigationArrowDropDown)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
