@@ -11,6 +11,9 @@ import (
 	"gioui.org/widget/material"
 )
 
+type C = layout.Context
+type D = layout.Dimensions
+
 func smallButton(icStyle material.IconButtonStyle) material.IconButtonStyle {
 	icStyle.Size = unit.Dp(14)
 	icStyle.Inset = layout.UniformInset(unit.Dp(1))

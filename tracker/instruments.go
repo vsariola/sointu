@@ -14,9 +14,6 @@ import (
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
-type C = layout.Context
-type D = layout.Dimensions
-
 func (t *Tracker) updateInstrumentScroll() {
 	if t.CurrentInstrument > 7 {
 		t.InstrumentDragList.List.Position.First = t.CurrentInstrument - 7
