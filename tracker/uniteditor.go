@@ -74,7 +74,9 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 				valueText = fmt.Sprintf("%v", value)
 			}
 		}
-		t.ParameterSliders[index].Value = float32(value)
+		if !t.ParameterSliders[index].Dragging() {
+			t.ParameterSliders[index].Value = float32(value)
+		}
 		sliderStyle := material.Slider(t.Theme, t.ParameterSliders[index], float32(min), float32(max))
 		sliderStyle.Color = t.Theme.Fg
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
@@ -95,12 +97,12 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 					t.EditMode = EditParameters
 					t.CurrentParam = index
 					if u.Type == "oscillator" && name == "sample" {
-						v := int(t.ParameterSliders[index].Value) - 1
+						v := int(t.ParameterSliders[index].Value+0.5) - 1
 						if v >= 0 {
 							t.SetGmDlsEntry(v)
 						}
 					} else {
-						t.SetUnitParam(int(t.ParameterSliders[index].Value))
+						t.SetUnitParam(int(t.ParameterSliders[index].Value + 0.5))
 					}
 				}
 				return dims
