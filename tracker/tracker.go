@@ -709,7 +709,8 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 	t.InstrumentDragList.HoverItem = -1
 	t.Octave.Value = 4
 	t.VerticalSplit.Axis = layout.Vertical
-	t.BottomHorizontalSplit.Ratio = -.5
+	t.BottomHorizontalSplit.Ratio = -.6
+	t.TopHorizontalSplit.Ratio = -.6
 	t.Theme.Palette.Fg = primaryColor
 	t.Theme.Palette.ContrastFg = black
 	for range allUnits {
