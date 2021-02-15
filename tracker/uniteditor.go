@@ -156,7 +156,7 @@ func (t *Tracker) layoutUnitTypeChooser(gtx C) D {
 		}
 		labelStyle := LabelStyle{Text: allUnits[i], ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
 		bg := func(gtx C) D {
-			gtx.Constraints = layout.Exact(image.Pt(120, 20))
+			gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, 20))
 			var color color.NRGBA
 			if t.ChooseUnitTypeBtns[i].Hovered() {
 				color = unitTypeListHighlightColor
@@ -169,5 +169,13 @@ func (t *Tracker) layoutUnitTypeChooser(gtx C) D {
 			layout.Expanded(labelStyle.Layout),
 			layout.Expanded(t.ChooseUnitTypeBtns[i].Layout))
 	}
-	return t.ChooseUnitTypeList.Layout(gtx, len(allUnits), listElem)
+	hintText := Label("Choose unit type:", white)
+	inset := layout.Inset{Left: unit.Dp(6), Top: unit.Dp(6)}
+	return inset.Layout(gtx, func(gtx C) D {
+		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+			layout.Rigid(hintText),
+			layout.Flexed(1, func(gtx C) D {
+				return t.ChooseUnitTypeList.Layout(gtx, len(allUnits), listElem)
+			}))
+	})
 }
