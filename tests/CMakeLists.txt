@@ -6,7 +6,7 @@ function(regression_test testname)
         else()
             set(source ${ARGV3}.yml)
         endif()
-        
+
         set(asmfile ${testname}.asm)
         set (headerfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.h)
 
@@ -66,7 +66,8 @@ regression_test(test_invgain LOADVAL INVGAIN)
 regression_test(test_invgain_stereo INVGAIN)
 regression_test(test_send LOADVAL SEND)
 regression_test(test_send_stereo SEND)
-regression_test(test_send_global SEND)
+regression_test(test_send_global SEND SEND_GLOBAL)
+regression_test(test_send_global_stereo SEND_GLOBAL)
 regression_test(test_receive SEND RECEIVE)
 regression_test(test_receive_stereo RECEIVE)
 regression_test(test_in LOADVAL IN)

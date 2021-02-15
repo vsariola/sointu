@@ -89,6 +89,14 @@ su_op_aux_mono:
 {{.Func "su_op_send" "Opcode"}}
     lodsw
     mov     {{.CX}}, [{{.Stack "Voice"}}]  ; load pointer to voice
+{{- if .SupportsParamValueOtherThan "send" "voice" 0}}
+    pushf   ; uh ugly: we save the flags just for the stereo carry bit. Doing the .CX loading later crashed the synth for stereo sends as loading the synth address from stack was f'd up by the "call su_op_send_mono"
+    test    {{.AX}}, 0x8000
+    jz      su_op_send_skipglobal
+    mov     {{.CX}}, [{{.Stack "Synth"}} + {{.PTRSIZE}}]
+su_op_send_skipglobal:
+    popf
+{{- end}}
 {{- if .StereoAndMono "send"}}
     jnc     su_op_send_mono
 {{- end}}
@@ -102,12 +110,6 @@ su_op_aux_mono:
     jnz     su_op_send_mono
     fxch                        ; swap them back: l r
 su_op_send_mono:
-{{- end}}
-{{- if .SupportsParamValueOtherThan "send" "voice" 0}}
-    test    {{.AX}}, 0x8000
-    jz      su_op_send_skipglobal
-    mov     {{.CX}}, [{{.Stack "Synth"}}]
-su_op_send_skipglobal:
 {{- end}}
     test    {{.AX}}, 0x8        ; if the SEND_POP bit is not set
     jnz     su_op_send_skippush
