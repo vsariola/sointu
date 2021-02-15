@@ -67,6 +67,19 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 			}
 			value = params[name]
 			min, max = ut[index].MinValue, ut[index].MaxValue
+			if u.Type == "send" && name == "voice" {
+				max = t.song.Patch.TotalVoices()
+			} else if u.Type == "send" && name == "unit" { // set the maximum values depending on the send target
+				instrIndex, _, _, _ := t.song.Patch.FindSendTarget(t.CurrentInstrument, t.CurrentUnit)
+				if instrIndex != -1 {
+					max = len(t.song.Patch.Instruments[instrIndex].Units) - 1
+				}
+			} else if u.Type == "send" && name == "port" { // set the maximum values depending on the send target
+				instrIndex, unitIndex, _, _ := t.song.Patch.FindSendTarget(t.CurrentInstrument, t.CurrentUnit)
+				if instrIndex != -1 && unitIndex != -1 {
+					max = len(sointu.Ports[t.song.Patch.Instruments[instrIndex].Units[unitIndex].Type]) - 1
+				}
+			}
 			hint := t.song.ParamHintString(t.CurrentInstrument, t.CurrentUnit, name)
 			if hint != "" {
 				valueText = fmt.Sprintf("%v / %v", value, hint)
@@ -76,6 +89,9 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 		}
 		if !t.ParameterSliders[index].Dragging() {
 			t.ParameterSliders[index].Value = float32(value)
+		}
+		if max < min {
+			max = min
 		}
 		sliderStyle := material.Slider(t.Theme, t.ParameterSliders[index], float32(min), float32(max))
 		sliderStyle.Color = t.Theme.Fg

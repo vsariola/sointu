@@ -268,6 +268,20 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false}},
 }
 
+var Ports = make(map[string]([]string))
+
+func init() {
+	for name, unitType := range UnitTypes {
+		unitPorts := make([]string, 0)
+		for _, param := range unitType {
+			if param.CanModulate {
+				unitPorts = append(unitPorts, param.Name)
+			}
+		}
+		Ports[name] = unitPorts
+	}
+}
+
 type Song struct {
 	BPM            int
 	RowsPerPattern int
@@ -356,6 +370,46 @@ func (s *Song) Validate() error {
 		return errors.New("Tracks use too many voices")
 	}
 	return nil
+}
+
+func (p *Patch) FindSendTarget(i, u int) (int, int, int, error) {
+	if i < 0 || i >= len(p.Instruments) {
+		return -1, -1, -1, errors.New("instrument index out of range")
+	}
+	instr := p.Instruments[i]
+	if u < 0 || u >= len(instr.Units) {
+		return -1, -1, -1, errors.New("unit index out of range")
+	}
+	unit := instr.Units[u]
+	var targetInstrIndex int
+	if unit.Parameters["voice"] == 0 {
+		targetInstrIndex = i
+	} else {
+		var err error
+		targetInstrIndex, err = p.InstrumentForVoice(unit.Parameters["voice"] - 1)
+		if err != nil {
+			return -1, -1, -1, errors.New("the target voice was out of range")
+		}
+	}
+	targetInstr := p.Instruments[targetInstrIndex]
+	targetUnitIndex := unit.Parameters["unit"]
+	if targetUnitIndex < 0 || targetUnitIndex >= len(targetInstr.Units) {
+		return targetInstrIndex, -1, -1, errors.New("the target unit was out of range")
+	}
+	targetUnit := targetInstr.Units[targetUnitIndex]
+	port := unit.Parameters["port"]
+	if port < 0 {
+		return targetInstrIndex, targetUnitIndex, -1, errors.New("the target port was out of range")
+	}
+	for k, param := range UnitTypes[targetUnit.Type] {
+		if param.CanModulate {
+			port--
+			if port < 0 {
+				return targetInstrIndex, targetUnitIndex, k, nil
+			}
+		}
+	}
+	return targetInstrIndex, targetUnitIndex, -1, errors.New("the target port was out of range")
 }
 
 func (s *Song) ParamHintString(instrIndex, unitIndex int, param string) string {
