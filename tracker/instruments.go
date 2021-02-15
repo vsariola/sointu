@@ -22,7 +22,7 @@ func (t *Tracker) layoutInstruments(gtx C) D {
 		if !ok {
 			continue
 		}
-		if e.Type == pointer.Press {
+		if e.Type == pointer.Press && (t.EditMode != EditUnits && t.EditMode != EditParameters) {
 			t.EditMode = EditUnits
 		}
 	}
