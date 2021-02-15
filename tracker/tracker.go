@@ -36,6 +36,8 @@ type Tracker struct {
 	EditMode              EditMode
 	SelectionCorner       SongPoint
 	Cursor                SongPoint
+	FileMenu              *Menu
+	EditMenu              *Menu
 	CursorColumn          int
 	CurrentInstrument     int
 	CurrentUnit           int
@@ -67,6 +69,7 @@ type Tracker struct {
 	SaveSongFileBtn       *widget.Clickable
 	FileMenuBtn           *widget.Clickable
 	PanicBtn              *widget.Clickable
+	MenuBar               []widget.Clickable
 	FileMenuVisible       bool
 	ParameterSliders      []*widget.Float
 	ParameterList         *layout.List
@@ -683,6 +686,9 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		DeleteUnitBtn:         new(widget.Clickable),
 		ClearUnitBtn:          new(widget.Clickable),
 		PanicBtn:              new(widget.Clickable),
+		FileMenu:              new(Menu),
+		EditMenu:              new(Menu),
+		MenuBar:               make([]widget.Clickable, 2),
 		UnitDragList:          &DragList{List: &layout.List{Axis: layout.Vertical}},
 		setPlaying:            make(chan bool),
 		rowJump:               make(chan int),

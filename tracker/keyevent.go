@@ -111,6 +111,16 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 				t.LoadSong(defaultSong.Copy())
 				return true
 			}
+		case "S":
+			if e.Modifiers.Contain(key.ModShortcut) {
+				t.SaveSongFile()
+				return false
+			}
+		case "O":
+			if e.Modifiers.Contain(key.ModShortcut) {
+				t.LoadSongFile()
+				return true
+			}
 		case key.NameDeleteForward:
 			switch t.EditMode {
 			case EditTracks:

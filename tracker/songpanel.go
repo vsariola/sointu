@@ -3,6 +3,7 @@ package tracker
 import (
 	"image"
 	"math"
+	"runtime"
 
 	"gioui.org/f32"
 	"gioui.org/io/clipboard"
@@ -11,6 +12,7 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
+	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"gopkg.in/yaml.v3"
@@ -18,105 +20,80 @@ import (
 
 func (t *Tracker) layoutSongPanel(gtx C) D {
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(t.layoutSongButtons),
+		layout.Rigid(t.layoutMenuBar),
 		layout.Rigid(t.layoutSongOptions),
 	)
 }
 
-func (t *Tracker) layoutSongButtons(gtx C) D {
+func (t *Tracker) layoutMenu(title string, clickable *widget.Clickable, menu *Menu, width unit.Value, items ...MenuItem) layout.Widget {
+	for clickable.Clicked() {
+		menu.Visible = true
+	}
+	m := PopupMenu(t.Theme, menu)
+	return func(gtx C) D {
+		defer op.Save(gtx.Ops).Load()
+		titleBtn := material.Button(t.Theme, clickable, title)
+		titleBtn.Color = white
+		titleBtn.Background = transparent
+		titleBtn.CornerRadius = unit.Dp(0)
+		dims := titleBtn.Layout(gtx)
+		op.Offset(f32.Pt(0, float32(dims.Size.Y))).Add(gtx.Ops)
+		gtx.Constraints.Max.X = gtx.Px(width)
+		gtx.Constraints.Max.Y = gtx.Px(unit.Dp(1000))
+		m.Layout(gtx, items...)
+		return dims
+	}
+}
+
+func (t *Tracker) layoutMenuBar(gtx C) D {
 	gtx.Constraints.Max.Y = gtx.Px(unit.Dp(36))
 	gtx.Constraints.Min.Y = gtx.Px(unit.Dp(36))
 
-	//paint.FillShape(gtx.Ops, primaryColorDark, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
-
-	for t.NewSongFileBtn.Clicked() {
-		t.LoadSong(defaultSong.Copy())
-		t.FileMenuVisible = false
-	}
-
-	for t.LoadSongFileBtn.Clicked() {
-		t.LoadSongFile()
-		t.FileMenuVisible = false
-	}
-
-	for t.SaveSongFileBtn.Clicked() {
-		t.SaveSongFile()
-	}
-
-	for t.CopySongBtn.Clicked() {
-		if contents, err := yaml.Marshal(t.song); err == nil {
-			clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+	for clickedItem, hasClicked := t.FileMenu.Clicked(); hasClicked; {
+		switch clickedItem {
+		case 0:
+			t.LoadSong(defaultSong.Copy())
+		case 1:
+			t.LoadSongFile()
+		case 2:
+			t.SaveSongFile()
 		}
+		clickedItem, hasClicked = t.FileMenu.Clicked()
 	}
 
-	for t.PasteBtn.Clicked() {
-		clipboard.ReadOp{Tag: t.PasteBtn}.Add(gtx.Ops)
+	for clickedItem, hasClicked := t.EditMenu.Clicked(); hasClicked; {
+		switch clickedItem {
+		case 0:
+			t.Undo()
+		case 1:
+			t.Redo()
+		case 2:
+			if contents, err := yaml.Marshal(t.song); err == nil {
+				clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+			}
+		case 3:
+			clipboard.ReadOp{Tag: t.EditMenu}.Add(gtx.Ops)
+		}
+		clickedItem, hasClicked = t.FileMenu.Clicked()
 	}
 
-	newBtnStyle := material.IconButton(t.Theme, t.NewSongFileBtn, widgetForIcon(icons.ContentClear))
-	newBtnStyle.Background = transparent
-	newBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-	newBtnStyle.Color = primaryColor
-
-	loadBtnStyle := material.IconButton(t.Theme, t.LoadSongFileBtn, widgetForIcon(icons.FileFolder))
-	loadBtnStyle.Background = transparent
-	loadBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-	loadBtnStyle.Color = primaryColor
-
-	copySongBtnStyle := material.IconButton(t.Theme, t.CopySongBtn, widgetForIcon(icons.ContentContentCopy))
-	copySongBtnStyle.Background = transparent
-	copySongBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-	copySongBtnStyle.Color = primaryColor
-
-	pasteBtnStyle := material.IconButton(t.Theme, t.PasteBtn, widgetForIcon(icons.ContentContentPaste))
-	pasteBtnStyle.Background = transparent
-	pasteBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-	pasteBtnStyle.Color = primaryColor
-
-	menuContents := func(gtx C) D {
-		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-			layout.Rigid(newBtnStyle.Layout),
-			layout.Rigid(loadBtnStyle.Layout),
-			layout.Rigid(copySongBtnStyle.Layout),
-			layout.Rigid(pasteBtnStyle.Layout),
-		)
+	shortcutKey := "Ctrl+"
+	if runtime.GOOS == "darwin" {
+		shortcutKey = "Cmd+"
 	}
-
-	fileMenu := Popup(&t.FileMenuVisible)
-	fileMenu.NE = unit.Dp(0)
-	fileMenu.ShadowN = unit.Dp(0)
-	fileMenu.NW = unit.Dp(0)
-
-	saveBtnStyle := material.IconButton(t.Theme, t.SaveSongFileBtn, widgetForIcon(icons.ContentSave))
-	saveBtnStyle.Background = transparent
-	saveBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-	saveBtnStyle.Color = primaryColor
-
-	fileMenuBtnStyle := material.IconButton(t.Theme, t.FileMenuBtn, widgetForIcon(icons.NavigationMoreVert))
-	fileMenuBtnStyle.Background = transparent
-	fileMenuBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-	fileMenuBtnStyle.Color = primaryColor
-
-	for t.FileMenuBtn.Clicked() {
-		t.FileMenuVisible = !t.FileMenuVisible
-	}
-
-	popupWidget := func(gtx C) D {
-		defer op.Save(gtx.Ops).Load()
-		dims := fileMenuBtnStyle.Layout(gtx)
-		op.Offset(f32.Pt(0, float32(dims.Size.Y))).Add(gtx.Ops)
-		gtx.Constraints.Max.X = 160
-		gtx.Constraints.Max.Y = 300
-		fileMenu.Layout(gtx, menuContents)
-		return dims
-	}
-
-	layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		layout.Rigid(saveBtnStyle.Layout),
-		layout.Rigid(popupWidget),
+	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+		layout.Rigid(t.layoutMenu("File", &t.MenuBar[0], t.FileMenu, unit.Dp(200),
+			MenuItem{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: shortcutKey + "N"},
+			MenuItem{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: shortcutKey + "O"},
+			MenuItem{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: shortcutKey + "S"},
+		)),
+		layout.Rigid(t.layoutMenu("Edit", &t.MenuBar[1], t.EditMenu, unit.Dp(160),
+			MenuItem{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: shortcutKey + "Z", Disabled: len(t.undoStack) == 0},
+			MenuItem{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: shortcutKey + "Y", Disabled: len(t.redoStack) == 0},
+			MenuItem{IconBytes: icons.ContentContentCopy, Text: "Copy", ShortcutText: shortcutKey + "C"},
+			MenuItem{IconBytes: icons.ContentContentPaste, Text: "Paste", ShortcutText: shortcutKey + "V"},
+		)),
 	)
-
-	return layout.Dimensions{Size: gtx.Constraints.Max}
 }
 
 func (t *Tracker) layoutSongOptions(gtx C) D {
@@ -167,7 +144,6 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 					dims := in.Layout(gtx, numStyle.Layout)
 					t.SetBPM(t.BPM.Value)
 					return dims
-					//return in.Layout(gtx, enableButton(smallButton(material.IconButton(t.Theme, t.BPMUpBtn, upIcon)), t.song.BPM < 999).Layout)
 				}),
 			)
 		}),
