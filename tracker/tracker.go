@@ -54,6 +54,7 @@ type Tracker struct {
 	InstrumentNameEditor  *widget.Editor
 	NewTrackBtn           *widget.Clickable
 	CopySongBtn           *widget.Clickable
+	PasteBtn              *widget.Clickable
 	NewInstrumentBtn      *widget.Clickable
 	DeleteInstrumentBtn   *widget.Clickable
 	LoadSongFileBtn       *widget.Clickable
@@ -670,6 +671,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		DeleteInstrumentBtn:   new(widget.Clickable),
 		NewSongFileBtn:        new(widget.Clickable),
 		CopySongBtn:           new(widget.Clickable),
+		PasteBtn:              new(widget.Clickable),
 		FileMenuBtn:           new(widget.Clickable),
 		LoadSongFileBtn:       new(widget.Clickable),
 		SaveSongFileBtn:       new(widget.Clickable),

@@ -49,6 +49,10 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 		}
 	}
 
+	for t.PasteBtn.Clicked() {
+		clipboard.ReadOp{Tag: t.PasteBtn}.Add(gtx.Ops)
+	}
+
 	newBtnStyle := material.IconButton(t.Theme, t.NewSongFileBtn, widgetForIcon(icons.ContentClear))
 	newBtnStyle.Background = transparent
 	newBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
@@ -64,11 +68,17 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 	copySongBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 	copySongBtnStyle.Color = primaryColor
 
+	pasteBtnStyle := material.IconButton(t.Theme, t.PasteBtn, widgetForIcon(icons.ContentContentPaste))
+	pasteBtnStyle.Background = transparent
+	pasteBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+	pasteBtnStyle.Color = primaryColor
+
 	menuContents := func(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 			layout.Rigid(newBtnStyle.Layout),
 			layout.Rigid(loadBtnStyle.Layout),
 			layout.Rigid(copySongBtnStyle.Layout),
+			layout.Rigid(pasteBtnStyle.Layout),
 		)
 	}
 
