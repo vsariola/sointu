@@ -56,7 +56,6 @@ func (s PopupStyle) Layout(gtx C, contents layout.Widget) D {
 	}
 
 	bg := func(gtx C) D {
-		pointer.PassOp{Pass: true}.Add(gtx.Ops)
 		pointer.InputOp{Tag: s.Visible,
 			Types: pointer.Press,
 		}.Add(gtx.Ops)

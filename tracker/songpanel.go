@@ -88,7 +88,7 @@ func (t *Tracker) layoutSongButtons(gtx C) D {
 	fileMenuBtnStyle.Color = primaryColor
 
 	for t.FileMenuBtn.Clicked() {
-		t.FileMenuVisible = true
+		t.FileMenuVisible = !t.FileMenuVisible
 	}
 
 	popupWidget := func(gtx C) D {
