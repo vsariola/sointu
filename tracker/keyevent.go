@@ -121,6 +121,47 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 				t.LoadSongFile()
 				return true
 			}
+		case "F1":
+			t.EditMode = EditPatterns
+			return true
+		case "F2":
+			t.EditMode = EditTracks
+			return true
+		case "F3":
+			t.EditMode = EditUnits
+			return true
+		case "F4":
+			t.EditMode = EditParameters
+			return true
+		case "F5":
+			t.NoteTracking = true
+			t.PlayPosition.Pattern = t.Cursor.Pattern
+			if t.EditMode == EditPatterns {
+				t.PlayPosition.Row = 0
+			} else {
+				t.PlayPosition.Row = t.Cursor.Row
+			}
+			t.PlayPosition.Row-- // TODO: we advance soon to make up for this -1, but this is not very elegant way to do it
+			t.SetPlaying(true)
+			return true
+		case "F6":
+			t.NoteTracking = false
+			t.PlayPosition.Pattern = t.Cursor.Pattern
+			if t.EditMode == EditPatterns {
+				t.PlayPosition.Row = 0
+			} else {
+				t.PlayPosition.Row = t.Cursor.Row
+			}
+			t.PlayPosition.Row-- // TODO: we advance soon to make up for this -1, but this is not very elegant way to do it
+			t.SetPlaying(true)
+			return true
+		case "F7":
+			t.NoteTracking = false
+			t.SetPlaying(true)
+			return true
+		case "F8":
+			t.SetPlaying(false)
+			return true
 		case key.NameDeleteForward:
 			switch t.EditMode {
 			case EditTracks:
@@ -131,7 +172,19 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 				return true
 			}
 		case "Space":
-			t.TogglePlay()
+			t.SetPlaying(!t.Playing)
+			if t.Playing {
+				if !e.Modifiers.Contain(key.ModShortcut) {
+					t.NoteTracking = true
+				}
+				t.PlayPosition.Pattern = t.Cursor.Pattern
+				if t.EditMode == EditPatterns {
+					t.PlayPosition.Row = 0
+				} else {
+					t.PlayPosition.Row = t.Cursor.Row
+				}
+				t.PlayPosition.Row--
+			}
 			return true
 		case `\`:
 			if e.Modifiers.Contain(key.ModShift) {

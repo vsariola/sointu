@@ -144,15 +144,10 @@ func (t *Tracker) Close() {
 	t.closer <- struct{}{}
 }
 
-func (t *Tracker) TogglePlay() {
+func (t *Tracker) SetPlaying(value bool) {
 	t.songPlayMutex.Lock()
 	defer t.songPlayMutex.Unlock()
-	t.Playing = !t.Playing
-	if t.Playing {
-		t.NoteTracking = true
-		t.PlayPosition = t.Cursor.SongRow
-		t.PlayPosition.Row-- // TODO: we advance soon to make up for this -1, but this is not very elegant way to do it
-	}
+	t.Playing = value
 }
 
 func (t *Tracker) ChangeOctave(delta int) bool {
