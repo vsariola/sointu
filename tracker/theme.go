@@ -39,6 +39,8 @@ var trackerInactiveTextColor = highEmphasisTextColor
 var trackerActiveTextColor = color.NRGBA{R: 255, G: 255, B: 130, A: 255}
 var trackerPlayColor = color.NRGBA{R: 55, G: 55, B: 61, A: 255}
 var trackerPatMarker = primaryColor
+var oneBeatHighlight = color.NRGBA{R: 31, G: 37, B: 38, A: 255}
+var twoBeatHighlight = color.NRGBA{R: 31, G: 51, B: 53, A: 255}
 
 var patternPlayColor = color.NRGBA{R: 55, G: 55, B: 61, A: 255}
 var patternTextColor = primaryColor

@@ -228,10 +228,6 @@ func (t *Tracker) layoutTracks(gtx C) D {
 		y2 *= trackRowHeight * t.song.RowsPerPattern
 		paint.FillShape(gtx.Ops, inactiveSelectionColor, clip.Rect{Min: image.Pt(x1, y1), Max: image.Pt(x2, y2)}.Op())
 	}
-	if t.Playing {
-		py := trackRowHeight * (t.PlayPosition.Pattern*t.song.RowsPerPattern + t.PlayPosition.Row)
-		paint.FillShape(gtx.Ops, trackerPlayColor, clip.Rect{Min: image.Pt(0, py), Max: image.Pt(gtx.Constraints.Max.X, py+trackRowHeight)}.Op())
-	}
 	if t.EditMode == EditTracks {
 		x1, y1 := t.Cursor.Track, t.Cursor.Pattern*t.song.RowsPerPattern+t.Cursor.Row
 		x2, y2 := t.SelectionCorner.Track, t.SelectionCorner.Pattern*t.song.RowsPerPattern+t.SelectionCorner.Row
