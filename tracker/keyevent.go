@@ -399,7 +399,7 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 		if f, ok := t.KeyPlaying[e.Name]; ok {
 			f()
 			delete(t.KeyPlaying, e.Name)
-			if t.EditMode == EditTracks && t.Playing && t.getCurrent() == 1 {
+			if t.EditMode == EditTracks && t.Playing && t.getCurrent() == 1 && t.NoteTracking {
 				t.SetCurrentNote(0)
 			}
 		}
