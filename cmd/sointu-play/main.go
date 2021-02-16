@@ -41,7 +41,8 @@ func main() {
 	}
 	var audioContext sointu.AudioContext
 	if *play {
-		audioContext, err := oto.NewContext()
+		var err error
+		audioContext, err = oto.NewContext()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "could not acquire oto AudioContext: %v\n", err)
 			os.Exit(1)
