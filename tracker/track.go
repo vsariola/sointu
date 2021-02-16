@@ -198,19 +198,19 @@ func (t *Tracker) layoutTracks(gtx C) D {
 			t.EditMode = EditTracks
 			t.Cursor.Track = int(e.Position.X) / trackColWidth
 			t.Cursor.Pattern = 0
-			t.Cursor.Row = int(e.Position.Y) / trackRowHeight
+			t.Cursor.Row = int((e.Position.Y-float32(gtx.Constraints.Max.Y-trackRowHeight)/2)/trackRowHeight + float32(cursorSongRow))
 			t.Cursor.Clamp(t.song)
 			t.SelectionCorner = t.Cursor
 			cursorSongRow = t.Cursor.Pattern*t.song.RowsPerPattern + t.Cursor.Row
 		}
 	}
-	op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y-trackRowHeight)/2)).Add(gtx.Ops)
-	op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorSongRow))).Add(gtx.Ops)
-	rect := image.Rect(0, 0, trackColWidth*len(t.song.Tracks), trackRowHeight*t.song.TotalRows())
+	rect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
 	pointer.Rect(rect).Add(gtx.Ops)
 	pointer.InputOp{Tag: &trackJumpPointerTag,
 		Types: pointer.Press,
 	}.Add(gtx.Ops)
+	op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y-trackRowHeight)/2)).Add(gtx.Ops)
+	op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorSongRow))).Add(gtx.Ops)
 	if t.EditMode == EditPatterns || t.EditMode == EditTracks {
 		x1, y1 := t.Cursor.Track, t.Cursor.Pattern
 		x2, y2 := t.SelectionCorner.Track, t.SelectionCorner.Pattern
