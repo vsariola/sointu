@@ -40,6 +40,21 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 		for len(t.ParameterSliders) <= index {
 			t.ParameterSliders = append(t.ParameterSliders, new(widget.Float))
 		}
+		for len(t.ParameterLabelBtns) <= index {
+			t.ParameterLabelBtns = append(t.ParameterLabelBtns, new(widget.Clickable))
+		}
+		for t.ParameterLabelBtns[index].Clicked() {
+			if t.EditMode != EditParameters || t.CurrentParam != index {
+				t.EditMode = EditParameters
+				t.CurrentParam = index
+				op.InvalidateOp{}.Add(gtx.Ops)
+			} else {
+				if index < len(ut) {
+					t.SetUnitParam(defaultUnits[u.Type].Parameters[ut[index].Name])
+					op.InvalidateOp{}.Add(gtx.Ops)
+				}
+			}
+		}
 		params := u.Parameters
 		var name string
 		var value, min, max int
@@ -97,8 +112,13 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 		sliderStyle.Color = t.Theme.Fg
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
-				gtx.Constraints.Min.X = gtx.Px(unit.Dp(110))
-				return layout.E.Layout(gtx, Label(name, white))
+				return layout.Stack{}.Layout(gtx,
+					layout.Stacked(func(gtx C) D {
+						gtx.Constraints.Min.X = gtx.Px(unit.Dp(110))
+						return layout.E.Layout(gtx, Label(name, white))
+					}),
+					layout.Expanded(t.ParameterLabelBtns[index].Layout),
+				)
 			}),
 			layout.Rigid(func(gtx C) D {
 				gtx.Constraints.Min.X = gtx.Px(unit.Dp(200))

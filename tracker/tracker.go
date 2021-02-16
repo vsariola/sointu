@@ -69,6 +69,7 @@ type Tracker struct {
 	ChooseUnitTypeList    *layout.List
 	ChooseUnitTypeBtns    []*widget.Clickable
 	AddUnitBtn            *widget.Clickable
+	ParameterLabelBtns    []*widget.Clickable
 	InstrumentDragList    *DragList
 	TrackHexCheckBoxes    []*widget.Bool
 	TrackShowHex          []bool
