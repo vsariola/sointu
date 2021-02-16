@@ -454,6 +454,7 @@ func (t *Tracker) AddUnit() {
 	copy(units[t.CurrentUnit+2:], t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit+1:])
 	t.song.Patch.Instruments[t.CurrentInstrument].Units = units
 	t.CurrentUnit++
+	t.CurrentParam = 0
 	t.ClampPositions()
 	t.sequencer.SetPatch(t.song.Patch)
 }
@@ -462,6 +463,7 @@ func (t *Tracker) ClearUnit() {
 	t.SaveUndo()
 	t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type = ""
 	t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Parameters = make(map[string]int)
+	t.CurrentParam = 0
 	t.ClampPositions()
 	t.sequencer.SetPatch(t.song.Patch)
 }
@@ -493,6 +495,7 @@ func (t *Tracker) DeleteUnit() {
 	if t.CurrentUnit > 0 {
 		t.CurrentUnit--
 	}
+	t.CurrentParam = 0
 	t.ClampPositions()
 	t.sequencer.SetPatch(t.song.Patch)
 }
@@ -581,6 +584,9 @@ func (t *Tracker) ClampPositions() {
 			numSettableParams++
 		}
 	}
+	if numSettableParams == 0 {
+		numSettableParams = 1
+	}
 	if t.CurrentParam < 0 && t.CurrentUnit > 0 {
 		t.CurrentUnit--
 		numSettableParams = 0
@@ -590,18 +596,12 @@ func (t *Tracker) ClampPositions() {
 			}
 		}
 		t.CurrentParam = numSettableParams - 1
-	}
-	if t.CurrentParam >= numSettableParams && t.CurrentUnit < len(t.song.Patch.Instruments[t.CurrentInstrument].Units)-1 {
+	} else if t.CurrentParam >= numSettableParams && t.CurrentUnit < len(t.song.Patch.Instruments[t.CurrentInstrument].Units)-1 {
 		t.CurrentUnit++
-		numSettableParams = 0
-		for _, t := range sointu.UnitTypes[t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type] {
-			if t.CanSet {
-				numSettableParams++
-			}
-		}
 		t.CurrentParam = 0
+	} else {
+		t.CurrentParam = clamp(t.CurrentParam, 0, numSettableParams)
 	}
-	t.CurrentParam = clamp(t.CurrentParam, 0, numSettableParams)
 }
 
 func (t *Tracker) getSelectionRange() (int, int, int, int) {
