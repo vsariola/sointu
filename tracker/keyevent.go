@@ -186,7 +186,7 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 				t.PlayPosition.Row--
 			}
 			return true
-		case `\`:
+		case `\`, `<`, `>`:
 			if e.Modifiers.Contain(key.ModShift) {
 				return t.ChangeOctave(1)
 			}
