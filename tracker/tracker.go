@@ -60,6 +60,7 @@ type Tracker struct {
 	SubtractOctaveBtn     *widget.Clickable
 	SongLength            *NumberInput
 	PanicBtn              *widget.Clickable
+	CopyInstrumentBtn     *widget.Clickable
 	ParameterSliders      []*widget.Float
 	ParameterList         *layout.List
 	UnitDragList          *DragList
@@ -100,7 +101,18 @@ func (t *Tracker) LoadSong(song sointu.Song) error {
 	return nil
 }
 
-func (t *Tracker) UnmarshalSong(bytes []byte) error {
+func (t *Tracker) UnmarshalContent(bytes []byte) error {
+	var instr sointu.Instrument
+	if errJSON := json.Unmarshal(bytes, &instr); errJSON == nil {
+		if t.SetInstrument(instr) {
+			return nil
+		}
+	}
+	if errYaml := yaml.Unmarshal(bytes, &instr); errYaml == nil {
+		if t.SetInstrument(instr) {
+			return nil
+		}
+	}
 	var song sointu.Song
 	if errJSON := json.Unmarshal(bytes, &song); errJSON != nil {
 		if errYaml := yaml.Unmarshal(bytes, &song); errYaml != nil {
@@ -144,6 +156,16 @@ func (t *Tracker) ChangeOctave(delta int) bool {
 	}
 	if newOctave != t.Octave.Value {
 		t.Octave.Value = newOctave
+		return true
+	}
+	return false
+}
+
+func (t *Tracker) SetInstrument(instrument sointu.Instrument) bool {
+	if len(instrument.Units) > 0 {
+		t.SaveUndo()
+		t.song.Patch.Instruments[t.CurrentInstrument] = instrument
+		t.sequencer.SetPatch(t.song.Patch)
 		return true
 	}
 	return false
@@ -674,6 +696,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		DeleteUnitBtn:         new(widget.Clickable),
 		ClearUnitBtn:          new(widget.Clickable),
 		PanicBtn:              new(widget.Clickable),
+		CopyInstrumentBtn:     new(widget.Clickable),
 		Menus:                 make([]Menu, 2),
 		MenuBar:               make([]widget.Clickable, 2),
 		UnitDragList:          &DragList{List: &layout.List{Axis: layout.Vertical}},

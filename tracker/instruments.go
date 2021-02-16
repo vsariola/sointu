@@ -4,6 +4,7 @@ import (
 	"image"
 	"strconv"
 
+	"gioui.org/io/clipboard"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -12,6 +13,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"golang.org/x/exp/shiny/materialdesign/icons"
+	"gopkg.in/yaml.v3"
 )
 
 var instrumentPointerTag = false
@@ -63,6 +65,11 @@ func (t *Tracker) layoutInstruments(gtx C) D {
 
 func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 	header := func(gtx C) D {
+		copyInstrumentBtnStyle := material.IconButton(t.Theme, t.CopyInstrumentBtn, widgetForIcon(icons.ContentContentCopy))
+		copyInstrumentBtnStyle.Background = transparent
+		copyInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		copyInstrumentBtnStyle.Color = primaryColor
+
 		deleteInstrumentBtnStyle := material.IconButton(t.Theme, t.DeleteInstrumentBtn, widgetForIcon(icons.ActionDelete))
 		deleteInstrumentBtnStyle.Background = transparent
 		deleteInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
@@ -88,7 +95,14 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 				return dims
 			}),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+			layout.Rigid(copyInstrumentBtnStyle.Layout),
 			layout.Rigid(deleteInstrumentBtnStyle.Layout))
+	}
+	for t.CopyInstrumentBtn.Clicked() {
+		contents, err := yaml.Marshal(t.song.Patch.Instruments[t.CurrentInstrument])
+		if err == nil {
+			clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+		}
 	}
 	for t.DeleteInstrumentBtn.Clicked() {
 		t.DeleteInstrument()

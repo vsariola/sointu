@@ -24,7 +24,7 @@ func (t *Tracker) Run(w *app.Window) error {
 					w.Invalidate()
 				}
 			case clipboard.Event:
-				err := t.UnmarshalSong([]byte(e.Text))
+				err := t.UnmarshalContent([]byte(e.Text))
 				if err == nil {
 					w.Invalidate()
 				}
