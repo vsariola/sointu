@@ -162,7 +162,7 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 		case "F8":
 			t.SetPlaying(false)
 			return true
-		case key.NameDeleteForward:
+		case key.NameDeleteBackward, key.NameDeleteForward:
 			switch t.EditMode {
 			case EditTracks:
 				t.DeleteSelection()
