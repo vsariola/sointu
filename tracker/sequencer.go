@@ -47,7 +47,7 @@ type noteID struct {
 	id    uint32
 }
 
-func NewSequencer(bufferSize int, service sointu.SynthService, context sointu.AudioContext, iterator func([]RowNote) []RowNote) *Sequencer {
+func NewSequencer(bufferSize int, service sointu.SynthService, context sointu.AudioContext, callBack func([]float32), iterator func([]RowNote) []RowNote) *Sequencer {
 	ret := &Sequencer{
 		closer:        make(chan struct{}),
 		setPatch:      make(chan sointu.Patch, 32),
@@ -60,11 +60,11 @@ func NewSequencer(bufferSize int, service sointu.SynthService, context sointu.Au
 	// the iterator is a bit unconventional in the sense that it might return
 	// false to indicate that there is no row available, but might still return
 	// true in future attempts if new rows become available.
-	go ret.loop(bufferSize, service, context, iterator)
+	go ret.loop(bufferSize, service, context, callBack, iterator)
 	return ret
 }
 
-func (s *Sequencer) loop(bufferSize int, service sointu.SynthService, context sointu.AudioContext, iterator func([]RowNote) []RowNote) {
+func (s *Sequencer) loop(bufferSize int, service sointu.SynthService, context sointu.AudioContext, callBack func([]float32), iterator func([]RowNote) []RowNote) {
 	buffer := make([]float32, bufferSize)
 	renderTries := 0
 	audioOut := context.Output()
@@ -141,6 +141,7 @@ func (s *Sequencer) loop(bufferSize int, service sointu.SynthService, context so
 					}
 				}
 				rendered, timeAdvanced, err := s.synth.Render(buffer, renderTime)
+				callBack(buffer)
 				if err != nil {
 					s.Disable()
 					break

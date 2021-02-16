@@ -192,5 +192,6 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 			gtx.Constraints.Min = image.Pt(0, 0)
 			return panicBtnStyle.Layout(gtx)
 		}),
+		layout.Rigid(t.VuMeter.Layout),
 	)
 }

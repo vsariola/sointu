@@ -71,6 +71,7 @@ type Tracker struct {
 	InstrumentDragList    *DragList
 	TrackHexCheckBoxes    []*widget.Bool
 	TrackShowHex          []bool
+	VuMeter               VuMeter
 	TopHorizontalSplit    *Split
 	BottomHorizontalSplit *Split
 	VerticalSplit         *Split
@@ -695,10 +696,23 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 	t.TopHorizontalSplit.Ratio = -.6
 	t.Theme.Palette.Fg = primaryColor
 	t.Theme.Palette.ContrastFg = black
+	t.EditMode = EditTracks
+	t.Step.Value = 1
+	t.VuMeter.FallOff = 2e-8
+	t.VuMeter.RangeDb = 80
+	t.VuMeter.Decay = 1e-3
 	for range allUnits {
 		t.ChooseUnitTypeBtns = append(t.ChooseUnitTypeBtns, new(widget.Clickable))
 	}
-	t.sequencer = NewSequencer(2048, synthService, audioContext, func(row []RowNote) []RowNote {
+	callBack := func(buf []float32) {
+		t.VuMeter.Update(buf)
+		select {
+		case t.refresh <- struct{}{}:
+		default:
+			// message dropped, there's already a tick queued, so no need to queue extra
+		}
+	}
+	t.sequencer = NewSequencer(2048, synthService, audioContext, callBack, func(row []RowNote) []RowNote {
 		t.playRowPatMutex.Lock()
 		if !t.Playing {
 			t.playRowPatMutex.Unlock()
