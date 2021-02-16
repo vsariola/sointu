@@ -26,7 +26,6 @@ const (
 )
 
 type Tracker struct {
-	QuitButton    *widget.Clickable
 	songPlayMutex sync.RWMutex // protects song and playing
 	song          sointu.Song
 	Playing       bool
@@ -36,15 +35,12 @@ type Tracker struct {
 	EditMode              EditMode
 	SelectionCorner       SongPoint
 	Cursor                SongPoint
-	FileMenu              *Menu
-	EditMenu              *Menu
+	MenuBar               []widget.Clickable
+	Menus                 []Menu
 	CursorColumn          int
 	CurrentInstrument     int
 	CurrentUnit           int
 	CurrentParam          int
-	UnitGroupMenuVisible  bool
-	UnitGroupMenuIndex    int
-	UnitSubMenuIndex      int
 	NoteTracking          bool
 	Theme                 *material.Theme
 	Octave                *NumberInput
@@ -55,22 +51,14 @@ type Tracker struct {
 	TrackVoices           *NumberInput
 	InstrumentNameEditor  *widget.Editor
 	NewTrackBtn           *widget.Clickable
-	CopySongBtn           *widget.Clickable
-	PasteBtn              *widget.Clickable
 	NewInstrumentBtn      *widget.Clickable
 	DeleteInstrumentBtn   *widget.Clickable
-	LoadSongFileBtn       *widget.Clickable
-	NewSongFileBtn        *widget.Clickable
 	AddSemitoneBtn        *widget.Clickable
 	SubtractSemitoneBtn   *widget.Clickable
 	AddOctaveBtn          *widget.Clickable
 	SubtractOctaveBtn     *widget.Clickable
 	SongLength            *NumberInput
-	SaveSongFileBtn       *widget.Clickable
-	FileMenuBtn           *widget.Clickable
 	PanicBtn              *widget.Clickable
-	MenuBar               []widget.Clickable
-	FileMenuVisible       bool
 	ParameterSliders      []*widget.Float
 	ParameterList         *layout.List
 	UnitDragList          *DragList
@@ -90,12 +78,7 @@ type Tracker struct {
 
 	sequencer    *Sequencer
 	refresh      chan struct{}
-	setPlaying   chan bool
-	rowJump      chan int
-	patternJump  chan int
 	audioContext sointu.AudioContext
-	playBuffer   []float32
-	closer       chan struct{}
 	undoStack    []sointu.Song
 	redoStack    []sointu.Song
 }
@@ -141,7 +124,6 @@ func clamp(a, min, max int) int {
 
 func (t *Tracker) Close() {
 	t.audioContext.Close()
-	t.closer <- struct{}{}
 }
 
 func (t *Tracker) SetPlaying(value bool) {
@@ -654,7 +636,6 @@ func (t *Tracker) Unselect() {
 func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tracker {
 	t := &Tracker{
 		Theme:                 material.NewTheme(gofont.Collection()),
-		QuitButton:            new(widget.Clickable),
 		audioContext:          audioContext,
 		BPM:                   new(NumberInput),
 		Octave:                new(NumberInput),
@@ -667,12 +648,6 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		NewTrackBtn:           new(widget.Clickable),
 		NewInstrumentBtn:      new(widget.Clickable),
 		DeleteInstrumentBtn:   new(widget.Clickable),
-		NewSongFileBtn:        new(widget.Clickable),
-		CopySongBtn:           new(widget.Clickable),
-		PasteBtn:              new(widget.Clickable),
-		FileMenuBtn:           new(widget.Clickable),
-		LoadSongFileBtn:       new(widget.Clickable),
-		SaveSongFileBtn:       new(widget.Clickable),
 		AddSemitoneBtn:        new(widget.Clickable),
 		SubtractSemitoneBtn:   new(widget.Clickable),
 		AddOctaveBtn:          new(widget.Clickable),
@@ -681,15 +656,10 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		DeleteUnitBtn:         new(widget.Clickable),
 		ClearUnitBtn:          new(widget.Clickable),
 		PanicBtn:              new(widget.Clickable),
-		FileMenu:              new(Menu),
-		EditMenu:              new(Menu),
+		Menus:                 make([]Menu, 2),
 		MenuBar:               make([]widget.Clickable, 2),
 		UnitDragList:          &DragList{List: &layout.List{Axis: layout.Vertical}},
-		setPlaying:            make(chan bool),
-		rowJump:               make(chan int),
-		patternJump:           make(chan int),
 		refresh:               make(chan struct{}, 1), // use non-blocking sends; no need to queue extra ticks if one is queued already
-		closer:                make(chan struct{}),
 		undoStack:             []sointu.Song{},
 		redoStack:             []sointu.Song{},
 		InstrumentDragList:    &DragList{List: &layout.List{Axis: layout.Horizontal}},

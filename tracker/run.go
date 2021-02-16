@@ -1,8 +1,6 @@
 package tracker
 
 import (
-	"os"
-
 	"gioui.org/app"
 	"gioui.org/io/clipboard"
 	"gioui.org/io/key"
@@ -32,9 +30,6 @@ func (t *Tracker) Run(w *app.Window) error {
 				}
 			case system.FrameEvent:
 				gtx := layout.NewContext(&ops, e)
-				if t.QuitButton.Clicked() {
-					os.Exit(0)
-				}
 				t.Layout(gtx)
 				e.Frame(gtx.Ops)
 			}

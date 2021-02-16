@@ -49,7 +49,7 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 	gtx.Constraints.Max.Y = gtx.Px(unit.Dp(36))
 	gtx.Constraints.Min.Y = gtx.Px(unit.Dp(36))
 
-	for clickedItem, hasClicked := t.FileMenu.Clicked(); hasClicked; {
+	for clickedItem, hasClicked := t.Menus[0].Clicked(); hasClicked; {
 		switch clickedItem {
 		case 0:
 			t.LoadSong(defaultSong.Copy())
@@ -58,10 +58,10 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 		case 2:
 			t.SaveSongFile()
 		}
-		clickedItem, hasClicked = t.FileMenu.Clicked()
+		clickedItem, hasClicked = t.Menus[0].Clicked()
 	}
 
-	for clickedItem, hasClicked := t.EditMenu.Clicked(); hasClicked; {
+	for clickedItem, hasClicked := t.Menus[1].Clicked(); hasClicked; {
 		switch clickedItem {
 		case 0:
 			t.Undo()
@@ -72,9 +72,9 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 				clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
 			}
 		case 3:
-			clipboard.ReadOp{Tag: t.EditMenu}.Add(gtx.Ops)
+			clipboard.ReadOp{Tag: &t.Menus[1]}.Add(gtx.Ops)
 		}
-		clickedItem, hasClicked = t.FileMenu.Clicked()
+		clickedItem, hasClicked = t.Menus[1].Clicked()
 	}
 
 	shortcutKey := "Ctrl+"
@@ -82,12 +82,12 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 		shortcutKey = "Cmd+"
 	}
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		layout.Rigid(t.layoutMenu("File", &t.MenuBar[0], t.FileMenu, unit.Dp(200),
+		layout.Rigid(t.layoutMenu("File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200),
 			MenuItem{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: shortcutKey + "N"},
 			MenuItem{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: shortcutKey + "O"},
 			MenuItem{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: shortcutKey + "S"},
 		)),
-		layout.Rigid(t.layoutMenu("Edit", &t.MenuBar[1], t.EditMenu, unit.Dp(160),
+		layout.Rigid(t.layoutMenu("Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(160),
 			MenuItem{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: shortcutKey + "Z", Disabled: len(t.undoStack) == 0},
 			MenuItem{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: shortcutKey + "Y", Disabled: len(t.redoStack) == 0},
 			MenuItem{IconBytes: icons.ContentContentCopy, Text: "Copy", ShortcutText: shortcutKey + "C"},
