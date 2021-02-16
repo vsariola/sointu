@@ -211,7 +211,11 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 				if e.Modifiers.Contain(key.ModShortcut) {
 					t.Cursor.Row -= t.song.RowsPerPattern
 				} else {
-					t.Cursor.Row--
+					if t.Step.Value > 0 {
+						t.Cursor.Row -= t.Step.Value
+					} else {
+						t.Cursor.Row--
+					}
 				}
 				t.NoteTracking = false
 			case EditUnits:
@@ -237,7 +241,11 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 				if e.Modifiers.Contain(key.ModShortcut) {
 					t.Cursor.Row += t.song.RowsPerPattern
 				} else {
-					t.Cursor.Row++
+					if t.Step.Value > 0 {
+						t.Cursor.Row += t.Step.Value
+					} else {
+						t.Cursor.Row++
+					}
 				}
 				t.NoteTracking = false
 			case EditUnits:

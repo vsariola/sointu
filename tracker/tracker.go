@@ -47,6 +47,7 @@ type Tracker struct {
 	BPM                   *NumberInput
 	RowsPerPattern        *NumberInput
 	RowsPerBeat           *NumberInput
+	Step                  *NumberInput
 	InstrumentVoices      *NumberInput
 	TrackVoices           *NumberInput
 	InstrumentNameEditor  *widget.Editor
@@ -325,6 +326,11 @@ func (t *Tracker) DeleteInstrument() {
 func (t *Tracker) SetCurrentNote(iv byte) {
 	t.SaveUndo()
 	t.song.Tracks[t.Cursor.Track].Patterns[t.song.Tracks[t.Cursor.Track].Sequence[t.Cursor.Pattern]][t.Cursor.Row] = iv
+	if !t.Playing || !t.NoteTracking {
+		t.Cursor.Row += t.Step.Value
+		t.ClampPositions()
+		t.Unselect()
+	}
 }
 
 func (t *Tracker) SetCurrentPattern(pat byte) {
@@ -338,6 +344,11 @@ func (t *Tracker) SetCurrentPattern(pat byte) {
 		t.song.Tracks[t.Cursor.Track].Patterns = append(t.song.Tracks[t.Cursor.Track].Patterns, tail...)
 	}
 	t.song.Tracks[t.Cursor.Track].Sequence[t.Cursor.Pattern] = pat
+	if t.Step.Value > 0 && (!t.Playing || !t.NoteTracking) {
+		t.Cursor.Pattern++
+		t.ClampPositions()
+		t.Unselect()
+	}
 }
 
 func (t *Tracker) SetSongLength(value int) {
@@ -627,6 +638,11 @@ func (t *Tracker) DeleteSelection() {
 			t.song.Tracks[c].Patterns[p][s.Row] = 1
 		}
 	}
+	if (!t.Playing || !t.NoteTracking) && t.Step.Value > 0 && r1 == r2 {
+		t.Cursor.Row += t.Step.Value
+		t.ClampPositions()
+		t.Unselect()
+	}
 }
 
 func (t *Tracker) Unselect() {
@@ -642,6 +658,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		SongLength:            new(NumberInput),
 		RowsPerPattern:        new(NumberInput),
 		RowsPerBeat:           new(NumberInput),
+		Step:                  new(NumberInput),
 		InstrumentVoices:      new(NumberInput),
 		TrackVoices:           new(NumberInput),
 		InstrumentNameEditor:  &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle},

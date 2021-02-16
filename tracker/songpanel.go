@@ -176,6 +176,19 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 			)
 		}),
 		layout.Rigid(func(gtx C) D {
+			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+				layout.Rigid(Label("STP:", white)),
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					numStyle := NumericUpDown(t.Theme, t.Step, 0, 8)
+					numStyle.UnitsPerStep = unit.Dp(20)
+					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					dims := in.Layout(gtx, numStyle.Layout)
+					return dims
+				}),
+			)
+		}),
+		layout.Rigid(func(gtx C) D {
 			gtx.Constraints.Min = image.Pt(0, 0)
 			return panicBtnStyle.Layout(gtx)
 		}),
