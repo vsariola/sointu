@@ -1,8 +1,10 @@
 package tracker
 
 import (
+	"fmt"
 	"image"
 	"strconv"
+	"time"
 
 	"gioui.org/io/clipboard"
 	"gioui.org/io/pointer"
@@ -104,6 +106,7 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 		contents, err := yaml.Marshal(t.song.Patch.Instruments[t.CurrentInstrument])
 		if err == nil {
 			clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+			t.Alert.Update("Instrument copied to clipboard", Notify, time.Second*3)
 		}
 	}
 	for t.DeleteInstrumentBtn.Clicked() {
@@ -185,19 +188,20 @@ func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 	addUnitBtnStyle.Background = t.Theme.Fg
 	addUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(4))
 
-	for len(t.StackUse) < len(t.song.Patch.Instruments[t.CurrentInstrument].Units) {
+	units := t.song.Patch.Instruments[t.CurrentInstrument].Units
+	for len(t.StackUse) < len(units) {
 		t.StackUse = append(t.StackUse, 0)
 	}
 
 	stackHeight := 0
-	for i, u := range t.song.Patch.Instruments[t.CurrentInstrument].Units {
+	for i, u := range units {
 		stackHeight += u.StackChange()
 		t.StackUse[i] = stackHeight
 	}
 
 	element := func(gtx C, i int) D {
 		gtx.Constraints = layout.Exact(image.Pt(gtx.Px(unit.Dp(120)), gtx.Px(unit.Dp(20))))
-		u := t.song.Patch.Instruments[t.CurrentInstrument].Units[i]
+		u := units[i]
 		unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
 		if unitNameLabel.Text == "" {
 			unitNameLabel.Text = "---"
@@ -210,8 +214,16 @@ func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 			if i > 0 {
 				prevStackUse = t.StackUse[i-1]
 			}
-			if u.StackNeed() > prevStackUse || (i == len(t.StackUse)-1 && t.StackUse[i] != 0) {
+			if stackNeed := u.StackNeed(); stackNeed > prevStackUse {
 				unitNameLabel.Color = errorColor
+				typeString := u.Type
+				if u.Parameters["stereo"] == 1 {
+					typeString += " (stereo)"
+				}
+				t.Alert.Update(fmt.Sprintf("%v needs at least %v input signals, got %v", typeString, stackNeed, prevStackUse), Error, 0)
+			} else if i == len(units)-1 && t.StackUse[i] != 0 {
+				unitNameLabel.Color = warningColor
+				t.Alert.Update(fmt.Sprintf("Instrument leaves %v signal(s) on the stack", t.StackUse[i]), Warning, 0)
 			}
 		}
 		stackLabel := LabelStyle{Text: stackText, ShadeColor: black, Color: mediumEmphasisTextColor, Font: labelDefaultFont, FontSize: unit.Sp(12)}
@@ -224,7 +236,7 @@ func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 		)
 	}
 
-	unitList := FilledDragList(t.Theme, t.UnitDragList, len(t.song.Patch.Instruments[t.CurrentInstrument].Units), element, t.SwapUnits)
+	unitList := FilledDragList(t.Theme, t.UnitDragList, len(units), element, t.SwapUnits)
 
 	if t.EditMode == EditUnits {
 		unitList.SelectedColor = cursorColor

@@ -4,6 +4,7 @@ import (
 	"image"
 	"math"
 	"runtime"
+	"time"
 
 	"gioui.org/f32"
 	"gioui.org/io/clipboard"
@@ -70,6 +71,7 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 		case 2:
 			if contents, err := yaml.Marshal(t.song); err == nil {
 				clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+				t.Alert.Update("Song copied to clipboard", Notify, time.Second*3)
 			}
 		case 3:
 			clipboard.ReadOp{Tag: &t.Menus[1]}.Add(gtx.Ops)

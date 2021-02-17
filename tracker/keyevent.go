@@ -3,6 +3,7 @@ package tracker
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"gioui.org/app"
 	"gioui.org/io/key"
@@ -88,6 +89,7 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 				contents, err := yaml.Marshal(t.song)
 				if err == nil {
 					w.WriteClipboard(string(contents))
+					t.Alert.Update("Song copied to clipboard", Notify, time.Second*3)
 				}
 				return true
 			}

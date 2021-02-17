@@ -16,6 +16,7 @@ func (t *Tracker) Layout(gtx layout.Context) {
 	t.VerticalSplit.Layout(gtx,
 		t.layoutTop,
 		t.layoutBottom)
+	t.Alert.Layout(gtx)
 }
 
 func (t *Tracker) layoutBottom(gtx layout.Context) layout.Dimensions {

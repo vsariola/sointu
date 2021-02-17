@@ -83,6 +83,7 @@ type Tracker struct {
 	VerticalSplit         *Split
 	StackUse              []int
 	KeyPlaying            map[string]func()
+	Alert                 Alert
 
 	sequencer    *Sequencer
 	refresh      chan struct{}
