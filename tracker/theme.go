@@ -69,3 +69,5 @@ var inactiveSelectionColor = color.NRGBA{R: 140, G: 140, B: 140, A: 16}
 var errorColor = color.NRGBA{R: 207, G: 102, B: 121, A: 255}
 
 var menuHoverColor = color.NRGBA{R: 30, G: 31, B: 38, A: 255}
+
+var scrollBarColor = color.NRGBA{R: 255, G: 255, B: 255, A: 32}

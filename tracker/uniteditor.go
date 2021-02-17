@@ -150,7 +150,14 @@ func (t *Tracker) layoutUnitSliders(gtx C) D {
 	if u.Type == "oscillator" && u.Parameters["type"] == sointu.Sample {
 		l++
 	}
-	return t.ParameterList.Layout(gtx, l, listElements)
+	return layout.Stack{}.Layout(gtx,
+		layout.Stacked(func(gtx C) D {
+			return t.ParameterList.Layout(gtx, l, listElements)
+		}),
+		layout.Stacked(func(gtx C) D {
+			gtx.Constraints.Min = gtx.Constraints.Max
+			return t.ParameterScrollBar.Layout(gtx, unit.Dp(10), l, &t.ParameterList.Position)
+		}))
 }
 
 func (t *Tracker) layoutUnitFooter() layout.Widget {
@@ -173,17 +180,19 @@ func (t *Tracker) layoutUnitFooter() layout.Widget {
 		}
 		if t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type == "" {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+				layout.Rigid(deleteUnitBtnStyle.Layout),
 				layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
-				layout.Rigid(deleteUnitBtnStyle.Layout))
+			)
 		}
 		clearUnitBtnStyle := material.IconButton(t.Theme, t.ClearUnitBtn, widgetForIcon(icons.ContentClear))
 		clearUnitBtnStyle.Color = primaryColor
 		clearUnitBtnStyle.Background = transparent
 		clearUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+			layout.Rigid(deleteUnitBtnStyle.Layout),
 			layout.Rigid(clearUnitBtnStyle.Layout),
-			layout.Rigid(deleteUnitBtnStyle.Layout))
+			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+		)
 	}
 }
 
@@ -213,7 +222,13 @@ func (t *Tracker) layoutUnitTypeChooser(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 			layout.Rigid(hintText),
 			layout.Flexed(1, func(gtx C) D {
-				return t.ChooseUnitTypeList.Layout(gtx, len(allUnits), listElem)
+				return layout.Stack{}.Layout(gtx,
+					layout.Stacked(func(gtx C) D {
+						return t.ChooseUnitTypeList.Layout(gtx, len(allUnits), listElem)
+					}),
+					layout.Expanded(func(gtx C) D {
+						return t.ChooseUnitScrollBar.Layout(gtx, unit.Dp(10), len(allUnits), &t.ChooseUnitTypeList.Position)
+					}))
 			}))
 	})
 }

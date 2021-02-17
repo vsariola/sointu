@@ -63,14 +63,18 @@ type Tracker struct {
 	CopyInstrumentBtn     *widget.Clickable
 	ParameterSliders      []*widget.Float
 	ParameterList         *layout.List
+	ParameterScrollBar    *ScrollBar
 	UnitDragList          *DragList
+	UnitScrollBar         *ScrollBar
 	DeleteUnitBtn         *widget.Clickable
 	ClearUnitBtn          *widget.Clickable
 	ChooseUnitTypeList    *layout.List
+	ChooseUnitScrollBar   *ScrollBar
 	ChooseUnitTypeBtns    []*widget.Clickable
 	AddUnitBtn            *widget.Clickable
 	ParameterLabelBtns    []*widget.Clickable
 	InstrumentDragList    *DragList
+	InstrumentScrollBar   *ScrollBar
 	TrackHexCheckBox      *widget.Bool
 	TrackShowHex          []bool
 	VuMeter               VuMeter
@@ -702,15 +706,19 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		Menus:                 make([]Menu, 2),
 		MenuBar:               make([]widget.Clickable, 2),
 		UnitDragList:          &DragList{List: &layout.List{Axis: layout.Vertical}},
+		UnitScrollBar:         &ScrollBar{Axis: layout.Vertical},
 		refresh:               make(chan struct{}, 1), // use non-blocking sends; no need to queue extra ticks if one is queued already
 		undoStack:             []sointu.Song{},
 		redoStack:             []sointu.Song{},
 		InstrumentDragList:    &DragList{List: &layout.List{Axis: layout.Horizontal}},
+		InstrumentScrollBar:   &ScrollBar{Axis: layout.Horizontal},
 		ParameterList:         &layout.List{Axis: layout.Vertical},
+		ParameterScrollBar:    &ScrollBar{Axis: layout.Vertical},
 		TopHorizontalSplit:    new(Split),
 		BottomHorizontalSplit: new(Split),
 		VerticalSplit:         new(Split),
 		ChooseUnitTypeList:    &layout.List{Axis: layout.Vertical},
+		ChooseUnitScrollBar:   &ScrollBar{Axis: layout.Vertical},
 		KeyPlaying:            make(map[string]func()),
 	}
 	t.UnitDragList.HoverItem = -1

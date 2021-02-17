@@ -33,11 +33,6 @@ func (t *Tracker) layoutInstruments(gtx C) D {
 	pointer.InputOp{Tag: &instrumentPointerTag,
 		Types: pointer.Press,
 	}.Add(gtx.Ops)
-	if t.CurrentInstrument > 7 {
-		t.InstrumentDragList.List.Position.First = t.CurrentInstrument - 7
-	} else {
-		t.InstrumentDragList.List.Position.First = 0
-	}
 	for t.NewInstrumentBtn.Clicked() {
 		t.AddInstrument()
 	}
@@ -53,7 +48,14 @@ func (t *Tracker) layoutInstruments(gtx C) D {
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{}.Layout(
 				gtx,
-				layout.Flexed(1, t.layoutInstrumentNames),
+				layout.Flexed(1, func(gtx C) D {
+					return layout.Stack{}.Layout(gtx,
+						layout.Stacked(t.layoutInstrumentNames),
+						layout.Expanded(func(gtx C) D {
+							return t.InstrumentScrollBar.Layout(gtx, unit.Dp(6), len(t.song.Patch.Instruments), &t.InstrumentDragList.List.Position)
+						}),
+					)
+				}),
 				layout.Rigid(func(gtx C) D {
 					return layout.E.Layout(gtx, btnStyle.Layout)
 				}),
@@ -180,7 +182,6 @@ func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 	}
 	addUnitBtnStyle := material.IconButton(t.Theme, t.AddUnitBtn, widgetForIcon(icons.ContentAdd))
 	addUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(4))
-	margin := layout.UniformInset(unit.Dp(2))
 
 	for len(t.StackUse) < len(t.song.Patch.Instruments[t.CurrentInstrument].Units) {
 		t.StackUse = append(t.StackUse, 0)
@@ -212,10 +213,12 @@ func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 			}
 		}
 		stackLabel := LabelStyle{Text: stackText, ShadeColor: black, Color: mediumEmphasisTextColor, Font: labelDefaultFont, FontSize: unit.Sp(12)}
-
+		rightMargin := layout.Inset{Right: unit.Dp(10)}
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 			layout.Flexed(1, unitNameLabel.Layout),
-			layout.Rigid(stackLabel.Layout),
+			layout.Rigid(func(gtx C) D {
+				return rightMargin.Layout(gtx, stackLabel.Layout)
+			}),
 		)
 	}
 
@@ -239,7 +242,11 @@ func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 						}
 						return dims
 					}),
+					layout.Expanded(func(gtx C) D {
+						return t.UnitScrollBar.Layout(gtx, unit.Dp(10), len(t.song.Patch.Instruments[t.CurrentInstrument].Units), &t.UnitDragList.List.Position)
+					}),
 					layout.Stacked(func(gtx C) D {
+						margin := layout.Inset{Right: unit.Dp(20), Bottom: unit.Dp(1)}
 						return margin.Layout(gtx, addUnitBtnStyle.Layout)
 					}))
 			}),
