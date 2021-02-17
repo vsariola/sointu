@@ -181,6 +181,8 @@ func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 		t.AddUnit()
 	}
 	addUnitBtnStyle := material.IconButton(t.Theme, t.AddUnitBtn, widgetForIcon(icons.ContentAdd))
+	addUnitBtnStyle.Color = t.Theme.ContrastFg
+	addUnitBtnStyle.Background = t.Theme.Fg
 	addUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(4))
 
 	for len(t.StackUse) < len(t.song.Patch.Instruments[t.CurrentInstrument].Units) {

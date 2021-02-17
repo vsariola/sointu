@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"strings"
 
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -178,20 +179,27 @@ func (t *Tracker) layoutUnitFooter() layout.Widget {
 		} else {
 			deleteUnitBtnStyle.Color = disabledTextColor
 		}
-		if t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type == "" {
-			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(deleteUnitBtnStyle.Layout),
-				layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
-			)
+		text := t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type
+		if text == "" {
+			text = "Choose unit type"
+		} else {
+			text = strings.Title(text)
 		}
-		clearUnitBtnStyle := material.IconButton(t.Theme, t.ClearUnitBtn, widgetForIcon(icons.ContentClear))
-		clearUnitBtnStyle.Color = primaryColor
-		clearUnitBtnStyle.Background = transparent
-		clearUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+		hintText := Label(text, white)
+		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(deleteUnitBtnStyle.Layout),
-			layout.Rigid(clearUnitBtnStyle.Layout),
-			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+			layout.Rigid(func(gtx C) D {
+				var dims D
+				if t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit].Type != "" {
+					clearUnitBtnStyle := material.IconButton(t.Theme, t.ClearUnitBtn, widgetForIcon(icons.ContentClear))
+					clearUnitBtnStyle.Color = primaryColor
+					clearUnitBtnStyle.Background = transparent
+					clearUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+					dims = clearUnitBtnStyle.Layout(gtx)
+				}
+				return D{Size: image.Pt(gtx.Px(unit.Dp(48)), dims.Size.Y)}
+			}),
+			layout.Flexed(1, hintText),
 		)
 	}
 }
@@ -211,24 +219,20 @@ func (t *Tracker) layoutUnitTypeChooser(gtx C) D {
 			paint.FillShape(gtx.Ops, color, clip.Rect{Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
 			return D{Size: gtx.Constraints.Min}
 		}
+		leftMargin := layout.Inset{Left: unit.Dp(10)}
 		return layout.Stack{Alignment: layout.W}.Layout(gtx,
 			layout.Stacked(bg),
-			layout.Expanded(labelStyle.Layout),
+			layout.Expanded(func(gtx C) D {
+				return leftMargin.Layout(gtx, labelStyle.Layout)
+			}),
 			layout.Expanded(t.ChooseUnitTypeBtns[i].Layout))
 	}
-	hintText := Label("Choose unit type:", white)
-	inset := layout.Inset{Left: unit.Dp(6), Top: unit.Dp(6)}
-	return inset.Layout(gtx, func(gtx C) D {
-		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-			layout.Rigid(hintText),
-			layout.Flexed(1, func(gtx C) D {
-				return layout.Stack{}.Layout(gtx,
-					layout.Stacked(func(gtx C) D {
-						return t.ChooseUnitTypeList.Layout(gtx, len(allUnits), listElem)
-					}),
-					layout.Expanded(func(gtx C) D {
-						return t.ChooseUnitScrollBar.Layout(gtx, unit.Dp(10), len(allUnits), &t.ChooseUnitTypeList.Position)
-					}))
-			}))
-	})
+	return layout.Stack{}.Layout(gtx,
+		layout.Stacked(func(gtx C) D {
+			return t.ChooseUnitTypeList.Layout(gtx, len(allUnits), listElem)
+		}),
+		layout.Expanded(func(gtx C) D {
+			return t.ChooseUnitScrollBar.Layout(gtx, unit.Dp(10), len(allUnits), &t.ChooseUnitTypeList.Position)
+		}),
+	)
 }
