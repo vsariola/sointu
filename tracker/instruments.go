@@ -210,7 +210,7 @@ func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 			if i > 0 {
 				prevStackUse = t.StackUse[i-1]
 			}
-			if u.StackNeed() > prevStackUse || (i == len(t.StackUse)-1 && t.StackUse[i] > 0) {
+			if u.StackNeed() > prevStackUse || (i == len(t.StackUse)-1 && t.StackUse[i] != 0) {
 				unitNameLabel.Color = errorColor
 			}
 		}
