@@ -532,7 +532,7 @@ func (u *Unit) StackChange() int {
 
 func (u *Unit) StackNeed() int {
 	switch u.Type {
-	case "envelope", "oscillator", "noise", "receive", "loadnote", "loadval", "in":
+	case "", "envelope", "oscillator", "noise", "receive", "loadnote", "loadval", "in":
 		return 0
 	case "mulp", "mul", "add", "addp", "xch":
 		return 2 * (1 + u.Parameters["stereo"])
