@@ -47,10 +47,6 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		t.AddTrack()
 	}
 
-	for len(t.TrackHexCheckBoxes) < len(t.song.Tracks) {
-		t.TrackHexCheckBoxes = append(t.TrackHexCheckBoxes, new(widget.Bool))
-	}
-
 	for len(t.TrackShowHex) < len(t.song.Tracks) {
 		t.TrackShowHex = append(t.TrackShowHex, false)
 	}
@@ -120,6 +116,8 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 			gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
 			return in.Layout(gtx, numStyle.Layout)
 		}
+		t.TrackHexCheckBox.Value = t.TrackShowHex[t.Cursor.Track]
+		hexCheckBoxStyle := material.CheckBox(t.Theme, t.TrackHexCheckBox, "Hex")
 		dims := layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(Label("OCT:", white)),
 			layout.Rigid(octave),
@@ -128,10 +126,12 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 			layout.Rigid(subtractSemitoneBtnStyle.Layout),
 			layout.Rigid(addOctaveBtnStyle.Layout),
 			layout.Rigid(subtractOctaveBtnStyle.Layout),
-			layout.Rigid(Label("Voices:", white)),
+			layout.Rigid(hexCheckBoxStyle.Layout),
+			layout.Rigid(Label("  Voices:", white)),
 			layout.Rigid(voiceUpDown),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(newTrackBtnStyle.Layout))
+		t.TrackShowHex[t.Cursor.Track] = t.TrackHexCheckBox.Value
 		t.SetTrackVoices(t.TrackVoices.Value)
 		return dims
 	}
@@ -158,31 +158,9 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		layout.Flexed(1, func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 				rowMarkers,
-				layout.Flexed(1, func(gtx C) D {
-					return layout.Stack{Alignment: layout.NW}.Layout(gtx,
-						layout.Stacked(t.layoutTracks),
-						layout.Stacked(t.layoutTrackTitles),
-					)
-				}))
-
+				layout.Flexed(1, t.layoutTracks))
 		}),
 	)
-}
-
-func (t *Tracker) layoutTrackTitles(gtx C) D {
-	defer op.Save(gtx.Ops).Load()
-	hexFlexChildren := make([]layout.FlexChild, len(t.song.Tracks))
-	for trkIndex := range t.song.Tracks {
-		trkIndex2 := trkIndex
-		hexFlexChildren[trkIndex] = layout.Rigid(func(gtx C) D {
-			t.TrackHexCheckBoxes[trkIndex2].Value = t.TrackShowHex[trkIndex2]
-			cbStyle := material.CheckBox(t.Theme, t.TrackHexCheckBoxes[trkIndex2], "hex")
-			dims := cbStyle.Layout(gtx)
-			t.TrackShowHex[trkIndex2] = t.TrackHexCheckBoxes[trkIndex2].Value
-			return layout.Dimensions{Size: image.Pt(trackColWidth, dims.Size.Y)}
-		})
-	}
-	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx, hexFlexChildren...)
 }
 
 func (t *Tracker) layoutTracks(gtx C) D {

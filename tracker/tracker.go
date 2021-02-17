@@ -71,7 +71,7 @@ type Tracker struct {
 	AddUnitBtn            *widget.Clickable
 	ParameterLabelBtns    []*widget.Clickable
 	InstrumentDragList    *DragList
-	TrackHexCheckBoxes    []*widget.Bool
+	TrackHexCheckBox      *widget.Bool
 	TrackShowHex          []bool
 	VuMeter               VuMeter
 	TopHorizontalSplit    *Split
@@ -698,6 +698,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 		ClearUnitBtn:          new(widget.Clickable),
 		PanicBtn:              new(widget.Clickable),
 		CopyInstrumentBtn:     new(widget.Clickable),
+		TrackHexCheckBox:      new(widget.Bool),
 		Menus:                 make([]Menu, 2),
 		MenuBar:               make([]widget.Clickable, 2),
 		UnitDragList:          &DragList{List: &layout.List{Axis: layout.Vertical}},
