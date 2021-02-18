@@ -181,7 +181,7 @@ func (t *Tracker) layoutInstrumentNames(gtx C) D {
 }
 func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 	for t.AddUnitBtn.Clicked() {
-		t.AddUnit()
+		t.AddUnit(true)
 	}
 	addUnitBtnStyle := material.IconButton(t.Theme, t.AddUnitBtn, widgetForIcon(icons.ContentAdd))
 	addUnitBtnStyle.Color = t.Theme.ContrastFg

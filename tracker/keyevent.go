@@ -164,13 +164,28 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 		case "F8":
 			t.SetPlaying(false)
 			return true
-		case key.NameDeleteBackward, key.NameDeleteForward:
+		case key.NameDeleteForward:
 			switch t.EditMode {
+			case EditPatterns:
+				t.DeleteOrderRow(true)
+				return true
 			case EditTracks:
 				t.DeleteSelection()
 				return true
 			case EditUnits:
-				t.DeleteUnit()
+				t.DeleteUnit(true)
+				return true
+			}
+		case key.NameDeleteBackward:
+			switch t.EditMode {
+			case EditPatterns:
+				t.DeleteOrderRow(false)
+				return true
+			case EditTracks:
+				t.DeleteSelection()
+				return true
+			case EditUnits:
+				t.DeleteUnit(false)
 				return true
 			}
 		case "Space":
@@ -200,6 +215,13 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 				t.EditMode = (t.EditMode + 1) % 4
 			}
 			return true
+		case key.NameReturn:
+			switch t.EditMode {
+			case EditPatterns:
+				t.AddOrderRow(!e.Modifiers.Contain(key.ModShortcut))
+			case EditUnits:
+				t.AddUnit(!e.Modifiers.Contain(key.ModShortcut))
+			}
 		case key.NameUpArrow:
 			switch t.EditMode {
 			case EditPatterns:

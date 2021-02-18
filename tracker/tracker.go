@@ -440,7 +440,7 @@ func (t *Tracker) SetUnit(typ string) {
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
-func (t *Tracker) AddUnit() {
+func (t *Tracker) AddUnit(after bool) {
 	t.SaveUndo()
 	start := t.song.FirstInstrumentVoice(t.CurrentInstrument)
 	end := start + t.song.Patch.Instruments[t.CurrentInstrument].NumVoices
@@ -456,13 +456,57 @@ func (t *Tracker) AddUnit() {
 		}
 	}
 	units := make([]sointu.Unit, len(t.song.Patch.Instruments[t.CurrentInstrument].Units)+1)
-	copy(units, t.song.Patch.Instruments[t.CurrentInstrument].Units[:t.CurrentUnit+1])
-	copy(units[t.CurrentUnit+2:], t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit+1:])
+	newUnitIndex := t.CurrentUnit
+	if after {
+		newUnitIndex++
+	}
+	copy(units, t.song.Patch.Instruments[t.CurrentInstrument].Units[:newUnitIndex])
+	copy(units[newUnitIndex+1:], t.song.Patch.Instruments[t.CurrentInstrument].Units[newUnitIndex:])
 	t.song.Patch.Instruments[t.CurrentInstrument].Units = units
-	t.CurrentUnit++
+	t.CurrentUnit = newUnitIndex
 	t.CurrentParam = 0
 	t.ClampPositions()
 	t.sequencer.SetPatch(t.song.Patch)
+}
+
+func (t *Tracker) AddOrderRow(after bool) {
+	t.SaveUndo()
+	l := t.song.SequenceLength()
+	newRowIndex := t.Cursor.Pattern
+	if after {
+		newRowIndex++
+	}
+	for i, trk := range t.song.Tracks {
+		seq := make([]byte, l+1)
+		copy(seq, trk.Sequence[:newRowIndex])
+		copy(seq[newRowIndex+1:], trk.Sequence[newRowIndex:])
+		t.song.Tracks[i].Sequence = seq
+	}
+	t.Cursor.Pattern = newRowIndex
+	t.SelectionCorner = t.Cursor
+	t.ClampPositions()
+}
+
+func (t *Tracker) DeleteOrderRow(forward bool) {
+	l := t.song.SequenceLength()
+	if l <= 1 {
+		return
+	}
+	t.SaveUndo()
+	c := t.Cursor.Pattern
+	for i, trk := range t.song.Tracks {
+		seq := make([]byte, l-1)
+		copy(seq, trk.Sequence[:c])
+		copy(seq[c:], trk.Sequence[c+1:])
+		t.song.Tracks[i].Sequence = seq
+	}
+	if !forward {
+		if t.Cursor.Pattern > 0 {
+			t.Cursor.Pattern--
+		}
+	}
+	t.SelectionCorner = t.Cursor
+	t.ClampPositions()
 }
 
 func (t *Tracker) ClearUnit() {
@@ -474,7 +518,7 @@ func (t *Tracker) ClearUnit() {
 	t.sequencer.SetPatch(t.song.Patch)
 }
 
-func (t *Tracker) DeleteUnit() {
+func (t *Tracker) DeleteUnit(forward bool) {
 	if len(t.song.Patch.Instruments[t.CurrentInstrument].Units) <= 1 {
 		return
 	}
@@ -498,7 +542,7 @@ func (t *Tracker) DeleteUnit() {
 	copy(units, t.song.Patch.Instruments[t.CurrentInstrument].Units[:t.CurrentUnit])
 	copy(units[t.CurrentUnit:], t.song.Patch.Instruments[t.CurrentInstrument].Units[t.CurrentUnit+1:])
 	t.song.Patch.Instruments[t.CurrentInstrument].Units = units
-	if t.CurrentUnit > 0 {
+	if !forward && t.CurrentUnit > 0 {
 		t.CurrentUnit--
 	}
 	t.CurrentParam = 0

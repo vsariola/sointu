@@ -168,7 +168,7 @@ func (t *Tracker) layoutUnitFooter() layout.Widget {
 			op.InvalidateOp{}.Add(gtx.Ops)
 		}
 		for t.DeleteUnitBtn.Clicked() {
-			t.DeleteUnit()
+			t.DeleteUnit(false)
 			op.InvalidateOp{}.Add(gtx.Ops)
 		}
 		deleteUnitBtnStyle := material.IconButton(t.Theme, t.DeleteUnitBtn, widgetForIcon(icons.ActionDelete))
