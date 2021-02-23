@@ -32,11 +32,17 @@ func fixPatternLength(patterns [][]byte, fixedLength int) [][]int {
 func flattenSequence(patterns [][]int, sequence []int) []int {
 	sumLen := 0
 	for _, patIndex := range sequence {
+		if patIndex < 0 || patIndex >= len(patterns) {
+			continue
+		}
 		sumLen += len(patterns[patIndex])
 	}
 	notes := make([]int, sumLen)
 	window := notes
 	for _, patIndex := range sequence {
+		if patIndex < 0 || patIndex >= len(patterns) {
+			continue
+		}
 		elementsCopied := copy(window, patterns[patIndex])
 		window = window[elementsCopied:]
 	}
@@ -167,12 +173,12 @@ func bytesToInts(array []byte) []int {
 }
 
 func ConstructPatterns(song *sointu.Song) ([][]byte, [][]byte, error) {
-	patLength := song.RowsPerPattern
-	sequences := make([][]byte, len(song.Tracks))
+	patLength := song.Score.RowsPerPattern
+	sequences := make([][]byte, len(song.Score.Tracks))
 	var patterns [][]int
-	for i, t := range song.Tracks {
+	for i, t := range song.Score.Tracks {
 		fixed := fixPatternLength(t.Patterns, patLength)
-		flat := flattenSequence(fixed, bytesToInts(t.Sequence))
+		flat := flattenSequence(fixed, t.Order)
 		dontCares := markDontCares(flat)
 		// TODO: we could give the user the possibility to use another length during encoding that during composing
 		chunks := splitSequence(dontCares, patLength)

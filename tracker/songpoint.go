@@ -17,36 +17,56 @@ type SongRect struct {
 	Corner2 SongPoint
 }
 
-func (r *SongRow) Wrap(song sointu.Song) {
-	totalRow := r.Pattern*song.RowsPerPattern + r.Row
-	r.Row = mod(totalRow, song.RowsPerPattern)
-	r.Pattern = mod((totalRow-r.Row)/song.RowsPerPattern, song.SequenceLength())
+func (r SongRow) AddRows(rows int) SongRow {
+	return SongRow{Row: r.Row + rows, Pattern: r.Pattern}
 }
 
-func (r *SongRow) Clamp(song sointu.Song) {
-	totalRow := r.Pattern*song.RowsPerPattern + r.Row
+func (r SongRow) AddPatterns(patterns int) SongRow {
+	return SongRow{Row: r.Row, Pattern: r.Pattern + patterns}
+}
+
+func (r SongRow) Wrap(score sointu.Score) SongRow {
+	totalRow := r.Pattern*score.RowsPerPattern + r.Row
+	r.Row = mod(totalRow, score.RowsPerPattern)
+	r.Pattern = mod((totalRow-r.Row)/score.RowsPerPattern, score.Length)
+	return r
+}
+
+func (r SongRow) Clamp(score sointu.Score) SongRow {
+	totalRow := r.Pattern*score.RowsPerPattern + r.Row
 	if totalRow < 0 {
 		totalRow = 0
 	}
-	if totalRow >= song.TotalRows() {
-		totalRow = song.TotalRows() - 1
+	if totalRow >= score.LengthInRows() {
+		totalRow = score.LengthInRows() - 1
 	}
-	r.Row = totalRow % song.RowsPerPattern
-	r.Pattern = ((totalRow - r.Row) / song.RowsPerPattern) % song.SequenceLength()
+	r.Row = totalRow % score.RowsPerPattern
+	r.Pattern = ((totalRow - r.Row) / score.RowsPerPattern) % score.Length
+	return r
 }
 
-func (p *SongPoint) Wrap(song sointu.Song) {
-	p.Track = mod(p.Track, len(song.Tracks))
-	p.SongRow.Wrap(song)
+func (r SongPoint) AddRows(rows int) SongPoint {
+	return SongPoint{Track: r.Track, SongRow: r.SongRow.AddRows(rows)}
 }
 
-func (p *SongPoint) Clamp(song sointu.Song) {
+func (r SongPoint) AddPatterns(patterns int) SongPoint {
+	return SongPoint{Track: r.Track, SongRow: r.SongRow.AddPatterns(patterns)}
+}
+
+func (p SongPoint) Wrap(score sointu.Score) SongPoint {
+	p.Track = mod(p.Track, len(score.Tracks))
+	p.SongRow = p.SongRow.Wrap(score)
+	return p
+}
+
+func (p SongPoint) Clamp(score sointu.Score) SongPoint {
 	if p.Track < 0 {
 		p.Track = 0
-	} else if l := len(song.Tracks); p.Track >= l {
+	} else if l := len(score.Tracks); p.Track >= l {
 		p.Track = l - 1
 	}
-	p.SongRow.Clamp(song)
+	p.SongRow = p.SongRow.Clamp(score)
+	return p
 }
 
 func (r *SongRect) Contains(p SongPoint) bool {

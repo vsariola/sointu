@@ -23,7 +23,7 @@ func (s BridgeService) Compile(patch sointu.Patch) (sointu.Synth, error) {
 
 func Synth(patch sointu.Patch) (*C.Synth, error) {
 	s := new(C.Synth)
-	comPatch, err := compiler.Encode(&patch, compiler.AllFeatures{})
+	comPatch, err := compiler.Encode(patch, compiler.AllFeatures{})
 	if err != nil {
 		return nil, fmt.Errorf("error compiling patch: %v", err)
 	}
@@ -102,7 +102,7 @@ func (s *C.Synth) Release(voice int) {
 
 // Update
 func (s *C.Synth) Update(patch sointu.Patch) error {
-	comPatch, err := compiler.Encode(&patch, compiler.AllFeatures{})
+	comPatch, err := compiler.Encode(patch, compiler.AllFeatures{})
 	if err != nil {
 		return fmt.Errorf("error compiling patch: %v", err)
 	}

@@ -13,10 +13,10 @@ type SongMacros struct {
 }
 
 func NewSongMacros(s *sointu.Song) *SongMacros {
-	maxSamples := s.SamplesPerRow() * s.TotalRows()
+	maxSamples := s.SamplesPerRow() * s.Score.LengthInRows()
 	p := SongMacros{Song: s, MaxSamples: maxSamples}
 	trackVoiceNumber := 0
-	for _, t := range s.Tracks {
+	for _, t := range s.Score.Tracks {
 		for b := 0; b < t.NumVoices-1; b++ {
 			p.VoiceTrackBitmask += 1 << trackVoiceNumber
 			trackVoiceNumber++
@@ -28,7 +28,7 @@ func NewSongMacros(s *sointu.Song) *SongMacros {
 
 func (p *SongMacros) NumDelayLines() string {
 	total := 0
-	for _, instr := range p.Song.Patch.Instruments {
+	for _, instr := range p.Song.Patch {
 		for _, unit := range instr.Units {
 			if unit.Type == "delay" {
 				total += unit.Parameters["count"] * (1 + unit.Parameters["stereo"])

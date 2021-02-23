@@ -1,4 +1,4 @@
-package tracker
+package gioui
 
 import (
 	"fmt"
@@ -12,6 +12,7 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/widget"
+	"github.com/vsariola/sointu/tracker"
 )
 
 const patternCellHeight = 16
@@ -29,7 +30,7 @@ func (t *Tracker) layoutPatterns(gtx C) D {
 			continue
 		}
 		if e.Type == pointer.Press {
-			t.EditMode = EditPatterns
+			t.SetEditMode(tracker.EditPatterns)
 		}
 	}
 	rect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
@@ -37,28 +38,30 @@ func (t *Tracker) layoutPatterns(gtx C) D {
 	pointer.InputOp{Tag: &patternPointerTag,
 		Types: pointer.Press,
 	}.Add(gtx.Ops)
-	patternRect := SongRect{
-		Corner1: SongPoint{SongRow: SongRow{Pattern: t.Cursor.Pattern}, Track: t.Cursor.Track},
-		Corner2: SongPoint{SongRow: SongRow{Pattern: t.SelectionCorner.Pattern}, Track: t.SelectionCorner.Track},
+	patternRect := tracker.SongRect{
+		Corner1: tracker.SongPoint{SongRow: tracker.SongRow{Pattern: t.Cursor().Pattern}, Track: t.Cursor().Track},
+		Corner2: tracker.SongPoint{SongRow: tracker.SongRow{Pattern: t.SelectionCorner().Pattern}, Track: t.SelectionCorner().Track},
 	}
-	for j := 0; j < t.song.SequenceLength(); j++ {
-		if j == t.PlayPosition.Pattern && t.Playing {
+	for j := 0; j < t.Song().Score.Length; j++ {
+		if playPos, ok := t.player.Position(); ok && j == playPos.Pattern {
 			paint.FillShape(gtx.Ops, patternPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, patternCellHeight)}.Op())
 		}
 		paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)
 		widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)))
 		stack := op.Save(gtx.Ops)
 		op.Offset(f32.Pt(patternRowMarkerWidth, 0)).Add(gtx.Ops)
-		for i, track := range t.song.Tracks {
+		for i, track := range t.Song().Score.Tracks {
 			paint.ColorOp{Color: patternTextColor}.Add(gtx.Ops)
-			widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(track.Sequence[j]))
-			point := SongPoint{Track: i, SongRow: SongRow{Pattern: j}}
-			if t.EditMode == EditPatterns || t.EditMode == EditTracks {
+			if j < len(track.Order) && track.Order[j] >= 0 {
+				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(track.Order[j]))
+			}
+			point := tracker.SongPoint{Track: i, SongRow: tracker.SongRow{Pattern: j}}
+			if t.EditMode() == tracker.EditPatterns || t.EditMode() == tracker.EditTracks {
 				if patternRect.Contains(point) {
 					color := inactiveSelectionColor
-					if t.EditMode == EditPatterns {
+					if t.EditMode() == tracker.EditPatterns {
 						color = selectionColor
-						if point.Pattern == t.Cursor.Pattern && point.Track == t.Cursor.Track {
+						if point.Pattern == t.Cursor().Pattern && point.Track == t.Cursor().Track {
 							color = cursorColor
 						}
 					}
@@ -73,9 +76,11 @@ func (t *Tracker) layoutPatterns(gtx C) D {
 	return layout.Dimensions{Size: gtx.Constraints.Max}
 }
 
-func patternIndexToString(index byte) string {
-	if index < 10 {
-		return string([]byte{'0' + index})
+func patternIndexToString(index int) string {
+	if index < 0 {
+		return ""
+	} else if index < 10 {
+		return string('0' + byte(index))
 	}
-	return string([]byte{'A' + index - 10})
+	return string('A' + byte(index-10))
 }

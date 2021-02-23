@@ -6,6 +6,8 @@ import (
 	"github.com/vsariola/sointu"
 )
 
+var UnitTypeNames []string
+
 var defaultUnits = map[string]sointu.Unit{
 	"envelope":   {Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 64, "decay": 64, "sustain": 64, "release": 64, "gain": 64}},
 	"oscillator": {Type: "oscillator", Parameters: map[string]int{"stereo": 0, "transpose": 64, "detune": 64, "phase": 0, "color": 64, "shape": 64, "gain": 64, "type": sointu.Sine}},
@@ -40,16 +42,6 @@ var defaultUnits = map[string]sointu.Unit{
 	"send":       {Type: "send", Parameters: map[string]int{"stereo": 0, "amount": 128, "voice": 0, "unit": 0, "port": 0, "sendpop": 1}},
 }
 
-var allUnits []string
-
-func init() {
-	allUnits = make([]string, 0, len(sointu.UnitTypes))
-	for k := range sointu.UnitTypes {
-		allUnits = append(allUnits, k)
-	}
-	sort.Strings(allUnits)
-}
-
 var defaultInstrument = sointu.Instrument{
 	Name:      "Instr",
 	NumVoices: 1,
@@ -64,14 +56,16 @@ var defaultInstrument = sointu.Instrument{
 }
 
 var defaultSong = sointu.Song{
-	BPM:            100,
-	RowsPerPattern: 16,
-	RowsPerBeat:    4,
-	Tracks: []sointu.Track{
-		{NumVoices: 1, Sequence: []byte{0, 0, 0, 1}, Patterns: [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}, {64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 75, 0, 75, 0, 80, 0}}},
+	BPM:         100,
+	RowsPerBeat: 4,
+	Score: sointu.Score{
+		RowsPerPattern: 16,
+		Length:         4,
+		Tracks: []sointu.Track{
+			{NumVoices: 1, Order: []int{0, 0, 0, 1}, Patterns: [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}, {64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 75, 0, 75, 0, 80, 0}}},
+		},
 	},
-	Patch: sointu.Patch{Instruments: []sointu.Instrument{
-		defaultInstrument,
+	Patch: sointu.Patch{defaultInstrument,
 		{Name: "Global", NumVoices: 1, Units: []sointu.Unit{
 			defaultUnits["in"],
 			{Type: "delay",
@@ -80,5 +74,13 @@ var defaultSong = sointu.Song{
 					1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642,
 				}},
 			defaultUnits["out"],
-		}}}},
+		}}},
+}
+
+func init() {
+	UnitTypeNames = make([]string, 0, len(sointu.UnitTypes))
+	for k := range sointu.UnitTypes {
+		UnitTypeNames = append(UnitTypeNames, k)
+	}
+	sort.Strings(UnitTypeNames)
 }

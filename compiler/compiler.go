@@ -82,7 +82,7 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 	}
 	features := NecessaryFeaturesFor(song.Patch)
 	retmap := map[string]string{}
-	encodedPatch, err := Encode(&song.Patch, features)
+	encodedPatch, err := Encode(song.Patch, features)
 	if err != nil {
 		return nil, fmt.Errorf(`could not encode patch: %v`, err)
 	}

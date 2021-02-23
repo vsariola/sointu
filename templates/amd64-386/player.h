@@ -8,8 +8,8 @@
 #define SU_SAMPLE_RATE     44100
 #define SU_BPM             {{.Song.BPM}}
 #define SU_ROWS_PER_BEAT  {{.Song.RowsPerBeat}}
-#define SU_PATTERN_SIZE    {{.Song.RowsPerPattern}}
-#define SU_MAX_PATTERNS    {{.Song.SequenceLength}}
+#define SU_PATTERN_SIZE    {{.Song.Score.RowsPerPattern}}
+#define SU_MAX_PATTERNS    {{.Song.Score.Length}}
 #define SU_TOTAL_ROWS      (SU_MAX_PATTERNS*SU_PATTERN_SIZE)
 #define SU_SAMPLES_PER_ROW (SU_SAMPLE_RATE*60/(SU_BPM*SU_ROWS_PER_BEAT))
 

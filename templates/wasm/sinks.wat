@@ -95,12 +95,12 @@
     loop $stereoLoop
 {{- end}}
     (local.set $scaledAddress (i32.add (i32.mul (i32.and (local.get $address) (i32.const 0x7FF7)) (i32.const 4))
-{{- if .SupportsParamValueOtherThan "send" "voice" 0}}
+{{- if .SupportsGlobalSend}}
         (select
             (i32.const 4096)
 {{- end}}
             (global.get $voice)
-{{- if .SupportsParamValueOtherThan "send" "voice" 0}}
+{{- if .SupportsGlobalSend}}
             (i32.and (local.get $address)(i32.const 0x8000))
         )
 {{- end}}

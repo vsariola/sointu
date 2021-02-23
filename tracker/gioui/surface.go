@@ -1,4 +1,4 @@
-package tracker
+package gioui
 
 import (
 	"image/color"

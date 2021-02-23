@@ -40,7 +40,7 @@ su_render_sampleloop:                   ; loop through every sample in the row
             {{- if .SupportsPolyphony}}
             {{.Push (.PolyphonyBitmask | printf "%v") "PolyphonyBitmask"}} ; does the next voice reuse the current opcodes?
             {{- end}}
-            {{.Push (.Song.Patch.TotalVoices | printf "%v") "VoicesRemain"}}
+            {{.Push (.Song.Patch.NumVoices | printf "%v") "VoicesRemain"}}
             mov     {{.DX}}, {{.PTRWORD}} su_synth_obj                       ; {{.DX}} points to the synth object
             mov     {{.COM}}, {{.PTRWORD}} su_patch_code           ; COM points to vm code
             mov     {{.VAL}}, {{.PTRWORD}} su_patch_parameters             ; VAL points to unit params
@@ -140,7 +140,7 @@ su_update_voices_nexttrack:
         pop     {{.DX}}                                 ; edx=patrnrow
         add     {{.SI}}, {{.SequenceLength}}
         inc     {{.BP}}
-{{- $addrname := len .Song.Tracks | printf "su_synth_obj + %v"}}
+{{- $addrname := len .Song.Score.Tracks | printf "su_synth_obj + %v"}}
 {{- .Prepare $addrname | indent 8}}
         cmp     {{.BP}},{{.Use $addrname}}
         jl      su_update_voices_trackloop
@@ -154,7 +154,7 @@ su_update_voices_nexttrack:
 {{- .Prepare "su_tracks" | indent 4}}
     lea     {{.SI}}, [{{.Use "su_tracks"}}+{{.AX}}]; esi points to the pattern data for current track
     mov     {{.DI}}, {{.PTRWORD}} su_synth_obj+su_synthworkspace.voices
-    mov     bl, {{len .Song.Tracks}}                      ; MAX_TRACKS is always <= 32 so this is ok
+    mov     bl, {{len .Song.Score.Tracks}}                      ; MAX_TRACKS is always <= 32 so this is ok
 su_update_voices_trackloop:
         movzx   eax, byte [{{.SI}}]                     ; eax = current pattern
         imul    eax, {{.PatternLength}}           ; multiply by rows per pattern, eax = offset to current pattern data

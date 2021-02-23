@@ -1,4 +1,4 @@
-package tracker
+package gioui
 
 import (
 	"fmt"
@@ -14,6 +14,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"gopkg.in/yaml.v3"
 )
@@ -26,8 +27,8 @@ func (t *Tracker) layoutInstruments(gtx C) D {
 		if !ok {
 			continue
 		}
-		if e.Type == pointer.Press && (t.EditMode != EditUnits && t.EditMode != EditParameters) {
-			t.EditMode = EditUnits
+		if e.Type == pointer.Press && (t.EditMode() != tracker.EditUnits && t.EditMode() != tracker.EditParameters) {
+			t.SetEditMode(tracker.EditUnits)
 		}
 	}
 	rect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
@@ -36,12 +37,12 @@ func (t *Tracker) layoutInstruments(gtx C) D {
 		Types: pointer.Press,
 	}.Add(gtx.Ops)
 	for t.NewInstrumentBtn.Clicked() {
-		t.AddInstrument()
+		t.AddInstrument(true)
 	}
 	btnStyle := material.IconButton(t.Theme, t.NewInstrumentBtn, widgetForIcon(icons.ContentAdd))
 	btnStyle.Background = transparent
 	btnStyle.Inset = layout.UniformInset(unit.Dp(6))
-	if t.song.Patch.TotalVoices() < 32 {
+	if t.CanAddInstrument() {
 		btnStyle.Color = primaryColor
 	} else {
 		btnStyle.Color = disabledTextColor
@@ -54,7 +55,7 @@ func (t *Tracker) layoutInstruments(gtx C) D {
 					return layout.Stack{}.Layout(gtx,
 						layout.Stacked(t.layoutInstrumentNames),
 						layout.Expanded(func(gtx C) D {
-							return t.InstrumentScrollBar.Layout(gtx, unit.Dp(6), len(t.song.Patch.Instruments), &t.InstrumentDragList.List.Position)
+							return t.InstrumentScrollBar.Layout(gtx, unit.Dp(6), len(t.Song().Patch), &t.InstrumentDragList.List.Position)
 						}),
 					)
 				}),
@@ -77,7 +78,7 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 		deleteInstrumentBtnStyle := material.IconButton(t.Theme, t.DeleteInstrumentBtn, widgetForIcon(icons.ActionDelete))
 		deleteInstrumentBtnStyle.Background = transparent
 		deleteInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		if len(t.song.Patch.Instruments) > 1 {
+		if t.CanDeleteInstrument() {
 			deleteInstrumentBtnStyle.Color = primaryColor
 		} else {
 			deleteInstrumentBtnStyle.Color = disabledTextColor
@@ -86,11 +87,8 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(Label("Voices: ", white)),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				maxRemain := 32 - t.song.Patch.TotalVoices() + t.song.Patch.Instruments[t.CurrentInstrument].NumVoices
-				if maxRemain < 0 {
-					maxRemain = 0
-				}
-				t.InstrumentVoices.Value = t.song.Patch.Instruments[t.CurrentInstrument].NumVoices
+				maxRemain := t.MaxInstrumentVoices()
+				t.InstrumentVoices.Value = t.Instrument().NumVoices
 				numStyle := NumericUpDown(t.Theme, t.InstrumentVoices, 0, maxRemain)
 				gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
 				gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
@@ -103,16 +101,16 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 			layout.Rigid(deleteInstrumentBtnStyle.Layout))
 	}
 	for t.CopyInstrumentBtn.Clicked() {
-		contents, err := yaml.Marshal(t.song.Patch.Instruments[t.CurrentInstrument])
+		contents, err := yaml.Marshal(t.Instrument())
 		if err == nil {
 			clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
 			t.Alert.Update("Instrument copied to clipboard", Notify, time.Second*3)
 		}
 	}
 	for t.DeleteInstrumentBtn.Clicked() {
-		t.DeleteInstrument()
+		t.DeleteInstrument(false)
 	}
-	return Surface{Gray: 37, Focus: t.EditMode == EditUnits || t.EditMode == EditParameters}.Layout(gtx, header)
+	return Surface{Gray: 37, Focus: t.EditMode() == tracker.EditUnits || t.EditMode() == tracker.EditParameters}.Layout(gtx, header)
 }
 
 func (t *Tracker) layoutInstrumentNames(gtx C) D {
@@ -120,11 +118,11 @@ func (t *Tracker) layoutInstrumentNames(gtx C) D {
 		gtx.Constraints.Min.Y = gtx.Px(unit.Dp(36))
 		gtx.Constraints.Min.X = gtx.Px(unit.Dp(30))
 		grabhandle := LabelStyle{Text: "", ShadeColor: black, Color: white, FontSize: unit.Sp(10), Alignment: layout.Center}
-		if i == t.CurrentInstrument {
+		if i == t.InstrIndex() {
 			grabhandle.Text = ":::"
 		}
 		label := func(gtx C) D {
-			if i == t.CurrentInstrument {
+			if i == t.InstrIndex() {
 				for _, ev := range t.InstrumentNameEditor.Events() {
 					_, ok := ev.(widget.SubmitEvent)
 					if ok {
@@ -132,7 +130,7 @@ func (t *Tracker) layoutInstrumentNames(gtx C) D {
 						break
 					}
 				}
-				if n := t.song.Patch.Instruments[t.CurrentInstrument].Name; n != t.InstrumentNameEditor.Text() {
+				if n := t.Instrument().Name; n != t.InstrumentNameEditor.Text() {
 					t.InstrumentNameEditor.SetText(n)
 				}
 				editor := material.Editor(t.Theme, t.InstrumentNameEditor, "Instr")
@@ -143,7 +141,7 @@ func (t *Tracker) layoutInstrumentNames(gtx C) D {
 				t.SetInstrumentName(t.InstrumentNameEditor.Text())
 				return dims
 			}
-			text := t.song.Patch.Instruments[i].Name
+			text := t.Song().Patch[i].Name
 			if text == "" {
 				text = "Instr"
 			}
@@ -159,22 +157,19 @@ func (t *Tracker) layoutInstrumentNames(gtx C) D {
 	}
 
 	color := inactiveLightSurfaceColor
-	if t.EditMode == EditUnits || t.EditMode == EditParameters {
+	if t.EditMode() == tracker.EditUnits || t.EditMode() == tracker.EditParameters {
 		color = activeLightSurfaceColor
 	}
-	instrumentList := FilledDragList(t.Theme, t.InstrumentDragList, len(t.song.Patch.Instruments), element, t.SwapInstruments)
+	instrumentList := FilledDragList(t.Theme, t.InstrumentDragList, len(t.Song().Patch), element, t.SwapInstruments)
 	instrumentList.SelectedColor = color
 	instrumentList.HoverColor = instrumentHoverColor
 
-	t.InstrumentDragList.SelectedItem = t.CurrentInstrument
+	t.InstrumentDragList.SelectedItem = t.InstrIndex()
 	defer op.Save(gtx.Ops).Load()
 	pointer.PassOp{Pass: true}.Add(gtx.Ops)
 	dims := instrumentList.Layout(gtx)
-	if t.CurrentInstrument != t.InstrumentDragList.SelectedItem {
-		t.CurrentInstrument = t.InstrumentDragList.SelectedItem
-		if l := len(t.song.Patch.Instruments[t.CurrentInstrument].Units); t.CurrentUnit >= l {
-			t.CurrentUnit = l - 1
-		}
+	if t.InstrIndex() != t.InstrumentDragList.SelectedItem {
+		t.SetInstrIndex(t.InstrumentDragList.SelectedItem)
 		op.InvalidateOp{}.Add(gtx.Ops)
 	}
 	return dims
@@ -188,7 +183,7 @@ func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 	addUnitBtnStyle.Background = t.Theme.Fg
 	addUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(4))
 
-	units := t.song.Patch.Instruments[t.CurrentInstrument].Units
+	units := t.Instrument().Units
 	for len(t.StackUse) < len(units) {
 		t.StackUse = append(t.StackUse, 0)
 	}
@@ -238,26 +233,26 @@ func (t *Tracker) layoutInstrumentEditor(gtx C) D {
 
 	unitList := FilledDragList(t.Theme, t.UnitDragList, len(units), element, t.SwapUnits)
 
-	if t.EditMode == EditUnits {
+	if t.EditMode() == tracker.EditUnits {
 		unitList.SelectedColor = cursorColor
 	}
 
-	t.UnitDragList.SelectedItem = t.CurrentUnit
-	return Surface{Gray: 30, Focus: t.EditMode == EditUnits || t.EditMode == EditParameters}.Layout(gtx, func(gtx C) D {
+	t.UnitDragList.SelectedItem = t.UnitIndex()
+	return Surface{Gray: 30, Focus: t.EditMode() == tracker.EditUnits || t.EditMode() == tracker.EditParameters}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
 				return layout.Stack{Alignment: layout.SE}.Layout(gtx,
 					layout.Expanded(func(gtx C) D {
 						dims := unitList.Layout(gtx)
-						if t.CurrentUnit != t.UnitDragList.SelectedItem {
-							t.CurrentUnit = t.UnitDragList.SelectedItem
-							t.EditMode = EditUnits
+						if t.UnitIndex() != t.UnitDragList.SelectedItem {
+							t.SetUnitIndex(t.UnitDragList.SelectedItem)
+							t.SetEditMode(tracker.EditUnits)
 							op.InvalidateOp{}.Add(gtx.Ops)
 						}
 						return dims
 					}),
 					layout.Expanded(func(gtx C) D {
-						return t.UnitScrollBar.Layout(gtx, unit.Dp(10), len(t.song.Patch.Instruments[t.CurrentInstrument].Units), &t.UnitDragList.List.Position)
+						return t.UnitScrollBar.Layout(gtx, unit.Dp(10), len(t.Instrument().Units), &t.UnitDragList.List.Position)
 					}),
 					layout.Stacked(func(gtx C) D {
 						margin := layout.Inset{Right: unit.Dp(20), Bottom: unit.Dp(1)}

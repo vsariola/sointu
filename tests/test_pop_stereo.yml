@@ -1,23 +1,24 @@
 bpm: 100
-rowsperpattern: 16
 rowsperbeat: 4
-tracks:
-    - numvoices: 1
-      sequence: [0]
-      patterns: [[64, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]
-patch:
-    instruments:
+score:
+    rowsperpattern: 16
+    length: 1
+    tracks:
         - numvoices: 1
-          units:
-            - type: loadval
-              parameters: {stereo: 0, value: 32}
-            - type: loadval
-              parameters: {stereo: 0, value: 96}
-            - type: loadval
-              parameters: {stereo: 0, value: 0}
-            - type: loadval
-              parameters: {stereo: 0, value: 0}
-            - type: pop
-              parameters: {stereo: 1}
-            - type: out
-              parameters: {gain: 128, stereo: 1}
+          order: [0]
+          patterns: [[64, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]
+patch:
+    - numvoices: 1
+      units:
+        - type: loadval
+          parameters: {stereo: 0, value: 32}
+        - type: loadval
+          parameters: {stereo: 0, value: 96}
+        - type: loadval
+          parameters: {stereo: 0, value: 0}
+        - type: loadval
+          parameters: {stereo: 0, value: 0}
+        - type: pop
+          parameters: {stereo: 1}
+        - type: out
+          parameters: {gain: 128, stereo: 1}

@@ -170,7 +170,7 @@
 {{- end}}
                 (global.set $WRK (i32.const 4160))
                 (global.set $voice (i32.const 4160))
-                (global.set $voicesRemain (i32.const {{.Song.Patch.TotalVoices | printf "%v"}}))
+                (global.set $voicesRemain (i32.const {{.Song.Patch.NumVoices | printf "%v"}}))
 {{- if .HasOp "delay"}}
                 (global.set $delayWRK (i32.const 262144)) ;; BAD IDEA: we are limited to something like 30 delay lines
                 ;; after that, the delay lines start to overwrite the outputbuffer. Find a way to layout the memory

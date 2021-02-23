@@ -19,8 +19,7 @@ var notes = []string{
 	"B-",
 }
 
-// valueAsNote returns the textual representation of a note value
-func valueAsNote(val byte) string {
+func NoteStr(val byte) string {
 	if val == 1 {
 		return "..." // hold
 	}
@@ -38,7 +37,6 @@ func valueAsNote(val byte) string {
 	return fmt.Sprintf("%s%d", notes[oNote], octave)
 }
 
-// noteValue return the note value for a particular note and octave combination
-func getNoteValue(octave, note int) byte {
+func NoteAsValue(octave, note int) byte {
 	return byte(baseNote + (octave * 12) + note)
 }

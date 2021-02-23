@@ -17,6 +17,7 @@ type FeatureSet interface {
 	SupportsParamValueOtherThan(unitType string, paramName string, value int) bool
 	SupportsModulation(unitType string, paramName string) bool
 	SupportsPolyphony() bool
+	SupportsGlobalSend() bool
 }
 
 type Instruction struct {
@@ -55,6 +56,10 @@ func (_ AllFeatures) SupportsModulation(unit string, port string) bool {
 }
 
 func (_ AllFeatures) SupportsPolyphony() bool {
+	return true
+}
+
+func (_ AllFeatures) SupportsGlobalSend() bool {
 	return true
 }
 
@@ -114,12 +119,13 @@ type NecessaryFeatures struct {
 	instructions       []string
 	supportsParamValue map[paramKey](map[int]bool)
 	supportsModulation map[paramKey]bool
+	globalSend         bool
 	polyphony          bool
 }
 
 func NecessaryFeaturesFor(patch sointu.Patch) NecessaryFeatures {
 	features := NecessaryFeatures{opcodes: map[string]int{}, supportsParamValue: map[paramKey](map[int]bool){}, supportsModulation: map[paramKey]bool{}}
-	for instrNo, instrument := range patch.Instruments {
+	for instrIndex, instrument := range patch {
 		for _, unit := range instrument.Units {
 			if _, ok := features.opcodes[unit.Type]; !ok {
 				features.instructions = append(features.instructions, unit.Type)
@@ -133,27 +139,20 @@ func NecessaryFeaturesFor(patch sointu.Patch) NecessaryFeatures {
 				features.supportsParamValue[key][v] = true
 			}
 			if unit.Type == "send" {
-				targetInstrument := instrNo
-				if unit.Parameters["voice"] > 0 {
-					v, err := patch.InstrumentForVoice(unit.Parameters["voice"] - 1)
-					if err != nil {
-						continue
-					}
-					targetInstrument = v
+				targetInstrIndex, targetUnitIndex, err := patch.FindSendTarget(unit.Parameters["target"])
+				if err != nil {
+					continue
 				}
-				if unit.Parameters["unit"] < 0 || unit.Parameters["unit"] >= len(patch.Instruments[targetInstrument].Units) {
-					continue // send is modulating outside the range of the target instrument; probably a bug in patch, but at least it's not modulating the uniType we're after
+				targetUnit := patch[targetInstrIndex].Units[targetUnitIndex]
+				portList := sointu.Ports[targetUnit.Type]
+				portIndex := unit.Parameters["port"]
+				if portIndex < 0 || portIndex >= len(portList) {
+					continue
 				}
-				targetUnit := patch.Instruments[targetInstrument].Units[unit.Parameters["unit"]]
-				modulatedPortNo := 0
-				for _, v := range sointu.UnitTypes[targetUnit.Type] {
-					if v.CanModulate {
-						if modulatedPortNo == unit.Parameters["port"] {
-							features.supportsModulation[paramKey{targetUnit.Type, v.Name}] = true
-						}
-						modulatedPortNo++
-					}
+				if targetInstrIndex != instrIndex || unit.Parameters["voice"] > 0 {
+					features.globalSend = true
 				}
+				features.supportsModulation[paramKey{targetUnit.Type, portList[portIndex]}] = true
 			}
 		}
 		if instrument.NumVoices > 1 {
@@ -203,4 +202,8 @@ func (n NecessaryFeatures) InputNumber(unitType string, paramName string) int {
 
 func (_ NecessaryFeatures) TransformCount(unitType string) int {
 	return allTransformCounts[unitType]
+}
+
+func (n NecessaryFeatures) SupportsGlobalSend() bool {
+	return n.globalSend
 }

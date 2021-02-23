@@ -122,6 +122,9 @@ func main() {
 		if song.RowsPerBeat == 0 {
 			song.RowsPerBeat = 4
 		}
+		if song.Score.Length == 0 {
+			song.Score.Length = len(song.Score.Tracks[0].Patterns)
+		}
 		var compiledPlayer map[string]string
 		if compile {
 			var err error

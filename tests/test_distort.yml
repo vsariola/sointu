@@ -1,21 +1,22 @@
 bpm: 100
-rowsperpattern: 16
 rowsperbeat: 4
-tracks:
-    - numvoices: 1
-      sequence: [0]
-      patterns: [[64, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]
-patch:
-    instruments:
+score:
+    rowsperpattern: 16
+    length: 1
+    tracks:
         - numvoices: 1
-          units:
-            - type: envelope
-              parameters: {attack: 64, decay: 64, gain: 128, release: 80, stereo: 0, sustain: 64}
-            - type: distort
-              parameters: {drive: 32, stereo: 0}
-            - type: envelope
-              parameters: {attack: 64, decay: 64, gain: 128, release: 80, stereo: 0, sustain: 64}
-            - type: distort
-              parameters: {drive: 96, stereo: 0}
-            - type: out
-              parameters: {gain: 128, stereo: 1}
+          order: [0]
+          patterns: [[64, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]
+patch:
+    - numvoices: 1
+      units:
+        - type: envelope
+          parameters: {attack: 64, decay: 64, gain: 128, release: 80, stereo: 0, sustain: 64}
+        - type: distort
+          parameters: {drive: 32, stereo: 0}
+        - type: envelope
+          parameters: {attack: 64, decay: 64, gain: 128, release: 80, stereo: 0, sustain: 64}
+        - type: distort
+          parameters: {drive: 96, stereo: 0}
+        - type: out
+          parameters: {gain: 128, stereo: 1}

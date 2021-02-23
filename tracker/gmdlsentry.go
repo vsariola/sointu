@@ -10,12 +10,12 @@ type GmDlsEntry struct {
 	Name               string
 }
 
-var gmDlsEntryMap = make(map[compiler.SampleOffset]int)
+var GmDlsEntryMap = make(map[compiler.SampleOffset]int)
 
 func init() {
-	for i, e := range gmDlsEntries {
+	for i, e := range GmDlsEntries {
 		key := compiler.SampleOffset{Start: uint32(e.Start), LoopStart: uint16(e.LoopStart), LoopLength: uint16(e.LoopLength)}
-		gmDlsEntryMap[key] = i
+		GmDlsEntryMap[key] = i
 	}
 }
 

@@ -1,4 +1,4 @@
-package tracker
+package gioui
 
 import (
 	"image"
@@ -6,6 +6,7 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
+	"github.com/vsariola/sointu/tracker"
 )
 
 type C = layout.Context
@@ -22,10 +23,10 @@ func (t *Tracker) Layout(gtx layout.Context) {
 func (t *Tracker) layoutBottom(gtx layout.Context) layout.Dimensions {
 	return t.BottomHorizontalSplit.Layout(gtx,
 		func(gtx C) D {
-			return Surface{Gray: 24, Focus: t.EditMode == 0}.Layout(gtx, t.layoutPatterns)
+			return Surface{Gray: 24, Focus: t.EditMode() == tracker.EditPatterns}.Layout(gtx, t.layoutPatterns)
 		},
 		func(gtx C) D {
-			return Surface{Gray: 24, Focus: t.EditMode == 1}.Layout(gtx, t.layoutTracker)
+			return Surface{Gray: 24, Focus: t.EditMode() == tracker.EditTracks}.Layout(gtx, t.layoutTracker)
 		},
 	)
 }

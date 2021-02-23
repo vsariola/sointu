@@ -10,14 +10,16 @@ import (
 
 func TestPatternReusing(t *testing.T) {
 	song := sointu.Song{
-		RowsPerPattern: 8,
-		Tracks: []sointu.Track{{
-			Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 0, 0}, {72, 0, 0, 0, 0, 0, 0, 0}},
-			Sequence: []byte{0, 1},
-		}, {
-			Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 0, 0}, {84, 0, 0, 0, 0, 0, 0, 0}},
-			Sequence: []byte{0, 1},
-		}},
+		Score: sointu.Score{
+			RowsPerPattern: 8,
+			Tracks: []sointu.Track{{
+				Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 0, 0}, {72, 0, 0, 0, 0, 0, 0, 0}},
+				Order:    []int{0, 1},
+			}, {
+				Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 0, 0}, {84, 0, 0, 0, 0, 0, 0, 0}},
+				Order:    []int{0, 1},
+			}},
+		},
 	}
 	patterns, sequences, err := compiler.ConstructPatterns(&song)
 	if err != nil {
@@ -35,14 +37,15 @@ func TestPatternReusing(t *testing.T) {
 
 func TestUnnecessaryHolds(t *testing.T) {
 	song := sointu.Song{
-		RowsPerPattern: 8,
-		Tracks: []sointu.Track{{
-			Patterns: [][]byte{{64, 1, 1, 1, 0, 1, 0, 0}, {72, 0, 1, 0, 1, 0, 0, 0}},
-			Sequence: []byte{0, 1},
-		}, {
-			Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 1, 0}, {84, 0, 0, 0, 1, 1, 0, 0}},
-			Sequence: []byte{0, 1},
-		}},
+		Score: sointu.Score{
+			RowsPerPattern: 8,
+			Tracks: []sointu.Track{{
+				Patterns: [][]byte{{64, 1, 1, 1, 0, 1, 0, 0}, {72, 0, 1, 0, 1, 0, 0, 0}},
+				Order:    []int{0, 1},
+			}, {
+				Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 1, 0}, {84, 0, 0, 0, 1, 1, 0, 0}},
+				Order:    []int{0, 1},
+			}}},
 	}
 	patterns, sequences, err := compiler.ConstructPatterns(&song)
 	if err != nil {
@@ -60,14 +63,17 @@ func TestUnnecessaryHolds(t *testing.T) {
 
 func TestDontCares(t *testing.T) {
 	song := sointu.Song{
-		RowsPerPattern: 8,
-		Tracks: []sointu.Track{{
-			Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}},
-			Sequence: []byte{0, 1},
-		}, {
-			Patterns: [][]byte{{64, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 0, 0, 0, 0}},
-			Sequence: []byte{0, 1},
-		}},
+		Score: sointu.Score{
+			Length:         2,
+			RowsPerPattern: 8,
+			Tracks: []sointu.Track{{
+				Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}},
+				Order:    []int{0, 1},
+			}, {
+				Patterns: [][]byte{{64, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 0, 0, 0, 0}},
+				Order:    []int{0, 1},
+			}},
+		},
 	}
 	patterns, sequences, err := compiler.ConstructPatterns(&song)
 	if err != nil {

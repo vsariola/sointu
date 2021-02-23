@@ -1,4 +1,4 @@
-package tracker
+package gioui
 
 import (
 	"encoding/json"
@@ -26,7 +26,7 @@ func (t *Tracker) LoadSongFile() {
 			return
 		}
 	}
-	t.LoadSong(song)
+	t.SetSong(song)
 }
 
 func (t *Tracker) SaveSongFile() {
@@ -37,9 +37,9 @@ func (t *Tracker) SaveSongFile() {
 	var extension = filepath.Ext(filename)
 	var contents []byte
 	if extension == "json" {
-		contents, err = json.Marshal(t.song)
+		contents, err = json.Marshal(t.Song())
 	} else {
-		contents, err = yaml.Marshal(t.song)
+		contents, err = yaml.Marshal(t.Song())
 	}
 	if err != nil {
 		return

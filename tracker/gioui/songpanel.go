@@ -1,4 +1,4 @@
-package tracker
+package gioui
 
 import (
 	"image"
@@ -53,7 +53,7 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 	for clickedItem, hasClicked := t.Menus[0].Clicked(); hasClicked; {
 		switch clickedItem {
 		case 0:
-			t.LoadSong(defaultSong.Copy())
+			t.ResetSong()
 		case 1:
 			t.LoadSongFile()
 		case 2:
@@ -69,7 +69,7 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 		case 1:
 			t.Redo()
 		case 2:
-			if contents, err := yaml.Marshal(t.song); err == nil {
+			if contents, err := yaml.Marshal(t.Song()); err == nil {
 				clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
 				t.Alert.Update("Song copied to clipboard", Notify, time.Second*3)
 			}
@@ -90,8 +90,8 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 			MenuItem{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: shortcutKey + "S"},
 		)),
 		layout.Rigid(t.layoutMenu("Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(160),
-			MenuItem{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: shortcutKey + "Z", Disabled: len(t.undoStack) == 0},
-			MenuItem{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: shortcutKey + "Y", Disabled: len(t.redoStack) == 0},
+			MenuItem{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: shortcutKey + "Z", Disabled: !t.CanUndo()},
+			MenuItem{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: shortcutKey + "Y", Disabled: !t.CanRedo()},
 			MenuItem{IconBytes: icons.ContentContentCopy, Text: "Copy", ShortcutText: shortcutKey + "C"},
 			MenuItem{IconBytes: icons.ContentContentPaste, Text: "Paste", ShortcutText: shortcutKey + "V"},
 		)),
@@ -104,7 +104,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 	in := layout.UniformInset(unit.Dp(1))
 
 	panicBtnStyle := material.Button(t.Theme, t.PanicBtn, "Panic")
-	if t.sequencer.Enabled() {
+	if t.player.Enabled() {
 		panicBtnStyle.Background = transparent
 		panicBtnStyle.Color = t.Theme.Palette.Fg
 	} else {
@@ -113,11 +113,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 	}
 
 	for t.PanicBtn.Clicked() {
-		if t.sequencer.Enabled() {
-			t.sequencer.Disable()
-		} else {
-			t.sequencer.SetPatch(t.song.Patch)
-		}
+		t.player.Disable()
 	}
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -125,7 +121,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 				layout.Rigid(Label("LEN:", white)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					t.SongLength.Value = t.song.SequenceLength()
+					t.SongLength.Value = t.Song().Score.Length
 					numStyle := NumericUpDown(t.Theme, t.SongLength, 1, math.MaxInt32)
 					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
 					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
@@ -139,7 +135,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 				layout.Rigid(Label("BPM:", white)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					t.BPM.Value = t.song.BPM
+					t.BPM.Value = t.Song().BPM
 					numStyle := NumericUpDown(t.Theme, t.BPM, 1, 999)
 					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
 					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
@@ -153,7 +149,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 				layout.Rigid(Label("RPP:", white)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					t.RowsPerPattern.Value = t.song.RowsPerPattern
+					t.RowsPerPattern.Value = t.Song().Score.RowsPerPattern
 					numStyle := NumericUpDown(t.Theme, t.RowsPerPattern, 1, 255)
 					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
 					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
@@ -167,7 +163,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 				layout.Rigid(Label("RPB:", white)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					t.RowsPerBeat.Value = t.song.RowsPerBeat
+					t.RowsPerBeat.Value = t.Song().RowsPerBeat
 					numStyle := NumericUpDown(t.Theme, t.RowsPerBeat, 1, 32)
 					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
 					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
@@ -194,6 +190,6 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 			gtx.Constraints.Min = image.Pt(0, 0)
 			return panicBtnStyle.Layout(gtx)
 		}),
-		layout.Rigid(t.VuMeter.Layout),
+		layout.Rigid(VuMeter{Volume: t.lastVolume, Range: 100}.Layout),
 	)
 }

@@ -1,33 +1,36 @@
 bpm: 100
-rowsperpattern: 16
 rowsperbeat: 4
-tracks:
-    - numvoices: 1
-      sequence: [0]
-      patterns: [[64, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]
+score:
+    rowsperpattern: 16
+    length: 1
+    tracks:
+        - numvoices: 1
+          order: [0]
+          patterns: [[64, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]
 patch:
-    instruments:
-        - numvoices: 1
-          units:
-            - type: loadval
-              parameters: {stereo: 0, value: 96}
-            - type: send
-              parameters: {amount: 96, port: 0, sendpop: 1, stereo: 0, unit: 3, voice: 2}
-            - type: loadval
-              parameters: {stereo: 0, value: 64}
-            - type: loadval
-              parameters: {stereo: 0, value: 64}
-            - type: out
-              parameters: {gain: 128, stereo: 1}
-        - numvoices: 1
-          units:
-            - type: loadval
-              parameters: {stereo: 0, value: 32}
-            - type: send
-              parameters: {amount: 96, port: 0, sendpop: 1, stereo: 0, unit: 2, voice: 1}
-            - type: loadval
-              parameters: {stereo: 0, value: 64}
-            - type: loadval
-              parameters: {stereo: 0, value: 64}
-            - type: out
-              parameters: {gain: 128, stereo: 1}
+    - numvoices: 1
+      units:
+        - type: loadval
+          parameters: {stereo: 0, value: 96}
+        - type: send
+          parameters: {amount: 96, port: 0, sendpop: 1, stereo: 0, target: 1}
+        - type: loadval
+          id: 2
+          parameters: {stereo: 0, value: 64}
+        - type: loadval
+          parameters: {stereo: 0, value: 64}
+        - type: out
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 1
+      units:
+        - type: loadval
+          parameters: {stereo: 0, value: 32}
+        - type: send
+          parameters: {amount: 96, port: 0, sendpop: 1, stereo: 0, target: 2}
+        - type: loadval
+          parameters: {stereo: 0, value: 64}
+        - type: loadval
+          id: 1
+          parameters: {stereo: 0, value: 64}
+        - type: out
+          parameters: {gain: 128, stereo: 1}

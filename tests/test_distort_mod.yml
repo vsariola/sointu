@@ -1,27 +1,30 @@
 bpm: 100
-rowsperpattern: 16
 rowsperbeat: 4
-tracks:
-    - numvoices: 1
-      sequence: [0]
-      patterns: [[64, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]
-patch:
-    instruments:
+score:
+    rowsperpattern: 16
+    length: 1
+    tracks:
         - numvoices: 1
-          units:
-            - type: envelope
-              parameters: {attack: 64, decay: 64, gain: 128, release: 80, stereo: 0, sustain: 64}
-            - type: distort
-              parameters: {drive: 32, stereo: 0}
-            - type: envelope
-              parameters: {attack: 64, decay: 64, gain: 128, release: 80, stereo: 0, sustain: 64}
-            - type: distort
-              parameters: {drive: 96, stereo: 0}
-            - type: oscillator
-              parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 64, shape: 64, stereo: 0, transpose: 70, type: 0, unison: 0}
-            - type: send
-              parameters: {amount: 68, port: 0, sendpop: 0, stereo: 0, unit: 1, voice: 0}
-            - type: send
-              parameters: {amount: 68, port: 0, sendpop: 1, stereo: 0, unit: 3, voice: 0}
-            - type: out
-              parameters: {gain: 128, stereo: 1}
+          order: [0]
+          patterns: [[64, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]
+patch:
+    - numvoices: 1
+      units:
+        - type: envelope
+          parameters: {attack: 64, decay: 64, gain: 128, release: 80, stereo: 0, sustain: 64}
+        - type: distort
+          parameters: {drive: 32, stereo: 0}
+          id: 1
+        - type: envelope
+          parameters: {attack: 64, decay: 64, gain: 128, release: 80, stereo: 0, sustain: 64}
+        - type: distort
+          parameters: {drive: 96, stereo: 0}
+          id: 2
+        - type: oscillator
+          parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 64, shape: 64, stereo: 0, transpose: 70, type: 0, unison: 0}
+        - type: send
+          parameters: {amount: 68, port: 0, sendpop: 0, stereo: 0, target: 1}
+        - type: send
+          parameters: {amount: 68, port: 0, sendpop: 1, stereo: 0, target: 2}
+        - type: out
+          parameters: {gain: 128, stereo: 1}

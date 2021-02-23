@@ -1,29 +1,30 @@
 bpm: 100
-rowsperpattern: 16
 rowsperbeat: 4
-tracks:
-    - numvoices: 1
-      sequence: [0]
-      patterns: [[64, 0, 0, 0, 68, 0, 0, 0, 66, 0, 0, 0, 69, 0, 0, 0]]
-    - numvoices: 1
-      sequence: [0]
-      patterns: [[0, 68, 0, 0, 71, 0, 0, 0, 69, 0, 0, 0, 73, 0, 0, 0]]
-    - numvoices: 1
-      sequence: [0]
-      patterns: [[0, 0, 71, 0, 75, 0, 0, 0, 73, 0, 0, 0, 76, 0, 0, 0]]
+score:
+    rowsperpattern: 16
+    length: 1
+    tracks:
+        - numvoices: 1
+          order: [0]
+          patterns: [[64, 0, 0, 0, 68, 0, 0, 0, 66, 0, 0, 0, 69, 0, 0, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[0, 68, 0, 0, 71, 0, 0, 0, 69, 0, 0, 0, 73, 0, 0, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[0, 0, 71, 0, 75, 0, 0, 0, 73, 0, 0, 0, 76, 0, 0, 0]]
 patch:
-    instruments:
-        - numvoices: 3
-          units:
-            - type: envelope
-              parameters: {attack: 64, decay: 64, gain: 32, release: 64, stereo: 0, sustain: 64}
-            - type: envelope
-              parameters: {attack: 64, decay: 64, gain: 32, release: 64, stereo: 0, sustain: 64}
-            - type: oscillator
-              parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 88, type: 0, unison: 0}
-            - type: oscillator
-              parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 88, type: 0, unison: 0}
-            - type: mulp
-              parameters: {stereo: 1}
-            - type: out
-              parameters: {gain: 128, stereo: 1}
+    - numvoices: 3
+      units:
+        - type: envelope
+          parameters: {attack: 64, decay: 64, gain: 32, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          parameters: {attack: 64, decay: 64, gain: 32, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 88, type: 0, unison: 0}
+        - type: oscillator
+          parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 88, type: 0, unison: 0}
+        - type: mulp
+          parameters: {stereo: 1}
+        - type: out
+          parameters: {gain: 128, stereo: 1}

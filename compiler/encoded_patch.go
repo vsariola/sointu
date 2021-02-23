@@ -22,16 +22,22 @@ type SampleOffset struct {
 	LoopLength uint16
 }
 
-func Encode(patch *sointu.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
+func Encode(patch sointu.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
 	var c EncodedPatch
 	sampleOffsetMap := map[SampleOffset]int{}
-	for instrIndex, instr := range patch.Instruments {
+	globalAddrs := map[int]uint16{}
+	globalFixups := map[int]([]int){}
+	voiceNo := 0
+	for instrIndex, instr := range patch {
 		if len(instr.Units) > 63 {
 			return nil, errors.New("An instrument can have a maximum of 63 units")
 		}
 		if instr.NumVoices < 1 {
 			return nil, errors.New("Each instrument must have at least 1 voice")
 		}
+		localAddrs := map[int]uint16{}
+		localFixups := map[int]([]int){}
+		localUnitNo := 0
 		for _, unit := range instr.Units {
 			if unit.Type == "" { // empty units are just ignored & skipped
 				continue
@@ -113,44 +119,62 @@ func Encode(patch *sointu.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
 				}
 				values = append(values, byte(flags))
 			} else if unit.Type == "send" {
+				targetID := unit.Parameters["target"]
+				targetInstrIndex, _, err := patch.FindSendTarget(targetID)
 				targetVoice := unit.Parameters["voice"]
-				var targetInstrument int
-				if targetVoice == 0 {
-					targetInstrument = instrIndex
-				} else {
-					var err error
-					targetInstrument, err = patch.InstrumentForVoice(targetVoice - 1)
-					if err != nil {
-						return nil, fmt.Errorf("send targeted a voice %v, which out of the range of instruments", targetVoice-1)
-					}
-				}
-				origTarget := unit.Parameters["unit"]
-				targetUnit := origTarget
-				for k := 0; k < origTarget; k++ {
-					units := patch.Instruments[targetInstrument].Units
-					if k >= len(units) {
-						break
-					}
-					if units[k].Type == "" {
-						targetUnit--
-					}
-				}
-				address := ((targetUnit + 1) << 4) + unit.Parameters["port"] // each unit is 16 dwords, 8 workspace followed by 8 ports. +1 is for skipping the note/release/inputs
-				if unit.Parameters["voice"] > 0 {
-					address += 0x8000 + 16 + (unit.Parameters["voice"]-1)*1024 // global send, +16 is for skipping the out/aux ports
-				}
+				var addr uint16 = uint16(unit.Parameters["port"]) & 7
 				if unit.Parameters["sendpop"] == 1 {
-					address += 0x8
+					addr += 0x8
 				}
-				values = append(values, byte(address&255), byte(address>>8))
+
+				if err == nil {
+					// local send is only possible if targetVoice is "auto" (0) and
+					// the targeted unit is in the same instrument as send
+					if targetInstrIndex == instrIndex && targetVoice == 0 {
+						if v, ok := localAddrs[targetID]; ok {
+							addr += v
+						} else {
+							localFixups[targetID] = append(localFixups[targetID], len(c.Values)+len(values))
+						}
+					} else {
+						addr += 0x8000
+						if targetVoice > 0 { // "auto" (0) means for global send that it targets voice 0 of that instrument
+							addr += uint16((targetVoice - 1) * 0x400)
+						}
+						if v, ok := globalAddrs[targetID]; ok {
+							addr += v
+						} else {
+							globalFixups[targetID] = append(globalFixups[targetID], len(c.Values)+len(values))
+						}
+					}
+				} else {
+					// if no target will be found, the send will trash some of
+					// the last values of the last port of the last voice, which
+					// is unlikely to cause issues. We still honor the POP bit.
+					addr &= 0x8
+					addr |= 0xFFF7
+				}
+				values = append(values, byte(addr&255), byte(addr>>8))
 			} else if unit.Type == "delay" {
 				countTrack := (unit.Parameters["count"] << 1) - 1 + unit.Parameters["notetracking"] // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
 				values = append(values, byte(unit.Parameters["delay"]), byte(countTrack))
 			}
 			c.Commands = append(c.Commands, byte(opcode+unit.Parameters["stereo"]))
 			c.Values = append(c.Values, values...)
+			if unit.ID != 0 {
+				localAddr := uint16((localUnitNo + 1) << 4)
+				fixUp(c.Values, localFixups[unit.ID], localAddr)
+				localFixups[unit.ID] = nil
+				localAddrs[unit.ID] = localAddr
+				globalAddr := localAddr + 16 + uint16(voiceNo)*1024
+				fixUp(c.Values, globalFixups[unit.ID], globalAddr)
+				globalFixups[unit.ID] = nil
+				globalAddrs[unit.ID] = globalAddr
+			}
+			localUnitNo++ // a command in command stream means the wrkspace addr gets also increased
 		}
 		c.Commands = append(c.Commands, byte(0)) // advance
+		voiceNo += instr.NumVoices
 		c.NumVoices += uint32(instr.NumVoices)
 		for k := 0; k < instr.NumVoices-1; k++ {
 			c.PolyphonyBitmask = (c.PolyphonyBitmask << 1) + 1
@@ -162,4 +186,13 @@ func Encode(patch *sointu.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
 	}
 
 	return &c, nil
+}
+
+func fixUp(values []byte, positions []int, delta uint16) {
+	for _, pos := range positions {
+		orig := (uint16(values[pos+1]) << 8) + uint16(values[pos])
+		new := orig + delta
+		values[pos] = byte(new & 255)
+		values[pos+1] = byte(new >> 8)
+	}
 }
