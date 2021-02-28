@@ -26,12 +26,12 @@ void SU_CALLCONV su_render_song(float* buffer) {
     synth->RandSeed = 1;
     // triger first voice    
     synth->SynthWrk.Voices[0].Note = 64;
-    samples = SU_MAX_SAMPLES / 2;
+    samples = SU_LENGTH_IN_SAMPLES / 2;
     time = INT32_MAX;
     retval = su_render(synth, buffer, &samples, &time);
     synth->SynthWrk.Voices[0].Release++;
-    buffer = buffer + SU_MAX_SAMPLES;
-    samples = SU_MAX_SAMPLES / 2;
+    buffer = buffer + SU_LENGTH_IN_SAMPLES;
+    samples = SU_LENGTH_IN_SAMPLES / 2;
     time = INT32_MAX;
     retval = su_render(synth, buffer, &samples, &time);
     free(synth);

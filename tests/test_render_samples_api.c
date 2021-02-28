@@ -6,9 +6,9 @@
 
 #define BPM 100
 #define SAMPLE_RATE 44100
-#define TOTAL_ROWS 16
+#define LENGTH_IN_ROWS 16
 #define SAMPLES_PER_ROW SAMPLE_RATE * 4 * 60 / (BPM * 16)
-const int su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS;
+const int su_max_samples = SAMPLES_PER_ROW * LENGTH_IN_ROWS;
 
 int main(int argc, char* argv[]) {
     Synth* synth;

@@ -2,16 +2,16 @@
 #ifndef SU_RENDER_H
 #define SU_RENDER_H
 
-#define SU_MAX_SAMPLES     {{.MaxSamples}}
-#define SU_BUFFER_LENGTH   (SU_MAX_SAMPLES*2)
+#define SU_LENGTH_IN_SAMPLES    {{.MaxSamples}}
+#define SU_BUFFER_LENGTH        (SU_LENGTH_IN_SAMPLES*2)
 
-#define SU_SAMPLE_RATE     44100
-#define SU_BPM             {{.Song.BPM}}
-#define SU_ROWS_PER_BEAT  {{.Song.RowsPerBeat}}
-#define SU_PATTERN_SIZE    {{.Song.Score.RowsPerPattern}}
-#define SU_MAX_PATTERNS    {{.Song.Score.Length}}
-#define SU_TOTAL_ROWS      (SU_MAX_PATTERNS*SU_PATTERN_SIZE)
-#define SU_SAMPLES_PER_ROW (SU_SAMPLE_RATE*60/(SU_BPM*SU_ROWS_PER_BEAT))
+#define SU_SAMPLE_RATE          44100
+#define SU_BPM                  {{.Song.BPM}}
+#define SU_ROWS_PER_BEAT        {{.Song.RowsPerBeat}}
+#define SU_ROWS_PER_PATTERN     {{.Song.Score.RowsPerPattern}}
+#define SU_LENGTH_IN_PATTERNS   {{.Song.Score.Length}}
+#define SU_LENGTH_IN_ROWS       (SU_LENGTH_IN_PATTERNS*SU_PATTERN_SIZE)
+#define SU_SAMPLES_PER_ROW      (SU_SAMPLE_RATE*60/(SU_BPM*SU_ROWS_PER_BEAT))
 
 #include <stdint.h>
 #if UINTPTR_MAX == 0xffffffff
