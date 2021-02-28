@@ -27,6 +27,7 @@ int main(int argc, char* argv[]) {
     int retval;    
     // initialize Synth
     synth = (Synth*)malloc(sizeof(Synth));    
+    memset(synth, 0, sizeof(Synth));
     memcpy(synth->Commands, commands, sizeof(commands));
     memcpy(synth->Values, values, sizeof(values));
     synth->NumVoices = 1;
