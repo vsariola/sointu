@@ -3,6 +3,7 @@ package tracker
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -765,6 +766,12 @@ func (m *Model) NumParams() int {
 	if numSettableParams == 0 {
 		numSettableParams = 1
 	}
+	if unit.Type == "delay" {
+		numSettableParams += 1 + len(unit.VarArgs)
+		if len(unit.VarArgs)%2 == 1 && unit.Parameters["stereo"] == 1 {
+			numSettableParams++
+		}
+	}
 	return numSettableParams
 }
 
@@ -814,6 +821,28 @@ func (m *Model) Param(index int) (Parameter, error) {
 		}
 		return Parameter{Type: IntegerParameter, Min: 0, Max: len(GmDlsEntries), Name: "sample", Hint: hint, Value: val}, nil
 	}
+	if unit.Type == "delay" {
+		if index == 0 {
+			l := len(unit.VarArgs)
+			if unit.Parameters["stereo"] == 1 {
+				l = (l + 1) / 2
+			}
+			return Parameter{Type: IntegerParameter, Min: 1, Max: 32, Name: "delaylines", Hint: strconv.Itoa(l), Value: l}, nil
+		}
+		index--
+		if index < len(unit.VarArgs) {
+			val := unit.VarArgs[index]
+			var text string
+			if unit.Parameters["notetracking"] == 1 {
+				relPitch := float64(val) / 10787
+				semitones := -math.Log2(relPitch) * 12
+				text = fmt.Sprintf("%v / %.3f st", val, semitones)
+			} else {
+				text = fmt.Sprintf("%v / %.3f rows", val, float32(val)/float32(m.song.SamplesPerRow()))
+			}
+			return Parameter{Type: IntegerParameter, Min: 1, Max: 65535, Name: "delaytime", Hint: text, Value: val}, nil
+		}
+	}
 	return Parameter{}, errors.New("invalid parameter")
 }
 
@@ -832,11 +861,30 @@ func (m *Model) SetParam(value int) {
 		return
 	}
 	unit := m.Unit()
-	if unit.Parameters[p.Name] == value {
-		return
+	if p.Name == "delaylines" {
+		m.saveUndo("SetParam", 20)
+		targetLines := value
+		if unit.Parameters["stereo"] == 1 {
+			targetLines *= 2
+		}
+		for len(m.Instrument().Units[m.unitIndex].VarArgs) < targetLines {
+			m.Instrument().Units[m.unitIndex].VarArgs = append(m.Instrument().Units[m.unitIndex].VarArgs, 1)
+		}
+		m.Instrument().Units[m.unitIndex].VarArgs = m.Instrument().Units[m.unitIndex].VarArgs[:targetLines]
+	} else if p.Name == "delaytime" {
+		m.saveUndo("SetParam", 20)
+		index := m.paramIndex - 7
+		for len(m.Instrument().Units[m.unitIndex].VarArgs) <= index {
+			m.Instrument().Units[m.unitIndex].VarArgs = append(m.Instrument().Units[m.unitIndex].VarArgs, 1)
+		}
+		m.Instrument().Units[m.unitIndex].VarArgs[index] = value
+	} else {
+		if unit.Parameters[p.Name] == value {
+			return
+		}
+		m.saveUndo("SetParam", 20)
+		unit.Parameters[p.Name] = value
 	}
-	m.saveUndo("SetParam", 20)
-	unit.Parameters[p.Name] = value
 	m.clampPositions()
 	m.notifyPatchChange()
 }

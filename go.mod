@@ -3,7 +3,7 @@ module github.com/vsariola/sointu
 go 1.15
 
 require (
-	gioui.org v0.0.0-20210201160312-bb56b8183c84
+	gioui.org v0.0.0-20210301085932-857143370701
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
