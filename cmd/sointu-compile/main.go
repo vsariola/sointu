@@ -14,7 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/compiler"
+	"github.com/vsariola/sointu/vm/compiler"
 )
 
 func filterExtensions(input map[string]string, extensions []string) map[string]string {

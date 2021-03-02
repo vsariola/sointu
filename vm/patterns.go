@@ -1,4 +1,4 @@
-package compiler
+package vm
 
 import (
 	"errors"

@@ -10,6 +10,7 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/vsariola/sointu"
+	"github.com/vsariola/sointu/vm"
 )
 
 type Compiler struct {
@@ -30,7 +31,7 @@ func New(os string, arch string, output16Bit bool) (*Compiler, error) {
 	} else {
 		return nil, fmt.Errorf("compiler.New failed, because only amd64, 386 and wasm archs are supported (targeted architecture was %v)", arch)
 	}
-	templateDir := filepath.Join(path.Dir(myname), "..", "templates", subdir)
+	templateDir := filepath.Join(path.Dir(myname), "..", "..", "templates", subdir)
 	compiler, err := NewFromTemplates(os, arch, output16Bit, templateDir)
 	return compiler, err
 }
@@ -49,7 +50,7 @@ func (com *Compiler) Library() (map[string]string, error) {
 		return nil, fmt.Errorf(`compiling as a library is supported only on 386 and amd64 architectures (targeted architecture was %v)`, com.Arch)
 	}
 	templates := []string{"library.asm", "library.h"}
-	features := AllFeatures{}
+	features := vm.AllFeatures{}
 	retmap := map[string]string{}
 	for _, templateName := range templates {
 		compilerMacros := *NewCompilerMacros(*com)
@@ -80,13 +81,13 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 	} else if com.Arch == "wasm" {
 		templates = []string{"player.wat"}
 	}
-	features := NecessaryFeaturesFor(song.Patch)
+	features := vm.NecessaryFeaturesFor(song.Patch)
 	retmap := map[string]string{}
-	encodedPatch, err := Encode(song.Patch, features)
+	encodedPatch, err := vm.Encode(song.Patch, features)
 	if err != nil {
 		return nil, fmt.Errorf(`could not encode patch: %v`, err)
 	}
-	patterns, sequences, err := ConstructPatterns(song)
+	patterns, sequences, err := vm.ConstructPatterns(song)
 	if err != nil {
 		return nil, fmt.Errorf(`could not encode song: %v`, err)
 	}
@@ -103,7 +104,7 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 				FeatureSetMacros
 				X86Macros
 				SongMacros
-				*EncodedPatch
+				*vm.BytePatch
 				Patterns       [][]byte
 				Sequences      [][]byte
 				PatternLength  int
@@ -118,7 +119,7 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 				FeatureSetMacros
 				WasmMacros
 				SongMacros
-				*EncodedPatch
+				*vm.BytePatch
 				Patterns       [][]byte
 				Sequences      [][]byte
 				PatternLength  int

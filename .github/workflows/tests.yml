@@ -67,4 +67,4 @@ jobs:
       env:
         CGO_LDFLAGS: ${{ matrix.config.cgo_ldflags }}
       run: |
-        go test ./bridge ./compiler ./oto
+        go test ./vm ./vm/compiler/bridge ./vm/compiler ./oto

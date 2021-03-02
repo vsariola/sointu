@@ -1,4 +1,4 @@
-package compiler
+package vm
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"github.com/vsariola/sointu"
 )
 
-type EncodedPatch struct {
+type BytePatch struct {
 	Commands         []byte
 	Values           []byte
 	DelayTimes       []uint16
@@ -22,8 +22,8 @@ type SampleOffset struct {
 	LoopLength uint16
 }
 
-func Encode(patch sointu.Patch, featureSet FeatureSet) (*EncodedPatch, error) {
-	var c EncodedPatch
+func Encode(patch sointu.Patch, featureSet FeatureSet) (*BytePatch, error) {
+	var c BytePatch
 	sampleOffsetMap := map[SampleOffset]int{}
 	globalAddrs := map[int]uint16{}
 	globalFixups := map[int]([]int){}

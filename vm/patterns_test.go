@@ -1,11 +1,11 @@
-package compiler_test
+package vm_test
 
 import (
 	"reflect"
 	"testing"
 
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/compiler"
+	"github.com/vsariola/sointu/vm"
 )
 
 func TestPatternReusing(t *testing.T) {
@@ -21,7 +21,7 @@ func TestPatternReusing(t *testing.T) {
 			}},
 		},
 	}
-	patterns, sequences, err := compiler.ConstructPatterns(&song)
+	patterns, sequences, err := vm.ConstructPatterns(&song)
 	if err != nil {
 		t.Fatalf("erorr constructing patterns: %v", err)
 	}
@@ -47,7 +47,7 @@ func TestUnnecessaryHolds(t *testing.T) {
 				Order:    []int{0, 1},
 			}}},
 	}
-	patterns, sequences, err := compiler.ConstructPatterns(&song)
+	patterns, sequences, err := vm.ConstructPatterns(&song)
 	if err != nil {
 		t.Fatalf("erorr constructing patterns: %v", err)
 	}
@@ -75,7 +75,7 @@ func TestDontCares(t *testing.T) {
 			}},
 		},
 	}
-	patterns, sequences, err := compiler.ConstructPatterns(&song)
+	patterns, sequences, err := vm.ConstructPatterns(&song)
 	if err != nil {
 		t.Fatalf("erorr constructing patterns: %v", err)
 	}

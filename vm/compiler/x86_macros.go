@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"strings"
+
+	"github.com/vsariola/sointu/vm"
 )
 
 type X86Macros struct {
@@ -17,10 +19,10 @@ type X86Macros struct {
 	intConsts       []int
 	calls           map[string]bool
 	stackframes     map[string][]string
-	features        FeatureSet
+	features        vm.FeatureSet
 }
 
-func NewX86Macros(os string, Amd64 bool, features FeatureSet, DisableSections bool) *X86Macros {
+func NewX86Macros(os string, Amd64 bool, features vm.FeatureSet, DisableSections bool) *X86Macros {
 	return &X86Macros{
 		calls:           map[string]bool{},
 		usesFloatConst:  map[float32]bool{},

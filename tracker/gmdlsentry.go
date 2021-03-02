@@ -1,6 +1,6 @@
 package tracker
 
-import "github.com/vsariola/sointu/compiler"
+import "github.com/vsariola/sointu/vm"
 
 type GmDlsEntry struct {
 	Start              int
@@ -10,11 +10,11 @@ type GmDlsEntry struct {
 	Name               string
 }
 
-var GmDlsEntryMap = make(map[compiler.SampleOffset]int)
+var GmDlsEntryMap = make(map[vm.SampleOffset]int)
 
 func init() {
 	for i, e := range GmDlsEntries {
-		key := compiler.SampleOffset{Start: uint32(e.Start), LoopStart: uint16(e.LoopStart), LoopLength: uint16(e.LoopLength)}
+		key := vm.SampleOffset{Start: uint32(e.Start), LoopStart: uint16(e.LoopStart), LoopLength: uint16(e.LoopLength)}
 		GmDlsEntryMap[key] = i
 	}
 }

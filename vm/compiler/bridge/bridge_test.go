@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/bridge"
+	"github.com/vsariola/sointu/vm/compiler/bridge"
 	"gopkg.in/yaml.v2"
 	// TODO: test the song using a mocks instead
 )
@@ -78,7 +78,7 @@ func TestRenderSamples(t *testing.T) {
 
 func TestAllRegressionTests(t *testing.T) {
 	_, myname, _, _ := runtime.Caller(0)
-	files, err := filepath.Glob(path.Join(path.Dir(myname), "..", "tests", "*.yml"))
+	files, err := filepath.Glob(path.Join(path.Dir(myname), "..", "..", "..", "tests", "*.yml"))
 	if err != nil {
 		t.Fatalf("cannot glob files in the test directory: %v", err)
 	}
@@ -217,7 +217,7 @@ func TestDivideByZero(t *testing.T) {
 
 func compareToRawFloat32(t *testing.T, buffer []float32, rawname string) {
 	_, filename, _, _ := runtime.Caller(0)
-	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "tests", "expected_output", rawname))
+	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "..", "..", "tests", "expected_output", rawname))
 	if err != nil {
 		t.Fatalf("cannot read expected: %v", err)
 	}

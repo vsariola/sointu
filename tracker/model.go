@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/compiler"
+	"github.com/vsariola/sointu/vm"
 )
 
 // Model implements the mutable state for the tracker program GUI.
@@ -812,7 +812,7 @@ func (m *Model) Param(index int) (Parameter, error) {
 		return Parameter{Type: typ, Min: min, Max: max, Name: name, Hint: text, Value: val}, nil
 	}
 	if unit.Type == "oscillator" && index == 0 {
-		key := compiler.SampleOffset{Start: uint32(unit.Parameters["samplestart"]), LoopStart: uint16(unit.Parameters["loopstart"]), LoopLength: uint16(unit.Parameters["looplength"])}
+		key := vm.SampleOffset{Start: uint32(unit.Parameters["samplestart"]), LoopStart: uint16(unit.Parameters["loopstart"]), LoopLength: uint16(unit.Parameters["looplength"])}
 		val := 0
 		hint := "0 / custom"
 		if v, ok := GmDlsEntryMap[key]; ok {

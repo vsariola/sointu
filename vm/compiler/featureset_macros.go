@@ -1,7 +1,9 @@
 package compiler
 
+import "github.com/vsariola/sointu/vm"
+
 type FeatureSetMacros struct {
-	FeatureSet
+	vm.FeatureSet
 }
 
 func (p *FeatureSetMacros) HasOp(instruction string) bool {
