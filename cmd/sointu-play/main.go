@@ -24,6 +24,7 @@ func main() {
 	help := flag.Bool("h", false, "Show help.")
 	directory := flag.String("o", "", "Directory where to output all files. The directory and its parents are created if needed. By default, everything is placed in the same directory where the original song file is.")
 	play := flag.Bool("p", false, "Play the input songs (default behaviour when no other output is defined).")
+	unreleased := flag.Bool("u", false, "Start song with all oscillators unreleased.")
 	//start := flag.Float64("start", 0, "Start playing from part; given in the units defined by parameter `unit`.")
 	//stop := flag.Float64("stop", -1, "Stop playing at part; given in the units defined by parameter `unit`. Negative values indicate render until end.")
 	//units := flag.String("unit", "pattern", "Units for parameters start and stop. Possible values: second, sample, pattern, beat. Warning: beat and pattern do not take SPEED modulations into account.")
@@ -85,6 +86,11 @@ func main() {
 		synth, err := bridge.Synth(song.Patch)
 		if err != nil {
 			return fmt.Errorf("could not create synth based on the patch: %v", err)
+		}
+		if !*unreleased {
+			for i := 0; i < 32; i++ {
+				synth.Release(i)
+			}
 		}
 		buffer, err := sointu.Play(synth, song) // render the song to calculate its length
 		if err != nil {

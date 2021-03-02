@@ -56,17 +56,6 @@ func Encode(patch sointu.Patch, featureSet FeatureSet) (*BytePatch, error) {
 				}
 				unit.Parameters["color"] = index
 			}
-			if unit.Type == "delay" {
-				unit.Parameters["delay"] = len(c.DelayTimes)
-				if unit.Parameters["stereo"] == 1 {
-					unit.Parameters["count"] = len(unit.VarArgs) / 2
-				} else {
-					unit.Parameters["count"] = len(unit.VarArgs)
-				}
-				for _, v := range unit.VarArgs {
-					c.DelayTimes = append(c.DelayTimes, uint16(v))
-				}
-			}
 			opcode, ok := featureSet.Opcode(unit.Type)
 			if !ok {
 				return nil, fmt.Errorf(`the targeted virtual machine is not configured to support unit type "%v"`, unit.Type)
@@ -156,8 +145,19 @@ func Encode(patch sointu.Patch, featureSet FeatureSet) (*BytePatch, error) {
 				}
 				values = append(values, byte(addr&255), byte(addr>>8))
 			} else if unit.Type == "delay" {
-				countTrack := (unit.Parameters["count"] << 1) - 1 + unit.Parameters["notetracking"] // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
-				values = append(values, byte(unit.Parameters["delay"]), byte(countTrack))
+				count := len(unit.VarArgs)
+				if unit.Parameters["stereo"] == 1 {
+					count /= 2
+				}
+				if count == 0 {
+					continue // skip encoding delays without any delay lines
+				}
+				countTrack := count*2 - 1 + unit.Parameters["notetracking"] // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
+				delStart := len(c.DelayTimes)
+				for _, v := range unit.VarArgs {
+					c.DelayTimes = append(c.DelayTimes, uint16(v))
+				}
+				values = append(values, byte(delStart), byte(countTrack))
 			}
 			c.Commands = append(c.Commands, byte(opcode+unit.Parameters["stereo"]))
 			c.Values = append(c.Values, values...)

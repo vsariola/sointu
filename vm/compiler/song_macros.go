@@ -1,8 +1,6 @@
 package compiler
 
 import (
-	"fmt"
-
 	"github.com/vsariola/sointu"
 )
 
@@ -24,16 +22,4 @@ func NewSongMacros(s *sointu.Song) *SongMacros {
 		trackVoiceNumber++ // set all bits except last one
 	}
 	return &p
-}
-
-func (p *SongMacros) NumDelayLines() string {
-	total := 0
-	for _, instr := range p.Song.Patch {
-		for _, unit := range instr.Units {
-			if unit.Type == "delay" {
-				total += unit.Parameters["count"] * (1 + unit.Parameters["stereo"])
-			}
-		}
-	}
-	return fmt.Sprintf("%v", total)
 }

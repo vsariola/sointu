@@ -28,33 +28,7 @@ func (s *Song) Validate() error {
 	if len(s.Score.Tracks) == 0 {
 		return errors.New("song contains no tracks")
 	}
-	var patternLen int
-	for i, t := range s.Score.Tracks {
-		for j, pat := range t.Patterns {
-			if i == 0 && j == 0 {
-				patternLen = len(pat)
-			} else {
-				if len(pat) != patternLen {
-					return errors.New("Every pattern should have the same length")
-				}
-			}
-		}
-	}
-	for i := range s.Score.Tracks[:len(s.Score.Tracks)-1] {
-		if len(s.Score.Tracks[i].Order) != len(s.Score.Tracks[i+1].Order) {
-			return errors.New("Every track should have the same sequence length")
-		}
-	}
-	totalTrackVoices := 0
-	for _, track := range s.Score.Tracks {
-		totalTrackVoices += track.NumVoices
-		for _, p := range track.Order {
-			if p < 0 || int(p) >= len(track.Patterns) {
-				return errors.New("Tracks use a non-existing pattern")
-			}
-		}
-	}
-	if totalTrackVoices > s.Patch.NumVoices() {
+	if s.Score.NumVoices() > s.Patch.NumVoices() {
 		return errors.New("Tracks use too many voices")
 	}
 	return nil

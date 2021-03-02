@@ -73,7 +73,10 @@ func Play(synth Synth, song Song) ([]float32, error) {
 		}
 		tries := 0
 		for rowtime := 0; rowtime < song.SamplesPerRow(); {
-			samples, time, _ := synth.Render(rowbuffer, song.SamplesPerRow()-rowtime)
+			samples, time, err := synth.Render(rowbuffer, song.SamplesPerRow()-rowtime)
+			if err != nil {
+				return buffer, fmt.Errorf("render failed: %v", err)
+			}
 			rowtime += time
 			buffer = append(buffer, rowbuffer[:samples*2]...)
 			if tries > 100 {

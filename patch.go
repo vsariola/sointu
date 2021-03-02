@@ -25,6 +25,18 @@ func (p Patch) NumVoices() int {
 	return ret
 }
 
+func (p Patch) NumDelayLines() int {
+	total := 0
+	for _, instr := range p {
+		for _, unit := range instr.Units {
+			if unit.Type == "delay" {
+				total += len(unit.VarArgs)
+			}
+		}
+	}
+	return total
+}
+
 func (p Patch) FirstVoiceForInstrument(instrIndex int) int {
 	ret := 0
 	for _, t := range p[:instrIndex] {

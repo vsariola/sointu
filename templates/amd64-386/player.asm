@@ -5,7 +5,7 @@
 {{.SectBss "synth_object"}}
 su_synth_obj:
     resb    su_synthworkspace.size
-    resb    {{.NumDelayLines}}*su_delayline_wrk.size
+    resb    {{.Song.Patch.NumDelayLines}}*su_delayline_wrk.size
 
 ;-------------------------------------------------------------------------------
 ;   su_render_song function: the entry point for the synth
