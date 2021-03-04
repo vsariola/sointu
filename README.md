@@ -6,6 +6,9 @@ intros, forked from [4klang](https://github.com/hzdgopher/4klang). Targetable
 architectures include 386, amd64, and WebAssembly; targetable platforms include
 Windows, Mac, Linux (and related) + browser.
 
+Pull requests / suggestions / issues welcome, through Github! You can also
+contact me through email (firstname.lastname@gmail.com).
+
 Summary
 -------
 
@@ -22,29 +25,70 @@ hundred bytes for the patch and pattern data.
 
 Sointu consists of two core elements:
 - A cross-platform synth-tracker app for composing music, written in
-  [go](https://golang.org/). The app is not working yet, but a prototype is
-  existing. The app exports (will export) the projects as .yml files.
+  [go](https://golang.org/). The app is still heavily work in progress. The app
+  exports the projects as .yml files. There are two versions of the app:
+  [cmd/sointu-track/](sointu-track), using a pure-Go VM bytecode interpreter,
+  and [cmd/sointu-nativetrack/](sointu-nativetrack), using cgo to bridge calls
+  to the Sointu compiled VM. The former should be highly portable, the latter
+  currently works only on x86/amd64 platforms.
 - A compiler, likewise written in go, which can be invoked from the command line
-  to compile these .yml files into .asm or .wat code. For x86 platforms, the
+  to compile these .yml files into .asm or .wat code. For x86/amd64, the
   resulting .asm can be then compiled by [nasm](https://www.nasm.us/) or
   [yasm](https://yasm.tortall.net). For browsers, the resulting .wat can be
   compiled by [wat2wasm](https://github.com/WebAssembly/wabt).
 
 This is how the current prototype tracker looks like:
-  
+
 ![Screenshot of the tracker](screenshot.png)
-  
+
 Building
 --------
 
 Various aspects of the project have different tool dependencies, which are
 listed below.
 
-### Building the compiler
+### Sointu-track
 
-The [compiler](compiler/) package is an ordinary [go](https://golang.org/)
-package with no other tool dependencies. The command line interface to it is
-[sointu-compile](cmd/sointu-compile).
+Running the tracker:
+
+```
+go run cmd/sointu-track/main.go
+```
+
+Building the tracker:
+
+```
+go build -o sointu-track cmd/sointu-track/main.go
+```
+
+On windows, replace `-o sointu-track` with `-o sointu-track.exe`.
+
+The uses the [gioui](https://gioui.org/) for the GUI and
+[oto](https://github.com/hajimehoshi/oto) for the audio, so the portability is
+currently limited by these. This version of the executable uses the bytecode
+interpreter written in Go.
+
+> :warning: Unlike the x86/amd64 VM compiled by Sointu, the Go written VM
+> bytecode interpreter uses a software stack. Thus, unlike x87 FPU stack, it is
+> not limited to 8 items. If you intent to compile the patch to x86/amd64
+> targets, make sure not to use too much stack. Keeping at most 5 signals in the
+> stack is presumably fine (reserving 3 for the temporary variables of the
+> opcodes). In future, the app should give warnings if the user is about to
+> exceed the capabilities of a target platform.
+
+### Compiler
+
+The command line interface to it is [sointu-compile](cmd/sointu-compile) and the
+actual code resides in the [compiler](vm/compiler/) package, which is an ordinary
+[go](https://golang.org/) package with no other tool dependencies.
+
+Running the compiler:
+
+```
+go run cmd/sointu-compile/main.go
+```
+
+Building the compiler:
 
 ```
 go build -o sointu-compile cmd/sointu-compile/main.go
@@ -98,9 +142,17 @@ cmake .. -DCMAKE_C_FLAGS="-m32" -DCMAKE_ASM_NASM_OBJECT_FORMAT="win32" -G"MinGW 
 Another example: on Visual Studio 2019 Community, just open the folder, choose
 either Debug or Release and either x86 or x64 build, and hit build all.
 
-### Building and running command line player, tracker, and go tests
+### Native bridge & sointu-nativetrack
 
-This is a bit trickier, but not much. Building these requires:
+The native bridge allows the Go call the sointu compiled virtual machine,
+through cgo, instead of using the Go written bytecode interpreter. It's likely
+slightly faster than the interpreter. The command line interface to the tracker
+version using the native bridge is
+[sointu-nativetrack](cmd/sointu-nativetrack/). Before you can actually run it,
+you need to build the bridge using CMake (thus, the nativetrack does not work
+with go get)
+
+Building the native bridge requires:
 - [go](https://golang.org/)
 - [CMake](https://cmake.org)
 - [nasm](https://www.nasm.us/) or [yasm](https://yasm.tortall.net)
@@ -111,25 +163,28 @@ This is a bit trickier, but not much. Building these requires:
 The last point is because the command line player and the tracker use
 [cgo](https://golang.org/cmd/cgo/) to interface with the synth core, which is
 compiled into a library. The cgo bridge resides in the package
-[bridge](bridge/).
+[bridge](vm/compiler/bridge/).
 
 A critical thing here is that *you must build the library inside a directory
 called build at the root of the project*. This is because the path where cgo
 looks for the library is hard coded to point to build/ in the go files.
 
-So, to build the library, run:
+So, to build the library, run (this example is using
+[ninja](https://ninja-build.org/) for the build; adapt for other build tools
+accordingly):
 
 ```
 mkdir build
 cd build
-cmake .. -G"MinGW Makefiles"
-mingw32-make sointu
+cmake .. -GNinja
+ninja sointu
 ```
 
-Running `mingw32-make sointu` only builds the static library that go needs. This
+Running `ninja sointu` only builds the static library that go needs. This
 is a lot faster than building all the CTests.
 
-Running all go tests (run from the project root folder)
+You and now run all the go tests, even the ones that test the native bridge.run
+From the project root folder, run:
 
 ```
 go test ./...
@@ -140,9 +195,9 @@ Play a song from the command line:
 go run cmd/sointu-play/main.go tests/test_chords.yml
 ```
 
-Run the tracker
+Run the tracker using the native bridge
 ```
-go run cmd/sointu-track/main.go
+go run cmd/sointu-nativetrack/main.go
 ```
 
 > :warning: **If you are using MinGW and Yasm**: Yasm 1.3.0 (currently still the
@@ -167,7 +222,7 @@ New features since fork
     quite powerful combination: we can handcraft the assembly code to keep the
     entropy as low as possible, yet we can call arbitrary go functions as
     "macros". The templates are [here](templates/) and the compiler lives
-    [here](compiler/).
+    [here](vm/compiler/).
   - **Tracker**. Written in go. A prototype exists.
   - **Supports 32 and 64 bit builds**. The 64-bit version is done with minimal
     changes to get it work, using template macros to change the lines between
@@ -183,10 +238,10 @@ New features since fork
     any number of voices, meaning in practice that multiple voices can reuse the
     same opcodes. So, you can have a single instrument with three voices, and
     three tracks that use this instrument, to make chords. See
-    [here](tests/test_chords.yml) for an example and [here](templates/patch.asm)
-    for the implementation. The maximum total number of voices will be 32: you
-    can have 32 monophonic instruments or any combination of polyphonic
-    instruments adding up to 32.
+    [here](tests/test_chords.yml) for an example and
+    [here](templates/amd64-386/patch.asm) for the implementation. The maximum
+    total number of voices will be 32: you can have 32 monophonic instruments or
+    any combination of polyphonic instruments adding up to 32.
   - **Any number of voices per track**. A single track can trigger more than one
     voice. At every note, a new voice from the assigned voices is triggered and
     the previous released. Combined with the previous, you can have a single
@@ -242,9 +297,9 @@ New features since fork
   - **Sample-based oscillators, with samples imported from gm.dls**. Reading
     gm.dls is obviously Windows only, but the sample mechanism can be used also
     without it, in case you are working on a 64k and have some kilobytes to
-    spare. See [this example](tests/test_oscillat_sample.yml), and this Python
-    [script](scripts/parse_gmdls.py) parses the gm.dls file and dumps the sample
-    offsets from it.
+    spare. See [this example](tests/test_oscillat_sample.yml), and this go
+    generate [program](cmd/sointu-generate/main.go) parses the gm.dls file and
+    dumps the sample offsets from it.
   - **Unison oscillators**. Multiple copies of the oscillator running slightly
     detuned and added up to together. Great for trance leads (supersaw). Unison
     of up to 4, or 8 if you make stereo unison oscillator and add up both left
@@ -255,6 +310,9 @@ New features since fork
     releasing voices etc.)
   - **Calling Sointu as a library from Go language**. The Go API is slighty more
     sane than the low-level library API, offering more Go-like experience.
+  - **A bytecode interpreter written in pure go**. It's slightly slower than the
+    hand-written assembly code by sointu compiler, but with this, the tracker is
+    ultraportable.
 
 Future goals
 ------------
@@ -307,14 +365,15 @@ Anti-goals
   - **Ability to run Sointu as a DAW plugin (VSTi, AU, LADSPA and DSSI...)**.
     None of these plugin technologies are cross-platform and they are full of
     proprietary technologies. In particular, since Sointu was initiated after
-    Steinberg ceased to give out VSTi2 licenses, there is currently no legal or
-    easy way to compile it as a VSTi2 plugin. I downloaded the VSTi3 API and,
-    nope, sorry, I don't want to spend my time on it. And Renoise supports only
-    VSTi2... There is [JUCE](https://juce.com/), but it is again a mammoth and
-    requires apparently pretty deep integration in build system in the form of
-    Projucer. If someone comes up with a light-weight way and easily
-    maintainable way to make the project into DAW plugin, I may reconsider. For
-    now, if you really must, we aim to support MIDI.
+    Steinberg ceased to give out VSTi2 licenses, there is currently no legal to
+    compile it as a VSTi2 plugin using the official API. I downloaded the VSTi3
+    API and, nope, sorry, I don't want to spend my time on it. And Renoise
+    supports only VSTi2... There is [JUCE](https://juce.com/), but it is again a
+    mammoth and requires apparently pretty deep integration in build system in
+    the form of Projucer. If you know a legal way to start a VSTi2 project
+    today, please let me know! But I really am not interested in
+    cease-and-desist letters from Steinberg, so "just do it, no-one cares" is
+    not enough. For now, the aim is to support MIDI.
 
 Design philosophy
 -----------------
