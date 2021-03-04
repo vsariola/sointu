@@ -27,7 +27,7 @@ Sointu consists of two core elements:
 - A cross-platform synth-tracker app for composing music, written in
   [go](https://golang.org/). The app is still heavily work in progress. The app
   exports the projects as .yml files. There are two versions of the app:
-  [cmd/sointu-track/](sointu-track), using a pure-Go VM bytecode interpreter,
+  [cmd/sointu-track/](sointu-track), using a plain Go VM bytecode interpreter,
   and [cmd/sointu-nativetrack/](sointu-nativetrack), using cgo to bridge calls
   to the Sointu compiled VM. The former should be highly portable, the latter
   currently works only on x86/amd64 platforms.
@@ -49,7 +49,8 @@ listed below.
 
 ### Sointu-track
 
-Running the tracker:
+This version of the tracker is the version that uses the bytecode interpreter
+written in plain Go. Running the tracker:
 
 ```
 go run cmd/sointu-track/main.go
@@ -63,10 +64,9 @@ go build -o sointu-track cmd/sointu-track/main.go
 
 On windows, replace `-o sointu-track` with `-o sointu-track.exe`.
 
-The uses the [gioui](https://gioui.org/) for the GUI and
+Sointu-track uses the [gioui](https://gioui.org/) for the GUI and
 [oto](https://github.com/hajimehoshi/oto) for the audio, so the portability is
-currently limited by these. This version of the executable uses the bytecode
-interpreter written in Go.
+currently limited by these.
 
 > :warning: Unlike the x86/amd64 VM compiled by Sointu, the Go written VM
 > bytecode interpreter uses a software stack. Thus, unlike x87 FPU stack, it is
@@ -78,9 +78,9 @@ interpreter written in Go.
 
 ### Compiler
 
-The command line interface to it is [sointu-compile](cmd/sointu-compile) and the
-actual code resides in the [compiler](vm/compiler/) package, which is an ordinary
-[go](https://golang.org/) package with no other tool dependencies.
+The command line interface to it is [sointu-compile](cmd/sointu-compile/main.go)
+and the actual code resides in the [compiler](vm/compiler/) package, which is an
+ordinary [go](https://golang.org/) package with no other tool dependencies.
 
 Running the compiler:
 
@@ -122,21 +122,21 @@ the same way when you would link them in an intro) requires:
   obtained using Visual Studio 2019, gcc&make on linux, MinGW&mingw32-make, and
   ninja&AppleClang.
 
-For example, using MinGW:
+For example, using [ninja](https://ninja-build.org/):
 
 ```
 mkdir build
 cd build
-cmake .. -G"MinGW Makefiles"
-mingw32-make
-mingw32-make test
+cmake .. -GNinja
+ninja
+ninja test
 ```
 
 Note that this builds 64-bit binaries on 64-bit Windows. To build 32-bit
 binaries on 64-bit Windows, replace in above:
 
 ```
-cmake .. -DCMAKE_C_FLAGS="-m32" -DCMAKE_ASM_NASM_OBJECT_FORMAT="win32" -G"MinGW Makefiles"
+cmake .. -DCMAKE_C_FLAGS="-m32" -DCMAKE_ASM_NASM_OBJECT_FORMAT="win32" -GNinja
 ```
 
 Another example: on Visual Studio 2019 Community, just open the folder, choose
@@ -312,7 +312,7 @@ New features since fork
     sane than the low-level library API, offering more Go-like experience.
   - **A bytecode interpreter written in pure go**. It's slightly slower than the
     hand-written assembly code by sointu compiler, but with this, the tracker is
-    ultraportable.
+    ultraportable and does not need cgo calls.
 
 Future goals
 ------------
