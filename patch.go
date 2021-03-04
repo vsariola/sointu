@@ -30,7 +30,7 @@ func (p Patch) NumDelayLines() int {
 	for _, instr := range p {
 		for _, unit := range instr.Units {
 			if unit.Type == "delay" {
-				total += len(unit.VarArgs)
+				total += len(unit.VarArgs) * instr.NumVoices
 			}
 		}
 	}
