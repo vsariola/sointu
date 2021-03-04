@@ -11,6 +11,7 @@ import (
 func TestPatternReusing(t *testing.T) {
 	song := sointu.Song{
 		Score: sointu.Score{
+			Length:         2,
 			RowsPerPattern: 8,
 			Tracks: []sointu.Track{{
 				Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 0, 0}, {72, 0, 0, 0, 0, 0, 0, 0}},
@@ -38,6 +39,7 @@ func TestPatternReusing(t *testing.T) {
 func TestUnnecessaryHolds(t *testing.T) {
 	song := sointu.Song{
 		Score: sointu.Score{
+			Length:         2,
 			RowsPerPattern: 8,
 			Tracks: []sointu.Track{{
 				Patterns: [][]byte{{64, 1, 1, 1, 0, 1, 0, 0}, {72, 0, 1, 0, 1, 0, 0, 0}},
