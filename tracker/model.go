@@ -724,8 +724,8 @@ func (m *Model) ParamIndex() int {
 }
 
 func (m *Model) clampPositions() {
-	m.cursor = m.cursor.Clamp(m.song.Score)
-	m.selectionCorner = m.selectionCorner.Clamp(m.song.Score)
+	m.cursor = m.cursor.Wrap(m.song.Score)
+	m.selectionCorner = m.selectionCorner.Wrap(m.song.Score)
 	if !m.Track().Effect {
 		m.lowNibble = false
 	}
