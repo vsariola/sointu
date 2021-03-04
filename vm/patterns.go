@@ -29,22 +29,26 @@ func fixPatternLength(patterns [][]byte, fixedLength int) [][]int {
 // single linear array of notes. Note that variable length patterns are
 // concatenated as such; call fixPatternLength first if you want every pattern
 // to be constant length.
-func flattenSequence(patterns [][]int, sequence []int) []int {
-	sumLen := 0
-	for _, patIndex := range sequence {
-		if patIndex < 0 || patIndex >= len(patterns) {
-			continue
-		}
-		sumLen += len(patterns[patIndex])
-	}
+func flattenSequence(patterns [][]int, sequence []int, songLength int, rowsPerPattern int, releaseFirst bool) []int {
+	sumLen := rowsPerPattern * songLength
 	notes := make([]int, sumLen)
 	window := notes
-	for _, patIndex := range sequence {
-		if patIndex < 0 || patIndex >= len(patterns) {
-			continue
+	for i := 0; i < songLength; i++ {
+		patIndex := -1
+		if i < len(sequence) {
+			patIndex = sequence[i]
 		}
-		elementsCopied := copy(window, patterns[patIndex])
-		window = window[elementsCopied:]
+		var k int
+		if patIndex >= 0 && patIndex < len(patterns) {
+			k = copy(window, patterns[patIndex])
+		}
+		for ; k < rowsPerPattern; k++ {
+			window[k] = 1 // pad with holds
+		}
+		if i == 0 && window[0] == 1 && releaseFirst {
+			window[0] = 0
+		}
+		window = window[rowsPerPattern:]
 	}
 	return notes
 }
@@ -121,7 +125,7 @@ func addPatternsToTable(patterns [][]int, table [][]int) ([]int, [][]int) {
 					match = false
 					break
 				}
-				if n != pat[i] {
+				if (i < len(pat) && n != pat[i]) || n != 1 {
 					identical = false
 				}
 			}
@@ -173,15 +177,14 @@ func bytesToInts(array []byte) []int {
 }
 
 func ConstructPatterns(song *sointu.Song) ([][]byte, [][]byte, error) {
-	patLength := song.Score.RowsPerPattern
 	sequences := make([][]byte, len(song.Score.Tracks))
 	var patterns [][]int
 	for i, t := range song.Score.Tracks {
-		fixed := fixPatternLength(t.Patterns, patLength)
-		flat := flattenSequence(fixed, t.Order)
+		fixed := fixPatternLength(t.Patterns, song.Score.RowsPerPattern)
+		flat := flattenSequence(fixed, t.Order, song.Score.Length, song.Score.RowsPerPattern, true)
 		dontCares := markDontCares(flat)
 		// TODO: we could give the user the possibility to use another length during encoding that during composing
-		chunks := splitSequence(dontCares, patLength)
+		chunks := splitSequence(dontCares, song.Score.RowsPerPattern)
 		var sequence []int
 		sequence, patterns = addPatternsToTable(chunks, patterns)
 		var err error
