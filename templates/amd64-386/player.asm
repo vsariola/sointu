@@ -107,7 +107,7 @@ su_update_voices_trackloop:
         xor     edx, edx                            ; edx=0
         mov     ecx, ebx                            ; ecx=first voice of the track to be done
 su_calculate_voices_loop:                           ; do {
-        bt      dword [{{.Stack "VoiceTrackBitmask"}}],ecx ; test voicetrack_bitmask// notice that the incs don't set carry
+        bt      dword [{{.Stack "VoiceTrackBitmask"}} + {{.PTRSIZE}}],ecx ; test voicetrack_bitmask// notice that the incs don't set carry
         inc     edx                                 ;   edx++   // edx=numvoices
         inc     ecx                                 ;   ecx++   // ecx=the first voice of next track
         jc      su_calculate_voices_loop            ; } while bit ecx-1 of bitmask is on
