@@ -27,9 +27,11 @@
 {{- if .Output16Bit}}
 typedef short SUsample;
 #define SU_SAMPLE_RANGE 32767.0
+#define SU_SAMPLE_PCM16
 {{- else}}
 typedef float SUsample;
 #define SU_SAMPLE_RANGE 1.0
+#define SU_SAMPLE_FLOAT
 {{- end}}
 
 
