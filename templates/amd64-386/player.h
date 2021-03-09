@@ -13,6 +13,15 @@
 #define SU_LENGTH_IN_ROWS       (SU_LENGTH_IN_PATTERNS*SU_PATTERN_SIZE)
 #define SU_SAMPLES_PER_ROW      (SU_SAMPLE_RATE*60/(SU_BPM*SU_ROWS_PER_BEAT))
 
+{{- if or .RowSync (.HasOp "sync")}}
+{{- if .RowSync}}
+#define SU_NUMSYNCS             {{add1 .Song.Patch.NumSyncs}}
+{{- else}}
+#define SU_NUMSYNCS             {{.Song.Patch.NumSyncs}}
+{{- end}}
+#define SU_SYNCBUFFER_LENGTH    ((SU_LENGTH_IN_SAMPLES+255)>>8)*SU_NUMSYNCS
+{{- end}}
+
 #include <stdint.h>
 #if UINTPTR_MAX == 0xffffffff
     #if defined(__clang__) || defined(__GNUC__)
@@ -39,7 +48,12 @@ typedef float SUsample;
 extern "C" {
 #endif
 
+{{- if or .RowSync (.HasOp "sync")}}
+void SU_CALLCONV su_render_song(SUsample *buffer,float *syncBuffer);
+#define SU_SYNC
+{{- else}}
 void SU_CALLCONV su_render_song(SUsample *buffer);
+{{- end}}
 {{- if gt (.SampleOffsets | len) 0}}
 void SU_CALLCONV su_load_gmdls();
 #define SU_LOAD_GMDLS

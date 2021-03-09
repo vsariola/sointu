@@ -30,7 +30,8 @@ const (
 	opReceive    = 26
 	opSend       = 27
 	opSpeed      = 28
-	opXch        = 29
+	opSync       = 29
+	opXch        = 30
 )
 
-var transformCounts = [...]int{0, 0, 1, 0, 5, 1, 4, 1, 5, 2, 1, 1, 0, 1, 0, 1, 0, 0, 2, 6, 1, 2, 1, 0, 0, 0, 1, 0, 0}
+var transformCounts = [...]int{0, 0, 1, 0, 5, 1, 4, 1, 5, 2, 1, 1, 0, 1, 0, 1, 0, 0, 2, 6, 1, 2, 1, 0, 0, 0, 1, 0, 0, 0}

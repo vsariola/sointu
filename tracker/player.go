@@ -66,13 +66,16 @@ func (p *Player) Enabled() bool {
 	return atomic.LoadInt32(&p.synthNotNil) == 1
 }
 
-func NewPlayer(service sointu.SynthService, closer <-chan struct{}, patchs <-chan sointu.Patch, scores <-chan sointu.Score, samplesPerRows <-chan int, posChanged chan<- struct{}, outputs ...chan<- []float32) *Player {
+func NewPlayer(service sointu.SynthService, closer <-chan struct{}, patchs <-chan sointu.Patch, scores <-chan sointu.Score, samplesPerRows <-chan int, posChanged chan<- struct{}, syncOutput chan<- []float32, outputs ...chan<- []float32) *Player {
 	p := &Player{playCmds: make(chan uint64, 16)}
 	go func() {
 		var score sointu.Score
 		buffer := make([]float32, 2048)
 		buffer2 := make([]float32, 2048)
 		zeros := make([]float32, 2048)
+		totalSyncs := 1 // just the beat
+		syncBuffer := make([]float32, (2048+255)/256*totalSyncs)
+		syncBuffer2 := make([]float32, (2048+255)/256*totalSyncs)
 		rowTime := 0
 		samplesPerRow := math.MaxInt32
 		var trackIDs []uint32
@@ -103,6 +106,9 @@ func NewPlayer(service sointu.SynthService, closer <-chan struct{}, patchs <-cha
 						}
 					}
 				}
+				totalSyncs = 1 + p.patch.NumSyncs()
+				syncBuffer = make([]float32, ((2048+255)/256)*totalSyncs)
+				syncBuffer2 = make([]float32, ((2048+255)/256)*totalSyncs)
 				p.mutex.Unlock()
 			case score = <-scores:
 				if row, playing := p.Position(); playing {
@@ -165,17 +171,29 @@ func NewPlayer(service sointu.SynthService, closer <-chan struct{}, patchs <-cha
 						renderTime = math.MaxInt32
 					}
 					p.mutex.Lock()
-					rendered, timeAdvanced, err := p.synth.Render(buffer, renderTime)
+					rendered, syncs, timeAdvanced, err := p.synth.Render(buffer, syncBuffer, renderTime)
 					if err != nil {
 						p.synth = nil
 						atomic.StoreInt32(&p.synthNotNil, 0)
 					}
 					p.mutex.Unlock()
+					for i := 0; i < syncs; i++ {
+						a := syncBuffer[i*totalSyncs]
+						b := (a+float32(rowTime))/float32(samplesPerRow) + float32(row.Pattern*score.RowsPerPattern+row.Row)
+						syncBuffer[i*totalSyncs] = b
+					}
 					rowTime += timeAdvanced
+					for window := syncBuffer[:totalSyncs*syncs]; len(window) > 0; window = window[totalSyncs:] {
+						select {
+						case syncOutput <- window[:totalSyncs]:
+						default:
+						}
+					}
 					for _, o := range outputs {
 						o <- buffer[:rendered*2]
 					}
 					buffer2, buffer = buffer, buffer2
+					syncBuffer2, syncBuffer = syncBuffer, syncBuffer2
 				} else {
 					rowTime += len(zeros) / 2
 					for _, o := range outputs {

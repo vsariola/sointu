@@ -313,6 +313,20 @@ New features since fork
   - **A bytecode interpreter written in pure go**. It's slightly slower than the
     hand-written assembly code by sointu compiler, but with this, the tracker is
     ultraportable and does not need cgo calls.
+  - **Using Sointu as a sync-tracker**. Similar to [GNU
+    Rocket](https://github.com/yupferris/gnurocket), but (ab)using the tracker
+    we already have for music. We use the Go "rpc" package to send current sync
+    values from the new "sync" opcode + optionally the current fractional row
+    the song is on. The syncs are saved every 256th sample (approximately 172
+    Hz). For 4k intro development, the idea is to write a debug version of the
+    intro that merely loads the shader and listens to the RPC messages, and then
+    draws the shader with those as the uniforms. Then, during the actual 4k
+    intro, one can get sync the data from Sointu: when using syncs,
+    su_render_song takes two buffer parameters, one for sound, another for
+    syncs. These can then be sent to the shader as a uniform float array. A
+    track with two voices, triggering an instrument with a single envelope and a
+    slow filter can even be used as a cheap smooth interpolation mechanism,
+    provided the syncs are added to each other in the shader.
 
 Future goals
 ------------
@@ -327,15 +341,6 @@ Future goals
       bit flag in the existing filter
     - Arbitrary envelopes; for easier automation.
   - **MIDI support for the tracker**.
-  - **Reintroduce the sync mechanism**. 4klang could export the envelopes of all
-    instruments at a 256 times lower frequency, with the purpose of using them
-    as sync data. This feature was removed at some point, but should be
-    reintroduced at some point. Need to investigate the best way to implement
-    this; maybe a "sync" opcode that save the current signal from the stack? Or
-    reusing sends/outs and having special sync output ports, allowing easily
-    combining multiple signals into one sync. Oh, and we probably should dump
-    the whole thing also as a texture to the shader; to fly through the song, in
-    a very literal way.
   - **Find a solution for denormalized signals**. Denormalized floating point
     numbers (floating point numbers that are very very small) can result in 100x
     CPU slow down. We got hit by this already: the damp filters in delay units
@@ -347,16 +352,6 @@ Future goals
 
 Crazy ideas
 -----------
-  - **Using Sointu as a sync-tracker**. Similar to [GNU
-    Rocket](https://github.com/yupferris/gnurocket), but (ab)using the tracker
-    we already have for music. We could define a generic RPC protocol for Sointu
-    tracker send current sync values and time; one could then write a debug
-    version of a 4k intro that merely loads the shader and listens to the RPC
-    messages, and then draws the shader with those as the uniforms. Then, during
-    the actual 4k intro, just render song, get sync data from Sointu and send as
-    uniforms to shader. A track with two voices, triggering an instrument with a
-    single envelope and a slow filter can even be used as a cheap smooth
-    interpolation mechanism.
   - **Hack deeper into audio sources from the OS**. Speech synthesis, I'm eyeing
     at you.
 

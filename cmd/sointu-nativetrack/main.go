@@ -17,5 +17,7 @@ func main() {
 	}
 	defer audioContext.Close()
 	synthService := bridge.BridgeService{}
-	gioui.Main(audioContext, synthService)
+	// TODO: native track does not support syncing at the moment (which is why
+	// we pass nil), as the native bridge does not support sync data
+	gioui.Main(audioContext, synthService, nil)
 }

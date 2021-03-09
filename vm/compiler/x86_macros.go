@@ -354,15 +354,25 @@ func (p *X86Macros) FmtStack() string {
 }
 
 func (p *X86Macros) ExportFunc(name string, params ...string) string {
-	if !p.Amd64 {
-		reverseParams := make([]string, len(params))
-		for i, param := range params {
-			reverseParams[len(params)-1-i] = param
-		}
-		p.Stacklocs = append(reverseParams, "retaddr_"+name) // in 32-bit, we use stdcall and parameters are in the stack
-		if p.OS == "windows" {
-			return fmt.Sprintf("%[1]v\nglobal _%[2]v@%[3]v\n_%[2]v@%[3]v:", p.SectText(name), name, len(params)*4)
-		}
+	numRegisters := 0 // in 32-bit systems, we use stdcall: everything in stack
+	switch {
+	case p.Amd64 && p.OS == "windows":
+		numRegisters = 4 // 64-bit windows has 4 parameters in registers, rest in stack
+	case p.Amd64:
+		numRegisters = 6 // System V ABI has 6 parameters in registers, rest in stack
+	}
+	if len(params) > numRegisters {
+		params = params[numRegisters:]
+	} else {
+		params = nil
+	}
+	reverseParams := make([]string, len(params))
+	for i, param := range params {
+		reverseParams[len(params)-1-i] = param
+	}
+	p.Stacklocs = append(reverseParams, "retaddr_"+name) // in 32-bit, we use stdcall and parameters are in the stack
+	if !p.Amd64 && p.OS == "windows" {
+		return fmt.Sprintf("%[1]v\nglobal _%[2]v@%[3]v\n_%[2]v@%[3]v:", p.SectText(name), name, len(params)*4)
 	}
 	if p.OS == "darwin" {
 		return fmt.Sprintf("%[1]v\nglobal _%[2]v\n_%[2]v:", p.SectText(name), name)

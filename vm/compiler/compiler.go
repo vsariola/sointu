@@ -18,10 +18,11 @@ type Compiler struct {
 	OS          string
 	Arch        string
 	Output16Bit bool
+	RowSync     bool
 }
 
 // New returns a new compiler using the default .asm templates
-func New(os string, arch string, output16Bit bool) (*Compiler, error) {
+func New(os string, arch string, output16Bit bool, rowsync bool) (*Compiler, error) {
 	_, myname, _, _ := runtime.Caller(0)
 	var subdir string
 	if arch == "386" || arch == "amd64" {
@@ -32,17 +33,17 @@ func New(os string, arch string, output16Bit bool) (*Compiler, error) {
 		return nil, fmt.Errorf("compiler.New failed, because only amd64, 386 and wasm archs are supported (targeted architecture was %v)", arch)
 	}
 	templateDir := filepath.Join(path.Dir(myname), "..", "..", "templates", subdir)
-	compiler, err := NewFromTemplates(os, arch, output16Bit, templateDir)
+	compiler, err := NewFromTemplates(os, arch, output16Bit, rowsync, templateDir)
 	return compiler, err
 }
 
-func NewFromTemplates(os string, arch string, output16Bit bool, templateDirectory string) (*Compiler, error) {
+func NewFromTemplates(os string, arch string, output16Bit bool, rowsync bool, templateDirectory string) (*Compiler, error) {
 	globPtrn := filepath.Join(templateDirectory, "*.*")
 	tmpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).ParseGlob(globPtrn)
 	if err != nil {
 		return nil, fmt.Errorf(`could not create template based on directory "%v": %v`, templateDirectory, err)
 	}
-	return &Compiler{Template: tmpl, OS: os, Arch: arch, Output16Bit: output16Bit}, nil
+	return &Compiler{Template: tmpl, OS: os, Arch: arch, RowSync: rowsync, Output16Bit: output16Bit}, nil
 }
 
 func (com *Compiler) Library() (map[string]string, error) {

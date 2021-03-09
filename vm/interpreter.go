@@ -115,7 +115,7 @@ func (s *Interpreter) Update(patch sointu.Patch) error {
 	return nil
 }
 
-func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time int, renderError error) {
+func (s *Interpreter) Render(buffer []float32, syncBuf []float32, maxtime int) (samples int, syncs int, time int, renderError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			renderError = fmt.Errorf("render panicced: %v", err)
@@ -133,6 +133,10 @@ func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time i
 		voicesRemaining := s.bytePatch.NumVoices
 		voices := s.synth.voices[:]
 		units := voices[0].units[:]
+		if byte(s.synth.globalTime) == 0 { // every 256 samples
+			syncBuf[0], syncBuf = float32(time), syncBuf[1:]
+			syncs++
+		}
 		for voicesRemaining > 0 {
 			op := commands[0]
 			commands = commands[1:]
@@ -152,7 +156,7 @@ func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time i
 			}
 			tcount := transformCounts[opNoStereo-1]
 			if len(values) < tcount {
-				return samples, time, errors.New("value stream ended prematurely")
+				return samples, syncs, time, errors.New("value stream ended prematurely")
 			}
 			voice := &voices[0]
 			unit := &units[0]
@@ -523,16 +527,20 @@ func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time i
 				if stereo {
 					stack = append(stack, gain)
 				}
+			case opSync:
+				if byte(s.synth.globalTime) == 0 { // every 256 samples
+					syncBuf[0], syncBuf = float32(stack[l-1]), syncBuf[1:]
+				}
 			default:
-				return samples, time, errors.New("invalid / unimplemented opcode")
+				return samples, syncs, time, errors.New("invalid / unimplemented opcode")
 			}
 			units = units[1:]
 		}
 		if len(stack) < 4 {
-			return samples, time, errors.New("stack underflow")
+			return samples, syncs, time, errors.New("stack underflow")
 		}
 		if len(stack) > 4 {
-			return samples, time, errors.New("stack not empty")
+			return samples, syncs, time, errors.New("stack not empty")
 		}
 		buffer[0] = synth.outputs[0]
 		buffer[1] = synth.outputs[1]
@@ -544,7 +552,7 @@ func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time i
 		s.synth.globalTime++
 	}
 	s.stack = stack[:0]
-	return samples, time, nil
+	return samples, syncs, time, nil
 }
 
 func (s *synth) rand() float32 {

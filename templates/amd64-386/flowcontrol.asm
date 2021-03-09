@@ -21,3 +21,24 @@
     fstp    dword [{{.WRK}}] ; save the remainder for future
     ret
 {{end}}
+
+
+{{- if or .RowSync (.HasOp "sync")}}
+;-------------------------------------------------------------------------------
+;   SYNC opcode: save the stack top to sync buffer
+;-------------------------------------------------------------------------------
+{{.Func "su_op_sync" "Opcode"}}
+{{- if not .Library}}
+    ; TODO: syncs are NOPs when compiling as library, should figure out a way to
+    ; make them work when compiling to use the native track also
+    mov     {{.AX}}, [{{.Stack "GlobalTick"}}]
+    test    al, al
+    jne     su_op_sync_skip
+    xchg    {{.AX}}, [{{.Stack "SyncBufPtr"}}]
+    fst     dword [{{.AX}}]
+    add     {{.AX}}, 4
+    xchg    {{.AX}}, [{{.Stack "SyncBufPtr"}}]
+su_op_sync_skip:
+{{- end}}
+    ret
+{{end}}

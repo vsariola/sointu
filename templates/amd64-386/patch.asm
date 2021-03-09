@@ -14,6 +14,14 @@
 ;-------------------------------------------------------------------------------
 {{.Func "su_run_vm"}}
     {{- .PushRegs .CX "DelayWorkSpace" .DX "Synth" .COM "CommandStream" .WRK "Voice" .VAL "ValueStream" | indent 4}}
+    {{- if .RowSync}}
+    fild    dword [{{.Stack "Sample"}}]
+    {{.Int .Song.SamplesPerRow | .Prepare | indent 8}}
+    fidiv   dword [{{.Int .Song.SamplesPerRow | .Use}}]
+    fiadd   dword [{{.Stack "Row"}}]
+    {{.Call "su_op_sync"}}
+    fstp    st0
+    {{- end}}
 su_run_vm_loop:                                     ; loop until all voices done
     movzx   edi, byte [{{.COM}}]                         ; edi = command byte
     inc     {{.COM}}                                     ; move to next instruction

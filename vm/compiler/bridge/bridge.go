@@ -70,17 +70,18 @@ func Synth(patch sointu.Patch) (*C.Synth, error) {
 // time > maxtime, as it is modulated and the time could advance by 2 or more, so the loop
 // exit condition would fire when the time is already past maxtime.
 // Under no conditions, nsamples >= len(buffer)/2 i.e. guaranteed to never overwrite the buffer.
-func (synth *C.Synth) Render(buffer []float32, maxtime int) (int, int, error) {
+func (synth *C.Synth) Render(buffer []float32, syncBuffer []float32, maxtime int) (int, int, int, error) {
+	// TODO: syncBuffer is not getting passed to cgo; do we want to even try to support the syncing with the native bridge
 	if len(buffer)%1 == 1 {
-		return -1, -1, errors.New("RenderTime writes stereo signals, so buffer should have even length")
+		return -1, -1, -1, errors.New("RenderTime writes stereo signals, so buffer should have even length")
 	}
 	samples := C.int(len(buffer) / 2)
 	time := C.int(maxtime)
 	errcode := int(C.su_render(synth, (*C.float)(&buffer[0]), &samples, &time))
 	if errcode > 0 {
-		return int(samples), int(time), &RenderError{errcode: errcode}
+		return int(samples), 0, int(time), &RenderError{errcode: errcode}
 	}
-	return int(samples), int(time), nil
+	return int(samples), 0, int(time), nil
 }
 
 // Trigger is part of C.Synths' implementation of sointu.Synth interface

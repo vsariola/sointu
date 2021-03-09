@@ -37,6 +37,18 @@ func (p Patch) NumDelayLines() int {
 	return total
 }
 
+func (p Patch) NumSyncs() int {
+	total := 0
+	for _, instr := range p {
+		for _, unit := range instr.Units {
+			if unit.Type == "sync" {
+				total += instr.NumVoices
+			}
+		}
+	}
+	return total
+}
+
 func (p Patch) FirstVoiceForInstrument(instrIndex int) int {
 	ret := 0
 	for _, t := range p[:instrIndex] {

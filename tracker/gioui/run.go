@@ -51,13 +51,13 @@ func (t *Tracker) Run(w *app.Window) error {
 	}
 }
 
-func Main(audioContext sointu.AudioContext, synthService sointu.SynthService) {
+func Main(audioContext sointu.AudioContext, synthService sointu.SynthService, syncChannel chan<- []float32) {
 	go func() {
 		w := app.NewWindow(
 			app.Size(unit.Dp(800), unit.Dp(600)),
 			app.Title("Sointu Tracker"),
 		)
-		t := New(audioContext, synthService)
+		t := New(audioContext, synthService, syncChannel)
 		defer t.Close()
 		if err := t.Run(w); err != nil {
 			fmt.Println(err)

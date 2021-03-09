@@ -16,6 +16,11 @@
 #include TEST_HEADER
 SUsample buf[SU_BUFFER_LENGTH];
 SUsample filebuf[SU_BUFFER_LENGTH];
+#ifdef SU_SYNC
+float syncBuf[SU_SYNCBUFFER_LENGTH];
+float fileSyncBuf[SU_BUFFER_LENGTH];
+#endif
+
 
 int main(int argc, char* argv[]) {
     FILE* f;
@@ -36,7 +41,11 @@ int main(int argc, char* argv[]) {
     su_load_gmdls();
     #endif
 
+    #ifdef SU_SYNC
+    su_render_song(buf, syncBuf);
+    #else
     su_render_song(buf);
+    #endif
 
 #if defined (_WIN32)
     CreateDirectory(actual_output_folder, NULL);
@@ -48,6 +57,13 @@ int main(int argc, char* argv[]) {
     f = fopen(filename, "wb");
     fwrite((void*)buf, sizeof(SUsample), SU_BUFFER_LENGTH, f);
     fclose(f);
+
+    #ifdef SU_SYNC
+    snprintf(filename, sizeof filename, "%s%s%s", actual_output_folder, test_name, "_syncbuf.raw");
+    f = fopen(filename, "wb");
+    fwrite((void*)syncBuf, sizeof(float), SU_SYNCBUFFER_LENGTH, f);
+    fclose(f);
+    #endif
 
     f = fopen(argv[1], "rb");
 
@@ -92,6 +108,42 @@ int main(int argc, char* argv[]) {
         printf("Warning: Sointu rendered almost correct wave, but a small maximum error of %f\n",max_diff);        
     }
 
+#ifdef SU_SYNC
+    f = fopen(argv[2], "rb");
+
+    if (f == NULL) {
+        printf("No expected sync waveform found!\n");
+        goto fail;
+    }
+
+    fseek(f, 0, SEEK_END);
+    fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    if (SU_SYNCBUFFER_LENGTH * sizeof(float) < fsize) {
+        printf("Sointu rendered shorter sync wave than expected\n");
+        goto fail;
+    }
+
+    if (SU_SYNCBUFFER_LENGTH * sizeof(float) > fsize) {
+        printf("Sointu rendered longer sync wave than expected\n");
+        goto fail;
+    }
+
+    fread((void*)fileSyncBuf, fsize, 1, f);
+    fclose(f);
+    f = NULL;
+
+    max_diff = 0.0f;
+
+    for (n = 0; n < SU_SYNCBUFFER_LENGTH; n++) {
+        diff = (float)fabs(syncBuf[n] - fileSyncBuf[n]);
+        if (diff > 1e-3f || isnan(diff)) {
+            printf("Sointu rendered different sync wave than expected\n");
+            goto fail;
+        }
+    }
+#endif
     return 0;
 
 fail:

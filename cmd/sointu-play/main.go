@@ -92,7 +92,7 @@ func main() {
 				synth.Release(i)
 			}
 		}
-		buffer, err := sointu.Play(synth, song) // render the song to calculate its length
+		buffer, _, err := sointu.Play(synth, song) // render the song to calculate its length
 		if err != nil {
 			return fmt.Errorf("sointu.Play failed: %v", err)
 		}

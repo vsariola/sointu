@@ -7,7 +7,7 @@ import (
 )
 
 type Synth interface {
-	Render(buffer []float32, maxtime int) (int, int, error)
+	Render(buffer []float32, syncBuffer []float32, maxtime int) (sample int, syncs int, time int, err error)
 	Update(patch Patch) error
 	Trigger(voice int, note byte)
 	Release(voice int)
@@ -18,7 +18,7 @@ type SynthService interface {
 }
 
 func Render(synth Synth, buffer []float32) error {
-	s, _, err := synth.Render(buffer, math.MaxInt32)
+	s, _, _, err := synth.Render(buffer, nil, math.MaxInt32)
 	if err != nil {
 		return fmt.Errorf("sointu.Render failed: %v", err)
 	}
@@ -28,10 +28,10 @@ func Render(synth Synth, buffer []float32) error {
 	return nil
 }
 
-func Play(synth Synth, song Song) ([]float32, error) {
+func Play(synth Synth, song Song) ([]float32, []float32, error) {
 	err := song.Validate()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	curVoices := make([]int, len(song.Score.Tracks))
 	for i := range curVoices {
@@ -39,7 +39,10 @@ func Play(synth Synth, song Song) ([]float32, error) {
 	}
 	initialCapacity := song.Score.LengthInRows() * song.SamplesPerRow() * 2
 	buffer := make([]float32, 0, initialCapacity)
+	syncBuffer := make([]float32, 0, initialCapacity)
 	rowbuffer := make([]float32, song.SamplesPerRow()*2)
+	numSyncs := song.Patch.NumSyncs()
+	syncRowBuffer := make([]float32, ((song.SamplesPerRow()+255)/256)*(1+numSyncs))
 	for row := 0; row < song.Score.LengthInRows(); row++ {
 		patternRow := row % song.Score.RowsPerPattern
 		pattern := row / song.Score.RowsPerPattern
@@ -73,16 +76,22 @@ func Play(synth Synth, song Song) ([]float32, error) {
 		}
 		tries := 0
 		for rowtime := 0; rowtime < song.SamplesPerRow(); {
-			samples, time, err := synth.Render(rowbuffer, song.SamplesPerRow()-rowtime)
+			samples, syncs, time, err := synth.Render(rowbuffer, syncRowBuffer, song.SamplesPerRow()-rowtime)
+			for i := 0; i < syncs; i++ {
+				t := syncRowBuffer[i*(1+numSyncs)]
+				t = (t+float32(rowtime))/(float32(song.SamplesPerRow())) + float32(row)
+				syncRowBuffer[i*(1+numSyncs)] = t
+			}
 			if err != nil {
-				return buffer, fmt.Errorf("render failed: %v", err)
+				return buffer, syncBuffer, fmt.Errorf("render failed: %v", err)
 			}
 			rowtime += time
 			buffer = append(buffer, rowbuffer[:samples*2]...)
+			syncBuffer = append(syncBuffer, syncRowBuffer[:syncs]...)
 			if tries > 100 {
-				return nil, fmt.Errorf("Song speed modulation likely so slow that row never advances; error at pattern %v, row %v", pattern, patternRow)
+				return nil, nil, fmt.Errorf("Song speed modulation likely so slow that row never advances; error at pattern %v, row %v", pattern, patternRow)
 			}
 		}
 	}
-	return buffer, nil
+	return buffer, syncBuffer, nil
 }

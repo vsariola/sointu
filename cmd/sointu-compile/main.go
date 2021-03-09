@@ -33,6 +33,7 @@ func main() {
 	list := flag.Bool("l", false, "Do not write files; just list files that would change instead.")
 	stdout := flag.Bool("s", false, "Do not write files; write to standard output instead.")
 	help := flag.Bool("h", false, "Show help.")
+	rowsync := flag.Bool("r", false, "Write the current fractional row as sync #0")
 	library := flag.Bool("a", false, "Compile Sointu into a library. Input files are not needed.")
 	jsonOut := flag.Bool("j", false, "Output the song as .json file instead of compiling.")
 	yamlOut := flag.Bool("y", false, "Output the song as .yml file instead of compiling.")
@@ -53,9 +54,9 @@ func main() {
 	if compile || *library {
 		var err error
 		if *tmplDir != "" {
-			comp, err = compiler.NewFromTemplates(*targetOs, *targetArch, *output16bit, *tmplDir)
+			comp, err = compiler.NewFromTemplates(*targetOs, *targetArch, *output16bit, *rowsync, *tmplDir)
 		} else {
-			comp, err = compiler.New(*targetOs, *targetArch, *output16bit)
+			comp, err = compiler.New(*targetOs, *targetArch, *output16bit, *rowsync)
 		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, `error creating compiler: %v`, err)

@@ -99,7 +99,7 @@ func (t *Tracker) Close() {
 	t.audioContext.Close()
 }
 
-func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tracker {
+func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syncChannel chan<- []float32) *Tracker {
 	t := &Tracker{
 		Theme:                 material.NewTheme(gofont.Collection()),
 		audioContext:          audioContext,
@@ -160,7 +160,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService) *Tr
 	sprObserver := make(chan int, 16)
 	t.AddSamplesPerRowObserver(sprObserver)
 	audioChannel := make(chan []float32)
-	t.player = tracker.NewPlayer(synthService, t.playerCloser, patchObserver, scoreObserver, sprObserver, t.refresh, audioChannel, vuBufferObserver)
+	t.player = tracker.NewPlayer(synthService, t.playerCloser, patchObserver, scoreObserver, sprObserver, t.refresh, syncChannel, audioChannel, vuBufferObserver)
 	audioOut := audioContext.Output()
 	go func() {
 		for buf := range audioChannel {
