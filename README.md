@@ -183,7 +183,7 @@ ninja sointu
 Running `ninja sointu` only builds the static library that go needs. This
 is a lot faster than building all the CTests.
 
-You and now run all the go tests, even the ones that test the native bridge.run
+You and now run all the go tests, even the ones that test the native bridge.
 From the project root folder, run:
 
 ```
@@ -209,6 +209,9 @@ and the fix
 Use a newer nightly build of yasm that includes the fix. The linker had placed
 our synth object overlapping with DLL call addresses; very funny stuff to debug.
 
+> :warning: The sointu-nativetrack cannot be used with the syncs at the moment.
+> For syncs, use the Go VM (sointu-track).
+
 ### Building and running the WebAssembly tests
 
 These are automatically invoked by CTest if [node](https://nodejs.org) and
@@ -223,7 +226,7 @@ New features since fork
     entropy as low as possible, yet we can call arbitrary go functions as
     "macros". The templates are [here](templates/) and the compiler lives
     [here](vm/compiler/).
-  - **Tracker**. Written in go. A prototype exists.
+  - **Tracker**. Written in go. A crude version exists.
   - **Supports 32 and 64 bit builds**. The 64-bit version is done with minimal
     changes to get it work, using template macros to change the lines between
     32-bit and 64-bit modes. Mostly, it's as easy as writing {{.AX}} instead of
