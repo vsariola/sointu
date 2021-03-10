@@ -45,7 +45,7 @@ func TestAllRegressionTests(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Compiling patch failed: %v", err)
 			}
-			buffer, _, err := sointu.Play(synth, song)
+			buffer, syncBuffer, err := sointu.Play(synth, song)
 			buffer = buffer[:song.Score.LengthInRows()*song.SamplesPerRow()*2] // extend to the nominal length always.
 			if err != nil {
 				t.Fatalf("Play failed: %v", err)
@@ -72,6 +72,9 @@ func TestAllRegressionTests(t *testing.T) {
 				}
 			}
 			compareToRawFloat32(t, buffer, testname+".raw")
+			if strings.Contains(testname, "sync") {
+				compareToRawFloat32(t, syncBuffer, testname+"_syncbuf.raw")
+			}
 		})
 	}
 }

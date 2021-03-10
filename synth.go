@@ -39,9 +39,9 @@ func Play(synth Synth, song Song) ([]float32, []float32, error) {
 	}
 	initialCapacity := song.Score.LengthInRows() * song.SamplesPerRow() * 2
 	buffer := make([]float32, 0, initialCapacity)
-	syncBuffer := make([]float32, 0, initialCapacity)
 	rowbuffer := make([]float32, song.SamplesPerRow()*2)
 	numSyncs := song.Patch.NumSyncs()
+	syncBuffer := make([]float32, 0, (song.Score.LengthInRows()*song.SamplesPerRow()+255)/256*(1+numSyncs))
 	syncRowBuffer := make([]float32, ((song.SamplesPerRow()+255)/256)*(1+numSyncs))
 	for row := 0; row < song.Score.LengthInRows(); row++ {
 		patternRow := row % song.Score.RowsPerPattern
@@ -87,7 +87,7 @@ func Play(synth Synth, song Song) ([]float32, []float32, error) {
 			}
 			rowtime += time
 			buffer = append(buffer, rowbuffer[:samples*2]...)
-			syncBuffer = append(syncBuffer, syncRowBuffer[:syncs]...)
+			syncBuffer = append(syncBuffer, syncRowBuffer[:syncs*(1+numSyncs)]...)
 			if tries > 100 {
 				return nil, nil, fmt.Errorf("Song speed modulation likely so slow that row never advances; error at pattern %v, row %v", pattern, patternRow)
 			}
