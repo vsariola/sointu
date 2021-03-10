@@ -7,6 +7,17 @@ import (
 	"github.com/vsariola/sointu"
 )
 
+// BytePatch is the compiler Sointu VM bytecode & data (delay times, sample
+// offsets) ready to interpret or from which the ASM/WASM code can be generate.
+//
+// PolyphonyBitmask is a rather peculiar bitmask used by Sointu VM to store the
+// information about which voices use which instruments: bit MAXVOICES - n - 1
+// corresponds to voice n. If the bit 1, the next voice uses the same
+// instrument. If the bit 0, the next voice uses different instrument. For
+// example, if first instrument has 3 voices, second instrument has 2 voices,
+// and third instrument four voices, the PolyphonyBitmask is:
+//
+// (MSB) 110101110 (LSB)
 type BytePatch struct {
 	Commands         []byte
 	Values           []byte
@@ -23,7 +34,10 @@ type SampleOffset struct {
 }
 
 func Encode(patch sointu.Patch, featureSet FeatureSet) (*BytePatch, error) {
-	var c BytePatch
+	c := BytePatch{PolyphonyBitmask: polyphonyBitmask(patch), NumVoices: uint32(patch.NumVoices())}
+	if c.NumVoices > 32 {
+		return nil, fmt.Errorf("Sointu does not support more than 32 concurrent voices; patch uses %v", c.NumVoices)
+	}
 	sampleOffsetMap := map[SampleOffset]int{}
 	globalAddrs := map[int]uint16{}
 	globalFixups := map[int]([]int){}
@@ -175,17 +189,19 @@ func Encode(patch sointu.Patch, featureSet FeatureSet) (*BytePatch, error) {
 		}
 		c.Commands = append(c.Commands, byte(0)) // advance
 		voiceNo += instr.NumVoices
-		c.NumVoices += uint32(instr.NumVoices)
-		for k := 0; k < instr.NumVoices-1; k++ {
-			c.PolyphonyBitmask = (c.PolyphonyBitmask << 1) + 1
-		}
-		c.PolyphonyBitmask <<= 1
 	}
-	if c.NumVoices > 32 {
-		return nil, fmt.Errorf("Sointu does not support more than 32 concurrent voices; patch uses %v", c.NumVoices)
-	}
-
 	return &c, nil
+}
+
+func polyphonyBitmask(patch sointu.Patch) uint32 {
+	var ret uint32 = 0
+	for _, instr := range patch {
+		for j := 0; j < instr.NumVoices-1; j++ {
+			ret = (ret << 1) + 1 // for each instrument, NumVoices - 1 bits are ones
+		}
+		ret <<= 1 // ...and the last bit is zero, to denote "change instrument"
+	}
+	return ret
 }
 
 func fixUp(values []byte, positions []int, delta uint16) {
