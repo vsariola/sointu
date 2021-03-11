@@ -300,13 +300,22 @@ func (m *Model) Note() byte {
 func (m *Model) SetNote(iv byte) {
 	m.saveUndo("SetNote", 10)
 	tracks := m.song.Score.Tracks
-	order := tracks[m.cursor.Track].Order
-	if m.cursor.Pattern < 0 || m.cursor.Pattern >= len(order) || m.cursor.Row < 0 {
+	if m.cursor.Pattern < 0 || m.cursor.Row < 0 {
 		return
 	}
+	for len(tracks[m.cursor.Track].Order) <= m.cursor.Pattern {
+		tracks[m.cursor.Track].Order = append(tracks[m.cursor.Track].Order, -1)
+	}
+	order := tracks[m.cursor.Track].Order
 	patIndex := order[m.cursor.Pattern]
 	if patIndex < 0 {
-		return
+		patIndex = len(tracks[m.cursor.Track].Patterns)
+		for _, pi := range tracks[m.cursor.Track].Order {
+			if pi >= patIndex {
+				patIndex = pi + 1 // we find a pattern that is not in the pattern table nor in the order list i.e. completely new pattern
+			}
+		}
+		tracks[m.cursor.Track].Order[m.cursor.Pattern] = patIndex
 	}
 	for len(tracks[m.cursor.Track].Patterns) <= patIndex {
 		tracks[m.cursor.Track].Patterns = append(tracks[m.cursor.Track].Patterns, nil)
