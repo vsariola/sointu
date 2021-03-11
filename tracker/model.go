@@ -192,7 +192,7 @@ func (m *Model) AddTrack(after bool) {
 	copy(newTracks[m.cursor.Track+1:], m.song.Score.Tracks[m.cursor.Track:])
 	newTracks[m.cursor.Track] = sointu.Track{
 		NumVoices: 1,
-		Patterns:  [][]byte{make([]byte, m.song.Score.RowsPerPattern)},
+		Patterns:  [][]byte{},
 	}
 	m.song.Score.Tracks = newTracks
 	m.clampPositions()
