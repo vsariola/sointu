@@ -11,6 +11,7 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
+	"gioui.org/text"
 	"gioui.org/widget"
 	"github.com/vsariola/sointu/tracker"
 )
@@ -51,9 +52,14 @@ func (t *Tracker) layoutPatterns(gtx C) D {
 		stack := op.Save(gtx.Ops)
 		op.Offset(f32.Pt(patternRowMarkerWidth, 0)).Add(gtx.Ops)
 		for i, track := range t.Song().Score.Tracks {
+			paint.FillShape(gtx.Ops, patternCellColor, clip.Rect{Min: image.Pt(1, 1), Max: image.Pt(patternCellWidth-1, patternCellHeight-1)}.Op())
 			paint.ColorOp{Color: patternTextColor}.Add(gtx.Ops)
 			if j < len(track.Order) && track.Order[j] >= 0 {
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(track.Order[j]))
+				gtx := gtx
+				gtx.Constraints.Max.X = patternCellWidth
+				op.Offset(f32.Pt(0, -2)).Add(gtx.Ops)
+				widget.Label{Alignment: text.Middle}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(track.Order[j]))
+				op.Offset(f32.Pt(0, 2)).Add(gtx.Ops)
 			}
 			point := tracker.SongPoint{Track: i, SongRow: tracker.SongRow{Pattern: j}}
 			if t.EditMode() == tracker.EditPatterns || t.EditMode() == tracker.EditTracks {

@@ -44,6 +44,7 @@ var twoBeatHighlight = color.NRGBA{R: 31, G: 51, B: 53, A: 255}
 
 var patternPlayColor = color.NRGBA{R: 55, G: 55, B: 61, A: 255}
 var patternTextColor = primaryColor
+var patternCellColor = color.NRGBA{R: 255, G: 255, B: 255, A: 3}
 
 var instrumentHoverColor = color.NRGBA{R: 30, G: 31, B: 38, A: 255}
 var instrumentNameColor = color.NRGBA{R: 255, G: 255, B: 255, A: 255}
