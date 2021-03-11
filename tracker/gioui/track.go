@@ -32,6 +32,10 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		t.AddTrack(true)
 	}
 
+	for t.DeleteTrackBtn.Clicked() {
+		t.DeleteTrack(false)
+	}
+
 	//t.TrackHexCheckBoxes[i2].Value = t.TrackShowHex[i2]
 	//cbStyle := material.CheckBox(t.Theme, t.TrackHexCheckBoxes[i2], "hex")
 	//cbStyle.Color = white
@@ -70,6 +74,14 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		subtractOctaveBtnStyle.Color = primaryColor
 		subtractOctaveBtnStyle.Background = transparent
 		subtractOctaveBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		deleteTrackBtnStyle := material.IconButton(t.Theme, t.DeleteTrackBtn, widgetForIcon(icons.ActionDelete))
+		deleteTrackBtnStyle.Background = transparent
+		deleteTrackBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		if t.CanDeleteTrack() {
+			deleteTrackBtnStyle.Color = primaryColor
+		} else {
+			deleteTrackBtnStyle.Color = disabledTextColor
+		}
 		newTrackBtnStyle := material.IconButton(t.Theme, t.NewTrackBtn, widgetForIcon(icons.ContentAdd))
 		newTrackBtnStyle.Background = transparent
 		newTrackBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
@@ -110,6 +122,7 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 			layout.Rigid(Label("  Voices:", white)),
 			layout.Rigid(voiceUpDown),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+			layout.Rigid(deleteTrackBtnStyle.Layout),
 			layout.Rigid(newTrackBtnStyle.Layout))
 		t.Song().Score.Tracks[t.Cursor().Track].Effect = t.TrackHexCheckBox.Value // TODO: we should not modify the model, but how should this be done
 		t.SetTrackVoices(t.TrackVoices.Value)

@@ -203,6 +203,27 @@ func (m *Model) CanAddTrack() bool {
 	return m.song.Score.NumVoices() < 32
 }
 
+func (m *Model) DeleteTrack(forward bool) {
+	if !m.CanDeleteTrack() {
+		return
+	}
+	m.saveUndo("DeleteTrack", 0)
+	newTracks := make([]sointu.Track, len(m.song.Score.Tracks)-1)
+	copy(newTracks, m.song.Score.Tracks[:m.cursor.Track])
+	copy(newTracks[m.cursor.Track:], m.song.Score.Tracks[m.cursor.Track+1:])
+	m.song.Score.Tracks = newTracks
+	if !forward {
+		m.cursor.Track--
+	}
+	m.selectionCorner = m.cursor
+	m.clampPositions()
+	m.notifyScoreChange()
+}
+
+func (m *Model) CanDeleteTrack() bool {
+	return len(m.song.Score.Tracks) > 1
+}
+
 func (m *Model) SetTrackVoices(value int) {
 	if value < 1 {
 		value = 1

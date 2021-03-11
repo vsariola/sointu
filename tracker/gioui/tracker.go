@@ -28,6 +28,7 @@ type Tracker struct {
 	TrackVoices           *NumberInput
 	InstrumentNameEditor  *widget.Editor
 	NewTrackBtn           *widget.Clickable
+	DeleteTrackBtn        *widget.Clickable
 	NewInstrumentBtn      *widget.Clickable
 	DeleteInstrumentBtn   *widget.Clickable
 	AddSemitoneBtn        *widget.Clickable
@@ -113,6 +114,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 		TrackVoices:           new(NumberInput),
 		InstrumentNameEditor:  &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle},
 		NewTrackBtn:           new(widget.Clickable),
+		DeleteTrackBtn:        new(widget.Clickable),
 		NewInstrumentBtn:      new(widget.Clickable),
 		DeleteInstrumentBtn:   new(widget.Clickable),
 		AddSemitoneBtn:        new(widget.Clickable),
