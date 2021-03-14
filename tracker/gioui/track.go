@@ -193,6 +193,32 @@ func (t *Tracker) layoutTracks(gtx C) D {
 	pointer.InputOp{Tag: &trackJumpPointerTag,
 		Types: pointer.Press,
 	}.Add(gtx.Ops)
+	stack := op.Save(gtx.Ops)
+	curVoice := 0
+	for _, trk := range t.Song().Score.Tracks {
+		gtx := gtx
+		instrName := "?"
+		firstIndex, err := t.Song().Patch.InstrumentForVoice(curVoice)
+		lastIndex, err2 := t.Song().Patch.InstrumentForVoice(curVoice + trk.NumVoices - 1)
+		if err == nil && err2 == nil {
+			switch lastIndex - firstIndex {
+			case 0:
+				instrName = t.Song().Patch[firstIndex].Name
+			case 1:
+				instrName = string(t.Song().Patch[firstIndex].Name[0]) + "/" + string(t.Song().Patch[lastIndex].Name[0])
+			default:
+				instrName = string(t.Song().Patch[firstIndex].Name[0]) + "/" + string(t.Song().Patch[firstIndex+1].Name[0]) + "..."
+			}
+			if len(instrName) > 7 {
+				instrName = instrName[:7]
+			}
+		}
+		gtx.Constraints.Max.X = trackColWidth
+		LabelStyle{Alignment: layout.N, Text: instrName, FontSize: unit.Dp(12), Color: mediumEmphasisTextColor}.Layout(gtx)
+		op.Offset(f32.Pt(trackColWidth, 0)).Add(gtx.Ops)
+		curVoice += trk.NumVoices
+	}
+	stack.Load()
 	op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y-trackRowHeight)/2)).Add(gtx.Ops)
 	op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorSongRow))).Add(gtx.Ops)
 	if t.EditMode() == tracker.EditPatterns || t.EditMode() == tracker.EditTracks {
