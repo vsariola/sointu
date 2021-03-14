@@ -49,6 +49,14 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		t.AdjustSelectionPitch(-1)
 	}
 
+	for t.NoteOffBtn.Clicked() {
+		t.SetNote(0)
+		if !(t.NoteTracking() && t.player.Playing()) && t.Step.Value > 0 {
+			t.SetCursor(t.Cursor().AddRows(t.Step.Value))
+			t.SetSelectionCorner(t.Cursor())
+		}
+	}
+
 	for t.AddOctaveBtn.Clicked() {
 		t.AdjustSelectionPitch(12)
 	}
@@ -74,6 +82,10 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		subtractOctaveBtnStyle.Color = primaryColor
 		subtractOctaveBtnStyle.Background = transparent
 		subtractOctaveBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		noteOffBtnStyle := material.Button(t.Theme, t.NoteOffBtn, "Note Off")
+		noteOffBtnStyle.Color = primaryColor
+		noteOffBtnStyle.Background = transparent
+		noteOffBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 		deleteTrackBtnStyle := material.IconButton(t.Theme, t.DeleteTrackBtn, widgetForIcon(icons.ActionDelete))
 		deleteTrackBtnStyle.Background = transparent
 		deleteTrackBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
@@ -113,11 +125,12 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		dims := layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(Label("OCT:", white)),
 			layout.Rigid(octave),
-			layout.Rigid(Label(" PITCH:", white)),
+			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Px(unit.Dp(12)), 0)} }),
 			layout.Rigid(addSemitoneBtnStyle.Layout),
 			layout.Rigid(subtractSemitoneBtnStyle.Layout),
 			layout.Rigid(addOctaveBtnStyle.Layout),
 			layout.Rigid(subtractOctaveBtnStyle.Layout),
+			layout.Rigid(noteOffBtnStyle.Layout),
 			layout.Rigid(hexCheckBoxStyle.Layout),
 			layout.Rigid(Label("  Voices:", white)),
 			layout.Rigid(voiceUpDown),

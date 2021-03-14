@@ -35,6 +35,7 @@ type Tracker struct {
 	SubtractSemitoneBtn   *widget.Clickable
 	AddOctaveBtn          *widget.Clickable
 	SubtractOctaveBtn     *widget.Clickable
+	NoteOffBtn            *widget.Clickable
 	SongLength            *NumberInput
 	PanicBtn              *widget.Clickable
 	CopyInstrumentBtn     *widget.Clickable
@@ -121,6 +122,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 		SubtractSemitoneBtn:   new(widget.Clickable),
 		AddOctaveBtn:          new(widget.Clickable),
 		SubtractOctaveBtn:     new(widget.Clickable),
+		NoteOffBtn:            new(widget.Clickable),
 		AddUnitBtn:            new(widget.Clickable),
 		DeleteUnitBtn:         new(widget.Clickable),
 		ClearUnitBtn:          new(widget.Clickable),

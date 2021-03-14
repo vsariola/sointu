@@ -382,7 +382,7 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 					t.NumberPressed(byte(iv))
 				}
 			} else {
-				if e.Name == "A" {
+				if e.Name == "A" || e.Name == "1" {
 					t.SetNote(0)
 				} else {
 					if val, ok := noteMap[e.Name]; ok {
