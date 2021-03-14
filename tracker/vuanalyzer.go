@@ -7,8 +7,8 @@ import (
 // Volume represents an average and peak volume measurement, in decibels. 0 dB =
 // signal level of +-1.
 type Volume struct {
-	Average [2]float32
-	Peak    [2]float32
+	Average [2]float64
+	Peak    [2]float64
 }
 
 // VuAnalyzer receives stereo from the bc channel and converts these into peak &
@@ -28,11 +28,11 @@ type Volume struct {
 //
 // minVolume is just a hard limit for the vuanalyzer volumes, in decibels, just to
 // prevent negative infinities for volumes
-func VuAnalyzer(tau float64, attack float64, release float64, minVolume float32, bc <-chan []float32, vc chan<- Volume) {
-	v := Volume{Average: [2]float32{minVolume, minVolume}, Peak: [2]float32{minVolume, minVolume}}
-	alpha := 1 - float32(math.Exp(-1.0/(tau*44100))) // from https://en.wikipedia.org/wiki/Exponential_smoothing
-	alphaAttack := 1 - float32(math.Exp(-1.0/(attack*44100)))
-	alphaRelease := 1 - float32(math.Exp(-1.0/(release*44100)))
+func VuAnalyzer(tau float64, attack float64, release float64, minVolume float64, maxVolume float64, bc <-chan []float32, vc chan<- Volume) {
+	v := Volume{Average: [2]float64{minVolume, minVolume}, Peak: [2]float64{minVolume, minVolume}}
+	alpha := 1 - math.Exp(-1.0/(tau*44100)) // from https://en.wikipedia.org/wiki/Exponential_smoothing
+	alphaAttack := 1 - math.Exp(-1.0/(attack*44100))
+	alphaRelease := 1 - math.Exp(-1.0/(release*44100))
 	for buffer := range bc {
 		for j := 0; j < 2; j++ {
 			for i := 0; i < len(buffer); i += 2 {
@@ -40,9 +40,12 @@ func VuAnalyzer(tau float64, attack float64, release float64, minVolume float32,
 				if math.IsNaN(sample2) {
 					sample2 = float64(minVolume)
 				}
-				dB := float32(10 * math.Log10(float64(sample2)))
-				if dB < minVolume {
+				dB := 10 * math.Log10(float64(sample2))
+				if dB < minVolume || math.IsNaN(dB) {
 					dB = minVolume
+				}
+				if dB > maxVolume {
+					dB = maxVolume
 				}
 				v.Average[j] += (dB - v.Average[j]) * alpha
 				alphaPeak := alphaAttack

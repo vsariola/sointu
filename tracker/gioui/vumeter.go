@@ -21,7 +21,7 @@ func (v VuMeter) Layout(gtx C) D {
 	gtx.Constraints.Max.Y = gtx.Px(unit.Dp(12))
 	height := gtx.Px(unit.Dp(6))
 	for j := 0; j < 2; j++ {
-		value := v.Volume.Average[j] + v.Range
+		value := float32(v.Volume.Average[j]) + v.Range
 		if value > 0 {
 			x := int(value/v.Range*float32(gtx.Constraints.Max.X) + 0.5)
 			if x > gtx.Constraints.Max.X {
@@ -29,7 +29,7 @@ func (v VuMeter) Layout(gtx C) D {
 			}
 			paint.FillShape(gtx.Ops, mediumEmphasisTextColor, clip.Rect(image.Rect(0, 0, x, height)).Op())
 		}
-		valueMax := v.Volume.Peak[j] + v.Range
+		valueMax := float32(v.Volume.Peak[j]) + v.Range
 		if valueMax > 0 {
 			color := white
 			if valueMax >= v.Range {

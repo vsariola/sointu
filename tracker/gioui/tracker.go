@@ -149,7 +149,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 	}
 	t.Model = tracker.NewModel()
 	vuBufferObserver := make(chan []float32)
-	go tracker.VuAnalyzer(0.3, 1e-4, 1, -100, vuBufferObserver, t.volumeChan)
+	go tracker.VuAnalyzer(0.3, 1e-4, 1, -100, 20, vuBufferObserver, t.volumeChan)
 	t.Theme.Palette.Fg = primaryColor
 	t.Theme.Palette.ContrastFg = black
 	t.SetEditMode(tracker.EditTracks)
