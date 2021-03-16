@@ -49,11 +49,10 @@ extern "C" {
 #endif
 
 {{- if or .RowSync (.HasOp "sync")}}
-void SU_CALLCONV su_render_song(SUsample *buffer,float *syncBuffer);
 #define SU_SYNC
-{{- else}}
-void SU_CALLCONV su_render_song(SUsample *buffer);
 {{- end}}
+void SU_CALLCONV su_render_song(SUsample *buffer);
+
 {{- if gt (.SampleOffsets | len) 0}}
 void SU_CALLCONV su_load_gmdls();
 #define SU_LOAD_GMDLS

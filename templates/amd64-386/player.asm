@@ -7,6 +7,15 @@ su_synth_obj:
     resb    su_synthworkspace.size
     resb    {{.Song.Patch.NumDelayLines}}*su_delayline_wrk.size
 
+{{- if or .RowSync (.HasOp "sync")}}
+{{- if or (and (eq .OS "windows") (not .Amd64)) (eq .OS "darwin")}}
+extern _syncBuf
+{{- else}}
+extern syncBuf
+{{- end}}
+{{- end}}
+
+
 ;-------------------------------------------------------------------------------
 ;   su_render_song function: the entry point for the synth
 ;-------------------------------------------------------------------------------
@@ -14,27 +23,26 @@ su_synth_obj:
 ;   the output buffer. Renders the compile time hard-coded song to the buffer.
 ;   Stack:  output_ptr
 ;-------------------------------------------------------------------------------
-{{- if or .RowSync (.HasOp "sync")}}
-{{.ExportFunc "su_render_song" "OutputBufPtr" "SyncBufPtr"}}
-{{- else}}
 {{.ExportFunc "su_render_song" "OutputBufPtr"}}
-{{- end}}
     {{-  if .Amd64}}
     {{- if eq .OS "windows"}}
     {{- .PushRegs "rcx" "OutputBufPtr" "rdi" "NonVolatileRsi" "rsi" "NonVolatile" "rbx" "NonVolatileRbx" "rbp" "NonVolatileRbp" | indent 4}} ; rcx = ptr to buf. rdi,rsi,rbx,rbp  nonvolatile
-    {{- if or .RowSync (.HasOp "sync")}}
-    {{- .PushRegs "rdx" "SyncBufPtr" | indent 4}}
-    {{- end}}
     {{- else}} ; SystemV amd64 ABI, linux mac or hopefully something similar
     {{- .PushRegs "rdi" "OutputBufPtr" "rbx" "NonVolatileRbx" "rbp" "NonVolatileRbp" | indent 4}}
-    {{- if or .RowSync (.HasOp "sync")}}
-    {{- .PushRegs "rsi" "SyncBufPtr" | indent 4}}
-    {{- end}}
     {{- end}}
     {{- else}}
     {{- .PushRegs | indent 4}}
     {{- end}}
     {{- $prologsize := len .Stacklocs}}
+    {{- if or .RowSync (.HasOp "sync")}}
+    {{- if or (and (eq .OS "windows") (not .Amd64)) (eq .OS "darwin")}}
+    {{- .Prepare "_syncBuf"}}
+    {{.Push (.Use "_syncBuf") "SyncBufPtr"}}
+    {{- else}}
+    {{- .Prepare "syncBuf"}}
+    {{.Push (.Use "syncBuf") "SyncBufPtr"}}
+    {{- end}}
+    {{- end}}
     xor     eax, eax
     {{- if ne .VoiceTrackBitmask 0}}
     {{.Push (.VoiceTrackBitmask | printf "%v") "VoiceTrackBitmask"}}
@@ -78,9 +86,6 @@ su_render_sampleloop:                   ; loop through every sample in the row
     {{$.Pop $.AX}}
     {{- end}}
     {{-  if .Amd64}}
-    {{- if or .RowSync (.HasOp "sync")}}
-    {{.Pop .AX}} ; pop the sync buf ptr away
-    {{- end}}
     {{- if eq .OS "windows"}}
     ; Windows64 ABI, rdi rsi rbx rbp non-volatile
     {{- .PopRegs "rcx" "rdi" "rsi" "rbx" "rbp" | indent 4}}
@@ -91,11 +96,7 @@ su_render_sampleloop:                   ; loop through every sample in the row
     ret
     {{- else}}
     {{- .PopRegs | indent 4}}
-    {{- if or .RowSync (.HasOp "sync")}}
-    ret     8
-    {{- else}}
     ret     4
-    {{- end}}
     {{- end}}
 
 ;-------------------------------------------------------------------------------

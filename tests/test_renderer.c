@@ -41,11 +41,7 @@ int main(int argc, char* argv[]) {
     su_load_gmdls();
     #endif
 
-    #ifdef SU_SYNC
-    su_render_song(buf, syncBuf);
-    #else
     su_render_song(buf);
-    #endif
 
 #if defined (_WIN32)
     CreateDirectory(actual_output_folder, NULL);
