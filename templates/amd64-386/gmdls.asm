@@ -27,16 +27,17 @@
     push    0                   ; OF_READ
     push    ebx                 ; &ofstruct, blatantly reuse the sample table
     push    su_gmdls_path1      ; path
-    call    _OpenFile@12        ; eax = OpenFile(path,&ofstruct,OF_READ) // should not touch ebx according to calling convention
+    call    dword [__imp__OpenFile@12]; eax = OpenFile(path,&ofstruct,OF_READ) // should not touch ebx according to calling convention
     push    0                       ; NULL
     push    ebx                     ; &bytes_read, reusing sample table again; it does not matter that the first four bytes are trashed
     push    3440660                 ; number of bytes to read
     push    ebx                     ; here we actually pass the sample table to readfile
     push    eax                     ; handle to file
-    call    _ReadFile@20            ; Readfile(handle,&su_sample_table,SAMPLE_TABLE_SIZE,&bytes_read,NULL)
+    call    dword [__imp__ReadFile@20] ; Readfile(handle,&su_sample_table,SAMPLE_TABLE_SIZE,&bytes_read,NULL)
     ret
-extern _OpenFile@12 ; requires windows
-extern _ReadFile@20 ; requires windows
+extern __imp__OpenFile@12 ; requires windows
+extern __imp__ReadFile@20
+ ; requires windows
 {{end}}
 
 {{.Data "su_gmdls_path1"}}
