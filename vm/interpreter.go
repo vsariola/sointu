@@ -505,10 +505,8 @@ func (s *Interpreter) Render(buffer []float32, syncBuf []float32, maxtime int) (
 				}
 				unit.ports[4] = 0
 			case opCompressor:
-				stack[l-1] /= params[2]                // apply inverse gain
 				signalLevel := stack[l-1] * stack[l-1] // square the signal to get power
 				if stereo {
-					stack[l-2] /= params[2] // apply inverse gain
 					signalLevel += stack[l-2] * stack[l-2]
 				}
 				currentLevel := unit.state[0]
@@ -523,6 +521,7 @@ func (s *Interpreter) Render(buffer []float32, syncBuf []float32, maxtime int) (
 				if threshold2 := params[3] * params[3]; currentLevel > threshold2 {
 					gain = float32(math.Pow(float64(threshold2/currentLevel), float64(params[4]/2)))
 				}
+				gain /= params[2] // apply inverse gain
 				stack = append(stack, gain)
 				if stereo {
 					stack = append(stack, gain)

@@ -409,10 +409,6 @@
 ;;   Stereo: push g g on stack, where g is calculated using l^2 + r^2
 ;;-------------------------------------------------------------------------------
 (func $su_op_compressor (param $stereo i32) (local $x2 f32) (local $level f32) (local $t2 f32)
-    (call $push (f32.div ;; the inverse gain is applied on this signal, even if the gain is side-chained somewhere else
-        (call $pop)
-        (call $input (i32.const {{.InputNumber "compressor" "invgain"}}))
-    ))
 {{- if .Stereo "compressor"}}
     (local.set $x2 (f32.mul
         (call $peek)
@@ -420,10 +416,6 @@
     ))
     (if (local.get $stereo)(then
         (call $pop)
-        (call $push (f32.div
-            (call $pop)
-            (call $input (i32.const {{.InputNumber "compressor" "invgain"}}))
-        ))
         (local.set $x2 (f32.add
             (local.get $x2)
             (f32.mul
@@ -471,6 +463,10 @@
         )
     )(else
         (call $push (f32.const 1)) ;; unity gain if we are below threshold
+    ))
+    (call $push (f32.div ;; apply post-gain ("make up gain")
+        (call $pop)
+        (call $input (i32.const {{.InputNumber "compressor" "invgain"}}))
     ))
 {{- if .Stereo "compressor"}}
     (if (local.get $stereo)(then

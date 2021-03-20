@@ -353,18 +353,16 @@ su_op_delay_loop:
 ;   Stereo: push g g on stack, where g is calculated using l^2 + r^2
 ;-------------------------------------------------------------------------------
 {{.Func "su_op_compressor" "Opcode"}}
-    fdiv    dword [{{.Input "compressor" "invgain"}}]; l/g, we'll call this pre inverse gained signal x from now on
     fld     st0                                 ; x x
     fmul    st0, st0                            ; x^2 x
 {{- if .StereoAndMono "compressor"}}
     jnc     su_op_compressor_mono
 {{- end}}
 {{- if .Stereo "compressor"}}
-    fld     st2                                 ; r x^2 l/g r
-    fdiv    dword [{{.Input "compressor" "invgain"}}]; r/g, we'll call this pre inverse gained signal y from now on
-    fst     st3                                 ; y x^2 l/g r/g
-    fmul    st0, st0                            ; y^2 x^2 l/g r/g
-    faddp   st1, st0                            ; y^2+x^2 l/g r/g
+    fld     st2                                 ; r x^2 l r
+    fst     st3                                 ; y x^2 l r
+    fmul    st0, st0                            ; y^2 x^2 l r
+    faddp   st1, st0                            ; y^2+x^2 l r
     call    su_op_compressor_mono               ; So, for stereo, we square both left & right and add them up
     fld     st0                                 ; and return the computed gain two times, ready for MULP STEREO
     ret
@@ -389,9 +387,11 @@ su_op_compressor_mono:
     fmul    dword [{{.Float 0.5 | .Use}}]       ; p=r/2 t*t/l' x
     fxch                                        ; t*t/l' p x
     fyl2x                                       ; p*log2(t*t/l') x
-    {{.TailCall "su_power"}}                     ; 2^(p*log2(t*t/l')) x
-    ; tail call                                 ; Equal to:
+    {{.Call "su_power"}}                        ; 2^(p*log2(t*t/l')) x
+                                                ; Equal to:
                                                 ; (t*t/l')^p x
                                                 ; if ratio is at minimum => p=0 => 1 x
                                                 ; if ratio is at maximum => p=0.5 => t/x => t/x*x=t
+    fdiv    dword [{{.Input "compressor" "invgain"}}]; this used to be pregain but that ran into problems with getting back up to 0 dB so postgain should be better at that
+    ret
 {{- end}}

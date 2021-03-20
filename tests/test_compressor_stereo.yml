@@ -49,7 +49,7 @@ patch:
           parameters: {stereo: 1}
           id: 1
         - type: compressor
-          parameters: {attack: 32, invgain: 32, ratio: 96, release: 64, stereo: 1, threshold: 64}
+          parameters: {attack: 16, invgain: 64, ratio: 96, release: 64, stereo: 1, threshold: 71}
         - type: mulp
           parameters: {stereo: 1}
         - type: out
