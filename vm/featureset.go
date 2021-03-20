@@ -131,8 +131,9 @@ func NecessaryFeaturesFor(patch sointu.Patch) NecessaryFeatures {
 				features.instructions = append(features.instructions, unit.Type)
 				features.opcodes[unit.Type] = len(features.instructions) * 2 // note that the first opcode gets value 1, as 0 is always reserved for advance
 			}
-			for k, v := range unit.Parameters {
-				key := paramKey{unit.Type, k}
+			for _, paramType := range sointu.UnitTypes[unit.Type] {
+				v := unit.Parameters[paramType.Name]
+				key := paramKey{unit.Type, paramType.Name}
 				if features.supportsParamValue[key] == nil {
 					features.supportsParamValue[key] = map[int]bool{}
 				}
