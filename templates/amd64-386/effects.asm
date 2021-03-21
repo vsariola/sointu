@@ -363,10 +363,12 @@ su_op_delay_loop:
     fst     st3                                 ; y x^2 l r
     fmul    st0, st0                            ; y^2 x^2 l r
     faddp   st1, st0                            ; y^2+x^2 l r
+{{- if .StereoAndMono "compressor"}}
     call    su_op_compressor_mono               ; So, for stereo, we square both left & right and add them up
     fld     st0                                 ; and return the computed gain two times, ready for MULP STEREO
     ret
 su_op_compressor_mono:
+{{- end}}
 {{- end}}
     fld     dword [{{.WRK}}]    ; l x^2 x
     fucomi  st0, st1
@@ -393,5 +395,8 @@ su_op_compressor_mono:
                                                 ; if ratio is at minimum => p=0 => 1 x
                                                 ; if ratio is at maximum => p=0.5 => t/x => t/x*x=t
     fdiv    dword [{{.Input "compressor" "invgain"}}]; this used to be pregain but that ran into problems with getting back up to 0 dB so postgain should be better at that
+{{- if and (.Stereo "compressor") (not (.Mono "compressor"))}}
+    fld     st0                                 ; and return the computed gain two times, ready for MULP STEREO
+{{- end}}
     ret
 {{- end}}
