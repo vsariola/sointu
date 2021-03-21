@@ -147,9 +147,6 @@ su_effects_stereohelper_mono:
 
 {{- if .HasCall "su_waveshaper" }}
 {{.Func "su_waveshaper"}}
-    fxch                                    ; x a
-    {{.Call "su_clip"}}
-    fxch                                    ; a x' (from now on just called x)
     fld     st0                             ; a a x
     {{.Prepare (.Float 0.5)}}
     fsub    dword [{{.Use (.Float 0.5)}}]                 ; a-.5 a x
