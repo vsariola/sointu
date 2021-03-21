@@ -156,19 +156,25 @@ su_op_oscillat_single:
 {{- .Float 0.0078125 | .Prepare}}
     fdiv    dword [{{.Float 0.0078125 | .Use}}]
     faddp   st1
+{{- if .SupportsParamValue "oscillator" "lfo" 1}}
     test    al, byte 0x08
     jnz     su_op_oscillat_skipnote
+{{- end}}
     fiadd   dword [{{.INP}}-su_voice.inputs+su_voice.note]   ; // st0 is note, st1 is t+d offset
+{{- if .SupportsParamValue "oscillator" "lfo" 1}}
 su_op_oscillat_skipnote:
+{{- end}}
 {{- .Int 0x3DAAAAAA | .Prepare}}
     fmul    dword [{{.Int 0x3DAAAAAA | .Use}}]
     {{.Call "su_power"}}
+{{- if .SupportsParamValue "oscillator" "lfo" 1}}
     test    al, byte 0x08
     jz      short su_op_oscillat_normalize_note
 {{- .Float 0.000038 | .Prepare}}
     fmul    dword [{{.Float 0.000038 | .Use}}]  ; // st0 is now frequency for lfo
     jmp     short su_op_oscillat_normalized
 su_op_oscillat_normalize_note:
+{{- end}}
 {{- .Float 0.000092696138 | .Prepare}}
     fmul    dword [{{.Float 0.000092696138 | .Use}}]   ; // st0 is now frequency
 su_op_oscillat_normalized:
