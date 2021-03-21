@@ -167,11 +167,28 @@ func Encode(patch sointu.Patch, featureSet FeatureSet) (*BytePatch, error) {
 					continue // skip encoding delays without any delay lines
 				}
 				countTrack := count*2 - 1 + unit.Parameters["notetracking"] // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
-				delStart := len(c.DelayTimes)
-				for _, v := range unit.VarArgs {
-					c.DelayTimes = append(c.DelayTimes, uint16(v))
+				matchIndex := -1
+				for i := 0; i <= len(c.DelayTimes)-len(unit.VarArgs); i++ {
+					match := true
+					for j, v := range unit.VarArgs {
+						if uint16(v) != c.DelayTimes[i+j] {
+							match = false
+							break
+						}
+					}
+					if match {
+						matchIndex = i
+						break
+					}
 				}
-				values = append(values, byte(delStart), byte(countTrack))
+				if matchIndex > -1 {
+					values = append(values, byte(matchIndex), byte(countTrack))
+				} else {
+					values = append(values, byte(len(c.DelayTimes)), byte(countTrack))
+					for _, v := range unit.VarArgs {
+						c.DelayTimes = append(c.DelayTimes, uint16(v))
+					}
+				}
 			}
 			c.Commands = append(c.Commands, byte(opcode+unit.Parameters["stereo"]))
 			c.Values = append(c.Values, values...)
