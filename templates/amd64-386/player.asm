@@ -63,7 +63,7 @@ su_render_sampleloop:                   ; loop through every sample in the row
             mov     {{.COM}}, {{.PTRWORD}} su_patch_code           ; COM points to vm code
             mov     {{.VAL}}, {{.PTRWORD}} su_patch_parameters             ; VAL points to unit params
             {{- if .HasOp "delay"}}
-            lea     {{.CX}}, [{{.DX}} + su_synthworkspace.size - su_delayline_wrk.filtstate]
+            mov     {{.CX}}, {{.PTRWORD}} su_synth_obj + su_synthworkspace.size - su_delayline_wrk.filtstate
             {{- end}}
             lea     {{.WRK}}, [{{.DX}} + su_synthworkspace.voices]            ; WRK points to the first voice
             {{.Call "su_run_vm"}} ; run through the VM code
