@@ -202,5 +202,33 @@ func ConstructPatterns(song *sointu.Song) ([][]byte, [][]byte, error) {
 			return nil, nil, fmt.Errorf("invalid note in pattern, notes should be 0 .. 255: %v", err)
 		}
 	}
+	allZeroIndex := -1
+	for i, pat := range patterns {
+		match := true
+		for _, note := range pat {
+			if note != 0 {
+				match = false
+				break
+			}
+		}
+		if match {
+			allZeroIndex = i
+			break
+		}
+	}
+	// if there's a pattern full of zeros...
+	if allZeroIndex > -1 {
+		// ...swap that into position 0, as it is likely the most common pattern
+		bytePatterns[allZeroIndex], bytePatterns[0] = bytePatterns[0], bytePatterns[allZeroIndex]
+		for _, s := range sequences {
+			for j, n := range s {
+				if n == 0 {
+					s[j] = byte(allZeroIndex)
+				} else if n == byte(allZeroIndex) {
+					s[j] = 0
+				}
+			}
+		}
+	}
 	return bytePatterns, sequences, nil
 }
