@@ -2,7 +2,10 @@ package tracker
 
 import "fmt"
 
-const baseNote = 20
+// note 81 = A4
+// note 72 = C4
+// note 24 = C0
+const baseNote = 24
 
 var notes = []string{
 	"C-",
