@@ -127,6 +127,9 @@ func NecessaryFeaturesFor(patch sointu.Patch) NecessaryFeatures {
 	features := NecessaryFeatures{opcodes: map[string]int{}, supportsParamValue: map[paramKey](map[int]bool){}, supportsModulation: map[paramKey]bool{}}
 	for instrIndex, instrument := range patch {
 		for _, unit := range instrument.Units {
+			if unit.Type == "" {
+				continue
+			}
 			if _, ok := features.opcodes[unit.Type]; !ok {
 				features.instructions = append(features.instructions, unit.Type)
 				features.opcodes[unit.Type] = len(features.instructions) * 2 // note that the first opcode gets value 1, as 0 is always reserved for advance
