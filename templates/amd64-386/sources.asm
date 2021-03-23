@@ -114,10 +114,9 @@ su_op_noise_mono:
 {{- end}}
 {{- if .Stereo "oscillator"}}
     fld     st0                             ; d d
+    add     {{.WRK}}, 4                     ; move wrk...
     call    su_op_oscillat_mono             ; r d
-    ;; WARNING: this is a bug. WRK should be nonvolatile, but we are changing it. It does not cause immediate problems but modulations will be off.
-    ;; Figure out how to do this; maybe $WRK should be volatile (pushed by the virtual machine)
-    add     {{.WRK}}, 4                     ; state vars: r1 l1 r2 l2 r3 l3 r4 l4, for the unison osc phases-
+    sub     {{.WRK}}, 4                     ; ...restore wrk
     fxch                                    ; d r
     fchs                                    ; -d r, negate the detune for second round
 su_op_oscillat_mono:
@@ -132,9 +131,7 @@ su_op_oscillat_unison_loop:
     faddp   st1, st0                ; a+=s
     test    al, 3
     je      su_op_oscillat_unison_out
-    ;; WARNING: this is a bug. WRK should be nonvolatile, but we are changing it. It does not cause immediate problems but modulations will be off.
-    ;; Figure out how to do this; maybe $WRK should be volatile (pushed by the virtual machine)
-    add     {{.WRK}}, 8
+    add     {{.WRK}}, 8   ; this is ok after all, as there's a pop in the end of unison loop
     fld     dword [{{.Input "oscillator" "phase"}}] ; p s
 {{.Int 0x3DAAAAAA | .Prepare}}
     fadd    dword [{{.Int 0x3DAAAAAA | .Use}}]  ; 1/12 p s, add some little phase offset to unison oscillators so they don't start in sync
