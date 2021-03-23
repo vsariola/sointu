@@ -1,19 +1,3 @@
-{{- if .HasOp "distort"}}
-;-------------------------------------------------------------------------------
-;   DISTORT opcode: apply distortion on the signal
-;-------------------------------------------------------------------------------
-;   Mono:   x   ->  x*a/(1-a+(2*a-1)*abs(x))            where x is clamped first
-;   Stereo: l r ->  l*a/(1-a+(2*a-1)*abs(l)) r*a/(1-a+(2*a-1)*abs(r))
-;-------------------------------------------------------------------------------
-{{.Func "su_op_distort" "Opcode"}}
-{{- if .Stereo "distort" -}}
-    {{.Call "su_effects_stereohelper"}}
-{{- end}}
-    fld     dword [{{.Input "distort" "drive"}}]
-    {{.TailCall "su_waveshaper"}}
-{{end}}
-
-
 {{- if .HasOp "hold"}}
 ;-------------------------------------------------------------------------------
 ;   HOLD opcode: sample and hold the signal, reducing sample rate

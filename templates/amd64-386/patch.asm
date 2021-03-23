@@ -127,6 +127,44 @@ su_power:
 
 {{end}}
 
+{{- if .HasOp "distort"}}
+;-------------------------------------------------------------------------------
+;   DISTORT opcode: apply distortion on the signal
+;-------------------------------------------------------------------------------
+;   Mono:   x   ->  x*a/(1-a+(2*a-1)*abs(x))            where x is clamped first
+;   Stereo: l r ->  l*a/(1-a+(2*a-1)*abs(l)) r*a/(1-a+(2*a-1)*abs(r))
+;   This is placed here to be able to flow into waveshaper & also include
+;   wave shaper if needed by some other function; need to investigate the
+;   best way to do this
+;-------------------------------------------------------------------------------
+{{.Func "su_op_distort" "Opcode"}}
+{{- if .Stereo "distort" -}}
+    {{.Call "su_effects_stereohelper"}}
+{{- end}}
+    fld     dword [{{.Input "distort" "drive"}}]
+{{end}}
+
+{{- if or (.HasCall "su_waveshaper") (.HasOp "distort")}}
+{{- if .HasOp "distort"}}
+su_waveshaper:
+{{- else}}
+{{.Func "su_waveshaper"}}
+{{- end}}
+    fld     st0                             ; a a x
+    {{.Prepare (.Float 0.5)}}
+    fsub    dword [{{.Use (.Float 0.5)}}]                 ; a-.5 a x
+    fadd    st0                             ; 2*a-1 a x
+    fld     st2                             ; x 2*a-1 a x
+    fabs                                    ; abs(x) 2*a-1 a x
+    fmulp   st1                             ; (2*a-1)*abs(x) a x
+    fld1                                    ; 1 (2*a-1)*abs(x) a x
+    faddp   st1                             ; 1+(2*a-1)*abs(x) a x
+    fsub    st1                             ; 1-a+(2*a-1)*abs(x) a x
+    fdivp   st1, st0                        ; a/(1-a+(2*a-1)*abs(x)) x
+    fmulp   st1                             ; x*a/(1-a+(2*a-1)*abs(x))
+    ret
+{{end}}
+
 {{- if .HasCall "su_effects_stereohelper" }}
 ;-------------------------------------------------------------------------------
 ;   su_effects_stereohelper: moves the workspace to next, does the filtering for
@@ -143,23 +181,6 @@ su_power:
 su_effects_stereohelper_mono:
     ret                   ; return to process l/mono sound
 
-{{end}}
-
-{{- if .HasCall "su_waveshaper" }}
-{{.Func "su_waveshaper"}}
-    fld     st0                             ; a a x
-    {{.Prepare (.Float 0.5)}}
-    fsub    dword [{{.Use (.Float 0.5)}}]                 ; a-.5 a x
-    fadd    st0                             ; 2*a-1 a x
-    fld     st2                             ; x 2*a-1 a x
-    fabs                                    ; abs(x) 2*a-1 a x
-    fmulp   st1                             ; (2*a-1)*abs(x) a x
-    fld1                                    ; 1 (2*a-1)*abs(x) a x
-    faddp   st1                             ; 1+(2*a-1)*abs(x) a x
-    fsub    st1                             ; 1-a+(2*a-1)*abs(x) a x
-    fdivp   st1, st0                        ; a/(1-a+(2*a-1)*abs(x)) x
-    fmulp   st1                             ; x*a/(1-a+(2*a-1)*abs(x))
-    ret
 {{end}}
 
 {{- if .HasCall "su_clip"}}
