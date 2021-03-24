@@ -361,6 +361,10 @@ su_op_compressor_mono:
     {{.Call "su_nonlinear_map"}}                ; c x^2-l x, c is either attack or release parameter mapped in a nonlinear way
     fmulp   st1, st0                            ; c*(x^2-l) x
     fadd    dword [{{.WRK}}]    ; l+c*(x^2-l) x   // we could've kept level in the stack and save a few bytes, but su_env_map uses 3 stack (c + 2 temp), so the stack was getting quite big.
+    ; TODO: make this denormalization optional, if the user wants to save some space
+    {{- .Float 0.5 | .Prepare | indent 4}}
+    fadd    dword [{{.Float 0.5 | .Use}}]           ; add and sub small offset to prevent denormalization. WARNING: this is highly important, as the damp filters might denormalize and give 100x CPU penalty
+    fsub    dword [{{.Float 0.5 | .Use}}]           ; See for example: https://stackoverflow.com/questions/36781881/why-denormalized-floats-are-so-much-slower-than-other-floats-from-hardware-arch
     fst     dword [{{.WRK}}]    ; l'=l+c*(x^2-l), l' x
     fld     dword [{{.Input "compressor" "threshold"}}] ; t l' x
     fmul    st0, st0                            ; t*t l' x
