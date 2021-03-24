@@ -315,7 +315,7 @@ su_oscillat_gate_bit:                           ; stack: 0/1, let's call it x
 
 {{- if .HasCall "su_oscillat_sample"}}
 {{.Func "su_oscillat_sample"}}
-    {{- .PushRegs .AX "SampleAx" .DX "SampleDx" .CX "SampleCx" .BX "SampleBx" | indent 4}}                              ; edx must be saved, eax & ecx if this is stereo osc
+    {{- .PushRegs .AX "SampleAx" .DX "SampleDx" .CX "SampleCx" .BX "SampleBx" .DI "SampleDi" | indent 4}}                              ; edx must be saved, eax & ecx if this is stereo osc
     push    {{.AX}}
     mov     al, byte [{{.VAL}}-4]                                ; reuse "color" as the sample number
 {{- if .Library}}
@@ -342,7 +342,7 @@ su_oscillat_sample_not_looping:
     fild    word [{{.Use "su_sample_table"}} + {{.DX}}*2]
 {{- .Float 32767.0 | .Prepare | indent 4}}
     fdiv    dword [{{.Float 32767.0 | .Use}}]
-    {{- .PopRegs .AX .DX .CX .BX | indent 4}}
+    {{- .PopRegs .AX .DX .CX .BX .DI | indent 4}}
     ret
 {{end}}
 
