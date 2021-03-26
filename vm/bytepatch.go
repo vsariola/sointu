@@ -42,6 +42,11 @@ func Encode(patch sointu.Patch, featureSet FeatureSet) (*BytePatch, error) {
 	globalAddrs := map[int]uint16{}
 	globalFixups := map[int]([]int){}
 	voiceNo := 0
+	delayTable, delayIndices := constructDelayTimeTable(patch)
+	c.DelayTimes = make([]uint16, len(delayTable))
+	for i := range delayTable {
+		c.DelayTimes[i] = uint16(delayTable[i])
+	}
 	for instrIndex, instr := range patch {
 		if len(instr.Units) > 63 {
 			return nil, errors.New("An instrument can have a maximum of 63 units")
@@ -52,7 +57,7 @@ func Encode(patch sointu.Patch, featureSet FeatureSet) (*BytePatch, error) {
 		localAddrs := map[int]uint16{}
 		localFixups := map[int]([]int){}
 		localUnitNo := 0
-		for _, unit := range instr.Units {
+		for unitIndex, unit := range instr.Units {
 			if unit.Type == "" { // empty units are just ignored & skipped
 				continue
 			}
@@ -167,28 +172,7 @@ func Encode(patch sointu.Patch, featureSet FeatureSet) (*BytePatch, error) {
 					continue // skip encoding delays without any delay lines
 				}
 				countTrack := count*2 - 1 + unit.Parameters["notetracking"] // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
-				matchIndex := -1
-				for i := 0; i <= len(c.DelayTimes)-len(unit.VarArgs); i++ {
-					match := true
-					for j, v := range unit.VarArgs {
-						if uint16(v) != c.DelayTimes[i+j] {
-							match = false
-							break
-						}
-					}
-					if match {
-						matchIndex = i
-						break
-					}
-				}
-				if matchIndex > -1 {
-					values = append(values, byte(matchIndex), byte(countTrack))
-				} else {
-					values = append(values, byte(len(c.DelayTimes)), byte(countTrack))
-					for _, v := range unit.VarArgs {
-						c.DelayTimes = append(c.DelayTimes, uint16(v))
-					}
-				}
+				values = append(values, byte(delayIndices[instrIndex][unitIndex]), byte(countTrack))
 			}
 			c.Commands = append(c.Commands, byte(opcode+unit.Parameters["stereo"]))
 			c.Values = append(c.Values, values...)
