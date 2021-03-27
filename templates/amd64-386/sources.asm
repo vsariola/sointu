@@ -86,8 +86,7 @@ su_op_noise_mono:
     fidiv   dword [{{.Use (.Int 2147483648)}}] ; 65536*32768
     fld     dword [{{.Input "noise" "shape"}}]
     {{.Call "su_waveshaper"}}
-    fld     dword [{{.Input "noise" "gain"}}]
-    fmulp   st1, st0
+    fmul    dword [{{.Input "noise" "gain"}}]
     ret
 {{end}}
 
@@ -233,8 +232,7 @@ su_op_oscillat_shaping:
     fld     dword [{{.Input "oscillator" "shape"}}]
     {{.Call "su_waveshaper"}}
 su_op_oscillat_gain:
-    fld     dword [{{.Input "oscillator" "gain"}}]
-    fmulp   st1, st0
+    fmul    dword [{{.Input "oscillator" "gain"}}]
     ret
 {{end}}
 
