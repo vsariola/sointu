@@ -91,7 +91,7 @@ su_op_aux_mono:
     mov     {{.CX}}, [{{.Stack "Voice"}}]  ; load pointer to voice
 {{- if .SupportsGlobalSend}}
     pushf   ; uh ugly: we save the flags just for the stereo carry bit. Doing the .CX loading later crashed the synth for stereo sends as loading the synth address from stack was f'd up by the "call su_op_send_mono"
-    test    {{.AX}}, 0x8000
+    test    ah, 0x80
     jz      su_op_send_skipglobal
     mov     {{.CX}}, [{{.Stack "Synth"}} + {{.PTRSIZE}}]
 su_op_send_skipglobal:
@@ -106,12 +106,12 @@ su_op_send_skipglobal:
     fxch                        ; r l
     call    su_op_send_mono     ; (r) l
     mov     {{.AX}}, {{.DI}}            ; move back to original address
-    test    {{.AX}}, 0x8    ; if r was not popped and is still in the stack
+    test    al, 0x8             ; if r was not popped and is still in the stack
     jnz     su_op_send_mono
     fxch                        ; swap them back: l r
 su_op_send_mono:
 {{- end}}
-    test    {{.AX}}, 0x8        ; if the SEND_POP bit is not set
+    test    al, 0x8             ; if the SEND_POP bit is not set
     jnz     su_op_send_skippush
     fld     st0                 ; duplicate the signal on stack: s s
 su_op_send_skippush:            ; there is signal s, but maybe also another: s (s)
