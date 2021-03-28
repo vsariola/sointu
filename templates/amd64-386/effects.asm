@@ -111,7 +111,7 @@ su_op_invgain_mono:
     fld     dword [{{.Input "filter" "resonance"}}] ; r x
     fld     dword [{{.Input "filter" "frequency"}}]; f r x
     fmul    st0, st0                        ; f2 x (square the input so we never get negative and also have a smoother behaviour in the lower frequencies)
-    fst     dword [{{.SP}}-4]                   ; f2 r x
+    fst     dword [{{.WRK}}+12]                   ; f2 r x
     fmul    dword [{{.WRK}}+8]  ; f2*b r x
     fadd    dword [{{.WRK}}]   ; f2*b+l r x
     fst     dword [{{.WRK}}]   ; l'=f2*b+l r x
@@ -119,7 +119,7 @@ su_op_invgain_mono:
     fmul    dword [{{.WRK}}+8]  ; r*b x-l'
     fsubp   st1, st0                        ; x-l'-r*b
     fst     dword [{{.WRK}}+4]  ; h'=x-l'-r*b
-    fmul    dword [{{.SP}}-4]                   ; f2*h'
+    fmul    dword [{{.WRK}}+12]                   ; f2*h'
     fadd    dword [{{.WRK}}+8]  ; f2*h'+b
     fstp    dword [{{.WRK}}+8]  ; b'=f2*h'+b
     fldz                                    ; 0
