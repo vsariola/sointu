@@ -29,6 +29,7 @@ su_run_vm_loop:                                     ; loop until all voices done
     shr     edi, 1                                  ; shift out the LSB bit = stereo bit
     je      su_run_vm_advance                ; the opcode is zero, jump to advance
     mov     {{.INP}}, [{{.Stack "Voice"}}]         ; reset INP to point to the inputs part of voice
+    pushf                                          ; push flags to save carry = stereo bit
     add     {{.INP}}, su_voice.inputs
     xor     ecx, ecx                                ; counter = 0
     xor     eax, eax                                ; clear out high bits of eax, as lodsb only sets al
@@ -49,7 +50,7 @@ su_transform_values_loop:
     inc     ecx
     jmp     su_transform_values_loop
 su_transform_values_out:
-    bt      dword [{{.COM}}-1],0                         ; LSB of COM = stereo bit => carry
+    popf                                          ; pop flags for the carry bit = stereo bit
     {{- .SaveStack "Opcode"}}
     {{- $x := printf "su_vm_jumptable-%v" .PTRSIZE}}
     {{- .Prepare $x | indent 4}}
