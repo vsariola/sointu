@@ -10,18 +10,18 @@
 {{- end}}
 ;-------------------------------------------------------------------------------
 {{.Func "su_op_out" "Opcode"}}   ; l r
-    mov     {{.AX}}, [{{.Stack "Synth"}}] ; AX points to the synth object
+    mov     {{.DI}}, [{{.Stack "Synth"}}] ; DI points to the synth object, use DI consistently in sinks/sources presumably to increase compression rate
 {{- if .StereoAndMono "out" }}
     jnc     su_op_out_mono
 {{- end }}
 {{- if .Stereo "out" }}
     call    su_op_out_mono
-    add     {{.AX}}, 4 ; shift from left to right channel
+    add     {{.DI}}, 4 ; shift from left to right channel
 su_op_out_mono:
 {{- end}}
     fmul    dword [{{.Input "out" "gain"}}] ; multiply by gain
-    fadd    dword [{{.AX}} + su_synthworkspace.left]   ; add current value of the output
-    fstp    dword [{{.AX}} + su_synthworkspace.left]   ; store the new value of the output
+    fadd    dword [{{.DI}} + su_synthworkspace.left]   ; add current value of the output
+    fstp    dword [{{.DI}} + su_synthworkspace.left]   ; store the new value of the output
     ret
 {{end}}
 
@@ -34,22 +34,22 @@ su_op_out_mono:
 ;   Stereo: also add outgain*ST1 to main right port and auxgain*ST1 to aux1 right
 ;-------------------------------------------------------------------------------
 {{.Func "su_op_outaux" "Opcode"}} ; l r
-    mov     {{.AX}}, [{{.Stack "Synth"}}]
+    mov     {{.DI}}, [{{.Stack "Synth"}}]
 {{- if .StereoAndMono "outaux" }}
     jnc     su_op_outaux_mono
 {{- end}}
 {{- if .Stereo "outaux" }}
     call    su_op_outaux_mono
-    add     {{.AX}}, 4
+    add     {{.DI}}, 4
 su_op_outaux_mono:
 {{- end}}
     fld     st0                                     ; l l
     fmul    dword [{{.Input "outaux" "outgain"}}]   ; g*l
-    fadd    dword [{{.AX}} + su_synthworkspace.left]             ; g*l+o
-    fstp    dword [{{.AX}} + su_synthworkspace.left]             ; o'=g*l+o
+    fadd    dword [{{.DI}} + su_synthworkspace.left]             ; g*l+o
+    fstp    dword [{{.DI}} + su_synthworkspace.left]             ; o'=g*l+o
     fmul    dword [{{.Input "outaux" "auxgain"}}]   ; h*l
-    fadd    dword [{{.AX}} + su_synthworkspace.aux]              ; h*l+a
-    fstp    dword [{{.AX}} + su_synthworkspace.aux]              ; a'=h*l+a
+    fadd    dword [{{.DI}} + su_synthworkspace.aux]              ; h*l+a
+    fstp    dword [{{.DI}} + su_synthworkspace.aux]              ; a'=h*l+a
     ret
 {{end}}
 
