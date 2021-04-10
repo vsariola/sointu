@@ -94,12 +94,8 @@ func (r *SongRect) Contains(p SongPoint) bool {
 }
 
 func mod(a, b int) int {
-	m := a % b
-	if a < 0 && b < 0 {
-		m -= b
+	if a < 0 {
+		return b - 1 - mod(-a-1, b)
 	}
-	if a < 0 && b > 0 {
-		m += b
-	}
-	return m
+	return a % b
 }
