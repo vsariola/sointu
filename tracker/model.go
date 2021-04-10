@@ -614,6 +614,9 @@ func (m *Model) DeleteSelection() {
 	for r := r1; r <= r2; r++ {
 		s := SongRow{Row: r}.Wrap(m.song.Score)
 		for c := t1; c <= t2; c++ {
+			if len(m.song.Score.Tracks[c].Order) <= s.Pattern {
+				continue
+			}
 			p := m.song.Score.Tracks[c].Order[s.Pattern]
 			if p < 0 {
 				continue
