@@ -12,6 +12,7 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"github.com/vsariola/sointu/tracker"
 )
@@ -43,6 +44,31 @@ func (t *Tracker) layoutPatterns(gtx C) D {
 		Corner1: tracker.SongPoint{SongRow: tracker.SongRow{Pattern: t.Cursor().Pattern}, Track: t.Cursor().Track},
 		Corner2: tracker.SongPoint{SongRow: tracker.SongRow{Pattern: t.SelectionCorner().Pattern}, Track: t.SelectionCorner().Track},
 	}
+
+	// draw the single letter titles for tracks
+	{
+		gtx := gtx
+		curVoice := 0
+		stack := op.Save(gtx.Ops)
+		op.Offset(f32.Pt(patternRowMarkerWidth, 0)).Add(gtx.Ops)
+		gtx.Constraints = layout.Exact(image.Pt(patternCellWidth, patternCellHeight))
+		for _, track := range t.Song().Score.Tracks {
+			instr, err := t.Song().Patch.InstrumentForVoice(curVoice)
+			var title string
+			if err == nil && len(t.Song().Patch[instr].Name) > 0 {
+				title = string(t.Song().Patch[instr].Name[0])
+			} else {
+				title = "I"
+			}
+			LabelStyle{Alignment: layout.N, Text: title, FontSize: unit.Dp(12), Color: mediumEmphasisTextColor}.Layout(gtx)
+			op.Offset(f32.Pt(patternCellWidth, 0)).Add(gtx.Ops)
+			curVoice += track.NumVoices
+		}
+		stack.Load()
+	}
+	op.Offset(f32.Pt(0, patternCellHeight)).Add(gtx.Ops)
+	gtx.Constraints.Max.Y -= patternCellHeight
+	gtx.Constraints.Min.Y -= patternCellHeight
 	for j := 0; j < t.Song().Score.Length; j++ {
 		if playPos, ok := t.player.Position(); ok && j == playPos.Pattern {
 			paint.FillShape(gtx.Ops, patternPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, patternCellHeight)}.Op())
