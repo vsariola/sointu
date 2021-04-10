@@ -59,6 +59,8 @@ type Tracker struct {
 	StackUse              []int
 	KeyPlaying            map[string]uint32
 	Alert                 Alert
+	PatternOrderList      *layout.List
+	PatternOrderScrollBar *ScrollBar
 
 	lastVolume tracker.Volume
 	volumeChan chan tracker.Volume
@@ -146,6 +148,8 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 		KeyPlaying:            make(map[string]uint32),
 		volumeChan:            make(chan tracker.Volume, 1),
 		playerCloser:          make(chan struct{}),
+		PatternOrderList:      &layout.List{Axis: layout.Vertical},
+		PatternOrderScrollBar: &ScrollBar{Axis: layout.Vertical},
 	}
 	t.Model = tracker.NewModel()
 	vuBufferObserver := make(chan []float32)

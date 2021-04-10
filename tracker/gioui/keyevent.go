@@ -241,6 +241,7 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 			if !e.Modifiers.Contain(key.ModShift) {
 				t.SetSelectionCorner(t.Cursor())
 			}
+			scrollToView(t.PatternOrderList, t.Cursor().Pattern, t.Song().Score.Length)
 			return true
 		case key.NameDownArrow:
 			cursor := t.Cursor()
@@ -272,6 +273,7 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 			if !e.Modifiers.Contain(key.ModShift) {
 				t.SetSelectionCorner(t.Cursor())
 			}
+			scrollToView(t.PatternOrderList, t.Cursor().Pattern, t.Song().Score.Length)
 			return true
 		case key.NameLeftArrow:
 			cursor := t.Cursor()

@@ -69,7 +69,7 @@ func (t *Tracker) layoutPatterns(gtx C) D {
 	op.Offset(f32.Pt(0, patternCellHeight)).Add(gtx.Ops)
 	gtx.Constraints.Max.Y -= patternCellHeight
 	gtx.Constraints.Min.Y -= patternCellHeight
-	for j := 0; j < t.Song().Score.Length; j++ {
+	element := func(gtx C, j int) D {
 		if playPos, ok := t.player.Position(); ok && j == playPos.Pattern {
 			paint.FillShape(gtx.Ops, patternPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, patternCellHeight)}.Op())
 		}
@@ -80,7 +80,7 @@ func (t *Tracker) layoutPatterns(gtx C) D {
 		for i, track := range t.Song().Score.Tracks {
 			paint.FillShape(gtx.Ops, patternCellColor, clip.Rect{Min: image.Pt(1, 1), Max: image.Pt(patternCellWidth-1, patternCellHeight-1)}.Op())
 			paint.ColorOp{Color: patternTextColor}.Add(gtx.Ops)
-			if j < len(track.Order) && track.Order[j] >= 0 {
+			if j >= 0 && j < len(track.Order) && track.Order[j] >= 0 {
 				gtx := gtx
 				gtx.Constraints.Max.X = patternCellWidth
 				op.Offset(f32.Pt(0, -2)).Add(gtx.Ops)
@@ -103,9 +103,16 @@ func (t *Tracker) layoutPatterns(gtx C) D {
 			op.Offset(f32.Pt(patternCellWidth, 0)).Add(gtx.Ops)
 		}
 		stack.Load()
-		op.Offset(f32.Pt(0, patternCellHeight)).Add(gtx.Ops)
+		return D{Size: image.Pt(gtx.Constraints.Max.X, patternCellHeight)}
 	}
-	return layout.Dimensions{Size: gtx.Constraints.Max}
+	return layout.Stack{Alignment: layout.NE}.Layout(gtx,
+		layout.Expanded(func(gtx C) D {
+			return t.PatternOrderList.Layout(gtx, t.Song().Score.Length, element)
+		}),
+		layout.Expanded(func(gtx C) D {
+			return t.PatternOrderScrollBar.Layout(gtx, unit.Dp(10), t.Song().Score.Length, &t.PatternOrderList.Position)
+		}),
+	)
 }
 
 func patternIndexToString(index int) string {

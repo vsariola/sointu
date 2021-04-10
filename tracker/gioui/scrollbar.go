@@ -126,3 +126,28 @@ func (s *ScrollBar) Layout(gtx C, width unit.Value, numItems int, pos *layout.Po
 
 	return D{Size: gtx.Constraints.Min}
 }
+
+func scrollToView(l *layout.List, index int, length int) {
+	pmin := index + 2 - l.Position.Count
+	pmax := index - 1
+	if pmin < 0 {
+		pmin = 0
+	}
+	if pmax < 0 {
+		pmax = 0
+	}
+	m := length - 1
+	if pmin > m {
+		pmin = m
+	}
+	if pmax > m {
+		pmax = m
+	}
+	if l.Position.First > pmax {
+		l.Position.First = pmax
+		l.Position.Offset = 0
+	}
+	if l.Position.First < pmin {
+		l.Position.First = pmin
+	}
+}
