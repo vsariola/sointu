@@ -56,9 +56,17 @@ func main() {
 				fmt.Print(contents)
 				return nil
 			}
-			dir, name := filepath.Split(filename)
+			_, name := filepath.Split(filename)
+			var dir string
 			if *directory != "" {
 				dir = *directory
+			}
+			if dir == "" {
+				var err error
+				dir, err = os.Getwd()
+				if err != nil {
+					return fmt.Errorf("could not get working directory, specify the output directory explicitly: %v", err)
+				}
 			}
 			name = strings.TrimSuffix(name, filepath.Ext(name)) + extension
 			f := filepath.Join(dir, name)

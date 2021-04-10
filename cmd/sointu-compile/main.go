@@ -68,7 +68,8 @@ func main() {
 			fmt.Print(string(contents))
 			return nil
 		}
-		dir, name := filepath.Split(filename)
+		_, name := filepath.Split(filename)
+		var dir string
 		if *outPath != "" {
 			// check if it's an already existing directory and the user just forgot trailing slash
 			if info, err := os.Stat(*outPath); err == nil && info.IsDir() {
@@ -81,6 +82,13 @@ func main() {
 				if outname != "" {
 					name = outname
 				}
+			}
+		}
+		if dir == "" {
+			var err error
+			dir, err = os.Getwd()
+			if err != nil {
+				return fmt.Errorf("could not get working directory, specify the output directory explicitly: %v", err)
 			}
 		}
 		name = strings.TrimSuffix(name, filepath.Ext(name)) + extension
