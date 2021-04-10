@@ -35,6 +35,7 @@ int main(int argc, char* argv[]) {
 
     if (argc < 2) {
         fprintf(stderr, "usage: [test] path/to/expected_wave.raw");
+        return 1;
     }
 
     #ifdef SU_LOAD_GMDLS
