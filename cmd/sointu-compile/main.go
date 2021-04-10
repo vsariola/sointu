@@ -40,9 +40,9 @@ func main() {
 	tmplDir := flag.String("t", "", "When compiling, use the templates in this directory instead of the standard templates.")
 	outPath := flag.String("o", "", "Directory or filename where to write compiled code. Extension is ignored. Directory and its parents are created if needed. By default, everything is placed in the same directory where the original song file is.")
 	extensionsOut := flag.String("e", "", "Output only the compiled files with these comma separated extensions. For example: h,asm")
-	targetArch := flag.String("arch", runtime.GOARCH, "Target architecture. Defaults to OS architecture. Possible values: 386, amd64")
+	targetArch := flag.String("arch", runtime.GOARCH, "Target architecture. Defaults to OS architecture. Possible values: 386, amd64, wasm")
 	output16bit := flag.Bool("i", false, "Compiled song should output 16-bit integers, instead of floats.")
-	targetOs := flag.String("os", runtime.GOOS, "Target OS. Defaults to current OS. Possible values: windows, darwin, linux. Anything else is assumed linuxy.")
+	targetOs := flag.String("os", runtime.GOOS, "Target OS. Defaults to current OS. Possible values: windows, darwin, linux. Anything else is assumed linuxy. Ignored when targeting wasm.")
 	flag.Usage = printUsage
 	flag.Parse()
 	if (flag.NArg() == 0 && !*library) || *help {
