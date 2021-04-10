@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
     f = fopen(argv[1], "rb");
 
     if (f == NULL) {
-        printf("No expected waveform found!\n");
+        fprintf(stderr, "No expected waveform found!\n");
         goto fail;
     }
 
@@ -73,12 +73,12 @@ int main(int argc, char* argv[]) {
     fseek(f, 0, SEEK_SET);
 
     if (SU_BUFFER_LENGTH * sizeof(SUsample) < fsize) {
-        printf("Sointu rendered shorter wave than expected\n");
+        fprintf(stderr, "Sointu rendered shorter wave than expected\n");
         goto fail;
     }
 
     if (SU_BUFFER_LENGTH * sizeof(SUsample) > fsize) {
-        printf("Sointu rendered longer wave than expected\n");
+        fprintf(stderr, "Sointu rendered longer wave than expected\n");
         goto fail;
     }
 
@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
     for (n = 0; n < SU_BUFFER_LENGTH; n++) {
         diff = (float)fabs((float)(buf[n] - filebuf[n])/SU_SAMPLE_RANGE);
         if (diff > 1e-3f || isnan(diff)) {
-            printf("Sointu rendered different wave than expected\n");
+            fprintf(stderr, "Sointu rendered different wave than expected\n");
             goto fail;
         }
 
@@ -101,14 +101,14 @@ int main(int argc, char* argv[]) {
     }
 
     if (max_diff > 1e-6) {
-        printf("Warning: Sointu rendered almost correct wave, but a small maximum error of %f\n",max_diff);        
+        fprintf(stderr, "Warning: Sointu rendered almost correct wave, but a small maximum error of %f\n",max_diff);
     }
 
 #ifdef SU_SYNC
     f = fopen(argv[2], "rb");
 
     if (f == NULL) {
-        printf("No expected sync waveform found!\n");
+        fprintf(stderr, "No expected sync waveform found!\n");
         goto fail;
     }
 
@@ -117,12 +117,12 @@ int main(int argc, char* argv[]) {
     fseek(f, 0, SEEK_SET);
 
     if (SU_SYNCBUFFER_LENGTH * sizeof(float) < fsize) {
-        printf("Sointu rendered shorter sync wave than expected\n");
+        fprintf(stderr, "Sointu rendered shorter sync wave than expected\n");
         goto fail;
     }
 
     if (SU_SYNCBUFFER_LENGTH * sizeof(float) > fsize) {
-        printf("Sointu rendered longer sync wave than expected\n");
+        fprintf(stderr, "Sointu rendered longer sync wave than expected\n");
         goto fail;
     }
 
@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
     for (n = 0; n < SU_SYNCBUFFER_LENGTH; n++) {
         diff = (float)fabs(syncBuf[n] - fileSyncBuf[n]);
         if (diff > 1e-3f || isnan(diff)) {
-            printf("Sointu rendered different sync wave than expected\n");
+            fprintf(stderr, "Sointu rendered different sync wave than expected\n");
             goto fail;
         }
     }
