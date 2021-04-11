@@ -3,6 +3,8 @@ package gioui
 import (
 	"fmt"
 	"image"
+	"image/color"
+	"math"
 	"strconv"
 	"time"
 
@@ -129,6 +131,21 @@ func (t *Tracker) layoutInstrumentNames(gtx C) D {
 			grabhandle.Text = ":::"
 		}
 		label := func(gtx C) D {
+			c := 0.0
+			voice := t.Song().Patch.FirstVoiceForInstrument(i)
+			for j := 0; j < t.Song().Patch[i].NumVoices; j++ {
+				released, event := t.player.VoiceState(voice)
+				vc := math.Exp(-float64(event)/15000) * .5
+				if !released {
+					vc += .5
+				}
+				if c < vc {
+					c = vc
+				}
+				voice++
+			}
+			k := byte(255 - c*127)
+			color := color.NRGBA{R: 255, G: k, B: 255, A: 255}
 			if i == t.InstrIndex() {
 				for _, ev := range t.InstrumentNameEditor.Events() {
 					_, ok := ev.(widget.SubmitEvent)
@@ -141,7 +158,7 @@ func (t *Tracker) layoutInstrumentNames(gtx C) D {
 					t.InstrumentNameEditor.SetText(n)
 				}
 				editor := material.Editor(t.Theme, t.InstrumentNameEditor, "Instr")
-				editor.Color = instrumentNameColor
+				editor.Color = color
 				editor.HintColor = instrumentNameHintColor
 				editor.TextSize = unit.Dp(12)
 				dims := layout.Center.Layout(gtx, editor.Layout)
@@ -152,7 +169,7 @@ func (t *Tracker) layoutInstrumentNames(gtx C) D {
 			if text == "" {
 				text = "Instr"
 			}
-			labelStyle := LabelStyle{Text: text, ShadeColor: black, Color: white, FontSize: unit.Sp(12)}
+			labelStyle := LabelStyle{Text: text, ShadeColor: black, Color: color, FontSize: unit.Sp(12)}
 			return layout.Center.Layout(gtx, labelStyle.Layout)
 		}
 		return layout.Inset{Left: unit.Dp(6), Right: unit.Dp(6)}.Layout(gtx, func(gtx C) D {

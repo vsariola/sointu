@@ -13,12 +13,13 @@ type Player struct {
 
 	playCmds chan uint64
 
-	mutex         sync.Mutex
-	runningID     uint32
-	voiceNoteID   []uint32
-	voiceReleased []bool
-	synth         sointu.Synth
-	patch         sointu.Patch
+	mutex             sync.Mutex
+	runningID         uint32
+	voiceNoteID       []uint32
+	voiceReleased     []int32
+	synth             sointu.Synth
+	patch             sointu.Patch
+	samplesSinceEvent []int32
 
 	synthNotNil int32
 }
@@ -64,6 +65,13 @@ func (p *Player) Disable() {
 
 func (p *Player) Enabled() bool {
 	return atomic.LoadInt32(&p.synthNotNil) == 1
+}
+
+func (p *Player) VoiceState(voice int) (bool, int) {
+	if voice >= len(p.samplesSinceEvent) || voice >= len(p.voiceReleased) {
+		return true, math.MaxInt32
+	}
+	return atomic.LoadInt32(&p.voiceReleased[voice]) == 1, int(atomic.LoadInt32(&p.samplesSinceEvent[voice]))
 }
 
 func NewPlayer(service sointu.SynthService, closer <-chan struct{}, patchs <-chan sointu.Patch, scores <-chan sointu.Score, samplesPerRows <-chan int, posChanged chan<- struct{}, syncOutput chan<- []float32, outputs ...chan<- []float32) *Player {
@@ -189,6 +197,9 @@ func NewPlayer(service sointu.SynthService, closer <-chan struct{}, patchs <-cha
 						default:
 						}
 					}
+					for i := range p.samplesSinceEvent {
+						atomic.AddInt32(&p.samplesSinceEvent[i], int32(timeAdvanced))
+					}
 					for _, o := range outputs {
 						o <- buffer[:rendered*2]
 					}
@@ -243,7 +254,10 @@ func (p *Player) trigger(voiceStart, voiceEnd int, note byte) uint32 {
 	oldestVoice := 0
 	for i := voiceStart; i < voiceEnd; i++ {
 		for len(p.voiceReleased) <= i {
-			p.voiceReleased = append(p.voiceReleased, true)
+			p.voiceReleased = append(p.voiceReleased, 1)
+		}
+		for len(p.samplesSinceEvent) <= i {
+			p.samplesSinceEvent = append(p.samplesSinceEvent, 0)
 		}
 		for len(p.voiceNoteID) <= i {
 			p.voiceNoteID = append(p.voiceNoteID, 0)
@@ -253,7 +267,7 @@ func (p *Player) trigger(voiceStart, voiceEnd int, note byte) uint32 {
 		// case two voices are both playing or or both are released, we prefer
 		// the older one
 		id := p.voiceNoteID[i]
-		isReleased := p.voiceReleased[i]
+		isReleased := atomic.LoadInt32(&p.voiceReleased[i]) == 1
 		if id < oldestID && (oldestReleased == isReleased) || (!oldestReleased && isReleased) {
 			oldestVoice = i
 			oldestID = id
@@ -261,7 +275,8 @@ func (p *Player) trigger(voiceStart, voiceEnd int, note byte) uint32 {
 		}
 	}
 	p.voiceNoteID[oldestVoice] = newID
-	p.voiceReleased[oldestVoice] = false
+	atomic.StoreInt32(&p.voiceReleased[oldestVoice], 0)
+	atomic.StoreInt32(&p.samplesSinceEvent[oldestVoice], 0)
 	if p.synth != nil {
 		p.synth.Trigger(oldestVoice, note)
 	}
@@ -273,8 +288,9 @@ func (p *Player) release(ID uint32) {
 		return
 	}
 	for i := 0; i < len(p.voiceNoteID); i++ {
-		if p.voiceNoteID[i] == ID && !p.voiceReleased[i] {
-			p.voiceReleased[i] = true
+		if p.voiceNoteID[i] == ID && atomic.LoadInt32(&p.voiceReleased[i]) != 1 {
+			atomic.StoreInt32(&p.voiceReleased[i], 1)
+			atomic.StoreInt32(&p.samplesSinceEvent[i], 0)
 			p.synth.Release(i)
 			return
 		}
