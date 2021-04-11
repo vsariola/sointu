@@ -18,6 +18,8 @@ func (t *Tracker) Layout(gtx layout.Context) {
 		t.layoutTop,
 		t.layoutBottom)
 	t.Alert.Layout(gtx)
+	dstyle := ConfirmDialog(t.Theme, t.ConfirmInstrDelete, "Are you sure you want to delete this instrument?")
+	dstyle.Layout(gtx)
 }
 
 func (t *Tracker) layoutBottom(gtx layout.Context) layout.Dimensions {

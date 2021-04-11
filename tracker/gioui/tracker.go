@@ -61,6 +61,7 @@ type Tracker struct {
 	Alert                 Alert
 	PatternOrderList      *layout.List
 	PatternOrderScrollBar *ScrollBar
+	ConfirmInstrDelete    *Dialog
 
 	lastVolume tracker.Volume
 	volumeChan chan tracker.Volume
@@ -150,6 +151,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 		playerCloser:          make(chan struct{}),
 		PatternOrderList:      &layout.List{Axis: layout.Vertical},
 		PatternOrderScrollBar: &ScrollBar{Axis: layout.Vertical},
+		ConfirmInstrDelete:    new(Dialog),
 	}
 	t.Model = tracker.NewModel()
 	vuBufferObserver := make(chan []float32)

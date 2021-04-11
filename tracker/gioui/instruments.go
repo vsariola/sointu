@@ -108,7 +108,14 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 		}
 	}
 	for t.DeleteInstrumentBtn.Clicked() {
+		t.ConfirmInstrDelete.Visible = true
+	}
+	for t.ConfirmInstrDelete.BtnOk.Clicked() {
 		t.DeleteInstrument(false)
+		t.ConfirmInstrDelete.Visible = false
+	}
+	for t.ConfirmInstrDelete.BtnCancel.Clicked() {
+		t.ConfirmInstrDelete.Visible = false
 	}
 	return Surface{Gray: 37, Focus: t.EditMode() == tracker.EditUnits || t.EditMode() == tracker.EditParameters}.Layout(gtx, header)
 }
