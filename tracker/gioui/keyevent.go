@@ -379,18 +379,22 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 				return true
 			}
 		case tracker.EditTracks:
+			step := false
 			if t.Song().Score.Tracks[t.Cursor().Track].Effect {
 				if iv, err := strconv.ParseInt(e.Name, 16, 8); err == nil {
 					t.NumberPressed(byte(iv))
+					step = true
 				}
 			} else {
 				if e.Name == "A" || e.Name == "1" {
 					t.SetNote(0)
+					step = true
 				} else {
 					if val, ok := noteMap[e.Name]; ok {
 						if _, ok := t.KeyPlaying[e.Name]; !ok {
 							n := tracker.NoteAsValue(t.OctaveNumberInput.Value, val)
 							t.SetNote(n)
+							step = true
 							trk := t.Cursor().Track
 							start := t.Song().Score.FirstVoiceForTrack(trk)
 							end := start + t.Song().Score.Tracks[trk].NumVoices
@@ -399,7 +403,7 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 					}
 				}
 			}
-			if !(t.NoteTracking() && t.player.Playing()) && t.Step.Value > 0 {
+			if step && !(t.NoteTracking() && t.player.Playing()) && t.Step.Value > 0 {
 				t.SetCursor(t.Cursor().AddRows(t.Step.Value))
 				t.SetSelectionCorner(t.Cursor())
 			}
