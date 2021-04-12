@@ -131,6 +131,14 @@ func NewPlayer(service sointu.SynthService, closer <-chan struct{}, patchs <-cha
 						p.release(id)
 					}
 					p.mutex.Unlock()
+				} else {
+					p.mutex.Lock()
+					for i, t := range score.Tracks {
+						if !t.Effect && i < len(trackIDs) { // when starting to play from another position, release only non-effect tracks
+							p.release(trackIDs[i])
+						}
+					}
+					p.mutex.Unlock()
 				}
 				rowTime = math.MaxInt32
 			default:
