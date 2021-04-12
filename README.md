@@ -14,14 +14,14 @@ Summary
 
 Sointu is work-in-progress. It is a fork and an evolution of
 [4klang](https://github.com/hzdgopher/4klang), a modular software synthesizer
-intended to easily produce music for 4k intros-small executables with a maximum
-filesize of 4096 bytes containing realtime audio and visuals. Like 4klang, the
-sound is produced by a virtual machine that executes small bytecode to produce
-the audio; however, by now the internal virtual machine has been heavily
-rewritten and extended. It is actually extended so much that you will never fit
-all the features at the same time in a 4k intro, but a fairly capable synthesis
-engine can already be fitted in 600 bytes (386, compressed), with another few
-hundred bytes for the patch and pattern data.
+intended to easily produce music for 4k intros &mdash; small executables with a
+maximum filesize of 4096 bytes containing realtime audio and visuals. Like
+4klang, the sound is produced by a virtual machine that executes small bytecode
+to produce the audio; however, by now the internal virtual machine has been
+heavily rewritten and extended. It is actually extended so much that you will
+never fit all the features at the same time in a 4k intro, but a fairly capable
+synthesis engine can already be fitted in 600 bytes (386, compressed), with
+another few hundred bytes for the patch and pattern data.
 
 Sointu consists of two core elements:
 - A cross-platform synth-tracker app for composing music, written in
@@ -144,13 +144,12 @@ either Debug or Release and either x86 or x64 build, and hit build all.
 
 ### Native bridge & sointu-nativetrack
 
-The native bridge allows the Go call the sointu compiled virtual machine,
-through cgo, instead of using the Go written bytecode interpreter. It's likely
-slightly faster than the interpreter. The command line interface to the tracker
-version using the native bridge is
-[sointu-nativetrack](cmd/sointu-nativetrack/). Before you can actually run it,
-you need to build the bridge using CMake (thus, the nativetrack does not work
-with go get)
+The native bridge allows Go to call the sointu compiled virtual machine, through
+cgo, instead of using the Go written bytecode interpreter. It's likely slightly
+faster than the interpreter. The version of the tracker that uses the native
+bridge is [sointu-nativetrack](cmd/sointu-nativetrack/). Before you can actually
+run it, you need to build the bridge using CMake (thus, the nativetrack does not
+work with go get)
 
 Building the native bridge requires:
 - [go](https://golang.org/)
@@ -165,9 +164,9 @@ The last point is because the command line player and the tracker use
 compiled into a library. The cgo bridge resides in the package
 [bridge](vm/compiler/bridge/).
 
-A critical thing here is that *you must build the library inside a directory
-called build at the root of the project*. This is because the path where cgo
-looks for the library is hard coded to point to build/ in the go files.
+> :warning: *you must build the library inside a directory called 'build' at the
+> root of the project*. This is because the path where cgo looks for the library
+> is hard coded to point to build/ in the go files.
 
 So, to build the library, run (this example is using
 [ninja](https://ninja-build.org/) for the build; adapt for other build tools
@@ -180,10 +179,10 @@ cmake .. -GNinja
 ninja sointu
 ```
 
-Running `ninja sointu` only builds the static library that go needs. This
-is a lot faster than building all the CTests.
+Running `ninja sointu` only builds the static library that Go needs. This is a
+lot faster than building all the CTests.
 
-You and now run all the go tests, even the ones that test the native bridge.
+You and now run all the Go tests, even the ones that test the native bridge.
 From the project root folder, run:
 
 ```
@@ -201,13 +200,14 @@ go run cmd/sointu-nativetrack/main.go
 ```
 
 > :warning: **If you are using MinGW and Yasm**: Yasm 1.3.0 (currently still the
-latest stable release) and GNU linker do not play nicely along, trashing the BSS
-layout. See
-[here](https://tortall.lighthouseapp.com/projects/78676/tickets/274-bss-problem-with-windows-win64)
-and the fix
-[here](https://github.com/yasm/yasm/commit/1910e914792399137dec0b047c59965207245df5).
-Use a newer nightly build of yasm that includes the fix. The linker had placed
-our synth object overlapping with DLL call addresses; very funny stuff to debug.
+> latest stable release) and GNU linker do not play nicely along, trashing the
+> BSS layout. See
+> [here](https://tortall.lighthouseapp.com/projects/78676/tickets/274-bss-problem-with-windows-win64)
+> and the fix
+> [here](https://github.com/yasm/yasm/commit/1910e914792399137dec0b047c59965207245df5).
+> Use a newer nightly build of yasm that includes the fix. The linker had placed
+> our synth object overlapping with DLL call addresses; very funny stuff to
+> debug.
 
 > :warning: The sointu-nativetrack cannot be used with the syncs at the moment.
 > For syncs, use the Go VM (sointu-track).
@@ -219,6 +219,8 @@ These are automatically invoked by CTest if [node](https://nodejs.org) and
 
 New features since fork
 -----------------------
+  - **New units**. For example: bit-crusher, gain, inverse gain, clip, modulate
+    bpm (proper triplets!), compressor (can be used for side-chaining).
   - **Compiler**. Written in go. The input is a .yml file and the output is an
     .asm. It works by inputting the song data to the excellent go
     `text/template` package, effectively working as a preprocessor. This allows
@@ -235,16 +237,14 @@ New features since fork
     of the core, written in WebAssembly text format (.wat).
   - **Supports Windows, Linux and MacOS**. On all three 64-bit platforms, all
     tests are passing. Additionally, all tests are passing on windows 32.
-  - **New units**. For example: bit-crusher, gain, inverse gain, clip, modulate
-    bpm (proper triplets!), compressor (can be used for side-chaining).
   - **Per instrument polyphonism**. An instrument has the possibility to have
-    any number of voices, meaning in practice that multiple voices can reuse the
-    same opcodes. So, you can have a single instrument with three voices, and
-    three tracks that use this instrument, to make chords. See
+    any number of voices, meaning that multiple voices can reuse the same
+    opcodes. So, you can have a single instrument with three voices, and three
+    tracks that use this instrument, to make chords. See
     [here](tests/test_chords.yml) for an example and
     [here](templates/amd64-386/patch.asm) for the implementation. The maximum
-    total number of voices will be 32: you can have 32 monophonic instruments or
-    any combination of polyphonic instruments adding up to 32.
+    total number of voices is 32: you can have 32 monophonic instruments or any
+    combination of polyphonic instruments adding up to 32.
   - **Any number of voices per track**. A single track can trigger more than one
     voice. At every note, a new voice from the assigned voices is triggered and
     the previous released. Combined with the previous, you can have a single
@@ -254,12 +254,12 @@ New features since fork
     alternating between these two; maybe useful for example as an easy way to
     alternate between an open and a closed hihat.
   - **Easily extensible**. Instead of %ifdef hell, the primary extension
-    mechanism will be through new opcodes for the virtual machine. Only the
-    opcodes actually used in a song are compiled into the virtual machine. The
-    goal is to try to write the code so that if two similar opcodes are used,
-    the common code in both is reused by moving it to a function. Macro and
-    linker magic ensure that also helper functions are only compiled in if they
-    are actually used.
+    mechanism is through new opcodes for the virtual machine. Only the opcodes
+    actually used in a song are compiled into the virtual machine. The goal is
+    to try to write the code so that if two similar opcodes are used, the common
+    code in both is reused by moving it to a function. Macro and linker magic
+    ensure that also helper functions are only compiled in if they are actually
+    used.
   - **Songs are YAML files**. These markup files are simple data files,
     describing the tracks, patterns and patch structure (see
     [here](tests/test_oscillat_trisaw.yml) for an example). The sointu-cli
@@ -298,11 +298,11 @@ New features since fork
     out of ports in small intros.
   - **Pattern length does not have to be a power of 2**.
   - **Sample-based oscillators, with samples imported from gm.dls**. Reading
-    gm.dls is obviously Windows only, but the sample mechanism can be used also
-    without it, in case you are working on a 64k and have some kilobytes to
-    spare. See [this example](tests/test_oscillat_sample.yml), and this go
-    generate [program](cmd/sointu-generate/main.go) parses the gm.dls file and
-    dumps the sample offsets from it.
+    gm.dls is obviously Windows only, but with some effort the sample mechanism
+    can be used also without it, in case you are working on a 64k and have some
+    kilobytes to spare. See [this example](tests/test_oscillat_sample.yml), and
+    this go generate [program](cmd/sointu-generate/main.go) parses the gm.dls
+    file and dumps the sample offsets from it.
   - **Unison oscillators**. Multiple copies of the oscillator running slightly
     detuned and added up to together. Great for trance leads (supersaw). Unison
     of up to 4, or 8 if you make stereo unison oscillator and add up both left
@@ -324,9 +324,9 @@ New features since fork
     Hz). For 4k intro development, the idea is to write a debug version of the
     intro that merely loads the shader and listens to the RPC messages, and then
     draws the shader with those as the uniforms. Then, during the actual 4k
-    intro, one can get sync the data from Sointu: when using syncs,
-    su_render_song takes two buffer parameters, one for sound, another for
-    syncs. These can then be sent to the shader as a uniform float array. A
+    intro, one can get the sync data from Sointu: if the song uses syncs,
+    su_render_song writes the syncs to a float array. During each time step, a
+    slice of this array can be sent to the shader as a uniform float array. A
     track with two voices, triggering an instrument with a single envelope and a
     slow filter can even be used as a cheap smooth interpolation mechanism,
     provided the syncs are added to each other in the shader.
@@ -353,25 +353,14 @@ Future goals
     explanation about the potential massive CPU hit, see
     https://stackoverflow.com/questions/36781881/why-denormalized-floats-are-so-much-slower-than-other-floats-from-hardware-arch
 
-Crazy ideas
+Long-shot ideas
 -----------
   - **Hack deeper into audio sources from the OS**. Speech synthesis, I'm eyeing
     at you.
-
-Anti-goals
-----------
-  - **Ability to run Sointu as a DAW plugin (VSTi, AU, LADSPA and DSSI...)**.
-    None of these plugin technologies are cross-platform and they are full of
-    proprietary technologies. In particular, since Sointu was initiated after
-    Steinberg ceased to give out VSTi2 licenses, there is currently no legal to
-    compile it as a VSTi2 plugin using the official API. I downloaded the VSTi3
-    API and, nope, sorry, I don't want to spend my time on it. And Renoise
-    supports only VSTi2... There is [JUCE](https://juce.com/), but it is again a
-    mammoth and requires apparently pretty deep integration in build system in
-    the form of Projucer. If you know a legal way to start a VSTi2 project
-    today, please let me know! But I really am not interested in
-    cease-and-desist letters from Steinberg, so "just do it, no-one cares" is
-    not enough. For now, the aim is to support MIDI.
+  - **Ability to run Sointu as a DAW plugin (VSTi3)**. Now that Renoise supports
+    VSTi3, there's no fundamental objection to compiling Sointu as a VSTi3. But
+    don't expect it any soon; I need to digest the idea of having to learn the
+    horrors of the VSTi3 C++ API.
 
 Design philosophy
 -----------------
@@ -406,12 +395,12 @@ helpful for anyone looking to understand how 4klang and Sointu use the FPU stack
 to manipulate the signals. Since then, 4klang has been used in countless of
 scene productions and people use it even today.
 
-However, 4klang seems not to be actively developed anymore and the polyphonism
-was never implemented in a very well engineered way (you can have exactly 2
-voices per instrument if you enable it). Also, reading through the code, I
-spotted several avenues to squeeze away more bytes. These observations triggered
-project Sointu. That, and I just wanted to learn x86 assembly, and needed a
-real-world project to work on.
+However, 4klang seems not to be actively developed anymore and polyphonism was
+implemented only in a rather limited way (you could have exactly 2 voices per
+instrument if you enable it). Also, reading through the code, I spotted several
+avenues to squeeze away more bytes. These observations triggered project Sointu.
+That, and I just wanted to learn x86 assembly, and needed a real-world project
+to work on.
 
 What's with the name
 --------------------
@@ -422,6 +411,11 @@ so I thought it would fun to learn some Finnish for a change. And
 [there's](https://www.pouet.net/prod.php?which=53398)
 [enough](https://www.pouet.net/prod.php?which=75814)
 [klangs](https://www.pouet.net/prod.php?which=85351) already.
+
+Prods using Sointu
+------------------
+
+[Adam](https://github.com/vsariola/adam) by brainlez Coders! - My first test-driving of Sointu. Some ideas how to integrate Sointu to the build chain.
 
 Credits
 -------
