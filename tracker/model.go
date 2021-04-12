@@ -42,12 +42,13 @@ type Model struct {
 }
 
 type Parameter struct {
-	Type  ParameterType
-	Name  string
-	Hint  string
-	Value int
-	Min   int
-	Max   int
+	Type      ParameterType
+	Name      string
+	Hint      string
+	Value     int
+	Min       int
+	Max       int
+	LargeStep int
 }
 
 type EditMode int
@@ -842,7 +843,11 @@ func (m *Model) Param(index int) (Parameter, error) {
 				typ = IDParameter
 			}
 		}
-		return Parameter{Type: typ, Min: min, Max: max, Name: name, Hint: text, Value: val}, nil
+		largeStep := 16
+		if unit.Type == "oscillator" && t.Name == "transpose" {
+			largeStep = 12
+		}
+		return Parameter{Type: typ, Min: min, Max: max, Name: name, Hint: text, Value: val, LargeStep: largeStep}, nil
 	}
 	if unit.Type == "oscillator" && index == 0 {
 		key := vm.SampleOffset{Start: uint32(unit.Parameters["samplestart"]), LoopStart: uint16(unit.Parameters["loopstart"]), LoopLength: uint16(unit.Parameters["looplength"])}
@@ -873,7 +878,7 @@ func (m *Model) Param(index int) (Parameter, error) {
 			} else {
 				text = fmt.Sprintf("%v / %.3f rows", val, float32(val)/float32(m.song.SamplesPerRow()))
 			}
-			return Parameter{Type: IntegerParameter, Min: 1, Max: 65535, Name: "delaytime", Hint: text, Value: val}, nil
+			return Parameter{Type: IntegerParameter, Min: 1, Max: 65535, Name: "delaytime", Hint: text, Value: val, LargeStep: 256}, nil
 		}
 	}
 	return Parameter{}, errors.New("invalid parameter")

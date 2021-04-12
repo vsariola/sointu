@@ -296,7 +296,10 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 			case tracker.EditParameters:
 				param, _ := t.Param(t.ParamIndex())
 				if e.Modifiers.Contain(key.ModShift) {
-					t.SetParam(param.Value - 16)
+					p, err := t.Param(t.ParamIndex())
+					if err == nil {
+						t.SetParam(param.Value - p.LargeStep)
+					}
 				} else {
 					t.SetParam(param.Value - 1)
 				}
@@ -330,7 +333,10 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 			case tracker.EditParameters:
 				param, _ := t.Param(t.ParamIndex())
 				if e.Modifiers.Contain(key.ModShift) {
-					t.SetParam(param.Value + 16)
+					p, err := t.Param(t.ParamIndex())
+					if err == nil {
+						t.SetParam(param.Value + p.LargeStep)
+					}
 				} else {
 					t.SetParam(param.Value + 1)
 				}
