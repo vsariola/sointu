@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"errors"
 	"math"
 )
 
@@ -28,7 +29,7 @@ type Volume struct {
 //
 // minVolume is just a hard limit for the vuanalyzer volumes, in decibels, just to
 // prevent negative infinities for volumes
-func VuAnalyzer(tau float64, attack float64, release float64, minVolume float64, maxVolume float64, bc <-chan []float32, vc chan<- Volume) {
+func VuAnalyzer(tau float64, attack float64, release float64, minVolume float64, maxVolume float64, bc <-chan []float32, vc chan<- Volume, ec chan<- error) {
 	v := Volume{Average: [2]float64{minVolume, minVolume}, Peak: [2]float64{minVolume, minVolume}}
 	alpha := 1 - math.Exp(-1.0/(tau*44100)) // from https://en.wikipedia.org/wiki/Exponential_smoothing
 	alphaAttack := 1 - math.Exp(-1.0/(attack*44100))
@@ -38,7 +39,11 @@ func VuAnalyzer(tau float64, attack float64, release float64, minVolume float64,
 			for i := 0; i < len(buffer); i += 2 {
 				sample2 := float64(buffer[i+j] * buffer[i+j])
 				if math.IsNaN(sample2) {
-					sample2 = float64(minVolume)
+					select {
+					case ec <- errors.New("NaN detected in master output"):
+					default:
+					}
+					continue
 				}
 				dB := 10 * math.Log10(float64(sample2))
 				if dB < minVolume || math.IsNaN(dB) {

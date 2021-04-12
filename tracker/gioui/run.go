@@ -3,6 +3,7 @@ package gioui
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"gioui.org/app"
 	"gioui.org/io/clipboard"
@@ -28,6 +29,9 @@ func (t *Tracker) Run(w *app.Window) error {
 			w.Invalidate()
 		case v := <-t.volumeChan:
 			t.lastVolume = v
+			w.Invalidate()
+		case e := <-t.errorChannel:
+			t.Alert.Update(e.Error(), Error, time.Second*5)
 			w.Invalidate()
 		case e := <-w.Events():
 			switch e := e.(type) {
