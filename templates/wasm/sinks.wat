@@ -6,7 +6,7 @@
 ;;   Stereo: also add outgain*ST1 to main right port and auxgain*ST1 to aux1 right
 ;;-------------------------------------------------------------------------------
 (func $su_op_outaux (param $stereo i32) (local $addr i32)
-    (local.set $addr (i32.const 4128))
+    (local.set $addr (i32.const {{index .Labels "su_globalports"}}))
 {{- if .Stereo "outaux"}}
     loop $stereoLoop
 {{- end}}
@@ -47,7 +47,7 @@
 ;;   Stereo: also add gain*ST1 to right port
 ;;-------------------------------------------------------------------------------
 (func $su_op_aux (param $stereo i32) (local $addr i32)
-    (local.set $addr (i32.add (i32.mul (call $scanValueByte) (i32.const 4)) (i32.const 4128)))
+    (local.set $addr (i32.add (i32.mul (call $scanValueByte) (i32.const 4)) (i32.const {{index .Labels "su_globalports"}})))
 {{- if .Stereo "aux"}}
     loop $stereoLoop
 {{- end}}
@@ -97,7 +97,7 @@
     (local.set $scaledAddress (i32.add (i32.mul (i32.and (local.get $address) (i32.const 0x7FF7)) (i32.const 4))
 {{- if .SupportsGlobalSend}}
         (select
-            (i32.const 4096)
+            (i32.const {{index .Labels "su_synth"}})
 {{- end}}
             (global.get $voice)
 {{- if .SupportsGlobalSend}}
@@ -137,7 +137,7 @@
 {{- end}}
 ;;-------------------------------------------------------------------------------
 (func $su_op_out (param $stereo i32) (local $ptr i32)
-    (local.set $ptr (i32.const 4128)) ;; synth.left, but should not be magic constant
+    (local.set $ptr (i32.const {{index .Labels "su_globalports"}})) ;; synth.left
     (f32.store (local.get $ptr)
         (f32.add
             (f32.mul
@@ -147,7 +147,7 @@
             (f32.load (local.get $ptr))
         )
     )
-    (local.set $ptr (i32.const 4132)) ;; synth.right, but should not be magic constant
+    (local.set $ptr (i32.const {{add (index .Labels "su_globalports") 4}})) ;; synth.right, note that ATM does not seem to support mono ocpode at all
     (f32.store (local.get $ptr)
         (f32.add
             (f32.mul

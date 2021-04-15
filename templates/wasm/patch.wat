@@ -13,7 +13,7 @@
                 {{- $addr := sub (index .Labels "su_vm_transformcounts") 1}}
                 (if (i32.lt_u (local.get $paramNum) (i32.load8_u offset={{$addr}} (local.get $opcode)))(then ;;(i32.ge (local.get $paramNum) (i32.load8_u (local.get $opcode)))  /*TODO: offset to transformvalues
                     (local.set $WRKplusparam (i32.add (global.get $WRK) (local.get $paramX4)))
-                    (f32.store offset=512
+                    (f32.store offset={{index .Labels "su_transformedvalues"}}
                         (local.get $paramX4)
                         (f32.add
                             (f32.mul
@@ -59,7 +59,7 @@
 ;; The transformed values start at 512 (TODO: change magic constants somehow)
 ;;-------------------------------------------------------------------------------
 (func $input (param $inputNumber i32) (result f32)
-    (f32.load offset=512 (i32.mul (local.get $inputNumber) (i32.const 4)))
+    (f32.load offset={{index .Labels "su_transformedvalues"}} (i32.mul (local.get $inputNumber) (i32.const 4)))
 )
 
 ;;-------------------------------------------------------------------------------

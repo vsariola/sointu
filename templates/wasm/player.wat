@@ -5,7 +5,7 @@
 ;    Patterns
 ;-------------------------------------------------------------------------------
 */}}
-{{- .SetLabel "su_patterns"}}
+{{- .SetDataLabel "su_patterns"}}
 {{- $m := .}}
 {{- range .Patterns}}
     {{- range .}}
@@ -18,7 +18,7 @@
 ;    Tracks
 ;-------------------------------------------------------------------------------
 */}}
-{{- .SetLabel "su_tracks"}}
+{{- .SetDataLabel "su_tracks"}}
 {{- $m := .}}
 {{- range .Sequences}}
     {{- range .}}
@@ -31,7 +31,7 @@
 ;    The code for this patch, basically indices to vm jump table
 ;-------------------------------------------------------------------------------
 */}}
-{{- .SetLabel "su_patch_code"}}
+{{- .SetDataLabel "su_patch_code"}}
 {{- range .Commands}}
 {{- $.DataB .}}
 {{- end}}
@@ -41,7 +41,7 @@
 ;    The parameters / inputs to each opcode
 ;-------------------------------------------------------------------------------
 */}}
-{{- .SetLabel "su_patch_parameters"}}
+{{- .SetDataLabel "su_patch_parameters"}}
 {{- range .Values}}
 {{- $.DataB .}}
 {{- end}}
@@ -51,7 +51,7 @@
 ;    Delay times
 ;-------------------------------------------------------------------------------
 */}}
-{{- .SetLabel "su_delay_times"}}
+{{- .SetDataLabel "su_delay_times"}}
 {{- range .DelayTimes}}
 {{- $.DataW .}}
 {{- end}}
@@ -61,10 +61,60 @@
 ; The number of transformed parameters each opcode takes
 ;-------------------------------------------------------------------------------
 */}}
-{{- .SetLabel "su_vm_transformcounts"}}
+{{- .SetDataLabel "su_vm_transformcounts"}}
 {{- range .Instructions}}
 {{- $.TransformCount . | $.ToByte | $.DataB}}
 {{- end}}
+
+{{- /*
+;-------------------------------------------------------------------------------
+; Allocate memory for stack.
+; Stack of 64 float signals is enough for everybody... right?
+; Note: as the stack grows _downwards_ the label is _after_ stack
+;-------------------------------------------------------------------------------
+*/}}
+{{- .Align}}
+{{- .Block 256}}
+{{- .SetBlockLabel "su_stack"}}
+
+{{- /*
+;-------------------------------------------------------------------------------
+; Allocate memory for transformed values.
+;-------------------------------------------------------------------------------
+*/}}
+{{- .Align}}
+{{- .SetBlockLabel "su_transformedvalues"}}
+{{- .Block 32}}
+
+{{- /*
+;-------------------------------------------------------------------------------
+; Uninitialized memory for synth, delaylines & outputbuffer
+;-------------------------------------------------------------------------------
+*/}}
+{{- .Align}}
+{{- if ne .VoiceTrackBitmask 0}}
+{{- .SetBlockLabel "su_trackcurrentvoice"}}
+{{- .Block 32}}
+{{- end}}
+{{- .Align}}
+{{- .SetBlockLabel "su_synth"}}
+{{- .Block 32}}
+{{- .SetBlockLabel "su_globalports"}}
+{{- .Block 32}}
+{{- .SetBlockLabel "su_voices"}}
+{{- .Block 131072}}
+{{- .Align}}
+{{- .SetBlockLabel "su_delaylines"}}
+{{- .Block (int (mul 262156 .Song.Patch.NumDelayLines))}}
+{{- .Align}}
+{{- .SetBlockLabel "su_outputbuffer"}}
+{{- if .Output16Bit}}
+{{- .Block (int (mul .PatternLength .SequenceLength .Song.SamplesPerRow 4))}}
+{{- else}}
+{{- .Block (int (mul .PatternLength .SequenceLength .Song.SamplesPerRow 8))}}
+{{- end}}
+{{- .SetBlockLabel "su_outputend"}}
+
 
 ;;------------------------------------------------------------------------------
 ;; Import the difficult math functions from javascript
@@ -82,9 +132,8 @@
 
 ;;------------------------------------------------------------------------------
 ;; The one and only memory
-;; TODO: Its size should be calculated just to fit, but not more
 ;;------------------------------------------------------------------------------
-(memory (export "m") 256)
+(memory (export "m") {{.MemoryPages}})
 
 ;;------------------------------------------------------------------------------
 ;; Globals. Putting all with same initialization value should compress most
@@ -106,11 +155,11 @@
 (global $voice (mut i32) (i32.const 0))
 (global $voicesRemain (mut i32) (i32.const 0))
 (global $randseed (mut i32) (i32.const 1))
-(global $sp (mut i32) (i32.const 2048))
-(global $outputBufPtr (mut i32) (i32.const 8388608))
+(global $sp (mut i32) (i32.const {{index .Labels "su_stack"}}))
+(global $outputBufPtr (mut i32) (i32.const {{index .Labels "su_outputbuffer"}}))
 ;; TODO: only export start and length with certain compiler options; in demo use, they can be hard coded
 ;; in the intro
-(global $outputStart (export "s") i32 (i32.const 8388608)) ;; TODO: do not hard code, layout memory somehow intelligently
+(global $outputStart (export "s") i32 (i32.const {{index .Labels "su_outputbuffer"}}))
 (global $outputLength (export "l") i32 (i32.const {{if .Output16Bit}}{{mul .PatternLength .SequenceLength .Song.SamplesPerRow 4}}{{else}}{{mul .PatternLength .SequenceLength .Song.SamplesPerRow 8}}{{end}}))
 (global $output16bit (export "t") i32 (i32.const {{if .Output16Bit}}1{{else}}0{{end}}))
 
@@ -168,13 +217,11 @@
                 (global.set $COM_instr_start (global.get $COM))
                 (global.set $VAL_instr_start (global.get $VAL))
 {{- end}}
-                (global.set $WRK (i32.const 4160))
-                (global.set $voice (i32.const 4160))
+                (global.set $WRK (i32.const {{index .Labels "su_voices"}}))
+                (global.set $voice (i32.const {{index .Labels "su_voices"}}))
                 (global.set $voicesRemain (i32.const {{.Song.Patch.NumVoices | printf "%v"}}))
 {{- if .HasOp "delay"}}
-                (global.set $delayWRK (i32.const 262144)) ;; BAD IDEA: we are limited to something like 30 delay lines
-                ;; after that, the delay lines start to overwrite the outputbuffer. Find a way to layout the memory
-                ;; based on the song, instead of hard coding addressed.
+                (global.set $delayWRK (i32.const {{index .Labels "su_delaylines"}}))
 {{- end}}
                 (call $su_run_vm)
                 {{- template "output_sound.wat" .}}
@@ -217,10 +264,10 @@
         (i32.load8_u offset={{index .Labels "su_patterns"}})
         (local.tee $note)
         (if (i32.ne (i32.const {{.Hold}}))(then
-            (i32.store offset=4164
+            (i32.store offset={{add (index .Labels "su_voices") 4}}
                 (i32.mul
                     (i32.add
-                        (local.tee $voiceNo (i32.load8_u offset=768 (local.get $tracksRemaining)))
+                        (local.tee $voiceNo (i32.load8_u offset={{index .Labels "su_trackcurrentvoice"}} (local.get $tracksRemaining)))
                         (local.get $firstVoice)
                     )
                     (i32.const 4096)
@@ -239,11 +286,11 @@
                         )
                         (i32.const 4096)
                     )
-                    (i32.const 4160)
+                    (i32.const {{index .Labels "su_voices"}})
                 ))
                 (memory.fill (local.get $di) (i32.const 0) (i32.const 4096))
                 (i32.store (local.get $di) (local.get $note))
-                (i32.store8 offset=768 (local.get $tracksRemaining) (local.get $voiceNo))
+                (i32.store8 offset={{index .Labels "su_trackcurrentvoice"}} (local.get $tracksRemaining) (local.get $voiceNo))
             ))
         ))
         (local.set $si (i32.add (local.get $si) (i32.const {{.SequenceLength}})))
@@ -256,7 +303,7 @@
 (func $su_update_voices (local $si i32) (local $di i32) (local $tracksRemaining i32) (local $note i32)
     (local.set $tracksRemaining (i32.const {{len .Sequences}}))
     (local.set $si (global.get $pattern))
-    (local.set $di (i32.const 4160))
+    (local.set $di (i32.const {{index .Labels "su_voices"}}))
     loop $track_loop
         (i32.load8_u offset={{index .Labels "su_tracks"}} (local.get $si))
         (i32.mul (i32.const {{.PatternLength}}))

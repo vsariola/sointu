@@ -183,7 +183,7 @@
 {{- if .SupportsParamValueOtherThan "oscillator" "unison" 0}}
     (call $push (f32.add (call $pop) (call $pop)))
     (if (local.tee $unison (i32.sub (local.get $unison) (i32.const 1)))(then
-        (f32.store offset={{.InputNumber "oscillator" "phase" | mul 4 | add 512}} (i32.const 0)
+        (f32.store offset={{.InputNumber "oscillator" "phase" | mul 4 | add (index .Labels "su_transformedvalues")}} (i32.const 0)
             (f32.add
                 (call $input (i32.const {{.InputNumber "oscillator" "phase"}}))
                 (f32.const 0.08333333) ;; 1/12, add small phase shift so all oscillators don't start in phase
@@ -328,7 +328,7 @@
 {{- if .Stereo "in"}}
     (i32.add (local.get $stereo)) ;; start from right channel if stereo
 {{- end}}
-    (local.set $addr (i32.add (i32.mul (i32.const 4)) (i32.const 4128)))
+    (local.set $addr (i32.add (i32.mul (i32.const 4)) (i32.const {{index .Labels "su_globalports"}})))
 {{- if .Stereo "in"}}
     loop $stereoLoop
 {{- end}}
