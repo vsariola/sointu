@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"gioui.org/app"
 	"gioui.org/font/gofont"
 	"gioui.org/layout"
 	"gioui.org/text"
@@ -13,6 +14,12 @@ import (
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"gopkg.in/yaml.v3"
+)
+
+const (
+	ConfirmQuit = iota
+	ConfirmLoad
+	ConfirmNew
 )
 
 type Tracker struct {
@@ -62,6 +69,9 @@ type Tracker struct {
 	PatternOrderList      *layout.List
 	PatternOrderScrollBar *ScrollBar
 	ConfirmInstrDelete    *Dialog
+	ConfirmSongDialog     *Dialog
+	ConfirmSongActionType int
+	window                *app.Window
 
 	lastVolume tracker.Volume
 	volumeChan chan tracker.Volume
@@ -70,6 +80,7 @@ type Tracker struct {
 	refresh      chan struct{}
 	playerCloser chan struct{}
 	errorChannel chan error
+	quitted      bool
 	audioContext sointu.AudioContext
 
 	*tracker.Model
@@ -105,7 +116,7 @@ func (t *Tracker) Close() {
 	t.audioContext.Close()
 }
 
-func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syncChannel chan<- []float32) *Tracker {
+func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syncChannel chan<- []float32, window *app.Window) *Tracker {
 	t := &Tracker{
 		Theme:                 material.NewTheme(gofont.Collection()),
 		audioContext:          audioContext,
@@ -153,7 +164,9 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 		PatternOrderList:      &layout.List{Axis: layout.Vertical},
 		PatternOrderScrollBar: &ScrollBar{Axis: layout.Vertical},
 		ConfirmInstrDelete:    new(Dialog),
+		ConfirmSongDialog:     new(Dialog),
 		errorChannel:          make(chan error, 32),
+		window:                window,
 	}
 	t.Model = tracker.NewModel()
 	vuBufferObserver := make(chan []float32)

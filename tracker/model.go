@@ -17,18 +17,20 @@ import (
 // accidental mutations in the song. But at least the value members are
 // protected.
 type Model struct {
-	song            sointu.Song
-	editMode        EditMode
-	selectionCorner SongPoint
-	cursor          SongPoint
-	lowNibble       bool
-	instrIndex      int
-	unitIndex       int
-	paramIndex      int
-	octave          int
-	noteTracking    bool
-	usedIDs         map[int]bool
-	maxID           int
+	song             sointu.Song
+	editMode         EditMode
+	selectionCorner  SongPoint
+	cursor           SongPoint
+	lowNibble        bool
+	instrIndex       int
+	unitIndex        int
+	paramIndex       int
+	octave           int
+	noteTracking     bool
+	usedIDs          map[int]bool
+	maxID            int
+	filePath         string
+	changedSinceSave bool
 
 	prevUndoType    string
 	undoSkipCounter int
@@ -76,8 +78,26 @@ func NewModel() *Model {
 	return ret
 }
 
+func (m *Model) FilePath() string {
+	return m.filePath
+}
+
+func (m *Model) SetFilePath(value string) {
+	m.filePath = value
+}
+
+func (m *Model) ChangedSinceSave() bool {
+	return m.changedSinceSave
+}
+
+func (m *Model) SetChangedSinceSave(value bool) {
+	m.changedSinceSave = value
+}
+
 func (m *Model) ResetSong() {
 	m.SetSong(defaultSong.Copy())
+	m.filePath = ""
+	m.changedSinceSave = false
 }
 
 func (m *Model) SetSong(song sointu.Song) {
@@ -671,6 +691,15 @@ func (m *Model) CanUndo() bool {
 	return len(m.undoStack) > 0
 }
 
+func (m *Model) ClearUndoHistory() {
+	if len(m.undoStack) > 0 {
+		m.undoStack = m.undoStack[:0]
+	}
+	if len(m.redoStack) > 0 {
+		m.redoStack = m.redoStack[:0]
+	}
+}
+
 func (m *Model) Redo() {
 	if !m.CanRedo() {
 		return
@@ -986,6 +1015,7 @@ func (m *Model) saveUndo(undoType string, undoSkipping int) {
 		m.undoSkipCounter++
 		return
 	}
+	m.changedSinceSave = true
 	m.prevUndoType = undoType
 	m.undoSkipCounter = 0
 	if len(m.undoStack) >= maxUndo {

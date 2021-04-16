@@ -4,9 +4,11 @@ package gioui
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 
+	"gioui.org/app"
 	"gopkg.in/yaml.v3"
 
 	"github.com/sqweek/dialog"
@@ -14,6 +16,30 @@ import (
 )
 
 func (t *Tracker) LoadSongFile() {
+	if t.ChangedSinceSave() {
+		t.ConfirmSongActionType = ConfirmLoad
+		t.ConfirmSongDialog.Visible = true
+		return
+	}
+	t.loadSong()
+}
+
+func (t *Tracker) SaveSongFile() bool {
+	if p := t.FilePath(); p != "" {
+		return t.saveSong(p)
+	}
+	return t.SaveSongAsFile()
+}
+
+func (t *Tracker) SaveSongAsFile() bool {
+	filename, err := dialog.File().Filter("Sointu YAML song", "yml").Filter("Sointu JSON song", "json").Title("Save song").Save()
+	if err != nil {
+		return false
+	}
+	return t.saveSong(filename)
+}
+
+func (t *Tracker) loadSong() {
 	filename, err := dialog.File().Filter("Sointu YAML song", "yml").Filter("Sointu JSON song", "json").Title("Load song").Load()
 	if err != nil {
 		return
@@ -29,25 +55,30 @@ func (t *Tracker) LoadSongFile() {
 		}
 	}
 	t.SetSong(song)
+	t.SetFilePath(filename)
+	t.window.Option(app.Title(fmt.Sprintf("Sointu Tracker - %v", filename)))
+	t.ClearUndoHistory()
+	t.SetChangedSinceSave(false)
 }
 
-func (t *Tracker) SaveSongFile() {
-	filename, err := dialog.File().Filter("Sointu YAML song", "yml").Filter("Sointu JSON song", "json").Title("Save song").Save()
-	if err != nil {
-		return
-	}
+func (t *Tracker) saveSong(filename string) bool {
 	var extension = filepath.Ext(filename)
 	var contents []byte
+	var err error
 	if extension == "json" {
 		contents, err = json.Marshal(t.Song())
 	} else {
 		contents, err = yaml.Marshal(t.Song())
 	}
 	if err != nil {
-		return
+		return false
 	}
 	if extension == "" {
 		filename = filename + ".yml"
 	}
 	ioutil.WriteFile(filename, contents, 0644)
+	t.SetFilePath(filename)
+	t.window.Option(app.Title(fmt.Sprintf("Sointu Tracker - %v", filename)))
+	t.SetChangedSinceSave(false)
+	return true
 }

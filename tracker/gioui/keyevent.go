@@ -111,7 +111,7 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 			}
 		case "N":
 			if e.Modifiers.Contain(key.ModShortcut) {
-				t.ResetSong()
+				t.TryResetSong()
 				return true
 			}
 		case "S":

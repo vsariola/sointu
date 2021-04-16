@@ -53,11 +53,15 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 	for clickedItem, hasClicked := t.Menus[0].Clicked(); hasClicked; {
 		switch clickedItem {
 		case 0:
-			t.ResetSong()
+			t.TryResetSong()
 		case 1:
 			t.LoadSongFile()
 		case 2:
 			t.SaveSongFile()
+		case 3:
+			t.SaveSongAsFile()
+		case 4:
+			t.TryQuit()
 		}
 		clickedItem, hasClicked = t.Menus[0].Clicked()
 	}
@@ -88,6 +92,8 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 			MenuItem{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: shortcutKey + "N"},
 			MenuItem{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: shortcutKey + "O"},
 			MenuItem{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: shortcutKey + "S"},
+			MenuItem{IconBytes: icons.ContentSave, Text: "Save Song As..."},
+			MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit"},
 		)),
 		layout.Rigid(t.layoutMenu("Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(160),
 			MenuItem{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: shortcutKey + "Z", Disabled: !t.CanUndo()},
