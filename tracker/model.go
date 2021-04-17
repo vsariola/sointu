@@ -31,6 +31,7 @@ type Model struct {
 	maxID            int
 	filePath         string
 	changedSinceSave bool
+	patternUseCount  [][]int
 
 	prevUndoType    string
 	undoSkipCounter int
@@ -238,6 +239,7 @@ func (m *Model) DeleteTrack(forward bool) {
 	}
 	m.selectionCorner = m.cursor
 	m.clampPositions()
+	m.computePatternUseCounts()
 	m.notifyScoreChange()
 }
 
@@ -377,7 +379,19 @@ func (m *Model) SetCurrentPattern(pat int) {
 		track.Order = append(track.Order, -1)
 	}
 	track.Order[m.cursor.Pattern] = pat
+	m.computePatternUseCounts()
 	m.notifyScoreChange()
+}
+
+func (m *Model) IsPatternUnique(track, pattern int) bool {
+	if track < 0 || track >= len(m.patternUseCount) {
+		return false
+	}
+	p := m.patternUseCount[track]
+	if pattern < 0 || pattern >= len(p) {
+		return false
+	}
+	return p[pattern] <= 1
 }
 
 func (m *Model) SetSongLength(value int) {
@@ -390,6 +404,7 @@ func (m *Model) SetSongLength(value int) {
 	m.saveUndo("SetSongLength", 10)
 	m.song.Score.Length = value
 	m.clampPositions()
+	m.computePatternUseCounts()
 	m.notifyScoreChange()
 }
 
@@ -464,6 +479,7 @@ func (m *Model) AddOrderRow(after bool) {
 	m.song.Score.Length++
 	m.selectionCorner = m.cursor
 	m.clampPositions()
+	m.computePatternUseCounts()
 	m.notifyScoreChange()
 }
 
@@ -486,6 +502,7 @@ func (m *Model) DeleteOrderRow(forward bool) {
 	m.song.Score.Length--
 	m.selectionCorner = m.cursor
 	m.clampPositions()
+	m.computePatternUseCounts()
 	m.notifyScoreChange()
 }
 
@@ -668,6 +685,7 @@ func (m *Model) DeletePatternSelection() {
 			}
 		}
 	}
+	m.computePatternUseCounts()
 	m.notifyScoreChange()
 }
 
@@ -987,6 +1005,7 @@ func (m *Model) setSongNoUndo(song sointu.Song) {
 		m.assignUnitIDs(instr.Units)
 	}
 	m.clampPositions()
+	m.computePatternUseCounts()
 	m.notifySamplesPerRowChange()
 	m.notifyPatchChange()
 	m.notifyScoreChange()
@@ -1040,6 +1059,30 @@ func (m *Model) assignUnitIDs(units []sointu.Unit) {
 		m.usedIDs[units[i].ID] = true
 		if m.maxID < units[i].ID {
 			m.maxID = units[i].ID
+		}
+	}
+}
+
+func (m *Model) computePatternUseCounts() {
+	for i, track := range m.song.Score.Tracks {
+		for len(m.patternUseCount) <= i {
+			m.patternUseCount = append(m.patternUseCount, nil)
+		}
+		for j := range m.patternUseCount[i] {
+			m.patternUseCount[i][j] = 0
+		}
+		for j := 0; j < m.song.Score.Length; j++ {
+			if j >= len(track.Order) {
+				break
+			}
+			p := track.Order[j]
+			for len(m.patternUseCount[i]) <= p {
+				m.patternUseCount[i] = append(m.patternUseCount[i], 0)
+			}
+			if p < 0 {
+				continue
+			}
+			m.patternUseCount[i][p]++
 		}
 	}
 }

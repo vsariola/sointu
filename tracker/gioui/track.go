@@ -275,7 +275,7 @@ func (t *Tracker) layoutTracks(gtx C) D {
 		lastRow = l - 1
 	}
 	op.Offset(f32.Pt(0, float32(trackRowHeight*firstRow))).Add(gtx.Ops)
-	for _, trk := range t.Song().Score.Tracks {
+	for trkIndex, trk := range t.Song().Score.Tracks {
 		stack := op.Save(gtx.Ops)
 		for row := firstRow; row <= lastRow; row++ {
 			pat := row / t.Song().Score.RowsPerPattern
@@ -291,6 +291,10 @@ func (t *Tracker) layoutTracks(gtx C) D {
 			if s >= 0 && patRow == 0 {
 				paint.ColorOp{Color: trackerPatMarker}.Add(gtx.Ops)
 				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(s))
+			}
+			if s >= 0 && patRow == 1 && t.IsPatternUnique(trkIndex, s) {
+				paint.ColorOp{Color: mediumEmphasisTextColor}.Add(gtx.Ops)
+				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, "*")
 			}
 			op.Offset(f32.Pt(patmarkWidth, 0)).Add(gtx.Ops)
 			if t.EditMode() == tracker.EditTracks && t.Cursor().Row == patRow && t.Cursor().Pattern == pat {
