@@ -55,6 +55,9 @@ func (t *Tracker) loadSong() {
 			return
 		}
 	}
+	if song.Score.Length <= 0 || len(song.Score.Tracks) == 0 || len(song.Patch) == 0 {
+		return
+	}
 	t.SetSong(song)
 	t.SetFilePath(filename)
 	t.window.Option(app.Title(fmt.Sprintf("Sointu Tracker - %v", filename)))
