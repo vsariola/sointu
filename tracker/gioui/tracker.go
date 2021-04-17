@@ -46,6 +46,8 @@ type Tracker struct {
 	SongLength            *NumberInput
 	PanicBtn              *widget.Clickable
 	CopyInstrumentBtn     *widget.Clickable
+	SaveInstrumentBtn     *widget.Clickable
+	LoadInstrumentBtn     *widget.Clickable
 	ParameterList         *layout.List
 	ParameterScrollBar    *ScrollBar
 	Parameters            []*ParameterWidget
@@ -145,6 +147,8 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 		ClearUnitBtn:          new(widget.Clickable),
 		PanicBtn:              new(widget.Clickable),
 		CopyInstrumentBtn:     new(widget.Clickable),
+		SaveInstrumentBtn:     new(widget.Clickable),
+		LoadInstrumentBtn:     new(widget.Clickable),
 		TrackHexCheckBox:      new(widget.Bool),
 		Menus:                 make([]Menu, 2),
 		MenuBar:               make([]widget.Clickable, 2),

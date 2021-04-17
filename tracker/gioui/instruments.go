@@ -77,6 +77,16 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 		copyInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
 		copyInstrumentBtnStyle.Color = primaryColor
 
+		saveInstrumentBtnStyle := material.IconButton(t.Theme, t.SaveInstrumentBtn, widgetForIcon(icons.ContentSave))
+		saveInstrumentBtnStyle.Background = transparent
+		saveInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		saveInstrumentBtnStyle.Color = primaryColor
+
+		loadInstrumentBtnStyle := material.IconButton(t.Theme, t.LoadInstrumentBtn, widgetForIcon(icons.FileFolderOpen))
+		loadInstrumentBtnStyle.Background = transparent
+		loadInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		loadInstrumentBtnStyle.Color = primaryColor
+
 		deleteInstrumentBtnStyle := material.IconButton(t.Theme, t.DeleteInstrumentBtn, widgetForIcon(icons.ActionDelete))
 		deleteInstrumentBtnStyle.Background = transparent
 		deleteInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
@@ -99,6 +109,8 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 				return dims
 			}),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+			layout.Rigid(saveInstrumentBtnStyle.Layout),
+			layout.Rigid(loadInstrumentBtnStyle.Layout),
 			layout.Rigid(copyInstrumentBtnStyle.Layout),
 			layout.Rigid(deleteInstrumentBtnStyle.Layout))
 	}
@@ -118,6 +130,13 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 	}
 	for t.ConfirmInstrDelete.BtnCancel.Clicked() {
 		t.ConfirmInstrDelete.Visible = false
+	}
+	for t.SaveInstrumentBtn.Clicked() {
+		t.SaveInstrument()
+	}
+
+	for t.LoadInstrumentBtn.Clicked() {
+		t.LoadInstrument()
 	}
 	return Surface{Gray: 37, Focus: t.EditMode() == tracker.EditUnits || t.EditMode() == tracker.EditParameters}.Layout(gtx, header)
 }

@@ -84,6 +84,46 @@ func (t *Tracker) saveSong(filename string) bool {
 	return true
 }
 
+func (t *Tracker) SaveInstrument() bool {
+	filename, err := dialog.File().Filter("Sointu YAML instrument", "yml").Filter("Sointu JSON song", "json").Title(fmt.Sprintf("Save instrument %v", t.Instrument().Name)).Save()
+	if err != nil {
+		return false
+	}
+	var extension = filepath.Ext(filename)
+	var contents []byte
+	if extension == "json" {
+		contents, err = json.Marshal(t.Instrument())
+	} else {
+		contents, err = yaml.Marshal(t.Instrument())
+	}
+	if err != nil {
+		return false
+	}
+	if extension == "" {
+		filename = filename + ".yml"
+	}
+	ioutil.WriteFile(filename, contents, 0644)
+	return true
+}
+
+func (t *Tracker) LoadInstrument() {
+	filename, err := dialog.File().Filter("Sointu YAML instrument", "yml").Filter("Sointu JSON instrument", "json").Title("Load instrument").Load()
+	if err != nil {
+		return
+	}
+	bytes, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return
+	}
+	var instrument sointu.Instrument
+	if errJSON := json.Unmarshal(bytes, &instrument); errJSON != nil {
+		if errYaml := yaml.Unmarshal(bytes, &instrument); errYaml != nil {
+			return
+		}
+	}
+	t.SetInstrument(instrument)
+}
+
 func (t *Tracker) exportWav(pcm16 bool) {
 	filename, err := dialog.File().Filter(".wav file", "wav").Title("Export .wav").Save()
 	if err != nil {
