@@ -39,6 +39,22 @@ func (t *Tracker) Layout(gtx layout.Context) {
 	for t.ConfirmSongDialog.BtnCancel.Clicked() {
 		t.ConfirmSongDialog.Visible = false
 	}
+	dstyle = ConfirmDialog(t.Theme, t.WaveTypeDialog, "Export .wav in int16 or float32 sample format?")
+	dstyle.ShowAlt = true
+	dstyle.OkStyle.Text = "Int16"
+	dstyle.AltStyle.Text = "Float32"
+	dstyle.Layout(gtx)
+	for t.WaveTypeDialog.BtnOk.Clicked() {
+		t.exportWav(true)
+		t.WaveTypeDialog.Visible = false
+	}
+	for t.WaveTypeDialog.BtnAlt.Clicked() {
+		t.exportWav(false)
+		t.WaveTypeDialog.Visible = false
+	}
+	for t.WaveTypeDialog.BtnCancel.Clicked() {
+		t.WaveTypeDialog.Visible = false
+	}
 }
 
 func (t *Tracker) confirmedSongAction() {

@@ -70,6 +70,7 @@ type Tracker struct {
 	PatternOrderScrollBar *ScrollBar
 	ConfirmInstrDelete    *Dialog
 	ConfirmSongDialog     *Dialog
+	WaveTypeDialog        *Dialog
 	ConfirmSongActionType int
 	window                *app.Window
 
@@ -82,6 +83,7 @@ type Tracker struct {
 	errorChannel chan error
 	quitted      bool
 	audioContext sointu.AudioContext
+	synthService sointu.SynthService
 
 	*tracker.Model
 }
@@ -165,8 +167,10 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 		PatternOrderScrollBar: &ScrollBar{Axis: layout.Vertical},
 		ConfirmInstrDelete:    new(Dialog),
 		ConfirmSongDialog:     new(Dialog),
+		WaveTypeDialog:        new(Dialog),
 		errorChannel:          make(chan error, 32),
 		window:                window,
+		synthService:          synthService,
 	}
 	t.Model = tracker.NewModel()
 	vuBufferObserver := make(chan []float32)

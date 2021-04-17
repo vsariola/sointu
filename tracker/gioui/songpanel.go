@@ -61,6 +61,8 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 		case 3:
 			t.SaveSongAsFile()
 		case 4:
+			t.WaveTypeDialog.Visible = true
+		case 5:
 			t.TryQuit()
 		}
 		clickedItem, hasClicked = t.Menus[0].Clicked()
@@ -93,6 +95,7 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 			MenuItem{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: shortcutKey + "O"},
 			MenuItem{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: shortcutKey + "S"},
 			MenuItem{IconBytes: icons.ContentSave, Text: "Save Song As..."},
+			MenuItem{IconBytes: icons.ImageAudiotrack, Text: "Export Wav..."},
 			MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit"},
 		)),
 		layout.Rigid(t.layoutMenu("Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(160),

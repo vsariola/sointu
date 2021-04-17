@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"time"
 
 	"gioui.org/app"
 	"gopkg.in/yaml.v3"
@@ -81,4 +82,34 @@ func (t *Tracker) saveSong(filename string) bool {
 	t.window.Option(app.Title(fmt.Sprintf("Sointu Tracker - %v", filename)))
 	t.SetChangedSinceSave(false)
 	return true
+}
+
+func (t *Tracker) exportWav(pcm16 bool) {
+	filename, err := dialog.File().Filter(".wav file", "wav").Title("Export .wav").Save()
+	if err != nil {
+		return
+	}
+	var extension = filepath.Ext(filename)
+	if extension == "" {
+		filename = filename + ".wav"
+	}
+	synth, err := t.synthService.Compile(t.Song().Patch)
+	if err != nil {
+		t.Alert.Update(fmt.Sprintf("Error compiling the patch during export: %v", err), Error, time.Second*3)
+		return
+	}
+	for i := 0; i < 32; i++ {
+		synth.Release(i)
+	}
+	data, _, err := sointu.Play(synth, t.Song()) // render the song to calculate its length
+	if err != nil {
+		t.Alert.Update(fmt.Sprintf("Error rendering the song during export: %v", err), Error, time.Second*3)
+		return
+	}
+	buffer, err := sointu.Wav(data, pcm16)
+	if err != nil {
+		t.Alert.Update(fmt.Sprintf("Error converting to .wav: %v", err), Error, time.Second*3)
+		return
+	}
+	ioutil.WriteFile(filename, buffer, 0644)
 }

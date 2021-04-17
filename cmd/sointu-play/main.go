@@ -1,13 +1,10 @@
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -111,38 +108,22 @@ func main() {
 				return fmt.Errorf("error playing: %v", err)
 			}
 		}
-		var data interface{}
-		data = buffer
-		if *pcm {
-			int16buffer := make([]int16, len(buffer))
-			for i, v := range buffer {
-				int16buffer[i] = int16(clamp(int(v*math.MaxInt16), math.MinInt16, math.MaxInt16))
-			}
-			data = int16buffer
-		}
 		if *rawOut {
-			buf := new(bytes.Buffer)
-			err := binary.Write(buf, binary.LittleEndian, data)
+			raw, err := sointu.Raw(buffer, *pcm)
 			if err != nil {
-				return fmt.Errorf("could not binary write data to binary buffer: %v", err)
+				return fmt.Errorf("could not generate .raw file: %v", err)
 			}
-			if err := output(".raw", buf.Bytes()); err != nil {
-				return fmt.Errorf("error outputting raw audio file: %v", err)
+			if err := output(".raw", raw); err != nil {
+				return fmt.Errorf("error outputting .raw file: %v", err)
 			}
 		}
 		if *wavOut {
-			buf := new(bytes.Buffer)
-			header := createWavHeader(len(buffer), *pcm)
-			err := binary.Write(buf, binary.LittleEndian, header)
+			wav, err := sointu.Wav(buffer, *pcm)
 			if err != nil {
-				return fmt.Errorf("could not binary write header to binary buffer: %v", err)
+				return fmt.Errorf("could not generate .wav file: %v", err)
 			}
-			err = binary.Write(buf, binary.LittleEndian, data)
-			if err != nil {
-				return fmt.Errorf("could not binary write data to binary buffer: %v", err)
-			}
-			if err := output(".wav", buf.Bytes()); err != nil {
-				return fmt.Errorf("error outputting wav audio file: %v", err)
+			if err := output(".wav", wav); err != nil {
+				return fmt.Errorf("error outputting .wav file: %v", err)
 			}
 		}
 		return nil
@@ -184,58 +165,4 @@ func main() {
 func printUsage() {
 	fmt.Fprintf(os.Stderr, "Sointu command line utility for playing .asm/.json song files.\nUsage: %s [flags] [path ...]\n", os.Args[0])
 	flag.PrintDefaults()
-}
-
-func createWavHeader(bufferLength int, pcm bool) []byte {
-	// Refer to: http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html
-	numChannels := 2
-	sampleRate := 44100
-	var bytesPerSample, chunkSize, fmtChunkSize, waveFormat int
-	var factChunk bool
-	if pcm {
-		bytesPerSample = 2
-		chunkSize = 36 + bytesPerSample*bufferLength
-		fmtChunkSize = 16
-		waveFormat = 1 // PCM
-		factChunk = false
-	} else {
-		bytesPerSample = 4
-		chunkSize = 50 + bytesPerSample*bufferLength
-		fmtChunkSize = 18
-		waveFormat = 3 // IEEE float
-		factChunk = true
-	}
-	buf := new(bytes.Buffer)
-	buf.Write([]byte("RIFF"))
-	binary.Write(buf, binary.LittleEndian, uint32(chunkSize))
-	buf.Write([]byte("WAVE"))
-	buf.Write([]byte("fmt "))
-	binary.Write(buf, binary.LittleEndian, uint32(fmtChunkSize))
-	binary.Write(buf, binary.LittleEndian, uint16(waveFormat))
-	binary.Write(buf, binary.LittleEndian, uint16(numChannels))
-	binary.Write(buf, binary.LittleEndian, uint32(sampleRate))
-	binary.Write(buf, binary.LittleEndian, uint32(sampleRate*numChannels*bytesPerSample)) // avgBytesPerSec
-	binary.Write(buf, binary.LittleEndian, uint16(numChannels*bytesPerSample))            // blockAlign
-	binary.Write(buf, binary.LittleEndian, uint16(8*bytesPerSample))                      // bits per sample
-	if fmtChunkSize > 16 {
-		binary.Write(buf, binary.LittleEndian, uint16(0)) // size of extension
-	}
-	if factChunk {
-		buf.Write([]byte("fact"))
-		binary.Write(buf, binary.LittleEndian, uint32(4))            // fact chunk size
-		binary.Write(buf, binary.LittleEndian, uint32(bufferLength)) // sample length
-	}
-	buf.Write([]byte("data"))
-	binary.Write(buf, binary.LittleEndian, uint32(bytesPerSample*bufferLength))
-	return buf.Bytes()
-}
-
-func clamp(value, min, max int) int {
-	if value < min {
-		return min
-	}
-	if value > max {
-		return max
-	}
-	return value
 }
