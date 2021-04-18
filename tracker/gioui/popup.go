@@ -1,6 +1,7 @@
 package gioui
 
 import (
+	"image"
 	"image/color"
 
 	"gioui.org/f32"
@@ -43,6 +44,7 @@ func (s PopupStyle) Layout(gtx C, contents layout.Widget) D {
 	if !*s.Visible {
 		return D{}
 	}
+
 	for _, ev := range gtx.Events(s.Visible) {
 		e, ok := ev.(pointer.Event)
 		if !ok {
@@ -56,9 +58,7 @@ func (s PopupStyle) Layout(gtx C, contents layout.Widget) D {
 	}
 
 	bg := func(gtx C) D {
-		pointer.InputOp{Tag: s.Visible,
-			Types: pointer.Press,
-		}.Add(gtx.Ops)
+		pointer.PassOp{Pass: false}.Add(gtx.Ops)
 		rrect := clip.RRect{
 			Rect: f32.Rectangle{Max: f32.Pt(float32(gtx.Constraints.Min.X), float32(gtx.Constraints.Min.Y))},
 			SE:   float32(gtx.Px(s.SE)),
@@ -71,6 +71,20 @@ func (s PopupStyle) Layout(gtx C, contents layout.Widget) D {
 		rrect2.Rect.Max = rrect2.Rect.Max.Add(f32.Pt(float32(gtx.Px(s.ShadowE)), float32(gtx.Px(s.ShadowS))))
 		paint.FillShape(gtx.Ops, s.ShadowColor, rrect2.Op(gtx.Ops))
 		paint.FillShape(gtx.Ops, s.SurfaceColor, rrect.Op(gtx.Ops))
+		rect := image.Rect(int(rrect2.Rect.Min.X), int(rrect2.Rect.Min.Y), int(rrect2.Rect.Max.X), int(rrect2.Rect.Max.Y))
+		state := op.Save(gtx.Ops)
+		pointer.InputOp{Tag: s.Visible,
+			Types: pointer.Press,
+			Grab:  true,
+		}.Add(gtx.Ops)
+		state.Load()
+		state = op.Save(gtx.Ops)
+		pointer.Rect(rect).Add(gtx.Ops)
+		pointer.InputOp{Tag: dummyTag,
+			Types: pointer.Press,
+			Grab:  true,
+		}.Add(gtx.Ops)
+		state.Load()
 		return D{Size: gtx.Constraints.Min}
 	}
 	macro := op.Record(gtx.Ops)
@@ -82,3 +96,5 @@ func (s PopupStyle) Layout(gtx C, contents layout.Widget) D {
 	op.Defer(gtx.Ops, callop)
 	return dims
 }
+
+var dummyTag bool

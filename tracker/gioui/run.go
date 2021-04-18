@@ -36,7 +36,7 @@ func (t *Tracker) Run(w *app.Window) error {
 		case e := <-w.Events():
 			switch e := e.(type) {
 			case system.DestroyEvent:
-				if !t.TryQuit() {
+				if !t.Quit(false) {
 					// TODO: uh oh, there's no way of canceling the destroyevent in gioui? so we create a new window just to show the dialog
 					w = app.NewWindow(
 						app.Size(unit.Dp(800), unit.Dp(600)),

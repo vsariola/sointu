@@ -73,12 +73,18 @@ type Tracker struct {
 	ConfirmInstrDelete    *Dialog
 	ConfirmSongDialog     *Dialog
 	WaveTypeDialog        *Dialog
+	OpenSongDialog        *FileDialog
+	SaveSongDialog        *FileDialog
+	OpenInstrumentDialog  *FileDialog
+	SaveInstrumentDialog  *FileDialog
+	ExportWavDialog       *FileDialog
 	ConfirmSongActionType int
 	window                *app.Window
 
 	lastVolume tracker.Volume
 	volumeChan chan tracker.Volume
 
+	wavFilePath  string
 	player       *tracker.Player
 	refresh      chan struct{}
 	playerCloser chan struct{}
@@ -172,9 +178,15 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 		ConfirmInstrDelete:    new(Dialog),
 		ConfirmSongDialog:     new(Dialog),
 		WaveTypeDialog:        new(Dialog),
-		errorChannel:          make(chan error, 32),
-		window:                window,
-		synthService:          synthService,
+		OpenSongDialog:        NewFileDialog(),
+		SaveSongDialog:        NewFileDialog(),
+		OpenInstrumentDialog:  NewFileDialog(),
+		SaveInstrumentDialog:  NewFileDialog(),
+
+		ExportWavDialog: NewFileDialog(),
+		errorChannel:    make(chan error, 32),
+		window:          window,
+		synthService:    synthService,
 	}
 	t.Model = tracker.NewModel()
 	vuBufferObserver := make(chan []float32)
@@ -202,4 +214,14 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 	}()
 	t.ResetSong()
 	return t
+}
+
+func (t *Tracker) Quit(forced bool) bool {
+	if !forced && t.ChangedSinceSave() {
+		t.ConfirmSongActionType = ConfirmQuit
+		t.ConfirmSongDialog.Visible = true
+		return false
+	}
+	t.quitted = true
+	return true
 }

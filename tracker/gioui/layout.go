@@ -1,6 +1,7 @@
 package gioui
 
 import (
+	"fmt"
 	"image"
 
 	"gioui.org/app"
@@ -45,35 +46,68 @@ func (t *Tracker) Layout(gtx layout.Context) {
 	dstyle.AltStyle.Text = "Float32"
 	dstyle.Layout(gtx)
 	for t.WaveTypeDialog.BtnOk.Clicked() {
-		t.exportWav(true)
+		t.exportWav(t.wavFilePath, true)
 		t.WaveTypeDialog.Visible = false
 	}
 	for t.WaveTypeDialog.BtnAlt.Clicked() {
-		t.exportWav(false)
+		t.exportWav(t.wavFilePath, false)
 		t.WaveTypeDialog.Visible = false
 	}
 	for t.WaveTypeDialog.BtnCancel.Clicked() {
 		t.WaveTypeDialog.Visible = false
 	}
+	fstyle := OpenFileDialog(t.Theme, t.OpenSongDialog)
+	fstyle.Title = "Open Song File"
+	fstyle.Layout(gtx)
+	for ok, file := t.OpenSongDialog.FileSelected(); ok; ok, file = t.OpenSongDialog.FileSelected() {
+		t.loadSong(file)
+	}
+	fstyle = SaveFileDialog(t.Theme, t.SaveSongDialog)
+	fstyle.Title = "Save Song As"
+	for ok, file := t.SaveSongDialog.FileSelected(); ok; ok, file = t.SaveSongDialog.FileSelected() {
+		t.saveSong(file)
+	}
+	fstyle.Layout(gtx)
+	exportWavDialogStyle := SaveFileDialog(t.Theme, t.ExportWavDialog)
+	exportWavDialogStyle.Title = "Export Song As Wav"
+	for ok, file := t.ExportWavDialog.FileSelected(); ok; ok, file = t.ExportWavDialog.FileSelected() {
+		t.wavFilePath = file
+		t.WaveTypeDialog.Visible = true
+	}
+	exportWavDialogStyle.ExtMain = ".wav"
+	exportWavDialogStyle.ExtAlt = ""
+	exportWavDialogStyle.Layout(gtx)
+	fstyle = SaveFileDialog(t.Theme, t.SaveInstrumentDialog)
+	fstyle.Title = "Save Instrument As"
+	if t.SaveInstrumentDialog.Visible && t.Instrument().Name != "" {
+		fstyle.Title = fmt.Sprintf("Save Instrument \"%v\" As", t.Instrument().Name)
+	}
+	for ok, file := t.SaveInstrumentDialog.FileSelected(); ok; ok, file = t.SaveInstrumentDialog.FileSelected() {
+		t.saveInstrument(file)
+		t.OpenInstrumentDialog.Directory.SetText(t.SaveInstrumentDialog.Directory.Text())
+	}
+	fstyle.Layout(gtx)
+	fstyle = OpenFileDialog(t.Theme, t.OpenInstrumentDialog)
+	fstyle.Title = "Open Instrument File"
+	for ok, file := t.OpenInstrumentDialog.FileSelected(); ok; ok, file = t.OpenInstrumentDialog.FileSelected() {
+		t.loadInstrument(file)
+	}
+	fstyle.Layout(gtx)
 }
 
 func (t *Tracker) confirmedSongAction() {
 	switch t.ConfirmSongActionType {
 	case ConfirmLoad:
-		t.loadSong()
+		t.OpenSongFile(true)
 	case ConfirmNew:
-		t.ResetSong()
-		t.SetFilePath("")
-		t.window.Option(app.Title("Sointu Tracker"))
-		t.ClearUndoHistory()
-		t.SetChangedSinceSave(false)
+		t.NewSong(true)
 	case ConfirmQuit:
-		t.quitted = true
+		t.Quit(true)
 	}
 }
 
-func (t *Tracker) TryResetSong() {
-	if t.ChangedSinceSave() {
+func (t *Tracker) NewSong(forced bool) {
+	if !forced && t.ChangedSinceSave() {
 		t.ConfirmSongActionType = ConfirmNew
 		t.ConfirmSongDialog.Visible = true
 		return
@@ -83,16 +117,6 @@ func (t *Tracker) TryResetSong() {
 	t.window.Option(app.Title("Sointu Tracker"))
 	t.ClearUndoHistory()
 	t.SetChangedSinceSave(false)
-}
-
-func (t *Tracker) TryQuit() bool {
-	if t.ChangedSinceSave() {
-		t.ConfirmSongActionType = ConfirmQuit
-		t.ConfirmSongDialog.Visible = true
-		return false
-	}
-	t.quitted = true
-	return true
 }
 
 func (t *Tracker) layoutBottom(gtx layout.Context) layout.Dimensions {

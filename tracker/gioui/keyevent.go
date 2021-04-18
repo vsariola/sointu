@@ -81,7 +81,12 @@ var unitKeyMap = map[string]string{
 // KeyEvent handles incoming key events and returns true if repaint is needed.
 func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 	if e.State == key.Press {
-		if t.InstrumentNameEditor.Focused() {
+		if t.InstrumentNameEditor.Focused() ||
+			t.OpenSongDialog.Visible ||
+			t.SaveSongDialog.Visible ||
+			t.SaveInstrumentDialog.Visible ||
+			t.OpenInstrumentDialog.Visible ||
+			t.ExportWavDialog.Visible {
 			return false
 		}
 		switch e.Name {
@@ -111,7 +116,7 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 			}
 		case "N":
 			if e.Modifiers.Contain(key.ModShortcut) {
-				t.TryResetSong()
+				t.NewSong(false)
 				return true
 			}
 		case "S":
@@ -121,7 +126,7 @@ func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 			}
 		case "O":
 			if e.Modifiers.Contain(key.ModShortcut) {
-				t.LoadSongFile()
+				t.OpenSongFile(false)
 				return true
 			}
 		case "F1":

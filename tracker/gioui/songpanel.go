@@ -53,17 +53,17 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 	for clickedItem, hasClicked := t.Menus[0].Clicked(); hasClicked; {
 		switch clickedItem {
 		case 0:
-			t.TryResetSong()
+			t.NewSong(false)
 		case 1:
-			t.LoadSongFile()
+			t.OpenSongFile(false)
 		case 2:
 			t.SaveSongFile()
 		case 3:
 			t.SaveSongAsFile()
 		case 4:
-			t.WaveTypeDialog.Visible = true
+			t.ExportWav()
 		case 5:
-			t.TryQuit()
+			t.Quit(false)
 		}
 		clickedItem, hasClicked = t.Menus[0].Clicked()
 	}

@@ -12,7 +12,6 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
-	github.com/sqweek/dialog v0.0.0-20200911184034-8a3d98e8211d
 	github.com/stretchr/testify v1.6.1 // indirect
 	golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3
 	gopkg.in/yaml.v2 v2.3.0
