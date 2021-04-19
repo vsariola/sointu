@@ -61,9 +61,9 @@ var defaultSong = sointu.Song{
 	RowsPerBeat: 4,
 	Score: sointu.Score{
 		RowsPerPattern: 16,
-		Length:         4,
+		Length:         1,
 		Tracks: []sointu.Track{
-			{NumVoices: 1, Order: []int{0, 0, 0, 1}, Patterns: [][]byte{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}, {64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 75, 0, 75, 0, 80, 0}}},
+			{NumVoices: 1, Order: []int{0}, Patterns: [][]byte{{72, 0}}},
 		},
 	},
 	Patch: sointu.Patch{defaultInstrument,
@@ -74,7 +74,7 @@ var defaultSong = sointu.Song{
 				VarArgs: []int{1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618,
 					1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642,
 				}},
-			defaultUnits["out"],
+			{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
 		}}},
 }
 
