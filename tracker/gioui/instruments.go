@@ -17,6 +17,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"gioui.org/x/eventx"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"gopkg.in/yaml.v3"
@@ -50,7 +51,8 @@ func (t *Tracker) layoutInstruments(gtx C) D {
 	} else {
 		btnStyle.Color = disabledTextColor
 	}
-	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+	spy, spiedGtx := eventx.Enspy(gtx)
+	ret := layout.Flex{Axis: layout.Vertical}.Layout(spiedGtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{}.Layout(
 				gtx,
@@ -69,6 +71,17 @@ func (t *Tracker) layoutInstruments(gtx C) D {
 		}),
 		layout.Rigid(t.layoutInstrumentHeader),
 		layout.Flexed(1, t.layoutInstrumentEditor))
+	for _, group := range spy.AllEvents() {
+		for _, event := range group.Items {
+			switch e := event.(type) {
+			case key.Event:
+				if e.Name == key.NameEscape {
+					key.FocusOp{}.Add(gtx.Ops)
+				}
+			}
+		}
+	}
+	return ret
 }
 
 func (t *Tracker) layoutInstrumentHeader(gtx C) D {
@@ -139,12 +152,24 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 			}
 			editorStyle := material.Editor(t.Theme, t.InstrumentCommentEditor, "Comment")
 			editorStyle.Color = highEmphasisTextColor
-			ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+
+			spy, spiedGtx := eventx.Enspy(gtx)
+			ret := layout.Flex{Axis: layout.Vertical}.Layout(spiedGtx,
 				layout.Rigid(header),
 				layout.Rigid(func(gtx C) D {
 					return layout.UniformInset(unit.Dp(6)).Layout(gtx, editorStyle.Layout)
 				}),
 			)
+			for _, group := range spy.AllEvents() {
+				for _, event := range group.Items {
+					switch e := event.(type) {
+					case key.Event:
+						if e.Name == key.NameEscape {
+							key.FocusOp{}.Add(gtx.Ops)
+						}
+					}
+				}
+			}
 			t.SetInstrumentComment(t.InstrumentCommentEditor.Text())
 			return ret
 		}
