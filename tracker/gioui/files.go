@@ -174,5 +174,8 @@ func (t *Tracker) loadInstrument(filename string) bool {
 		return false
 	}
 	t.SetInstrument(instrument)
+	if t.Instrument().Comment != "" {
+		t.InstrumentExpanded = true
+	}
 	return true
 }

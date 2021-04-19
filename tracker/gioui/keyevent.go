@@ -82,6 +82,7 @@ var unitKeyMap = map[string]string{
 func (t *Tracker) KeyEvent(w *app.Window, e key.Event) bool {
 	if e.State == key.Press {
 		if t.InstrumentNameEditor.Focused() ||
+			t.InstrumentCommentEditor.Focused() ||
 			t.OpenSongDialog.Visible ||
 			t.SaveSongDialog.Visible ||
 			t.SaveInstrumentDialog.Visible ||

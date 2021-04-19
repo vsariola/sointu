@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"gioui.org/io/clipboard"
+	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -72,6 +73,16 @@ func (t *Tracker) layoutInstruments(gtx C) D {
 
 func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 	header := func(gtx C) D {
+		collapseIcon := icons.NavigationExpandLess
+		if t.InstrumentExpanded {
+			collapseIcon = icons.NavigationExpandMore
+		}
+
+		instrumentExpandBtnStyle := material.IconButton(t.Theme, t.InstrumentExpandBtn, widgetForIcon(collapseIcon))
+		instrumentExpandBtnStyle.Background = transparent
+		instrumentExpandBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		instrumentExpandBtnStyle.Color = primaryColor
+
 		copyInstrumentBtnStyle := material.IconButton(t.Theme, t.CopyInstrumentBtn, widgetForIcon(icons.ContentContentCopy))
 		copyInstrumentBtnStyle.Background = transparent
 		copyInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
@@ -96,23 +107,48 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 			deleteInstrumentBtnStyle.Color = disabledTextColor
 		}
 
-		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-			layout.Rigid(Label("Voices: ", white)),
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				maxRemain := t.MaxInstrumentVoices()
-				t.InstrumentVoices.Value = t.Instrument().NumVoices
-				numStyle := NumericUpDown(t.Theme, t.InstrumentVoices, 0, maxRemain)
-				gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
-				gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
-				dims := numStyle.Layout(gtx)
-				t.SetInstrumentVoices(t.InstrumentVoices.Value)
-				return dims
-			}),
-			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
-			layout.Rigid(saveInstrumentBtnStyle.Layout),
-			layout.Rigid(loadInstrumentBtnStyle.Layout),
-			layout.Rigid(copyInstrumentBtnStyle.Layout),
-			layout.Rigid(deleteInstrumentBtnStyle.Layout))
+		header := func(gtx C) D {
+			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(Label("Voices: ", white)),
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					maxRemain := t.MaxInstrumentVoices()
+					t.InstrumentVoices.Value = t.Instrument().NumVoices
+					numStyle := NumericUpDown(t.Theme, t.InstrumentVoices, 0, maxRemain)
+					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					dims := numStyle.Layout(gtx)
+					t.SetInstrumentVoices(t.InstrumentVoices.Value)
+					return dims
+				}),
+				layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+				layout.Rigid(instrumentExpandBtnStyle.Layout),
+				layout.Rigid(saveInstrumentBtnStyle.Layout),
+				layout.Rigid(loadInstrumentBtnStyle.Layout),
+				layout.Rigid(copyInstrumentBtnStyle.Layout),
+				layout.Rigid(deleteInstrumentBtnStyle.Layout))
+		}
+		for t.InstrumentExpandBtn.Clicked() {
+			t.InstrumentExpanded = !t.InstrumentExpanded
+			if !t.InstrumentExpanded {
+				key.FocusOp{Tag: nil}.Add(gtx.Ops) // clear focus
+			}
+		}
+		if t.InstrumentExpanded || t.InstrumentCommentEditor.Focused() { // we draw once the widget after it manages to lose focus
+			if t.InstrumentCommentEditor.Text() != t.Instrument().Comment {
+				t.InstrumentCommentEditor.SetText(t.Instrument().Comment)
+			}
+			editorStyle := material.Editor(t.Theme, t.InstrumentCommentEditor, "Comment")
+			editorStyle.Color = highEmphasisTextColor
+			ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+				layout.Rigid(header),
+				layout.Rigid(func(gtx C) D {
+					return layout.UniformInset(unit.Dp(6)).Layout(gtx, editorStyle.Layout)
+				}),
+			)
+			t.SetInstrumentComment(t.InstrumentCommentEditor.Text())
+			return ret
+		}
+		return header(gtx)
 	}
 	for t.CopyInstrumentBtn.Clicked() {
 		contents, err := yaml.Marshal(t.Instrument())

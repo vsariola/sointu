@@ -171,6 +171,14 @@ func (m *Model) SetInstrumentName(name string) {
 	m.song.Patch[m.instrIndex].Name = name
 }
 
+func (m *Model) SetInstrumentComment(comment string) {
+	if m.Instrument().Comment == comment {
+		return
+	}
+	m.saveUndo("SetInstrumentComment", 10)
+	m.song.Patch[m.instrIndex].Comment = comment
+}
+
 func (m *Model) SetBPM(value int) {
 	if value < 1 {
 		value = 1
