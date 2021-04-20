@@ -10,7 +10,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
-	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
@@ -79,14 +78,7 @@ func (t *Tracker) layoutUnitFooter() layout.Widget {
 			t.DeleteUnit(false)
 			op.InvalidateOp{}.Add(gtx.Ops)
 		}
-		deleteUnitBtnStyle := material.IconButton(t.Theme, t.DeleteUnitBtn, widgetForIcon(icons.ActionDelete))
-		deleteUnitBtnStyle.Background = transparent
-		deleteUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		if t.CanDeleteUnit() {
-			deleteUnitBtnStyle.Color = primaryColor
-		} else {
-			deleteUnitBtnStyle.Color = disabledTextColor
-		}
+		deleteUnitBtnStyle := IconButton(t.Theme, t.DeleteUnitBtn, icons.ActionDelete, t.CanDeleteUnit())
 		text := t.Unit().Type
 		if text == "" {
 			text = "Choose unit type"
@@ -99,10 +91,7 @@ func (t *Tracker) layoutUnitFooter() layout.Widget {
 			layout.Rigid(func(gtx C) D {
 				var dims D
 				if t.Unit().Type != "" {
-					clearUnitBtnStyle := material.IconButton(t.Theme, t.ClearUnitBtn, widgetForIcon(icons.ContentClear))
-					clearUnitBtnStyle.Color = primaryColor
-					clearUnitBtnStyle.Background = transparent
-					clearUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+					clearUnitBtnStyle := IconButton(t.Theme, t.ClearUnitBtn, icons.ContentClear, true)
 					dims = clearUnitBtnStyle.Layout(gtx)
 				}
 				return D{Size: image.Pt(gtx.Px(unit.Dp(48)), dims.Size.Y)}

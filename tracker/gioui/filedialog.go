@@ -73,7 +73,7 @@ func OpenFileDialog(th *material.Theme, f *FileDialog) FileDialogStyle {
 func commonFileDialog(th *material.Theme, f *FileDialog) FileDialogStyle {
 	ret := FileDialogStyle{
 		dialog:         f,
-		FolderUpStyle:  material.IconButton(th, &f.BtnFolderUp, widgetForIcon(icons.NavigationArrowUpward)),
+		FolderUpStyle:  IconButton(th, &f.BtnFolderUp, icons.NavigationArrowUpward, true),
 		DirEditorStyle: material.Editor(th, &f.Directory, "Directory"),
 		FileNameStyle:  material.Editor(th, &f.FileName, "Filename"),
 		CancelStyle:    material.Button(th, &f.BtnCancel, "Cancel"),
@@ -81,9 +81,6 @@ func commonFileDialog(th *material.Theme, f *FileDialog) FileDialogStyle {
 	}
 	ret.CancelStyle.Background = transparent
 	ret.CancelStyle.Color = primaryColor
-	ret.FolderUpStyle.Inset = layout.UniformInset(unit.Dp(1))
-	ret.FolderUpStyle.Color = primaryColor
-	ret.FolderUpStyle.Background = transparent
 	ret.UseAltExtStyle.Color.Enabled = white
 	ret.UseAltExtStyle.Color.Disabled = white
 	ret.ExtMain = ".yml"

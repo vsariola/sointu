@@ -43,14 +43,7 @@ func (t *Tracker) layoutInstruments(gtx C) D {
 	for t.NewInstrumentBtn.Clicked() {
 		t.AddInstrument(true)
 	}
-	btnStyle := material.IconButton(t.Theme, t.NewInstrumentBtn, widgetForIcon(icons.ContentAdd))
-	btnStyle.Background = transparent
-	btnStyle.Inset = layout.UniformInset(unit.Dp(6))
-	if t.CanAddInstrument() {
-		btnStyle.Color = primaryColor
-	} else {
-		btnStyle.Color = disabledTextColor
-	}
+	btnStyle := IconButton(t.Theme, t.NewInstrumentBtn, icons.ContentAdd, t.CanAddInstrument())
 	spy, spiedGtx := eventx.Enspy(gtx)
 	ret := layout.Flex{Axis: layout.Vertical}.Layout(spiedGtx,
 		layout.Rigid(func(gtx C) D {
@@ -91,34 +84,11 @@ func (t *Tracker) layoutInstrumentHeader(gtx C) D {
 			collapseIcon = icons.NavigationExpandMore
 		}
 
-		instrumentExpandBtnStyle := material.IconButton(t.Theme, t.InstrumentExpandBtn, widgetForIcon(collapseIcon))
-		instrumentExpandBtnStyle.Background = transparent
-		instrumentExpandBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		instrumentExpandBtnStyle.Color = primaryColor
-
-		copyInstrumentBtnStyle := material.IconButton(t.Theme, t.CopyInstrumentBtn, widgetForIcon(icons.ContentContentCopy))
-		copyInstrumentBtnStyle.Background = transparent
-		copyInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		copyInstrumentBtnStyle.Color = primaryColor
-
-		saveInstrumentBtnStyle := material.IconButton(t.Theme, t.SaveInstrumentBtn, widgetForIcon(icons.ContentSave))
-		saveInstrumentBtnStyle.Background = transparent
-		saveInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		saveInstrumentBtnStyle.Color = primaryColor
-
-		loadInstrumentBtnStyle := material.IconButton(t.Theme, t.LoadInstrumentBtn, widgetForIcon(icons.FileFolderOpen))
-		loadInstrumentBtnStyle.Background = transparent
-		loadInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		loadInstrumentBtnStyle.Color = primaryColor
-
-		deleteInstrumentBtnStyle := material.IconButton(t.Theme, t.DeleteInstrumentBtn, widgetForIcon(icons.ActionDelete))
-		deleteInstrumentBtnStyle.Background = transparent
-		deleteInstrumentBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		if t.CanDeleteInstrument() {
-			deleteInstrumentBtnStyle.Color = primaryColor
-		} else {
-			deleteInstrumentBtnStyle.Color = disabledTextColor
-		}
+		instrumentExpandBtnStyle := IconButton(t.Theme, t.InstrumentExpandBtn, collapseIcon, true)
+		copyInstrumentBtnStyle := IconButton(t.Theme, t.CopyInstrumentBtn, icons.ContentContentCopy, true)
+		saveInstrumentBtnStyle := IconButton(t.Theme, t.SaveInstrumentBtn, icons.ContentSave, true)
+		loadInstrumentBtnStyle := IconButton(t.Theme, t.LoadInstrumentBtn, icons.FileFolderOpen, true)
+		deleteInstrumentBtnStyle := IconButton(t.Theme, t.DeleteInstrumentBtn, icons.ActionDelete, t.CanDeleteInstrument())
 
 		header := func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,

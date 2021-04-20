@@ -86,22 +86,8 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 		noteOffBtnStyle.Color = primaryColor
 		noteOffBtnStyle.Background = transparent
 		noteOffBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		deleteTrackBtnStyle := material.IconButton(t.Theme, t.DeleteTrackBtn, widgetForIcon(icons.ActionDelete))
-		deleteTrackBtnStyle.Background = transparent
-		deleteTrackBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		if t.CanDeleteTrack() {
-			deleteTrackBtnStyle.Color = primaryColor
-		} else {
-			deleteTrackBtnStyle.Color = disabledTextColor
-		}
-		newTrackBtnStyle := material.IconButton(t.Theme, t.NewTrackBtn, widgetForIcon(icons.ContentAdd))
-		newTrackBtnStyle.Background = transparent
-		newTrackBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		if t.CanAddTrack() {
-			newTrackBtnStyle.Color = primaryColor
-		} else {
-			newTrackBtnStyle.Color = disabledTextColor
-		}
+		deleteTrackBtnStyle := IconButton(t.Theme, t.DeleteTrackBtn, icons.ActionDelete, t.CanDeleteTrack())
+		newTrackBtnStyle := IconButton(t.Theme, t.NewTrackBtn, icons.ContentAdd, t.CanAddTrack())
 		in := layout.UniformInset(unit.Dp(1))
 		octave := func(gtx C) D {
 			t.OctaveNumberInput.Value = t.Octave()
