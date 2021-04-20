@@ -30,13 +30,10 @@ func ConfirmDialog(th *material.Theme, dialog *Dialog, text string) DialogStyle 
 		dialog:      dialog,
 		Text:        text,
 		Inset:       layout.Inset{Top: unit.Dp(12), Bottom: unit.Dp(12), Left: unit.Dp(20), Right: unit.Dp(20)},
-		AltStyle:    material.Button(th, &dialog.BtnAlt, "Alt"),
-		OkStyle:     material.Button(th, &dialog.BtnOk, "Ok"),
-		CancelStyle: material.Button(th, &dialog.BtnCancel, "Cancel"),
+		AltStyle:    HighEmphasisButton(th, &dialog.BtnAlt, "Alt"),
+		OkStyle:     HighEmphasisButton(th, &dialog.BtnOk, "Ok"),
+		CancelStyle: HighEmphasisButton(th, &dialog.BtnCancel, "Cancel"),
 	}
-	ret.AltStyle.Background = primaryColor
-	ret.OkStyle.Background = primaryColor
-	ret.CancelStyle.Background = primaryColor
 	return ret
 }
 

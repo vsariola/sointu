@@ -66,26 +66,11 @@ func (t *Tracker) layoutTracker(gtx layout.Context) layout.Dimensions {
 	}
 
 	menu := func(gtx C) D {
-		addSemitoneBtnStyle := material.Button(t.Theme, t.AddSemitoneBtn, "+1")
-		addSemitoneBtnStyle.Color = primaryColor
-		addSemitoneBtnStyle.Background = transparent
-		addSemitoneBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		subtractSemitoneBtnStyle := material.Button(t.Theme, t.SubtractSemitoneBtn, "-1")
-		subtractSemitoneBtnStyle.Color = primaryColor
-		subtractSemitoneBtnStyle.Background = transparent
-		subtractSemitoneBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		addOctaveBtnStyle := material.Button(t.Theme, t.AddOctaveBtn, "+12")
-		addOctaveBtnStyle.Color = primaryColor
-		addOctaveBtnStyle.Background = transparent
-		addOctaveBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		subtractOctaveBtnStyle := material.Button(t.Theme, t.SubtractOctaveBtn, "-12")
-		subtractOctaveBtnStyle.Color = primaryColor
-		subtractOctaveBtnStyle.Background = transparent
-		subtractOctaveBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
-		noteOffBtnStyle := material.Button(t.Theme, t.NoteOffBtn, "Note Off")
-		noteOffBtnStyle.Color = primaryColor
-		noteOffBtnStyle.Background = transparent
-		noteOffBtnStyle.Inset = layout.UniformInset(unit.Dp(6))
+		addSemitoneBtnStyle := LowEmphasisButton(t.Theme, t.AddSemitoneBtn, "+1")
+		subtractSemitoneBtnStyle := LowEmphasisButton(t.Theme, t.SubtractSemitoneBtn, "-1")
+		addOctaveBtnStyle := LowEmphasisButton(t.Theme, t.AddOctaveBtn, "+12")
+		subtractOctaveBtnStyle := LowEmphasisButton(t.Theme, t.SubtractOctaveBtn, "-12")
+		noteOffBtnStyle := LowEmphasisButton(t.Theme, t.NoteOffBtn, "Note Off")
 		deleteTrackBtnStyle := IconButton(t.Theme, t.DeleteTrackBtn, icons.ActionDelete, t.CanDeleteTrack())
 		newTrackBtnStyle := IconButton(t.Theme, t.NewTrackBtn, icons.ContentAdd, t.CanAddTrack())
 		in := layout.UniformInset(unit.Dp(1))

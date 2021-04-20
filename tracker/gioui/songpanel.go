@@ -112,13 +112,11 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 
 	in := layout.UniformInset(unit.Dp(1))
 
-	panicBtnStyle := material.Button(t.Theme, t.PanicBtn, "Panic")
+	var panicBtnStyle material.ButtonStyle
 	if t.player.Enabled() {
-		panicBtnStyle.Background = transparent
-		panicBtnStyle.Color = t.Theme.Palette.Fg
+		panicBtnStyle = LowEmphasisButton(t.Theme, t.PanicBtn, "Panic")
 	} else {
-		panicBtnStyle.Background = t.Theme.Palette.Fg
-		panicBtnStyle.Color = t.Theme.Palette.ContrastFg
+		panicBtnStyle = HighEmphasisButton(t.Theme, t.PanicBtn, "Panic")
 	}
 
 	for t.PanicBtn.Clicked() {
