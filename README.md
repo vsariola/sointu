@@ -262,12 +262,12 @@ New features since fork
     used.
   - **Songs are YAML files**. These markup files are simple data files,
     describing the tracks, patterns and patch structure (see
-    [here](tests/test_oscillat_trisaw.yml) for an example). The sointu-cli
-    compiler then reads these files and compiles them into .asm code. This has
-    the nice implication that, in future, there will be no need for a binary
-    format to save patches, nor should you need to commit .o or .asm to repo:
-    just put the .yml in the repo and automate the .yml -> .asm -> .o steps
-    using sointu-cli & nasm.
+    [here](tests/test_oscillat_trisaw.yml) for an example). The sointu-compile
+    then reads these files and compiles them into .asm code. This has the nice
+    implication that, in future, there will be no need for a binary format to
+    save patches, nor should you need to commit .o or .asm to repo: just put the
+    .yml in the repo and automate the .yml -> .asm -> .o steps using
+    sointu-compile & nasm.
   - **Harmonized support for stereo signals**. Every opcode supports a stereo
     variant: the stereo bit is hidden in the least significant bit of the
     command stream and passed in carry to the opcode. This has several nice
@@ -278,7 +278,7 @@ New features since fork
     stereo opcodes usually follow stereo opcodes (and mono opcodes follow mono
     opcodes), the stereo bits of the command bytes will be highly correlated and
     if crinkler or any other modeling compressor is doing its job, that should
-    make them highly predictable i.e. highly compressably.
+    make them highly predictable i.e. highly compressable.
   - **Test-driven development**. Given that 4klang was already a mature project,
     the first thing actually implemented was a set of regression tests to avoid
     breaking everything beyond any hope of repair. Done, using go test (runs the
@@ -317,19 +317,19 @@ New features since fork
     hand-written assembly code by sointu compiler, but with this, the tracker is
     ultraportable and does not need cgo calls.
   - **Using Sointu as a sync-tracker**. Similar to [GNU
-    Rocket](https://github.com/yupferris/gnurocket), but (ab)using the tracker
-    we already have for music. We use the Go "rpc" package to send current sync
-    values from the new "sync" opcode + optionally the current fractional row
-    the song is on. The syncs are saved every 256th sample (approximately 172
-    Hz). For 4k intro development, the idea is to write a debug version of the
-    intro that merely loads the shader and listens to the RPC messages, and then
-    draws the shader with those as the uniforms. Then, during the actual 4k
-    intro, one can get the sync data from Sointu: if the song uses syncs,
-    su_render_song writes the syncs to a float array. During each time step, a
-    slice of this array can be sent to the shader as a uniform float array. A
-    track with two voices, triggering an instrument with a single envelope and a
-    slow filter can even be used as a cheap smooth interpolation mechanism,
-    provided the syncs are added to each other in the shader.
+    Rocket](https://github.com/rocket/rocket), but (ab)using the tracker we
+    already have for music. We use the Go rpc package to send current sync
+    values from the new SYNC opcode + optionally the current fractional row the
+    song is on. The syncs are saved every 256th sample (approximately 172 Hz).
+    For 4k intro development, the idea is to write a debug version of the intro
+    that merely loads the shader and listens to the RPC messages, and then draws
+    the shader with those as the uniforms. Then, during the actual 4k intro, one
+    can get the sync data from Sointu: if the song uses syncs, su_render_song
+    writes the syncs to a float array. During each time step, a slice of this
+    array can be sent to the shader as a uniform float array. A track with two
+    voices, triggering an instrument with a single envelope and a slow filter,
+    can even be used as a cheap smooth interpolation mechanism, provided the
+    syncs are added to each other in the shader.
 
 Future goals
 ------------
