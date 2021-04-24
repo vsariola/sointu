@@ -185,6 +185,7 @@ func (s *FilledDragListStyle) Layout(gtx C) D {
 					Types: pointer.Drag | pointer.Press | pointer.Release,
 					Grab:  s.dragList.drag,
 				}.Add(gtx.Ops)
+				pointer.CursorNameOp{Name: pointer.CursorGrab}.Add(gtx.Ops)
 			}
 			return layout.Dimensions{Size: gtx.Constraints.Min}
 		}
