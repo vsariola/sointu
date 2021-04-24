@@ -245,6 +245,17 @@ func (m *Model) CanDeleteTrack() bool {
 	return len(m.song.Score.Tracks) > 1
 }
 
+func (m *Model) SwapTracks(i, j int) {
+	if i < 0 || j < 0 || i >= len(m.song.Score.Tracks) || j >= len(m.song.Score.Tracks) || i == j {
+		return
+	}
+	m.saveUndo("SwapTracks", 10)
+	tracks := m.song.Score.Tracks
+	tracks[i], tracks[j] = tracks[j], tracks[i]
+	m.clampPositions()
+	m.notifyScoreChange()
+}
+
 func (m *Model) SetTrackVoices(value int) {
 	if value < 1 {
 		value = 1

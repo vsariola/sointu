@@ -25,6 +25,7 @@ const patternRowMarkerWidth = 30
 
 type OrderEditor struct {
 	list         *layout.List
+	titleList    *DragList
 	scrollBar    *ScrollBar
 	tag          bool
 	focused      bool
@@ -34,6 +35,7 @@ type OrderEditor struct {
 func NewOrderEditor() *OrderEditor {
 	return &OrderEditor{
 		list:      &layout.List{Axis: layout.Vertical},
+		titleList: &DragList{List: &layout.List{Axis: layout.Horizontal}},
 		scrollBar: &ScrollBar{Axis: layout.Vertical},
 	}
 }
@@ -169,22 +171,25 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 	// draw the single letter titles for tracks
 	{
 		gtx := gtx
-		curVoice := 0
 		stack := op.Save(gtx.Ops)
 		op.Offset(f32.Pt(patternRowMarkerWidth, 0)).Add(gtx.Ops)
-		gtx.Constraints = layout.Exact(image.Pt(patternCellWidth, patternCellHeight))
-		for _, track := range t.Song().Score.Tracks {
-			instr, err := t.Song().Patch.InstrumentForVoice(curVoice)
+		gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X-patternRowMarkerWidth, patternCellHeight))
+		elem := func(gtx C, i int) D {
+			gtx.Constraints = layout.Exact(image.Pt(patternCellWidth, patternCellHeight))
+			instr, err := t.Song().Patch.InstrumentForVoice(t.Song().Score.FirstVoiceForTrack(i))
 			var title string
 			if err == nil && len(t.Song().Patch[instr].Name) > 0 {
 				title = string(t.Song().Patch[instr].Name[0])
 			} else {
-				title = "I"
+				title = "?"
 			}
 			LabelStyle{Alignment: layout.N, Text: title, FontSize: unit.Dp(12), Color: mediumEmphasisTextColor}.Layout(gtx)
-			op.Offset(f32.Pt(patternCellWidth, 0)).Add(gtx.Ops)
-			curVoice += track.NumVoices
+			return D{Size: gtx.Constraints.Min}
 		}
+		style := FilledDragList(t.Theme, oe.titleList, len(t.Song().Score.Tracks), elem, t.SwapTracks)
+		style.HoverColor = transparent
+		style.SelectedColor = transparent
+		style.Layout(gtx)
 		stack.Load()
 	}
 	op.Offset(f32.Pt(0, patternCellHeight)).Add(gtx.Ops)
