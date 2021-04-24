@@ -8,7 +8,6 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"github.com/vsariola/sointu/tracker"
 )
 
 type C = layout.Context
@@ -20,9 +19,7 @@ func (t *Tracker) Layout(gtx layout.Context) {
 		t.layoutTop,
 		t.layoutBottom)
 	t.Alert.Layout(gtx)
-	dstyle := ConfirmDialog(t.Theme, t.ConfirmInstrDelete, "Are you sure you want to delete this instrument?")
-	dstyle.Layout(gtx)
-	dstyle = ConfirmDialog(t.Theme, t.ConfirmSongDialog, "Do you want to save your changes to the song? Your changes will be lost if you don't save them.")
+	dstyle := ConfirmDialog(t.Theme, t.ConfirmSongDialog, "Do you want to save your changes to the song? Your changes will be lost if you don't save them.")
 	dstyle.ShowAlt = true
 	dstyle.OkStyle.Text = "Save"
 	dstyle.AltStyle.Text = "Don't save"
@@ -93,6 +90,9 @@ func (t *Tracker) Layout(gtx layout.Context) {
 		t.loadInstrument(file)
 	}
 	fstyle.Layout(gtx)
+	if t.ModalDialog != nil {
+		t.ModalDialog(gtx)
+	}
 }
 
 func (t *Tracker) confirmedSongAction() {
@@ -122,10 +122,10 @@ func (t *Tracker) NewSong(forced bool) {
 func (t *Tracker) layoutBottom(gtx layout.Context) layout.Dimensions {
 	return t.BottomHorizontalSplit.Layout(gtx,
 		func(gtx C) D {
-			return Surface{Gray: 24, Focus: t.EditMode() == tracker.EditPatterns}.Layout(gtx, t.layoutPatterns)
+			return t.OrderEditor.Layout(gtx, t)
 		},
 		func(gtx C) D {
-			return Surface{Gray: 24, Focus: t.EditMode() == tracker.EditTracks}.Layout(gtx, t.layoutTracker)
+			return t.TrackEditor.Layout(gtx, t)
 		},
 	)
 }
@@ -133,6 +133,8 @@ func (t *Tracker) layoutBottom(gtx layout.Context) layout.Dimensions {
 func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
 	return t.TopHorizontalSplit.Layout(gtx,
 		t.layoutSongPanel,
-		t.layoutInstruments,
+		func(gtx C) D {
+			return t.InstrumentEditor.Layout(gtx, t)
+		},
 	)
 }

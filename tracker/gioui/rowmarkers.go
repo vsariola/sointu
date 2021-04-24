@@ -11,7 +11,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/widget"
-	"github.com/vsariola/sointu/tracker"
 )
 
 const rowMarkerWidth = 50
@@ -47,7 +46,7 @@ func (t *Tracker) layoutRowMarkers(gtx C) D {
 				paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)
 				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", i)))
 			}
-			if t.EditMode() == tracker.EditTracks && songRow == cursorSongRow {
+			if t.TrackEditor.Focused() && songRow == cursorSongRow {
 				paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
 			} else {
 				paint.ColorOp{Color: rowMarkerRowTextColor}.Add(gtx.Ops)

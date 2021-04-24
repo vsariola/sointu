@@ -18,7 +18,6 @@ import (
 // protected.
 type Model struct {
 	song             sointu.Song
-	editMode         EditMode
 	selectionCorner  SongPoint
 	cursor           SongPoint
 	lowNibble        bool
@@ -54,16 +53,7 @@ type Parameter struct {
 	LargeStep int
 }
 
-type EditMode int
-
 type ParameterType int
-
-const (
-	EditPatterns EditMode = iota
-	EditTracks
-	EditUnits
-	EditParameters
-)
 
 const (
 	IntegerParameter ParameterType = iota
@@ -697,10 +687,6 @@ func (m *Model) DeletePatternSelection() {
 	m.notifyScoreChange()
 }
 
-func (m *Model) SetEditMode(value EditMode) {
-	m.editMode = value
-}
-
 func (m *Model) Undo() {
 	if !m.CanUndo() {
 		return
@@ -756,10 +742,6 @@ func (m *Model) Octave() int {
 
 func (m *Model) Song() sointu.Song {
 	return m.song
-}
-
-func (m *Model) EditMode() EditMode {
-	return m.editMode
 }
 
 func (m *Model) SelectionCorner() SongPoint {

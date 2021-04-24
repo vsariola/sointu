@@ -17,6 +17,7 @@ type ScrollBar struct {
 	dragStart float32
 	hovering  bool
 	dragging  bool
+	tag       bool
 }
 
 func (s *ScrollBar) Layout(gtx C, width unit.Value, numItems int, pos *layout.Position) D {
@@ -107,11 +108,11 @@ func (s *ScrollBar) Layout(gtx C, width unit.Value, numItems int, pos *layout.Po
 	pointer.PassOp{Pass: true}.Add(gtx.Ops)
 	rect := image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
 	pointer.Rect(rect).Add(gtx.Ops)
-	pointer.InputOp{Tag: s,
+	pointer.InputOp{Tag: &s.tag,
 		Types: pointer.Enter | pointer.Leave,
 	}.Add(gtx.Ops)
 
-	for _, ev := range gtx.Events(s) {
+	for _, ev := range gtx.Events(&s.tag) {
 		e, ok := ev.(pointer.Event)
 		if !ok {
 			continue

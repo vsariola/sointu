@@ -44,7 +44,7 @@ func (t *Tracker) Run(w *app.Window) error {
 					)
 				}
 			case key.Event:
-				if t.KeyEvent(w, e) {
+				if t.KeyEvent(e) {
 					w.Invalidate()
 				}
 			case clipboard.Event:
