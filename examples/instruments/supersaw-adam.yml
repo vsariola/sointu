@@ -11,13 +11,13 @@ comment: |
 numvoices: 1
 units:
     - type: oscillator
-      parameters: {color: 2, detune: 48, gain: 16, lfo: 0, phase: 0, shape: 63, stereo: 1, transpose: 66, type: 1, unison: 3}
+      parameters: {color: 2, detune: 48, gain: 16, lfo: 0, phase: 0, shape: 63, stereo: 1, transpose: 64, type: 1, unison: 3}
     - type: oscillator
-      parameters: {color: 126, detune: 78, gain: 16, phase: 0, shape: 64, stereo: 1, transpose: 66, type: 1, unison: 3}
+      parameters: {color: 126, detune: 78, gain: 16, phase: 0, shape: 64, stereo: 1, transpose: 64, type: 1, unison: 3}
     - type: addp
       parameters: {stereo: 1}
     - type: oscillator
-      parameters: {color: 2, detune: 59, gain: 16, phase: 0, shape: 64, stereo: 1, transpose: 66, type: 1, unison: 3}
+      parameters: {color: 2, detune: 59, gain: 16, phase: 0, shape: 64, stereo: 1, transpose: 64, type: 1, unison: 3}
     - type: addp
       parameters: {stereo: 1}
     - type: noise
