@@ -50,9 +50,6 @@ jobs:
         node-version: '15'
     - uses: actions/checkout@v2
     - uses: ilammy/setup-nasm@v1.2.0
-    - name: Install libasound2-dev                   # sointu-cli has alsa as dependency for playing sound and
-      if: ${{ matrix.config.os == 'ubuntu-latest' }} # ubuntu was complaining about "Package alsa was not found in the pkg-config search path.",
-      run: sudo apt install libasound2-dev           # leading to tests failing. This fixes that.
     - name: Run ctest
       env:
         ASM_NASM: ${{ matrix.config.asmnasm }}
@@ -67,4 +64,4 @@ jobs:
       env:
         CGO_LDFLAGS: ${{ matrix.config.cgo_ldflags }}
       run: |
-        go test ./vm ./vm/compiler/bridge ./vm/compiler ./oto
+        go test ./vm ./vm/compiler/bridge ./vm/compiler
