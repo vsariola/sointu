@@ -325,13 +325,27 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 		firstIndex, err := t.Song().Patch.InstrumentForVoice(curVoice)
 		lastIndex, err2 := t.Song().Patch.InstrumentForVoice(curVoice + trk.NumVoices - 1)
 		if err == nil && err2 == nil {
-			switch lastIndex - firstIndex {
+			switch diff := lastIndex - firstIndex; diff {
 			case 0:
 				instrName = t.Song().Patch[firstIndex].Name
-			case 1:
-				instrName = string(t.Song().Patch[firstIndex].Name[0]) + "/" + string(t.Song().Patch[lastIndex].Name[0])
 			default:
-				instrName = string(t.Song().Patch[firstIndex].Name[0]) + "/" + string(t.Song().Patch[firstIndex+1].Name[0]) + "..."
+				n1 := t.Song().Patch[firstIndex].Name
+				n2 := t.Song().Patch[firstIndex+1].Name
+				if len(n1) > 0 {
+					n1 = string(n1[0])
+				} else {
+					n1 = "?"
+				}
+				if len(n2) > 0 {
+					n2 = string(n2[0])
+				} else {
+					n2 = "?"
+				}
+				if diff > 1 {
+					instrName = n1 + "/" + n2 + "..."
+				} else {
+					instrName = n1 + "/" + n2
+				}
 			}
 			if len(instrName) > 7 {
 				instrName = instrName[:7]
