@@ -81,6 +81,8 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 			}
 		case 3:
 			clipboard.ReadOp{Tag: &t.Menus[1]}.Add(gtx.Ops)
+		case 4:
+			t.RemoveUnusedData()
 		}
 		clickedItem, hasClicked = t.Menus[1].Clicked()
 	}
@@ -98,11 +100,12 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 			MenuItem{IconBytes: icons.ImageAudiotrack, Text: "Export Wav..."},
 			MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit"},
 		)),
-		layout.Rigid(t.layoutMenu("Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(160),
+		layout.Rigid(t.layoutMenu("Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200),
 			MenuItem{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: shortcutKey + "Z", Disabled: !t.CanUndo()},
 			MenuItem{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: shortcutKey + "Y", Disabled: !t.CanRedo()},
 			MenuItem{IconBytes: icons.ContentContentCopy, Text: "Copy", ShortcutText: shortcutKey + "C"},
 			MenuItem{IconBytes: icons.ContentContentPaste, Text: "Paste", ShortcutText: shortcutKey + "V"},
+			MenuItem{IconBytes: icons.ImageCrop, Text: "Remove unused data"},
 		)),
 	)
 }

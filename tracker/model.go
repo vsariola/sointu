@@ -913,6 +913,64 @@ func (m *Model) Param(index int) (Parameter, error) {
 	return Parameter{}, errors.New("invalid parameter")
 }
 
+func (m *Model) RemoveUnusedData() {
+	m.saveUndo("RemoveUnusedData", 0)
+	for trkIndex, trk := range m.song.Score.Tracks {
+		// assign new indices to patterns
+		newIndex := map[int]int{}
+		runningIndex := 0
+		length := 0
+		if len(trk.Order) > m.song.Score.Length {
+			trk.Order = trk.Order[:m.song.Score.Length]
+		}
+		for i, p := range trk.Order {
+			// if the pattern hasn't been considered and is within limits
+			if _, ok := newIndex[p]; !ok && p >= 0 && p < len(trk.Patterns) {
+				pat := trk.Patterns[p]
+				useful := false
+				for _, n := range pat { // patterns that have anything else than all holds are useful and to be kept
+					if n != 1 {
+						useful = true
+						break
+					}
+				}
+				if useful {
+					newIndex[p] = runningIndex
+					runningIndex++
+				} else {
+					newIndex[p] = -1
+				}
+			}
+			if ind, ok := newIndex[p]; ok && ind > -1 {
+				length = i + 1
+				trk.Order[i] = ind
+			} else {
+				trk.Order[i] = -1
+			}
+		}
+		trk.Order = trk.Order[:length]
+		newPatterns := make([]sointu.Pattern, runningIndex)
+		for i, pat := range trk.Patterns {
+			if ind, ok := newIndex[i]; ok && ind > -1 {
+				patLength := 0
+				for j, note := range pat { // find last note that is something else that hold
+					if note != 1 {
+						patLength = j + 1
+					}
+				}
+				if patLength > m.song.Score.RowsPerPattern {
+					patLength = m.song.Score.RowsPerPattern
+				}
+				newPatterns[ind] = pat[:patLength] // crop to either RowsPerPattern or last row having something else than hold
+			}
+		}
+		trk.Patterns = newPatterns
+		m.song.Score.Tracks[trkIndex] = trk
+	}
+	m.computePatternUseCounts()
+	m.notifyScoreChange()
+}
+
 func (m *Model) SetParam(value int) {
 	p, err := m.Param(m.paramIndex)
 	if err != nil {
