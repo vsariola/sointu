@@ -19,4 +19,4 @@ func init() {
 	}
 }
 
-//go:generate go run ../cmd/sointu-generate/main.go
+//go:generate go run generate/main.go
