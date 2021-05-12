@@ -10,7 +10,7 @@ import (
 // fixPatternLength makes sure that every pattern is the same length. During
 // composing. Patterns shorter than the given length are padded with 1 / "hold";
 // patterns longer than the given length are cropped.
-func fixPatternLength(patterns [][]byte, fixedLength int) [][]int {
+func fixPatternLength(patterns []sointu.Pattern, fixedLength int) [][]int {
 	patternData := make([]int, len(patterns)*fixedLength)
 	ret := make([][]int, len(patterns))
 	for i, pat := range patterns {

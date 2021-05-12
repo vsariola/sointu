@@ -63,7 +63,7 @@ var defaultSong = sointu.Song{
 		RowsPerPattern: 16,
 		Length:         1,
 		Tracks: []sointu.Track{
-			{NumVoices: 1, Order: []int{0}, Patterns: [][]byte{{72, 0}}},
+			{NumVoices: 1, Order: sointu.Order{0}, Patterns: []sointu.Pattern{{72, 0}}},
 		},
 	},
 	Patch: sointu.Patch{defaultInstrument,

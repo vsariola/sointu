@@ -418,10 +418,7 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 		for row := firstRow; row <= lastRow; row++ {
 			pat := row / t.Song().Score.RowsPerPattern
 			patRow := row % t.Song().Score.RowsPerPattern
-			s := -1
-			if pat >= 0 && pat < len(trk.Order) {
-				s = trk.Order[pat]
-			}
+			s := trk.Order.Get(pat)
 			if s < 0 {
 				op.Offset(f32.Pt(0, trackRowHeight)).Add(gtx.Ops)
 				continue
@@ -442,10 +439,7 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 			}
 			var c byte = 1
 			if s >= 0 && s < len(trk.Patterns) {
-				pattern := trk.Patterns[s]
-				if patRow >= 0 && patRow < len(pattern) {
-					c = pattern[patRow]
-				}
+				c = trk.Patterns[s].Get(patRow)
 			}
 			if trk.Effect {
 				var text string

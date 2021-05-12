@@ -14,11 +14,11 @@ func TestPatternReusing(t *testing.T) {
 			Length:         2,
 			RowsPerPattern: 8,
 			Tracks: []sointu.Track{{
-				Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 0, 0}, {72, 0, 0, 0, 0, 0, 0, 0}},
-				Order:    []int{0, 1},
+				Patterns: []sointu.Pattern{{64, 1, 1, 1, 0, 0, 0, 0}, {72, 0, 0, 0, 0, 0, 0, 0}},
+				Order:    sointu.Order{0, 1},
 			}, {
-				Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 0, 0}, {84, 0, 0, 0, 0, 0, 0, 0}},
-				Order:    []int{0, 1},
+				Patterns: []sointu.Pattern{{64, 1, 1, 1, 0, 0, 0, 0}, {84, 0, 0, 0, 0, 0, 0, 0}},
+				Order:    sointu.Order{0, 1},
 			}},
 		},
 	}
@@ -42,10 +42,10 @@ func TestUnnecessaryHolds(t *testing.T) {
 			Length:         2,
 			RowsPerPattern: 8,
 			Tracks: []sointu.Track{{
-				Patterns: [][]byte{{64, 1, 1, 1, 0, 1, 0, 0}, {72, 0, 1, 0, 1, 0, 0, 0}},
+				Patterns: []sointu.Pattern{{64, 1, 1, 1, 0, 1, 0, 0}, {72, 0, 1, 0, 1, 0, 0, 0}},
 				Order:    []int{0, 1},
 			}, {
-				Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 1, 0}, {84, 0, 0, 0, 1, 1, 0, 0}},
+				Patterns: []sointu.Pattern{{64, 1, 1, 1, 0, 0, 1, 0}, {84, 0, 0, 0, 1, 1, 0, 0}},
 				Order:    []int{0, 1},
 			}}},
 	}
@@ -69,10 +69,10 @@ func TestDontCares(t *testing.T) {
 			Length:         2,
 			RowsPerPattern: 8,
 			Tracks: []sointu.Track{{
-				Patterns: [][]byte{{64, 1, 1, 1, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}},
+				Patterns: []sointu.Pattern{{64, 1, 1, 1, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}},
 				Order:    []int{0, 1},
 			}, {
-				Patterns: [][]byte{{64, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 0, 0, 0, 0}},
+				Patterns: []sointu.Pattern{{64, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 0, 0, 0, 0}},
 				Order:    []int{0, 1},
 			}},
 		},

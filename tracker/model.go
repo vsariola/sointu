@@ -212,7 +212,7 @@ func (m *Model) AddTrack(after bool) {
 	copy(newTracks[m.cursor.Track+1:], m.song.Score.Tracks[m.cursor.Track:])
 	newTracks[m.cursor.Track] = sointu.Track{
 		NumVoices: 1,
-		Patterns:  [][]byte{},
+		Patterns:  []sointu.Pattern{},
 	}
 	m.song.Score.Tracks = newTracks
 	m.clampPositions()
@@ -335,18 +335,11 @@ func (m *Model) CanDeleteInstrument() bool {
 
 func (m *Model) Note() byte {
 	trk := m.song.Score.Tracks[m.cursor.Track]
-	if m.cursor.Pattern < 0 || m.cursor.Pattern >= len(trk.Order) {
+	pat := trk.Order.Get(m.cursor.Pattern)
+	if pat < 0 || pat >= len(trk.Patterns) {
 		return 1
 	}
-	p := trk.Order[m.cursor.Pattern]
-	if p < 0 || p >= len(trk.Patterns) {
-		return 1
-	}
-	pat := trk.Patterns[p]
-	if m.cursor.Row < 0 || m.cursor.Row >= len(pat) {
-		return 1
-	}
-	return pat[m.cursor.Row]
+	return trk.Patterns[pat].Get(m.cursor.Row)
 }
 
 // SetCurrentNote sets the (note) value in current pattern under cursor to iv
@@ -356,11 +349,7 @@ func (m *Model) SetNote(iv byte) {
 	if m.cursor.Pattern < 0 || m.cursor.Row < 0 {
 		return
 	}
-	for len(tracks[m.cursor.Track].Order) <= m.cursor.Pattern {
-		tracks[m.cursor.Track].Order = append(tracks[m.cursor.Track].Order, -1)
-	}
-	order := tracks[m.cursor.Track].Order
-	patIndex := order[m.cursor.Pattern]
+	patIndex := tracks[m.cursor.Track].Order.Get(m.cursor.Pattern)
 	if patIndex < 0 {
 		patIndex = len(tracks[m.cursor.Track].Patterns)
 		for _, pi := range tracks[m.cursor.Track].Order {
@@ -368,26 +357,18 @@ func (m *Model) SetNote(iv byte) {
 				patIndex = pi + 1 // we find a pattern that is not in the pattern table nor in the order list i.e. completely new pattern
 			}
 		}
-		tracks[m.cursor.Track].Order[m.cursor.Pattern] = patIndex
+		tracks[m.cursor.Track].Order.Set(m.cursor.Pattern, patIndex)
 	}
 	for len(tracks[m.cursor.Track].Patterns) <= patIndex {
 		tracks[m.cursor.Track].Patterns = append(tracks[m.cursor.Track].Patterns, nil)
 	}
-	patterns := tracks[m.cursor.Track].Patterns
-	for len(patterns[patIndex]) <= m.cursor.Row {
-		patterns[patIndex] = append(patterns[patIndex], 1)
-	}
-	patterns[patIndex][m.cursor.Row] = iv
+	tracks[m.cursor.Track].Patterns[patIndex].Set(m.cursor.Row, iv)
 	m.notifyScoreChange()
 }
 
 func (m *Model) SetCurrentPattern(pat int) {
 	m.saveUndo("SetCurrentPattern", 0)
-	track := &m.song.Score.Tracks[m.cursor.Track]
-	for len(track.Order) <= m.cursor.Pattern {
-		track.Order = append(track.Order, -1)
-	}
-	track.Order[m.cursor.Pattern] = pat
+	m.song.Score.Tracks[m.cursor.Track].Order.Set(m.cursor.Pattern, pat)
 	m.computePatternUseCounts()
 	m.notifyScoreChange()
 }
