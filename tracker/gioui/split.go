@@ -68,6 +68,7 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 				} else {
 					s.dragCoord = e.Position.Y
 				}
+				s.drag = true
 
 			case pointer.Drag:
 				if s.dragID != e.PointerID {
@@ -92,6 +93,27 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 			case pointer.Cancel:
 				s.drag = false
 			}
+		}
+
+		low := -1 + float32(bar)/float32(coord)*2
+		const snapMargin = 0.1
+
+		if s.Ratio < low {
+			s.Ratio = low
+		}
+
+		if s.Ratio > 1 {
+			s.Ratio = 1
+		}
+
+		if s.Ratio < low+snapMargin {
+			firstSize = 0
+			secondOffset = bar
+			secondSize = coord - bar
+		} else if s.Ratio > 1-snapMargin {
+			firstSize = coord - bar
+			secondOffset = coord
+			secondSize = 0
 		}
 
 		// register for input
