@@ -7,48 +7,26 @@ import (
 	"github.com/vsariola/sointu"
 )
 
-// fixPatternLength makes sure that every pattern is the same length. During
-// composing. Patterns shorter than the given length are padded with 1 / "hold";
-// patterns longer than the given length are cropped.
-func fixPatternLength(patterns []sointu.Pattern, fixedLength int) [][]int {
-	patternData := make([]int, len(patterns)*fixedLength)
-	ret := make([][]int, len(patterns))
-	for i, pat := range patterns {
-		for j, note := range pat {
-			patternData[j] = int(note)
-		}
-		for j := len(pat); j < fixedLength; j++ {
-			patternData[j] = 1 // pad with hold
-		}
-		ret[i], patternData = patternData[:fixedLength], patternData[fixedLength:]
-	}
-	return ret
-}
-
-// flattenSequence looks up a sequence of patterns and concatenates them into a
-// single linear array of notes. Note that variable length patterns are
-// concatenated as such; call fixPatternLength first if you want every pattern
-// to be constant length.
-func flattenSequence(patterns [][]int, sequence []int, songLength int, rowsPerPattern int, releaseFirst bool) []int {
+// flattenSequence returns the notes of a track in a single linear array of
+// integer notes.
+func flattenSequence(t sointu.Track, songLength int, rowsPerPattern int, releaseFirst bool) []int {
 	sumLen := rowsPerPattern * songLength
 	notes := make([]int, sumLen)
-	window := notes
+	k := 0
 	for i := 0; i < songLength; i++ {
-		patIndex := -1
-		if i < len(sequence) {
-			patIndex = sequence[i]
+		patIndex := t.Order.Get(i)
+		var pattern sointu.Pattern = nil
+		if patIndex >= 0 && patIndex < len(t.Patterns) {
+			pattern = t.Patterns[patIndex]
 		}
-		var k int
-		if patIndex >= 0 && patIndex < len(patterns) {
-			k = copy(window, patterns[patIndex])
+		for j := 0; j < rowsPerPattern; j++ {
+			note := int(pattern.Get(j))
+			if releaseFirst && i == 0 && j == 0 && note == 1 {
+				note = 0
+			}
+			notes[k] = note
+			k++
 		}
-		for ; k < rowsPerPattern; k++ {
-			window[k] = 1 // pad with holds
-		}
-		if i == 0 && window[0] == 1 && releaseFirst {
-			window[0] = 0
-		}
-		window = window[rowsPerPattern:]
 	}
 	return notes
 }
@@ -168,20 +146,11 @@ func intsToBytes(array []int) ([]byte, error) {
 	return ret, nil
 }
 
-func bytesToInts(array []byte) []int {
-	ret := make([]int, len(array))
-	for i, v := range array {
-		ret[i] = int(v)
-	}
-	return ret
-}
-
 func ConstructPatterns(song *sointu.Song) ([][]byte, [][]byte, error) {
 	sequences := make([][]byte, len(song.Score.Tracks))
 	var patterns [][]int
 	for i, t := range song.Score.Tracks {
-		fixed := fixPatternLength(t.Patterns, song.Score.RowsPerPattern)
-		flat := flattenSequence(fixed, t.Order, song.Score.Length, song.Score.RowsPerPattern, true)
+		flat := flattenSequence(t, song.Score.Length, song.Score.RowsPerPattern, true)
 		dontCares := markDontCares(flat)
 		// TODO: we could give the user the possibility to use another length during encoding that during composing
 		chunks := splitSequence(dontCares, song.Score.RowsPerPattern)
