@@ -108,7 +108,7 @@ func (pe *ParamEditor) Bind(t *Tracker) layout.Widget {
 			key.FocusOp{Tag: &pe.tag}.Add(gtx.Ops)
 		}
 		editorFunc := pe.layoutUnitSliders
-		if t.Unit().Type == "" {
+		if y := t.Unit().Type; y == "" || y != t.InstrumentEditor.unitTypeEditor.Text() {
 			editorFunc = pe.layoutUnitTypeChooser
 		}
 		return Surface{Gray: 24, Focus: t.InstrumentEditor.wasFocused}.Layout(gtx, func(gtx C) D {
@@ -210,8 +210,13 @@ func (pe *ParamEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 	listElem := func(gtx C, i int) D {
 		for pe.ChooseUnitTypeBtns[i].Clicked() {
 			t.SetUnitType(tracker.UnitTypeNames[i])
+			t.InstrumentEditor.unitTypeEditor.SetText(tracker.UnitTypeNames[i])
 		}
-		labelStyle := LabelStyle{Text: tracker.UnitTypeNames[i], ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
+		text := tracker.UnitTypeNames[i]
+		if t.InstrumentEditor.unitTypeEditor.Focused() && !strings.HasPrefix(text, t.InstrumentEditor.unitTypeEditor.Text()) {
+			return D{}
+		}
+		labelStyle := LabelStyle{Text: text, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
 		bg := func(gtx C) D {
 			gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, 20))
 			var color color.NRGBA

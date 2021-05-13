@@ -794,22 +794,7 @@ func (m *Model) clampPositions() {
 	}
 	m.instrIndex = clamp(m.instrIndex, 0, len(m.song.Patch)-1)
 	m.unitIndex = clamp(m.unitIndex, 0, len(m.Instrument().Units)-1)
-	for m.paramIndex < 0 {
-		if m.unitIndex == 0 {
-			m.paramIndex = 0
-			break
-		}
-		m.unitIndex--
-		m.paramIndex += m.NumParams()
-	}
-	for n := m.NumParams(); m.paramIndex >= n; n = m.NumParams() {
-		if m.unitIndex == len(m.Instrument().Units)-1 {
-			m.paramIndex = n - 1
-			break
-		}
-		m.paramIndex -= n
-		m.unitIndex++
-	}
+	m.paramIndex = clamp(m.paramIndex, 0, m.NumParams()-1)
 }
 
 func (m *Model) NumParams() int {

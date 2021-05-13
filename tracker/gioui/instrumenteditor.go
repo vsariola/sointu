@@ -19,6 +19,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/eventx"
+	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"gopkg.in/yaml.v3"
 )
@@ -33,6 +34,7 @@ type InstrumentEditor struct {
 	commentExpandBtn    *widget.Clickable
 	commentEditor       *widget.Editor
 	nameEditor          *widget.Editor
+	unitTypeEditor      *widget.Editor
 	instrumentDragList  *DragList
 	instrumentScrollBar *ScrollBar
 	unitDragList        *DragList
@@ -56,6 +58,7 @@ func NewInstrumentEditor() *InstrumentEditor {
 		commentExpandBtn:    new(widget.Clickable),
 		commentEditor:       new(widget.Editor),
 		nameEditor:          &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle},
+		unitTypeEditor:      &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Start},
 		instrumentDragList:  &DragList{List: &layout.List{Axis: layout.Horizontal}, HoverItem: -1},
 		instrumentScrollBar: &ScrollBar{Axis: layout.Horizontal},
 		unitDragList:        &DragList{List: &layout.List{Axis: layout.Vertical}, HoverItem: -1},
@@ -78,7 +81,7 @@ func (ie *InstrumentEditor) Focused() bool {
 }
 
 func (ie *InstrumentEditor) ChildFocused() bool {
-	return ie.paramEditor.Focused() || ie.instrumentDragList.Focused() || ie.commentEditor.Focused() || ie.nameEditor.Focused()
+	return ie.paramEditor.Focused() || ie.instrumentDragList.Focused() || ie.commentEditor.Focused() || ie.nameEditor.Focused() || ie.unitTypeEditor.Focused()
 }
 
 func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
@@ -349,11 +352,8 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 	element := func(gtx C, i int) D {
 		gtx.Constraints = layout.Exact(image.Pt(gtx.Px(unit.Dp(120)), gtx.Px(unit.Dp(20))))
 		u := units[i]
-		unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
-		if unitNameLabel.Text == "" {
-			unitNameLabel.Text = "---"
-			unitNameLabel.Alignment = layout.Center
-		}
+		var color color.NRGBA = white
+
 		var stackText string
 		if i < len(ie.stackUse) {
 			stackText = strconv.FormatInt(int64(ie.stackUse[i]), 10)
@@ -362,27 +362,80 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 				prevStackUse = ie.stackUse[i-1]
 			}
 			if stackNeed := u.StackNeed(); stackNeed > prevStackUse {
-				unitNameLabel.Color = errorColor
+				color = errorColor
 				typeString := u.Type
 				if u.Parameters["stereo"] == 1 {
 					typeString += " (stereo)"
 				}
 				t.Alert.Update(fmt.Sprintf("%v needs at least %v input signals, got %v", typeString, stackNeed, prevStackUse), Error, 0)
 			} else if i == len(units)-1 && ie.stackUse[i] != 0 {
-				unitNameLabel.Color = warningColor
+				color = warningColor
 				t.Alert.Update(fmt.Sprintf("Instrument leaves %v signal(s) on the stack", ie.stackUse[i]), Warning, 0)
 			}
 		}
+
+		var unitName layout.Widget
+		if i == t.UnitIndex() {
+			for _, ev := range ie.unitTypeEditor.Events() {
+				_, ok := ev.(widget.SubmitEvent)
+				if ok {
+					ie.unitDragList.Focus()
+					if text := ie.unitTypeEditor.Text(); text != "" {
+						for _, n := range tracker.UnitTypeNames {
+							if strings.HasPrefix(n, ie.unitTypeEditor.Text()) {
+								t.SetUnitType(n)
+								break
+							}
+						}
+					} else {
+						t.SetUnitType("")
+					}
+					continue
+				}
+			}
+			if !ie.unitTypeEditor.Focused() && !ie.paramEditor.Focused() && ie.unitTypeEditor.Text() != t.Unit().Type {
+				ie.unitTypeEditor.SetText(t.Unit().Type)
+			}
+			editor := material.Editor(t.Theme, ie.unitTypeEditor, "---")
+			editor.Color = color
+			editor.HintColor = instrumentNameHintColor
+			editor.TextSize = unit.Sp(12)
+			editor.Font = labelDefaultFont
+			unitName = func(gtx C) D {
+				spy, spiedGtx := eventx.Enspy(gtx)
+				ret := editor.Layout(spiedGtx)
+				for _, group := range spy.AllEvents() {
+					for _, event := range group.Items {
+						switch e := event.(type) {
+						case key.Event:
+							if e.Name == key.NameEscape {
+								ie.unitDragList.Focus()
+							}
+						}
+					}
+				}
+				return ret
+			}
+		} else {
+			unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: color, Font: labelDefaultFont, FontSize: unit.Sp(12)}
+			if unitNameLabel.Text == "" {
+				unitNameLabel.Text = "---"
+			}
+			unitName = unitNameLabel.Layout
+		}
+
 		stackLabel := LabelStyle{Text: stackText, ShadeColor: black, Color: mediumEmphasisTextColor, Font: labelDefaultFont, FontSize: unit.Sp(12)}
 		rightMargin := layout.Inset{Right: unit.Dp(10)}
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-			layout.Flexed(1, unitNameLabel.Layout),
+			layout.Flexed(1, unitName),
 			layout.Rigid(func(gtx C) D {
 				return rightMargin.Layout(gtx, stackLabel.Layout)
 			}),
 		)
 	}
 
+	defer op.Save(gtx.Ops).Load()
+	pointer.PassOp{Pass: true}.Add(gtx.Ops)
 	unitList := FilledDragList(t.Theme, ie.unitDragList, len(units), element, t.SwapUnits)
 	ie.unitDragList.SelectedItem = t.UnitIndex()
 	return Surface{Gray: 30, Focus: ie.wasFocused}.Layout(gtx, func(gtx C) D {
@@ -395,41 +448,44 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 						prevUnitIndex := t.UnitIndex()
 						if t.UnitIndex() != ie.unitDragList.SelectedItem {
 							t.SetUnitIndex(ie.unitDragList.SelectedItem)
+							ie.unitTypeEditor.SetText(t.Unit().Type)
 						}
-						for _, group := range spy.AllEvents() {
-							for _, event := range group.Items {
-								switch e := event.(type) {
-								case key.Event:
-									switch e.State {
-									case key.Press:
-										switch e.Name {
-										case key.NameUpArrow:
-											if prevUnitIndex == 0 {
-												ie.instrumentDragList.Focus()
+						if ie.unitDragList.Focused() {
+							for _, group := range spy.AllEvents() {
+								for _, event := range group.Items {
+									switch e := event.(type) {
+									case key.Event:
+										switch e.State {
+										case key.Press:
+											switch e.Name {
+											case key.NameUpArrow:
+												if prevUnitIndex == 0 {
+													ie.instrumentDragList.Focus()
+												}
+											case key.NameRightArrow:
+												ie.paramEditor.Focus()
+											case key.NameDeleteBackward:
+												t.SetUnitType("")
+												ie.unitTypeEditor.Focus()
+												l := len(ie.unitTypeEditor.Text())
+												ie.unitTypeEditor.SetCaret(l, l)
+											case key.NameDeleteForward:
+												t.DeleteUnit(true)
+											case key.NameReturn:
+												if e.Modifiers.Contain(key.ModShortcut) {
+													t.AddUnit(true)
+												}
+												ie.unitTypeEditor.Focus()
+												l := len(ie.unitTypeEditor.Text())
+												ie.unitTypeEditor.SetCaret(l, l)
 											}
-										case key.NameRightArrow:
-											ie.paramEditor.Focus()
-										case key.NameDeleteForward, key.NameDeleteBackward:
-											t.DeleteUnit(e.Name == key.NameDeleteForward)
-										case key.NameReturn:
-											t.AddUnit(!e.Modifiers.Contain(key.ModShortcut))
-										}
-										name := e.Name
-										if !e.Modifiers.Contain(key.ModShift) {
-											name = strings.ToLower(name)
-										}
-										if val, ok := unitKeyMap[name]; ok {
 											if e.Modifiers.Contain(key.ModShortcut) {
-												t.SetUnitType(val)
 												continue
 											}
+											t.JammingPressed(e)
+										case key.Release:
+											t.JammingReleased(e)
 										}
-										if e.Modifiers.Contain(key.ModShortcut) {
-											continue
-										}
-										t.JammingPressed(e)
-									case key.Release:
-										t.JammingReleased(e)
 									}
 								}
 							}

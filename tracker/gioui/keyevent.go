@@ -43,38 +43,6 @@ var noteMap = map[string]int{
 	"P": 16,
 }
 
-var unitKeyMap = map[string]string{
-	"e": "envelope",
-	"o": "oscillator",
-	"m": "mulp",
-	"M": "mul",
-	"a": "addp",
-	"A": "add",
-	"p": "pan",
-	"S": "push",
-	"P": "pop",
-	"O": "out",
-	"l": "loadnote",
-	"L": "loadval",
-	"h": "xch",
-	"d": "delay",
-	"D": "distort",
-	"H": "hold",
-	"b": "crush",
-	"g": "gain",
-	"i": "invgain",
-	"f": "filter",
-	"I": "clip",
-	"E": "speed",
-	"r": "compressor",
-	"u": "outaux",
-	"U": "aux",
-	"s": "send",
-	"n": "noise",
-	"N": "in",
-	"R": "receive",
-}
-
 // KeyEvent handles incoming key events and returns true if repaint is needed.
 func (t *Tracker) KeyEvent(e key.Event) bool {
 	if e.State == key.Press {
