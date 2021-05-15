@@ -124,6 +124,12 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 					cursor.Track++
 				}
 				t.SetCursor(cursor)
+			case "+":
+				t.AdjustPatternNumber(1, e.Modifiers.Contain(key.ModShortcut))
+				continue
+			case "-":
+				t.AdjustPatternNumber(-1, e.Modifiers.Contain(key.ModShortcut))
+				continue
 			}
 			if (e.Name != key.NameLeftArrow &&
 				e.Name != key.NameRightArrow &&

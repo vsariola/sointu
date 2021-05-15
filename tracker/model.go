@@ -366,6 +366,92 @@ func (m *Model) SetNote(iv byte) {
 	m.notifyScoreChange()
 }
 
+func (m *Model) AdjustPatternNumber(delta int, swap bool) {
+	r1, r2 := m.cursor.Pattern, m.selectionCorner.Pattern
+	if r1 > r2 {
+		r1, r2 = r2, r1
+	}
+	t1, t2 := m.cursor.Track, m.selectionCorner.Track
+	if t1 > t2 {
+		t1, t2 = t2, t1
+	}
+	type k = struct {
+		track int
+		pat   int
+	}
+	newIds := map[k]int{}
+	usedIds := map[k]bool{}
+	for t := t1; t <= t2; t++ {
+		for r := r1; r <= r2; r++ {
+			p := m.song.Score.Tracks[t].Order.Get(r)
+			if p < 0 {
+				continue
+			}
+			if p+delta < 0 || p+delta > 35 {
+				return // if any of the patterns would go out of range, abort
+			}
+			newIds[k{t, p}] = p + delta
+			usedIds[k{t, p + delta}] = true
+		}
+	}
+	m.saveUndo("AdjustPatternNumber", 10)
+	for t := t1; t <= t2; t++ {
+		if swap {
+			maxId := len(m.song.Score.Tracks[t].Patterns) - 1
+			// check if song uses patterns that are not in the table yet
+			for _, o := range m.song.Score.Tracks[t].Order {
+				if maxId < o {
+					maxId = o
+				}
+			}
+			for p := 0; p <= maxId; p++ {
+				j := p
+				if delta > 0 {
+					j = maxId - p
+				}
+				if _, ok := newIds[k{t, j}]; ok {
+					continue
+				}
+				nextId := j
+				for used := usedIds[k{t, nextId}]; used; used = usedIds[k{t, nextId}] {
+					if delta < 0 {
+						nextId++
+					} else {
+						nextId--
+					}
+				}
+				newIds[k{t, j}] = nextId
+				usedIds[k{t, nextId}] = true
+			}
+			for i, o := range m.song.Score.Tracks[t].Order {
+				if o < 0 {
+					continue
+				}
+				m.song.Score.Tracks[t].Order[i] = newIds[k{t, o}]
+			}
+			newPatterns := make([]sointu.Pattern, len(m.song.Score.Tracks[t].Patterns))
+			for p, pat := range m.song.Score.Tracks[t].Patterns {
+				id := newIds[k{t, p}]
+				for len(newPatterns) <= id {
+					newPatterns = append(newPatterns, nil)
+				}
+				newPatterns[id] = pat
+			}
+			m.song.Score.Tracks[t].Patterns = newPatterns
+		} else {
+			for r := r1; r <= r2; r++ {
+				p := m.song.Score.Tracks[t].Order.Get(r)
+				if p < 0 {
+					continue
+				}
+				m.song.Score.Tracks[t].Order.Set(r, p+delta)
+			}
+		}
+	}
+	m.computePatternUseCounts()
+	m.notifyScoreChange()
+}
+
 func (m *Model) SetCurrentPattern(pat int) {
 	m.saveUndo("SetCurrentPattern", 0)
 	m.song.Score.Tracks[m.cursor.Track].Order.Set(m.cursor.Pattern, pat)
