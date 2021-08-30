@@ -7,6 +7,11 @@ import (
 	"math"
 )
 
+// Wav converts a stereo signal of 32-bit floats (L R L R..., length should be
+// divisible by 2) into a valid WAV-file, returned as a []byte array.
+//
+// If pcm16 is set to true, the samples in the WAV-file will be 16-bit signed
+// integers; otherwise the samples will be 32-bit floats
 func Wav(buffer []float32, pcm16 bool) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	wavHeader(len(buffer), pcm16, buf)
@@ -17,6 +22,11 @@ func Wav(buffer []float32, pcm16 bool) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// Raw converts a stereo signal of 32-bit floats (L R L R..., length should be
+// divisible by 2) into a raw audio file, returned as a []byte array.
+//
+// If pcm16 is set to true, the samples will be 16-bit signed integers;
+// otherwise the samples will be 32-bit floats
 func Raw(buffer []float32, pcm16 bool) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := rawToBuffer(buffer, pcm16, buf)

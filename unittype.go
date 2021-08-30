@@ -134,6 +134,10 @@ var UnitTypes = map[string]([]UnitParameter){
 	"sync": []UnitParameter{},
 }
 
+// Ports is static map allowing quickly finding the parameters of a unit that
+// can be modulated. This is populated based on the UnitTypes list during
+// init(). Thus, should be immutable, but Go not supporting that, then this will
+// have to suffice: DO NOT EVER CHANGE THIS MAP.
 var Ports = make(map[string]([]string))
 
 func init() {

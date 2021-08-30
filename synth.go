@@ -6,17 +6,41 @@ import (
 	"math"
 )
 
+// Synth represents a state of a synthesizer, compiled from a Patch.
 type Synth interface {
+	// Render tries to fill a stereo signal buffer with sound from the
+	// synthesizer, until either the buffer is full or a given number of
+	// timesteps is advanced. In the process, it also fills the syncbuffer with
+	// the values output by sync units. Normally, 1 sample = 1 unit of time, but
+	// speed modulations may change this. It returns the number of samples
+	// filled (! in stereo samples, so the buffer will have 2 * sample floats),
+	// the number of sync outputs written, the number of time steps time
+	// advanced, and a possible error.
 	Render(buffer []float32, syncBuffer []float32, maxtime int) (sample int, syncs int, time int, err error)
+
+	// Update recompiles a patch, but should maintain as much as possible of its
+	// state as reasonable. For example, filters should keep their state and
+	// delaylines should keep their content. Every change in the Patch triggers
+	// an Update and if the Patch would be started fresh every time, it would
+	// lead to very choppy audio.
 	Update(patch Patch) error
+
+	// Trigger triggers a note for a given voice. Called between synth.Renders.
 	Trigger(voice int, note byte)
+
+	// Release releases the currently playing note for a given voice. Called
+	// between synth.Renders.
 	Release(voice int)
 }
 
+// SynthService compiles a given Patch into a Synth, throwing errors if the
+// Patch is malformed.
 type SynthService interface {
 	Compile(patch Patch) (Synth, error)
 }
 
+// Render fills an stereo audio buffer using a Synth, disregarding all syncs and
+// time limits.
 func Render(synth Synth, buffer []float32) error {
 	s, _, _, err := synth.Render(buffer, nil, math.MaxInt32)
 	if err != nil {
@@ -28,6 +52,10 @@ func Render(synth Synth, buffer []float32) error {
 	return nil
 }
 
+// Play plays the Song using a given Synth, returning the stereo audio buffer
+// and the sync buffer as a result (and possible errors). This is a bit
+// illogical as the Song contains already the Patch; this could be probably
+// refactored to just accept a SynthService and a Song.
 func Play(synth Synth, song Song) ([]float32, []float32, error) {
 	err := song.Validate()
 	if err != nil {

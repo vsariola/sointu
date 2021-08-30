@@ -8,6 +8,7 @@ type Instrument struct {
 	Units     []Unit
 }
 
+// Copy makes a deep copy of an Instrument
 func (instr *Instrument) Copy() Instrument {
 	units := make([]Unit, len(instr.Units))
 	for i, u := range instr.Units {

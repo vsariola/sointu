@@ -9,6 +9,7 @@ import (
 // Patch is simply a list of instruments used in a song
 type Patch []Instrument
 
+// Copy makes a deep copy of a Patch.
 func (p Patch) Copy() Patch {
 	instruments := make([]Instrument, len(p))
 	for i, instr := range p {
@@ -17,6 +18,8 @@ func (p Patch) Copy() Patch {
 	return instruments
 }
 
+// NumVoices returns the total number of voices used in the patch; summing the
+// voices of every instrument
 func (p Patch) NumVoices() int {
 	ret := 0
 	for _, i := range p {
@@ -25,6 +28,8 @@ func (p Patch) NumVoices() int {
 	return ret
 }
 
+// NumDelayLines return the total number of delay lines used in the patch;
+// summing the number of delay lines of every delay unit in every instrument
 func (p Patch) NumDelayLines() int {
 	total := 0
 	for _, instr := range p {
@@ -37,6 +42,8 @@ func (p Patch) NumDelayLines() int {
 	return total
 }
 
+// NumSyns return the total number of sync outputs used in the patch; summing
+// the number of sync outputs of every sync unit in every instrument
 func (p Patch) NumSyncs() int {
 	total := 0
 	for _, instr := range p {
@@ -49,6 +56,11 @@ func (p Patch) NumSyncs() int {
 	return total
 }
 
+// FirstVoiceForInstrument returns the index of the first voice of given
+// instrument. For example, if the Patch has three instruments (0, 1 and 2),
+// with 1, 3, 2 voices, respectively, then FirstVoiceForInstrument(0) returns 0,
+// FirstVoiceForInstrument(1) returns 1 and FirstVoiceForInstrument(2) returns
+// 4. Essentially computes just the cumulative sum.
 func (p Patch) FirstVoiceForInstrument(instrIndex int) int {
 	ret := 0
 	for _, t := range p[:instrIndex] {
@@ -57,6 +69,10 @@ func (p Patch) FirstVoiceForInstrument(instrIndex int) int {
 	return ret
 }
 
+// InstrumentForVoice returns the instrument number for the given voice index.
+// For example, if the Patch has three instruments (0, 1 and 2), with 1, 3, 2
+// voices, respectively, then InstrumentForVoice(0) returns 0,
+// InstrumentForVoice(1) returns 1 and InstrumentForVoice(3) returns 1.
 func (p Patch) InstrumentForVoice(voice int) (int, error) {
 	if voice < 0 {
 		return 0, errors.New("voice cannot be negative")
@@ -70,6 +86,11 @@ func (p Patch) InstrumentForVoice(voice int) (int, error) {
 	return 0, errors.New("voice number is beyond the total voices of an instrument")
 }
 
+// FindSendTarget searches the instrument number and unit index for a unit with
+// the given id. Two units should never have the same id, but if they do, then
+// the first match is returned. Id 0 is interpreted as "no id", thus searching
+// for id 0 returns an error. Error is also returned if the searched id is not
+// found.
 func (p Patch) FindSendTarget(id int) (int, int, error) {
 	if id == 0 {
 		return 0, 0, errors.New("send targets unit id 0")
@@ -84,6 +105,8 @@ func (p Patch) FindSendTarget(id int) (int, int, error) {
 	return 0, 0, fmt.Errorf("send targets an unit with id %v, could not find a unit with such an ID in the patch", id)
 }
 
+// ParamHintString returns a human readable string representing the current
+// value of a given unit parameter.
 func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
 	if instrIndex < 0 || instrIndex >= len(p) {
 		return ""
