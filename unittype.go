@@ -1,7 +1,6 @@
 package sointu
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -12,15 +11,6 @@ type UnitParameter struct {
 	MaxValue    int    // maximum value of the parameter, inclusive
 	CanSet      bool   // if this parameter can be set before hand i.e. through the gui
 	CanModulate bool   // if this parameter can be modulated i.e. has a port number in "send" unit
-}
-
-func engineeringTime(sec float64) string {
-	if sec < 1e-3 {
-		return fmt.Sprintf("%.2f us", sec*1e6)
-	} else if sec < 1 {
-		return fmt.Sprintf("%.2f ms", sec*1e3)
-	}
-	return fmt.Sprintf("%.2f s", sec)
 }
 
 // UnitTypes documents all the available unit types and if they support stereo variant

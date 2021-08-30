@@ -195,3 +195,12 @@ func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
 	}
 	return ""
 }
+
+func engineeringTime(sec float64) string {
+	if sec < 1e-3 {
+		return fmt.Sprintf("%.2f us", sec*1e6)
+	} else if sec < 1 {
+		return fmt.Sprintf("%.2f ms", sec*1e3)
+	}
+	return fmt.Sprintf("%.2f s", sec)
+}
