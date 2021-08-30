@@ -1,3 +1,4 @@
+//go:build !js
 // +build !js
 
 package gioui
@@ -116,15 +117,7 @@ func (t *Tracker) exportWav(filename string, pcm16 bool) {
 	if extension == "" {
 		filename = filename + ".wav"
 	}
-	synth, err := t.synthService.Compile(t.Song().Patch)
-	if err != nil {
-		t.Alert.Update(fmt.Sprintf("Error compiling the patch during export: %v", err), Error, time.Second*3)
-		return
-	}
-	for i := 0; i < 32; i++ {
-		synth.Release(i)
-	}
-	data, _, err := sointu.Play(synth, t.Song()) // render the song to calculate its length
+	data, _, err := sointu.Play(t.synthService, t.Song(), true) // render the song to calculate its length
 	if err != nil {
 		t.Alert.Update(fmt.Sprintf("Error rendering the song during export: %v", err), Error, time.Second*3)
 		return

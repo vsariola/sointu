@@ -88,16 +88,7 @@ func main() {
 				return fmt.Errorf("the song could not be parsed as .json (%v) or .yml (%v)", errJSON, errYaml)
 			}
 		}
-		synth, err := bridge.Synth(song.Patch)
-		if err != nil {
-			return fmt.Errorf("could not create synth based on the patch: %v", err)
-		}
-		if !*unreleased {
-			for i := 0; i < 32; i++ {
-				synth.Release(i)
-			}
-		}
-		buffer, _, err := sointu.Play(synth, song) // render the song to calculate its length
+		buffer, _, err := sointu.Play(bridge.BridgeService{}, song, !*unreleased) // render the song to calculate its length
 		if err != nil {
 			return fmt.Errorf("sointu.Play failed: %v", err)
 		}

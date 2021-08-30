@@ -52,14 +52,25 @@ func Render(synth Synth, buffer []float32) error {
 	return nil
 }
 
-// Play plays the Song using a given Synth, returning the stereo audio buffer
-// and the sync buffer as a result (and possible errors). This is a bit
-// illogical as the Song contains already the Patch; this could be probably
-// refactored to just accept a SynthService and a Song.
-func Play(synth Synth, song Song) ([]float32, []float32, error) {
+// Play plays the Song using a given SynthService, returning the stereo audio
+// buffer and the sync buffer as a result (and possible errors). Passing
+// 'release' as true means that all the notes are released when the synth is
+// created. The default behaviour during runtime rendering is to leave them
+// playing, meaning that envelopes start attacking right away unless an explicit
+// note release is put to every track.
+func Play(synthService SynthService, song Song, release bool) ([]float32, []float32, error) {
 	err := song.Validate()
 	if err != nil {
 		return nil, nil, err
+	}
+	synth, err := synthService.Compile(song.Patch)
+	if err != nil {
+		return nil, nil, fmt.Errorf("sointu.Play failed: %v", err)
+	}
+	if release {
+		for i := 0; i < 32; i++ {
+			synth.Release(i)
+		}
 	}
 	curVoices := make([]int, len(song.Score.Tracks))
 	for i := range curVoices {
