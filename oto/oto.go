@@ -13,7 +13,7 @@ type OtoOutput struct {
 	tmpBuffer []byte
 }
 
-func (c *OtoContext) Output() sointu.AudioSink {
+func (c *OtoContext) Output() sointu.AudioOutput {
 	return &OtoOutput{player: (*oto.Context)(c).NewPlayer(), tmpBuffer: make([]byte, 0)}
 }
 
