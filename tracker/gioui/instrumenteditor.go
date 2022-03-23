@@ -132,7 +132,7 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 	header := func(gtx C) D {
 		collapseIcon := icons.NavigationExpandLess
-		if ie.commentExpanded {
+		if !ie.commentExpanded {
 			collapseIcon = icons.NavigationExpandMore
 		}
 
