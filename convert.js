@@ -34,7 +34,9 @@ const addInstrument = (name, strdef) => {
             const opcode_params = opline.replace(/\s\s+/,'\t').split(/[\t]/);
             const opcode = opcode_params[0];
             const params = opcode_params[1].split(',');
-            const parameters = {};
+            const parameters = {
+                stereo: 1
+            };
             params.forEach(param => {
                 const paramParts = param.split('(');
                 const paramName = paramParts[0];
@@ -69,7 +71,7 @@ const addInstrument = (name, strdef) => {
                 "type": {
                     "GO4K_ENV": "envelope",
                     "GO4K_OUT": "out",
-                    //"GO4K_VCO": "oscillator"
+                    "GO4K_VCO": "oscillator"
                 }[opcode],
                 parameters
             }
