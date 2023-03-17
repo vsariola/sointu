@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'fs/promises';
 
-const wasm = (await readFile('./chords.wasm'));
+const wasm = (await readFile('./groove.wasm'));
 
 const mod = await WebAssembly.instantiate(wasm, {
     m: {

@@ -6,12 +6,18 @@ const doc = {
     bpm: groove.BPM,
     rowsperbeat: 4,
     score: {
-        length: groove.patterns[0].length,
+        length: groove.instrumentPatternLists[0].length,
         rowsperpattern: groove.patternsize,
         tracks: groove.instrumentPatternLists.map(track => {
-
-            const patterns = track.map(patternIndex => groove.patterns[patternIndex]);
-            const order = track.map((patternIndex, ndx) => ndx);
+            const patternMap = {};
+            track.forEach(patternIndex => {
+                patternMap[`${patternIndex}`] = groove.patterns[patternIndex];
+            });
+            const patternIndices = Object.keys(patternMap);
+            const patterns = patternIndices.map(patternIndex => patternMap[`${patternIndex}`]);
+            const order = track.map((patternIndex) => {
+                return patternIndices.indexOf(`${patternIndex}`);
+            });
             return {
                 numvoices: 1,
                 order,
@@ -25,13 +31,11 @@ const doc = {
 const addInstrument = (name, strdef) => {
     const units = strdef.split('\n')
         .map(opline => {
-            console.log(opline);
             const opcode_params = opline.replace(/\s\s+/,'\t').split(/[\t]/);
             const opcode = opcode_params[0];
             const params = opcode_params[1].split(',');
             const parameters = {};
             params.forEach(param => {
-                console.log(param)
                 const paramParts = param.split('(');
                 const paramName = paramParts[0];
                 const paramValue = paramParts[1].substr(0, paramParts[1].length - 1);
@@ -51,15 +55,25 @@ const addInstrument = (name, strdef) => {
                     case 'GAIN':
                         parameters['gain'] = parseInt(paramValue);
                         break;
+                    case 'GAIN':
+                        parameters['gain'] = parseInt(paramValue);
+                        break;
+                    case 'FLAGS':
+                        if (opcode == 'GO4K_VCO') {
+                            parameters['type'] = 0;
+                        }
+                        break;
                 }
             });
             return {
                 "type": {
-                    "GO4K_ENV": "envelope"
+                    "GO4K_ENV": "envelope",
+                    "GO4K_OUT": "out",
+                    //"GO4K_VCO": "oscillator"
                 }[opcode],
                 parameters
             }
-        });
+        }).filter(unit => unit.type ?? false);
     doc.patch.push({numvoices: 1, units});
 };
 
