@@ -8,10 +8,10 @@ const doc = {
     score: {
         length: groove.instrumentPatternLists[0].length,
         rowsperpattern: groove.patternsize,
-        tracks: groove.instrumentPatternLists.map(track => {
+        tracks: groove.instrumentPatternLists.slice(0, 7).map(track => {
             const patternMap = {};
             track.forEach(patternIndex => {
-                patternMap[`${patternIndex}`] = groove.patterns[patternIndex];
+                patternMap[`${patternIndex}`] = groove.patterns[patternIndex-1];
             });
             const patternIndices = Object.keys(patternMap);
             const patterns = patternIndices.map(patternIndex => patternMap[`${patternIndex}`]);
@@ -25,224 +25,1060 @@ const doc = {
             }
         })
     },
-    patch: []
-}
-
-const addInstrument = (name, strdef) => {
-    const units = strdef.split('\n')
-        .map(opline => {
-            const opcode_params = opline.replace(/\s\s+/,'\t').split(/[\t]/);
-            const opcode = opcode_params[0];
-            const params = opcode_params[1].split(',');
-            const parameters = {
-                stereo: 1
-            };
-            params.forEach(param => {
-                const paramParts = param.split('(');
-                const paramName = paramParts[0];
-                const paramValue = paramParts[1].substr(0, paramParts[1].length - 1);
-                switch(paramName) {
-                    case 'ATTAC':
-                        parameters['attack'] = parseInt(paramValue);
-                        break;
-                    case 'DECAY':
-                        parameters['decay'] = parseInt(paramValue);
-                        break;
-                    case 'SUSTAIN':
-                        parameters['sustain'] = parseInt(paramValue);
-                        break;
-                    case 'RELEASE':
-                        parameters['release'] = parseInt(paramValue);
-                        break;
-                    case 'GAIN':
-                        parameters['gain'] = parseInt(paramValue);
-                        break;
-                    case 'GAIN':
-                        parameters['gain'] = parseInt(paramValue);
-                        break;
-                    case 'FLAGS':
-                        if (opcode == 'GO4K_VCO') {
-                            parameters['type'] = 0;
-                        }
-                        break;
+    patch: [
+        {
+            "numvoices": 1,
+            "units": [
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 2,
+                  "detune": 48,
+                  "gain": 16,
+                  "lfo": 0,
+                  "phase": 0,
+                  "shape": 63,
+                  "stereo": 1,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 3
                 }
-            });
-            return {
-                "type": {
-                    "GO4K_ENV": "envelope",
-                    "GO4K_OUT": "out",
-                    "GO4K_VCO": "oscillator"
-                }[opcode],
-                parameters
-            }
-        }).filter(unit => unit.type ?? false);
-    doc.patch.push({numvoices: 1, units});
-};
-
-const addInstrumentGroup = () => { };
-const setGlobalParamDefs = () => { };
-
-addInstrument('lead1', `GO4K_ENV        ATTAC(24),DECAY(70),SUSTAIN(32),RELEASE(64),GAIN(60)
-GO4K_VCO        TRANSPOSE(76),DETUNE(64),PHASE(0),GATES(85),COLOR(64),SHAPE(64),GAIN(64),FLAGS(NOISE)
-GO4K_DST        DRIVE(64), SNHFREQ(0), FLAGS(0)
-GO4K_VCO        TRANSPOSE(16),DETUNE(64),PHASE(0),GATES(85),COLOR(64),SHAPE(64),GAIN(128),FLAGS(TRISAW|LFO)
-GO4K_FOP        OP(FOP_ADDP)
-GO4K_FST        AMOUNT(40),DEST(10*MAX_UNIT_SLOTS+4+FST_SET)
-GO4K_FST        AMOUNT(58),DEST(10*MAX_UNIT_SLOTS+5+FST_SET)
-GO4K_FOP        OP(FOP_POP)
-GO4K_VCO        TRANSPOSE(76),DETUNE(64),PHASE(0),GATES(85),COLOR(64),SHAPE(64),GAIN(128),FLAGS(SINE)
-GO4K_VCO        TRANSPOSE(83),DETUNE(64),PHASE(64),GATES(85),COLOR(90),SHAPE(64),GAIN(48),FLAGS(SINE)
-GO4K_VCF        FREQUENCY(77),RESONANCE(24),VCFTYPE(BANDPASS)
-GO4K_FOP        OP(FOP_ADDP)
-GO4K_FOP        OP(FOP_PUSH)
-GO4K_VCF        FREQUENCY(32),RESONANCE(128),VCFTYPE(BANDPASS)
-GO4K_FOP        OP(FOP_XCH)
-GO4K_VCF        FREQUENCY(96),RESONANCE(128),VCFTYPE(BANDPASS)
-GO4K_FOP        OP(FOP_ADDP)
-GO4K_FOP        OP(FOP_MULP)
-GO4K_DLL        PREGAIN(64),DRY(100),FEEDBACK(70),DAMP(64),FREQUENCY(56),DEPTH(48),DELAY(17),COUNT(2)
-GO4K_PAN        PANNING(36)
-GO4K_OUT        GAIN(65),AUXSEND(80)`);
-addInstrument('bass', `GO4K_ENV	   ATTAC(32),DECAY(70),SUSTAIN(60),RELEASE(75),GAIN(32)
-GO4K_FST	AMOUNT(120),DEST(0*MAX_UNIT_SLOTS+2+FST_SET)
-GO4K_VCO	TRANSPOSE(76),DETUNE(64),PHASE(32),GATES(85),COLOR(80),SHAPE(64),GAIN(128),FLAGS(PULSE)
-GO4K_VCO	TRANSPOSE(76),DETUNE(72),PHASE(32),GATES(85),COLOR(96),SHAPE(64),GAIN(128),FLAGS(TRISAW)
-GO4K_VCO	TRANSPOSE(32),DETUNE(64),PHASE(0),GATES(85),COLOR(64),SHAPE(90),GAIN(128),FLAGS(SINE|LFO)
-GO4K_FST	AMOUNT(68),DEST(2*MAX_UNIT_SLOTS+2+FST_SET)
-GO4K_FST	AMOUNT(60),DEST(3*MAX_UNIT_SLOTS+2+FST_SET)
-GO4K_FOP	OP(FOP_POP)
-GO4K_FOP	OP(FOP_ADDP)
-GO4K_FOP	OP(FOP_MULP)
-GO4K_VCF	FREQUENCY(18),RESONANCE(64),VCFTYPE(PEAK)
-GO4K_VCF	FREQUENCY(32),RESONANCE(48),VCFTYPE(LOWPASS)
-GO4K_DST	DRIVE(88), SNHFREQ(128), FLAGS(0)
-GO4K_PAN	PANNING(80)
-GO4K_DLL	PREGAIN(64),DRY(128),FEEDBACK(96),DAMP(64),FREQUENCY(0),DEPTH(0),DELAY(17),COUNT(1) ; ERROR
-GO4K_FOP	OP(FOP_XCH)
-GO4K_DLL	PREGAIN(64),DRY(128),FEEDBACK(64),DAMP(64),FREQUENCY(0),DEPTH(0),DELAY(18),COUNT(1) ; ERROR
-GO4K_FOP	OP(FOP_XCH)
-GO4K_OUT	GAIN(18), AUXSEND(10)`);
-
-const pad = (panning) => `GO4K_ENV	ATTAC(32),DECAY(70),SUSTAIN(80),RELEASE(70),GAIN(80)
-GO4K_VCO	TRANSPOSE(16),DETUNE(64),PHASE(0),GATES(85),COLOR(64),SHAPE(64),GAIN(120),FLAGS(TRISAW|LFO)
-GO4K_FST	AMOUNT(80),DEST(13*MAX_UNIT_SLOTS+4+FST_SET)
-GO4K_FST	AMOUNT(48),DEST(9*MAX_UNIT_SLOTS+4+FST_SET)
-GO4K_FST	AMOUNT(58),DEST(9*MAX_UNIT_SLOTS+5+FST_SET)
-GO4K_FOP	OP(FOP_POP)
-GO4K_VCO	TRANSPOSE(76),DETUNE(64),PHASE(0),GATES(85),COLOR(30),SHAPE(64),GAIN(128),FLAGS(TRISAW)
-GO4K_VCO	TRANSPOSE(76),DETUNE(64),PHASE(32),GATES(85),COLOR(90),SHAPE(64),GAIN(64),FLAGS(TRISAW)
-GO4K_VCO	TRANSPOSE(64),DETUNE(64),PHASE(64),GATES(85),COLOR(64),SHAPE(64),GAIN(8),FLAGS(NOISE)
-GO4K_VCF	FREQUENCY(105),RESONANCE(20),VCFTYPE(BANDPASS)
-GO4K_FOP	OP(FOP_ADDP)
-GO4K_FOP	OP(FOP_ADDP)
-GO4K_FOP	OP(FOP_PUSH)
-GO4K_VCF	FREQUENCY(14),RESONANCE(128),VCFTYPE(BANDPASS)
-GO4K_FOP	OP(FOP_XCH)
-GO4K_VCF	FREQUENCY(70),RESONANCE(128),VCFTYPE(BANDPASS)
-GO4K_FOP	OP(FOP_ADDP)
-GO4K_FOP	OP(FOP_MULP)
-GO4K_DLL	PREGAIN(64),DRY(128),FEEDBACK(64),DAMP(64),FREQUENCY(0),DEPTH(0),DELAY(11),COUNT(1)
-GO4K_PAN	PANNING(${panning})
-GO4K_DLL	PREGAIN(64),DRY(128),FEEDBACK(64),DAMP(64),FREQUENCY(0),DEPTH(0),DELAY(11),COUNT(1)
-GO4K_OUT	GAIN(32), AUXSEND(64)`;
-
-addInstrument('pad1', pad(30));
-addInstrument('pad2', pad(60));
-addInstrument('pad3', pad(100));
-addInstrumentGroup('pads', ['pad1', 'pad2', 'pad3']);
-addInstrument('kick', `GO4K_ENV    ATTAC(0),DECAY(64),SUSTAIN(96),RELEASE(64),GAIN(90)
-GO4K_FST	AMOUNT(128),DEST(0*MAX_UNIT_SLOTS+2+FST_SET)
-GO4K_ENV	ATTAC(0),DECAY(70),SUSTAIN(0),RELEASE(0),GAIN(100)
-GO4K_DST	DRIVE(32), SNHFREQ(128), FLAGS(0)
-GO4K_FST	AMOUNT(80),DEST(6*MAX_UNIT_SLOTS+1+FST_SET)
-GO4K_FOP	OP(FOP_POP)
-GO4K_VCO	TRANSPOSE(46),DETUNE(64),PHASE(0),GATES(85),COLOR(64),SHAPE(64),GAIN(48),FLAGS(TRISAW)
-GO4K_FOP	OP(FOP_MULP)
-GO4K_FOP	OP(FOP_LOADNOTE)
-GO4K_FOP	OP(FOP_MULP)
-GO4K_PAN	PANNING(40)
-GO4K_OUT	GAIN(12), AUXSEND(1)`);
-addInstrument('snare', `GO4K_ENV	ATTAC(0),DECAY(72),SUSTAIN(0),RELEASE(72),GAIN(25)
-GO4K_FST	AMOUNT(128),DEST(0*MAX_UNIT_SLOTS+2+FST_SET)
-GO4K_ENV	ATTAC(0),DECAY(56),SUSTAIN(0),RELEASE(0),GAIN(128)
-GO4K_FST	AMOUNT(108),DEST(6*MAX_UNIT_SLOTS+1+FST_SET)
-GO4K_FST	AMOUNT(72),DEST(7*MAX_UNIT_SLOTS+1+FST_SET)
-GO4K_FOP	OP(FOP_POP)
-GO4K_VCO	TRANSPOSE(16),DETUNE(64),PHASE(0),GATES(85),COLOR(64),SHAPE(32),GAIN(64),FLAGS(SINE)
-GO4K_VCO	TRANSPOSE(32),DETUNE(64),PHASE(0),GATES(85),COLOR(64),SHAPE(80),GAIN(64),FLAGS(SINE)
-GO4K_VCO	TRANSPOSE(64),DETUNE(64),PHASE(0),GATES(85),COLOR(64),SHAPE(10),GAIN(64),FLAGS(NOISE)
-GO4K_VCF	FREQUENCY(96),RESONANCE(128),VCFTYPE(LOWPASS)
-GO4K_VCO	TRANSPOSE(64),DETUNE(64),PHASE(0),GATES(85),COLOR(64),SHAPE(64),GAIN(16),FLAGS(NOISE)
-GO4K_FOP	OP(FOP_ADDP)
-GO4K_FOP	OP(FOP_ADDP)
-GO4K_FOP	OP(FOP_ADDP)
-GO4K_FOP	OP(FOP_MULP)
-GO4K_VCF	FREQUENCY(22),RESONANCE(32),VCFTYPE(HIGHPASS)
-GO4K_FOP	OP(FOP_LOADNOTE)
-GO4K_FOP	OP(FOP_MULP)
-GO4K_PAN	PANNING(56)
-GO4K_OUT	GAIN(4), AUXSEND(2)
-GO4K_FLD    AMOUNT(100)
-GO4K_FST	AMOUNT(64),DEST(6*MAX_UNIT_SLOTS+1+FST_SET)
-GO4K_FST	AMOUNT(64),DEST(7*MAX_UNIT_SLOTS+1+FST_SET)
-GO4K_FOP	OP(FOP_POP)`);
-
-addInstrumentGroup('drums', ['kick', 'snare']);
-addInstrument('drivelead', `GO4K_ENV        ATTAC(32),DECAY(64),SUSTAIN(90),RELEASE(48),GAIN(35)
-GO4K_VCO        TRANSPOSE(76),DETUNE(70),PHASE(0),GATES(127),COLOR(10),SHAPE(110),GAIN(128),FLAGS(PULSE)
-GO4K_VCO        TRANSPOSE(76),DETUNE(64),PHASE(64),GATES(127),COLOR(20),SHAPE(20),GAIN(128),FLAGS(PULSE)
-GO4K_VCO        TRANSPOSE(76),DETUNE(58),PHASE(128),GATES(127),COLOR(30),SHAPE(110),GAIN(128),FLAGS(PULSE)
-GO4K_FOP        OP(FOP_ADDP)
-GO4K_FOP        OP(FOP_ADDP)
-GO4K_FOP        OP(FOP_MULP)
-GO4K_VCO        TRANSPOSE(48),DETUNE(64),PHASE(64),GATES(0x80),COLOR(127),SHAPE(64),GAIN(50),FLAGS(SINE|LFO)
-GO4K_FST        AMOUNT(104),DEST(10*MAX_UNIT_SLOTS+4+FST_SET)
-GO4K_FOP        OP(FOP_POP)
-GO4K_VCF        FREQUENCY(94),RESONANCE(120),VCFTYPE(LOWPASS)
-GO4K_DLL        PREGAIN(64),DRY(100),FEEDBACK(70),DAMP(64),FREQUENCY(56),DEPTH(48),DELAY(17),COUNT(2)
-GO4K_PAN		PANNING(50)
-GO4K_DLL        PREGAIN(64),DRY(100),FEEDBACK(70),DAMP(64),FREQUENCY(56),DEPTH(48),DELAY(16),COUNT(1)
-GO4K_OUT        GAIN(10),AUXSEND(52)`);
-
-addInstrument('hihat', `GO4K_ENV	ATTAC(0),DECAY(64),SUSTAIN(15),RELEASE(32),GAIN(100)
-GO4K_VCO	TRANSPOSE(64),DETUNE(64),PHASE(64),GATES(85),COLOR(64),SHAPE(64),GAIN(128),FLAGS(NOISE)
-GO4K_FOP	OP(FOP_MULP)
-GO4K_VCF	FREQUENCY(128),RESONANCE(128),VCFTYPE(BANDPASS)
-GO4K_FOP	OP(FOP_LOADNOTE)
-GO4K_FOP	OP(FOP_MULP)
-GO4K_PAN	PANNING(56)
-GO4K_OUT	GAIN(44), AUXSEND(0)`);
-addInstrument('squarelead', `GO4K_ENV	ATTAC(0),DECAY(70),SUSTAIN(0),RELEASE(70),GAIN(64)
-GO4K_ENV	ATTAC(0),DECAY(80),SUSTAIN(0),RELEASE(80),GAIN(128)
-GO4K_FST	AMOUNT(96),DEST(18*MAX_UNIT_SLOTS+4+FST_SET)
-GO4K_FST	AMOUNT(96),DEST(19*MAX_UNIT_SLOTS+4+FST_SET)
-GO4K_FOP	OP(FOP_POP)
-GO4K_FOP	OP(FOP_PUSH)
-GO4K_VCO	TRANSPOSE(72),DETUNE(64),PHASE(0),GATES(85),COLOR(64),SHAPE(64),GAIN(128),FLAGS(SINE|LFO)
-GO4K_FOP	OP(FOP_ADDP)
-GO4K_FST	AMOUNT(32),DEST(13*MAX_UNIT_SLOTS+5+FST_SET)
-GO4K_FOP	OP(FOP_POP)
-GO4K_VCO	TRANSPOSE(96),DETUNE(64),PHASE(0),GATES(85),COLOR(64),SHAPE(64),GAIN(128),FLAGS(SINE|LFO)
-GO4K_FST	AMOUNT(80),DEST(15*MAX_UNIT_SLOTS+2+FST_SET)
-GO4K_FOP	OP(FOP_POP)
-GO4K_VCO	TRANSPOSE(76),DETUNE(64),PHASE(0),GATES(85),COLOR(128),SHAPE(64),GAIN(128),FLAGS(PULSE)
-GO4K_VCO	TRANSPOSE(88),DETUNE(64),PHASE(0),GATES(85),COLOR(100),SHAPE(64),GAIN(128),FLAGS(TRISAW)
-GO4K_FOP	OP(FOP_ADDP)
-GO4K_VCF	FREQUENCY(82),RESONANCE(96),VCFTYPE(LOWPASS)
-GO4K_VCF	FREQUENCY(64),RESONANCE(96),VCFTYPE(LOWPASS)
-GO4K_FOP	OP(FOP_MULP)
-GO4K_DLL    PREGAIN(64),DRY(100),FEEDBACK(70),DAMP(64),FREQUENCY(56),DEPTH(48),DELAY(17),COUNT(2)
-GO4K_PAN	PANNING(64)
-GO4K_DLL    PREGAIN(64),DRY(100),FEEDBACK(70),DAMP(64),FREQUENCY(56),DEPTH(48),DELAY(18),COUNT(2)
-GO4K_OUT	GAIN(16), AUXSEND(32)`);
-
-setGlobalParamDefs(`GO4K_ACC	ACCTYPE(AUX)
-GO4K_DLL	PREGAIN(55),DRY(70),FEEDBACK(100),DAMP(64),FREQUENCY(0),DEPTH(0),DELAY(0),COUNT(8)
-GO4K_FOP	OP(FOP_XCH)
-GO4K_DLL	PREGAIN(55),DRY(70),FEEDBACK(100),DAMP(64),FREQUENCY(0),DEPTH(0),DELAY(8),COUNT(8)
-GO4K_FOP	OP(FOP_XCH)
-GO4K_ACC	ACCTYPE(OUTPUT)
-GO4K_FOP	OP(FOP_ADDP2)
-GO4K_OUT	GAIN(128), AUXSEND(0)`);
+              },
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 126,
+                  "detune": 78,
+                  "gain": 16,
+                  "phase": 0,
+                  "shape": 64,
+                  "stereo": 1,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 3
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 2,
+                  "detune": 59,
+                  "gain": 16,
+                  "phase": 0,
+                  "shape": 64,
+                  "stereo": 1,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 3
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "noise",
+                "parameters": {
+                  "gain": 6,
+                  "shape": 64,
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "filter",
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 128,
+                  "highpass": 1,
+                  "lowpass": 0,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "envelope",
+                "parameters": {
+                  "attack": 50,
+                  "decay": 64,
+                  "gain": 96,
+                  "release": 64,
+                  "stereo": 1,
+                  "sustain": 64
+                }
+              },
+              {
+                "type": "mulp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "filter",
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 32,
+                  "highpass": 1,
+                  "lowpass": 0,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "delay",
+                "parameters": {
+                  "damp": 64,
+                  "dry": 64,
+                  "feedback": 64,
+                  "notetracking": 0,
+                  "pregain": 64,
+                  "stereo": 1
+                },
+                "varargs": [
+                  9187,
+                  9187
+                ]
+              },
+              {
+                "type": "outaux",
+                "parameters": {
+                  "auxgain": 128,
+                  "outgain": 0,
+                  "stereo": 1
+                }
+              }
+            ]
+          },
+          {
+            "numvoices": 1,
+            "units": [
+              {
+                "type": "envelope",
+                "parameters": {
+                  "attack": 48,
+                  "decay": 63,
+                  "gain": 128,
+                  "release": 64,
+                  "stereo": 0,
+                  "sustain": 0
+                }
+              },
+              {
+                "type": "distort",
+                "parameters": {
+                  "drive": 112,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 0,
+                  "detune": 64,
+                  "gain": 128,
+                  "looplength": 1486,
+                  "loopstart": 2536,
+                  "phase": 64,
+                  "samplestart": 250849,
+                  "shape": 64,
+                  "stereo": 0,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 0
+                }
+              },
+              {
+                "type": "mulp",
+                "parameters": {
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "filter",
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 16,
+                  "highpass": 1,
+                  "lowpass": 0,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "filter",
+                "id": 1,
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 22,
+                  "highpass": 0,
+                  "lowpass": 1,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "pan",
+                "parameters": {
+                  "panning": 64,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "out",
+                "parameters": {
+                  "gain": 128,
+                  "stereo": 1
+                }
+              },
+              {
+                "parameters": {}
+              },
+              {
+                "type": "envelope",
+                "parameters": {
+                  "attack": 0,
+                  "decay": 64,
+                  "gain": 128,
+                  "release": 0,
+                  "stereo": 0,
+                  "sustain": 0
+                }
+              },
+              {
+                "type": "distort",
+                "parameters": {
+                  "drive": 32,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "send",
+                "parameters": {
+                  "amount": 79,
+                  "port": 0,
+                  "sendpop": 1,
+                  "stereo": 0,
+                  "target": 1
+                }
+              }
+            ]
+          },
+          {
+            "numvoices": 1,
+            "units": [
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 2,
+                  "detune": 48,
+                  "gain": 16,
+                  "lfo": 0,
+                  "phase": 0,
+                  "shape": 63,
+                  "stereo": 1,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 3
+                }
+              },
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 126,
+                  "detune": 78,
+                  "gain": 16,
+                  "phase": 0,
+                  "shape": 64,
+                  "stereo": 1,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 3
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 2,
+                  "detune": 59,
+                  "gain": 16,
+                  "phase": 0,
+                  "shape": 64,
+                  "stereo": 1,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 3
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "noise",
+                "parameters": {
+                  "gain": 6,
+                  "shape": 64,
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "filter",
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 128,
+                  "highpass": 1,
+                  "lowpass": 0,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "envelope",
+                "parameters": {
+                  "attack": 50,
+                  "decay": 64,
+                  "gain": 96,
+                  "release": 64,
+                  "stereo": 1,
+                  "sustain": 64
+                }
+              },
+              {
+                "type": "mulp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "filter",
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 32,
+                  "highpass": 1,
+                  "lowpass": 0,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "delay",
+                "parameters": {
+                  "damp": 64,
+                  "dry": 64,
+                  "feedback": 64,
+                  "notetracking": 0,
+                  "pregain": 64,
+                  "stereo": 1
+                },
+                "varargs": [
+                  9187,
+                  9187
+                ]
+              },
+              {
+                "type": "outaux",
+                "parameters": {
+                  "auxgain": 128,
+                  "outgain": 0,
+                  "stereo": 1
+                }
+              }
+            ]
+          },
+          {
+            "numvoices": 1,
+            "units": [
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 2,
+                  "detune": 48,
+                  "gain": 16,
+                  "lfo": 0,
+                  "phase": 0,
+                  "shape": 63,
+                  "stereo": 1,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 3
+                }
+              },
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 126,
+                  "detune": 78,
+                  "gain": 16,
+                  "phase": 0,
+                  "shape": 64,
+                  "stereo": 1,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 3
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 2,
+                  "detune": 59,
+                  "gain": 16,
+                  "phase": 0,
+                  "shape": 64,
+                  "stereo": 1,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 3
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "noise",
+                "parameters": {
+                  "gain": 6,
+                  "shape": 64,
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "filter",
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 128,
+                  "highpass": 1,
+                  "lowpass": 0,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "envelope",
+                "parameters": {
+                  "attack": 50,
+                  "decay": 64,
+                  "gain": 96,
+                  "release": 64,
+                  "stereo": 1,
+                  "sustain": 64
+                }
+              },
+              {
+                "type": "mulp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "filter",
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 32,
+                  "highpass": 1,
+                  "lowpass": 0,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "delay",
+                "parameters": {
+                  "damp": 64,
+                  "dry": 64,
+                  "feedback": 64,
+                  "notetracking": 0,
+                  "pregain": 64,
+                  "stereo": 1
+                },
+                "varargs": [
+                  9187,
+                  9187
+                ]
+              },
+              {
+                "type": "outaux",
+                "parameters": {
+                  "auxgain": 128,
+                  "outgain": 0,
+                  "stereo": 1
+                }
+              }
+            ]
+          },
+          {
+            "numvoices": 1,
+            "units": [
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 2,
+                  "detune": 48,
+                  "gain": 16,
+                  "lfo": 0,
+                  "phase": 0,
+                  "shape": 63,
+                  "stereo": 1,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 3
+                }
+              },
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 126,
+                  "detune": 78,
+                  "gain": 16,
+                  "phase": 0,
+                  "shape": 64,
+                  "stereo": 1,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 3
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "oscillator",
+                "parameters": {
+                  "color": 2,
+                  "detune": 59,
+                  "gain": 16,
+                  "phase": 0,
+                  "shape": 64,
+                  "stereo": 1,
+                  "transpose": 64,
+                  "type": 1,
+                  "unison": 3
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "noise",
+                "parameters": {
+                  "gain": 6,
+                  "shape": 64,
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "filter",
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 128,
+                  "highpass": 1,
+                  "lowpass": 0,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "envelope",
+                "parameters": {
+                  "attack": 50,
+                  "decay": 64,
+                  "gain": 96,
+                  "release": 64,
+                  "stereo": 1,
+                  "sustain": 64
+                }
+              },
+              {
+                "type": "mulp",
+                "parameters": {
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "filter",
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 32,
+                  "highpass": 1,
+                  "lowpass": 0,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 1
+                }
+              },
+              {
+                "type": "delay",
+                "parameters": {
+                  "damp": 64,
+                  "dry": 64,
+                  "feedback": 64,
+                  "notetracking": 0,
+                  "pregain": 64,
+                  "stereo": 1
+                },
+                "varargs": [
+                  9187,
+                  9187
+                ]
+              },
+              {
+                "type": "outaux",
+                "parameters": {
+                  "auxgain": 128,
+                  "outgain": 0,
+                  "stereo": 1
+                }
+              }
+            ]
+          },
+          {
+            "numvoices": 1,
+            "units": [
+              {
+                "type": "envelope",
+                "parameters": {
+                  "attack": 36,
+                  "decay": 69,
+                  "gain": 128,
+                  "release": 32,
+                  "stereo": 0,
+                  "sustain": 0
+                }
+              },
+              {
+                "type": "distort",
+                "parameters": {
+                  "drive": 112,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "oscillator",
+                "id": 1,
+                "parameters": {
+                  "color": 128,
+                  "detune": 64,
+                  "gain": 128,
+                  "looplength": 1,
+                  "phase": 0,
+                  "shape": 64,
+                  "stereo": 0,
+                  "transpose": 64,
+                  "type": 0
+                }
+              },
+              {
+                "type": "mulp",
+                "parameters": {
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "filter",
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 14,
+                  "highpass": 1,
+                  "lowpass": 0,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "push",
+                "parameters": {
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "filter",
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 16,
+                  "highpass": 0,
+                  "lowpass": 1,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "delay",
+                "parameters": {
+                  "count": 8,
+                  "damp": 64,
+                  "delay": 1,
+                  "dry": 0,
+                  "feedback": 96,
+                  "notetracking": 0,
+                  "pregain": 32,
+                  "stereo": 0
+                },
+                "varargs": [
+                  1116,
+                  1188,
+                  1276,
+                  1356,
+                  1422,
+                  1492,
+                  1556,
+                  1618
+                ]
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "pan",
+                "parameters": {
+                  "panning": 64,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "out",
+                "parameters": {
+                  "gain": 64,
+                  "stereo": 1
+                }
+              },
+              {
+                "parameters": {}
+              },
+              {
+                "type": "envelope",
+                "parameters": {
+                  "attack": 0,
+                  "decay": 70,
+                  "gain": 128,
+                  "release": 70,
+                  "stereo": 0,
+                  "sustain": 0
+                }
+              },
+              {
+                "type": "distort",
+                "parameters": {
+                  "drive": 5,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "send",
+                "parameters": {
+                  "amount": 101,
+                  "port": 0,
+                  "sendpop": 1,
+                  "stereo": 0,
+                  "target": 1
+                }
+              },
+              {
+                "parameters": {}
+              },
+              {
+                "type": "envelope",
+                "parameters": {
+                  "attack": 48,
+                  "decay": 58,
+                  "gain": 128,
+                  "release": 0,
+                  "stereo": 0,
+                  "sustain": 0
+                }
+              },
+              {
+                "type": "distort",
+                "parameters": {
+                  "drive": 64,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "send",
+                "parameters": {
+                  "amount": 32,
+                  "port": 5,
+                  "sendpop": 1,
+                  "stereo": 0,
+                  "target": 1,
+                  "unit": 0,
+                  "voice": 0
+                }
+              }
+            ]
+          },
+          {
+            "numvoices": 1,
+            "units": [
+              {
+                "type": "envelope",
+                "parameters": {
+                  "attack": 32,
+                  "decay": 60,
+                  "gain": 128,
+                  "release": 0,
+                  "stereo": 0,
+                  "sustain": 0
+                }
+              },
+              {
+                "type": "oscillator",
+                "id": 1,
+                "parameters": {
+                  "color": 64,
+                  "detune": 64,
+                  "gain": 128,
+                  "phase": 0,
+                  "shape": 64,
+                  "stereo": 0,
+                  "transpose": 64,
+                  "type": 1
+                }
+              },
+              {
+                "type": "mulp",
+                "parameters": {
+                  "stereo": 0
+                }
+              },
+              {
+                "parameters": {}
+              },
+              {
+                "type": "envelope",
+                "parameters": {
+                  "attack": 32,
+                  "decay": 64,
+                  "gain": 64,
+                  "release": 66,
+                  "stereo": 0,
+                  "sustain": 0
+                }
+              },
+              {
+                "type": "distort",
+                "parameters": {
+                  "drive": 32,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "noise",
+                "parameters": {
+                  "gain": 64,
+                  "shape": 64,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "mulp",
+                "parameters": {
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "filter",
+                "parameters": {
+                  "bandpass": 0,
+                  "frequency": 106,
+                  "highpass": 1,
+                  "lowpass": 0,
+                  "negbandpass": 0,
+                  "neghighpass": 0,
+                  "resonance": 128,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "addp",
+                "parameters": {
+                  "stereo": 0
+                }
+              },
+              {
+                "parameters": {}
+              },
+              {
+                "type": "distort",
+                "parameters": {
+                  "drive": 112,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "delay",
+                "parameters": {
+                  "count": 8,
+                  "damp": 0,
+                  "delay": 1,
+                  "dry": 128,
+                  "feedback": 40,
+                  "notetracking": 0,
+                  "pregain": 24,
+                  "stereo": 0
+                },
+                "varargs": [
+                  1116,
+                  1188,
+                  1276,
+                  1356,
+                  1422,
+                  1492,
+                  1556,
+                  1618
+                ]
+              },
+              {
+                "type": "compressor",
+                "parameters": {
+                  "attack": 51,
+                  "invgain": 64,
+                  "ratio": 112,
+                  "release": 49,
+                  "stereo": 0,
+                  "threshold": 64
+                }
+              },
+              {
+                "type": "mulp",
+                "parameters": {
+                  "stereo": 0
+                }
+              },
+              {
+                "parameters": {}
+              },
+              {
+                "type": "pan",
+                "parameters": {
+                  "panning": 68,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "outaux",
+                "parameters": {
+                  "auxgain": 0,
+                  "outgain": 64,
+                  "stereo": 1
+                }
+              },
+              {
+                "parameters": {}
+              },
+              {
+                "type": "envelope",
+                "parameters": {
+                  "attack": 0,
+                  "decay": 60,
+                  "gain": 128,
+                  "release": 0,
+                  "stereo": 0,
+                  "sustain": 0
+                }
+              },
+              {
+                "type": "distort",
+                "parameters": {
+                  "drive": 5,
+                  "stereo": 0
+                }
+              },
+              {
+                "type": "send",
+                "parameters": {
+                  "amount": 90,
+                  "port": 0,
+                  "sendpop": 1,
+                  "stereo": 0,
+                  "target": 1,
+                  "unit": 0,
+                  "voice": 0
+                }
+              }
+            ]
+          }
+    ]
+}
 
 await writeFile('tests/groove.yaml', yaml.stringify(doc));

@@ -32,39 +32,39 @@ score:
         - 0
       patterns:
         -
-          - 79
+          - 74
           - 1
-          - 43
+          - 72
           - 1
-          - 79
+          - 0
+          - 0
+          - 67
           - 1
-          - 43
           - 1
-          - 79
+          - 0
+          - 69
           - 1
-          - 43
           - 1
-          - 79
-          - 1
-          - 43
+          - 0
+          - 62
           - 1
         -
+          - 74
+          - 1
+          - 72
           - 1
           - 0
           - 0
+          - 67
+          - 1
+          - 1
           - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
+          - 69
+          - 1
+          - 1
+          - 1
+          - 62
+          - 1
     - numvoices: 1
       order:
         - 0
@@ -93,22 +93,39 @@ score:
         - 3
       patterns:
         -
-          - 74
+          - 26
           - 1
-          - 72
+          - 0
+          - 38
+          - 1
+          - 0
+          - 38
+          - 1
+          - 26
           - 1
           - 0
           - 0
-          - 67
-          - 1
+          - 0
+          - 0
+          - 0
+          - 0
+        -
+          - 24
           - 1
           - 0
-          - 69
-          - 1
+          - 36
           - 1
           - 0
-          - 62
+          - 36
           - 1
+          - 24
+          - 1
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
         -
           - 31
           - 1
@@ -144,22 +161,101 @@ score:
           - 0
           - 0
         -
-          - 0
-          - 0
-          - 0
-          - 0
-          - 79
+          - 26
           - 1
           - 0
+          - 38
+          - 1
           - 0
+          - 38
+          - 1
+          - 26
+          - 1
+          - 1
+          - 1
+          - 1
+          - 1
+          - 1
           - 0
+        -
+          - 24
+          - 1
           - 0
+          - 36
+          - 1
           - 0
+          - 36
+          - 1
+          - 24
+          - 1
+          - 1
+          - 1
+          - 1
+          - 1
+          - 1
           - 0
-          - 79
+        -
+          - 31
+          - 1
           - 0
+          - 43
+          - 1
           - 0
+          - 43
+          - 1
+          - 31
+          - 1
+          - 1
+          - 1
+          - 1
+          - 1
+          - 1
           - 0
+        -
+          - 29
+          - 1
+          - 0
+          - 41
+          - 1
+          - 0
+          - 41
+          - 1
+          - 29
+          - 1
+          - 1
+          - 1
+          - 1
+          - 1
+          - 1
+          - 0
+    - numvoices: 1
+      order:
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 1
+        - 2
+        - 1
+        - 2
+        - 1
+        - 2
+        - 1
+        - 2
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+      patterns:
+        - null
         -
           - 65
           - 1
@@ -194,40 +290,6 @@ score:
           - 1
           - 1
           - 0
-        -
-          - 79
-          - 1
-          - 43
-          - 1
-          - 79
-          - 1
-          - 43
-          - 1
-          - 40
-          - 1
-          - 43
-          - 1
-          - 79
-          - 1
-          - 43
-          - 1
-        -
-          - 79
-          - 1
-          - 43
-          - 1
-          - 20
-          - 1
-          - 43
-          - 1
-          - 79
-          - 1
-          - 43
-          - 1
-          - 79
-          - 1
-          - 43
-          - 1
     - numvoices: 1
       order:
         - 0
@@ -255,23 +317,7 @@ score:
         - 0
         - 0
       patterns:
-        -
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
+        - null
         -
           - 62
           - 1
@@ -333,23 +379,7 @@ score:
         - 0
         - 0
       patterns:
-        -
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
+        - null
         -
           - 69
           - 1
@@ -394,84 +424,6 @@ score:
         - 0
         - 0
         - 0
-        - 1
-        - 2
-        - 1
-        - 2
-        - 1
-        - 2
-        - 1
-        - 2
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-      patterns:
-        -
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
-        -
-          - 74
-          - 1
-          - 72
-          - 1
-          - 0
-          - 0
-          - 67
-          - 1
-          - 1
-          - 0
-          - 69
-          - 1
-          - 1
-          - 1
-          - 62
-          - 1
-        -
-          - 31
-          - 1
-          - 0
-          - 43
-          - 1
-          - 0
-          - 43
-          - 1
-          - 31
-          - 1
-          - 1
-          - 1
-          - 1
-          - 1
-          - 1
-          - 0
-    - numvoices: 1
-      order:
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
         - 0
         - 0
         - 0
@@ -490,19 +442,19 @@ score:
         - 0
       patterns:
         -
-          - 26
-          - 1
-          - 0
-          - 38
-          - 1
-          - 0
-          - 38
-          - 1
-          - 26
-          - 1
+          - 64
           - 0
           - 0
           - 0
+          - 64
+          - 0
+          - 0
+          - 0
+          - 64
+          - 0
+          - 0
+          - 0
+          - 64
           - 0
           - 0
           - 0
@@ -533,20 +485,21 @@ score:
         - 1
         - 1
       patterns:
+        - null
         -
-          - 64
           - 0
           - 0
           - 0
-          - 64
+          - 0
+          - 79
+          - 1
           - 0
           - 0
           - 0
-          - 64
           - 0
           - 0
           - 0
-          - 64
+          - 79
           - 0
           - 0
           - 0
@@ -568,265 +521,6 @@ score:
           - 0
           - 30
         -
-          - 26
-          - 1
-          - 0
-          - 38
-          - 1
-          - 0
-          - 38
-          - 1
-          - 26
-          - 1
-          - 1
-          - 1
-          - 1
-          - 1
-          - 1
-          - 0
-        -
-          - 0
-          - 0
-          - 57
-          - 1
-          - 62
-          - 1
-          - 57
-          - 69
-          - 1
-          - 57
-          - 67
-          - 1
-          - 65
-          - 0
-          - 64
-          - 0
-    - numvoices: 1
-      order:
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 1
-        - 2
-        - 3
-        - 4
-        - 1
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
-        - 8
-        - 5
-        - 6
-        - 7
-        - 8
-      patterns:
-        -
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
-        -
-          - 77
-          - 1
-          - 72
-          - 74
-          - 1
-          - 1
-          - 72
-          - 1
-          - 1
-          - 1
-          - 1
-          - 1
-          - 1
-          - 0
-          - 72
-          - 74
-        -
-          - 0
-          - 0
-          - 79
-          - 1
-          - 1
-          - 0
-          - 79
-          - 1
-          - 1
-          - 1
-          - 1
-          - 1
-          - 77
-          - 1
-          - 74
-          - 0
-        -
-          - 77
-          - 1
-          - 0
-          - 79
-          - 1
-          - 1
-          - 77
-          - 1
-          - 1
-          - 1
-          - 76
-          - 1
-          - 74
-          - 1
-          - 72
-          - 1
-        -
-          - 24
-          - 1
-          - 0
-          - 36
-          - 1
-          - 0
-          - 36
-          - 1
-          - 24
-          - 1
-          - 1
-          - 1
-          - 1
-          - 1
-          - 1
-          - 0
-        -
-          - 62
-          - 1
-          - 57
-          - 1
-          - 62
-          - 1
-          - 57
-          - 69
-          - 1
-          - 57
-          - 67
-          - 1
-          - 65
-          - 1
-          - 64
-          - 0
-        -
-          - 62
-          - 1
-          - 1
-          - 1
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 67
-        -
-          - 69
-          - 1
-          - 1
-          - 1
-          - 72
-          - 1
-          - 69
-          - 1
-          - 1
-          - 1
-          - 1
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-        - null
-    - numvoices: 1
-      order:
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 1
-        - 2
-        - 0
-        - 0
-        - 1
-        - 2
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-      patterns:
-        -
-          - 24
-          - 1
-          - 0
-          - 36
-          - 1
-          - 0
-          - 36
-          - 1
-          - 24
-          - 1
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-          - 0
-        -
-          - 29
-          - 1
-          - 0
-          - 41
-          - 1
-          - 0
-          - 41
-          - 1
-          - 29
-          - 1
-          - 1
-          - 1
-          - 1
-          - 1
-          - 1
-          - 0
-        -
           - 0
           - 0
           - 0
@@ -843,377 +537,721 @@ score:
           - 0
           - 0
           - 0
-    - numvoices: 1
-      order:
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-        - 0
-      patterns:
-        -
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
-          - 64
-          - 0
-          - 0
-          - 0
 patch:
   - numvoices: 1
     units:
-      - type: "envelope"
-        parameters:
-          stereo: 1
-          attack: 24
-          decay: 70
-          sustain: 32
-          release: 64
-          gain: 60
       - type: "oscillator"
         parameters:
-          stereo: 1
-          gain: 64
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 48
-          type: 0
-      - type: "out"
-        parameters:
-          stereo: 1
-          gain: 65
-  - numvoices: 1
-    units:
-      - type: "envelope"
-        parameters:
-          stereo: 1
-          attack: 32
-          decay: 70
-          sustain: 60
-          release: 75
-          gain: 32
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 128
-          type: 0
-      - type: "out"
-        parameters:
-          stereo: 1
-          gain: 18
-  - numvoices: 1
-    units:
-      - type: "envelope"
-        parameters:
-          stereo: 1
-          attack: 32
-          decay: 70
-          sustain: 80
-          release: 70
-          gain: 80
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 120
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 64
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 8
-          type: 0
-      - type: "out"
-        parameters:
-          stereo: 1
-          gain: 32
-  - numvoices: 1
-    units:
-      - type: "envelope"
-        parameters:
-          stereo: 1
-          attack: 32
-          decay: 70
-          sustain: 80
-          release: 70
-          gain: 80
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 120
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 64
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 8
-          type: 0
-      - type: "out"
-        parameters:
-          stereo: 1
-          gain: 32
-  - numvoices: 1
-    units:
-      - type: "envelope"
-        parameters:
-          stereo: 1
-          attack: 32
-          decay: 70
-          sustain: 80
-          release: 70
-          gain: 80
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 120
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 64
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 8
-          type: 0
-      - type: "out"
-        parameters:
-          stereo: 1
-          gain: 32
-  - numvoices: 1
-    units:
-      - type: "envelope"
-        parameters:
-          stereo: 1
-          attack: 0
-          decay: 64
-          sustain: 96
-          release: 64
-          gain: 90
-      - type: "envelope"
-        parameters:
-          stereo: 1
-          attack: 0
-          decay: 70
-          sustain: 0
-          release: 0
-          gain: 100
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 48
-          type: 0
-      - type: "out"
-        parameters:
-          stereo: 1
-          gain: 12
-  - numvoices: 1
-    units:
-      - type: "envelope"
-        parameters:
-          stereo: 1
-          attack: 0
-          decay: 72
-          sustain: 0
-          release: 72
-          gain: 25
-      - type: "envelope"
-        parameters:
-          stereo: 1
-          attack: 0
-          decay: 56
-          sustain: 0
-          release: 0
-          gain: 128
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 64
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 64
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
-          gain: 64
-          type: 0
-      - type: "oscillator"
-        parameters:
-          stereo: 1
+          color: 2
+          detune: 48
           gain: 16
-          type: 0
-      - type: "out"
+          lfo: 0
+          phase: 0
+          shape: 63
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+      - type: "oscillator"
+        parameters:
+          color: 126
+          detune: 78
+          gain: 16
+          phase: 0
+          shape: 64
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+      - type: "addp"
         parameters:
           stereo: 1
-          gain: 4
-  - numvoices: 1
-    units:
+      - type: "oscillator"
+        parameters:
+          color: 2
+          detune: 59
+          gain: 16
+          phase: 0
+          shape: 64
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+      - type: "addp"
+        parameters:
+          stereo: 1
+      - type: "noise"
+        parameters:
+          gain: 6
+          shape: 64
+          stereo: 1
+      - type: "filter"
+        parameters:
+          bandpass: 0
+          frequency: 128
+          highpass: 1
+          lowpass: 0
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
+          stereo: 1
+      - type: "addp"
+        parameters:
+          stereo: 1
       - type: "envelope"
         parameters:
-          stereo: 1
-          attack: 32
+          attack: 50
           decay: 64
-          sustain: 90
-          release: 48
-          gain: 35
-      - type: "oscillator"
+          gain: 96
+          release: 64
+          stereo: 1
+          sustain: 64
+      - type: "mulp"
         parameters:
           stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
+      - type: "filter"
         parameters:
+          bandpass: 0
+          frequency: 32
+          highpass: 1
+          lowpass: 0
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
           stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
+      - type: "delay"
         parameters:
+          damp: 64
+          dry: 64
+          feedback: 64
+          notetracking: 0
+          pregain: 64
           stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
+        varargs:
+          - 9187
+          - 9187
+      - type: "outaux"
         parameters:
+          auxgain: 128
+          outgain: 0
           stereo: 1
-          gain: 50
-          type: 0
-      - type: "out"
-        parameters:
-          stereo: 1
-          gain: 10
   - numvoices: 1
     units:
       - type: "envelope"
         parameters:
+          attack: 48
+          decay: 63
+          gain: 128
+          release: 64
+          stereo: 0
+          sustain: 0
+      - type: "distort"
+        parameters:
+          drive: 112
+          stereo: 0
+      - type: "oscillator"
+        parameters:
+          color: 0
+          detune: 64
+          gain: 128
+          looplength: 1486
+          loopstart: 2536
+          phase: 64
+          samplestart: 250849
+          shape: 64
+          stereo: 0
+          transpose: 64
+          type: 1
+          unison: 0
+      - type: "mulp"
+        parameters:
+          stereo: 0
+      - type: "filter"
+        parameters:
+          bandpass: 0
+          frequency: 16
+          highpass: 1
+          lowpass: 0
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
+          stereo: 0
+      - type: "filter"
+        id: 1
+        parameters:
+          bandpass: 0
+          frequency: 22
+          highpass: 0
+          lowpass: 1
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
+          stereo: 0
+      - type: "pan"
+        parameters:
+          panning: 64
+          stereo: 0
+      - type: "out"
+        parameters:
+          gain: 128
           stereo: 1
+      - parameters: {}
+      - type: "envelope"
+        parameters:
           attack: 0
           decay: 64
-          sustain: 15
+          gain: 128
+          release: 0
+          stereo: 0
+          sustain: 0
+      - type: "distort"
+        parameters:
+          drive: 32
+          stereo: 0
+      - type: "send"
+        parameters:
+          amount: 79
+          port: 0
+          sendpop: 1
+          stereo: 0
+          target: 1
+  - numvoices: 1
+    units:
+      - type: "oscillator"
+        parameters:
+          color: 2
+          detune: 48
+          gain: 16
+          lfo: 0
+          phase: 0
+          shape: 63
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+      - type: "oscillator"
+        parameters:
+          color: 126
+          detune: 78
+          gain: 16
+          phase: 0
+          shape: 64
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+      - type: "addp"
+        parameters:
+          stereo: 1
+      - type: "oscillator"
+        parameters:
+          color: 2
+          detune: 59
+          gain: 16
+          phase: 0
+          shape: 64
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+      - type: "addp"
+        parameters:
+          stereo: 1
+      - type: "noise"
+        parameters:
+          gain: 6
+          shape: 64
+          stereo: 1
+      - type: "filter"
+        parameters:
+          bandpass: 0
+          frequency: 128
+          highpass: 1
+          lowpass: 0
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
+          stereo: 1
+      - type: "addp"
+        parameters:
+          stereo: 1
+      - type: "envelope"
+        parameters:
+          attack: 50
+          decay: 64
+          gain: 96
+          release: 64
+          stereo: 1
+          sustain: 64
+      - type: "mulp"
+        parameters:
+          stereo: 1
+      - type: "filter"
+        parameters:
+          bandpass: 0
+          frequency: 32
+          highpass: 1
+          lowpass: 0
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
+          stereo: 1
+      - type: "delay"
+        parameters:
+          damp: 64
+          dry: 64
+          feedback: 64
+          notetracking: 0
+          pregain: 64
+          stereo: 1
+        varargs:
+          - 9187
+          - 9187
+      - type: "outaux"
+        parameters:
+          auxgain: 128
+          outgain: 0
+          stereo: 1
+  - numvoices: 1
+    units:
+      - type: "oscillator"
+        parameters:
+          color: 2
+          detune: 48
+          gain: 16
+          lfo: 0
+          phase: 0
+          shape: 63
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+      - type: "oscillator"
+        parameters:
+          color: 126
+          detune: 78
+          gain: 16
+          phase: 0
+          shape: 64
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+      - type: "addp"
+        parameters:
+          stereo: 1
+      - type: "oscillator"
+        parameters:
+          color: 2
+          detune: 59
+          gain: 16
+          phase: 0
+          shape: 64
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+      - type: "addp"
+        parameters:
+          stereo: 1
+      - type: "noise"
+        parameters:
+          gain: 6
+          shape: 64
+          stereo: 1
+      - type: "filter"
+        parameters:
+          bandpass: 0
+          frequency: 128
+          highpass: 1
+          lowpass: 0
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
+          stereo: 1
+      - type: "addp"
+        parameters:
+          stereo: 1
+      - type: "envelope"
+        parameters:
+          attack: 50
+          decay: 64
+          gain: 96
+          release: 64
+          stereo: 1
+          sustain: 64
+      - type: "mulp"
+        parameters:
+          stereo: 1
+      - type: "filter"
+        parameters:
+          bandpass: 0
+          frequency: 32
+          highpass: 1
+          lowpass: 0
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
+          stereo: 1
+      - type: "delay"
+        parameters:
+          damp: 64
+          dry: 64
+          feedback: 64
+          notetracking: 0
+          pregain: 64
+          stereo: 1
+        varargs:
+          - 9187
+          - 9187
+      - type: "outaux"
+        parameters:
+          auxgain: 128
+          outgain: 0
+          stereo: 1
+  - numvoices: 1
+    units:
+      - type: "oscillator"
+        parameters:
+          color: 2
+          detune: 48
+          gain: 16
+          lfo: 0
+          phase: 0
+          shape: 63
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+      - type: "oscillator"
+        parameters:
+          color: 126
+          detune: 78
+          gain: 16
+          phase: 0
+          shape: 64
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+      - type: "addp"
+        parameters:
+          stereo: 1
+      - type: "oscillator"
+        parameters:
+          color: 2
+          detune: 59
+          gain: 16
+          phase: 0
+          shape: 64
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+      - type: "addp"
+        parameters:
+          stereo: 1
+      - type: "noise"
+        parameters:
+          gain: 6
+          shape: 64
+          stereo: 1
+      - type: "filter"
+        parameters:
+          bandpass: 0
+          frequency: 128
+          highpass: 1
+          lowpass: 0
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
+          stereo: 1
+      - type: "addp"
+        parameters:
+          stereo: 1
+      - type: "envelope"
+        parameters:
+          attack: 50
+          decay: 64
+          gain: 96
+          release: 64
+          stereo: 1
+          sustain: 64
+      - type: "mulp"
+        parameters:
+          stereo: 1
+      - type: "filter"
+        parameters:
+          bandpass: 0
+          frequency: 32
+          highpass: 1
+          lowpass: 0
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
+          stereo: 1
+      - type: "delay"
+        parameters:
+          damp: 64
+          dry: 64
+          feedback: 64
+          notetracking: 0
+          pregain: 64
+          stereo: 1
+        varargs:
+          - 9187
+          - 9187
+      - type: "outaux"
+        parameters:
+          auxgain: 128
+          outgain: 0
+          stereo: 1
+  - numvoices: 1
+    units:
+      - type: "envelope"
+        parameters:
+          attack: 36
+          decay: 69
+          gain: 128
           release: 32
-          gain: 100
-      - type: "oscillator"
+          stereo: 0
+          sustain: 0
+      - type: "distort"
         parameters:
-          stereo: 1
+          drive: 112
+          stereo: 0
+      - type: "oscillator"
+        id: 1
+        parameters:
+          color: 128
+          detune: 64
           gain: 128
+          looplength: 1
+          phase: 0
+          shape: 64
+          stereo: 0
+          transpose: 64
           type: 0
+      - type: "mulp"
+        parameters:
+          stereo: 0
+      - type: "filter"
+        parameters:
+          bandpass: 0
+          frequency: 14
+          highpass: 1
+          lowpass: 0
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
+          stereo: 0
+      - type: "push"
+        parameters:
+          stereo: 0
+      - type: "filter"
+        parameters:
+          bandpass: 0
+          frequency: 16
+          highpass: 0
+          lowpass: 1
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
+          stereo: 0
+      - type: "delay"
+        parameters:
+          count: 8
+          damp: 64
+          delay: 1
+          dry: 0
+          feedback: 96
+          notetracking: 0
+          pregain: 32
+          stereo: 0
+        varargs:
+          - 1116
+          - 1188
+          - 1276
+          - 1356
+          - 1422
+          - 1492
+          - 1556
+          - 1618
+      - type: "addp"
+        parameters:
+          stereo: 0
+      - type: "pan"
+        parameters:
+          panning: 64
+          stereo: 0
       - type: "out"
         parameters:
+          gain: 64
           stereo: 1
-          gain: 44
+      - parameters: {}
+      - type: "envelope"
+        parameters:
+          attack: 0
+          decay: 70
+          gain: 128
+          release: 70
+          stereo: 0
+          sustain: 0
+      - type: "distort"
+        parameters:
+          drive: 5
+          stereo: 0
+      - type: "send"
+        parameters:
+          amount: 101
+          port: 0
+          sendpop: 1
+          stereo: 0
+          target: 1
+      - parameters: {}
+      - type: "envelope"
+        parameters:
+          attack: 48
+          decay: 58
+          gain: 128
+          release: 0
+          stereo: 0
+          sustain: 0
+      - type: "distort"
+        parameters:
+          drive: 64
+          stereo: 0
+      - type: "send"
+        parameters:
+          amount: 32
+          port: 5
+          sendpop: 1
+          stereo: 0
+          target: 1
+          unit: 0
+          voice: 0
   - numvoices: 1
     units:
       - type: "envelope"
         parameters:
-          stereo: 1
-          attack: 0
-          decay: 70
+          attack: 32
+          decay: 60
+          gain: 128
+          release: 0
+          stereo: 0
           sustain: 0
-          release: 70
-          gain: 64
+      - type: "oscillator"
+        id: 1
+        parameters:
+          color: 64
+          detune: 64
+          gain: 128
+          phase: 0
+          shape: 64
+          stereo: 0
+          transpose: 64
+          type: 1
+      - type: "mulp"
+        parameters:
+          stereo: 0
+      - parameters: {}
       - type: "envelope"
         parameters:
-          stereo: 1
-          attack: 0
-          decay: 80
+          attack: 32
+          decay: 64
+          gain: 64
+          release: 66
+          stereo: 0
           sustain: 0
-          release: 80
-          gain: 128
-      - type: "oscillator"
+      - type: "distort"
         parameters:
-          stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
+          drive: 32
+          stereo: 0
+      - type: "noise"
         parameters:
-          stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
+          gain: 64
+          shape: 64
+          stereo: 0
+      - type: "mulp"
         parameters:
-          stereo: 1
-          gain: 128
-          type: 0
-      - type: "oscillator"
+          stereo: 0
+      - type: "filter"
         parameters:
-          stereo: 1
-          gain: 128
-          type: 0
-      - type: "out"
+          bandpass: 0
+          frequency: 106
+          highpass: 1
+          lowpass: 0
+          negbandpass: 0
+          neghighpass: 0
+          resonance: 128
+          stereo: 0
+      - type: "addp"
         parameters:
+          stereo: 0
+      - parameters: {}
+      - type: "distort"
+        parameters:
+          drive: 112
+          stereo: 0
+      - type: "delay"
+        parameters:
+          count: 8
+          damp: 0
+          delay: 1
+          dry: 128
+          feedback: 40
+          notetracking: 0
+          pregain: 24
+          stereo: 0
+        varargs:
+          - 1116
+          - 1188
+          - 1276
+          - 1356
+          - 1422
+          - 1492
+          - 1556
+          - 1618
+      - type: "compressor"
+        parameters:
+          attack: 51
+          invgain: 64
+          ratio: 112
+          release: 49
+          stereo: 0
+          threshold: 64
+      - type: "mulp"
+        parameters:
+          stereo: 0
+      - parameters: {}
+      - type: "pan"
+        parameters:
+          panning: 68
+          stereo: 0
+      - type: "outaux"
+        parameters:
+          auxgain: 0
+          outgain: 64
           stereo: 1
-          gain: 16
+      - parameters: {}
+      - type: "envelope"
+        parameters:
+          attack: 0
+          decay: 60
+          gain: 128
+          release: 0
+          stereo: 0
+          sustain: 0
+      - type: "distort"
+        parameters:
+          drive: 5
+          stereo: 0
+      - type: "send"
+        parameters:
+          amount: 90
+          port: 0
+          sendpop: 1
+          stereo: 0
+          target: 1
+          unit: 0
+          voice: 0
