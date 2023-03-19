@@ -82,6 +82,17 @@ func process(filename string) error {
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+
+	// Handle pre-flight OPTIONS request
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
 		return
@@ -120,6 +131,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
+
 	w.WriteHeader(http.StatusOK)
 	w.Write(watContent)
 }
@@ -127,10 +139,10 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 func main() {
 	// Set up router and server
 	router := mux.NewRouter()
-	router.HandleFunc("/process", handleRequest).Methods("POST")
+	router.HandleFunc("/process", handleRequest).Methods("POST", "OPTIONS")
 	http.Handle("/", router)
 
-	port := "8080"
+	port := "10000"
 	fmt.Printf("Starting server on port %s\n", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)

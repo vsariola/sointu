@@ -33,3 +33,4 @@ actual_output/
 node_modules
 *.raw
 sointu-server
+temp_song_file.*
