@@ -794,9 +794,10 @@
 ;;------------------------------------------------------------------------------
 
 (func $render_128_samples (param)
-    (local $rendersamplecount i32) 
+(local $rendersamplecount i32) 
     (i32.const 0)
     (local.set $rendersamplecount)
+    {{- if  .Output16Bit }} (local $channel i32) {{- end }}
     (loop $sample_loop
         (if (i32.eq (global.get $sample) (i32.const 0))
             (then
@@ -816,9 +817,7 @@
         (global.set $delayWRK (i32.const {{index .Labels "su_delaylines"}}))
 {{- end}}
         (call $su_run_vm)
-        (i64.store (global.get $outputBufPtr) (i64.load (i32.const 1440))) ;; load the sample from left & right channels as one 64bit int and store it in the address pointed by outputBufPtr
-        (global.set $outputBufPtr (i32.add (global.get $outputBufPtr) (i32.const 8)))      ;; advance outputbufptr
-        (i64.store (i32.const 1440) (i64.const 0)) ;; clear the left and right ports
+        {{- template "output_sound.wat" .}}
         (global.set $sample (i32.add (global.get $sample) (i32.const 1)))
         (global.set $globaltick (i32.add (global.get $globaltick) (i32.const 1)))
         (if (i32.eq (global.get $sample) (i32.const {{.Song.SamplesPerRow}}))
@@ -835,7 +834,7 @@
             (global.set $row (i32.const 0))
             (global.set $pattern (i32.add (global.get $pattern) (i32.const 1)))
         )
-    )    
+    )
 )
 (export "render_128_samples" (func $render_128_samples))
 
