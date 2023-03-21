@@ -740,14 +740,14 @@
 (global $delayWRK (mut i32) (i32.const 0))
 {{- end}}
 (global $globaltick (export "tick") (mut i32) (i32.const 0))
-(global $row (mut i32) (i32.const 0))
-(global $pattern (mut i32) (i32.const 0))
-(global $sample (mut i32) (i32.const 0))
+(global $row (export "row") (mut i32) (i32.const 0))
+(global $pattern (export "pattern") (mut i32) (i32.const 0))
+(global $sample (export "sample") (mut i32) (i32.const 0))
 (global $voice (mut i32) (i32.const 0))
 (global $voicesRemain (mut i32) (i32.const 0))
 (global $randseed (mut i32) (i32.const 1))
 (global $sp (mut i32) (i32.const {{index .Labels "su_stack"}}))
-(global $outputBufPtr (mut i32) (i32.const {{index .Labels "su_outputbuffer"}}))
+(global $outputBufPtr (export "outputBufPtr") (mut i32) (i32.const {{index .Labels "su_outputbuffer"}}))
 ;; TODO: only export start and length with certain compiler options; in demo use, they can be hard coded
 ;; in the intro
 (global $outputStart (export "s") i32 (i32.const {{index .Labels "su_outputbuffer"}}))
