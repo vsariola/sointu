@@ -968,6 +968,17 @@
 )
 {{- end}}
 
+(func $update_single_voice (param $voice_no i32) (param $value i32)
+    (local $di i32)
+    (local.set $di (
+        i32.add (i32.const {{index .Labels "su_voices"}})
+        (i32.mul (i32.const 4096) (local.get $voice_no))
+    ))
+    (memory.fill (local.get $di) (i32.const 0) (i32.const 4096))
+    (i32.store (local.get $di) (local.get $value))    
+)
+(export "update_single_voice" (func $update_single_voice))
+
 {{template "patch.wat" .}}
 
 ;; All data is collected into a byte buffer and emitted at once
