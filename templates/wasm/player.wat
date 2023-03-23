@@ -793,15 +793,19 @@
 ;; "Entry point" for the player
 ;;------------------------------------------------------------------------------
 
-(func $render_128_samples (param)
+(func $render_128_samples (param) (result i32)
 (local $rendersamplecount i32) 
+(local $should_update_voices i32)
     (i32.const 0)
     (local.set $rendersamplecount)
+    (i32.const 0)
+    (local.set $should_update_voices)
     {{- if  .Output16Bit }} (local $channel i32) {{- end }}
     (loop $sample_loop
         (if (i32.eq (global.get $sample) (i32.const 0))
             (then
-                (call $su_update_voices)
+                (i32.const 1)
+                (local.set $should_update_voices)
             )
         )
         (global.set $COM (i32.const {{index .Labels "su_patch_code"}}))
@@ -842,8 +846,10 @@
         (local.set $rendersamplecount (i32.add (local.get $rendersamplecount) (i32.const 1)))
         (br_if $sample_loop (i32.lt_s (local.get $rendersamplecount) (i32.const 128)))
     )
+    (local.get $should_update_voices)
 )
 (export "render_128_samples" (func $render_128_samples))
+(export "update_voices" (func $su_update_voices))
 
 ;; (start $render) ;; we run render automagically when the module is instantiated
 
@@ -975,10 +981,25 @@
         (i32.mul (i32.const 4096) (local.get $voice_no))
     ))
     (memory.fill (local.get $di) (i32.const 0) (i32.const 4096))
-    (i32.store (local.get $di) (local.get $value))    
+    (i32.store (local.get $di) (local.get $value))
 )
 (export "update_single_voice" (func $update_single_voice))
-
+(func $set_current_pattern_value (param $voice_no i32) (param $value i32)
+    (local $si i32)
+    (local.set $si (global.get $pattern))
+    (local.set $si
+        (
+            i32.add (local.get $si) 
+            (i32.mul (local.get $voice_no) (i32.const {{.SequenceLength}}))
+        )
+    )
+    (i32.load8_u offset={{index .Labels "su_tracks"}} (local.get $si))
+    (i32.mul (i32.const {{.PatternLength}}))
+    (i32.add (global.get $row))
+    (local.get $value)
+    (i32.store8 offset={{index .Labels "su_patterns"}})
+)
+(export "set_current_pattern_value" (func $set_current_pattern_value))
 {{template "patch.wat" .}}
 
 ;; All data is collected into a byte buffer and emitted at once
