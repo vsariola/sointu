@@ -162,7 +162,18 @@ func ConstructPatterns(song *sointu.Song) ([][]byte, [][]byte, error) {
 			return nil, nil, errors.New("the constructed pattern table would result in > 256 unique patterns; only 256 unique patterns are supported")
 		}
 	}
-	bytePatterns := make([][]byte, len(patterns))
+
+	// Determine the length of bytePatterns
+	bytePatternsLength := len(patterns)
+	if song.CreateEmptyPatterns {
+		bytePatternsLength = 256
+	}
+
+	bytePatterns := make([][]byte, bytePatternsLength) // Initialize bytePatterns with the specified length
+	for i := 0; i < bytePatternsLength; i++ {
+		bytePatterns[i] = make([]byte, song.Score.RowsPerPattern) // Initialize each element with an array of zeros with length RowsPerPattern
+	}
+
 	for i, pat := range patterns {
 		var err error
 		replaceInts(pat, -1, 0) // replace don't cares with releases
