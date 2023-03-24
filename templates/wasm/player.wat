@@ -97,6 +97,8 @@
 {{- .Block 32}}
 {{- end}}
 {{- .Align}}
+{{- .SetBlockLabel "su_hold_override"}}
+{{- .Block 32}}
 {{- .SetBlockLabel "su_synth"}}
 {{- .Block 32}}
 {{- .SetBlockLabel "su_globalports"}}
@@ -950,7 +952,13 @@
 
 {{- else}}
 ;; the simple implementation of update_voices: each track has exactly one voice
-(func $su_update_voices (local $si i32) (local $di i32) (local $tracksRemaining i32) (local $note i32)
+(func $su_update_voices 
+    (local $si i32)
+    (local $di i32)
+    (local $tracksRemaining i32)
+    (local $note i32)
+    (local $channel i32)
+    (local.set $channel (i32.const 0))
     (local.set $tracksRemaining (i32.const {{len .Sequences}}))
     (local.set $si (global.get $pattern))
     (local.set $di (i32.const {{index .Labels "su_voices"}}))
@@ -961,14 +969,20 @@
         (i32.load8_u offset={{index .Labels "su_patterns"}})
         (local.tee $note)
         (if (i32.ne (i32.const {{.Hold}}))(then
-            (i32.store offset=4 (local.get $di) (i32.const 1)) ;; release the note
-            (if (i32.gt_u (local.get $note) (i32.const {{.Hold}}))(then
-                (memory.fill (local.get $di) (i32.const 0) (i32.const 4096))
-                (i32.store (local.get $di) (local.get $note))
+            (if (i32.eq (i32.const 0) 
+                (i32.load8_u offset={{index .Labels "su_hold_override"}} (local.get $channel))
+            )
+            (then
+                (i32.store offset=4 (local.get $di) (i32.const 1)) ;; release the note
+                (if (i32.gt_u (local.get $note) (i32.const {{.Hold}}))(then
+                    (memory.fill (local.get $di) (i32.const 0) (i32.const 4096))
+                    (i32.store (local.get $di) (local.get $note))
+                ))
             ))
         ))
         (local.set $di (i32.add (local.get $di) (i32.const 4096)))
         (local.set $si (i32.add (local.get $si) (i32.const {{.SequenceLength}})))
+        (local.set $channel (i32.add (local.get $channel) (i32.const 1)))
         (br_if $track_loop (local.tee $tracksRemaining (i32.sub (local.get $tracksRemaining) (i32.const 1))))
     end
 )
@@ -982,24 +996,10 @@
     ))
     (memory.fill (local.get $di) (i32.const 0) (i32.const 4096))
     (i32.store (local.get $di) (local.get $value))
+
+    (i32.store (i32.add (i32.const {{index .Labels "su_hold_override"}}) (local.get $voice_no)) (local.get $value))
 )
 (export "update_single_voice" (func $update_single_voice))
-(func $set_current_pattern_value (param $voice_no i32) (param $value i32)
-    (local $si i32)
-    (local.set $si (global.get $pattern))
-    (local.set $si
-        (
-            i32.add (local.get $si) 
-            (i32.mul (local.get $voice_no) (i32.const {{.SequenceLength}}))
-        )
-    )
-    (i32.load8_u offset={{index .Labels "su_tracks"}} (local.get $si))
-    (i32.mul (i32.const {{.PatternLength}}))
-    (i32.add (global.get $row))
-    (local.get $value)
-    (i32.store8 offset={{index .Labels "su_patterns"}})
-)
-(export "set_current_pattern_value" (func $set_current_pattern_value))
 {{template "patch.wat" .}}
 
 ;; All data is collected into a byte buffer and emitted at once
