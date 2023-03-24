@@ -994,9 +994,11 @@
         i32.add (i32.const {{index .Labels "su_voices"}})
         (i32.mul (i32.const 4096) (local.get $voice_no))
     ))
-    (memory.fill (local.get $di) (i32.const 0) (i32.const 4096))
-    (i32.store (local.get $di) (local.get $value))
-
+    (i32.store offset=4 (local.get $di) (i32.const 1)) ;; release the note
+    (if (i32.gt_u (local.get $value) (i32.const {{.Hold}}))(then
+        (memory.fill (local.get $di) (i32.const 0) (i32.const 4096))
+        (i32.store (local.get $di) (local.get $value))
+    ))
     (i32.store (i32.add (i32.const {{index .Labels "su_hold_override"}}) (local.get $voice_no)) (local.get $value))
 )
 (export "update_single_voice" (func $update_single_voice))
