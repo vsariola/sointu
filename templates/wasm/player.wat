@@ -796,8 +796,22 @@
 ;; Sync
 ;;------------------------------------------------------------------------------
 
-(func $su_op_sync (param $stereo i32)
+{{- .Align}}
+{{- .SetBlockLabel "su_syncbuf"}}
+{{- .Block (int (mul 8 .Song.Patch.NumSyncs)) }}
 
+(global $syncbufstart (export "sync") i32 (i32.const {{index .Labels "su_syncbuf"}}))
+(global $sync (mut i32) (i32.const {{index .Labels "su_syncbuf"}}))
+
+(func $su_op_sync (param $stereo i32)
+    {{- if .Stereo "sync"}}
+        (if (local.get $stereo) (then
+            (f32.store (global.get $sync) (call $peek2))
+            (global.set $sync (i32.add (i32.const 4) (global.get $sync)))
+        ))
+    {{- end}}
+    (f32.store (global.get $sync) (call $peek))
+    (global.set $sync (i32.add (i32.const 4) (global.get $sync)))
 )
 {{end}}
 
@@ -831,6 +845,9 @@
         (global.set $voicesRemain (i32.const {{.Song.Patch.NumVoices | printf "%v"}}))
 {{- if .HasOp "delay"}}
         (global.set $delayWRK (i32.const {{index .Labels "su_delaylines"}}))
+{{- end}}
+{{- if .HasOp "sync"}}
+        (global.set $sync (i32.const {{index .Labels "su_syncbuf"}}))
 {{- end}}
         (call $su_run_vm)
         {{- template "output_sound.wat" .}}
@@ -884,6 +901,9 @@
                 (global.set $voicesRemain (i32.const {{.Song.Patch.NumVoices | printf "%v"}}))
 {{- if .HasOp "delay"}}
                 (global.set $delayWRK (i32.const {{index .Labels "su_delaylines"}}))
+{{- end}}
+{{- if .HasOp "sync"}}
+                (global.set $sync (i32.const {{index .Labels "su_syncbuf"}}))
 {{- end}}
                 (call $su_run_vm)
                 {{- template "output_sound.wat" .}}
