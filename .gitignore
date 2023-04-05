@@ -33,5 +33,6 @@ actual_output/
 node_modules
 
 sointu-server
+sointu-compile
 temp_song_file.*
 wabt-*
