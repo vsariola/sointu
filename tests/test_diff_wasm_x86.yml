@@ -427,25 +427,6 @@ patch:
           auxgain: 2
           stereo: 1
         id: 12
-      - type: loadnote
-        id: 13
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 14
-      - type: mulp
-        id: 15
-      - type: sync
-        parameters: {}
-        id: 16
-      - type: pop
-        parameters: {}
-        id: 17
   - numvoices: 1
     units:
       - type: envelope
@@ -456,17 +437,17 @@ patch:
           release: 32
           stereo: 0
           sustain: 15
-        id: 18
+        id: 13
       - type: noise
         parameters:
           gain: 128
           shape: 64
           stereo: 0
-        id: 19
+        id: 14
       - type: mulp
         parameters:
           stereo: 0
-        id: 20
+        id: 15
       - type: filter
         parameters:
           bandpass: 1
@@ -477,49 +458,30 @@ patch:
           neghighpass: 0
           resonance: 128
           stereo: 0
-        id: 21
+        id: 16
       - type: loadnote
         parameters:
           stereo: 0
-        id: 22
+        id: 17
       - type: mulp
         parameters:
           stereo: 0
-        id: 23
+        id: 18
       - type: pan
         parameters:
           panning: 64
           stereo: 0
-        id: 24
+        id: 19
       - type: outaux
         parameters:
           outgain: 100
           auxgain: 100
           stereo: 1
-        id: 25
-      - type: loadnote
-        id: 26
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 27
-      - type: mulp
-        id: 28
-      - type: sync
-        parameters: {}
-        id: 29
-      - type: pop
-        parameters: {}
-        id: 30
+        id: 20
   - numvoices: 1
     units:
       - type: envelope
-        id: 31
+        id: 21
         parameters:
           attack: 32
           decay: 70
@@ -539,47 +501,28 @@ patch:
           transpose: 76
           type: 2
           unison: 0
-        id: 32
+        id: 22
       - type: mulp
         parameters:
           stereo: 0
-        id: 33
+        id: 23
       - type: filter
         parameters:
           lowpass: 1
           frequency: 27
           resonance: 128
-        id: 34
+        id: 24
       - type: pan
         parameters:
           panning: 64
           stereo: 0
-        id: 35
+        id: 25
       - type: outaux
         parameters:
           outgain: 90
           auxgain: 15
           stereo: 1
-        id: 36
-      - type: loadnote
-        id: 37
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 38
-      - type: mulp
-        id: 39
-      - type: sync
-        parameters: {}
-        id: 40
-      - type: pop
-        parameters: {}
-        id: 41
+        id: 26
   - numvoices: 1
     units:
       - type: oscillator
@@ -594,7 +537,7 @@ patch:
           transpose: 76
           type: 1
           unison: 1
-        id: 42
+        id: 27
       - type: oscillator
         parameters:
           color: 80
@@ -607,13 +550,13 @@ patch:
           transpose: 76
           type: 1
           unison: 1
-        id: 43
+        id: 28
       - type: addp
         parameters:
           stereo: 0
-        id: 44
+        id: 29
       - type: envelope
-        id: 45
+        id: 30
         parameters:
           attack: 32
           decay: 80
@@ -627,14 +570,14 @@ patch:
           port: 4
           sendpop: 0
           stereo: 0
-          target: 45
-        id: 46
+          target: 30
+        id: 31
       - type: mulp
         parameters:
           stereo: 0
-        id: 47
+        id: 32
       - type: filter
-        id: 48
+        id: 33
         parameters:
           lowpass: 1
           frequency: 30
@@ -651,41 +594,22 @@ patch:
         varargs:
           - 16537
           - 16537
-        id: 49
+        id: 34
       - type: pan
         parameters:
           panning: 64
           stereo: 0
-        id: 50
+        id: 35
       - type: outaux
         parameters:
           outgain: 20
           auxgain: 10
           stereo: 1
-        id: 51
-      - type: loadnote
-        id: 52
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 53
-      - type: mulp
-        id: 54
-      - type: sync
-        parameters: {}
-        id: 55
-      - type: pop
-        parameters: {}
-        id: 56
+        id: 36
   - numvoices: 1
     units:
       - type: envelope
-        id: 57
+        id: 37
         parameters:
           attack: 16
           decay: 98
@@ -699,10 +623,10 @@ patch:
           port: 4
           sendpop: 0
           stereo: 0
-          target: 57
-        id: 58
+          target: 37
+        id: 38
       - type: push
-        id: 59
+        id: 39
       - type: oscillator
         parameters:
           color: 110
@@ -715,387 +639,292 @@ patch:
           transpose: 64
           type: 1
           unison: 3
-        id: 60
+        id: 40
       - type: mulp
         parameters:
           stereo: 1
-        id: 61
+        id: 41
       - type: filter
         parameters:
           stereo: 1
           lowpass: 1
           frequency: 110
           resonance: 10
-        id: 62
+        id: 42
       - type: filter
         parameters:
           stereo: 1
           lowpass: 1
           frequency: 85
           resonance: 64
-        id: 63
+        id: 43
       - type: pan
         parameters:
           panning: 64
           stereo: 1
-        id: 64
+        id: 44
       - type: outaux
         parameters:
           outgain: 30
           auxgain: 100
           stereo: 1
-        id: 65
-      - type: loadnote
-        id: 66
+        id: 45
+  - numvoices: 1
+    units:
       - type: envelope
+        id: 46
         parameters:
-          attack: 0
-          gain: 128
+          attack: 16
+          decay: 98
+          gain: 7
+          release: 98
           stereo: 0
-          decay: 80
           sustain: 0
-          release: 80
+      - type: send
+        parameters:
+          amount: 127
+          port: 4
+          sendpop: 0
+          stereo: 0
+          target: 46
+        id: 47
+      - type: push
+        id: 48
+      - type: oscillator
+        parameters:
+          color: 110
+          detune: 58
+          gain: 2
+          lfo: 0
+          phase: 58
+          shape: 110
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+        id: 49
+      - type: mulp
+        parameters:
+          stereo: 1
+        id: 50
+      - type: filter
+        parameters:
+          stereo: 1
+          lowpass: 1
+          frequency: 110
+          resonance: 10
+        id: 51
+      - type: filter
+        parameters:
+          stereo: 1
+          lowpass: 1
+          frequency: 85
+          resonance: 64
+        id: 52
+      - type: pan
+        parameters:
+          panning: 64
+          stereo: 1
+        id: 53
+      - type: outaux
+        parameters:
+          outgain: 30
+          auxgain: 100
+          stereo: 1
+        id: 54
+  - numvoices: 1
+    units:
+      - type: envelope
+        id: 55
+        parameters:
+          attack: 16
+          decay: 98
+          gain: 7
+          release: 98
+          stereo: 0
+          sustain: 0
+      - type: send
+        parameters:
+          amount: 127
+          port: 4
+          sendpop: 0
+          stereo: 0
+          target: 55
+        id: 56
+      - type: push
+        id: 57
+      - type: oscillator
+        parameters:
+          color: 110
+          detune: 58
+          gain: 2
+          lfo: 0
+          phase: 58
+          shape: 110
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
+        id: 58
+      - type: mulp
+        parameters:
+          stereo: 1
+        id: 59
+      - type: filter
+        parameters:
+          stereo: 1
+          lowpass: 1
+          frequency: 110
+          resonance: 10
+        id: 60
+      - type: filter
+        parameters:
+          stereo: 1
+          lowpass: 1
+          frequency: 85
+          resonance: 64
+        id: 61
+      - type: pan
+        parameters:
+          panning: 64
+          stereo: 1
+        id: 62
+      - type: outaux
+        parameters:
+          outgain: 30
+          auxgain: 100
+          stereo: 1
+        id: 63
+  - numvoices: 1
+    units:
+      - type: envelope
+        id: 64
+        parameters:
+          attack: 16
+          decay: 98
+          gain: 7
+          release: 98
+          stereo: 0
+          sustain: 0
+      - type: send
+        parameters:
+          amount: 127
+          port: 4
+          sendpop: 0
+          stereo: 0
+          target: 64
+        id: 65
+      - type: push
+        id: 66
+      - type: oscillator
+        parameters:
+          color: 110
+          detune: 58
+          gain: 2
+          lfo: 0
+          phase: 58
+          shape: 110
+          stereo: 1
+          transpose: 64
+          type: 1
+          unison: 3
         id: 67
       - type: mulp
+        parameters:
+          stereo: 1
         id: 68
-      - type: sync
-        parameters: {}
+      - type: filter
+        parameters:
+          stereo: 1
+          lowpass: 1
+          frequency: 110
+          resonance: 10
         id: 69
-      - type: pop
-        parameters: {}
+      - type: filter
+        parameters:
+          stereo: 1
+          lowpass: 1
+          frequency: 85
+          resonance: 64
         id: 70
-  - numvoices: 1
-    units:
-      - type: envelope
+      - type: pan
+        parameters:
+          panning: 64
+          stereo: 1
         id: 71
+      - type: outaux
         parameters:
-          attack: 16
-          decay: 98
-          gain: 7
-          release: 98
-          stereo: 0
-          sustain: 0
-      - type: send
-        parameters:
-          amount: 127
-          port: 4
-          sendpop: 0
-          stereo: 0
-          target: 71
+          outgain: 30
+          auxgain: 100
+          stereo: 1
         id: 72
-      - type: push
+  - numvoices: 1
+    units:
+      - type: envelope
         id: 73
-      - type: oscillator
         parameters:
-          color: 110
-          detune: 58
-          gain: 2
-          lfo: 0
-          phase: 58
-          shape: 110
-          stereo: 1
-          transpose: 64
-          type: 1
-          unison: 3
+          attack: 16
+          decay: 98
+          gain: 7
+          release: 98
+          stereo: 0
+          sustain: 0
+      - type: send
+        parameters:
+          amount: 127
+          port: 4
+          sendpop: 0
+          stereo: 0
+          target: 73
         id: 74
-      - type: mulp
-        parameters:
-          stereo: 1
+      - type: push
         id: 75
-      - type: filter
+      - type: oscillator
         parameters:
+          color: 110
+          detune: 58
+          gain: 2
+          lfo: 0
+          phase: 58
+          shape: 110
           stereo: 1
-          lowpass: 1
-          frequency: 110
-          resonance: 10
+          transpose: 64
+          type: 1
+          unison: 3
         id: 76
-      - type: filter
+      - type: mulp
         parameters:
           stereo: 1
-          lowpass: 1
-          frequency: 85
-          resonance: 64
         id: 77
-      - type: pan
+      - type: filter
         parameters:
-          panning: 64
           stereo: 1
+          lowpass: 1
+          frequency: 110
+          resonance: 10
         id: 78
-      - type: outaux
+      - type: filter
         parameters:
-          outgain: 30
-          auxgain: 100
           stereo: 1
+          lowpass: 1
+          frequency: 85
+          resonance: 64
         id: 79
-      - type: loadnote
+      - type: pan
+        parameters:
+          panning: 64
+          stereo: 1
         id: 80
-      - type: envelope
+      - type: outaux
         parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
+          outgain: 30
+          auxgain: 100
+          stereo: 1
         id: 81
-      - type: mulp
+  - numvoices: 1
+    units:
+      - type: envelope
         id: 82
-      - type: sync
-        parameters: {}
-        id: 83
-      - type: pop
-        parameters: {}
-        id: 84
-  - numvoices: 1
-    units:
-      - type: envelope
-        id: 85
-        parameters:
-          attack: 16
-          decay: 98
-          gain: 7
-          release: 98
-          stereo: 0
-          sustain: 0
-      - type: send
-        parameters:
-          amount: 127
-          port: 4
-          sendpop: 0
-          stereo: 0
-          target: 85
-        id: 86
-      - type: push
-        id: 87
-      - type: oscillator
-        parameters:
-          color: 110
-          detune: 58
-          gain: 2
-          lfo: 0
-          phase: 58
-          shape: 110
-          stereo: 1
-          transpose: 64
-          type: 1
-          unison: 3
-        id: 88
-      - type: mulp
-        parameters:
-          stereo: 1
-        id: 89
-      - type: filter
-        parameters:
-          stereo: 1
-          lowpass: 1
-          frequency: 110
-          resonance: 10
-        id: 90
-      - type: filter
-        parameters:
-          stereo: 1
-          lowpass: 1
-          frequency: 85
-          resonance: 64
-        id: 91
-      - type: pan
-        parameters:
-          panning: 64
-          stereo: 1
-        id: 92
-      - type: outaux
-        parameters:
-          outgain: 30
-          auxgain: 100
-          stereo: 1
-        id: 93
-      - type: loadnote
-        id: 94
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 95
-      - type: mulp
-        id: 96
-      - type: sync
-        parameters: {}
-        id: 97
-      - type: pop
-        parameters: {}
-        id: 98
-  - numvoices: 1
-    units:
-      - type: envelope
-        id: 99
-        parameters:
-          attack: 16
-          decay: 98
-          gain: 7
-          release: 98
-          stereo: 0
-          sustain: 0
-      - type: send
-        parameters:
-          amount: 127
-          port: 4
-          sendpop: 0
-          stereo: 0
-          target: 99
-        id: 100
-      - type: push
-        id: 101
-      - type: oscillator
-        parameters:
-          color: 110
-          detune: 58
-          gain: 2
-          lfo: 0
-          phase: 58
-          shape: 110
-          stereo: 1
-          transpose: 64
-          type: 1
-          unison: 3
-        id: 102
-      - type: mulp
-        parameters:
-          stereo: 1
-        id: 103
-      - type: filter
-        parameters:
-          stereo: 1
-          lowpass: 1
-          frequency: 110
-          resonance: 10
-        id: 104
-      - type: filter
-        parameters:
-          stereo: 1
-          lowpass: 1
-          frequency: 85
-          resonance: 64
-        id: 105
-      - type: pan
-        parameters:
-          panning: 64
-          stereo: 1
-        id: 106
-      - type: outaux
-        parameters:
-          outgain: 30
-          auxgain: 100
-          stereo: 1
-        id: 107
-      - type: loadnote
-        id: 108
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 109
-      - type: mulp
-        id: 110
-      - type: sync
-        parameters: {}
-        id: 111
-      - type: pop
-        parameters: {}
-        id: 112
-  - numvoices: 1
-    units:
-      - type: envelope
-        id: 113
-        parameters:
-          attack: 16
-          decay: 98
-          gain: 7
-          release: 98
-          stereo: 0
-          sustain: 0
-      - type: send
-        parameters:
-          amount: 127
-          port: 4
-          sendpop: 0
-          stereo: 0
-          target: 113
-        id: 114
-      - type: push
-        id: 115
-      - type: oscillator
-        parameters:
-          color: 110
-          detune: 58
-          gain: 2
-          lfo: 0
-          phase: 58
-          shape: 110
-          stereo: 1
-          transpose: 64
-          type: 1
-          unison: 3
-        id: 116
-      - type: mulp
-        parameters:
-          stereo: 1
-        id: 117
-      - type: filter
-        parameters:
-          stereo: 1
-          lowpass: 1
-          frequency: 110
-          resonance: 10
-        id: 118
-      - type: filter
-        parameters:
-          stereo: 1
-          lowpass: 1
-          frequency: 85
-          resonance: 64
-        id: 119
-      - type: pan
-        parameters:
-          panning: 64
-          stereo: 1
-        id: 120
-      - type: outaux
-        parameters:
-          outgain: 30
-          auxgain: 100
-          stereo: 1
-        id: 121
-      - type: loadnote
-        id: 122
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 123
-      - type: mulp
-        id: 124
-      - type: sync
-        parameters: {}
-        id: 125
-      - type: pop
-        parameters: {}
-        id: 126
-  - numvoices: 1
-    units:
-      - type: envelope
-        id: 127
         parameters:
           attack: 0
           decay: 73
@@ -1109,18 +938,18 @@ patch:
           port: 4
           sendpop: 0
           stereo: 0
-          target: 127
-        id: 128
+          target: 82
+        id: 83
       - type: noise
         parameters:
           gain: 128
           shape: 64
           stereo: 0
-        id: 129
+        id: 84
       - type: mulp
         parameters:
           stereo: 0
-        id: 130
+        id: 85
       - type: filter
         parameters:
           bandpass: 1
@@ -1131,7 +960,7 @@ patch:
           neghighpass: 0
           resonance: 100
           stereo: 0
-        id: 131
+        id: 86
       - type: envelope
         parameters:
           attack: 0
@@ -1140,17 +969,17 @@ patch:
           release: 32
           stereo: 0
           sustain: 0
-        id: 132
+        id: 87
       - type: noise
         parameters:
           gain: 128
           shape: 64
           stereo: 0
-        id: 133
+        id: 88
       - type: mulp
         parameters:
           stereo: 0
-        id: 134
+        id: 89
       - type: filter
         parameters:
           bandpass: 1
@@ -1161,7 +990,7 @@ patch:
           neghighpass: 0
           resonance: 100
           stereo: 0
-        id: 135
+        id: 90
       - type: envelope
         parameters:
           attack: 0
@@ -1170,17 +999,17 @@ patch:
           release: 32
           stereo: 0
           sustain: 0
-        id: 136
+        id: 91
       - type: noise
         parameters:
           gain: 120
           shape: 64
           stereo: 0
-        id: 137
+        id: 92
       - type: mulp
         parameters:
           stereo: 0
-        id: 138
+        id: 93
       - type: filter
         parameters:
           bandpass: 1
@@ -1191,53 +1020,34 @@ patch:
           neghighpass: 0
           resonance: 100
           stereo: 0
-        id: 139
+        id: 94
       - type: addp
         parameters:
           stereo: 0
-        id: 140
+        id: 95
       - type: addp
         parameters:
           stereo: 0
-        id: 141
+        id: 96
       - type: loadnote
         parameters:
           stereo: 0
-        id: 142
+        id: 97
       - type: mulp
         parameters:
           stereo: 0
-        id: 143
+        id: 98
       - type: pan
         parameters:
           panning: 64
           stereo: 0
-        id: 144
+        id: 99
       - type: outaux
         parameters:
           outgain: 74
           auxgain: 30
           stereo: 1
-        id: 145
-      - type: loadnote
-        id: 146
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 147
-      - type: mulp
-        id: 148
-      - type: sync
-        parameters: {}
-        id: 149
-      - type: pop
-        parameters: {}
-        id: 150
+        id: 100
   - numvoices: 1
     units:
       - type: envelope
@@ -1248,9 +1058,9 @@ patch:
           release: 85
           stereo: 0
           sustain: 60
-        id: 151
+        id: 101
       - type: push
-        id: 152
+        id: 102
       - type: oscillator
         parameters:
           color: 120
@@ -1263,13 +1073,13 @@ patch:
           transpose: 64
           type: 1
           unison: 3
-        id: 153
+        id: 103
       - type: mulp
         parameters:
           stereo: 1
-        id: 154
+        id: 104
       - type: filter
-        id: 155
+        id: 105
         parameters:
           lowpass: 1
           frequency: 28
@@ -1279,32 +1089,13 @@ patch:
         parameters:
           panning: 64
           stereo: 1
-        id: 156
+        id: 106
       - type: outaux
         parameters:
           outgain: 100
           auxgain: 60
           stereo: 1
-        id: 157
-      - type: loadnote
-        id: 158
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 159
-      - type: mulp
-        id: 160
-      - type: sync
-        parameters: {}
-        id: 161
-      - type: pop
-        parameters: {}
-        id: 162
+        id: 107
   - numvoices: 1
     units:
       - type: envelope
@@ -1315,9 +1106,9 @@ patch:
           release: 85
           stereo: 0
           sustain: 60
-        id: 163
+        id: 108
       - type: push
-        id: 164
+        id: 109
       - type: oscillator
         parameters:
           color: 120
@@ -1330,13 +1121,13 @@ patch:
           transpose: 64
           type: 1
           unison: 3
-        id: 165
+        id: 110
       - type: mulp
         parameters:
           stereo: 1
-        id: 166
+        id: 111
       - type: filter
-        id: 167
+        id: 112
         parameters:
           lowpass: 1
           frequency: 28
@@ -1346,32 +1137,13 @@ patch:
         parameters:
           panning: 64
           stereo: 1
-        id: 168
+        id: 113
       - type: outaux
         parameters:
           outgain: 100
           auxgain: 60
           stereo: 1
-        id: 169
-      - type: loadnote
-        id: 170
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 171
-      - type: mulp
-        id: 172
-      - type: sync
-        parameters: {}
-        id: 173
-      - type: pop
-        parameters: {}
-        id: 174
+        id: 114
   - numvoices: 1
     units:
       - type: envelope
@@ -1382,9 +1154,9 @@ patch:
           release: 85
           stereo: 0
           sustain: 60
-        id: 175
+        id: 115
       - type: push
-        id: 176
+        id: 116
       - type: oscillator
         parameters:
           color: 120
@@ -1397,13 +1169,13 @@ patch:
           transpose: 64
           type: 1
           unison: 3
-        id: 177
+        id: 117
       - type: mulp
         parameters:
           stereo: 1
-        id: 178
+        id: 118
       - type: filter
-        id: 179
+        id: 119
         parameters:
           lowpass: 1
           frequency: 28
@@ -1413,36 +1185,17 @@ patch:
         parameters:
           panning: 64
           stereo: 1
-        id: 180
+        id: 120
       - type: outaux
         parameters:
           outgain: 100
           auxgain: 60
           stereo: 1
-        id: 181
-      - type: loadnote
-        id: 182
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 183
-      - type: mulp
-        id: 184
-      - type: sync
-        parameters: {}
-        id: 185
-      - type: pop
-        parameters: {}
-        id: 186
+        id: 121
   - numvoices: 1
     units:
       - type: envelope
-        id: 187
+        id: 122
         parameters:
           attack: 48
           decay: 32
@@ -1462,52 +1215,33 @@ patch:
           transpose: 64
           type: 1
           unison: 3
-        id: 188
+        id: 123
       - type: mulp
         parameters:
           stereo: 1
-        id: 189
+        id: 124
       - type: filter
         parameters:
           stereo: 1
           lowpass: 1
           frequency: 110
           resonance: 90
-        id: 190
+        id: 125
       - type: pan
         parameters:
           panning: 64
           stereo: 1
-        id: 191
+        id: 126
       - type: outaux
         parameters:
           outgain: 120
           auxgain: 48
           stereo: 1
-        id: 192
-      - type: loadnote
-        id: 193
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 194
-      - type: mulp
-        id: 195
-      - type: sync
-        parameters: {}
-        id: 196
-      - type: pop
-        parameters: {}
-        id: 197
+        id: 127
   - numvoices: 1
     units:
       - type: envelope
-        id: 198
+        id: 128
         parameters:
           attack: 48
           decay: 32
@@ -1527,52 +1261,33 @@ patch:
           transpose: 64
           type: 1
           unison: 3
-        id: 199
+        id: 129
       - type: mulp
         parameters:
           stereo: 1
-        id: 200
+        id: 130
       - type: filter
         parameters:
           stereo: 1
           lowpass: 1
           frequency: 110
           resonance: 90
-        id: 201
+        id: 131
       - type: pan
         parameters:
           panning: 64
           stereo: 1
-        id: 202
+        id: 132
       - type: outaux
         parameters:
           outgain: 120
           auxgain: 48
           stereo: 1
-        id: 203
-      - type: loadnote
-        id: 204
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 205
-      - type: mulp
-        id: 206
-      - type: sync
-        parameters: {}
-        id: 207
-      - type: pop
-        parameters: {}
-        id: 208
+        id: 133
   - numvoices: 1
     units:
       - type: envelope
-        id: 209
+        id: 134
         parameters:
           attack: 48
           decay: 32
@@ -1592,55 +1307,36 @@ patch:
           transpose: 64
           type: 1
           unison: 3
-        id: 210
+        id: 135
       - type: mulp
         parameters:
           stereo: 1
-        id: 211
+        id: 136
       - type: filter
         parameters:
           stereo: 1
           lowpass: 1
           frequency: 110
           resonance: 90
-        id: 212
+        id: 137
       - type: pan
         parameters:
           panning: 64
           stereo: 1
-        id: 213
+        id: 138
       - type: outaux
         parameters:
           outgain: 120
           auxgain: 48
           stereo: 1
-        id: 214
-      - type: loadnote
-        id: 215
-      - type: envelope
-        parameters:
-          attack: 0
-          gain: 128
-          stereo: 0
-          decay: 80
-          sustain: 0
-          release: 80
-        id: 216
-      - type: mulp
-        id: 217
-      - type: sync
-        parameters: {}
-        id: 218
-      - type: pop
-        parameters: {}
-        id: 219
+        id: 139
   - numvoices: 1
     units:
       - type: in
         parameters:
           channel: 2
           stereo: 1
-        id: 220
+        id: 140
       - type: delay
         parameters:
           damp: 64
@@ -1658,18 +1354,18 @@ patch:
           - 1492
           - 1556
           - 1618
-        id: 221
+        id: 141
       - type: outaux
         parameters:
           auxgain: 0
           outgain: 128
           stereo: 1
-        id: 222
+        id: 142
       - type: in
         parameters:
           channel: 0
           stereo: 1
-        id: 223
+        id: 143
       - type: compressor
         parameters:
           attack: 16
@@ -1678,14 +1374,14 @@ patch:
           release: 64
           stereo: 1
           threshold: 71
-        id: 224
+        id: 144
       - type: mulp
         parameters:
           stereo: 1
-        id: 225
+        id: 145
       - type: outaux
         parameters:
           auxgain: 0
           outgain: 128
           stereo: 1
-        id: 226
+        id: 146

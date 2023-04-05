@@ -31,7 +31,7 @@ function(regression_test testname)
                 SOURCES "${source}" "${wasmtemplates}"
                 DEPENDS sointu-compiler
             )
-            add_test(${wasmtarget} ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/wasm_test_renderer.es6 ${wasmfile} ${CMAKE_CURRENT_SOURCE_DIR}/expected_output/${testname}.raw)
+            add_test(${wasmtarget} ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/wasm_test_renderer.js ${wasmfile} ${CMAKE_CURRENT_SOURCE_DIR}/expected_output/${testname}.raw)
         endif()    
     endif()
 
@@ -57,6 +57,7 @@ function(regression_test testname)
 
 endfunction(regression_test)
 
+regression_test(test_diff_wasm_x86 "" WASMX86DIFF)
 regression_test(test_envelope "" ENVELOPE)
 regression_test(test_envelope_stereo ENVELOPE)
 regression_test(test_loadval "" LOADVAL)

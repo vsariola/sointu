@@ -1,9 +1,0 @@
-{
-  "type": "module",
-  "scripts": {
-    "test": "node convert.js && ./sointu-compile -o . -arch=wasm tests/groove.yaml && wat2wasm groove.wat && node testwasm.mjs"
-  },
-  "dependencies": {
-    "json-to-pretty-yaml": "^1.2.2"
-  }
-}

@@ -822,11 +822,11 @@
 (func $render_128_samples (param) (result i32)
 (local $rendersamplecount i32) 
 (local $should_update_voices i32)
+{{- if  .Output16Bit }} (local $channel i32) {{- end }}
     (i32.const 0)
     (local.set $rendersamplecount)
     (i32.const 0)
-    (local.set $should_update_voices)
-    {{- if  .Output16Bit }} (local $channel i32) {{- end }}
+    (local.set $should_update_voices)    
     (loop $sample_loop
         (if (i32.eq (global.get $sample) (i32.const 0))
             (then

@@ -31,6 +31,6 @@ actual_output/
 **/__debug_bin
 
 node_modules
-*.raw
+
 sointu-server
 temp_song_file.*
