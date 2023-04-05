@@ -880,7 +880,9 @@
 (export "render_128_samples" (func $render_128_samples))
 (export "update_voices" (func $su_update_voices))
 
+{{- if  .RenderOnStart }}
 (start $render) ;; we run render automagically when the module is instantiated
+{{- end}}
 
 (func $render (param)
 {{- if  .Output16Bit }} (local $channel i32) {{- end }}

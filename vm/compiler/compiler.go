@@ -126,7 +126,8 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 				PatternLength  int
 				SequenceLength int
 				Hold           int
-			}{compilerMacros, featureSetMacros, wasmMacros, songMacros, encodedPatch, patterns, sequences, len(patterns[0]), len(sequences[0]), 1}
+				RenderOnStart  bool
+			}{compilerMacros, featureSetMacros, wasmMacros, songMacros, encodedPatch, patterns, sequences, len(patterns[0]), len(sequences[0]), 1, !song.WasmDisableRenderOnStart}
 			populatedTemplate, extension, err = com.compile(templateName, &data)
 		}
 		if err != nil {

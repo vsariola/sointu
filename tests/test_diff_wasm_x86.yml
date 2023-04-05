@@ -1,6 +1,7 @@
 bpm: 120
 rowsperbeat: 4
 createemptypatterns: true
+wasmdisablerenderonstart: false
 score:
   length: 1
   rowsperpattern: 16
