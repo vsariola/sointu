@@ -880,7 +880,7 @@
 (export "render_128_samples" (func $render_128_samples))
 (export "update_voices" (func $su_update_voices))
 
-;; (start $render) ;; we run render automagically when the module is instantiated
+(start $render) ;; we run render automagically when the module is instantiated
 
 (func $render (param)
 {{- if  .Output16Bit }} (local $channel i32) {{- end }}
