@@ -115,7 +115,8 @@ regression_test(test_oscillat_detunemod "VCO_SINE;ENVELOPE;FOP_MULP;FOP_PUSH;SEN
 regression_test(test_oscillat_phasemod "VCO_SINE;ENVELOPE;FOP_MULP;FOP_PUSH;SEND")
 regression_test(test_oscillat_colormod "VCO_SINE;ENVELOPE;FOP_MULP;FOP_PUSH;SEND")
 regression_test(test_oscillat_shapemod "VCO_SINE;ENVELOPE;FOP_MULP;FOP_PUSH;SEND")
-regression_test(test_oscillat_gainmod "VCO_SINE;ENVELOPE;FOP_MULP;FOP_PUSH;SEND")
+regression_test(test_oscillat_gainmod OSCGAINMOD "VCO_SINE;ENVELOPE;FOP_MULP;FOP_PUSH;SEND")
+regression_test(test_oscillat_gainmod_stereo "" OSCGAINMOD)
 
 regression_test(test_distort ENVELOPE)
 regression_test(test_distort_mod "VCO_SINE;ENVELOPE;SEND")

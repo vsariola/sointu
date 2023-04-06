@@ -107,6 +107,10 @@
 {{- if .SupportsParamValueOtherThan "oscillator" "unison" 0}}
     (local $unison i32) (local $WRK_stash i32) (local $detune_stash f32)
 {{- end}}
+{{- if .Stereo "oscillator"}}
+    (local $WRK_stereostash i32)
+    (local.set $WRK_stereostash (global.get $WRK))
+{{- end}}
     (local.set $flags (call $scanValueByte))
     (local.set $detune (call $inputSigned (i32.const {{.InputNumber "oscillator" "detune"}})))
 {{- if .Stereo "oscillator"}}
@@ -189,7 +193,7 @@
                 (f32.const 0.08333333) ;; 1/12, add small phase shift so all oscillators don't start in phase
             )
         )
-        (global.set $WRK (i32.add (global.get $WRK) (i32.const 8))) ;; WARNING: this is a bug. WRK should be nonvolatile, but we are changing it. It does not cause immediate problems but modulations will be off.
+        (global.set $WRK (i32.add (global.get $WRK) (i32.const 8)))
         (local.set $detune (f32.neg (f32.mul
             (local.get $detune) ;; each unison oscillator has a detune with flipped sign and halved amount... this creates detunes that concentrate around the fundamental
             (f32.const 0.5)
@@ -202,9 +206,12 @@
 {{- end}}
 {{- if .Stereo "oscillator"}}
     (local.set $detune (f32.neg (local.get $detune))) ;; flip the detune for secon round
-    (global.set $WRK (i32.add (global.get $WRK) (i32.const 4))) ;; WARNING: this is a bug. WRK should be nonvolatile, but we are changing it. It does not cause immediate problems but modulations will be off.
+    (global.set $WRK (i32.add (global.get $WRK) (i32.const 4))) 
     (br_if $stereoLoop (i32.eqz (local.tee $stereo (i32.eqz (local.get $stereo)))))
     end
+    (global.set $WRK (local.get $WRK_stereostash))
+    ;; TODO: all this "save WRK to local variable, modify it and then restore it" could be better thought out
+    ;; however, it is now done like this as a quick bug fix to the issue of stereo oscillators touching WRK and not restoring it
 {{- end}}
 )
 
