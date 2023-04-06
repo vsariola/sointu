@@ -136,7 +136,7 @@
 ;; The opcode table jump table. This is constructed to only include the opcodes
 ;; that are used so that the jump table is as small as possible.
 ;;-------------------------------------------------------------------------------
-(table {{.Instructions | len | add 1}} anyfunc)
+(table {{.Instructions | len | add 1}} funcref)
 (elem (i32.const 1) ;; start the indices at 1, as 0 is reserved for advance
 {{- range .Instructions}}
     $su_op_{{.}}
