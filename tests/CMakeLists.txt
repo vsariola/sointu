@@ -27,7 +27,7 @@ function(regression_test testname)
             set(watfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.wat)
             set(wasmtarget wasm_${testname})
             add_custom_target(${wasmtarget} ALL
-                COMMAND ${compilecmd} ${ARGV4} -arch=wasm -o ${watfile} ${CMAKE_CURRENT_SOURCE_DIR}/${source} && ${WAT2WASM} --enable-bulk-memory -o ${wasmfile} ${watfile}
+                COMMAND ${compilecmd} ${ARGV4} -arch=wasm -o ${watfile} ${CMAKE_CURRENT_SOURCE_DIR}/${source} && ${WAT2WASM} -o ${wasmfile} ${watfile}
                 SOURCES "${source}" "${wasmtemplates}"
                 DEPENDS sointu-compiler
             )
