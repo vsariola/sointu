@@ -882,6 +882,8 @@
 
 {{- if  .RenderOnStart }}
 (start $render) ;; we run render automagically when the module is instantiated
+{{- else}}
+(export "render" (func $render))
 {{- end}}
 
 (func $render (param)
