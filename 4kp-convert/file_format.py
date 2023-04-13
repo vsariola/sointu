@@ -1,6 +1,7 @@
 import typing
-from construct import Struct, Array, Bytes, Int32ul, Enum, Int8ul, Const, Switch, this, Error, Padded, FlagsEnum, PaddedString, Container, ListContainer, EnumIntegerString, EnumInteger
+from construct import *
 from enum import IntEnum, IntFlag
+from typing import Any
 
 MAX_POLYPHONY = 2
 MAX_INSTRUMENTS = 16
@@ -10,12 +11,12 @@ MAX_INSTRUMENT_NAME_LENGTH = 64
 
 DEFAULT_GLOBAL_NAME = b'GlobalUnitsStoredAs.4ki                                         '
 
-class VersionTag(IntEnum or IntFlag):
-    VERSION_TAG_10 = 0x30316b34 # 4k10
-    VERSION_TAG_11 = 0x31316b34 # 4k11
-    VERSION_TAG_12 = 0x32316b34 # 4k12
-    VERSION_TAG_13 = 0x33316b34 # 4k13
-    VERSION_TAG_CURRENT = 0x34316b34 # 4k14
+class VersionTag(EnumIntegerString):
+    VERSION_TAG_10 = b'4k10'
+    VERSION_TAG_11 = b'4k11'
+    VERSION_TAG_12 = b'4k12'
+    VERSION_TAG_13 = b'4k13'
+    VERSION_TAG_CURRENT = b'4k14'
 
 class UnitId(IntEnum or IntFlag):
     M_NONE = 0x0
@@ -86,7 +87,7 @@ formatenv = Struct(
 formatvco = Struct(
     "transpose" / Int8ul,
     "detune" / Int8ul,
-    "phhaseofs" / Int8ul,
+    "phaseofs" / Int8ul,
     "gate" / Int8ul,
     "color" / Int8ul,
     "shape" / Int8ul,
@@ -98,7 +99,7 @@ formatvco = Struct(
 formatvco11 = Struct(
     "transpose" / Int8ul,
     "detune" / Int8ul,
-    "phhaseofs" / Int8ul,
+    "phaseofs" / Int8ul,
     "color" / Int8ul,
     "shape" / Int8ul,
     "gain" / Int8ul,
@@ -147,7 +148,7 @@ formatdll10 = Struct(
 )
 
 formatfop = Struct(
-    "flags"/ FlagsEnum(Int8ul, FOPFlags),
+    "flags" / FlagsEnum(Int8ul, FOPFlags),
 )
 
 formatfst = Struct(
@@ -218,15 +219,15 @@ format4ku = Struct(
 )
 
 format4ki = Struct(
-    "versionTag" / Enum(Int32ul, VersionTag),
-    "instrumentName" / PaddedString(MAX_INSTRUMENT_NAME_LENGTH, 'utf-8'),
+    "versionTag" / Bytes(4),
+    "instrumentName" / Padded(MAX_INSTRUMENT_NAME_LENGTH, CString('utf-8')),
     "units" / Array(MAX_UNITS, format4ku),
 )
 
 format4kp = Struct(
-    "versionTag" / Enum(Int32ul, VersionTag),
+    "versionTag" / Bytes(4),
     "polyphony" / Int32ul,
-    "instrumentNames" / Array(MAX_INSTRUMENTS, PaddedString(MAX_INSTRUMENT_NAME_LENGTH, 'utf-8')),
+    "instrumentNames" / Array(MAX_INSTRUMENTS, Padded(MAX_INSTRUMENT_NAME_LENGTH, CString('utf-8'))),
     "instrumentValues" / Array(MAX_INSTRUMENTS * MAX_UNITS, format4ku),
     "globalValues" / Array(MAX_UNITS, format4ku),
 )
@@ -354,3 +355,160 @@ class FormatConverter:
     @staticmethod
     def migrate(fromVersion: VersionTag, toVersion: VersionTag) -> typing.Any:
         return None
+    
+    @staticmethod
+    def convertPatch():
+        pass
+
+    @staticmethod
+    def convertEnvelope(envelope: Any) -> dict:
+        return {
+            'type': 'envelope',
+            'parameters': {
+                'attack': envelope.attack,
+                'decay': envelope.decay,
+                'gain': envelope.gain,
+                'release': envelope.release,
+                'stereo': 0, # NOTE: 4klang does not have a concept of stereo envelopes.
+                'sustain': envelope.sustain,
+            },
+        }
+    
+    @staticmethod
+    def convertOscillator(vco: Any) -> dict:
+        _type = None
+        if VCOFlags.VCO_SINE in vco.flags:
+            _type = 0
+        elif VCOFlags.VCO_TRISAW in vco.flags:
+            _type = 1
+        elif VCOFlags.VCO_PULSE in vco.flags:
+            _type = 2
+        elif VCOFlags.VCO_GATE in vco.gate:
+            _type = 3
+        # NOTE: 4klang does not have gm.dls sampler code as of now; so
+        # the enum entry VCO_SAMPLE is missing.
+
+        return {
+            'type': 'oscillator',
+            'parameters': {
+                'color': vco.color,
+                'detune': vco.detune,
+                'gain': vco.gain,
+                'lfo': 1 if VCOFlags.VCO_LFO in vco.flags else 0,
+                'phase': vco.phaseofs,
+                'shape': vco.shape,
+                'stereo': 1 if VCOFlags.VCO_STEREO in vco.flags else 0,
+                'transpose': vco.transpose,
+                'type': _type,
+                'unison': 0, # NOTE: 4klang does not support unison effects.
+            },
+        }
+
+    @staticmethod
+    def convertVCF(vcf: Any) -> dict:
+        lowPass = 0
+        bandPass = 0
+        highPass = 0
+        if VCFType.VCF_LOWPASS in vcf.flags:
+            lowPass = 1
+        elif VCFType.VCF_HIGHPASS in vcf.flags:
+            highPass = 1
+        elif VCFType.VCF_BANDPASS in vcf.flags:
+            bandPass = 1
+        elif VCFType.VCF_BANDSTOP in vcf.flags:
+            lowPass = 1
+            bandPass = 0
+            highPass = 1
+        elif VCFType.VCF_ALLPASS in vcf.flags:
+            lowPass = 1
+            bandPass = 1
+            highPass = 1
+
+        return {
+            'type': 'filter',
+            'parameters': {
+                'bandpass': bandPass,
+                'frequency': vcf.freq,
+                'highpass': highPass,
+                'lowpass': lowPass,
+                'negbandpass': 0,
+                'neghighpass': 0,
+                'resonance': vcf.res,
+                'stereo': 1 if VCFType.VCF_STEREO in vcf else 0,
+            },
+        }
+
+    @staticmethod
+    def convertDST(dst: Any) -> dict:
+        return {
+            'type': 'distort',
+            'parameters': {
+                'drive': dst.drive,
+                'stereo': dst.stereo,
+            },
+        }
+    
+    @staticmethod
+    def convertDLL(dll: Any) -> dict:
+        return {
+            'type': 'delay',
+            'parameters': {
+                'damp': dll.damp,
+                'dry': dll.dry,
+                'feedback': dll.feedback,
+                'notetracking': 0, # TODO: Find out what this means and how it can be converted from 4klang.
+                'pregain': dll.pregain,
+                'stereo': 0, # NOTE: 4klang does not have stereo delay.
+            },
+        }
+    
+    def convertFOP(fop: Any) -> dict:
+        _type = None
+        if FOPFlags.FOP_POP in fop.flags:
+            _type = 'pop'
+        elif FOPFlags.FOP_PUSH in fop.flags:
+            _type = 'push'
+        elif FOPFlags.FOP_ADD in fop.flags:
+            _type = 'add'
+        elif FOPFlags.FOP_ADDP in fop.flags:
+            _type = 'addp'
+        elif FOPFlags.FOP_MULP in fop.flags:
+            _type = 'mulp'
+        elif FOPFlags.FOP_MUL in fop.flags:
+            _type = 'mul'
+        elif FOPFlags.FOP_XCH in fop.flags:
+            _type = 'xch'
+
+        return {
+            'type': _type,
+            'parameters': {
+                'stereo': 0,
+            },
+        }
+
+    def convertPAN(pan: Any) -> dict:
+        return {
+            'type': 'pan',
+            'parameters': {
+                'panning': pan.panning,
+                'stereo': 0, # NOTE: 4klang does not do this.
+            },
+        }
+    
+    # FIXME: This needs more love
+    def convertOUT(out: Any) -> dict:
+        parameters = {
+            'gain' if out.auxsend != 0 else 'outgain': out.gain,
+        }
+        if out.auxsend != 0:
+            parameters['auxgain'] = out.auxsend
+
+        return {
+            'type': 'out' if out.auxsend != 0 else 'outaux',
+            'parameters': parameters,
+            'stereo': 0,
+        }
+    
+    # TODO: convertACC
+    # TODO: convertFLD
+    # TODO: convertGlitch
