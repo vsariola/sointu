@@ -1,0 +1,206 @@
+bpm: 120
+rowsperbeat: 4
+createemptypatterns: true
+wasmdisablerenderonstart: false
+score:
+  length: 1
+  rowsperpattern: 16
+  tracks:
+    - numvoices: 1
+      order:
+        - 0
+      patterns:
+        - - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+    - numvoices: 1
+      order:
+        - 0
+      patterns:
+        - - 60
+          - 0
+          - 72
+          - 0
+          - 76
+          - 0
+          - 67
+          - 0
+          - 94
+          - 0
+          - 79
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+patch:
+  - numvoices: 1
+    units:
+      - type: oscillator
+        id: 7
+        parameters:
+          color: 64
+          detune: 64
+          gain: 48
+          lfo: 0
+          phase: 0
+          shape: 96
+          stereo: 1
+          transpose: 46
+          type: 1
+          unison: 2
+      - type: pop
+        parameters:
+          stereo: 1
+        id: 8
+  - numvoices: 1
+    units:
+      - type: oscillator
+        parameters:
+          color: 80
+          detune: 62
+          gain: 60
+          lfo: 0
+          phase: 31
+          shape: 90
+          stereo: 0
+          transpose: 76
+          type: 1
+          unison: 1
+        id: 27
+      - type: oscillator
+        parameters:
+          color: 80
+          detune: 66
+          gain: 60
+          lfo: 0
+          phase: 33
+          shape: 90
+          stereo: 0
+          transpose: 76
+          type: 1
+          unison: 1
+        id: 28
+      - type: addp
+        parameters:
+          stereo: 0
+        id: 29
+      - type: envelope
+        id: 30
+        parameters:
+          attack: 32
+          decay: 80
+          gain: 20
+          release: 75
+          stereo: 0
+          sustain: 32
+      - type: send
+        parameters:
+          amount: 125
+          port: 4
+          sendpop: 0
+          stereo: 0
+          target: 30
+        id: 31
+      - type: mulp
+        parameters:
+          stereo: 0
+        id: 32
+      - type: filter
+        id: 33
+        parameters:
+          lowpass: 1
+          frequency: 30
+          resonance: 64
+          stereo: 0
+      - type: delay
+        parameters:
+          damp: 64
+          dry: 64
+          feedback: 64
+          notetracking: 0
+          pregain: 34
+          stereo: 0
+        varargs:
+          - 16537
+          - 16537
+        id: 34
+      - type: pan
+        parameters:
+          panning: 64
+          stereo: 0
+        id: 35
+      - type: outaux
+        parameters:
+          outgain: 20
+          auxgain: 10
+          stereo: 1
+        id: 36
+  - numvoices: 1
+    units:
+      - type: in
+        parameters:
+          channel: 2
+          stereo: 1
+        id: 140
+      - type: delay
+        parameters:
+          damp: 64
+          dry: 128
+          feedback: 125
+          notetracking: 0
+          pregain: 30
+          stereo: 0
+        varargs:
+          - 1116
+          - 1188
+          - 1276
+          - 1356
+          - 1422
+          - 1492
+          - 1556
+          - 1618
+        id: 141
+      - type: outaux
+        parameters:
+          auxgain: 0
+          outgain: 128
+          stereo: 1
+        id: 142
+      - type: in
+        parameters:
+          channel: 0
+          stereo: 1
+        id: 143
+      - type: compressor
+        parameters:
+          attack: 16
+          invgain: 90
+          ratio: 64
+          release: 64
+          stereo: 1
+          threshold: 71
+        id: 144
+      - type: mulp
+        parameters:
+          stereo: 1
+        id: 145
+      - type: outaux
+        parameters:
+          auxgain: 0
+          outgain: 128
+          stereo: 1
+        id: 146

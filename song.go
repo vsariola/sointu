@@ -11,10 +11,12 @@ import (
 // playback speed, but this could be changed to a floating point in future if
 // finer adjustments are necessary.
 type Song struct {
-	BPM         int
-	RowsPerBeat int
-	Score       Score
-	Patch       Patch
+	BPM                      int
+	RowsPerBeat              int
+	Score                    Score
+	Patch                    Patch
+	CreateEmptyPatterns      bool
+	WasmDisableRenderOnStart bool
 }
 
 // Copy makes a deep copy of a Score.

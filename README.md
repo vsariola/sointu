@@ -94,6 +94,11 @@ Building the compiler:
 go build -o sointu-compile cmd/sointu-compile/main.go
 ```
 
+or building it as a server where you can post yaml to the `/process` endpoint and get WAT in return:
+```
+go build -o sointu-server cmd/sointu-compile/server.go
+```
+
 On windows, replace `-o sointu-compile` with `-o sointu-compile.exe`.
 
 The compiler can then be used to compile a .yml song into .asm and .h files. For
@@ -109,6 +114,32 @@ WebAssembly example:
 ```
 sointu-compile -o . -arch=wasm tests/test_chords.yml
 wat2wasm --enable-bulk-memory test_chords.wat
+```
+
+Example using the server:
+
+```
+groove = `bpm: 120
+rowsperbeat: 4
+score:
+  length: 24
+  rowsperpattern: 16
+  tracks:
+    - numvoices: 1
+      order:
+        - 0
+        - 0
+        - 0
+        - 0
+        ......`;
+
+fetch('http://localhost:8080/process', {
+    method: 'POST',
+    headers: {
+        'content-type': 'application/json'
+    },
+    body: JSON.stringify({content: groove})
+});
 ```
 
 ### Building and running the tests as executables

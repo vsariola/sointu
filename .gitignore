@@ -29,3 +29,10 @@ out/
 .cache/
 actual_output/
 **/__debug_bin
+
+node_modules
+
+sointu-server
+sointu-compile
+temp_song_file.*
+wabt-*
