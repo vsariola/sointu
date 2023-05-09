@@ -24,7 +24,7 @@ func (t *Tracker) layoutRowMarkers(gtx C) D {
 	clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
 	op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y-trackRowHeight)/2)).Add(gtx.Ops)
 	cursorSongRow := t.Cursor().Pattern*t.Song().Score.RowsPerPattern + t.Cursor().Row
-	playPos, playing := t.player.Position()
+	playPos := t.PlayPosition()
 	playSongRow := playPos.Pattern*t.Song().Score.RowsPerPattern + playPos.Row
 	op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorSongRow))).Add(gtx.Ops)
 	beatMarkerDensity := t.Song().RowsPerBeat
@@ -39,7 +39,7 @@ func (t *Tracker) layoutRowMarkers(gtx C) D {
 			} else if mod(songRow, beatMarkerDensity) == 0 {
 				paint.FillShape(gtx.Ops, oneBeatHighlight, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, trackRowHeight)}.Op())
 			}
-			if playing && songRow == playSongRow {
+			if t.Playing() && songRow == playSongRow {
 				paint.FillShape(gtx.Ops, trackerPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, trackRowHeight)}.Op())
 			}
 			if j == 0 {

@@ -76,7 +76,7 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 				switch e.Name {
 				case key.NameDeleteForward, key.NameDeleteBackward:
 					t.DeleteSelection()
-					if !(t.NoteTracking() && t.player.Playing()) && t.Step.Value > 0 {
+					if !(t.NoteTracking() && t.Playing()) && t.Step.Value > 0 {
 						t.SetCursor(t.Cursor().AddRows(t.Step.Value))
 						t.SetSelectionCorner(t.Cursor())
 					}
@@ -159,14 +159,14 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 								t.SetNote(n)
 								step = true
 								trk := t.Cursor().Track
-								start := t.Song().Score.FirstVoiceForTrack(trk)
-								end := start + t.Song().Score.Tracks[trk].NumVoices
-								t.KeyPlaying[e.Name] = t.player.Trigger(start, end, n)
+								noteID := tracker.NoteIDTrack(trk, n)
+								t.NoteOn(noteID)
+								t.KeyPlaying[e.Name] = noteID
 							}
 						}
 					}
 				}
-				if step && !(t.NoteTracking() && t.player.Playing()) && t.Step.Value > 0 {
+				if step && !(t.NoteTracking() && t.Playing()) && t.Step.Value > 0 {
 					t.SetCursor(t.Cursor().AddRows(t.Step.Value))
 					t.SetSelectionCorner(t.Cursor())
 				}
@@ -208,7 +208,7 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 
 	for te.NoteOffBtn.Clicked() {
 		t.SetNote(0)
-		if !(t.NoteTracking() && t.player.Playing()) && t.Step.Value > 0 {
+		if !(t.NoteTracking() && t.Playing()) && t.Step.Value > 0 {
 			t.SetCursor(t.Cursor().AddRows(t.Step.Value))
 			t.SetSelectionCorner(t.Cursor())
 		}
@@ -230,18 +230,9 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 		noteOffBtnStyle := LowEmphasisButton(t.Theme, te.NoteOffBtn, "Note Off")
 		deleteTrackBtnStyle := IconButton(t.Theme, te.DeleteTrackBtn, icons.ActionDelete, t.CanDeleteTrack())
 		newTrackBtnStyle := IconButton(t.Theme, te.NewTrackBtn, icons.ContentAdd, t.CanAddTrack())
-		in := layout.UniformInset(unit.Dp(1))
-		octave := func(gtx C) D {
-			t.OctaveNumberInput.Value = t.Octave()
-			numStyle := NumericUpDown(t.Theme, t.OctaveNumberInput, 0, 9)
-			gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
-			gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
-			dims := in.Layout(gtx, numStyle.Layout)
-			t.SetOctave(t.OctaveNumberInput.Value)
-			return dims
-		}
 		n := t.Song().Score.Tracks[t.Cursor().Track].NumVoices
 		te.TrackVoices.Value = n
+		in := layout.UniformInset(unit.Dp(1))
 		voiceUpDown := func(gtx C) D {
 			numStyle := NumericUpDown(t.Theme, te.TrackVoices, 1, t.MaxTrackVoices())
 			gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
@@ -251,8 +242,6 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 		t.TrackHexCheckBox.Value = t.Song().Score.Tracks[t.Cursor().Track].Effect
 		hexCheckBoxStyle := material.CheckBox(t.Theme, t.TrackHexCheckBox, "Hex")
 		dims := layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-			layout.Rigid(Label("OCT:", white)),
-			layout.Rigid(octave),
 			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Px(unit.Dp(12)), 0)} }),
 			layout.Rigid(addSemitoneBtnStyle.Layout),
 			layout.Rigid(subtractSemitoneBtnStyle.Layout),

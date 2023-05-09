@@ -1,268 +1,364 @@
 package tracker
 
 import (
+	"fmt"
 	"math"
-	"sync"
-	"sync/atomic"
 
 	"github.com/vsariola/sointu"
+	"github.com/vsariola/sointu/vm"
 )
 
-type Player struct {
-	packedPos uint64
+type (
+	Player struct {
+		voiceNoteID       []int
+		voiceReleased     []bool
+		synth             sointu.Synth
+		patch             sointu.Patch
+		score             sointu.Score
+		playing           bool
+		rowtime           int
+		position          SongRow
+		samplesSinceEvent []int
+		samplesPerRow     int
+		volume            Volume
+		voiceStates       [vm.MAX_VOICES]float32
 
-	playCmds chan uint64
+		recording            bool
+		recordingNoteArrived bool
+		recordingFrames      int
+		recordingEvents      []PlayerProcessEvent
 
-	mutex             sync.Mutex
-	runningID         uint32
-	voiceNoteID       []uint32
-	voiceReleased     []int32
-	synth             sointu.Synth
-	patch             sointu.Patch
-	samplesSinceEvent []int32
-
-	synthNotNil int32
-}
-
-type voiceNote struct {
-	voice int
-	note  byte
-}
-
-// Position returns the current play position (song row), and a bool indicating
-// if the player is currently playing. The function is threadsafe.
-func (p *Player) Position() (SongRow, bool) {
-	packedPos := atomic.LoadUint64(&p.packedPos)
-	if packedPos == math.MaxUint64 { // stopped
-		return SongRow{}, false
+		synthService   sointu.SynthService
+		playerMessages chan<- PlayerMessage
+		modelMessages  <-chan interface{}
 	}
-	return unpackPosition(packedPos), true
-}
 
-func (p *Player) Playing() bool {
-	packedPos := atomic.LoadUint64(&p.packedPos)
-	if packedPos == math.MaxUint64 { // stopped
-		return false
+	PlayerProcessContext interface {
+		NextEvent() (event PlayerProcessEvent, ok bool)
+		BPM() (bpm float64, ok bool)
 	}
-	return true
-}
 
-func (p *Player) Play(position SongRow) {
-	position.Row-- // we'll advance this very shortly
-	p.playCmds <- packPosition(position)
-}
-
-func (p *Player) Stop() {
-	p.playCmds <- math.MaxUint64
-}
-
-func (p *Player) Disable() {
-	p.mutex.Lock()
-	p.synth = nil
-	atomic.StoreInt32(&p.synthNotNil, 0)
-	p.mutex.Unlock()
-}
-
-func (p *Player) Enabled() bool {
-	return atomic.LoadInt32(&p.synthNotNil) == 1
-}
-
-func (p *Player) VoiceState(voice int) (bool, int) {
-	if voice >= len(p.samplesSinceEvent) || voice >= len(p.voiceReleased) {
-		return true, math.MaxInt32
+	PlayerProcessEvent struct {
+		Frame   int
+		On      bool
+		Channel int
+		Note    byte
 	}
-	return atomic.LoadInt32(&p.voiceReleased[voice]) == 1, int(atomic.LoadInt32(&p.samplesSinceEvent[voice]))
-}
 
-func NewPlayer(service sointu.SynthService, closer <-chan struct{}, patchs <-chan sointu.Patch, scores <-chan sointu.Score, samplesPerRows <-chan int, posChanged chan<- struct{}, syncOutput chan<- []float32, outputs ...chan<- []float32) *Player {
-	p := &Player{playCmds: make(chan uint64, 16)}
-	go func() {
-		var score sointu.Score
-		buffer := make([]float32, 2048)
-		buffer2 := make([]float32, 2048)
-		zeros := make([]float32, 2048)
-		totalSyncs := 1 // just the beat
-		syncBuffer := make([]float32, (2048+255)/256*totalSyncs)
-		syncBuffer2 := make([]float32, (2048+255)/256*totalSyncs)
-		rowTime := 0
-		samplesPerRow := math.MaxInt32
-		var trackIDs []uint32
-		atomic.StoreUint64(&p.packedPos, math.MaxUint64)
-		for {
-			select {
-			case <-closer:
-				for _, o := range outputs {
-					close(o)
-				}
-				return
-			case patch := <-patchs:
-				p.mutex.Lock()
-				p.patch = patch
-				if p.synth != nil {
-					err := p.synth.Update(patch)
-					if err != nil {
-						p.synth = nil
-						atomic.StoreInt32(&p.synthNotNil, 0)
-					}
-				} else {
-					s, err := service.Compile(patch)
-					if err == nil {
-						p.synth = s
-						atomic.StoreInt32(&p.synthNotNil, 1)
-						for i := 0; i < 32; i++ {
-							s.Release(i)
-						}
-					}
-				}
-				totalSyncs = 1 + p.patch.NumSyncs()
-				syncBuffer = make([]float32, ((2048+255)/256)*totalSyncs)
-				syncBuffer2 = make([]float32, ((2048+255)/256)*totalSyncs)
-				p.mutex.Unlock()
-			case score = <-scores:
-				if row, playing := p.Position(); playing {
-					atomic.StoreUint64(&p.packedPos, packPosition(row.Wrap(score)))
-				}
-			case samplesPerRow = <-samplesPerRows:
-			case packedPos := <-p.playCmds:
-				atomic.StoreUint64(&p.packedPos, packedPos)
-				if packedPos == math.MaxUint64 {
-					p.mutex.Lock()
-					for _, id := range trackIDs {
-						p.release(id)
-					}
-					p.mutex.Unlock()
-				} else {
-					p.mutex.Lock()
-					for i, t := range score.Tracks {
-						if !t.Effect && i < len(trackIDs) { // when starting to play from another position, release only non-effect tracks
-							p.release(trackIDs[i])
-						}
-					}
-					p.mutex.Unlock()
-				}
-				rowTime = math.MaxInt32
-			default:
-				row, playing := p.Position()
-				if playing && rowTime >= samplesPerRow && score.Length > 0 && score.RowsPerPattern > 0 {
-					row.Row++ // advance row (this is why we subtracted one in Play())
-					row = row.Wrap(score)
-					atomic.StoreUint64(&p.packedPos, packPosition(row))
-					select {
-					case posChanged <- struct{}{}:
-					default:
-					}
-					p.mutex.Lock()
-					lastVoice := 0
-					for i, t := range score.Tracks {
-						start := lastVoice
-						lastVoice = start + t.NumVoices
-						if row.Pattern < 0 || row.Pattern >= len(t.Order) {
-							continue
-						}
-						o := t.Order[row.Pattern]
-						if o < 0 || o >= len(t.Patterns) {
-							continue
-						}
-						pat := t.Patterns[o]
-						if row.Row < 0 || row.Row >= len(pat) {
-							continue
-						}
-						n := pat[row.Row]
-						for len(trackIDs) <= i {
-							trackIDs = append(trackIDs, 0)
-						}
-						if n != 1 && trackIDs[i] > 0 {
-							p.release(trackIDs[i])
-						}
-						if n > 1 && p.synth != nil {
-							trackIDs[i] = p.trigger(start, lastVoice, n)
-						}
-					}
-					p.mutex.Unlock()
-					rowTime = 0
-				}
-				if p.synth != nil {
-					renderTime := samplesPerRow - rowTime
-					if !playing {
-						renderTime = math.MaxInt32
-					}
-					p.mutex.Lock()
-					rendered, syncs, timeAdvanced, err := p.synth.Render(buffer, syncBuffer, renderTime)
-					if err != nil {
-						p.synth = nil
-						atomic.StoreInt32(&p.synthNotNil, 0)
-					}
-					p.mutex.Unlock()
-					for i := 0; i < syncs; i++ {
-						a := syncBuffer[i*totalSyncs]
-						b := (a+float32(rowTime))/float32(samplesPerRow) + float32(row.Pattern*score.RowsPerPattern+row.Row)
-						syncBuffer[i*totalSyncs] = b
-					}
-					rowTime += timeAdvanced
-					for window := syncBuffer[:totalSyncs*syncs]; len(window) > 0; window = window[totalSyncs:] {
-						select {
-						case syncOutput <- window[:totalSyncs]:
-						default:
-						}
-					}
-					for i := range p.samplesSinceEvent {
-						atomic.AddInt32(&p.samplesSinceEvent[i], int32(timeAdvanced))
-					}
-					for _, o := range outputs {
-						o <- buffer[:rendered*2]
-					}
-					buffer2, buffer = buffer, buffer2
-					syncBuffer2, syncBuffer = syncBuffer, syncBuffer2
-				} else {
-					rowTime += len(zeros) / 2
-					for _, o := range outputs {
-						o <- zeros
-					}
-				}
-			}
-		}
-	}()
+	PlayerPlayingMessage struct {
+		bool
+	}
+
+	PlayerRecordedMessage struct {
+		BPM         float64 // vsts allow bpms as floats so for accurate reconstruction, keep it as float for recording
+		Events      []PlayerProcessEvent
+		TotalFrames int
+	}
+
+	// Volume and SongRow are transmitted so frequently that they are treated specially, to avoid boxing. All the
+	// rest messages can be boxed to interface{}
+	PlayerMessage struct {
+		Volume      Volume
+		SongRow     SongRow
+		VoiceStates [vm.MAX_VOICES]float32
+		Inner       interface{}
+	}
+
+	PlayerCrashMessage struct {
+		error
+	}
+
+	PlayerVolumeErrorMessage struct {
+		error
+	}
+
+	voiceNote struct {
+		voice int
+		note  byte
+	}
+
+	recordEvent struct {
+		frame int
+	}
+)
+
+const NUM_RENDER_TRIES = 10000
+
+func NewPlayer(synthService sointu.SynthService, playerMessages chan<- PlayerMessage, modelMessages <-chan interface{}) *Player {
+	p := &Player{
+		playerMessages: playerMessages,
+		modelMessages:  modelMessages,
+		synthService:   synthService,
+		volume:         Volume{Average: [2]float64{1e-9, 1e-9}, Peak: [2]float64{1e-9, 1e-9}},
+	}
 	return p
 }
 
-// Trigger is used to manually play a note on the sequencer when jamming. It is
-// thread-safe. It starts to play one of the voice in the range voiceStart
-// (inclusive) and voiceEnd (exclusive). It returns a id that can be called to
-// release the voice playing the note (in case the voice has not been captured
-// by someone else already).
-func (p *Player) Trigger(voiceStart, voiceEnd int, note byte) uint32 {
-	if note <= 1 {
-		return 0
+func (p *Player) Process(buffer []float32, context PlayerProcessContext) {
+	p.processMessages(context)
+	midi, midiOk := context.NextEvent()
+	frame := 0
+
+	if p.recording && p.recordingNoteArrived {
+		p.recordingFrames += len(buffer) / 2
 	}
-	p.mutex.Lock()
-	id := p.trigger(voiceStart, voiceEnd, note)
-	p.mutex.Unlock()
-	return id
+
+	oldBuffer := buffer
+
+	for i := 0; i < NUM_RENDER_TRIES; i++ {
+		for midiOk && frame >= midi.Frame {
+			if p.recording {
+				if !p.recordingNoteArrived {
+					p.recordingFrames = len(buffer) / 2
+					p.recordingNoteArrived = true
+				}
+				midiTotalFrame := midi
+				midiTotalFrame.Frame = p.recordingFrames - len(buffer)/2
+				p.recordingEvents = append(p.recordingEvents, midiTotalFrame)
+			}
+			if midi.On {
+				p.triggerInstrument(midi.Channel, midi.Note)
+			} else {
+				p.releaseInstrument(midi.Channel, midi.Note)
+			}
+			midi, midiOk = context.NextEvent()
+		}
+		framesUntilMidi := len(buffer) / 2
+		if delta := midi.Frame - frame; midiOk && delta < framesUntilMidi {
+			framesUntilMidi = delta
+		}
+		if p.playing && p.rowtime >= p.samplesPerRow {
+			p.advanceRow()
+		}
+		timeUntilRowAdvance := math.MaxInt32
+		if p.playing {
+			timeUntilRowAdvance = p.samplesPerRow - p.rowtime
+		}
+		var rendered, timeAdvanced int
+		var err error
+		if p.synth != nil {
+			rendered, timeAdvanced, err = p.synth.Render(buffer[:framesUntilMidi*2], timeUntilRowAdvance)
+		} else {
+			mx := framesUntilMidi
+			if timeUntilRowAdvance < mx {
+				mx = timeUntilRowAdvance
+			}
+			for i := 0; i < mx*2; i++ {
+				buffer[i] = 0
+			}
+			rendered = mx
+			timeAdvanced = mx
+		}
+		if err != nil {
+			p.synth = nil
+			p.trySend(PlayerCrashMessage{fmt.Errorf("synth.Render: %w", err)})
+		}
+		buffer = buffer[rendered*2:]
+		frame += rendered
+		p.rowtime += timeAdvanced
+		for i := range p.samplesSinceEvent {
+			p.samplesSinceEvent[i] += rendered
+		}
+		alpha := float32(math.Exp(-float64(rendered) / 15000))
+		for i, released := range p.voiceReleased {
+			if released {
+				p.voiceStates[i] *= alpha
+			} else {
+				p.voiceStates[i] = (p.voiceStates[i]-0.5)*alpha + 0.5
+			}
+		}
+		// when the buffer is full, return
+		if len(buffer) == 0 {
+			err := p.volume.Analyze(oldBuffer, 0.3, 1e-4, 1, -100, 20)
+			var msg interface{}
+			if err != nil {
+				msg = PlayerVolumeErrorMessage{err}
+			}
+			p.trySend(msg)
+			return
+		}
+	}
+	// we were not able to fill the buffer with NUM_RENDER_TRIES attempts, destroy synth and throw an error
+	p.synth = nil
+	p.trySend(PlayerCrashMessage{fmt.Errorf("synth did not fill the audio buffer even with %d render calls", NUM_RENDER_TRIES)})
 }
 
-// Release is used to manually release a note on the player when jamming.
-// Expects an ID that was previously acquired by calling Trigger.
-func (p *Player) Release(ID uint32) {
-	if ID == 0 {
+func (p *Player) advanceRow() {
+	if p.score.Length == 0 || p.score.RowsPerPattern == 0 {
 		return
 	}
-	p.mutex.Lock()
-	p.release(ID)
-	p.mutex.Unlock()
+	p.position.Row++ // advance row (this is why we subtracted one in Play())
+	p.position = p.position.Wrap(p.score)
+	p.trySend(nil) // just send volume and song row information
+	lastVoice := 0
+	for i, t := range p.score.Tracks {
+		start := lastVoice
+		lastVoice = start + t.NumVoices
+		if p.position.Pattern < 0 || p.position.Pattern >= len(t.Order) {
+			continue
+		}
+		o := t.Order[p.position.Pattern]
+		if o < 0 || o >= len(t.Patterns) {
+			continue
+		}
+		pat := t.Patterns[o]
+		if p.position.Row < 0 || p.position.Row >= len(pat) {
+			continue
+		}
+		n := pat[p.position.Row]
+		switch {
+		case n == 0:
+			p.releaseTrack(i)
+		case n > 1:
+			p.triggerTrack(i, n)
+		default: // n == 1
+		}
+	}
+	p.rowtime = 0
 }
 
-func (p *Player) trigger(voiceStart, voiceEnd int, note byte) uint32 {
-	if p.synth == nil {
-		return 0
+func (p *Player) processMessages(context PlayerProcessContext) {
+loop:
+	for { // process new message
+		select {
+		case msg := <-p.modelMessages:
+			switch m := msg.(type) {
+			case ModelPanicMessage:
+				if m.bool {
+					p.synth = nil
+				} else {
+					p.compileOrUpdateSynth()
+				}
+			case ModelPatchChangedMessage:
+				p.patch = m.Patch
+				p.compileOrUpdateSynth()
+			case ModelScoreChangedMessage:
+				p.score = m.Score
+			case ModelPlayingChangedMessage:
+				p.playing = m.bool
+				if !p.playing {
+					for i := range p.score.Tracks {
+						p.releaseTrack(i)
+					}
+				}
+			case ModelSamplesPerRowChangedMessage:
+				p.samplesPerRow = m.int
+			case ModelPlayFromPositionMessage:
+				p.playing = true
+				p.position = m.SongRow
+				p.position.Row--
+				p.rowtime = math.MaxInt
+				for i, t := range p.score.Tracks {
+					if !t.Effect {
+						// when starting to play from another position, release only non-effect tracks
+						p.releaseTrack(i)
+					}
+				}
+			case ModelNoteOnMessage:
+				if m.id.IsInstr {
+					p.triggerInstrument(m.id.Instr, m.id.Note)
+				} else {
+					p.triggerTrack(m.id.Track, m.id.Note)
+				}
+			case ModelNoteOffMessage:
+				if m.id.IsInstr {
+					p.releaseInstrument(m.id.Instr, m.id.Note)
+				} else {
+					p.releaseTrack(m.id.Track)
+				}
+			case ModelRecordingMessage:
+				if m.bool {
+					p.recording = true
+					p.recordingEvents = make([]PlayerProcessEvent, 0)
+					p.recordingFrames = 0
+					p.recordingNoteArrived = false
+				} else {
+					if p.recording && len(p.recordingEvents) > 0 {
+						bpm, ok := context.BPM()
+						if !ok {
+							bpm = 120
+						}
+						p.trySend(PlayerRecordedMessage{
+							BPM:         bpm,
+							Events:      p.recordingEvents,
+							TotalFrames: p.recordingFrames,
+						})
+					}
+					p.recording = false
+				}
+			default:
+				// ignore unknown messages
+			}
+		default:
+			break loop
+		}
 	}
-	var oldestID uint32 = math.MaxUint32
-	p.runningID++
-	newID := p.runningID
+}
+
+func (p *Player) compileOrUpdateSynth() {
+	if p.synth != nil {
+		err := p.synth.Update(p.patch)
+		if err != nil {
+			p.synth = nil
+			p.trySend(PlayerCrashMessage{fmt.Errorf("synth.Update: %w", err)})
+			return
+		}
+	} else {
+		var err error
+		p.synth, err = p.synthService.Compile(p.patch)
+		if err != nil {
+			p.synth = nil
+			p.trySend(PlayerCrashMessage{fmt.Errorf("synthService.Compile: %w", err)})
+			return
+		}
+		for i := 0; i < 32; i++ {
+			p.synth.Release(i)
+		}
+	}
+}
+
+// all sends from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
+func (p *Player) trySend(message interface{}) {
+	select {
+	case p.playerMessages <- PlayerMessage{Volume: p.volume, SongRow: p.position, VoiceStates: p.voiceStates, Inner: message}:
+	default:
+	}
+}
+
+func (p *Player) triggerInstrument(instrument int, note byte) {
+	ID := idForInstrumentNote(instrument, note)
+	p.release(ID)
+	voiceStart := p.patch.FirstVoiceForInstrument(instrument)
+	voiceEnd := voiceStart + p.patch[instrument].NumVoices
+	p.trigger(voiceStart, voiceEnd, note, ID)
+}
+
+func (p *Player) releaseInstrument(instrument int, note byte) {
+	p.release(idForInstrumentNote(instrument, note))
+}
+
+func (p *Player) triggerTrack(track int, note byte) {
+	ID := idForTrack(track)
+	p.release(ID)
+	voiceStart := p.score.FirstVoiceForTrack(track)
+	voiceEnd := voiceStart + p.score.Tracks[track].NumVoices
+	p.trigger(voiceStart, voiceEnd, note, ID)
+}
+
+func (p *Player) releaseTrack(track int) {
+	p.release(idForTrack(track))
+}
+
+func (p *Player) trigger(voiceStart, voiceEnd int, note byte, ID int) {
+	if p.synth == nil {
+		return
+	}
+	var age int = 0
 	oldestReleased := false
 	oldestVoice := 0
 	for i := voiceStart; i < voiceEnd; i++ {
 		for len(p.voiceReleased) <= i {
-			p.voiceReleased = append(p.voiceReleased, 1)
+			p.voiceReleased = append(p.voiceReleased, true)
 		}
 		for len(p.samplesSinceEvent) <= i {
 			p.samplesSinceEvent = append(p.samplesSinceEvent, 0)
@@ -274,43 +370,44 @@ func (p *Player) trigger(voiceStart, voiceEnd int, note byte) uint32 {
 		// then we prefer to trigger that over a voice that is still playing. in
 		// case two voices are both playing or or both are released, we prefer
 		// the older one
-		id := p.voiceNoteID[i]
-		isReleased := atomic.LoadInt32(&p.voiceReleased[i]) == 1
-		if id < oldestID && (oldestReleased == isReleased) || (!oldestReleased && isReleased) {
+		if (p.voiceReleased[i] && !oldestReleased) ||
+			(p.voiceReleased[i] == oldestReleased && p.samplesSinceEvent[i] >= age) {
 			oldestVoice = i
-			oldestID = id
-			oldestReleased = isReleased
+			oldestReleased = p.voiceReleased[i]
+			age = p.samplesSinceEvent[i]
 		}
 	}
-	p.voiceNoteID[oldestVoice] = newID
-	atomic.StoreInt32(&p.voiceReleased[oldestVoice], 0)
-	atomic.StoreInt32(&p.samplesSinceEvent[oldestVoice], 0)
+	p.voiceNoteID[oldestVoice] = ID
+	p.voiceReleased[oldestVoice] = false
+	p.voiceStates[oldestVoice] = 1.0
+	p.samplesSinceEvent[oldestVoice] = 0
 	if p.synth != nil {
 		p.synth.Trigger(oldestVoice, note)
 	}
-	return newID
 }
 
-func (p *Player) release(ID uint32) {
+func (p *Player) release(ID int) {
 	if p.synth == nil {
 		return
 	}
 	for i := 0; i < len(p.voiceNoteID); i++ {
-		if p.voiceNoteID[i] == ID && atomic.LoadInt32(&p.voiceReleased[i]) != 1 {
-			atomic.StoreInt32(&p.voiceReleased[i], 1)
-			atomic.StoreInt32(&p.samplesSinceEvent[i], 0)
+		if p.voiceNoteID[i] == ID && !p.voiceReleased[i] {
+			p.voiceReleased[i] = true
+			p.samplesSinceEvent[i] = 0
 			p.synth.Release(i)
 			return
 		}
 	}
 }
 
-func packPosition(pos SongRow) uint64 {
-	return (uint64(uint32(pos.Pattern)) << 32) + uint64(uint32(pos.Row))
+// we need to give voices triggered by different sources a identifier who triggered it
+// positive values are for voices triggered by instrument jamming i.e. MIDI message from
+// host or pressing key on the keyboard
+// negative values are for voices triggered by tracks when playing a song
+func idForInstrumentNote(instrument int, note byte) int {
+	return instrument*256 + int(note)
 }
 
-func unpackPosition(packedPos uint64) SongRow {
-	pattern := int(int32(packedPos >> 32))
-	row := int(int32(packedPos & 0xFFFFFFFF))
-	return SongRow{Pattern: pattern, Row: row}
+func idForTrack(track int) int {
+	return -1 - track
 }

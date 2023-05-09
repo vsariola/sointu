@@ -3,7 +3,6 @@ package gioui
 import (
 	"image"
 	"math"
-	"runtime"
 	"time"
 
 	"gioui.org/f32"
@@ -18,6 +17,22 @@ import (
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"gopkg.in/yaml.v3"
 )
+
+const shortcutKey = "Ctrl+"
+
+var fileMenuItems []MenuItem = []MenuItem{
+	{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: shortcutKey + "N"},
+	{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: shortcutKey + "O"},
+	{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: shortcutKey + "S"},
+	{IconBytes: icons.ContentSave, Text: "Save Song As..."},
+	{IconBytes: icons.ImageAudiotrack, Text: "Export Wav..."},
+}
+
+func init() {
+	if CAN_QUIT {
+		fileMenuItems = append(fileMenuItems, MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit"})
+	}
+}
 
 func (t *Tracker) layoutSongPanel(gtx C) D {
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -87,18 +102,9 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 		clickedItem, hasClicked = t.Menus[1].Clicked()
 	}
 
-	shortcutKey := "Ctrl+"
-	if runtime.GOOS == "darwin" {
-		shortcutKey = "Cmd+"
-	}
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 		layout.Rigid(t.layoutMenu("File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200),
-			MenuItem{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: shortcutKey + "N"},
-			MenuItem{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: shortcutKey + "O"},
-			MenuItem{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: shortcutKey + "S"},
-			MenuItem{IconBytes: icons.ContentSave, Text: "Save Song As..."},
-			MenuItem{IconBytes: icons.ImageAudiotrack, Text: "Export Wav..."},
-			MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit"},
+			fileMenuItems...,
 		)),
 		layout.Rigid(t.layoutMenu("Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200),
 			MenuItem{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: shortcutKey + "Z", Disabled: !t.CanUndo()},
@@ -116,14 +122,25 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 	in := layout.UniformInset(unit.Dp(1))
 
 	var panicBtnStyle material.ButtonStyle
-	if t.player.Enabled() {
+	if !t.Panic() {
 		panicBtnStyle = LowEmphasisButton(t.Theme, t.PanicBtn, "Panic")
 	} else {
 		panicBtnStyle = HighEmphasisButton(t.Theme, t.PanicBtn, "Panic")
 	}
 
 	for t.PanicBtn.Clicked() {
-		t.player.Disable()
+		t.SetPanic(!t.Panic())
+	}
+
+	var recordBtnStyle material.ButtonStyle
+	if !t.Recording() {
+		recordBtnStyle = LowEmphasisButton(t.Theme, t.RecordBtn, "Record")
+	} else {
+		recordBtnStyle = HighEmphasisButton(t.Theme, t.RecordBtn, "Record")
+	}
+
+	for t.RecordBtn.Clicked() {
+		t.SetRecording(!t.Recording())
 	}
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -199,6 +216,10 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 		layout.Rigid(func(gtx C) D {
 			gtx.Constraints.Min = image.Pt(0, 0)
 			return panicBtnStyle.Layout(gtx)
+		}),
+		layout.Rigid(func(gtx C) D {
+			gtx.Constraints.Min = image.Pt(0, 0)
+			return recordBtnStyle.Layout(gtx)
 		}),
 		layout.Rigid(VuMeter{Volume: t.lastVolume, Range: 100}.Layout),
 	)

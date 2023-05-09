@@ -40,7 +40,7 @@ func TestOscillatSine(t *testing.T) {
 	}}}
 	tracks := []sointu.Track{{NumVoices: 1, Order: []int{0}, Patterns: []sointu.Pattern{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}}}}
 	song := sointu.Song{BPM: 100, RowsPerBeat: 4, Score: sointu.Score{RowsPerPattern: 16, Length: 1, Tracks: tracks}, Patch: patch}
-	buffer, _, err := sointu.Play(bridge.BridgeService{}, song, false)
+	buffer, err := sointu.Play(bridge.BridgeService{}, song, false)
 	if err != nil {
 		t.Fatalf("Render failed: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestAllRegressionTests(t *testing.T) {
 			if err != nil {
 				t.Fatalf("could not parse the .yml file: %v", err)
 			}
-			buffer, _, err := sointu.Play(bridge.BridgeService{}, song, false)
+			buffer, err := sointu.Play(bridge.BridgeService{}, song, false)
 			buffer = buffer[:song.Score.LengthInRows()*song.SamplesPerRow()*2] // extend to the nominal length always.
 			if err != nil {
 				t.Fatalf("Play failed: %v", err)

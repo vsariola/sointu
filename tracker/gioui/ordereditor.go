@@ -73,20 +73,19 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 					t.DeleteOrderRow(e.Name == key.NameDeleteForward)
 				} else {
 					t.DeletePatternSelection()
-					if !(t.NoteTracking() && t.player.Playing()) && t.Step.Value > 0 {
+					if !(t.NoteTracking() && t.Playing()) && t.Step.Value > 0 {
 						t.SetCursor(t.Cursor().AddPatterns(1))
 						t.SetSelectionCorner(t.Cursor())
 					}
 				}
 			case "Space":
-				_, playing := t.player.Position()
-				if !playing {
+				if !t.Playing() {
 					t.SetNoteTracking(!e.Modifiers.Contain(key.ModShortcut))
 					startRow := t.Cursor().SongRow
 					startRow.Row = 0
-					t.player.Play(startRow)
+					t.PlayFromPosition(startRow)
 				} else {
-					t.player.Stop()
+					t.SetPlaying(false)
 				}
 			case key.NameReturn:
 				t.AddOrderRow(!e.Modifiers.Contain(key.ModShortcut))
@@ -143,14 +142,14 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 			}
 			if iv, err := strconv.Atoi(e.Name); err == nil {
 				t.SetCurrentPattern(iv)
-				if !(t.NoteTracking() && t.player.Playing()) && t.Step.Value > 0 {
+				if !(t.NoteTracking() && t.Playing()) && t.Step.Value > 0 {
 					t.SetCursor(t.Cursor().AddPatterns(1))
 					t.SetSelectionCorner(t.Cursor())
 				}
 			}
 			if b := int(e.Name[0]) - 'A'; len(e.Name) == 1 && b >= 0 && b < 26 {
 				t.SetCurrentPattern(b + 10)
-				if !(t.NoteTracking() && t.player.Playing()) && t.Step.Value > 0 {
+				if !(t.NoteTracking() && t.Playing()) && t.Step.Value > 0 {
 					t.SetCursor(t.Cursor().AddPatterns(1))
 					t.SetSelectionCorner(t.Cursor())
 				}
@@ -202,7 +201,7 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 	gtx.Constraints.Max.Y -= patternCellHeight
 	gtx.Constraints.Min.Y -= patternCellHeight
 	element := func(gtx C, j int) D {
-		if playPos, ok := t.player.Position(); ok && j == playPos.Pattern {
+		if playPos := t.PlayPosition(); t.Playing() && j == playPos.Pattern {
 			paint.FillShape(gtx.Ops, patternPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, patternCellHeight)}.Op())
 		}
 		paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)

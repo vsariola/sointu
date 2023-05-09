@@ -3,6 +3,7 @@ package gioui
 import (
 	"time"
 
+	"gioui.org/app"
 	"gioui.org/io/key"
 	"github.com/vsariola/sointu/tracker"
 	"gopkg.in/yaml.v3"
@@ -44,7 +45,7 @@ var noteMap = map[string]int{
 }
 
 // KeyEvent handles incoming key events and returns true if repaint is needed.
-func (t *Tracker) KeyEvent(e key.Event) bool {
+func (t *Tracker) KeyEvent(e key.Event, window *app.Window) bool {
 	if e.State == key.Press {
 		if t.OpenSongDialog.Visible ||
 			t.SaveSongDialog.Visible ||
@@ -58,14 +59,14 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 			if e.Modifiers.Contain(key.ModShortcut) {
 				contents, err := yaml.Marshal(t.Song())
 				if err == nil {
-					t.window.WriteClipboard(string(contents))
+					window.WriteClipboard(string(contents))
 					t.Alert.Update("Song copied to clipboard", Notify, time.Second*3)
 				}
 				return true
 			}
 		case "V":
 			if e.Modifiers.Contain(key.ModShortcut) {
-				t.window.ReadClipboard()
+				window.ReadClipboard()
 				return true
 			}
 		case "Z":
@@ -111,7 +112,7 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 			if t.OrderEditor.Focused() {
 				startRow.Row = 0
 			}
-			t.player.Play(startRow)
+			t.PlayFromPosition(startRow)
 			return true
 		case "F6":
 			t.SetNoteTracking(false)
@@ -119,19 +120,18 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 			if t.OrderEditor.Focused() {
 				startRow.Row = 0
 			}
-			t.player.Play(startRow)
+			t.PlayFromPosition(startRow)
 			return true
 		case "F8":
-			t.player.Stop()
+			t.SetPlaying(false)
 			return true
 		case "Space":
-			_, playing := t.player.Position()
-			if !playing {
+			if !t.Playing() && !t.InstrEnlarged() {
 				t.SetNoteTracking(!e.Modifiers.Contain(key.ModShortcut))
 				startRow := t.Cursor().SongRow
-				t.player.Play(startRow)
+				t.PlayFromPosition(startRow)
 			} else {
-				t.player.Stop()
+				t.SetPlaying(false)
 			}
 		case `\`, `<`, `>`:
 			if e.Modifiers.Contain(key.ModShift) {
@@ -147,7 +147,11 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 				case t.TrackEditor.Focused():
 					t.OrderEditor.Focus()
 				case t.InstrumentEditor.Focused():
-					t.TrackEditor.Focus()
+					if t.InstrEnlarged() {
+						t.InstrumentEditor.paramEditor.Focus()
+					} else {
+						t.TrackEditor.Focus()
+					}
 				default:
 					t.InstrumentEditor.Focus()
 				}
@@ -160,7 +164,11 @@ func (t *Tracker) KeyEvent(e key.Event) bool {
 				case t.InstrumentEditor.Focused():
 					t.InstrumentEditor.paramEditor.Focus()
 				default:
-					t.OrderEditor.Focus()
+					if t.InstrEnlarged() {
+						t.InstrumentEditor.Focus()
+					} else {
+						t.OrderEditor.Focus()
+					}
 				}
 			}
 		}
@@ -188,18 +196,18 @@ func (t *Tracker) JammingPressed(e key.Event) {
 		if _, ok := t.KeyPlaying[e.Name]; !ok {
 			n := tracker.NoteAsValue(t.OctaveNumberInput.Value, val)
 			instr := t.InstrIndex()
-			start := t.Song().Patch.FirstVoiceForInstrument(instr)
-			end := start + t.Instrument().NumVoices
-			t.KeyPlaying[e.Name] = t.player.Trigger(start, end, n)
+			noteID := tracker.NoteIDInstr(instr, n)
+			t.NoteOn(noteID)
+			t.KeyPlaying[e.Name] = noteID
 		}
 	}
 }
 
 func (t *Tracker) JammingReleased(e key.Event) {
-	if ID, ok := t.KeyPlaying[e.Name]; ok {
-		t.player.Release(ID)
+	if noteID, ok := t.KeyPlaying[e.Name]; ok {
+		t.NoteOff(noteID)
 		delete(t.KeyPlaying, e.Name)
-		if _, playing := t.player.Position(); t.TrackEditor.focused && playing && t.Note() == 1 && t.NoteTracking() {
+		if t.TrackEditor.focused && t.Playing() && t.Note() == 1 && t.NoteTracking() {
 			t.SetNote(0)
 		}
 	}

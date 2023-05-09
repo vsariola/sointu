@@ -29,40 +29,34 @@ type Volume struct {
 //
 // minVolume is just a hard limit for the vuanalyzer volumes, in decibels, just to
 // prevent negative infinities for volumes
-func VuAnalyzer(tau float64, attack float64, release float64, minVolume float64, maxVolume float64, bc <-chan []float32, vc chan<- Volume, ec chan<- error) {
-	v := Volume{Average: [2]float64{minVolume, minVolume}, Peak: [2]float64{minVolume, minVolume}}
+func (v *Volume) Analyze(buffer []float32, tau float64, attack float64, release float64, minVolume float64, maxVolume float64) error {
 	alpha := 1 - math.Exp(-1.0/(tau*44100)) // from https://en.wikipedia.org/wiki/Exponential_smoothing
 	alphaAttack := 1 - math.Exp(-1.0/(attack*44100))
 	alphaRelease := 1 - math.Exp(-1.0/(release*44100))
-	for buffer := range bc {
-		for j := 0; j < 2; j++ {
-			for i := 0; i < len(buffer); i += 2 {
-				sample2 := float64(buffer[i+j] * buffer[i+j])
-				if math.IsNaN(sample2) {
-					select {
-					case ec <- errors.New("NaN detected in master output"):
-					default:
-					}
-					continue
+	var err error
+	for j := 0; j < 2; j++ {
+		for i := 0; i < len(buffer); i += 2 {
+			sample2 := float64(buffer[i+j] * buffer[i+j])
+			if math.IsNaN(sample2) {
+				if err == nil {
+					err = errors.New("NaN detected in master output")
 				}
-				dB := 10 * math.Log10(float64(sample2))
-				if dB < minVolume || math.IsNaN(dB) {
-					dB = minVolume
-				}
-				if dB > maxVolume {
-					dB = maxVolume
-				}
-				v.Average[j] += (dB - v.Average[j]) * alpha
-				alphaPeak := alphaAttack
-				if dB < v.Peak[j] {
-					alphaPeak = alphaRelease
-				}
-				v.Peak[j] += (dB - v.Peak[j]) * alphaPeak
+				continue
 			}
-		}
-		select {
-		case vc <- v:
-		default:
+			dB := 10 * math.Log10(float64(sample2))
+			if dB < minVolume || math.IsNaN(dB) {
+				dB = minVolume
+			}
+			if dB > maxVolume {
+				dB = maxVolume
+			}
+			v.Average[j] += (dB - v.Average[j]) * alpha
+			alphaPeak := alphaAttack
+			if dB < v.Peak[j] {
+				alphaPeak = alphaRelease
+			}
+			v.Peak[j] += (dB - v.Peak[j]) * alphaPeak
 		}
 	}
+	return err
 }

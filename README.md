@@ -24,20 +24,17 @@ synthesis engine can already be fitted in 600 bytes (386, compressed), with
 another few hundred bytes for the patch and pattern data.
 
 Sointu consists of two core elements:
-- A cross-platform synth-tracker app for composing music, written in
-  [go](https://golang.org/). The app is still heavily work in progress. The app
-  exports the projects as .yml files. There are two versions of the app:
-  [cmd/sointu-track/](sointu-track), using a plain Go VM bytecode interpreter,
-  and [cmd/sointu-nativetrack/](sointu-nativetrack), using cgo to bridge calls
-  to the Sointu compiled VM. The former should be highly portable, the latter
-  currently works only on x86/amd64 platforms.
+- A cross-platform synth-tracker that runs as either VSTi or stand-alone
+  app for composing music, written in [go](https://golang.org/). The app
+  is still heavily work in progress. The app exports the projects as
+  .yml files.
 - A compiler, likewise written in go, which can be invoked from the command line
   to compile these .yml files into .asm or .wat code. For x86/amd64, the
   resulting .asm can be then compiled by [nasm](https://www.nasm.us/) or
   [yasm](https://yasm.tortall.net). For browsers, the resulting .wat can be
   compiled by [wat2wasm](https://github.com/WebAssembly/wabt).
 
-This is how the current prototype tracker looks like:
+This is how the current prototype app looks like:
 
 ![Screenshot of the tracker](screenshot.png)
 
@@ -49,8 +46,7 @@ listed below.
 
 ### Sointu-track
 
-This version of the tracker is the version that uses the bytecode interpreter
-written in plain Go. Running the tracker:
+This is the stand-alone version of the synth-tracker. Running the tracker:
 
 ```
 go run cmd/sointu-track/main.go
@@ -59,24 +55,40 @@ go run cmd/sointu-track/main.go
 Building the tracker:
 
 ```
-go build -o sointu-track cmd/sointu-track/main.go
+go build -o sointu-track.exe cmd/sointu-track/main.go
 ```
 
-On windows, replace `-o sointu-track` with `-o sointu-track.exe`.
+On other platforms than Windows, replace `-o sointu-track.exe` with
+`-o sointu-track`.
+
+Add `-tags=native` to use the [x86 native virtual machine](#native-virtual-machine)
+instead of the virtual machine written in Go.
 
 Sointu-track uses the [gioui](https://gioui.org/) for the GUI and
 [oto](https://github.com/hajimehoshi/oto) for the audio, so the portability is
 currently limited by these.
 
-> :warning: Unlike the x86/amd64 VM compiled by Sointu, the Go written VM
-> bytecode interpreter uses a software stack. Thus, unlike x87 FPU stack, it is
-> not limited to 8 items. If you intent to compile the patch to x86/amd64
-> targets, make sure not to use too much stack. Keeping at most 5 signals in the
-> stack is presumably fine (reserving 3 for the temporary variables of the
-> opcodes). In future, the app should give warnings if the user is about to
-> exceed the capabilities of a target platform.
+### Sointu-vsti
 
-### Compiler
+This is the VST instrument plugin version of the tracker, compiled into
+a dynamically linked library and ran inside a VST host. Building the VST
+plugin:
+
+```
+go build -buildmode=c-shared -tags=plugin -o sointu-vsti.dll .\cmd\sointu-vsti\
+```
+
+On other platforms than Windows, replace `-o sointu-track.dll`
+appropriately e.g. `-o sointu-track.so`; however, the VST instrument is
+completely untested on all other platforms than Windows at the moment.
+
+Notice the `-tags=plugin` build tag definition. This is required by the [vst2 library](https://github.com/pipelined/vst2);
+otherwise, you will get a lot of build errors.
+
+Add `-tags=native,plugin` to use the [x86 native virtual machine](#native-virtual-machine)
+instead of the virtual machine written in Go.
+
+### Sointu-compile
 
 The command line interface to it is [sointu-compile](cmd/sointu-compile/main.go)
 and the actual code resides in the [compiler](vm/compiler/) package, which is an
@@ -91,10 +103,11 @@ go run cmd/sointu-compile/main.go
 Building the compiler:
 
 ```
-go build -o sointu-compile cmd/sointu-compile/main.go
+go build -o sointu-compile.exe cmd/sointu-compile/main.go
 ```
 
-On windows, replace `-o sointu-compile` with `-o sointu-compile.exe`.
+On other platforms than Windows, replace `-o sointu-compile-exe` with
+`-o sointu-compile`.
 
 The compiler can then be used to compile a .yml song into .asm and .h files. For
 example:
@@ -111,7 +124,7 @@ sointu-compile -o . -arch=wasm tests/test_chords.yml
 wat2wasm --enable-bulk-memory test_chords.wat
 ```
 
-### Building and running the tests as executables
+### Tests
 
 Building the [regression tests](tests/) as executables (testing that they work
 the same way when you would link them in an intro) requires:
@@ -142,14 +155,13 @@ cmake .. -DCMAKE_C_FLAGS="-m32" -DCMAKE_ASM_NASM_OBJECT_FORMAT="win32" -GNinja
 Another example: on Visual Studio 2019 Community, just open the folder, choose
 either Debug or Release and either x86 or x64 build, and hit build all.
 
-### Native bridge & sointu-nativetrack
+### Native virtual machine
 
-The native bridge allows Go to call the sointu compiled virtual machine, through
-cgo, instead of using the Go written bytecode interpreter. It's likely slightly
-faster than the interpreter. The version of the tracker that uses the native
-bridge is [sointu-nativetrack](cmd/sointu-nativetrack/). Before you can actually
-run it, you need to build the bridge using CMake (thus, the nativetrack does not
-work with go get)
+The native bridge allows Go to call the sointu compiled x86 native
+virtual machine, through cgo, instead of using the Go written bytecode
+interpreter. It's likely slightly faster than the interpreter. Before
+you can actually run it, you need to build the bridge using CMake (thus,
+***this will not work with go get***)
 
 Building the native bridge requires:
 - [go](https://golang.org/)
@@ -191,13 +203,25 @@ go test ./...
 
 Play a song from the command line:
 ```
-go run cmd/sointu-play/main.go tests/test_chords.yml
+go run -tags=native cmd/sointu-play/main.go tests/test_chords.yml
 ```
 
 Run the tracker using the native bridge
 ```
-go run cmd/sointu-nativetrack/main.go
+go run -tags=native cmd/sointu-track/main.go
 ```
+
+```
+go build -buildmode=c-shared -tags=plugin,native -o sointu-vsti.dll .\cmd\sointu-vsti\
+```
+
+> :warning: Unlike the x86/amd64 VM compiled by Sointu, the Go written VM
+> bytecode interpreter uses a software stack. Thus, unlike x87 FPU stack, it is
+> not limited to 8 items. If you intent to compile the patch to x86/amd64
+> targets, make sure not to use too much stack. Keeping at most 5 signals in the
+> stack is presumably fine (reserving 3 for the temporary variables of the
+> opcodes). In future, the app should give warnings if the user is about to
+> exceed the capabilities of a target platform.
 
 > :warning: **If you are using MinGW and Yasm**: Yasm 1.3.0 (currently still the
 > latest stable release) and GNU linker do not play nicely along, trashing the
@@ -209,16 +233,17 @@ go run cmd/sointu-nativetrack/main.go
 > our synth object overlapping with DLL call addresses; very funny stuff to
 > debug.
 
-> :warning: The sointu-nativetrack cannot be used with the syncs at the moment.
-> For syncs, use the Go VM (sointu-track).
+> :warning: The native virtual machine cannot be output syncs at the
+> moment. For syncs, use the Go virtual machine.
 
-### Building and running the WebAssembly tests
+### WebAssembly tests
 
 These are automatically invoked by CTest if [node](https://nodejs.org) and
 [wat2wasm](https://github.com/WebAssembly/wabt) are found in the path.
 
 New features since fork
 -----------------------
+
   - **New units**. For example: bit-crusher, gain, inverse gain, clip, modulate
     bpm (proper triplets!), compressor (can be used for side-chaining).
   - **Compiler**. Written in go. The input is a .yml file and the output is an
@@ -415,7 +440,9 @@ so I thought it would fun to learn some Finnish for a change. And
 Prods using Sointu
 ------------------
 
-[Adam](https://github.com/vsariola/adam) by brainlez Coders! - My first test-driving of Sointu. Some ideas how to integrate Sointu to the build chain.
+[Adam](https://github.com/vsariola/adam) by brainlez Coders! - My first
+test-driving of Sointu. Some ideas how to integrate Sointu to the build
+chain.
 
 Credits
 -------

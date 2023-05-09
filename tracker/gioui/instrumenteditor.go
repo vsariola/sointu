@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -20,12 +19,14 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/eventx"
 	"github.com/vsariola/sointu/tracker"
+	"github.com/vsariola/sointu/vm"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"gopkg.in/yaml.v3"
 )
 
 type InstrumentEditor struct {
 	newInstrumentBtn    *widget.Clickable
+	enlargeBtn          *widget.Clickable
 	deleteInstrumentBtn *widget.Clickable
 	copyInstrumentBtn   *widget.Clickable
 	saveInstrumentBtn   *widget.Clickable
@@ -45,11 +46,13 @@ type InstrumentEditor struct {
 	tag                 bool
 	wasFocused          bool
 	commentExpanded     bool
+	voiceStates         [vm.MAX_VOICES]float32
 }
 
 func NewInstrumentEditor() *InstrumentEditor {
 	return &InstrumentEditor{
 		newInstrumentBtn:    new(widget.Clickable),
+		enlargeBtn:          new(widget.Clickable),
 		deleteInstrumentBtn: new(widget.Clickable),
 		copyInstrumentBtn:   new(widget.Clickable),
 		saveInstrumentBtn:   new(widget.Clickable),
@@ -97,10 +100,31 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 	pointer.InputOp{Tag: &ie.tag,
 		Types: pointer.Press,
 	}.Add(gtx.Ops)
+
+	var icon []byte
+	if t.InstrEnlarged() {
+		icon = icons.NavigationFullscreenExit
+	} else {
+		icon = icons.NavigationFullscreen
+	}
+	fullscreenBtnStyle := IconButton(t.Theme, ie.enlargeBtn, icon, true)
+	for ie.enlargeBtn.Clicked() {
+		t.SetInstrEnlarged(!t.InstrEnlarged())
+	}
 	for ie.newInstrumentBtn.Clicked() {
 		t.AddInstrument(true)
 	}
-	btnStyle := IconButton(t.Theme, ie.newInstrumentBtn, icons.ContentAdd, t.CanAddInstrument())
+	octave := func(gtx C) D {
+		in := layout.UniformInset(unit.Dp(1))
+		t.OctaveNumberInput.Value = t.Octave()
+		numStyle := NumericUpDown(t.Theme, t.OctaveNumberInput, 0, 9)
+		gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
+		gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+		dims := in.Layout(gtx, numStyle.Layout)
+		t.SetOctave(t.OctaveNumberInput.Value)
+		return dims
+	}
+	newBtnStyle := IconButton(t.Theme, ie.newInstrumentBtn, icons.ContentAdd, t.CanAddInstrument())
 	ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{}.Layout(
@@ -116,7 +140,19 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 					)
 				}),
 				layout.Rigid(func(gtx C) D {
-					return layout.E.Layout(gtx, btnStyle.Layout)
+					inset := layout.UniformInset(unit.Dp(6))
+					return inset.Layout(gtx, func(gtx C) D {
+						return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+							layout.Rigid(Label("OCT:", white)),
+							layout.Rigid(octave),
+						)
+					})
+				}),
+				layout.Rigid(func(gtx C) D {
+					return layout.E.Layout(gtx, fullscreenBtnStyle.Layout)
+				}),
+				layout.Rigid(func(gtx C) D {
+					return layout.E.Layout(gtx, newBtnStyle.Layout)
 				}),
 			)
 		}),
@@ -205,10 +241,12 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 			t.Alert.Update("Instrument copied to clipboard", Notify, time.Second*3)
 		}
 	}
-	for ie.deleteInstrumentBtn.Clicked() && t.ModalDialog == nil {
-		dialogStyle := ConfirmDialog(t.Theme, ie.confirmInstrDelete, "Are you sure you want to delete this instrument?")
-		ie.confirmInstrDelete.Visible = true
-		t.ModalDialog = dialogStyle.Layout
+	for ie.deleteInstrumentBtn.Clicked() {
+		if t.CanDeleteInstrument() {
+			dialogStyle := ConfirmDialog(t.Theme, ie.confirmInstrDelete, "Are you sure you want to delete this instrument?")
+			ie.confirmInstrDelete.Visible = true
+			t.ModalDialog = dialogStyle.Layout
+		}
 	}
 	for ie.confirmInstrDelete.BtnOk.Clicked() {
 		t.DeleteInstrument(false)
@@ -236,14 +274,10 @@ func (ie *InstrumentEditor) layoutInstrumentNames(gtx C, t *Tracker) D {
 			grabhandle.Text = ":::"
 		}
 		label := func(gtx C) D {
-			c := 0.0
+			c := float32(0.0)
 			voice := t.Song().Patch.FirstVoiceForInstrument(i)
 			for j := 0; j < t.Song().Patch[i].NumVoices; j++ {
-				released, event := t.player.VoiceState(voice)
-				vc := math.Exp(-float64(event)/15000) * .5
-				if !released {
-					vc += .5
-				}
+				vc := ie.voiceStates[voice]
 				if c < vc {
 					c = vc
 				}

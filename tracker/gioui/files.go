@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"gioui.org/app"
 	"gopkg.in/yaml.v3"
 
 	"github.com/vsariola/sointu"
@@ -84,7 +83,6 @@ func (t *Tracker) loadSong(filename string) {
 	}
 	t.SetSong(song)
 	t.SetFilePath(filename)
-	t.window.Option(app.Title(fmt.Sprintf("Sointu Tracker - %v", filename)))
 	t.ClearUndoHistory()
 	t.SetChangedSinceSave(false)
 }
@@ -107,7 +105,6 @@ func (t *Tracker) saveSong(filename string) bool {
 	}
 	ioutil.WriteFile(filename, contents, 0644)
 	t.SetFilePath(filename)
-	t.window.Option(app.Title(fmt.Sprintf("Sointu Tracker - %v", filename)))
 	t.SetChangedSinceSave(false)
 	return true
 }
@@ -117,7 +114,7 @@ func (t *Tracker) exportWav(filename string, pcm16 bool) {
 	if extension == "" {
 		filename = filename + ".wav"
 	}
-	data, _, err := sointu.Play(t.synthService, t.Song(), true) // render the song to calculate its length
+	data, err := sointu.Play(t.synthService, t.Song(), true) // render the song to calculate its length
 	if err != nil {
 		t.Alert.Update(fmt.Sprintf("Error rendering the song during export: %v", err), Error, time.Second*3)
 		return

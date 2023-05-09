@@ -5,14 +5,25 @@ import (
 	"fmt"
 	"os"
 
+	"gioui.org/app"
+	"github.com/vsariola/sointu/cmd"
 	"github.com/vsariola/sointu/oto"
-	"github.com/vsariola/sointu/rpc"
+	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/tracker/gioui"
-	"github.com/vsariola/sointu/vm"
 )
 
+type NullContext struct {
+}
+
+func (NullContext) NextEvent() (event tracker.PlayerProcessEvent, ok bool) {
+	return tracker.PlayerProcessEvent{}, false
+}
+
+func (NullContext) BPM() (bpm float64, ok bool) {
+	return 0, false
+}
+
 func main() {
-	syncAddress := flag.String("address", "", "remote RPC server where to send sync data")
 	flag.Parse()
 	audioContext, err := oto.NewContext()
 	if err != nil {
@@ -20,14 +31,24 @@ func main() {
 		os.Exit(1)
 	}
 	defer audioContext.Close()
-	var syncChannel chan<- []float32
-	if *syncAddress != "" {
-		syncChannel, err = rpc.Sender(*syncAddress)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+	modelMessages := make(chan interface{}, 1024)
+	playerMessages := make(chan tracker.PlayerMessage, 1024)
+	model := tracker.NewModel(modelMessages, playerMessages)
+	player := tracker.NewPlayer(cmd.DefaultService, playerMessages, modelMessages)
+	tracker := gioui.NewTracker(model, cmd.DefaultService)
+	output := audioContext.Output()
+	defer output.Close()
+	go func() {
+		buf := make([]float32, 2048)
+		ctx := NullContext{}
+		for {
+			player.Process(buf, ctx)
+			output.WriteAudio(buf)
 		}
-	}
-	synthService := vm.SynthService{}
-	gioui.Main(audioContext, synthService, syncChannel)
+	}()
+	go func() {
+		tracker.Main()
+		os.Exit(0)
+	}()
+	app.Main()
 }

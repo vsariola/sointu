@@ -10,13 +10,12 @@ import (
 type Synth interface {
 	// Render tries to fill a stereo signal buffer with sound from the
 	// synthesizer, until either the buffer is full or a given number of
-	// timesteps is advanced. In the process, it also fills the syncbuffer with
-	// the values output by sync units. Normally, 1 sample = 1 unit of time, but
+	// timesteps is advanced. Normally, 1 sample = 1 unit of time, but
 	// speed modulations may change this. It returns the number of samples
 	// filled (! in stereo samples, so the buffer will have 2 * sample floats),
 	// the number of sync outputs written, the number of time steps time
 	// advanced, and a possible error.
-	Render(buffer []float32, syncBuffer []float32, maxtime int) (sample int, syncs int, time int, err error)
+	Render(buffer []float32, maxtime int) (sample int, time int, err error)
 
 	// Update recompiles a patch, but should maintain as much as possible of its
 	// state as reasonable. For example, filters should keep their state and
@@ -42,7 +41,7 @@ type SynthService interface {
 // Render fills an stereo audio buffer using a Synth, disregarding all syncs and
 // time limits.
 func Render(synth Synth, buffer []float32) error {
-	s, _, _, err := synth.Render(buffer, nil, math.MaxInt32)
+	s, _, err := synth.Render(buffer, math.MaxInt32)
 	if err != nil {
 		return fmt.Errorf("sointu.Render failed: %v", err)
 	}
@@ -58,14 +57,14 @@ func Render(synth Synth, buffer []float32) error {
 // created. The default behaviour during runtime rendering is to leave them
 // playing, meaning that envelopes start attacking right away unless an explicit
 // note release is put to every track.
-func Play(synthService SynthService, song Song, release bool) ([]float32, []float32, error) {
+func Play(synthService SynthService, song Song, release bool) ([]float32, error) {
 	err := song.Validate()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	synth, err := synthService.Compile(song.Patch)
 	if err != nil {
-		return nil, nil, fmt.Errorf("sointu.Play failed: %v", err)
+		return nil, fmt.Errorf("sointu.Play failed: %v", err)
 	}
 	if release {
 		for i := 0; i < 32; i++ {
@@ -79,9 +78,6 @@ func Play(synthService SynthService, song Song, release bool) ([]float32, []floa
 	initialCapacity := song.Score.LengthInRows() * song.SamplesPerRow() * 2
 	buffer := make([]float32, 0, initialCapacity)
 	rowbuffer := make([]float32, song.SamplesPerRow()*2)
-	numSyncs := song.Patch.NumSyncs()
-	syncBuffer := make([]float32, 0, (song.Score.LengthInRows()*song.SamplesPerRow()+255)/256*(1+numSyncs))
-	syncRowBuffer := make([]float32, ((song.SamplesPerRow()+255)/256)*(1+numSyncs))
 	for row := 0; row < song.Score.LengthInRows(); row++ {
 		patternRow := row % song.Score.RowsPerPattern
 		pattern := row / song.Score.RowsPerPattern
@@ -115,22 +111,16 @@ func Play(synthService SynthService, song Song, release bool) ([]float32, []floa
 		}
 		tries := 0
 		for rowtime := 0; rowtime < song.SamplesPerRow(); {
-			samples, syncs, time, err := synth.Render(rowbuffer, syncRowBuffer, song.SamplesPerRow()-rowtime)
-			for i := 0; i < syncs; i++ {
-				t := syncRowBuffer[i*(1+numSyncs)]
-				t = (t+float32(rowtime))/(float32(song.SamplesPerRow())) + float32(row)
-				syncRowBuffer[i*(1+numSyncs)] = t
-			}
+			samples, time, err := synth.Render(rowbuffer, song.SamplesPerRow()-rowtime)
 			if err != nil {
-				return buffer, syncBuffer, fmt.Errorf("render failed: %v", err)
+				return buffer, fmt.Errorf("render failed: %v", err)
 			}
 			rowtime += time
 			buffer = append(buffer, rowbuffer[:samples*2]...)
-			syncBuffer = append(syncBuffer, syncRowBuffer[:syncs*(1+numSyncs)]...)
 			if tries > 100 {
-				return nil, nil, fmt.Errorf("Song speed modulation likely so slow that row never advances; error at pattern %v, row %v", pattern, patternRow)
+				return nil, fmt.Errorf("Song speed modulation likely so slow that row never advances; error at pattern %v, row %v", pattern, patternRow)
 			}
 		}
 	}
-	return buffer, syncBuffer, nil
+	return buffer, nil
 }

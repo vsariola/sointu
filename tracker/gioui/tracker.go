@@ -4,10 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"gioui.org/app"
 	"gioui.org/font/gofont"
+	"gioui.org/io/clipboard"
+	"gioui.org/io/key"
+	"gioui.org/io/system"
 	"gioui.org/layout"
+	"gioui.org/op"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/vsariola/sointu"
@@ -33,12 +39,13 @@ type Tracker struct {
 	InstrumentVoices      *NumberInput
 	SongLength            *NumberInput
 	PanicBtn              *widget.Clickable
+	RecordBtn             *widget.Clickable
 	AddUnitBtn            *widget.Clickable
 	TrackHexCheckBox      *widget.Bool
 	TopHorizontalSplit    *Split
 	BottomHorizontalSplit *Split
 	VerticalSplit         *Split
-	KeyPlaying            map[string]uint32
+	KeyPlaying            map[string]tracker.NoteID
 	Alert                 Alert
 	ConfirmSongDialog     *Dialog
 	WaveTypeDialog        *Dialog
@@ -48,22 +55,17 @@ type Tracker struct {
 	SaveInstrumentDialog  *FileDialog
 	ExportWavDialog       *FileDialog
 	ConfirmSongActionType int
-	window                *app.Window
 	ModalDialog           layout.Widget
 	InstrumentEditor      *InstrumentEditor
 	OrderEditor           *OrderEditor
 	TrackEditor           *TrackEditor
 
 	lastVolume tracker.Volume
-	volumeChan chan tracker.Volume
 
 	wavFilePath  string
-	player       *tracker.Player
 	refresh      chan struct{}
-	playerCloser chan struct{}
 	errorChannel chan error
 	quitted      bool
-	audioContext sointu.AudioContext
 	synthService sointu.SynthService
 
 	*tracker.Model
@@ -94,15 +96,9 @@ func (t *Tracker) UnmarshalContent(bytes []byte) error {
 	return errors.New("was able to unmarshal a song, but the bpm was 0")
 }
 
-func (t *Tracker) Close() {
-	t.playerCloser <- struct{}{}
-	t.audioContext.Close()
-}
-
-func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syncChannel chan<- []float32, window *app.Window) *Tracker {
+func NewTracker(model *tracker.Model, synthService sointu.SynthService) *Tracker {
 	t := &Tracker{
 		Theme:             material.NewTheme(gofont.Collection()),
-		audioContext:      audioContext,
 		BPM:               new(NumberInput),
 		OctaveNumberInput: &NumberInput{Value: 4},
 		SongLength:        new(NumberInput),
@@ -112,6 +108,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 		InstrumentVoices:  new(NumberInput),
 
 		PanicBtn:         new(widget.Clickable),
+		RecordBtn:        new(widget.Clickable),
 		TrackHexCheckBox: new(widget.Bool),
 		Menus:            make([]Menu, 2),
 		MenuBar:          make([]widget.Clickable, 2),
@@ -121,9 +118,7 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 		BottomHorizontalSplit: &Split{Ratio: -.6},
 		VerticalSplit:         &Split{Axis: layout.Vertical},
 
-		KeyPlaying:           make(map[string]uint32),
-		volumeChan:           make(chan tracker.Volume, 1),
-		playerCloser:         make(chan struct{}),
+		KeyPlaying:           make(map[string]tracker.NoteID),
 		ConfirmSongDialog:    new(Dialog),
 		WaveTypeDialog:       new(Dialog),
 		OpenSongDialog:       NewFileDialog(),
@@ -136,40 +131,85 @@ func New(audioContext sointu.AudioContext, synthService sointu.SynthService, syn
 
 		ExportWavDialog: NewFileDialog(),
 		errorChannel:    make(chan error, 32),
-		window:          window,
 		synthService:    synthService,
+		Model:           model,
 	}
-	t.Model = tracker.NewModel()
-	vuBufferObserver := make(chan []float32)
-	go tracker.VuAnalyzer(0.3, 1e-4, 1, -100, 20, vuBufferObserver, t.volumeChan, t.errorChannel)
 	t.Theme.Palette.Fg = primaryColor
 	t.Theme.Palette.ContrastFg = black
 	t.TrackEditor.Focus()
 	t.SetOctave(4)
-	patchObserver := make(chan sointu.Patch, 16)
-	t.AddPatchObserver(patchObserver)
-	scoreObserver := make(chan sointu.Score, 16)
-	t.AddScoreObserver(scoreObserver)
-	sprObserver := make(chan int, 16)
-	t.AddSamplesPerRowObserver(sprObserver)
-	audioChannel := make(chan []float32)
-	t.player = tracker.NewPlayer(synthService, t.playerCloser, patchObserver, scoreObserver, sprObserver, t.refresh, syncChannel, audioChannel, vuBufferObserver)
-	audioOut := audioContext.Output()
-	go func() {
-		for buf := range audioChannel {
-			audioOut.WriteAudio(buf)
-		}
-	}()
 	t.ResetSong()
 	return t
 }
 
-func (t *Tracker) Quit(forced bool) bool {
-	if !forced && t.ChangedSinceSave() {
-		t.ConfirmSongActionType = ConfirmQuit
-		t.ConfirmSongDialog.Visible = true
-		return false
+func (t *Tracker) Main() {
+	titleFooter := ""
+	w := app.NewWindow(
+		app.Size(unit.Dp(800), unit.Dp(600)),
+		app.Title("Sointu Tracker"),
+	)
+	var ops op.Ops
+mainloop:
+	for {
+		if pos, playing := t.PlayPosition(), t.Playing(); t.NoteTracking() && playing {
+			cursor := t.Cursor()
+			cursor.SongRow = pos
+			t.SetCursor(cursor)
+			t.SetSelectionCorner(cursor)
+		}
+		if titleFooter != t.FilePath() {
+			titleFooter = t.FilePath()
+			if titleFooter != "" {
+				w.Option(app.Title(fmt.Sprintf("Sointu Tracker - %v", titleFooter)))
+			} else {
+				w.Option(app.Title(fmt.Sprintf("Sointu Tracker")))
+			}
+		}
+		select {
+		case <-t.refresh:
+			w.Invalidate()
+		case e := <-t.errorChannel:
+			t.Alert.Update(e.Error(), Error, time.Second*5)
+			w.Invalidate()
+		case e := <-t.PlayerMessages:
+			if err, ok := e.Inner.(tracker.PlayerCrashMessage); ok {
+				t.Alert.Update(err.Error(), Error, time.Second*3)
+			}
+			if err, ok := e.Inner.(tracker.PlayerVolumeErrorMessage); ok {
+				t.Alert.Update(err.Error(), Warning, time.Second*3)
+			}
+			t.lastVolume = e.Volume
+			t.InstrumentEditor.voiceStates = e.VoiceStates
+			t.ProcessPlayerMessage(e)
+			w.Invalidate()
+		case e := <-w.Events():
+			switch e := e.(type) {
+			case system.DestroyEvent:
+				if !t.Quit(false) {
+					// TODO: uh oh, there's no way of canceling the destroyevent in gioui? so we create a new window just to show the dialog
+					w = app.NewWindow(
+						app.Size(unit.Dp(800), unit.Dp(600)),
+						app.Title("Sointu Tracker"),
+					)
+				}
+			case key.Event:
+				if t.KeyEvent(e, w) {
+					w.Invalidate()
+				}
+			case clipboard.Event:
+				err := t.UnmarshalContent([]byte(e.Text))
+				if err == nil {
+					w.Invalidate()
+				}
+			case system.FrameEvent:
+				gtx := layout.NewContext(&ops, e)
+				t.Layout(gtx)
+				e.Frame(gtx.Ops)
+			}
+		}
+		if t.quitted {
+			break mainloop
+		}
 	}
-	t.quitted = true
-	return true
+	w.Close()
 }

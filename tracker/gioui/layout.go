@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 
-	"gioui.org/app"
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
@@ -15,9 +14,13 @@ type D = layout.Dimensions
 
 func (t *Tracker) Layout(gtx layout.Context) {
 	paint.FillShape(gtx.Ops, backgroundColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
-	t.VerticalSplit.Layout(gtx,
-		t.layoutTop,
-		t.layoutBottom)
+	if t.InstrEnlarged() {
+		t.layoutTop(gtx)
+	} else {
+		t.VerticalSplit.Layout(gtx,
+			t.layoutTop,
+			t.layoutBottom)
+	}
 	t.Alert.Layout(gtx)
 	dstyle := ConfirmDialog(t.Theme, t.ConfirmSongDialog, "Do you want to save your changes to the song? Your changes will be lost if you don't save them.")
 	dstyle.ShowAlt = true
@@ -114,7 +117,6 @@ func (t *Tracker) NewSong(forced bool) {
 	}
 	t.ResetSong()
 	t.SetFilePath("")
-	t.window.Option(app.Title("Sointu Tracker"))
 	t.ClearUndoHistory()
 	t.SetChangedSinceSave(false)
 }

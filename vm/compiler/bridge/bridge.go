@@ -59,32 +59,36 @@ func Synth(patch sointu.Patch) (*C.Synth, error) {
 // Render renders until the buffer is full or the modulated time is reached, whichever
 // happens first.
 // Parameters:
-//   buffer     float32 slice to fill with rendered samples. Stereo signal, so
-//              should have even length.
-//   maxtime    how long nominal time to render in samples. Speed unit might modulate time
-//              so the actual number of samples rendered depends on the modulation and if
-//              buffer is full before maxtime is reached.
+//
+//	buffer     float32 slice to fill with rendered samples. Stereo signal, so
+//	           should have even length.
+//	maxtime    how long nominal time to render in samples. Speed unit might modulate time
+//	           so the actual number of samples rendered depends on the modulation and if
+//	           buffer is full before maxtime is reached.
+//
 // Returns a tuple (int, int, error), consisting of:
-//   samples    number of samples rendered in the buffer
-//   time       how much the time advanced
-//   error      potential error
+//
+//	samples    number of samples rendered in the buffer
+//	time       how much the time advanced
+//	error      potential error
+//
 // In practice, if nsamples = len(buffer)/2, then time <= maxtime. If maxtime was reached
 // first, then nsamples <= len(buffer)/2 and time >= maxtime. Note that it could happen that
 // time > maxtime, as it is modulated and the time could advance by 2 or more, so the loop
 // exit condition would fire when the time is already past maxtime.
 // Under no conditions, nsamples >= len(buffer)/2 i.e. guaranteed to never overwrite the buffer.
-func (synth *C.Synth) Render(buffer []float32, syncBuffer []float32, maxtime int) (int, int, int, error) {
+func (synth *C.Synth) Render(buffer []float32, maxtime int) (int, int, error) {
 	// TODO: syncBuffer is not getting passed to cgo; do we want to even try to support the syncing with the native bridge
 	if len(buffer)%1 == 1 {
-		return -1, -1, -1, errors.New("RenderTime writes stereo signals, so buffer should have even length")
+		return -1, -1, errors.New("RenderTime writes stereo signals, so buffer should have even length")
 	}
 	samples := C.int(len(buffer) / 2)
 	time := C.int(maxtime)
 	errcode := int(C.su_render(synth, (*C.float)(&buffer[0]), &samples, &time))
 	if errcode > 0 {
-		return int(samples), 0, int(time), &RenderError{errcode: errcode}
+		return int(samples), int(time), &RenderError{errcode: errcode}
 	}
-	return int(samples), 0, int(time), nil
+	return int(samples), int(time), nil
 }
 
 // Trigger is part of C.Synths' implementation of sointu.Synth interface

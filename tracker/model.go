@@ -16,32 +16,75 @@ import (
 // Go does not have immutable slices, so there's no efficient way to guarantee
 // accidental mutations in the song. But at least the value members are
 // protected.
-type Model struct {
-	song             sointu.Song
-	selectionCorner  SongPoint
-	cursor           SongPoint
-	lowNibble        bool
-	instrIndex       int
-	unitIndex        int
-	paramIndex       int
-	octave           int
-	noteTracking     bool
-	usedIDs          map[int]bool
-	maxID            int
-	filePath         string
-	changedSinceSave bool
-	patternUseCount  [][]int
+// It is owned by the GUI thread (goroutine), while the player is owned by
+// by the audioprocessing thread. They communicate using the two channels
+type (
+	Model struct {
+		song             sointu.Song
+		selectionCorner  SongPoint
+		cursor           SongPoint
+		lowNibble        bool
+		instrIndex       int
+		unitIndex        int
+		paramIndex       int
+		octave           int
+		noteTracking     bool
+		usedIDs          map[int]bool
+		maxID            int
+		filePath         string
+		changedSinceSave bool
+		patternUseCount  [][]int
+		panic            bool
+		playing          bool
+		recording        bool
+		playPosition     SongRow
+		instrEnlarged    bool
 
-	prevUndoType    string
-	undoSkipCounter int
-	undoStack       []sointu.Song
-	redoStack       []sointu.Song
+		prevUndoType    string
+		undoSkipCounter int
+		undoStack       []sointu.Song
+		redoStack       []sointu.Song
 
-	samplesPerRowObservers []chan<- int
-	patchObservers         []chan<- sointu.Patch
-	scoreObservers         []chan<- sointu.Score
-	playingObservers       []chan<- bool
-}
+		PlayerMessages <-chan PlayerMessage
+		modelMessages  chan<- interface{}
+	}
+
+	ModelPatchChangedMessage struct {
+		sointu.Patch
+	}
+
+	ModelScoreChangedMessage struct {
+		sointu.Score
+	}
+
+	ModelPlayingChangedMessage struct {
+		bool
+	}
+
+	ModelPlayFromPositionMessage struct {
+		SongRow
+	}
+
+	ModelSamplesPerRowChangedMessage struct {
+		int
+	}
+
+	ModelPanicMessage struct {
+		bool
+	}
+
+	ModelRecordingMessage struct {
+		bool
+	}
+
+	ModelNoteOnMessage struct {
+		id NoteID
+	}
+
+	ModelNoteOffMessage struct {
+		id NoteID
+	}
+)
 
 type Parameter struct {
 	Type      ParameterType
@@ -63,8 +106,10 @@ const (
 
 const maxUndo = 256
 
-func NewModel() *Model {
+func NewModel(modelMessages chan<- interface{}, playerMessages <-chan PlayerMessage) *Model {
 	ret := new(Model)
+	ret.modelMessages = modelMessages
+	ret.PlayerMessages = playerMessages
 	ret.setSongNoUndo(defaultSong.Copy())
 	return ret
 }
@@ -108,6 +153,19 @@ func (m *Model) SetOctave(value int) bool {
 	}
 	m.octave = value
 	return true
+}
+
+func (m *Model) ProcessPlayerMessage(msg PlayerMessage) {
+	m.playPosition = msg.SongRow
+	switch e := msg.Inner.(type) {
+	case PlayerCrashMessage:
+		m.panic = true
+	case PlayerRecordedMessage:
+		song := RecordingToSong(m.song.Patch, m.song.RowsPerBeat, m.song.Score.RowsPerPattern, e)
+		m.SetSong(song)
+		m.instrEnlarged = false
+	default:
+	}
 }
 
 func (m *Model) SetInstrument(instrument sointu.Instrument) bool {
@@ -300,6 +358,29 @@ func (m *Model) AddInstrument(after bool) {
 	m.notifyPatchChange()
 }
 
+func (m *Model) NoteOn(id NoteID) {
+	m.modelMessages <- ModelNoteOnMessage{id}
+}
+
+func (m *Model) NoteOff(id NoteID) {
+	m.modelMessages <- ModelNoteOffMessage{id}
+}
+
+func (m *Model) Playing() bool {
+	return m.playing
+}
+
+func (m *Model) SetPlaying(val bool) {
+	if m.playing != val {
+		m.playing = val
+		m.modelMessages <- ModelPlayingChangedMessage{val}
+	}
+}
+
+func (m *Model) PlayPosition() SongRow {
+	return m.playPosition
+}
+
 func (m *Model) CanAddInstrument() bool {
 	return m.song.Patch.NumVoices() < 32
 }
@@ -450,6 +531,42 @@ func (m *Model) AdjustPatternNumber(delta int, swap bool) {
 	}
 	m.computePatternUseCounts()
 	m.notifyScoreChange()
+}
+
+func (m *Model) SetRecording(val bool) {
+	if m.recording != val {
+		m.recording = val
+		m.instrEnlarged = val
+		m.modelMessages <- ModelRecordingMessage{val}
+	}
+}
+
+func (m *Model) Recording() bool {
+	return m.recording
+}
+
+func (m *Model) SetPanic(val bool) {
+	if m.panic != val {
+		m.panic = val
+		m.modelMessages <- ModelPanicMessage{val}
+	}
+}
+
+func (m *Model) Panic() bool {
+	return m.panic
+}
+
+func (m *Model) SetInstrEnlarged(val bool) {
+	m.instrEnlarged = val
+}
+
+func (m *Model) InstrEnlarged() bool {
+	return m.instrEnlarged
+}
+
+func (m *Model) PlayFromPosition(sr SongRow) {
+	m.playing = true
+	m.modelMessages <- ModelPlayFromPositionMessage{sr}
 }
 
 func (m *Model) SetCurrentPattern(pat int) {
@@ -1085,22 +1202,6 @@ func (m *Model) SetParam(value int) {
 	m.notifyPatchChange()
 }
 
-func (m *Model) AddPatchObserver(observer chan<- sointu.Patch) {
-	m.patchObservers = append(m.patchObservers, observer)
-}
-
-func (m *Model) AddScoreObserver(observer chan<- sointu.Score) {
-	m.scoreObservers = append(m.scoreObservers, observer)
-}
-
-func (m *Model) AddSamplesPerRowObserver(observer chan<- int) {
-	m.samplesPerRowObservers = append(m.samplesPerRowObservers, observer)
-}
-
-func (m *Model) AddPlayingObserver(observer chan<- bool) {
-	m.playingObservers = append(m.playingObservers, observer)
-}
-
 func (m *Model) setSongNoUndo(song sointu.Song) {
 	m.song = song
 	m.usedIDs = make(map[int]bool)
@@ -1123,20 +1224,24 @@ func (m *Model) setSongNoUndo(song sointu.Song) {
 }
 
 func (m *Model) notifyPatchChange() {
-	for _, channel := range m.patchObservers {
-		channel <- m.song.Patch.Copy()
+	m.panic = false
+	select {
+	case m.modelMessages <- ModelPatchChangedMessage{m.song.Patch.Copy()}:
+	default:
 	}
 }
 
 func (m *Model) notifyScoreChange() {
-	for _, channel := range m.scoreObservers {
-		channel <- m.song.Score.Copy()
+	select {
+	case m.modelMessages <- ModelScoreChangedMessage{m.song.Score.Copy()}:
+	default:
 	}
 }
 
 func (m *Model) notifySamplesPerRowChange() {
-	for _, channel := range m.samplesPerRowObservers {
-		channel <- m.song.SamplesPerRow()
+	select {
+	case m.modelMessages <- ModelSamplesPerRowChangedMessage{m.song.SamplesPerRow()}:
+	default:
 	}
 }
 
