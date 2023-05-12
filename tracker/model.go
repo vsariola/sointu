@@ -1267,14 +1267,25 @@ func (m *Model) freeUnitIDs(units []sointu.Unit) {
 }
 
 func (m *Model) assignUnitIDs(units []sointu.Unit) {
+	rewrites := map[int]int{}
 	for i := range units {
-		if units[i].ID == 0 || m.usedIDs[units[i].ID] {
+		if id := units[i].ID; id == 0 || m.usedIDs[id] {
 			m.maxID++
+			if id > 0 {
+				rewrites[id] = m.maxID
+			}
 			units[i].ID = m.maxID
 		}
 		m.usedIDs[units[i].ID] = true
 		if m.maxID < units[i].ID {
 			m.maxID = units[i].ID
+		}
+	}
+	for i, u := range units {
+		if target, ok := u.Parameters["target"]; u.Type == "send" && ok {
+			if newId, ok := rewrites[target]; ok {
+				units[i].Parameters["target"] = newId
+			}
 		}
 	}
 }
