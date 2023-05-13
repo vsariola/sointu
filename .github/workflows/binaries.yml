@@ -41,6 +41,10 @@ jobs:
             output: sointu-vsti-native.dll
             params: -buildmode=c-shared -tags="plugin,native" ./cmd/sointu-vsti/
     steps:
+    - uses: benjlevesque/short-sha@v2.2
+      id: short-sha
+      with:
+        length: 7
     - uses: lukka/get-cmake@v3.18.3
     - uses: actions/setup-go@v2
     - uses: actions/checkout@v2
@@ -59,5 +63,5 @@ jobs:
     - name: Upload binary
       uses: actions/upload-artifact@v3
       with:
-        name: binaries
+        name: sointu-binaries-${{ steps.short-sha.outputs.sha }}
         path: ${{ matrix.config.output }}
