@@ -1,0 +1,63 @@
+name: Binaries
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+
+jobs:
+  binaries:
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - os: windows-latest
+            cmakeflags: -GNinja
+            maker: ninja
+            asmnasm: C:\Users\runneradmin\nasm\nasm
+            output: sointu-track.exe
+            params: -ldflags -H=windowsgui cmd/sointu-track/main.go
+          - os: windows-latest
+            cmakeflags: -GNinja
+            maker: ninja
+            asmnasm: C:\Users\runneradmin\nasm\nasm
+            output: sointu-track-native.exe
+            params: -ldflags -H=windowsgui -tags=native cmd/sointu-track/main.go
+          - os: windows-latest
+            cmakeflags: -GNinja
+            maker: ninja
+            asmnasm: C:\Users\runneradmin\nasm\nasm
+            output: sointu-vsti.dll
+            params: -buildmode=c-shared -tags=plugin ./cmd/sointu-vsti/
+          - os: windows-latest
+            cmakeflags: -GNinja
+            maker: ninja
+            asmnasm: C:\Users\runneradmin\nasm\nasm
+            output: sointu-vsti-native.dll
+            params: -buildmode=c-shared -tags="plugin,native" ./cmd/sointu-vsti/
+    steps:
+    - uses: lukka/get-cmake@v3.18.3
+    - uses: actions/setup-go@v2
+    - uses: actions/checkout@v2
+    - uses: ilammy/setup-nasm@v1.4.0
+    - name: Build library
+      env:
+        ASM_NASM: ${{ matrix.config.asmnasm }}
+      run: |
+        mkdir build
+        cd build
+        cmake ${{ matrix.config.cmakeflags }} ..
+        ${{ matrix.config.maker }} sointu
+    - name: Build binary
+      run: |
+        go build -o ${{ matrix.config.output }} ${{ matrix.config.params }}
+    - name: Upload binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: binaries
+        path: ${{ matrix.config.output }}
