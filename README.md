@@ -233,9 +233,6 @@ go build -buildmode=c-shared -tags=plugin,native -o sointu-vsti.dll .\cmd\sointu
 > our synth object overlapping with DLL call addresses; very funny stuff to
 > debug.
 
-> :warning: The native virtual machine cannot be output syncs at the
-> moment. For syncs, use the Go virtual machine.
-
 ### WebAssembly tests
 
 These are automatically invoked by CTest if [node](https://nodejs.org) and
@@ -443,6 +440,8 @@ Prods using Sointu
 [Adam](https://github.com/vsariola/adam) by brainlez Coders! - My first
 test-driving of Sointu. Some ideas how to integrate Sointu to the build
 chain.
+
+[Roadtrip](https://www.pouet.net/prod.php?which=94105) by LJ & Virgill
 
 Credits
 -------
