@@ -10,7 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
       - name: Build sointu-server
         run: |
           go build -o sointu-server cmd/sointu-compile/server.go
-          docker build -t sointu-server .
+          docker build -t psalomo/sointu-server:latest .
+          docker push psalomo/sointu-server:latest
