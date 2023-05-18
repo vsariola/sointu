@@ -10,6 +10,7 @@ tasks:
       tar -xvzf wabt-1.0.32-ubuntu.tar.gz
       sudo cp wabt-1.0.32/bin/* /usr/bin
       sudo apt install nasm
+      go build -o sointu-server cmd/sointu-compile/server.go
   
 
 
