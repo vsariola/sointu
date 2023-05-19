@@ -136,10 +136,18 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	w.Write(watContent)
 }
 
+func handleRoot(w http.ResponseWriter, r *http.Request) {
+	// Your root handling logic goes here
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Sointu server. Find the WebAssembly Music app to use it."))
+}
+
 func main() {
 	// Set up router and server
 	router := mux.NewRouter()
 	router.HandleFunc("/process", handleRequest).Methods("POST", "OPTIONS")
+	router.HandleFunc("/", handleRoot).Methods("GET")
 	http.Handle("/", router)
 
 	port := "10000"
