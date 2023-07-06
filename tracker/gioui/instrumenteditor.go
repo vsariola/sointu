@@ -276,7 +276,11 @@ func (ie *InstrumentEditor) layoutInstrumentNames(gtx C, t *Tracker) D {
 		label := func(gtx C) D {
 			c := float32(0.0)
 			voice := t.Song().Patch.FirstVoiceForInstrument(i)
-			for j := 0; j < t.Song().Patch[i].NumVoices; j++ {
+			loopMax := t.Song().Patch[i].NumVoices
+			if loopMax > vm.MAX_VOICES {
+				loopMax = vm.MAX_VOICES
+			}
+			for j := 0; j < loopMax; j++ {
 				vc := ie.voiceStates[voice]
 				if c < vc {
 					c = vc
