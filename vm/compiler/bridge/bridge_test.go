@@ -54,7 +54,7 @@ func TestRenderSamples(t *testing.T) {
 		sointu.Unit{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
 	}}}
 
-	synth, err := bridge.Synth(patch)
+	synth, err := bridge.Synth(patch, 120)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestStackUnderflow(t *testing.T) {
 	patch := sointu.Patch{sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
 		sointu.Unit{Type: "pop", Parameters: map[string]int{}},
 	}}}
-	synth, err := bridge.Synth(patch)
+	synth, err := bridge.Synth(patch, 120)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
@@ -146,7 +146,7 @@ func TestStackBalancing(t *testing.T) {
 		sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
 			sointu.Unit{Type: "push", Parameters: map[string]int{}},
 		}}}
-	synth, err := bridge.Synth(patch)
+	synth, err := bridge.Synth(patch, 120)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
@@ -179,7 +179,7 @@ func TestStackOverflow(t *testing.T) {
 			sointu.Unit{Type: "pop", Parameters: map[string]int{}},
 			sointu.Unit{Type: "pop", Parameters: map[string]int{}},
 		}}}
-	synth, err := bridge.Synth(patch)
+	synth, err := bridge.Synth(patch, 120)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
@@ -196,7 +196,7 @@ func TestDivideByZero(t *testing.T) {
 		sointu.Unit{Type: "invgain", Parameters: map[string]int{"invgain": 0}},
 		sointu.Unit{Type: "pop", Parameters: map[string]int{}},
 	}}}
-	synth, err := bridge.Synth(patch)
+	synth, err := bridge.Synth(patch, 120)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}

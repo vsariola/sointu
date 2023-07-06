@@ -192,6 +192,18 @@ func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
 			}
 			return fmt.Sprintf(portList[value])
 		}
+	case "delay":
+		switch param {
+		case "notetracking":
+			switch value {
+			case 0:
+				return "fixed"
+			case 1:
+				return "tracks pitch"
+			case 2:
+				return "tracks BPM"
+			}
+		}
 	}
 	return ""
 }

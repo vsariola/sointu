@@ -20,6 +20,7 @@ type (
 		position          SongRow
 		samplesSinceEvent []int
 		samplesPerRow     int
+		bpm               int
 		volume            Volume
 		voiceStates       [vm.MAX_VOICES]float32
 
@@ -242,7 +243,9 @@ loop:
 					}
 				}
 			case ModelSamplesPerRowChangedMessage:
-				p.samplesPerRow = m.int
+				p.samplesPerRow = 44100 * 60 / (m.BPM * m.RowsPerBeat)
+				p.bpm = m.BPM
+				p.compileOrUpdateSynth()
 			case ModelPlayFromPositionMessage:
 				p.playing = true
 				p.position = m.SongRow
@@ -297,7 +300,7 @@ loop:
 
 func (p *Player) compileOrUpdateSynth() {
 	if p.synth != nil {
-		err := p.synth.Update(p.patch)
+		err := p.synth.Update(p.patch, p.bpm)
 		if err != nil {
 			p.synth = nil
 			p.trySend(PlayerCrashMessage{fmt.Errorf("synth.Update: %w", err)})
@@ -305,7 +308,7 @@ func (p *Player) compileOrUpdateSynth() {
 		}
 	} else {
 		var err error
-		p.synth, err = p.synthService.Compile(p.patch)
+		p.synth, err = p.synthService.Compile(p.patch, p.bpm)
 		if err != nil {
 			p.synth = nil
 			p.trySend(PlayerCrashMessage{fmt.Errorf("synthService.Compile: %w", err)})

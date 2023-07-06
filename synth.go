@@ -22,7 +22,7 @@ type Synth interface {
 	// delaylines should keep their content. Every change in the Patch triggers
 	// an Update and if the Patch would be started fresh every time, it would
 	// lead to very choppy audio.
-	Update(patch Patch) error
+	Update(patch Patch, bpm int) error
 
 	// Trigger triggers a note for a given voice. Called between synth.Renders.
 	Trigger(voice int, note byte)
@@ -35,7 +35,7 @@ type Synth interface {
 // SynthService compiles a given Patch into a Synth, throwing errors if the
 // Patch is malformed.
 type SynthService interface {
-	Compile(patch Patch) (Synth, error)
+	Compile(patch Patch, bpm int) (Synth, error)
 }
 
 // Render fills an stereo audio buffer using a Synth, disregarding all syncs and
@@ -62,7 +62,7 @@ func Play(synthService SynthService, song Song, release bool) ([]float32, error)
 	if err != nil {
 		return nil, err
 	}
-	synth, err := synthService.Compile(song.Patch)
+	synth, err := synthService.Compile(song.Patch, song.BPM)
 	if err != nil {
 		return nil, fmt.Errorf("sointu.Play failed: %v", err)
 	}

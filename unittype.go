@@ -58,7 +58,7 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "dry", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "feedback", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "damp", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "notetracking", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+		{Name: "notetracking", MinValue: 0, MaxValue: 2, CanSet: true, CanModulate: false},
 		{Name: "delaytime", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true}},
 	"compressor": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},

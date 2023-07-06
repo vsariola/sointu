@@ -33,7 +33,7 @@ type SampleOffset struct {
 	LoopLength uint16
 }
 
-func Encode(patch sointu.Patch, featureSet FeatureSet) (*BytePatch, error) {
+func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, error) {
 	c := BytePatch{PolyphonyBitmask: polyphonyBitmask(patch), NumVoices: uint32(patch.NumVoices())}
 	if c.NumVoices > 32 {
 		return nil, fmt.Errorf("Sointu does not support more than 32 concurrent voices; patch uses %v", c.NumVoices)
@@ -42,7 +42,7 @@ func Encode(patch sointu.Patch, featureSet FeatureSet) (*BytePatch, error) {
 	globalAddrs := map[int]uint16{}
 	globalFixups := map[int]([]int){}
 	voiceNo := 0
-	delayTable, delayIndices := constructDelayTimeTable(patch)
+	delayTable, delayIndices := constructDelayTimeTable(patch, bpm)
 	c.DelayTimes = make([]uint16, len(delayTable))
 	for i := range delayTable {
 		c.DelayTimes[i] = uint16(delayTable[i])
@@ -171,7 +171,7 @@ func Encode(patch sointu.Patch, featureSet FeatureSet) (*BytePatch, error) {
 				if count == 0 {
 					continue // skip encoding delays without any delay lines
 				}
-				countTrack := count*2 - 1 + unit.Parameters["notetracking"] // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
+				countTrack := count*2 - 1 + (unit.Parameters["notetracking"] & 1) // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
 				values = append(values, byte(delayIndices[instrIndex][unitIndex]), byte(countTrack))
 			}
 			c.Commands = append(c.Commands, byte(opcode+unit.Parameters["stereo"]))

@@ -66,7 +66,7 @@ type (
 	}
 
 	ModelSamplesPerRowChangedMessage struct {
-		int
+		BPM, RowsPerBeat int
 	}
 
 	ModelPanicMessage struct {
@@ -1088,14 +1088,43 @@ func (m *Model) Param(index int) (Parameter, error) {
 		if index < len(unit.VarArgs) {
 			val := unit.VarArgs[index]
 			var text string
-			if unit.Parameters["notetracking"] == 1 {
+			switch unit.Parameters["notetracking"] {
+			default:
+			case 0:
+				text = fmt.Sprintf("%v / %.3f rows", val, float32(val)/float32(m.song.SamplesPerRow()))
+				return Parameter{Type: IntegerParameter, Min: 1, Max: 65535, Name: "delaytime", Hint: text, Value: val, LargeStep: 256}, nil
+			case 1:
 				relPitch := float64(val) / 10787
 				semitones := -math.Log2(relPitch) * 12
 				text = fmt.Sprintf("%v / %.3f st", val, semitones)
-			} else {
-				text = fmt.Sprintf("%v / %.3f rows", val, float32(val)/float32(m.song.SamplesPerRow()))
+				return Parameter{Type: IntegerParameter, Min: 1, Max: 65535, Name: "delaytime", Hint: text, Value: val, LargeStep: 256}, nil
+			case 2:
+				k := 0
+				v := val
+				for v&1 == 0 { // divide val by 2 until it is odd
+					v >>= 1
+					k++
+				}
+				text := ""
+				switch v {
+				case 1:
+					if k <= 7 {
+						text = fmt.Sprintf(" (1/%d triplet)", 1<<(7-k))
+					}
+				case 3:
+					if k <= 6 {
+						text = fmt.Sprintf(" (1/%d)", 1<<(6-k))
+					}
+					break
+				case 9:
+					if k <= 5 {
+						text = fmt.Sprintf(" (1/%d dotted)", 1<<(5-k))
+					}
+				}
+				text = fmt.Sprintf("%v / %.3f beats%s", val, float32(val)/48.0, text)
+				return Parameter{Type: IntegerParameter, Min: 1, Max: 576, Name: "delaytime", Hint: text, Value: val, LargeStep: 16}, nil
 			}
-			return Parameter{Type: IntegerParameter, Min: 1, Max: 65535, Name: "delaytime", Hint: text, Value: val, LargeStep: 256}, nil
+
 		}
 	}
 	return Parameter{}, errors.New("invalid parameter")
@@ -1240,7 +1269,7 @@ func (m *Model) notifyScoreChange() {
 
 func (m *Model) notifySamplesPerRowChange() {
 	select {
-	case m.modelMessages <- ModelSamplesPerRowChangedMessage{m.song.SamplesPerRow()}:
+	case m.modelMessages <- ModelSamplesPerRowChangedMessage{m.song.BPM, m.song.RowsPerBeat}:
 	default:
 	}
 }

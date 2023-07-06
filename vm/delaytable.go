@@ -107,7 +107,7 @@ func findSuperIntArray(arrays [][]int) ([]int, []int) {
 // Returns the delay time table and two dimensional array of integers where
 // element [i][u] is the index for instrument i / unit u in the delay table if
 // the unit was a delay unit. For non-delay untis, the element is just 0.
-func constructDelayTimeTable(patch sointu.Patch) ([]int, [][]int) {
+func constructDelayTimeTable(patch sointu.Patch, bpm int) ([]int, [][]int) {
 	ind := make([][]int, len(patch))
 	var subarrays [][]int
 	// flatten the delay times into one array of arrays
@@ -119,11 +119,18 @@ func constructDelayTimeTable(patch sointu.Patch) ([]int, [][]int) {
 			// should use delay times
 			if unit.Type == "delay" {
 				ind[i][j] = len(subarrays)
-				end := unit.Parameters["count"]
-				if unit.Parameters["stereo"] > 0 {
-					end *= 2
+				converted := make([]int, len(unit.VarArgs))
+				copy(converted, unit.VarArgs)
+				if unit.Parameters["notetracking"] == 2 {
+					for i, t := range converted {
+						delay := 44100 * 60 * t / 48 / bpm
+						if delay > 65535 {
+							delay = 65535
+						}
+						converted[i] = delay
+					}
 				}
-				subarrays = append(subarrays, unit.VarArgs)
+				subarrays = append(subarrays, converted)
 			}
 		}
 	}

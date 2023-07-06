@@ -58,6 +58,7 @@ func (t *Tracker) Layout(gtx layout.Context) {
 	}
 	fstyle := OpenFileDialog(t.Theme, t.OpenSongDialog)
 	fstyle.Title = "Open Song File"
+	fstyle.ExtAlt = ".4kp"
 	fstyle.Layout(gtx)
 	for ok, file := t.OpenSongDialog.FileSelected(); ok; ok, file = t.OpenSongDialog.FileSelected() {
 		t.loadSong(file)
@@ -89,6 +90,7 @@ func (t *Tracker) Layout(gtx layout.Context) {
 	fstyle.Layout(gtx)
 	fstyle = OpenFileDialog(t.Theme, t.OpenInstrumentDialog)
 	fstyle.Title = "Open Instrument File"
+	fstyle.ExtAlt = ".4ki"
 	for ok, file := t.OpenInstrumentDialog.FileSelected(); ok; ok, file = t.OpenInstrumentDialog.FileSelected() {
 		t.loadInstrument(file)
 	}

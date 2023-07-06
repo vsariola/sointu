@@ -16,17 +16,17 @@ import (
 type BridgeService struct {
 }
 
-func (s BridgeService) Compile(patch sointu.Patch) (sointu.Synth, error) {
-	synth, err := Synth(patch)
+func (s BridgeService) Compile(patch sointu.Patch, bpm int) (sointu.Synth, error) {
+	synth, err := Synth(patch, bpm)
 	return synth, err
 }
 
-func Synth(patch sointu.Patch) (*C.Synth, error) {
+func Synth(patch sointu.Patch, bpm int) (*C.Synth, error) {
 	s := new(C.Synth)
 	if n := patch.NumDelayLines(); n > 64 {
 		return nil, fmt.Errorf("native bridge has currently a hard limit of 64 delaylines; patch uses %v", n)
 	}
-	comPatch, err := vm.Encode(patch, vm.AllFeatures{})
+	comPatch, err := vm.Encode(patch, vm.AllFeatures{}, bpm)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling patch: %v", err)
 	}
@@ -109,11 +109,11 @@ func (s *C.Synth) Release(voice int) {
 }
 
 // Update
-func (s *C.Synth) Update(patch sointu.Patch) error {
+func (s *C.Synth) Update(patch sointu.Patch, bpm int) error {
 	if n := patch.NumDelayLines(); n > 64 {
 		return fmt.Errorf("native bridge has currently a hard limit of 64 delaylines; patch uses %v", n)
 	}
-	comPatch, err := vm.Encode(patch, vm.AllFeatures{})
+	comPatch, err := vm.Encode(patch, vm.AllFeatures{}, bpm)
 	if err != nil {
 		return fmt.Errorf("error compiling patch: %v", err)
 	}

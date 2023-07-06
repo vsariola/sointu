@@ -76,7 +76,7 @@ func TestStackUnderflow(t *testing.T) {
 	patch := sointu.Patch{sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
 		sointu.Unit{Type: "pop", Parameters: map[string]int{}},
 	}}}
-	synth, err := vm.Synth(patch)
+	synth, err := vm.Synth(patch, 120)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestStackBalancing(t *testing.T) {
 		sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
 			sointu.Unit{Type: "push", Parameters: map[string]int{}},
 		}}}
-	synth, err := vm.Synth(patch)
+	synth, err := vm.Synth(patch, 120)
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}

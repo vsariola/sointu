@@ -4,6 +4,7 @@
 package gioui
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -66,15 +67,23 @@ func (t *Tracker) SaveInstrument() {
 }
 
 func (t *Tracker) loadSong(filename string) {
-	bytes, err := ioutil.ReadFile(filename)
+	b, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return
 	}
 	var song sointu.Song
-	if errJSON := json.Unmarshal(bytes, &song); errJSON != nil {
-		if errYaml := yaml.Unmarshal(bytes, &song); errYaml != nil {
-			t.Alert.Update(fmt.Sprintf("Error unmarshaling a song file: %v / %v", errYaml, errJSON), Error, time.Second*3)
-			return
+	if errJSON := json.Unmarshal(b, &song); errJSON != nil {
+		if errYaml := yaml.Unmarshal(b, &song); errYaml != nil {
+			var err4kp error
+			var patch sointu.Patch
+			if patch, err4kp = sointu.Read4klangPatch(bytes.NewReader(b)); err4kp != nil {
+				t.Alert.Update(fmt.Sprintf("Error unmarshaling a song file: %v / %v / %v", errYaml, errJSON, err4kp), Error, time.Second*3)
+				return
+			} else {
+				song = t.Song()
+				song.Score = t.Song().Score.Copy()
+				song.Patch = patch
+			}
 		}
 	}
 	if song.Score.Length <= 0 || len(song.Score.Tracks) == 0 || len(song.Patch) == 0 {
@@ -148,17 +157,22 @@ func (t *Tracker) saveInstrument(filename string) bool {
 }
 
 func (t *Tracker) loadInstrument(filename string) bool {
-	bytes, err := ioutil.ReadFile(filename)
+	b, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return false
 	}
 	var instrument sointu.Instrument
-	if errJSON := json.Unmarshal(bytes, &instrument); errJSON != nil {
-		if errYaml := yaml.Unmarshal(bytes, &instrument); errYaml != nil {
-			t.Alert.Update(fmt.Sprintf("Error unmarshaling an instrument file: %v / %v", errYaml, errJSON), Error, time.Second*3)
-			return false
+	if errJSON := json.Unmarshal(b, &instrument); errJSON != nil {
+		if errYaml := yaml.Unmarshal(b, &instrument); errYaml != nil {
+			var err4ki error
+			if instrument, err4ki = sointu.Read4klangInstrument(bytes.NewReader(b)); err4ki != nil {
+				t.Alert.Update(fmt.Sprintf("Error unmarshaling an instrument file: %v / %v / %v", errYaml, errJSON, err4ki), Error, time.Second*3)
+				return false
+			}
 		}
 	}
+	// the 4klang instrument names are junk, replace them with the filename without extension
+	instrument.Name = filepath.Base(filename[:len(filename)-len(filepath.Ext(filename))])
 	if len(instrument.Units) == 0 {
 		t.Alert.Update("The instrument file is malformed", Error, time.Second*3)
 		return false

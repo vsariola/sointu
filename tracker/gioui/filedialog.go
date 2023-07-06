@@ -106,9 +106,9 @@ func (f *FileDialogStyle) Layout(gtx C) D {
 				n = n[0 : len(n)-len(extension)]
 				switch f.dialog.UseAltExt.Value {
 				case true:
-					n += ".json"
+					n += f.ExtAlt
 				default:
-					n += ".yml"
+					n += f.ExtMain
 				}
 				f.dialog.FileName.SetText(n)
 			}

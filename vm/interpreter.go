@@ -63,8 +63,8 @@ const (
 	envStateRelease
 )
 
-func Synth(patch sointu.Patch) (sointu.Synth, error) {
-	bytePatch, err := Encode(patch, AllFeatures{})
+func Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
+	bytePatch, err := Encode(patch, AllFeatures{}, bpm)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling %v", err)
 	}
@@ -73,8 +73,8 @@ func Synth(patch sointu.Patch) (sointu.Synth, error) {
 	return ret, nil
 }
 
-func (s SynthService) Compile(patch sointu.Patch) (sointu.Synth, error) {
-	synth, err := Synth(patch)
+func (s SynthService) Compile(patch sointu.Patch, bpm int) (sointu.Synth, error) {
+	synth, err := Synth(patch, bpm)
 	return synth, err
 }
 
@@ -87,8 +87,8 @@ func (s *Interpreter) Release(voiceIndex int) {
 	s.synth.voices[voiceIndex].release = true
 }
 
-func (s *Interpreter) Update(patch sointu.Patch) error {
-	bytePatch, err := Encode(patch, AllFeatures{})
+func (s *Interpreter) Update(patch sointu.Patch, bpm int) error {
+	bytePatch, err := Encode(patch, AllFeatures{}, bpm)
 	if err != nil {
 		return fmt.Errorf("error compiling %v", err)
 	}
@@ -140,9 +140,11 @@ func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time i
 			stereo := channels == 2
 			opNoStereo := (op & 0xFE) >> 1
 			if opNoStereo == 0 {
-				voices = voices[1:]
-				units = voices[0].units[:]
 				voicesRemaining--
+				if voicesRemaining > 0 {
+					voices = voices[1:]
+					units = voices[0].units[:]
+				}
 				if mask := uint32(1) << uint32(voicesRemaining); s.bytePatch.PolyphonyBitmask&mask == mask {
 					commands, values = commandInstr, valuesInstr
 				} else {
