@@ -6,9 +6,6 @@ intros, forked from [4klang](https://github.com/hzdgopher/4klang). Targetable
 architectures include 386, amd64, and WebAssembly; targetable platforms include
 Windows, Mac, Linux (and related) + browser.
 
-Pull requests / suggestions / issues welcome, through Github! You can also
-contact me through email (firstname.lastname@gmail.com).
-
 Summary
 -------
 
@@ -250,7 +247,8 @@ New features since fork
     entropy as low as possible, yet we can call arbitrary go functions as
     "macros". The templates are [here](templates/) and the compiler lives
     [here](vm/compiler/).
-  - **Tracker**. Written in go. A crude version exists.
+  - **Tracker**. Written in go. A crude version exists. Can run either
+    as a stand-alone app or a vsti plugin.
   - **Supports 32 and 64 bit builds**. The 64-bit version is done with minimal
     changes to get it work, using template macros to change the lines between
     32-bit and 64-bit modes. Mostly, it's as easy as writing {{.AX}} instead of
@@ -379,10 +377,6 @@ Long-shot ideas
 -----------
   - **Hack deeper into audio sources from the OS**. Speech synthesis, I'm eyeing
     at you.
-  - **Ability to run Sointu as a DAW plugin (VSTi3)**. Now that Renoise supports
-    VSTi3, there's no fundamental objection to compiling Sointu as a VSTi3. But
-    don't expect it any soon; I need to digest the idea of having to learn the
-    horrors of the VSTi3 C++ API.
 
 Design philosophy
 -----------------
@@ -443,8 +437,26 @@ chain.
 
 [Roadtrip](https://www.pouet.net/prod.php?which=94105) by LJ & Virgill
 
-Credits
+Contributing
+------------
+
+Pull requests / suggestions / issues welcome, through Github! Or just DM
+me on Discord (see contact information below).
+
+License
 -------
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+
+Contact
+-------
+
+Veikko Sariola - pestis_bc on discord - firstname.lastname@gmail.com
+
+Project Link: [https://github.com/vsariola/sointu](https://github.com/vsariola/sointu)
+
+Acknowledgements
+----------------
 
 The original 4klang was developed by Dominik Ries
 ([gopher](https://github.com/hzdgopher/4klang)) and Paul Kraus (pOWL) of
