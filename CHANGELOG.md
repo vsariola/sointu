@@ -5,11 +5,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 ### Added
+- Ability to lock delay relative to beat duration
+- Ability to import 4klang patches (.4kp) and instruments (.4ki)
+- Ability to run sointu as a vsti plugin, inside vsti host
 - Saving and loading instruments
-- Non-platform native file save and load dialogs, for more reliable support across platforms
+- The repository has example instruments, including all patches and
+  instruments from 4klang
+- Non-platform native file save and load dialogs, for more reliable
+  support across platforms
 - Comment field to instruments
-- The repository has now a few example instruments
 - Ability to reorder tracks
+- Add menu command to delete all unused data from song file
+
+### Fixed
+- In the WebAssembly core, $WRK was messed after stereo oscillators,
+  making modulations not work
 
 ## v0.1.0
 ### Added
