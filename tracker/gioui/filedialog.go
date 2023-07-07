@@ -8,6 +8,7 @@ import (
 
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
+	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget"
@@ -77,7 +78,7 @@ func commonFileDialog(th *material.Theme, f *FileDialog) FileDialogStyle {
 		DirEditorStyle: material.Editor(th, &f.Directory, "Directory"),
 		FileNameStyle:  material.Editor(th, &f.FileName, "Filename"),
 		CancelStyle:    LowEmphasisButton(th, &f.BtnCancel, "Cancel"),
-		UseAltExtStyle: material.Switch(th, &f.UseAltExt),
+		UseAltExtStyle: material.Switch(th, &f.UseAltExt, "Change extension"),
 	}
 	ret.UseAltExtStyle.Color.Enabled = white
 	ret.UseAltExtStyle.Color.Disabled = white
@@ -174,11 +175,9 @@ func (f *FileDialogStyle) Layout(gtx C) D {
 			var text string
 			if index < len(subDirs) {
 				icon = widgetForIcon(icons.FileFolder)
-				icon.Color = primaryColor
 				text = subDirs[index]
 			} else {
 				icon = widgetForIcon(icons.EditorInsertDriveFile)
-				icon.Color = primaryColor
 				text = files[index-len(subDirs)]
 			}
 			labelColor := highEmphasisTextColor
@@ -189,17 +188,20 @@ func (f *FileDialogStyle) Layout(gtx C) D {
 				layout.Stacked(func(gtx C) D {
 					return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							return icon.Layout(gtx, unit.Dp(24))
+							p := gtx.Dp(unit.Dp(24))
+							gtx.Constraints.Min = image.Pt(p, p)
+							return icon.Layout(gtx, primaryColor)
 						}),
 						layout.Rigid(Label(text, labelColor)),
 					)
 				}),
 				layout.Expanded(func(gtx C) D {
 					rect := image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
-					pointer.Rect(rect).Add(gtx.Ops)
+					area := clip.Rect(rect).Push(gtx.Ops)
 					pointer.InputOp{Tag: &f.dialog.tags[index],
 						Types: pointer.Press | pointer.Drag | pointer.Release,
 					}.Add(gtx.Ops)
+					area.Pop()
 					return D{}
 				}),
 			)
@@ -215,14 +217,14 @@ func (f *FileDialogStyle) Layout(gtx C) D {
 							return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 								layout.Rigid(f.FolderUpStyle.Layout),
 								layout.Rigid(func(gtx C) D {
-									return D{Size: image.Pt(gtx.Px(unit.Dp(6)), gtx.Px(unit.Dp(36)))}
+									return D{Size: image.Pt(gtx.Dp(unit.Dp(6)), gtx.Dp(unit.Dp(36)))}
 								}),
 								layout.Rigid(f.DirEditorStyle.Layout))
 						}),
 						layout.Rigid(func(gtx C) D {
 							return layout.Stack{Alignment: layout.NE}.Layout(gtx,
 								layout.Stacked(func(gtx C) D {
-									gtx.Constraints = layout.Exact(image.Pt(gtx.Px(unit.Dp(600)), gtx.Px(unit.Dp(400))))
+									gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(unit.Dp(600)), gtx.Dp(unit.Dp(400))))
 									if listLen > 0 {
 										return f.dialog.FileList.Layout(gtx, listLen, listElement)
 									} else {
@@ -235,11 +237,11 @@ func (f *FileDialogStyle) Layout(gtx C) D {
 							)
 						}),
 						layout.Rigid(func(gtx C) D {
-							gtx.Constraints.Min.Y = gtx.Px(unit.Dp(36))
+							gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 							return layout.W.Layout(gtx, f.FileNameStyle.Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							gtx.Constraints = layout.Exact(image.Pt(gtx.Px(unit.Dp(600)), gtx.Px(unit.Dp(36))))
+							gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(unit.Dp(600)), gtx.Dp(unit.Dp(36))))
 							if f.ExtAlt != "" {
 								mainLabelColor := disabledTextColor
 								altLabelColor := disabledTextColor

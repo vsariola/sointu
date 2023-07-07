@@ -3,7 +3,6 @@ package gioui
 import (
 	"image"
 
-	"gioui.org/f32"
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
@@ -17,9 +16,9 @@ type VuMeter struct {
 }
 
 func (v VuMeter) Layout(gtx C) D {
-	defer op.Save(gtx.Ops).Load()
-	gtx.Constraints.Max.Y = gtx.Px(unit.Dp(12))
-	height := gtx.Px(unit.Dp(6))
+	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
+	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(12))
+	height := gtx.Dp(unit.Dp(6))
 	for j := 0; j < 2; j++ {
 		value := float32(v.Volume.Average[j]) + v.Range
 		if value > 0 {
@@ -41,7 +40,7 @@ func (v VuMeter) Layout(gtx C) D {
 			}
 			paint.FillShape(gtx.Ops, color, clip.Rect(image.Rect(x-1, 0, x, height)).Op())
 		}
-		op.Offset(f32.Pt(0, float32(height))).Add(gtx.Ops)
+		op.Offset(image.Point{0, height}).Add(gtx.Ops)
 	}
 	return D{Size: gtx.Constraints.Max}
 }

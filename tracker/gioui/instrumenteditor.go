@@ -13,6 +13,7 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/op/clip"
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
@@ -96,10 +97,11 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 		}
 	}
 	rect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
-	pointer.Rect(rect).Add(gtx.Ops)
+	area := clip.Rect(rect).Push(gtx.Ops)
 	pointer.InputOp{Tag: &ie.tag,
 		Types: pointer.Press,
 	}.Add(gtx.Ops)
+	area.Pop()
 
 	var icon []byte
 	if t.InstrEnlarged() {
@@ -118,8 +120,8 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 		in := layout.UniformInset(unit.Dp(1))
 		t.OctaveNumberInput.Value = t.Octave()
 		numStyle := NumericUpDown(t.Theme, t.OctaveNumberInput, 0, 9)
-		gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
-		gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+		gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
+		gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 		dims := in.Layout(gtx, numStyle.Layout)
 		t.SetOctave(t.OctaveNumberInput.Value)
 		return dims
@@ -185,8 +187,8 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 					maxRemain := t.MaxInstrumentVoices()
 					t.InstrumentVoices.Value = t.Instrument().NumVoices
 					numStyle := NumericUpDown(t.Theme, t.InstrumentVoices, 0, maxRemain)
-					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := numStyle.Layout(gtx)
 					t.SetInstrumentVoices(t.InstrumentVoices.Value)
 					return dims
@@ -267,8 +269,8 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 
 func (ie *InstrumentEditor) layoutInstrumentNames(gtx C, t *Tracker) D {
 	element := func(gtx C, i int) D {
-		gtx.Constraints.Min.Y = gtx.Px(unit.Dp(36))
-		gtx.Constraints.Min.X = gtx.Px(unit.Dp(30))
+		gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
+		gtx.Constraints.Min.X = gtx.Dp(unit.Dp(30))
 		grabhandle := LabelStyle{Text: "", ShadeColor: black, Color: white, FontSize: unit.Sp(10), Alignment: layout.Center}
 		if i == t.InstrIndex() {
 			grabhandle.Text = ":::"
@@ -303,7 +305,7 @@ func (ie *InstrumentEditor) layoutInstrumentNames(gtx C, t *Tracker) D {
 				editor := material.Editor(t.Theme, ie.nameEditor, "Instr")
 				editor.Color = color
 				editor.HintColor = instrumentNameHintColor
-				editor.TextSize = unit.Dp(12)
+				editor.TextSize = unit.Sp(12)
 				dims := layout.Center.Layout(gtx, editor.Layout)
 				t.SetInstrumentName(ie.nameEditor.Text())
 				return dims
@@ -332,34 +334,27 @@ func (ie *InstrumentEditor) layoutInstrumentNames(gtx C, t *Tracker) D {
 	instrumentList.HoverColor = instrumentHoverColor
 
 	ie.instrumentDragList.SelectedItem = t.InstrIndex()
-	defer op.Save(gtx.Ops).Load()
-	pointer.PassOp{Pass: true}.Add(gtx.Ops)
-	spy, spiedGtx := eventx.Enspy(gtx)
-	dims := instrumentList.Layout(spiedGtx)
-	for _, group := range spy.AllEvents() {
-		for _, event := range group.Items {
-			switch e := event.(type) {
-			case key.Event:
-				if e.Modifiers.Contain(key.ModShortcut) {
-					continue
-				}
-				if !ie.nameEditor.Focused() {
-					switch e.State {
-					case key.Press:
-						switch e.Name {
-						case key.NameDownArrow:
-							ie.unitDragList.Focus()
-						case key.NameReturn, key.NameEnter:
-							ie.nameEditor.Focus()
-						}
-						t.JammingPressed(e)
-					case key.Release:
-						t.JammingReleased(e)
-					}
+	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
+	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
+	key.InputOp{Tag: ie.instrumentDragList, Keys: "↓"}.Add(gtx.Ops)
+
+	for _, event := range gtx.Events(ie.instrumentDragList) {
+		switch e := event.(type) {
+		case key.Event:
+			switch e.State {
+			case key.Press:
+				switch e.Name {
+				case key.NameDownArrow:
+					ie.unitDragList.Focus()
+				case key.NameReturn, key.NameEnter:
+					ie.nameEditor.Focus()
 				}
 			}
 		}
 	}
+
+	dims := instrumentList.Layout(gtx)
+
 	if t.InstrIndex() != ie.instrumentDragList.SelectedItem {
 		t.SetInstrIndex(ie.instrumentDragList.SelectedItem)
 		op.InvalidateOp{}.Add(gtx.Ops)
@@ -371,7 +366,7 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 		t.AddUnit(true)
 		ie.unitDragList.Focus()
 	}
-	addUnitBtnStyle := material.IconButton(t.Theme, ie.addUnitBtn, widgetForIcon(icons.ContentAdd))
+	addUnitBtnStyle := material.IconButton(t.Theme, ie.addUnitBtn, widgetForIcon(icons.ContentAdd), "Add unit")
 	addUnitBtnStyle.Color = t.Theme.ContrastFg
 	addUnitBtnStyle.Background = t.Theme.Fg
 	addUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(4))
@@ -388,7 +383,7 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 	}
 
 	element := func(gtx C, i int) D {
-		gtx.Constraints = layout.Exact(image.Pt(gtx.Px(unit.Dp(120)), gtx.Px(unit.Dp(20))))
+		gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(unit.Dp(120)), gtx.Dp(unit.Dp(20))))
 		u := units[i]
 		var color color.NRGBA = white
 
@@ -439,21 +434,7 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 			editor.HintColor = instrumentNameHintColor
 			editor.TextSize = unit.Sp(12)
 			editor.Font = labelDefaultFont
-			unitName = func(gtx C) D {
-				spy, spiedGtx := eventx.Enspy(gtx)
-				ret := editor.Layout(spiedGtx)
-				for _, group := range spy.AllEvents() {
-					for _, event := range group.Items {
-						switch e := event.(type) {
-						case key.Event:
-							if e.Name == key.NameEscape {
-								ie.unitDragList.Focus()
-							}
-						}
-					}
-				}
-				return ret
-			}
+			unitName = editor.Layout
 		} else {
 			unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: color, Font: labelDefaultFont, FontSize: unit.Sp(12)}
 			if unitNameLabel.Text == "" {
@@ -472,8 +453,7 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 		)
 	}
 
-	defer op.Save(gtx.Ops).Load()
-	pointer.PassOp{Pass: true}.Add(gtx.Ops)
+	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	unitList := FilledDragList(t.Theme, ie.unitDragList, len(units), element, t.SwapUnits)
 	ie.unitDragList.SelectedItem = t.UnitIndex()
 	return Surface{Gray: 30, Focus: ie.wasFocused}.Layout(gtx, func(gtx C) D {
@@ -481,52 +461,43 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 			layout.Rigid(func(gtx C) D {
 				return layout.Stack{Alignment: layout.SE}.Layout(gtx,
 					layout.Expanded(func(gtx C) D {
-						spy, spiedGtx := eventx.Enspy(gtx)
-						dims := unitList.Layout(spiedGtx)
-						prevUnitIndex := t.UnitIndex()
-						if t.UnitIndex() != ie.unitDragList.SelectedItem {
-							t.SetUnitIndex(ie.unitDragList.SelectedItem)
-							ie.unitTypeEditor.SetText(t.Unit().Type)
-						}
-						if ie.unitDragList.Focused() {
-							for _, group := range spy.AllEvents() {
-								for _, event := range group.Items {
-									switch e := event.(type) {
-									case key.Event:
-										switch e.State {
-										case key.Press:
-											switch e.Name {
-											case key.NameUpArrow:
-												if prevUnitIndex == 0 {
-													ie.instrumentDragList.Focus()
-												}
-											case key.NameRightArrow:
-												ie.paramEditor.Focus()
-											case key.NameDeleteBackward:
-												t.SetUnitType("")
-												ie.unitTypeEditor.Focus()
-												l := len(ie.unitTypeEditor.Text())
-												ie.unitTypeEditor.SetCaret(l, l)
-											case key.NameDeleteForward:
-												t.DeleteUnit(true)
-											case key.NameReturn:
-												if e.Modifiers.Contain(key.ModShortcut) {
-													t.AddUnit(true)
-												}
-												ie.unitTypeEditor.Focus()
-												l := len(ie.unitTypeEditor.Text())
-												ie.unitTypeEditor.SetCaret(l, l)
-											}
-											if e.Modifiers.Contain(key.ModShortcut) {
-												continue
-											}
-											t.JammingPressed(e)
-										case key.Release:
-											t.JammingReleased(e)
+						defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
+						key.InputOp{Tag: ie.unitDragList, Keys: "→|⏎|⌫|⌦|⎋|Ctrl-⏎"}.Add(gtx.Ops)
+						for _, event := range gtx.Events(ie.unitDragList) {
+							switch e := event.(type) {
+							case key.Event:
+								switch e.State {
+								case key.Press:
+									switch e.Name {
+									case key.NameEscape:
+										ie.instrumentDragList.Focus()
+									case key.NameRightArrow:
+										ie.paramEditor.Focus()
+									case key.NameDeleteBackward:
+										t.SetUnitType("")
+										ie.unitTypeEditor.Focus()
+										l := len(ie.unitTypeEditor.Text())
+										ie.unitTypeEditor.SetCaret(l, l)
+									case key.NameDeleteForward:
+										t.DeleteUnit(true)
+									case key.NameReturn:
+										if e.Modifiers.Contain(key.ModShortcut) {
+											t.AddUnit(true)
+											ie.unitDragList.SelectedItem = t.UnitIndex()
+											ie.unitTypeEditor.SetText("")
 										}
+										ie.unitTypeEditor.Focus()
+										l := len(ie.unitTypeEditor.Text())
+										ie.unitTypeEditor.SetCaret(l, l)
 									}
 								}
 							}
+						}
+
+						dims := unitList.Layout(gtx)
+						if t.UnitIndex() != ie.unitDragList.SelectedItem {
+							t.SetUnitIndex(ie.unitDragList.SelectedItem)
+							ie.unitTypeEditor.SetText(t.Unit().Type)
 						}
 						return dims
 					}),

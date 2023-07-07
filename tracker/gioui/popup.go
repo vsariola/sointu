@@ -4,7 +4,6 @@ import (
 	"image"
 	"image/color"
 
-	"gioui.org/f32"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -17,11 +16,11 @@ type PopupStyle struct {
 	Visible        *bool
 	SurfaceColor   color.NRGBA
 	ShadowColor    color.NRGBA
-	ShadowN        unit.Value
-	ShadowE        unit.Value
-	ShadowW        unit.Value
-	ShadowS        unit.Value
-	SE, SW, NW, NE unit.Value
+	ShadowN        unit.Dp
+	ShadowE        unit.Dp
+	ShadowW        unit.Dp
+	ShadowS        unit.Dp
+	SE, SW, NW, NE unit.Dp
 }
 
 func Popup(visible *bool) PopupStyle {
@@ -58,33 +57,30 @@ func (s PopupStyle) Layout(gtx C, contents layout.Widget) D {
 	}
 
 	bg := func(gtx C) D {
-		pointer.PassOp{Pass: false}.Add(gtx.Ops)
 		rrect := clip.RRect{
-			Rect: f32.Rectangle{Max: f32.Pt(float32(gtx.Constraints.Min.X), float32(gtx.Constraints.Min.Y))},
-			SE:   float32(gtx.Px(s.SE)),
-			SW:   float32(gtx.Px(s.SW)),
-			NW:   float32(gtx.Px(s.NW)),
-			NE:   float32(gtx.Px(s.NE)),
+			Rect: image.Rectangle{Max: gtx.Constraints.Min},
+			SE:   gtx.Dp(s.SE),
+			SW:   gtx.Dp(s.SW),
+			NW:   gtx.Dp(s.NW),
+			NE:   gtx.Dp(s.NE),
 		}
 		rrect2 := rrect
-		rrect2.Rect.Min = rrect2.Rect.Min.Sub(f32.Pt(float32(gtx.Px(s.ShadowW)), float32(gtx.Px(s.ShadowN))))
-		rrect2.Rect.Max = rrect2.Rect.Max.Add(f32.Pt(float32(gtx.Px(s.ShadowE)), float32(gtx.Px(s.ShadowS))))
+		rrect2.Rect.Min = rrect2.Rect.Min.Sub(image.Pt(gtx.Dp(s.ShadowW), gtx.Dp(s.ShadowN)))
+		rrect2.Rect.Max = rrect2.Rect.Max.Add(image.Pt(gtx.Dp(s.ShadowE), gtx.Dp(s.ShadowS)))
 		paint.FillShape(gtx.Ops, s.ShadowColor, rrect2.Op(gtx.Ops))
 		paint.FillShape(gtx.Ops, s.SurfaceColor, rrect.Op(gtx.Ops))
-		rect := image.Rect(int(rrect2.Rect.Min.X), int(rrect2.Rect.Min.Y), int(rrect2.Rect.Max.X), int(rrect2.Rect.Max.Y))
-		state := op.Save(gtx.Ops)
+		area := clip.Rect(image.Rect(-1e6, -1e6, 1e6, 1e6)).Push(gtx.Ops)
 		pointer.InputOp{Tag: s.Visible,
 			Types: pointer.Press,
 			Grab:  true,
 		}.Add(gtx.Ops)
-		state.Load()
-		state = op.Save(gtx.Ops)
-		pointer.Rect(rect).Add(gtx.Ops)
-		pointer.InputOp{Tag: dummyTag,
+		area.Pop()
+		area = clip.Rect(rrect2.Rect).Push(gtx.Ops)
+		pointer.InputOp{Tag: &dummyTag,
 			Types: pointer.Press,
 			Grab:  true,
 		}.Add(gtx.Ops)
-		state.Load()
+		area.Pop()
 		return D{Size: gtx.Constraints.Min}
 	}
 	macro := op.Record(gtx.Ops)

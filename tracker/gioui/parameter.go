@@ -47,19 +47,16 @@ func (p *ParameterWidget) Clicked() bool {
 func (p ParameterStyle) Layout(gtx C) D {
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
-			return layout.Stack{}.Layout(gtx,
-				layout.Stacked(func(gtx C) D {
-					gtx.Constraints.Min.X = gtx.Px(unit.Dp(110))
-					return layout.E.Layout(gtx, Label(p.Parameter.Name, white))
-				}),
-				layout.Expanded(p.ParameterWidget.labelBtn.Layout),
-			)
+			return p.ParameterWidget.labelBtn.Layout(gtx, func(gtx C) D {
+				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(110))
+				return layout.E.Layout(gtx, Label(p.Parameter.Name, white))
+			})
 		}),
 		layout.Rigid(func(gtx C) D {
 			switch p.Parameter.Type {
 			case tracker.IntegerParameter:
-				gtx.Constraints.Min.X = gtx.Px(unit.Dp(200))
-				gtx.Constraints.Min.Y = gtx.Px(unit.Dp(40))
+				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(200))
+				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
 				if p.Focus {
 					paint.FillShape(gtx.Ops, cursorColor, clip.Rect{
 						Max: gtx.Constraints.Min,
@@ -74,15 +71,15 @@ func (p ParameterStyle) Layout(gtx C) D {
 				p.Parameter.Value = int(p.ParameterWidget.floatWidget.Value + 0.5)
 				return dims
 			case tracker.BoolParameter:
-				gtx.Constraints.Min.X = gtx.Px(unit.Dp(60))
-				gtx.Constraints.Min.Y = gtx.Px(unit.Dp(40))
+				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(60))
+				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
 				if p.Focus {
 					paint.FillShape(gtx.Ops, cursorColor, clip.Rect{
 						Max: gtx.Constraints.Min,
 					}.Op())
 				}
 				p.ParameterWidget.boolWidget.Value = p.Parameter.Value > p.Parameter.Min
-				boolStyle := material.Switch(p.Theme, &p.ParameterWidget.boolWidget)
+				boolStyle := material.Switch(p.Theme, &p.ParameterWidget.boolWidget, "Toggle boolean parameter")
 				boolStyle.Color.Disabled = p.Theme.Fg
 				boolStyle.Color.Enabled = white
 				dims := layout.Center.Layout(gtx, boolStyle.Layout)
@@ -93,8 +90,8 @@ func (p ParameterStyle) Layout(gtx C) D {
 				}
 				return dims
 			case tracker.IDParameter:
-				gtx.Constraints.Min.X = gtx.Px(unit.Dp(200))
-				gtx.Constraints.Min.Y = gtx.Px(unit.Dp(40))
+				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(200))
+				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
 				if p.Focus {
 					paint.FillShape(gtx.Ops, cursorColor, clip.Rect{
 						Max: gtx.Constraints.Min,

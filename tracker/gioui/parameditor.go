@@ -94,12 +94,6 @@ func (pe *ParamEditor) Bind(t *Tracker) layout.Widget {
 					case key.NameEscape:
 						t.InstrumentEditor.unitDragList.Focus()
 					}
-					if e.Modifiers.Contain(key.ModShortcut) {
-						continue
-					}
-					t.JammingPressed(e)
-				case key.Release:
-					t.JammingReleased(e)
 				}
 			}
 		}
@@ -118,12 +112,13 @@ func (pe *ParamEditor) Bind(t *Tracker) layout.Widget {
 				}),
 				layout.Rigid(pe.layoutUnitFooter(t)))
 			rect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
-			pointer.PassOp{Pass: true}.Add(gtx.Ops)
-			pointer.Rect(rect).Add(gtx.Ops)
+			area := clip.Rect(rect).Push(gtx.Ops)
+			defer pointer.PassOp{}.Push(gtx.Ops).Pop()
 			pointer.InputOp{Tag: &pe.tag,
 				Types: pointer.Press,
 			}.Add(gtx.Ops)
-			key.InputOp{Tag: &pe.tag}.Add(gtx.Ops)
+			key.InputOp{Tag: &pe.tag, Keys: "←|Shift-←|→|Shift-→|↑|↓|⎋"}.Add(gtx.Ops)
+			area.Pop()
 			return ret
 		})
 	}
@@ -138,12 +133,12 @@ func (pe *ParamEditor) layoutUnitSliders(gtx C, t *Tracker) D {
 
 	listItem := func(gtx C, index int) D {
 		for pe.Parameters[index].Clicked() {
-			if !pe.focused || t.ParamIndex() != index {
-				pe.Focus()
+			if t.ParamIndex() != index {
 				t.SetParamIndex(index)
 			} else {
 				t.ResetParam()
 			}
+			pe.Focus()
 		}
 		param, err := t.Param(index)
 		if err != nil {
@@ -199,7 +194,7 @@ func (pe *ParamEditor) layoutUnitFooter(t *Tracker) layout.Widget {
 					clearUnitBtnStyle := IconButton(t.Theme, pe.ClearUnitBtn, icons.ContentClear, true)
 					dims = clearUnitBtnStyle.Layout(gtx)
 				}
-				return D{Size: image.Pt(gtx.Px(unit.Dp(48)), dims.Size.Y)}
+				return D{Size: image.Pt(gtx.Dp(unit.Dp(48)), dims.Size.Y)}
 			}),
 			layout.Flexed(1, hintText),
 		)
@@ -230,9 +225,10 @@ func (pe *ParamEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 		return layout.Stack{Alignment: layout.W}.Layout(gtx,
 			layout.Stacked(bg),
 			layout.Expanded(func(gtx C) D {
-				return leftMargin.Layout(gtx, labelStyle.Layout)
-			}),
-			layout.Expanded(pe.ChooseUnitTypeBtns[i].Layout))
+				return pe.ChooseUnitTypeBtns[i].Layout(gtx, func(gtx C) D {
+					return leftMargin.Layout(gtx, labelStyle.Layout)
+				})
+			}))
 	}
 	return layout.Stack{}.Layout(gtx,
 		layout.Stacked(func(gtx C) D {

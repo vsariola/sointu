@@ -1,10 +1,10 @@
 package gioui
 
 import (
+	"image"
 	"image/color"
 	"time"
 
-	"gioui.org/f32"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
@@ -94,10 +94,10 @@ func (a *Alert) Layout(gtx C) D {
 		}.Op())
 		return D{Size: gtx.Constraints.Min}
 	}
-	labelStyle := LabelStyle{Text: a.showMessage, Color: textColor, ShadeColor: shadeColor, Font: labelDefaultFont, Alignment: layout.Center, FontSize: unit.Dp(16)}
+	labelStyle := LabelStyle{Text: a.showMessage, Color: textColor, ShadeColor: shadeColor, Font: labelDefaultFont, Alignment: layout.Center, FontSize: unit.Sp(16)}
 	return alertMargin.Layout(gtx, func(gtx C) D {
 		return layout.S.Layout(gtx, func(gtx C) D {
-			defer op.Save(gtx.Ops).Load()
+			defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 			gtx.Constraints.Min.X = gtx.Constraints.Max.X
 			recording := op.Record(gtx.Ops)
 			dims := layout.Stack{Alignment: layout.Center}.Layout(gtx,
@@ -107,8 +107,8 @@ func (a *Alert) Layout(gtx C) D {
 				}),
 			)
 			macro := recording.Stop()
-			totalY := dims.Size.Y + gtx.Px(alertMargin.Bottom)
-			op.Offset(f32.Pt(0, float32((1-a.pos)*float64(totalY)))).Add((gtx.Ops))
+			totalY := dims.Size.Y + gtx.Dp(alertMargin.Bottom)
+			op.Offset(image.Point{0, int((1 - a.pos) * float64(totalY))}).Add((gtx.Ops))
 			macro.Add(gtx.Ops)
 			return dims
 		})

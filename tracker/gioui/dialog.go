@@ -46,7 +46,7 @@ func (d *DialogStyle) Layout(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
 						layout.Rigid(Label(d.Text, highEmphasisTextColor)),
 						layout.Rigid(func(gtx C) D {
-							gtx.Constraints.Min.X = gtx.Px(unit.Dp(120))
+							gtx.Constraints.Min.X = gtx.Dp(unit.Dp(120))
 							if d.ShowAlt {
 								return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween}.Layout(gtx,
 									layout.Rigid(d.OkStyle.Layout),

@@ -9,7 +9,7 @@ import (
 )
 
 var fontCollection []text.FontFace = gofont.Collection()
-var textShaper = text.NewCache(fontCollection)
+var textShaper = text.NewShaper(fontCollection)
 
 var white = color.NRGBA{R: 255, G: 255, B: 255, A: 255}
 var black = color.NRGBA{R: 0, G: 0, B: 0, A: 255}
@@ -34,7 +34,7 @@ var rowMarkerPatternTextColor = secondaryColor
 var rowMarkerRowTextColor = mediumEmphasisTextColor
 
 var trackerFont = fontCollection[6].Font
-var trackerFontSize = unit.Px(16)
+var trackerFontSize = unit.Sp(16)
 var trackerInactiveTextColor = highEmphasisTextColor
 var trackerActiveTextColor = color.NRGBA{R: 255, G: 255, B: 130, A: 255}
 var trackerPlayColor = color.NRGBA{R: 55, G: 55, B: 61, A: 255}

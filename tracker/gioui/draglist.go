@@ -59,7 +59,13 @@ func (d *DragList) Focused() bool {
 func (s *FilledDragListStyle) Layout(gtx C) D {
 	swap := 0
 
-	defer op.Save(gtx.Ops).Load()
+	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
+	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
+	keys := key.Set("↑|↓|Ctrl-↑|Ctrl-↓")
+	if s.dragList.List.Axis == layout.Horizontal {
+		keys = key.Set("←|→|Ctrl-←|Ctrl-→")
+	}
+	key.InputOp{Tag: &s.dragList.mainTag, Keys: keys}.Add(gtx.Ops)
 
 	if s.dragList.List.Axis == layout.Horizontal {
 		gtx.Constraints.Min.X = gtx.Constraints.Max.X
@@ -121,7 +127,7 @@ func (s *FilledDragListStyle) Layout(gtx C) D {
 		}
 
 		inputFg := func(gtx C) D {
-			defer op.Save(gtx.Ops).Load()
+			//defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 			for _, ev := range gtx.Events(&s.dragList.tags[index]) {
 				e, ok := ev.(pointer.Event)
 				if !ok {
@@ -143,12 +149,13 @@ func (s *FilledDragListStyle) Layout(gtx C) D {
 				}
 			}
 			rect := image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
-			pointer.Rect(rect).Add(gtx.Ops)
+			area := clip.Rect(rect).Push(gtx.Ops)
 			pointer.InputOp{Tag: &s.dragList.tags[index],
 				Types: pointer.Press | pointer.Enter | pointer.Leave,
 			}.Add(gtx.Ops)
+			area.Pop()
 			if index == s.dragList.SelectedItem {
-				for _, ev := range gtx.Events(s.dragList) {
+				for _, ev := range gtx.Events(&s.dragList.focused) {
 					e, ok := ev.(pointer.Event)
 					if !ok {
 						continue
@@ -156,6 +163,7 @@ func (s *FilledDragListStyle) Layout(gtx C) D {
 					switch e.Type {
 					case pointer.Press:
 						s.dragList.dragID = e.PointerID
+						s.dragList.drag = true
 					case pointer.Drag:
 						if s.dragList.dragID != e.PointerID {
 							break
@@ -181,22 +189,24 @@ func (s *FilledDragListStyle) Layout(gtx C) D {
 						s.dragList.drag = false
 					}
 				}
-				pointer.InputOp{Tag: s.dragList,
+				area := clip.Rect(rect).Push(gtx.Ops)
+				pointer.InputOp{Tag: &s.dragList.focused,
 					Types: pointer.Drag | pointer.Press | pointer.Release,
 					Grab:  s.dragList.drag,
 				}.Add(gtx.Ops)
-				pointer.CursorNameOp{Name: pointer.CursorGrab}.Add(gtx.Ops)
+				pointer.CursorGrab.Add(gtx.Ops)
+				area.Pop()
 			}
 			return layout.Dimensions{Size: gtx.Constraints.Min}
 		}
 		return layout.Stack{Alignment: layout.W}.Layout(gtx,
 			layout.Expanded(bg),
+			layout.Expanded(inputFg),
 			layout.Stacked(func(gtx C) D {
 				return s.element(gtx, index)
 			}),
-			layout.Expanded(inputFg))
+		)
 	}
-	key.InputOp{Tag: &s.dragList.mainTag}.Add(gtx.Ops)
 	dims := s.dragList.List.Layout(gtx, s.Count, listElem)
 	if !s.dragList.swapped && swap != 0 && s.dragList.SelectedItem+swap >= 0 && s.dragList.SelectedItem+swap < s.Count {
 		s.swap(s.dragList.SelectedItem, s.dragList.SelectedItem+swap)

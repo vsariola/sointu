@@ -5,7 +5,6 @@ import (
 	"image"
 	"strings"
 
-	"gioui.org/f32"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
@@ -20,13 +19,13 @@ func (t *Tracker) layoutRowMarkers(gtx C) D {
 	paint.FillShape(gtx.Ops, rowMarkerSurfaceColor, clip.Rect{
 		Max: gtx.Constraints.Max,
 	}.Op())
-	defer op.Save(gtx.Ops).Load()
-	clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
-	op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y-trackRowHeight)/2)).Add(gtx.Ops)
+	//defer op.Save(gtx.Ops).Load()
+	defer clip.Rect{Max: gtx.Constraints.Max}.Push(gtx.Ops).Pop()
+	op.Offset(image.Pt(0, (gtx.Constraints.Max.Y-trackRowHeight)/2)).Add(gtx.Ops)
 	cursorSongRow := t.Cursor().Pattern*t.Song().Score.RowsPerPattern + t.Cursor().Row
 	playPos := t.PlayPosition()
 	playSongRow := playPos.Pattern*t.Song().Score.RowsPerPattern + playPos.Row
-	op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorSongRow))).Add(gtx.Ops)
+	op.Offset(image.Pt(0, (-1*trackRowHeight)*(cursorSongRow))).Add(gtx.Ops)
 	beatMarkerDensity := t.Song().RowsPerBeat
 	for beatMarkerDensity <= 2 {
 		beatMarkerDensity *= 2
@@ -44,16 +43,16 @@ func (t *Tracker) layoutRowMarkers(gtx C) D {
 			}
 			if j == 0 {
 				paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", i)))
+				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", i)), op.CallOp{})
 			}
 			if t.TrackEditor.Focused() && songRow == cursorSongRow {
 				paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
 			} else {
 				paint.ColorOp{Color: rowMarkerRowTextColor}.Add(gtx.Ops)
 			}
-			op.Offset(f32.Pt(rowMarkerWidth/2, 0)).Add(gtx.Ops)
-			widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)))
-			op.Offset(f32.Pt(-rowMarkerWidth/2, trackRowHeight)).Add(gtx.Ops)
+			op.Offset(image.Pt(rowMarkerWidth/2, 0)).Add(gtx.Ops)
+			widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)), op.CallOp{})
+			op.Offset(image.Pt(-rowMarkerWidth/2, trackRowHeight)).Add(gtx.Ops)
 		}
 	}
 	return layout.Dimensions{Size: image.Pt(rowMarkerWidth, gtx.Constraints.Max.Y)}

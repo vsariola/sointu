@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"gioui.org/f32"
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
@@ -64,7 +63,7 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 				key.FocusOp{Tag: &oe.tag}.Add(gtx.Ops)
 			}
 		case key.Event:
-			if !oe.focused || e.State != key.Press {
+			if e.State != key.Press {
 				continue
 			}
 			switch e.Name {
@@ -129,6 +128,14 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 			case "-":
 				t.AdjustPatternNumber(-1, e.Modifiers.Contain(key.ModShortcut))
 				continue
+			case key.NameHome:
+				cursor := t.Cursor()
+				cursor.Track = 0
+				t.SetCursor(cursor)
+			case key.NameEnd:
+				cursor := t.Cursor()
+				cursor.Track = len(t.Song().Score.Tracks) - 1
+				t.SetCursor(cursor)
 			}
 			if (e.Name != key.NameLeftArrow &&
 				e.Name != key.NameRightArrow &&
@@ -156,18 +163,18 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 			}
 		}
 	}
-	defer op.Save(gtx.Ops).Load()
+	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	if oe.requestFocus {
 		oe.requestFocus = false
 		key.FocusOp{Tag: &oe.tag}.Add(gtx.Ops)
 	}
-	clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
-	rect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
-	pointer.Rect(rect).Add(gtx.Ops)
+	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 	pointer.InputOp{Tag: &oe.tag,
 		Types: pointer.Press,
 	}.Add(gtx.Ops)
-	key.InputOp{Tag: &oe.tag}.Add(gtx.Ops)
+
+	key.InputOp{Tag: &oe.tag, Keys: "←|→|↑|↓|Shift-←|Shift-→|Shift-↑|Shift-↓|⏎|⇱|⇲|⌫|⌦|Ctrl-⌫|Ctrl-⌦|+|-|Space|0|1|2|3|4|5|6|7|8|9|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z"}.Add(gtx.Ops)
+
 	patternRect := tracker.SongRect{
 		Corner1: tracker.SongPoint{SongRow: tracker.SongRow{Pattern: t.Cursor().Pattern}, Track: t.Cursor().Track},
 		Corner2: tracker.SongPoint{SongRow: tracker.SongRow{Pattern: t.SelectionCorner().Pattern}, Track: t.SelectionCorner().Track},
@@ -176,8 +183,7 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 	// draw the single letter titles for tracks
 	{
 		gtx := gtx
-		stack := op.Save(gtx.Ops)
-		op.Offset(f32.Pt(patternRowMarkerWidth, 0)).Add(gtx.Ops)
+		stack := op.Offset(image.Pt(patternRowMarkerWidth, 0)).Push(gtx.Ops)
 		gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X-patternRowMarkerWidth, patternCellHeight))
 		elem := func(gtx C, i int) D {
 			gtx.Constraints = layout.Exact(image.Pt(patternCellWidth, patternCellHeight))
@@ -188,16 +194,16 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 			} else {
 				title = "?"
 			}
-			LabelStyle{Alignment: layout.N, Text: title, FontSize: unit.Dp(12), Color: mediumEmphasisTextColor}.Layout(gtx)
+			LabelStyle{Alignment: layout.N, Text: title, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor}.Layout(gtx)
 			return D{Size: gtx.Constraints.Min}
 		}
 		style := FilledDragList(t.Theme, oe.titleList, len(t.Song().Score.Tracks), elem, t.SwapTracks)
 		style.HoverColor = transparent
 		style.SelectedColor = transparent
 		style.Layout(gtx)
-		stack.Load()
+		stack.Pop()
 	}
-	op.Offset(f32.Pt(0, patternCellHeight)).Add(gtx.Ops)
+	op.Offset(image.Pt(0, patternCellHeight)).Add(gtx.Ops)
 	gtx.Constraints.Max.Y -= patternCellHeight
 	gtx.Constraints.Min.Y -= patternCellHeight
 	element := func(gtx C, j int) D {
@@ -205,18 +211,17 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 			paint.FillShape(gtx.Ops, patternPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, patternCellHeight)}.Op())
 		}
 		paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)
-		widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)))
-		stack := op.Save(gtx.Ops)
-		op.Offset(f32.Pt(patternRowMarkerWidth, 0)).Add(gtx.Ops)
+		widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)), op.CallOp{})
+		stack := op.Offset(image.Pt(patternRowMarkerWidth, 0)).Push(gtx.Ops)
 		for i, track := range t.Song().Score.Tracks {
 			paint.FillShape(gtx.Ops, patternCellColor, clip.Rect{Min: image.Pt(1, 1), Max: image.Pt(patternCellWidth-1, patternCellHeight-1)}.Op())
 			paint.ColorOp{Color: patternTextColor}.Add(gtx.Ops)
 			if j >= 0 && j < len(track.Order) && track.Order[j] >= 0 {
 				gtx := gtx
 				gtx.Constraints.Max.X = patternCellWidth
-				op.Offset(f32.Pt(0, -2)).Add(gtx.Ops)
-				widget.Label{Alignment: text.Middle}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(track.Order[j]))
-				op.Offset(f32.Pt(0, 2)).Add(gtx.Ops)
+				op.Offset(image.Pt(0, -2)).Add(gtx.Ops)
+				widget.Label{Alignment: text.Middle}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(track.Order[j]), op.CallOp{})
+				op.Offset(image.Pt(0, 2)).Add(gtx.Ops)
 			}
 			point := tracker.SongPoint{Track: i, SongRow: tracker.SongRow{Pattern: j}}
 			if oe.focused || t.TrackEditor.Focused() {
@@ -231,9 +236,9 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 					paint.FillShape(gtx.Ops, color, clip.Rect{Max: image.Pt(patternCellWidth, patternCellHeight)}.Op())
 				}
 			}
-			op.Offset(f32.Pt(patternCellWidth, 0)).Add(gtx.Ops)
+			op.Offset(image.Pt(patternCellWidth, 0)).Add(gtx.Ops)
 		}
-		stack.Load()
+		stack.Pop()
 		return D{Size: image.Pt(gtx.Constraints.Max.X, patternCellHeight)}
 	}
 

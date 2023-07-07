@@ -5,7 +5,6 @@ import (
 	"math"
 	"time"
 
-	"gioui.org/f32"
 	"gioui.org/io/clipboard"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -41,29 +40,29 @@ func (t *Tracker) layoutSongPanel(gtx C) D {
 	)
 }
 
-func (t *Tracker) layoutMenu(title string, clickable *widget.Clickable, menu *Menu, width unit.Value, items ...MenuItem) layout.Widget {
+func (t *Tracker) layoutMenu(title string, clickable *widget.Clickable, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
 	for clickable.Clicked() {
 		menu.Visible = true
 	}
 	m := PopupMenu(t.Theme, menu)
 	return func(gtx C) D {
-		defer op.Save(gtx.Ops).Load()
+		defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 		titleBtn := material.Button(t.Theme, clickable, title)
 		titleBtn.Color = white
 		titleBtn.Background = transparent
 		titleBtn.CornerRadius = unit.Dp(0)
 		dims := titleBtn.Layout(gtx)
-		op.Offset(f32.Pt(0, float32(dims.Size.Y))).Add(gtx.Ops)
-		gtx.Constraints.Max.X = gtx.Px(width)
-		gtx.Constraints.Max.Y = gtx.Px(unit.Dp(1000))
+		op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
+		gtx.Constraints.Max.X = gtx.Dp(width)
+		gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(1000))
 		m.Layout(gtx, items...)
 		return dims
 	}
 }
 
 func (t *Tracker) layoutMenuBar(gtx C) D {
-	gtx.Constraints.Max.Y = gtx.Px(unit.Dp(36))
-	gtx.Constraints.Min.Y = gtx.Px(unit.Dp(36))
+	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(36))
+	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 
 	for clickedItem, hasClicked := t.Menus[0].Clicked(); hasClicked; {
 		switch clickedItem {
@@ -95,7 +94,7 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 				t.Alert.Update("Song copied to clipboard", Notify, time.Second*3)
 			}
 		case 3:
-			clipboard.ReadOp{Tag: &t.Menus[1]}.Add(gtx.Ops)
+			clipboard.ReadOp{Tag: t}.Add(gtx.Ops)
 		case 4:
 			t.RemoveUnusedData()
 		}
@@ -150,8 +149,8 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					t.SongLength.Value = t.Song().Score.Length
 					numStyle := NumericUpDown(t.Theme, t.SongLength, 1, math.MaxInt32)
-					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
 					t.SetSongLength(t.SongLength.Value)
 					return dims
@@ -164,8 +163,8 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					t.BPM.Value = t.Song().BPM
 					numStyle := NumericUpDown(t.Theme, t.BPM, 1, 999)
-					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
 					t.SetBPM(t.BPM.Value)
 					return dims
@@ -178,8 +177,8 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					t.RowsPerPattern.Value = t.Song().Score.RowsPerPattern
 					numStyle := NumericUpDown(t.Theme, t.RowsPerPattern, 1, 255)
-					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
 					t.SetRowsPerPattern(t.RowsPerPattern.Value)
 					return dims
@@ -192,8 +191,8 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					t.RowsPerBeat.Value = t.Song().RowsPerBeat
 					numStyle := NumericUpDown(t.Theme, t.RowsPerBeat, 1, 32)
-					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
 					t.SetRowsPerBeat(t.RowsPerBeat.Value)
 					return dims
@@ -206,8 +205,8 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					numStyle := NumericUpDown(t.Theme, t.Step, 0, 8)
 					numStyle.UnitsPerStep = unit.Dp(20)
-					gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
+					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
 					return dims
 				}),

@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"gioui.org/f32"
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
@@ -58,17 +57,23 @@ func (te *TrackEditor) Focus() {
 }
 
 func (te *TrackEditor) Focused() bool {
-	return te.focused
+	return te.focused || te.ChildFocused()
 }
 
+func (te *TrackEditor) ChildFocused() bool {
+	return te.AddOctaveBtn.Focused() || te.AddSemitoneBtn.Focused() || te.DeleteTrackBtn.Focused() || te.NewTrackBtn.Focused() || te.NoteOffBtn.Focused() || te.SubtractOctaveBtn.Focused() || te.SubtractSemitoneBtn.Focused() || te.SubtractSemitoneBtn.Focused() || te.SubtractSemitoneBtn.Focused()
+}
+
+var trackerEditorKeys key.Set = "+|-|←|→|↑|↓|Ctrl-←|Ctrl-→|Ctrl-↑|Ctrl-↓|Shift-←|Shift-→|Shift-↑|Shift-↓|⏎|⇱|⇲|⌫|⌦|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|0|1|2|3|4|5|6|7|8|9|,|."
+
 func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
-	for _, e := range gtx.Events(&te.tag) {
+	for _, e := range gtx.Events(te) {
 		switch e := e.(type) {
 		case key.FocusEvent:
 			te.focused = e.Focus
 		case pointer.Event:
 			if e.Type == pointer.Press {
-				key.FocusOp{Tag: &te.tag}.Add(gtx.Ops)
+				key.FocusOp{Tag: te}.Add(gtx.Ops)
 			}
 		case key.Event:
 			switch e.State {
@@ -170,17 +175,18 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 					t.SetCursor(t.Cursor().AddRows(t.Step.Value))
 					t.SetSelectionCorner(t.Cursor())
 				}
-
-				t.JammingPressed(e)
 			case key.Release:
-				t.JammingReleased(e)
+				if noteID, ok := t.KeyPlaying[e.Name]; ok {
+					t.NoteOff(noteID)
+					delete(t.KeyPlaying, e.Name)
+				}
 			}
 		}
 	}
 
-	if te.requestFocus {
+	if te.requestFocus || te.ChildFocused() {
 		te.requestFocus = false
-		key.FocusOp{Tag: &te.tag}.Add(gtx.Ops)
+		key.FocusOp{Tag: te}.Add(gtx.Ops)
 	}
 
 	rowMarkers := layout.Rigid(t.layoutRowMarkers)
@@ -235,14 +241,14 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 		in := layout.UniformInset(unit.Dp(1))
 		voiceUpDown := func(gtx C) D {
 			numStyle := NumericUpDown(t.Theme, te.TrackVoices, 1, t.MaxTrackVoices())
-			gtx.Constraints.Min.Y = gtx.Px(unit.Dp(20))
-			gtx.Constraints.Min.X = gtx.Px(unit.Dp(70))
+			gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
+			gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 			return in.Layout(gtx, numStyle.Layout)
 		}
 		t.TrackHexCheckBox.Value = t.Song().Score.Tracks[t.Cursor().Track].Effect
 		hexCheckBoxStyle := material.CheckBox(t.Theme, t.TrackHexCheckBox, "Hex")
 		dims := layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Px(unit.Dp(12)), 0)} }),
+			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Dp(unit.Dp(12)), 0)} }),
 			layout.Rigid(addSemitoneBtnStyle.Layout),
 			layout.Rigid(subtractSemitoneBtnStyle.Layout),
 			layout.Rigid(addOctaveBtnStyle.Layout),
@@ -260,16 +266,16 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 	}
 
 	rect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
-	pointer.Rect(rect).Add(gtx.Ops)
-	pointer.InputOp{Tag: &te.tag,
+	area := clip.Rect(rect).Push(gtx.Ops)
+	pointer.InputOp{Tag: te,
 		Types: pointer.Press,
 	}.Add(gtx.Ops)
-	key.InputOp{Tag: &te.tag}.Add(gtx.Ops)
+	key.InputOp{Tag: te, Keys: trackerEditorKeys}.Add(gtx.Ops)
 
-	return Surface{Gray: 24, Focus: te.focused}.Layout(gtx, func(gtx C) D {
+	dims := Surface{Gray: 24, Focus: te.Focused()}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
-				return Surface{Gray: 37, Focus: te.focused, FitSize: true}.Layout(gtx, menu)
+				return Surface{Gray: 37, Focus: te.Focused(), FitSize: true}.Layout(gtx, menu)
 			}),
 			layout.Flexed(1, func(gtx C) D {
 				return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
@@ -280,11 +286,14 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 			}),
 		)
 	})
+
+	area.Pop()
+	return dims
 }
 
 func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
-	defer op.Save(gtx.Ops).Load()
-	clip.Rect{Max: gtx.Constraints.Max}.Add(gtx.Ops)
+	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
+	defer clip.Rect{Max: gtx.Constraints.Max}.Push(gtx.Ops).Pop()
 	cursorSongRow := t.Cursor().Pattern*t.Song().Score.RowsPerPattern + t.Cursor().Row
 	for _, ev := range gtx.Events(&te.trackJumpPointerTag) {
 		e, ok := ev.(pointer.Event)
@@ -302,11 +311,12 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 		}
 	}
 	rect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
-	pointer.Rect(rect).Add(gtx.Ops)
+	area := clip.Rect(rect).Push(gtx.Ops)
 	pointer.InputOp{Tag: &te.trackJumpPointerTag,
 		Types: pointer.Press,
 	}.Add(gtx.Ops)
-	stack := op.Save(gtx.Ops)
+	area.Pop()
+	stack := op.Offset(image.Point{}).Push(gtx.Ops)
 	curVoice := 0
 	for _, trk := range t.Song().Score.Tracks {
 		gtx := gtx
@@ -341,14 +351,14 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 			}
 		}
 		gtx.Constraints.Max.X = trackColWidth
-		LabelStyle{Alignment: layout.N, Text: instrName, FontSize: unit.Dp(12), Color: mediumEmphasisTextColor}.Layout(gtx)
-		op.Offset(f32.Pt(trackColWidth, 0)).Add(gtx.Ops)
+		LabelStyle{Alignment: layout.N, Text: instrName, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor}.Layout(gtx)
+		op.Offset(image.Point{trackColWidth, 0}).Add(gtx.Ops)
 		curVoice += trk.NumVoices
 	}
-	stack.Load()
-	op.Offset(f32.Pt(0, float32(gtx.Constraints.Max.Y-trackRowHeight)/2)).Add(gtx.Ops)
-	op.Offset(f32.Pt(0, (-1*trackRowHeight)*float32(cursorSongRow))).Add(gtx.Ops)
-	if te.focused || t.OrderEditor.Focused() {
+	stack.Pop()
+	op.Offset(image.Point{0, (gtx.Constraints.Max.Y - trackRowHeight) / 2}).Add(gtx.Ops)
+	op.Offset(image.Point{0, int((-1 * trackRowHeight) * (cursorSongRow))}).Add(gtx.Ops)
+	if te.Focused() || t.OrderEditor.Focused() {
 		x1, y1 := t.Cursor().Track, t.Cursor().Pattern
 		x2, y2 := t.SelectionCorner().Track, t.SelectionCorner().Pattern
 		if x1 > x2 {
@@ -365,7 +375,7 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 		y2 *= trackRowHeight * t.Song().Score.RowsPerPattern
 		paint.FillShape(gtx.Ops, inactiveSelectionColor, clip.Rect{Min: image.Pt(x1, y1), Max: image.Pt(x2, y2)}.Op())
 	}
-	if te.focused {
+	if te.Focused() {
 		x1, y1 := t.Cursor().Track, t.Cursor().Pattern*t.Song().Score.RowsPerPattern+t.Cursor().Row
 		x2, y2 := t.SelectionCorner().Track, t.SelectionCorner().Pattern*t.Song().Score.RowsPerPattern+t.SelectionCorner().Row
 		if x1 > x2 {
@@ -401,27 +411,27 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 	if l := t.Song().Score.LengthInRows(); lastRow >= l {
 		lastRow = l - 1
 	}
-	op.Offset(f32.Pt(0, float32(trackRowHeight*firstRow))).Add(gtx.Ops)
+	op.Offset(image.Point{0, trackRowHeight * firstRow}).Add(gtx.Ops)
 	for trkIndex, trk := range t.Song().Score.Tracks {
-		stack := op.Save(gtx.Ops)
+		stack := op.Offset(image.Point{}).Push(gtx.Ops)
 		for row := firstRow; row <= lastRow; row++ {
 			pat := row / t.Song().Score.RowsPerPattern
 			patRow := row % t.Song().Score.RowsPerPattern
 			s := trk.Order.Get(pat)
 			if s < 0 {
-				op.Offset(f32.Pt(0, trackRowHeight)).Add(gtx.Ops)
+				op.Offset(image.Point{0, trackRowHeight}).Add(gtx.Ops)
 				continue
 			}
 			if s >= 0 && patRow == 0 {
 				paint.ColorOp{Color: trackerPatMarker}.Add(gtx.Ops)
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(s))
+				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(s), op.CallOp{})
 			}
 			if s >= 0 && patRow == 1 && t.IsPatternUnique(trkIndex, s) {
 				paint.ColorOp{Color: mediumEmphasisTextColor}.Add(gtx.Ops)
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, "*")
+				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, "*", op.CallOp{})
 			}
-			op.Offset(f32.Pt(patmarkWidth, 0)).Add(gtx.Ops)
-			if te.focused && t.Cursor().Row == patRow && t.Cursor().Pattern == pat {
+			op.Offset(image.Point{patmarkWidth, 0}).Add(gtx.Ops)
+			if te.Focused() && t.Cursor().Row == patRow && t.Cursor().Pattern == pat {
 				paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
 			} else {
 				paint.ColorOp{Color: trackerInactiveTextColor}.Add(gtx.Ops)
@@ -440,14 +450,14 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 				default:
 					text = fmt.Sprintf("%02x", c)
 				}
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(text))
+				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(text), op.CallOp{})
 			} else {
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, tracker.NoteStr(c))
+				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, tracker.NoteStr(c), op.CallOp{})
 			}
-			op.Offset(f32.Pt(-patmarkWidth, trackRowHeight)).Add(gtx.Ops)
+			op.Offset(image.Point{-patmarkWidth, trackRowHeight}).Add(gtx.Ops)
 		}
-		stack.Load()
-		op.Offset(f32.Pt(trackColWidth, 0)).Add(gtx.Ops)
+		stack.Pop()
+		op.Offset(image.Point{trackColWidth, 0}).Add(gtx.Ops)
 	}
 	return layout.Dimensions{Size: gtx.Constraints.Max}
 }

@@ -28,8 +28,8 @@ type MenuStyle struct {
 	IconColor     color.NRGBA
 	TextColor     color.NRGBA
 	ShortCutColor color.NRGBA
-	FontSize      unit.Value
-	IconSize      unit.Value
+	FontSize      unit.Sp
+	IconSize      unit.Dp
 	HoverColor    color.NRGBA
 }
 
@@ -82,16 +82,15 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 			i2 := i // avoid loop variable getting updated in closure
 			item2 := item
 			flexChildren[i] = layout.Rigid(func(gtx C) D {
-				defer op.Save(gtx.Ops).Load()
+				defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 				var macro op.MacroOp
 				if i2 == m.Menu.hover-1 && !item2.Disabled {
 					macro = op.Record(gtx.Ops)
 				}
 				icon := widgetForIcon(item2.IconBytes)
-				if !item2.Disabled {
-					icon.Color = m.IconColor
-				} else {
-					icon.Color = mediumEmphasisTextColor
+				iconColor := m.IconColor
+				if item2.Disabled {
+					iconColor = mediumEmphasisTextColor
 				}
 				iconInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(6)}
 				textLabel := LabelStyle{Text: item2.Text, FontSize: m.FontSize, Color: m.TextColor}
@@ -103,7 +102,9 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 				dims := layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 					layout.Rigid(func(gtx C) D {
 						return iconInset.Layout(gtx, func(gtx C) D {
-							return icon.Layout(gtx, m.IconSize)
+							p := gtx.Dp(unit.Dp(m.IconSize))
+							gtx.Constraints.Min = image.Pt(p, p)
+							return icon.Layout(gtx, iconColor)
 						})
 					}),
 					layout.Rigid(textLabel.Layout),
@@ -121,10 +122,11 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 				}
 				if !item2.Disabled {
 					rect := image.Rect(0, 0, dims.Size.X, dims.Size.Y)
-					pointer.Rect(rect).Add(gtx.Ops)
+					area := clip.Rect(rect).Push(gtx.Ops)
 					pointer.InputOp{Tag: &m.Menu.tags[i2],
 						Types: pointer.Press | pointer.Enter | pointer.Leave,
 					}.Add(gtx.Ops)
+					area.Pop()
 				}
 				return dims
 			})
@@ -144,7 +146,7 @@ func PopupMenu(th *material.Theme, menu *Menu) MenuStyle {
 		IconColor:     white,
 		TextColor:     white,
 		ShortCutColor: mediumEmphasisTextColor,
-		FontSize:      unit.Dp(16),
+		FontSize:      unit.Sp(16),
 		IconSize:      unit.Dp(16),
 		HoverColor:    menuHoverColor,
 	}

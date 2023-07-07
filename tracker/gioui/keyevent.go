@@ -3,8 +3,9 @@ package gioui
 import (
 	"time"
 
-	"gioui.org/app"
+	"gioui.org/io/clipboard"
 	"gioui.org/io/key"
+	"gioui.org/op"
 	"github.com/vsariola/sointu/tracker"
 	"gopkg.in/yaml.v3"
 )
@@ -45,86 +46,80 @@ var noteMap = map[string]int{
 }
 
 // KeyEvent handles incoming key events and returns true if repaint is needed.
-func (t *Tracker) KeyEvent(e key.Event, window *app.Window) bool {
+func (t *Tracker) KeyEvent(e key.Event, o *op.Ops) {
 	if e.State == key.Press {
 		if t.OpenSongDialog.Visible ||
 			t.SaveSongDialog.Visible ||
 			t.SaveInstrumentDialog.Visible ||
 			t.OpenInstrumentDialog.Visible ||
 			t.ExportWavDialog.Visible {
-			return false
+			return
 		}
 		switch e.Name {
 		case "C":
 			if e.Modifiers.Contain(key.ModShortcut) {
 				contents, err := yaml.Marshal(t.Song())
 				if err == nil {
-					window.WriteClipboard(string(contents))
+					clipboard.WriteOp{Text: string(contents)}.Add(o)
 					t.Alert.Update("Song copied to clipboard", Notify, time.Second*3)
 				}
-				return true
+				return
 			}
 		case "V":
 			if e.Modifiers.Contain(key.ModShortcut) {
-				window.ReadClipboard()
-				return true
+				clipboard.ReadOp{Tag: t}.Add(o)
+				return
 			}
 		case "Z":
 			if e.Modifiers.Contain(key.ModShortcut) {
 				t.Undo()
-				return true
+				return
 			}
 		case "Y":
 			if e.Modifiers.Contain(key.ModShortcut) {
 				t.Redo()
-				return true
+				return
 			}
 		case "N":
 			if e.Modifiers.Contain(key.ModShortcut) {
 				t.NewSong(false)
-				return true
+				return
 			}
 		case "S":
 			if e.Modifiers.Contain(key.ModShortcut) {
 				t.SaveSongFile()
-				return false
+				return
 			}
 		case "O":
 			if e.Modifiers.Contain(key.ModShortcut) {
 				t.OpenSongFile(false)
-				return true
+				return
 			}
 		case "F1":
 			t.OrderEditor.Focus()
-			return true
+			return
 		case "F2":
 			t.TrackEditor.Focus()
-			return true
+			return
 		case "F3":
 			t.InstrumentEditor.Focus()
-			return true
+			return
 		case "F4":
 			t.TrackEditor.Focus()
-			return true
+			return
 		case "F5":
 			t.SetNoteTracking(true)
 			startRow := t.Cursor().SongRow
-			if t.OrderEditor.Focused() {
-				startRow.Row = 0
-			}
 			t.PlayFromPosition(startRow)
-			return true
+			return
 		case "F6":
 			t.SetNoteTracking(false)
 			startRow := t.Cursor().SongRow
-			if t.OrderEditor.Focused() {
-				startRow.Row = 0
-			}
 			t.PlayFromPosition(startRow)
-			return true
+			return
 		case "F8":
 			t.SetPlaying(false)
-			return true
+			return
 		case "Space":
 			if !t.Playing() && !t.InstrEnlarged() {
 				t.SetNoteTracking(!e.Modifiers.Contain(key.ModShortcut))
@@ -172,9 +167,10 @@ func (t *Tracker) KeyEvent(e key.Event, window *app.Window) bool {
 				}
 			}
 		}
+		t.JammingPressed(e)
+	} else { // e.State == key.Release
+		t.JammingReleased(e)
 	}
-
-	return false
 }
 
 // NumberPressed handles incoming presses while in either of the hex number columns
@@ -191,7 +187,7 @@ func (t *Tracker) NumberPressed(iv byte) {
 	t.SetNote(val)
 }
 
-func (t *Tracker) JammingPressed(e key.Event) {
+func (t *Tracker) JammingPressed(e key.Event) byte {
 	if val, ok := noteMap[e.Name]; ok {
 		if _, ok := t.KeyPlaying[e.Name]; !ok {
 			n := tracker.NoteAsValue(t.OctaveNumberInput.Value, val)
@@ -199,16 +195,17 @@ func (t *Tracker) JammingPressed(e key.Event) {
 			noteID := tracker.NoteIDInstr(instr, n)
 			t.NoteOn(noteID)
 			t.KeyPlaying[e.Name] = noteID
+			return n
 		}
 	}
+	return 0
 }
 
-func (t *Tracker) JammingReleased(e key.Event) {
+func (t *Tracker) JammingReleased(e key.Event) bool {
 	if noteID, ok := t.KeyPlaying[e.Name]; ok {
 		t.NoteOff(noteID)
 		delete(t.KeyPlaying, e.Name)
-		if t.TrackEditor.focused && t.Playing() && t.Note() == 1 && t.NoteTracking() {
-			t.SetNote(0)
-		}
+		return true
 	}
+	return false
 }

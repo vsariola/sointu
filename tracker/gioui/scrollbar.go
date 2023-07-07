@@ -20,10 +20,10 @@ type ScrollBar struct {
 	tag       bool
 }
 
-func (s *ScrollBar) Layout(gtx C, width unit.Value, numItems int, pos *layout.Position) D {
-	defer op.Save(gtx.Ops).Load()
-	clip.Rect{Max: gtx.Constraints.Min}.Add(gtx.Ops)
-	gradientSize := gtx.Px(unit.Dp(4))
+func (s *ScrollBar) Layout(gtx C, width unit.Dp, numItems int, pos *layout.Position) D {
+	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
+	defer clip.Rect{Max: gtx.Constraints.Min}.Push(gtx.Ops).Pop()
+	gradientSize := gtx.Dp(unit.Dp(4))
 	var totalPixelsEstimate, scrollBarRelLength float32
 	switch s.Axis {
 	case layout.Vertical:
@@ -52,9 +52,10 @@ func (s *ScrollBar) Layout(gtx C, width unit.Value, numItems int, pos *layout.Po
 	}
 
 	scrollBarRelStart := (float32(pos.First)*totalPixelsEstimate/float32(numItems) + float32(pos.Offset)) / totalPixelsEstimate
-	scrWidth := gtx.Px(width)
+	scrWidth := gtx.Dp(width)
 
-	stack := op.Save(gtx.Ops)
+	stack := op.Offset(image.Point{}).Push(gtx.Ops)
+	var area clip.Stack
 	switch s.Axis {
 	case layout.Vertical:
 		if scrollBarRelLength < 1 && (s.dragging || s.hovering) {
@@ -63,7 +64,7 @@ func (s *ScrollBar) Layout(gtx C, width unit.Value, numItems int, pos *layout.Po
 			paint.FillShape(gtx.Ops, scrollBarColor, clip.Rect{Min: image.Pt(gtx.Constraints.Min.X-scrWidth, y1), Max: image.Pt(gtx.Constraints.Min.X, y2)}.Op())
 		}
 		rect := image.Rect(gtx.Constraints.Min.X-scrWidth, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
-		pointer.Rect(rect).Add(gtx.Ops)
+		area = clip.Rect(rect).Push(gtx.Ops)
 	case layout.Horizontal:
 		if scrollBarRelLength < 1 && (s.dragging || s.hovering) {
 			x1 := int(scrollBarRelStart * float32(gtx.Constraints.Min.X))
@@ -71,12 +72,14 @@ func (s *ScrollBar) Layout(gtx C, width unit.Value, numItems int, pos *layout.Po
 			paint.FillShape(gtx.Ops, scrollBarColor, clip.Rect{Min: image.Pt(x1, gtx.Constraints.Min.Y-scrWidth), Max: image.Pt(x2, gtx.Constraints.Min.Y)}.Op())
 		}
 		rect := image.Rect(0, gtx.Constraints.Min.Y-scrWidth, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
-		pointer.Rect(rect).Add(gtx.Ops)
+		area = clip.Rect(rect).Push(gtx.Ops)
 	}
 	pointer.InputOp{Tag: &s.dragStart,
 		Types: pointer.Drag | pointer.Press | pointer.Cancel | pointer.Release,
+		Grab:  s.dragging,
 	}.Add(gtx.Ops)
-	stack.Load()
+	area.Pop()
+	stack.Pop()
 
 	for _, ev := range gtx.Events(&s.dragStart) {
 		e, ok := ev.(pointer.Event)
@@ -105,12 +108,13 @@ func (s *ScrollBar) Layout(gtx C, width unit.Value, numItems int, pos *layout.Po
 		}
 	}
 
-	pointer.PassOp{Pass: true}.Add(gtx.Ops)
 	rect := image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
-	pointer.Rect(rect).Add(gtx.Ops)
+	area2 := clip.Rect(rect).Push(gtx.Ops)
+	defer pointer.PassOp{}.Push(gtx.Ops).Pop()
 	pointer.InputOp{Tag: &s.tag,
 		Types: pointer.Enter | pointer.Leave,
 	}.Add(gtx.Ops)
+	area2.Pop()
 
 	for _, ev := range gtx.Events(&s.tag) {
 		e, ok := ev.(pointer.Event)

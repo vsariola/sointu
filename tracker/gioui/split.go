@@ -3,10 +3,10 @@ package gioui
 import (
 	"image"
 
-	"gioui.org/f32"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/op/clip"
 	"gioui.org/unit"
 )
 
@@ -15,7 +15,7 @@ type Split struct {
 	// 0 is center, -1 completely to the left, 1 completely to the right.
 	Ratio float32
 	// Bar is the width for resizing the layout
-	Bar unit.Value
+	Bar unit.Dp
 	// Axis is the split direction: layout.Horizontal splits the view in left
 	// and right, layout.Vertical splits the view in top and bottom
 	Axis layout.Axis
@@ -28,9 +28,9 @@ type Split struct {
 var defaultBarWidth = unit.Dp(10)
 
 func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.Dimensions {
-	bar := gtx.Px(s.Bar)
+	bar := gtx.Dp(s.Bar)
 	if bar <= 1 {
-		bar = gtx.Px(defaultBarWidth)
+		bar = gtx.Dp(defaultBarWidth)
 	}
 
 	var coord int
@@ -48,7 +48,6 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 
 	{ // handle input
 		// Avoid affecting the input tree with pointer events.
-		stack := op.Save(gtx.Ops)
 
 		for _, ev := range gtx.Events(s) {
 			e, ok := ev.(pointer.Event)
@@ -123,43 +122,43 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 		} else {
 			barRect = image.Rect(0, firstSize, gtx.Constraints.Max.X, secondOffset)
 		}
-		pointer.Rect(barRect).Add(gtx.Ops)
+		area := clip.Rect(barRect).Push(gtx.Ops)
 		pointer.InputOp{Tag: s,
 			Types: pointer.Press | pointer.Drag | pointer.Release,
 			Grab:  s.drag,
 		}.Add(gtx.Ops)
-
-		stack.Load()
+		area.Pop()
 	}
 
 	{
 		gtx := gtx
-		stack := op.Save(gtx.Ops)
 
 		if s.Axis == layout.Horizontal {
 			gtx.Constraints = layout.Exact(image.Pt(firstSize, gtx.Constraints.Max.Y))
 		} else {
 			gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, firstSize))
 		}
+		area := clip.Rect(image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)).Push(gtx.Ops)
 		first(gtx)
-
-		stack.Load()
+		area.Pop()
 	}
 
 	{
 		gtx := gtx
-		stack := op.Save(gtx.Ops)
+
+		var transform op.TransformStack
 		if s.Axis == layout.Horizontal {
-			op.Offset(f32.Pt(float32(secondOffset), 0)).Add(gtx.Ops)
+			transform = op.Offset(image.Pt(secondOffset, 0)).Push(gtx.Ops)
 			gtx.Constraints = layout.Exact(image.Pt(secondSize, gtx.Constraints.Max.Y))
 		} else {
-			op.Offset(f32.Pt(0, float32(secondOffset))).Add(gtx.Ops)
+			transform = op.Offset(image.Pt(0, secondOffset)).Push(gtx.Ops)
 			gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, secondSize))
 		}
 
+		area := clip.Rect(image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)).Push(gtx.Ops)
 		second(gtx)
-
-		stack.Load()
+		area.Pop()
+		transform.Pop()
 	}
 
 	return layout.Dimensions{Size: gtx.Constraints.Max}

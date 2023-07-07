@@ -8,8 +8,6 @@ import (
 
 	"gioui.org/app"
 	"gioui.org/font/gofont"
-	"gioui.org/io/clipboard"
-	"gioui.org/io/key"
 	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -192,18 +190,9 @@ mainloop:
 						app.Title("Sointu Tracker"),
 					)
 				}
-			case key.Event:
-				if t.KeyEvent(e, w) {
-					w.Invalidate()
-				}
-			case clipboard.Event:
-				err := t.UnmarshalContent([]byte(e.Text))
-				if err == nil {
-					w.Invalidate()
-				}
 			case system.FrameEvent:
 				gtx := layout.NewContext(&ops, e)
-				t.Layout(gtx)
+				t.Layout(gtx, w)
 				e.Frame(gtx.Ops)
 			}
 		}
@@ -211,5 +200,5 @@ mainloop:
 			break mainloop
 		}
 	}
-	w.Close()
+	w.Perform(system.ActionClose)
 }

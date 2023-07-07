@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/exp/shiny/materialdesign/icons"
 
-	"gioui.org/f32"
+	"gioui.org/font"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/widget"
@@ -34,15 +34,15 @@ type NumericUpDownStyle struct {
 	Min             int
 	Max             int
 	Color           color.NRGBA
-	Font            text.Font
-	TextSize        unit.Value
+	Font            font.Font
+	TextSize        unit.Sp
 	BorderColor     color.NRGBA
 	IconColor       color.NRGBA
 	BackgroundColor color.NRGBA
-	CornerRadius    unit.Value
-	Border          unit.Value
-	ButtonWidth     unit.Value
-	UnitsPerStep    unit.Value
+	CornerRadius    unit.Dp
+	Border          unit.Dp
+	ButtonWidth     unit.Dp
+	UnitsPerStep    unit.Dp
 	shaper          text.Shaper
 }
 
@@ -63,26 +63,23 @@ func NumericUpDown(th *material.Theme, number *NumberInput, min, max int) Numeri
 		ButtonWidth:     unit.Dp(16),
 		Border:          unit.Dp(1),
 		UnitsPerStep:    unit.Dp(8),
-		TextSize:        th.TextSize.Scale(14.0 / 16.0),
-		shaper:          th.Shaper,
+		TextSize:        th.TextSize * 14 / 16,
+		shaper:          *th.Shaper,
 	}
 }
 
 func (s NumericUpDownStyle) Layout(gtx C) D {
 	size := gtx.Constraints.Min
-	defer op.Save(gtx.Ops).Load()
-	rr := float32(gtx.Px(s.CornerRadius))
-	border := float32(gtx.Px(s.Border))
-	clip.UniformRRect(f32.Rectangle{Max: f32.Point{
-		X: float32(gtx.Constraints.Min.X),
-		Y: float32(gtx.Constraints.Min.Y),
-	}}, rr).Add(gtx.Ops)
+	rr := gtx.Dp(s.CornerRadius)
+	border := gtx.Dp(s.Border)
+	c := clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, rr).Push(gtx.Ops)
 	paint.Fill(gtx.Ops, s.BorderColor)
-	op.Offset(f32.Pt(border, border)).Add(gtx.Ops)
-	clip.UniformRRect(f32.Rectangle{Max: f32.Point{
-		X: float32(gtx.Constraints.Min.X) - border*2,
-		Y: float32(gtx.Constraints.Min.Y) - border*2,
-	}}, rr-border).Add(gtx.Ops)
+	c.Pop()
+	off := op.Offset(image.Pt(border, border)).Push(gtx.Ops)
+	c2 := clip.UniformRRect(image.Rectangle{Max: image.Pt(
+		gtx.Constraints.Min.X-border*2,
+		gtx.Constraints.Min.Y-border*2,
+	)}, rr-border).Push(gtx.Ops)
 	gtx.Constraints.Min.X -= int(border * 2)
 	gtx.Constraints.Min.Y -= int(border * 2)
 	gtx.Constraints.Max = gtx.Constraints.Min
@@ -97,12 +94,14 @@ func (s NumericUpDownStyle) Layout(gtx C) D {
 	if s.NumberInput.Value > s.Max {
 		s.NumberInput.Value = s.Max
 	}
+	off.Pop()
+	c2.Pop()
 	return layout.Dimensions{Size: size}
 }
 
 func (s NumericUpDownStyle) button(height int, icon *widget.Icon, delta int, click *gesture.Click) layout.Widget {
 	return func(gtx C) D {
-		btnWidth := gtx.Px(s.ButtonWidth)
+		btnWidth := gtx.Dp(s.ButtonWidth)
 		return layout.Stack{Alignment: layout.Center}.Layout(gtx,
 			layout.Stacked(func(gtx layout.Context) layout.Dimensions {
 				//paint.FillShape(gtx.Ops, black, clip.Rect(image.Rect(0, 0, btnWidth, height)).Op())
@@ -117,8 +116,12 @@ func (s NumericUpDownStyle) button(height int, icon *widget.Icon, delta int, cli
 					size = 1
 				}
 				if icon != nil {
-					icon.Color = s.IconColor
-					return icon.Layout(gtx, unit.Px(float32(size)))
+					p := gtx.Dp(unit.Dp(size))
+					if p < 1 {
+						p = 1
+					}
+					gtx.Constraints = layout.Exact(image.Pt(p, p))
+					return icon.Layout(gtx, s.IconColor)
 				}
 				return layout.Dimensions{}
 			}),
@@ -137,7 +140,7 @@ func (s NumericUpDownStyle) layoutText(gtx C) D {
 		}),
 		layout.Expanded(func(gtx layout.Context) layout.Dimensions {
 			paint.ColorOp{Color: s.Color}.Add(gtx.Ops)
-			return widget.Label{Alignment: text.Middle}.Layout(gtx, s.shaper, s.Font, s.TextSize, fmt.Sprintf("%v", s.NumberInput.Value))
+			return widget.Label{Alignment: text.Middle}.Layout(gtx, &s.shaper, s.Font, s.TextSize, fmt.Sprintf("%v", s.NumberInput.Value), op.CallOp{})
 		}),
 		layout.Expanded(s.layoutDrag),
 	)
@@ -145,7 +148,7 @@ func (s NumericUpDownStyle) layoutText(gtx C) D {
 
 func (s NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
 	{ // handle dragging
-		pxPerStep := float32(gtx.Px(s.UnitsPerStep))
+		pxPerStep := float32(gtx.Dp(s.UnitsPerStep))
 		for _, ev := range gtx.Events(s.NumberInput) {
 			if e, ok := ev.(pointer.Event); ok {
 				switch e.Type {
@@ -162,15 +165,16 @@ func (s NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
 		}
 
 		// Avoid affecting the input tree with pointer events.
-		stack := op.Save(gtx.Ops)
+		stack := op.Offset(image.Point{}).Push(gtx.Ops)
 		// register for input
 		dragRect := image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
-		pointer.Rect(dragRect).Add(gtx.Ops)
+		area := clip.Rect(dragRect).Push(gtx.Ops)
 		pointer.InputOp{
 			Tag:   s.NumberInput,
 			Types: pointer.Press | pointer.Drag | pointer.Release,
 		}.Add(gtx.Ops)
-		stack.Load()
+		area.Pop()
+		stack.Pop()
 	}
 	return layout.Dimensions{Size: gtx.Constraints.Min}
 }
@@ -184,11 +188,13 @@ func (s NumericUpDownStyle) layoutClick(gtx layout.Context, delta int, click *ge
 		}
 	}
 	// Avoid affecting the input tree with pointer events.
-	stack := op.Save(gtx.Ops)
+	stack := op.Offset(image.Point{}).Push(gtx.Ops)
+
 	// register for input
 	clickRect := image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
-	pointer.Rect(clickRect).Add(gtx.Ops)
+	area := clip.Rect(clickRect).Push(gtx.Ops)
 	click.Add(gtx.Ops)
-	stack.Load()
+	area.Pop()
+	stack.Pop()
 	return layout.Dimensions{Size: gtx.Constraints.Min}
 }

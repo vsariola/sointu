@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"image"
 
+	"gioui.org/app"
+	"gioui.org/io/clipboard"
+	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
@@ -12,7 +15,21 @@ import (
 type C = layout.Context
 type D = layout.Dimensions
 
-func (t *Tracker) Layout(gtx layout.Context) {
+func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
+	// this is the top level input handler for the whole app
+	// it handles all the global key events and clipboard events
+	// we need to tell gio that we handle tabs too; otherwise
+	// it will steal them for focus switching
+	key.InputOp{Tag: t, Keys: "Tab|Shift-Tab"}.Add(gtx.Ops)
+	for _, ev := range gtx.Events(t) {
+		switch e := ev.(type) {
+		case key.Event:
+			t.KeyEvent(e, gtx.Ops)
+		case clipboard.Event:
+			t.UnmarshalContent([]byte(e.Text))
+		}
+	}
+
 	paint.FillShape(gtx.Ops, backgroundColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 	if t.InstrEnlarged() {
 		t.layoutTop(gtx)
