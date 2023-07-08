@@ -11,7 +11,6 @@ func Read4klangPatch(r io.Reader) (patch Patch, err error) {
 	var versionTag uint32
 	var version int
 	var polyphonyUint32 uint32
-	var polyphony int
 	var instrumentNames [_4KLANG_MAX_INSTRS]string
 	patch = make(Patch, 0)
 	if err := binary.Read(r, binary.LittleEndian, &versionTag); err != nil {
@@ -23,10 +22,6 @@ func Read4klangPatch(r io.Reader) (patch Patch, err error) {
 	}
 	if err := binary.Read(r, binary.LittleEndian, &polyphonyUint32); err != nil {
 		return nil, fmt.Errorf("binary.Read: %w", err)
-	}
-	polyphony = int(polyphonyUint32)
-	if polyphony < 1 {
-		polyphony = 1
 	}
 	for i := range instrumentNames {
 		instrumentNames[i], err = read4klangName(r)
@@ -42,7 +37,7 @@ func Read4klangPatch(r io.Reader) (patch Patch, err error) {
 			return nil, fmt.Errorf("read4klangUnits: %w", err)
 		}
 		if len(units) > 0 {
-			patch = append(patch, Instrument{Name: instrumentNames[instrIndex], NumVoices: polyphony, Units: units})
+			patch = append(patch, Instrument{Name: instrumentNames[instrIndex], NumVoices: 1, Units: units})
 		}
 	}
 	var units []Unit
