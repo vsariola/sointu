@@ -2,10 +2,9 @@ package compiler
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
-	"path"
 	"path/filepath"
-	"runtime"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -21,9 +20,11 @@ type Compiler struct {
 	RowSync     bool
 }
 
+//go:embed templates/amd64-386/* templates/wasm/*
+var templateFS embed.FS
+
 // New returns a new compiler using the default .asm templates
 func New(os string, arch string, output16Bit bool, rowsync bool) (*Compiler, error) {
-	_, myname, _, _ := runtime.Caller(0)
 	var subdir string
 	if arch == "386" || arch == "amd64" {
 		subdir = "amd64-386"
@@ -32,9 +33,11 @@ func New(os string, arch string, output16Bit bool, rowsync bool) (*Compiler, err
 	} else {
 		return nil, fmt.Errorf("compiler.New failed, because only amd64, 386 and wasm archs are supported (targeted architecture was %v)", arch)
 	}
-	templateDir := filepath.Join(path.Dir(myname), "..", "..", "templates", subdir)
-	compiler, err := NewFromTemplates(os, arch, output16Bit, rowsync, templateDir)
-	return compiler, err
+	tmpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).ParseFS(templateFS, "templates/"+subdir+"/*.*")
+	if err != nil {
+		return nil, fmt.Errorf(`could not create templates: %v`, err)
+	}
+	return &Compiler{Template: tmpl, OS: os, Arch: arch, RowSync: rowsync, Output16Bit: output16Bit}, nil
 }
 
 func NewFromTemplates(os string, arch string, output16Bit bool, rowsync bool, templateDirectory string) (*Compiler, error) {
