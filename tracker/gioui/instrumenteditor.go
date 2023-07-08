@@ -501,12 +501,12 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 						}
 						return dims
 					}),
-					layout.Expanded(func(gtx C) D {
-						return ie.unitScrollBar.Layout(gtx, unit.Dp(10), len(t.Instrument().Units), &ie.unitDragList.List.Position)
-					}),
 					layout.Stacked(func(gtx C) D {
 						margin := layout.Inset{Right: unit.Dp(20), Bottom: unit.Dp(1)}
 						return margin.Layout(gtx, addUnitBtnStyle.Layout)
+					}),
+					layout.Expanded(func(gtx C) D {
+						return ie.unitScrollBar.Layout(gtx, unit.Dp(10), len(t.Instrument().Units), &ie.unitDragList.List.Position)
 					}))
 			}),
 			layout.Rigid(ie.paramEditor.Bind(t)))
