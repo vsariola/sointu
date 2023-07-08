@@ -75,7 +75,7 @@ func (t *Tracker) layoutMenuBar(gtx C) D {
 		case 3:
 			t.SaveSongAsFile()
 		case 4:
-			t.ExportWav()
+			t.WaveTypeDialog.Visible = true
 		case 5:
 			t.Quit(false)
 		}

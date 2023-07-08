@@ -7,7 +7,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -22,68 +23,76 @@ func (t *Tracker) OpenSongFile(forced bool) {
 		t.ConfirmSongDialog.Visible = true
 		return
 	}
-	if p := t.FilePath(); p != "" {
-		d, _ := filepath.Split(p)
-		d = filepath.Clean(d)
-		t.OpenSongDialog.Directory.SetText(d)
-		t.OpenSongDialog.FileName.SetText("")
+	reader, err := t.Explorer.ChooseFile(".yml", ".json")
+	if err != nil {
+		return
 	}
-	t.OpenSongDialog.Visible = true
+	t.loadSong(reader)
 }
 
 func (t *Tracker) SaveSongFile() bool {
 	if p := t.FilePath(); p != "" {
-		return t.saveSong(p)
+		if f, err := os.Open(p); err == nil {
+			return t.saveSong(f)
+		}
 	}
 	t.SaveSongAsFile()
 	return false
 }
 
 func (t *Tracker) SaveSongAsFile() {
-	t.SaveSongDialog.Visible = true
-	if p := t.FilePath(); p != "" {
-		d, f := filepath.Split(p)
-		d = filepath.Clean(d)
-		t.SaveSongDialog.Directory.SetText(d)
-		t.SaveSongDialog.FileName.SetText(f)
+	p := t.FilePath()
+	if p == "" {
+		p = "song.yml"
 	}
+	writer, err := t.Explorer.CreateFile(p)
+	if err != nil {
+		return
+	}
+	t.saveSong(writer)
 }
 
-func (t *Tracker) ExportWav() {
-	t.ExportWavDialog.Visible = true
+func (t *Tracker) ExportWav(pcm16 bool) {
+	filename := "song.wav"
 	if p := t.FilePath(); p != "" {
-		d, _ := filepath.Split(p)
-		d = filepath.Clean(d)
-		t.ExportWavDialog.Directory.SetText(d)
+		filename = p[:len(p)-len(filepath.Ext(p))] + ".wav"
 	}
+	writer, err := t.Explorer.CreateFile(filename)
+	if err != nil {
+		return
+	}
+	t.exportWav(writer, pcm16)
 }
 
 func (t *Tracker) LoadInstrument() {
-	t.OpenInstrumentDialog.Visible = true
+	reader, err := t.Explorer.ChooseFile(".yml", ".json", ".4ki", ".4kp")
+	if err != nil {
+		return
+	}
+	t.loadInstrument(reader)
 }
 
 func (t *Tracker) SaveInstrument() {
-	t.SaveInstrumentDialog.Visible = true
+	writer, err := t.Explorer.CreateFile(t.Instrument().Name + ".yml")
+	if err != nil {
+		return
+	}
+	t.saveInstrument(writer)
 }
 
-func (t *Tracker) loadSong(filename string) {
-	b, err := ioutil.ReadFile(filename)
+func (t *Tracker) loadSong(r io.ReadCloser) {
+	b, err := io.ReadAll(r)
+	if err != nil {
+		return
+	}
+	err = r.Close()
 	if err != nil {
 		return
 	}
 	var song sointu.Song
 	if errJSON := json.Unmarshal(b, &song); errJSON != nil {
 		if errYaml := yaml.Unmarshal(b, &song); errYaml != nil {
-			var err4kp error
-			var patch sointu.Patch
-			if patch, err4kp = sointu.Read4klangPatch(bytes.NewReader(b)); err4kp != nil {
-				t.Alert.Update(fmt.Sprintf("Error unmarshaling a song file: %v / %v / %v", errYaml, errJSON, err4kp), Error, time.Second*3)
-				return
-			} else {
-				song = t.Song()
-				song.Score = t.Song().Score.Copy()
-				song.Patch = patch
-			}
+			t.Alert.Update(fmt.Sprintf("Error unmarshaling a song file: %v / %v", errYaml, errJSON), Error, time.Second*3)
 		}
 	}
 	if song.Score.Length <= 0 || len(song.Score.Tracks) == 0 || len(song.Patch) == 0 {
@@ -91,13 +100,21 @@ func (t *Tracker) loadSong(filename string) {
 		return
 	}
 	t.SetSong(song)
-	t.SetFilePath(filename)
+	path := ""
+	if f, ok := r.(*os.File); ok {
+		path = f.Name()
+	}
+	t.SetFilePath(path)
 	t.ClearUndoHistory()
 	t.SetChangedSinceSave(false)
 }
 
-func (t *Tracker) saveSong(filename string) bool {
-	var extension = filepath.Ext(filename)
+func (t *Tracker) saveSong(w io.WriteCloser) bool {
+	path := ""
+	if f, ok := w.(*os.File); ok {
+		path = f.Name()
+	}
+	var extension = filepath.Ext(path)
 	var contents []byte
 	var err error
 	if extension == ".json" {
@@ -109,20 +126,14 @@ func (t *Tracker) saveSong(filename string) bool {
 		t.Alert.Update(fmt.Sprintf("Error marshaling a song file: %v", err), Error, time.Second*3)
 		return false
 	}
-	if extension == "" {
-		filename = filename + ".yml"
-	}
-	ioutil.WriteFile(filename, contents, 0644)
-	t.SetFilePath(filename)
+	w.Write(contents)
+	w.Close()
+	t.SetFilePath(path)
 	t.SetChangedSinceSave(false)
 	return true
 }
 
-func (t *Tracker) exportWav(filename string, pcm16 bool) {
-	var extension = filepath.Ext(filename)
-	if extension == "" {
-		filename = filename + ".wav"
-	}
+func (t *Tracker) exportWav(w io.WriteCloser, pcm16 bool) {
 	data, err := sointu.Play(t.synthService, t.Song(), true) // render the song to calculate its length
 	if err != nil {
 		t.Alert.Update(fmt.Sprintf("Error rendering the song during export: %v", err), Error, time.Second*3)
@@ -133,11 +144,16 @@ func (t *Tracker) exportWav(filename string, pcm16 bool) {
 		t.Alert.Update(fmt.Sprintf("Error converting to .wav: %v", err), Error, time.Second*3)
 		return
 	}
-	ioutil.WriteFile(filename, buffer, 0644)
+	w.Write(buffer)
+	w.Close()
 }
 
-func (t *Tracker) saveInstrument(filename string) bool {
-	var extension = filepath.Ext(filename)
+func (t *Tracker) saveInstrument(w io.WriteCloser) bool {
+	path := ""
+	if f, ok := w.(*os.File); ok {
+		path = f.Name()
+	}
+	var extension = filepath.Ext(path)
 	var contents []byte
 	var err error
 	if extension == ".json" {
@@ -149,30 +165,47 @@ func (t *Tracker) saveInstrument(filename string) bool {
 		t.Alert.Update(fmt.Sprintf("Error marshaling a ínstrument file: %v", err), Error, time.Second*3)
 		return false
 	}
-	if extension == "" {
-		filename = filename + ".yml"
-	}
-	ioutil.WriteFile(filename, contents, 0644)
+	w.Write(contents)
+	w.Close()
 	return true
 }
 
-func (t *Tracker) loadInstrument(filename string) bool {
-	b, err := ioutil.ReadFile(filename)
+func (t *Tracker) loadInstrument(r io.ReadCloser) bool {
+	b, err := io.ReadAll(r)
 	if err != nil {
 		return false
 	}
 	var instrument sointu.Instrument
-	if errJSON := json.Unmarshal(b, &instrument); errJSON != nil {
-		if errYaml := yaml.Unmarshal(b, &instrument); errYaml != nil {
-			var err4ki error
-			if instrument, err4ki = sointu.Read4klangInstrument(bytes.NewReader(b)); err4ki != nil {
-				t.Alert.Update(fmt.Sprintf("Error unmarshaling an instrument file: %v / %v / %v", errYaml, errJSON, err4ki), Error, time.Second*3)
-				return false
-			}
-		}
+	var errJSON, errYaml, err4ki, err4kp error
+	var patch sointu.Patch
+	errJSON = json.Unmarshal(b, &instrument)
+	if errJSON == nil {
+		goto success
 	}
-	// the 4klang instrument names are junk, replace them with the filename without extension
-	instrument.Name = filepath.Base(filename[:len(filename)-len(filepath.Ext(filename))])
+	errYaml = yaml.Unmarshal(b, &instrument)
+	if errYaml == nil {
+		goto success
+	}
+	patch, err4kp = sointu.Read4klangPatch(bytes.NewReader(b))
+	if err4kp == nil {
+		song := t.Song()
+		song.Score = t.Song().Score.Copy()
+		song.Patch = patch
+		t.SetSong(song)
+		return true
+	}
+	instrument, err4ki = sointu.Read4klangInstrument(bytes.NewReader(b))
+	if err4ki == nil {
+		goto success
+	}
+	t.Alert.Update(fmt.Sprintf("Error unmarshaling an instrument file: %v / %v / %v / %v", errYaml, errJSON, err4ki, err4kp), Error, time.Second*3)
+	return false
+success:
+	if f, ok := r.(*os.File); ok {
+		filename := f.Name()
+		// the 4klang instrument names are junk, replace them with the filename without extension
+		instrument.Name = filepath.Base(filename[:len(filename)-len(filepath.Ext(filename))])
+	}
 	if len(instrument.Units) == 0 {
 		t.Alert.Update("The instrument file is malformed", Error, time.Second*3)
 		return false

@@ -48,13 +48,6 @@ var noteMap = map[string]int{
 // KeyEvent handles incoming key events and returns true if repaint is needed.
 func (t *Tracker) KeyEvent(e key.Event, o *op.Ops) {
 	if e.State == key.Press {
-		if t.OpenSongDialog.Visible ||
-			t.SaveSongDialog.Visible ||
-			t.SaveInstrumentDialog.Visible ||
-			t.OpenInstrumentDialog.Visible ||
-			t.ExportWavDialog.Visible {
-			return
-		}
 		switch e.Name {
 		case "C":
 			if e.Modifiers.Contain(key.ModShortcut) {

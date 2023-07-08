@@ -14,6 +14,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"gioui.org/x/explorer"
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"gopkg.in/yaml.v3"
@@ -47,16 +48,12 @@ type Tracker struct {
 	Alert                 Alert
 	ConfirmSongDialog     *Dialog
 	WaveTypeDialog        *Dialog
-	OpenSongDialog        *FileDialog
-	SaveSongDialog        *FileDialog
-	OpenInstrumentDialog  *FileDialog
-	SaveInstrumentDialog  *FileDialog
-	ExportWavDialog       *FileDialog
 	ConfirmSongActionType int
 	ModalDialog           layout.Widget
 	InstrumentEditor      *InstrumentEditor
 	OrderEditor           *OrderEditor
 	TrackEditor           *TrackEditor
+	Explorer              *explorer.Explorer
 
 	lastVolume tracker.Volume
 
@@ -116,21 +113,16 @@ func NewTracker(model *tracker.Model, synthService sointu.SynthService) *Tracker
 		BottomHorizontalSplit: &Split{Ratio: -.6},
 		VerticalSplit:         &Split{Axis: layout.Vertical},
 
-		KeyPlaying:           make(map[string]tracker.NoteID),
-		ConfirmSongDialog:    new(Dialog),
-		WaveTypeDialog:       new(Dialog),
-		OpenSongDialog:       NewFileDialog(),
-		SaveSongDialog:       NewFileDialog(),
-		OpenInstrumentDialog: NewFileDialog(),
-		SaveInstrumentDialog: NewFileDialog(),
-		InstrumentEditor:     NewInstrumentEditor(),
-		OrderEditor:          NewOrderEditor(),
-		TrackEditor:          NewTrackEditor(),
+		KeyPlaying:        make(map[string]tracker.NoteID),
+		ConfirmSongDialog: new(Dialog),
+		WaveTypeDialog:    new(Dialog),
+		InstrumentEditor:  NewInstrumentEditor(),
+		OrderEditor:       NewOrderEditor(),
+		TrackEditor:       NewTrackEditor(),
 
-		ExportWavDialog: NewFileDialog(),
-		errorChannel:    make(chan error, 32),
-		synthService:    synthService,
-		Model:           model,
+		errorChannel: make(chan error, 32),
+		synthService: synthService,
+		Model:        model,
 	}
 	t.Theme.Palette.Fg = primaryColor
 	t.Theme.Palette.ContrastFg = black
@@ -146,6 +138,7 @@ func (t *Tracker) Main() {
 		app.Size(unit.Dp(800), unit.Dp(600)),
 		app.Title("Sointu Tracker"),
 	)
+	t.Explorer = explorer.NewExplorer(w)
 	var ops op.Ops
 mainloop:
 	for {
@@ -189,6 +182,7 @@ mainloop:
 						app.Size(unit.Dp(800), unit.Dp(600)),
 						app.Title("Sointu Tracker"),
 					)
+					t.Explorer = explorer.NewExplorer(w)
 				}
 			case system.FrameEvent:
 				gtx := layout.NewContext(&ops, e)
