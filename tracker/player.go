@@ -277,10 +277,7 @@ loop:
 					p.recordingNoteArrived = false
 				} else {
 					if p.recording && len(p.recordingEvents) > 0 {
-						bpm, ok := context.BPM()
-						if !ok {
-							bpm = 120
-						}
+						bpm, _ := context.BPM()
 						p.trySend(PlayerRecordedMessage{
 							BPM:         bpm,
 							Events:      p.recordingEvents,

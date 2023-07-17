@@ -36,6 +36,9 @@ func (c *VSTIProcessContext) NextEvent() (event tracker.PlayerProcessEvent, ok b
 
 func (c *VSTIProcessContext) BPM() (bpm float64, ok bool) {
 	timeInfo := c.host.GetTimeInfo()
+	if timeInfo == nil || timeInfo.Flags&vst2.TempoValid == 0 || timeInfo.Tempo == 0 {
+		return 0, false
+	}
 	return timeInfo.Tempo, true
 }
 
