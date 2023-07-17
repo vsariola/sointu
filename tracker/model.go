@@ -137,6 +137,10 @@ func (m *Model) ResetSong() {
 }
 
 func (m *Model) SetSong(song sointu.Song) {
+	// guard for malformed songs
+	if len(song.Score.Tracks) == 0 || song.Score.Length <= 0 || len(song.Patch) == 0 {
+		return
+	}
 	m.saveUndo("SetSong", 0)
 	m.setSongNoUndo(song)
 }
