@@ -10,7 +10,7 @@ require (
 	golang.org/x/exp/shiny v0.0.0-20220827204233-334a2380cb91
 	gopkg.in/yaml.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
-	pipelined.dev/audio/vst2 v0.10.1-0.20230513073541-08ee2a4520cb
+	pipelined.dev/audio/vst2 v0.10.1-0.20230718065422-be1242fca4ab
 )
 
 require (
