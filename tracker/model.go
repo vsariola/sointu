@@ -641,6 +641,24 @@ func (m *Model) SetUnitType(t string) {
 	m.notifyPatchChange()
 }
 
+func (m *Model) PasteUnit(unit sointu.Unit) {
+	m.saveUndo("PasteUnit", 0)
+	newUnits := make([]sointu.Unit, len(m.Instrument().Units)+1)
+	m.unitIndex++
+	copy(newUnits, m.Instrument().Units[:m.unitIndex])
+	copy(newUnits[m.unitIndex+1:], m.Instrument().Units[m.unitIndex:])
+	if _, ok := m.usedIDs[unit.ID]; ok {
+		m.maxID++
+		unit.ID = m.maxID
+	}
+	m.usedIDs[unit.ID] = true
+	newUnits[m.unitIndex] = unit
+	m.song.Patch[m.instrIndex].Units = newUnits
+	m.paramIndex = 0
+	m.clampPositions()
+	m.notifyPatchChange()
+}
+
 func (m *Model) SetUnitIndex(value int) {
 	m.unitIndex = value
 	m.paramIndex = 0

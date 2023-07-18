@@ -462,7 +462,7 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 				return layout.Stack{Alignment: layout.SE}.Layout(gtx,
 					layout.Expanded(func(gtx C) D {
 						defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-						key.InputOp{Tag: ie.unitDragList, Keys: "→|⏎|⌫|⌦|⎋|Ctrl-⏎"}.Add(gtx.Ops)
+						key.InputOp{Tag: ie.unitDragList, Keys: "→|⏎|⌫|⌦|⎋|Ctrl-⏎|Ctrl-C|Ctrl-X"}.Add(gtx.Ops)
 						for _, event := range gtx.Events(ie.unitDragList) {
 							switch e := event.(type) {
 							case key.Event:
@@ -479,6 +479,19 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 										l := len(ie.unitTypeEditor.Text())
 										ie.unitTypeEditor.SetCaret(l, l)
 									case key.NameDeleteForward:
+										t.DeleteUnit(true)
+									case "C":
+										contents, err := yaml.Marshal(t.Unit())
+										if err == nil {
+											clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+											t.Alert.Update("Unit copied to clipboard", Notify, time.Second*3)
+										}
+									case "X":
+										contents, err := yaml.Marshal(t.Unit())
+										if err == nil {
+											clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+											t.Alert.Update("Unit cut to clipboard", Notify, time.Second*3)
+										}
 										t.DeleteUnit(true)
 									case key.NameReturn:
 										if e.Modifiers.Contain(key.ModShortcut) {

@@ -4,7 +4,9 @@ import (
 	"image"
 	"image/color"
 	"strings"
+	"time"
 
+	"gioui.org/io/clipboard"
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
@@ -15,6 +17,7 @@ import (
 	"gioui.org/widget"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
+	"gopkg.in/yaml.v3"
 )
 
 type ParamEditor struct {
@@ -22,6 +25,7 @@ type ParamEditor struct {
 	scrollBar          *ScrollBar
 	Parameters         []*ParameterWidget
 	DeleteUnitBtn      *widget.Clickable
+	CopyUnitBtn        *widget.Clickable
 	ClearUnitBtn       *widget.Clickable
 	ChooseUnitTypeBtns []*widget.Clickable
 	tag                bool
@@ -41,6 +45,7 @@ func NewParamEditor() *ParamEditor {
 	ret := &ParamEditor{
 		DeleteUnitBtn: new(widget.Clickable),
 		ClearUnitBtn:  new(widget.Clickable),
+		CopyUnitBtn:   new(widget.Clickable),
 		list:          &layout.List{Axis: layout.Vertical},
 		scrollBar:     &ScrollBar{Axis: layout.Vertical},
 	}
@@ -178,6 +183,15 @@ func (pe *ParamEditor) layoutUnitFooter(t *Tracker) layout.Widget {
 			op.InvalidateOp{}.Add(gtx.Ops)
 			t.InstrumentEditor.unitDragList.Focus()
 		}
+		for pe.CopyUnitBtn.Clicked() {
+			op.InvalidateOp{}.Add(gtx.Ops)
+			contents, err := yaml.Marshal(t.Unit())
+			if err == nil {
+				clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+				t.Alert.Update("Unit copied to clipboard", Notify, time.Second*3)
+			}
+		}
+		copyUnitBtnStyle := IconButton(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, true)
 		deleteUnitBtnStyle := IconButton(t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, t.CanDeleteUnit())
 		text := t.Unit().Type
 		if text == "" {
@@ -188,6 +202,7 @@ func (pe *ParamEditor) layoutUnitFooter(t *Tracker) layout.Widget {
 		hintText := Label(text, white)
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(deleteUnitBtnStyle.Layout),
+			layout.Rigid(copyUnitBtnStyle.Layout),
 			layout.Rigid(func(gtx C) D {
 				var dims D
 				if t.Unit().Type != "" {
