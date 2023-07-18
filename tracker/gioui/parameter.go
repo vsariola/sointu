@@ -2,7 +2,10 @@ package gioui
 
 import (
 	"fmt"
+	"image"
+	"math"
 
+	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
@@ -55,6 +58,15 @@ func (p ParameterStyle) Layout(gtx C) D {
 		layout.Rigid(func(gtx C) D {
 			switch p.Parameter.Type {
 			case tracker.IntegerParameter:
+				for _, e := range gtx.Events(&p.ParameterWidget.floatWidget) {
+					switch ev := e.(type) {
+					case pointer.Event:
+						if ev.Type == pointer.Scroll {
+							delta := math.Min(math.Max(float64(ev.Scroll.Y), -1), 1)
+							p.Parameter.Value += int(math.Round(delta))
+						}
+					}
+				}
 				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(200))
 				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
 				if p.Focus {
@@ -67,7 +79,11 @@ func (p ParameterStyle) Layout(gtx C) D {
 				}
 				sliderStyle := material.Slider(p.Theme, &p.ParameterWidget.floatWidget, float32(p.Parameter.Min), float32(p.Parameter.Max))
 				sliderStyle.Color = p.Theme.Fg
+				r := image.Rectangle{Max: gtx.Constraints.Min}
+				area := clip.Rect(r).Push(gtx.Ops)
+				pointer.InputOp{Tag: &p.ParameterWidget.floatWidget, Types: pointer.Scroll, ScrollBounds: image.Rectangle{Min: image.Pt(0, -1e6), Max: image.Pt(0, 1e6)}}.Add(gtx.Ops)
 				dims := sliderStyle.Layout(gtx)
+				area.Pop()
 				p.Parameter.Value = int(p.ParameterWidget.floatWidget.Value + 0.5)
 				return dims
 			case tracker.BoolParameter:
