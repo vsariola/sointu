@@ -148,7 +148,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 				layout.Rigid(Label("LEN:", white)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					t.SongLength.Value = t.Song().Score.Length
-					numStyle := NumericUpDown(t.Theme, t.SongLength, 1, math.MaxInt32)
+					numStyle := NumericUpDown(t.Theme, t.SongLength, 1, math.MaxInt32, "Song length")
 					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
 					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
@@ -162,7 +162,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 				layout.Rigid(Label("BPM:", white)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					t.BPM.Value = t.Song().BPM
-					numStyle := NumericUpDown(t.Theme, t.BPM, 1, 999)
+					numStyle := NumericUpDown(t.Theme, t.BPM, 1, 999, "Beats per minute")
 					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
 					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
@@ -176,7 +176,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 				layout.Rigid(Label("RPP:", white)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					t.RowsPerPattern.Value = t.Song().Score.RowsPerPattern
-					numStyle := NumericUpDown(t.Theme, t.RowsPerPattern, 1, 255)
+					numStyle := NumericUpDown(t.Theme, t.RowsPerPattern, 1, 255, "Rows per pattern")
 					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
 					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
@@ -190,7 +190,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 				layout.Rigid(Label("RPB:", white)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					t.RowsPerBeat.Value = t.Song().RowsPerBeat
-					numStyle := NumericUpDown(t.Theme, t.RowsPerBeat, 1, 32)
+					numStyle := NumericUpDown(t.Theme, t.RowsPerBeat, 1, 32, "Rows per beat")
 					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
 					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
@@ -203,10 +203,8 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 				layout.Rigid(Label("STP:", white)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					numStyle := NumericUpDown(t.Theme, t.Step, 0, 8)
+					numStyle := NumericUpDown(t.Theme, t.Step, 0, 8, "Cursor step")
 					numStyle.UnitsPerStep = unit.Dp(20)
-					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
 					return dims
 				}),

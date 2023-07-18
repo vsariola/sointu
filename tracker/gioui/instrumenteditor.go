@@ -26,14 +26,14 @@ import (
 )
 
 type InstrumentEditor struct {
-	newInstrumentBtn    *widget.Clickable
-	enlargeBtn          *widget.Clickable
-	deleteInstrumentBtn *widget.Clickable
-	copyInstrumentBtn   *widget.Clickable
-	saveInstrumentBtn   *widget.Clickable
-	loadInstrumentBtn   *widget.Clickable
-	addUnitBtn          *widget.Clickable
-	commentExpandBtn    *widget.Clickable
+	newInstrumentBtn    *TipClickable
+	enlargeBtn          *TipClickable
+	deleteInstrumentBtn *TipClickable
+	copyInstrumentBtn   *TipClickable
+	saveInstrumentBtn   *TipClickable
+	loadInstrumentBtn   *TipClickable
+	addUnitBtn          *TipClickable
+	commentExpandBtn    *TipClickable
 	commentEditor       *widget.Editor
 	nameEditor          *widget.Editor
 	unitTypeEditor      *widget.Editor
@@ -52,14 +52,14 @@ type InstrumentEditor struct {
 
 func NewInstrumentEditor() *InstrumentEditor {
 	return &InstrumentEditor{
-		newInstrumentBtn:    new(widget.Clickable),
-		enlargeBtn:          new(widget.Clickable),
-		deleteInstrumentBtn: new(widget.Clickable),
-		copyInstrumentBtn:   new(widget.Clickable),
-		saveInstrumentBtn:   new(widget.Clickable),
-		loadInstrumentBtn:   new(widget.Clickable),
-		addUnitBtn:          new(widget.Clickable),
-		commentExpandBtn:    new(widget.Clickable),
+		newInstrumentBtn:    new(TipClickable),
+		enlargeBtn:          new(TipClickable),
+		deleteInstrumentBtn: new(TipClickable),
+		copyInstrumentBtn:   new(TipClickable),
+		saveInstrumentBtn:   new(TipClickable),
+		loadInstrumentBtn:   new(TipClickable),
+		addUnitBtn:          new(TipClickable),
+		commentExpandBtn:    new(TipClickable),
 		commentEditor:       new(widget.Editor),
 		nameEditor:          &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle},
 		unitTypeEditor:      &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Start},
@@ -103,30 +103,28 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 	}.Add(gtx.Ops)
 	area.Pop()
 
-	var icon []byte
+	enlargeTip := "Enlarge"
+	icon := icons.NavigationFullscreen
 	if t.InstrEnlarged() {
 		icon = icons.NavigationFullscreenExit
-	} else {
-		icon = icons.NavigationFullscreen
+		enlargeTip = "Shrink"
 	}
-	fullscreenBtnStyle := IconButton(t.Theme, ie.enlargeBtn, icon, true)
-	for ie.enlargeBtn.Clicked() {
+	fullscreenBtnStyle := IconButton(t.Theme, ie.enlargeBtn, icon, true, enlargeTip)
+	for ie.enlargeBtn.Clickable.Clicked() {
 		t.SetInstrEnlarged(!t.InstrEnlarged())
 	}
-	for ie.newInstrumentBtn.Clicked() {
+	for ie.newInstrumentBtn.Clickable.Clicked() {
 		t.AddInstrument(true)
 	}
 	octave := func(gtx C) D {
 		in := layout.UniformInset(unit.Dp(1))
 		t.OctaveNumberInput.Value = t.Octave()
-		numStyle := NumericUpDown(t.Theme, t.OctaveNumberInput, 0, 9)
-		gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
-		gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
+		numStyle := NumericUpDown(t.Theme, t.OctaveNumberInput, 0, 9, "Octave down (<) or up (>)")
 		dims := in.Layout(gtx, numStyle.Layout)
 		t.SetOctave(t.OctaveNumberInput.Value)
 		return dims
 	}
-	newBtnStyle := IconButton(t.Theme, ie.newInstrumentBtn, icons.ContentAdd, t.CanAddInstrument())
+	newBtnStyle := IconButton(t.Theme, ie.newInstrumentBtn, icons.ContentAdd, t.CanAddInstrument(), "Add\ninstrument")
 	ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{}.Layout(
@@ -170,15 +168,17 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 	header := func(gtx C) D {
 		collapseIcon := icons.NavigationExpandLess
+		commentTip := "Collapse comment"
 		if !ie.commentExpanded {
 			collapseIcon = icons.NavigationExpandMore
+			commentTip = "Expand comment"
 		}
 
-		commentExpandBtnStyle := IconButton(t.Theme, ie.commentExpandBtn, collapseIcon, true)
-		copyInstrumentBtnStyle := IconButton(t.Theme, ie.copyInstrumentBtn, icons.ContentContentCopy, true)
-		saveInstrumentBtnStyle := IconButton(t.Theme, ie.saveInstrumentBtn, icons.ContentSave, true)
-		loadInstrumentBtnStyle := IconButton(t.Theme, ie.loadInstrumentBtn, icons.FileFolderOpen, true)
-		deleteInstrumentBtnStyle := IconButton(t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, t.CanDeleteInstrument())
+		commentExpandBtnStyle := IconButton(t.Theme, ie.commentExpandBtn, collapseIcon, true, commentTip)
+		copyInstrumentBtnStyle := IconButton(t.Theme, ie.copyInstrumentBtn, icons.ContentContentCopy, true, "Copy instrument")
+		saveInstrumentBtnStyle := IconButton(t.Theme, ie.saveInstrumentBtn, icons.ContentSave, true, "Save instrument")
+		loadInstrumentBtnStyle := IconButton(t.Theme, ie.loadInstrumentBtn, icons.FileFolderOpen, true, "Load instrument")
+		deleteInstrumentBtnStyle := IconButton(t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, t.CanDeleteInstrument(), "Delete\ninstrument")
 
 		header := func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
@@ -186,9 +186,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					maxRemain := t.MaxInstrumentVoices()
 					t.InstrumentVoices.Value = t.Instrument().NumVoices
-					numStyle := NumericUpDown(t.Theme, t.InstrumentVoices, 0, maxRemain)
-					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
+					numStyle := NumericUpDown(t.Theme, t.InstrumentVoices, 0, maxRemain, "Number of voices for this instrument")
 					dims := numStyle.Layout(gtx)
 					t.SetInstrumentVoices(t.InstrumentVoices.Value)
 					return dims
@@ -200,7 +198,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				layout.Rigid(copyInstrumentBtnStyle.Layout),
 				layout.Rigid(deleteInstrumentBtnStyle.Layout))
 		}
-		for ie.commentExpandBtn.Clicked() {
+		for ie.commentExpandBtn.Clickable.Clicked() {
 			ie.commentExpanded = !ie.commentExpanded
 			if !ie.commentExpanded {
 				key.FocusOp{Tag: &ie.tag}.Add(gtx.Ops) // clear focus
@@ -236,14 +234,14 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		}
 		return header(gtx)
 	}
-	for ie.copyInstrumentBtn.Clicked() {
+	for ie.copyInstrumentBtn.Clickable.Clicked() {
 		contents, err := yaml.Marshal(t.Instrument())
 		if err == nil {
 			clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
 			t.Alert.Update("Instrument copied to clipboard", Notify, time.Second*3)
 		}
 	}
-	for ie.deleteInstrumentBtn.Clicked() {
+	for ie.deleteInstrumentBtn.Clickable.Clicked() {
 		if t.CanDeleteInstrument() {
 			dialogStyle := ConfirmDialog(t.Theme, ie.confirmInstrDelete, "Are you sure you want to delete this instrument?")
 			ie.confirmInstrDelete.Visible = true
@@ -257,11 +255,11 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 	for ie.confirmInstrDelete.BtnCancel.Clicked() {
 		t.ModalDialog = nil
 	}
-	for ie.saveInstrumentBtn.Clicked() {
+	for ie.saveInstrumentBtn.Clickable.Clicked() {
 		t.SaveInstrument()
 	}
 
-	for ie.loadInstrumentBtn.Clicked() {
+	for ie.loadInstrumentBtn.Clickable.Clicked() {
 		t.LoadInstrument()
 	}
 	return Surface{Gray: 37, Focus: ie.wasFocused}.Layout(gtx, header)
@@ -362,14 +360,14 @@ func (ie *InstrumentEditor) layoutInstrumentNames(gtx C, t *Tracker) D {
 	return dims
 }
 func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
-	for ie.addUnitBtn.Clicked() {
+	for ie.addUnitBtn.Clickable.Clicked() {
 		t.AddUnit(true)
 		ie.unitDragList.Focus()
 	}
-	addUnitBtnStyle := material.IconButton(t.Theme, ie.addUnitBtn, widgetForIcon(icons.ContentAdd), "Add unit")
-	addUnitBtnStyle.Color = t.Theme.ContrastFg
-	addUnitBtnStyle.Background = t.Theme.Fg
-	addUnitBtnStyle.Inset = layout.UniformInset(unit.Dp(4))
+	addUnitBtnStyle := IconButton(t.Theme, ie.addUnitBtn, icons.ContentAdd, true, "Add unit (Ctrl+Enter)")
+	addUnitBtnStyle.IconButtonStyle.Color = t.Theme.ContrastFg
+	addUnitBtnStyle.IconButtonStyle.Background = t.Theme.Fg
+	addUnitBtnStyle.IconButtonStyle.Inset = layout.UniformInset(unit.Dp(4))
 
 	units := t.Instrument().Units
 	for len(ie.stackUse) < len(units) {

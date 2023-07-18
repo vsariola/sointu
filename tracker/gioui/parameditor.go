@@ -24,9 +24,9 @@ type ParamEditor struct {
 	list               *layout.List
 	scrollBar          *ScrollBar
 	Parameters         []*ParameterWidget
-	DeleteUnitBtn      *widget.Clickable
-	CopyUnitBtn        *widget.Clickable
-	ClearUnitBtn       *widget.Clickable
+	DeleteUnitBtn      *TipClickable
+	CopyUnitBtn        *TipClickable
+	ClearUnitBtn       *TipClickable
 	ChooseUnitTypeBtns []*widget.Clickable
 	tag                bool
 	focused            bool
@@ -43,9 +43,9 @@ func (pe *ParamEditor) Focused() bool {
 
 func NewParamEditor() *ParamEditor {
 	ret := &ParamEditor{
-		DeleteUnitBtn: new(widget.Clickable),
-		ClearUnitBtn:  new(widget.Clickable),
-		CopyUnitBtn:   new(widget.Clickable),
+		DeleteUnitBtn: new(TipClickable),
+		ClearUnitBtn:  new(TipClickable),
+		CopyUnitBtn:   new(TipClickable),
 		list:          &layout.List{Axis: layout.Vertical},
 		scrollBar:     &ScrollBar{Axis: layout.Vertical},
 	}
@@ -173,17 +173,17 @@ func (pe *ParamEditor) layoutUnitSliders(gtx C, t *Tracker) D {
 
 func (pe *ParamEditor) layoutUnitFooter(t *Tracker) layout.Widget {
 	return func(gtx C) D {
-		for pe.ClearUnitBtn.Clicked() {
+		for pe.ClearUnitBtn.Clickable.Clicked() {
 			t.SetUnitType("")
 			op.InvalidateOp{}.Add(gtx.Ops)
 			t.InstrumentEditor.unitDragList.Focus()
 		}
-		for pe.DeleteUnitBtn.Clicked() {
+		for pe.DeleteUnitBtn.Clickable.Clicked() {
 			t.DeleteUnit(false)
 			op.InvalidateOp{}.Add(gtx.Ops)
 			t.InstrumentEditor.unitDragList.Focus()
 		}
-		for pe.CopyUnitBtn.Clicked() {
+		for pe.CopyUnitBtn.Clickable.Clicked() {
 			op.InvalidateOp{}.Add(gtx.Ops)
 			contents, err := yaml.Marshal(t.Unit())
 			if err == nil {
@@ -191,8 +191,8 @@ func (pe *ParamEditor) layoutUnitFooter(t *Tracker) layout.Widget {
 				t.Alert.Update("Unit copied to clipboard", Notify, time.Second*3)
 			}
 		}
-		copyUnitBtnStyle := IconButton(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, true)
-		deleteUnitBtnStyle := IconButton(t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, t.CanDeleteUnit())
+		copyUnitBtnStyle := IconButton(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, true, "Copy unit (Ctrl+C)")
+		deleteUnitBtnStyle := IconButton(t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, t.CanDeleteUnit(), "Delete unit (Del)")
 		text := t.Unit().Type
 		if text == "" {
 			text = "Choose unit type"
@@ -206,7 +206,7 @@ func (pe *ParamEditor) layoutUnitFooter(t *Tracker) layout.Widget {
 			layout.Rigid(func(gtx C) D {
 				var dims D
 				if t.Unit().Type != "" {
-					clearUnitBtnStyle := IconButton(t.Theme, pe.ClearUnitBtn, icons.ContentClear, true)
+					clearUnitBtnStyle := IconButton(t.Theme, pe.ClearUnitBtn, icons.ContentClear, true, "Clear unit")
 					dims = clearUnitBtnStyle.Layout(gtx)
 				}
 				return D{Size: image.Pt(gtx.Dp(unit.Dp(48)), dims.Size.Y)}

@@ -11,6 +11,7 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/widget"
+	"gioui.org/x/component"
 
 	"gioui.org/gesture"
 	"gioui.org/io/pointer"
@@ -27,6 +28,7 @@ type NumberInput struct {
 	dragStartXY    float32
 	clickDecrease  gesture.Click
 	clickIncrease  gesture.Click
+	tipArea        component.TipArea
 }
 
 type NumericUpDownStyle struct {
@@ -43,10 +45,13 @@ type NumericUpDownStyle struct {
 	Border          unit.Dp
 	ButtonWidth     unit.Dp
 	UnitsPerStep    unit.Dp
+	Tooltip         component.Tooltip
+	Width           unit.Dp
+	Height          unit.Dp
 	shaper          text.Shaper
 }
 
-func NumericUpDown(th *material.Theme, number *NumberInput, min, max int) NumericUpDownStyle {
+func NumericUpDown(th *material.Theme, number *NumberInput, min, max int, tooltip string) NumericUpDownStyle {
 	bgColor := th.Palette.Fg
 	bgColor.R /= 4
 	bgColor.G /= 4
@@ -64,12 +69,23 @@ func NumericUpDown(th *material.Theme, number *NumberInput, min, max int) Numeri
 		Border:          unit.Dp(1),
 		UnitsPerStep:    unit.Dp(8),
 		TextSize:        th.TextSize * 14 / 16,
+		Tooltip:         Tooltip(th, tooltip),
+		Width:           unit.Dp(70),
+		Height:          unit.Dp(20),
 		shaper:          *th.Shaper,
 	}
 }
 
 func (s NumericUpDownStyle) Layout(gtx C) D {
-	size := gtx.Constraints.Min
+	if s.Tooltip.Text.Text != "" {
+		return s.NumberInput.tipArea.Layout(gtx, s.Tooltip, s.actualLayout)
+	}
+	return s.actualLayout(gtx)
+}
+
+func (s NumericUpDownStyle) actualLayout(gtx C) D {
+	size := image.Pt(gtx.Dp(s.Width), gtx.Dp(s.Height))
+	gtx.Constraints.Min = size
 	rr := gtx.Dp(s.CornerRadius)
 	border := gtx.Dp(s.Border)
 	c := clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, rr).Push(gtx.Ops)

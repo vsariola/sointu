@@ -25,8 +25,8 @@ const patmarkWidth = 16
 
 type TrackEditor struct {
 	TrackVoices         *NumberInput
-	NewTrackBtn         *widget.Clickable
-	DeleteTrackBtn      *widget.Clickable
+	NewTrackBtn         *TipClickable
+	DeleteTrackBtn      *TipClickable
 	AddSemitoneBtn      *widget.Clickable
 	SubtractSemitoneBtn *widget.Clickable
 	AddOctaveBtn        *widget.Clickable
@@ -42,8 +42,8 @@ type TrackEditor struct {
 func NewTrackEditor() *TrackEditor {
 	return &TrackEditor{
 		TrackVoices:         new(NumberInput),
-		NewTrackBtn:         new(widget.Clickable),
-		DeleteTrackBtn:      new(widget.Clickable),
+		NewTrackBtn:         new(TipClickable),
+		DeleteTrackBtn:      new(TipClickable),
 		AddSemitoneBtn:      new(widget.Clickable),
 		SubtractSemitoneBtn: new(widget.Clickable),
 		AddOctaveBtn:        new(widget.Clickable),
@@ -61,7 +61,7 @@ func (te *TrackEditor) Focused() bool {
 }
 
 func (te *TrackEditor) ChildFocused() bool {
-	return te.AddOctaveBtn.Focused() || te.AddSemitoneBtn.Focused() || te.DeleteTrackBtn.Focused() || te.NewTrackBtn.Focused() || te.NoteOffBtn.Focused() || te.SubtractOctaveBtn.Focused() || te.SubtractSemitoneBtn.Focused() || te.SubtractSemitoneBtn.Focused() || te.SubtractSemitoneBtn.Focused()
+	return te.AddOctaveBtn.Focused() || te.AddSemitoneBtn.Focused() || te.DeleteTrackBtn.Clickable.Focused() || te.NewTrackBtn.Clickable.Focused() || te.NoteOffBtn.Focused() || te.SubtractOctaveBtn.Focused() || te.SubtractSemitoneBtn.Focused() || te.SubtractSemitoneBtn.Focused() || te.SubtractSemitoneBtn.Focused()
 }
 
 var trackerEditorKeys key.Set = "+|-|←|→|↑|↓|Ctrl-←|Ctrl-→|Ctrl-↑|Ctrl-↓|Shift-←|Shift-→|Shift-↑|Shift-↓|⏎|⇱|⇲|⌫|⌦|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|0|1|2|3|4|5|6|7|8|9|,|."
@@ -191,11 +191,11 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 
 	rowMarkers := layout.Rigid(t.layoutRowMarkers)
 
-	for te.NewTrackBtn.Clicked() {
+	for te.NewTrackBtn.Clickable.Clicked() {
 		t.AddTrack(true)
 	}
 
-	for te.DeleteTrackBtn.Clicked() {
+	for te.DeleteTrackBtn.Clickable.Clicked() {
 		t.DeleteTrack(false)
 	}
 
@@ -234,15 +234,13 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 		addOctaveBtnStyle := LowEmphasisButton(t.Theme, te.AddOctaveBtn, "+12")
 		subtractOctaveBtnStyle := LowEmphasisButton(t.Theme, te.SubtractOctaveBtn, "-12")
 		noteOffBtnStyle := LowEmphasisButton(t.Theme, te.NoteOffBtn, "Note Off")
-		deleteTrackBtnStyle := IconButton(t.Theme, te.DeleteTrackBtn, icons.ActionDelete, t.CanDeleteTrack())
-		newTrackBtnStyle := IconButton(t.Theme, te.NewTrackBtn, icons.ContentAdd, t.CanAddTrack())
+		deleteTrackBtnStyle := IconButton(t.Theme, te.DeleteTrackBtn, icons.ActionDelete, t.CanDeleteTrack(), "Delete track")
+		newTrackBtnStyle := IconButton(t.Theme, te.NewTrackBtn, icons.ContentAdd, t.CanAddTrack(), "Add track")
 		n := t.Song().Score.Tracks[t.Cursor().Track].NumVoices
 		te.TrackVoices.Value = n
 		in := layout.UniformInset(unit.Dp(1))
 		voiceUpDown := func(gtx C) D {
-			numStyle := NumericUpDown(t.Theme, te.TrackVoices, 1, t.MaxTrackVoices())
-			gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
-			gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
+			numStyle := NumericUpDown(t.Theme, te.TrackVoices, 1, t.MaxTrackVoices(), "Number of voices for this track")
 			return in.Layout(gtx, numStyle.Layout)
 		}
 		t.TrackHexCheckBox.Value = t.Song().Score.Tracks[t.Cursor().Track].Effect
