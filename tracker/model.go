@@ -641,18 +641,20 @@ func (m *Model) SetUnitType(t string) {
 	m.notifyPatchChange()
 }
 
-func (m *Model) PasteUnit(unit sointu.Unit) {
-	m.saveUndo("PasteUnit", 0)
-	newUnits := make([]sointu.Unit, len(m.Instrument().Units)+1)
+func (m *Model) PasteUnits(units []sointu.Unit) {
+	m.saveUndo("PasteUnits", 0)
+	newUnits := make([]sointu.Unit, len(m.Instrument().Units)+len(units))
 	m.unitIndex++
 	copy(newUnits, m.Instrument().Units[:m.unitIndex])
-	copy(newUnits[m.unitIndex+1:], m.Instrument().Units[m.unitIndex:])
-	if _, ok := m.usedIDs[unit.ID]; ok {
-		m.maxID++
-		unit.ID = m.maxID
+	copy(newUnits[m.unitIndex+len(units):], m.Instrument().Units[m.unitIndex:])
+	for _, unit := range units {
+		if _, ok := m.usedIDs[unit.ID]; ok {
+			m.maxID++
+			unit.ID = m.maxID
+		}
+		m.usedIDs[unit.ID] = true
 	}
-	m.usedIDs[unit.ID] = true
-	newUnits[m.unitIndex] = unit
+	copy(newUnits[m.unitIndex:m.unitIndex+len(units)], units)
 	m.song.Patch[m.instrIndex].Units = newUnits
 	m.paramIndex = 0
 	m.clampPositions()
@@ -724,23 +726,38 @@ func (m *Model) DeleteOrderRow(forward bool) {
 	m.notifyScoreChange()
 }
 
-func (m *Model) DeleteUnit(forward bool) {
-	if !m.CanDeleteUnit() {
-		return
-	}
+func (m *Model) DeleteUnits(forward bool, a, b int) []sointu.Unit {
 	instr := m.Instrument()
-	m.saveUndo("DeleteUnit", 0)
-	delete(m.usedIDs, instr.Units[m.unitIndex].ID)
-	newUnits := make([]sointu.Unit, len(instr.Units)-1)
-	copy(newUnits, instr.Units[:m.unitIndex])
-	copy(newUnits[m.unitIndex:], instr.Units[m.unitIndex+1:])
-	m.song.Patch[m.instrIndex].Units = newUnits
-	if !forward && m.unitIndex > 0 {
-		m.unitIndex--
+	m.saveUndo("DeleteUnits", 0)
+	a, b = intMin(a, b), intMax(a, b)
+	if a < 0 {
+		a = 0
 	}
+	if b > len(instr.Units)-1 {
+		b = len(instr.Units) - 1
+	}
+	for i := a; i <= b; i++ {
+		delete(m.usedIDs, instr.Units[i].ID)
+	}
+	var newUnits []sointu.Unit
+	if a == 0 && b == len(instr.Units)-1 {
+		newUnits = make([]sointu.Unit, 1)
+		m.unitIndex = 0
+	} else {
+		newUnits = make([]sointu.Unit, len(instr.Units)-(b-a+1))
+		copy(newUnits, instr.Units[:a])
+		copy(newUnits[a:], instr.Units[b+1:])
+		m.unitIndex = a
+		if forward {
+			m.unitIndex--
+		}
+	}
+	deletedUnits := instr.Units[a : b+1]
+	m.song.Patch[m.instrIndex].Units = newUnits
 	m.paramIndex = 0
 	m.clampPositions()
 	m.notifyPatchChange()
+	return deletedUnits
 }
 
 func (m *Model) CanDeleteUnit() bool {
@@ -1376,4 +1393,18 @@ func clamp(a, min, max int) int {
 		return max
 	}
 	return a
+}
+
+func intMax(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func intMin(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

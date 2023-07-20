@@ -67,13 +67,13 @@ type Tracker struct {
 }
 
 func (t *Tracker) UnmarshalContent(bytes []byte) error {
-	var unit sointu.Unit
-	if errJSON := json.Unmarshal(bytes, &unit); errJSON == nil {
-		t.PasteUnit(unit)
+	var units []sointu.Unit
+	if errJSON := json.Unmarshal(bytes, &units); errJSON == nil {
+		t.PasteUnits(units)
 		return nil
 	}
-	if errYaml := yaml.Unmarshal(bytes, &unit); errYaml == nil {
-		t.PasteUnit(unit)
+	if errYaml := yaml.Unmarshal(bytes, &units); errYaml == nil {
+		t.PasteUnits(units)
 		return nil
 	}
 	var instr sointu.Instrument

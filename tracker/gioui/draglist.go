@@ -14,16 +14,17 @@ import (
 )
 
 type DragList struct {
-	SelectedItem int
-	HoverItem    int
-	List         *layout.List
-	drag         bool
-	dragID       pointer.ID
-	tags         []bool
-	swapped      bool
-	focused      bool
-	requestFocus bool
-	mainTag      bool
+	SelectedItem  int
+	SelectedItem2 int
+	HoverItem     int
+	List          *layout.List
+	drag          bool
+	dragID        pointer.ID
+	tags          []bool
+	swapped       bool
+	focused       bool
+	requestFocus  bool
+	mainTag       bool
 }
 
 type FilledDragListStyle struct {
@@ -61,9 +62,9 @@ func (s *FilledDragListStyle) Layout(gtx C) D {
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-	keys := key.Set("↑|↓|Ctrl-↑|Ctrl-↓")
+	keys := key.Set("↑|↓|Ctrl-↑|Ctrl-↓|Shift-↑|Shift-↓")
 	if s.dragList.List.Axis == layout.Horizontal {
-		keys = key.Set("←|→|Ctrl-←|Ctrl-→")
+		keys = key.Set("←|→|Ctrl-←|Ctrl-→|Shift-←|Shift-→")
 	}
 	key.InputOp{Tag: &s.dragList.mainTag, Keys: keys}.Add(gtx.Ops)
 
@@ -76,6 +77,10 @@ func (s *FilledDragListStyle) Layout(gtx C) D {
 	if s.dragList.requestFocus {
 		s.dragList.requestFocus = false
 		key.FocusOp{Tag: &s.dragList.mainTag}.Add(gtx.Ops)
+	}
+
+	if !s.dragList.focused {
+		s.dragList.SelectedItem2 = s.dragList.SelectedItem
 	}
 
 	for _, ke := range gtx.Events(&s.dragList.mainTag) {
@@ -102,6 +107,9 @@ func (s *FilledDragListStyle) Layout(gtx C) D {
 					swap = delta
 				} else {
 					s.dragList.SelectedItem += delta
+					if !ke.Modifiers.Contain(key.ModShift) {
+						s.dragList.SelectedItem2 = s.dragList.SelectedItem
+					}
 				}
 			}
 		}
@@ -119,6 +127,8 @@ func (s *FilledDragListStyle) Layout(gtx C) D {
 				} else {
 					color = s.SelectedColor
 				}
+			} else if between(s.dragList.SelectedItem, index, s.dragList.SelectedItem2) {
+				color = s.SelectedColor
 			} else if s.dragList.HoverItem == index {
 				color = s.HoverColor
 			}
@@ -145,6 +155,9 @@ func (s *FilledDragListStyle) Layout(gtx C) D {
 						break
 					}
 					s.dragList.SelectedItem = index
+					if !e.Modifiers.Contain(key.ModShift) {
+						s.dragList.SelectedItem2 = index
+					}
 					key.FocusOp{Tag: &s.dragList.mainTag}.Add(gtx.Ops)
 				}
 			}
@@ -208,12 +221,41 @@ func (s *FilledDragListStyle) Layout(gtx C) D {
 		)
 	}
 	dims := s.dragList.List.Layout(gtx, s.Count, listElem)
-	if !s.dragList.swapped && swap != 0 && s.dragList.SelectedItem+swap >= 0 && s.dragList.SelectedItem+swap < s.Count {
-		s.swap(s.dragList.SelectedItem, s.dragList.SelectedItem+swap)
+	a := intMin(s.dragList.SelectedItem, s.dragList.SelectedItem2)
+	b := intMax(s.dragList.SelectedItem, s.dragList.SelectedItem2)
+	if !s.dragList.swapped && swap != 0 && a+swap >= 0 && b+swap < s.Count {
+		if swap < 0 {
+			for i := a; i <= b; i++ {
+				s.swap(i, i+swap)
+			}
+		} else {
+			for i := b; i >= a; i-- {
+				s.swap(i, i+swap)
+			}
+		}
 		s.dragList.SelectedItem += swap
+		s.dragList.SelectedItem2 += swap
 		s.dragList.swapped = true
 	} else {
 		s.dragList.swapped = false
 	}
 	return dims
+}
+
+func between(a, b, c int) bool {
+	return (a <= b && b <= c) || (c <= b && b <= a)
+}
+
+func intMax(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func intMin(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

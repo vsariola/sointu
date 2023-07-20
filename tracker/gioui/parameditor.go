@@ -179,7 +179,7 @@ func (pe *ParamEditor) layoutUnitFooter(t *Tracker) layout.Widget {
 			t.InstrumentEditor.unitDragList.Focus()
 		}
 		for pe.DeleteUnitBtn.Clickable.Clicked() {
-			t.DeleteUnit(false)
+			t.DeleteUnits(false, t.UnitIndex(), t.UnitIndex())
 			op.InvalidateOp{}.Add(gtx.Ops)
 			t.InstrumentEditor.unitDragList.Focus()
 		}

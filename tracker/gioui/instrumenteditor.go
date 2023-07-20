@@ -453,7 +453,6 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	unitList := FilledDragList(t.Theme, ie.unitDragList, len(units), element, t.SwapUnits)
-	ie.unitDragList.SelectedItem = t.UnitIndex()
 	return Surface{Gray: 30, Focus: ie.wasFocused}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
@@ -477,24 +476,23 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 										l := len(ie.unitTypeEditor.Text())
 										ie.unitTypeEditor.SetCaret(l, l)
 									case key.NameDeleteForward:
-										t.DeleteUnit(true)
-									case "C":
-										contents, err := yaml.Marshal(t.Unit())
+										t.DeleteUnits(true, ie.unitDragList.SelectedItem, ie.unitDragList.SelectedItem2)
+									case "C", "X":
+										units := t.DeleteUnits(true, ie.unitDragList.SelectedItem, ie.unitDragList.SelectedItem2)
+										contents, err := yaml.Marshal(units)
 										if err == nil {
 											clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
-											t.Alert.Update("Unit copied to clipboard", Notify, time.Second*3)
+											alertText := "Unit(s) copied to clipboard"
+											if e.Name == "X" {
+												alertText = "Unit(s) cut to clipboard"
+											}
+											t.Alert.Update(alertText, Notify, time.Second*3)
 										}
-									case "X":
-										contents, err := yaml.Marshal(t.Unit())
-										if err == nil {
-											clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
-											t.Alert.Update("Unit cut to clipboard", Notify, time.Second*3)
-										}
-										t.DeleteUnit(true)
+										ie.unitDragList.SelectedItem2 = t.UnitIndex()
 									case key.NameReturn:
 										if e.Modifiers.Contain(key.ModShortcut) {
 											t.AddUnit(true)
-											ie.unitDragList.SelectedItem = t.UnitIndex()
+											ie.unitDragList.SelectedItem2 = ie.unitDragList.SelectedItem
 											ie.unitTypeEditor.SetText("")
 										}
 										ie.unitTypeEditor.Focus()
@@ -504,7 +502,7 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 								}
 							}
 						}
-
+						ie.unitDragList.SelectedItem = t.UnitIndex()
 						dims := unitList.Layout(gtx)
 						if t.UnitIndex() != ie.unitDragList.SelectedItem {
 							t.SetUnitIndex(ie.unitDragList.SelectedItem)
