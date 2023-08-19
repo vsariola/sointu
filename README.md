@@ -439,6 +439,9 @@ chain.
 
 [Roadtrip](https://www.pouet.net/prod.php?which=94105) by LJ & Virgill
 
+[|](https://www.pouet.net/prod.php?which=94721) by epoqe - Likely the
+first Linux 4k intro using sointu
+
 Contributing
 ------------
 
