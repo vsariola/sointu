@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"gioui.org/app"
-	"gioui.org/font/gofont"
 	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -102,7 +101,7 @@ func (t *Tracker) UnmarshalContent(bytes []byte) error {
 
 func NewTracker(model *tracker.Model, synthService sointu.SynthService) *Tracker {
 	t := &Tracker{
-		Theme:             material.NewTheme(gofont.Collection()),
+		Theme:             material.NewTheme(),
 		BPM:               new(NumberInput),
 		OctaveNumberInput: &NumberInput{Value: 4},
 		SongLength:        new(NumberInput),

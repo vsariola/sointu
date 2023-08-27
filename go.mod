@@ -3,7 +3,7 @@ module github.com/vsariola/sointu
 go 1.17
 
 require (
-	gioui.org v0.1.0
+	gioui.org v0.2.1-0.20230823193131-cf5ae4aad92e
 	gioui.org/x v0.1.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/hajimehoshi/oto v0.6.6
@@ -19,7 +19,7 @@ require (
 	git.wow.st/gmp/jni v0.0.0-20210610011705-34026c7e22d0 // indirect
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/go-text/typesetting v0.0.0-20230602202114-9797aefac433 // indirect
+	github.com/go-text/typesetting v0.0.0-20230803102845-24e03d8b5372 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect

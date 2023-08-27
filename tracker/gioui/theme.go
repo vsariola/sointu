@@ -9,7 +9,7 @@ import (
 )
 
 var fontCollection []text.FontFace = gofont.Collection()
-var textShaper = text.NewShaper(fontCollection)
+var textShaper = text.NewShaper(text.WithCollection(fontCollection))
 
 var white = color.NRGBA{R: 255, G: 255, B: 255, A: 255}
 var black = color.NRGBA{R: 0, G: 0, B: 0, A: 255}
