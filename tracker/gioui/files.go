@@ -32,7 +32,7 @@ func (t *Tracker) OpenSongFile(forced bool) {
 
 func (t *Tracker) SaveSongFile() bool {
 	if p := t.FilePath(); p != "" {
-		if f, err := os.Open(p); err == nil {
+		if f, err := os.OpenFile(p, os.O_WRONLY|os.O_CREATE, 0644); err == nil {
 			return t.saveSong(f)
 		}
 	}
@@ -126,8 +126,14 @@ func (t *Tracker) saveSong(w io.WriteCloser) bool {
 		t.Alert.Update(fmt.Sprintf("Error marshaling a song file: %v", err), Error, time.Second*3)
 		return false
 	}
-	w.Write(contents)
-	w.Close()
+	if _, err := w.Write(contents); err != nil {
+		t.Alert.Update(fmt.Sprintf("Error writing to file: %v", err), Error, time.Second*3)
+		return false
+	}
+	if err := w.Close(); err != nil {
+		t.Alert.Update(fmt.Sprintf("Error closing file: %v", err), Error, time.Second*3)
+		return false
+	}
 	t.SetFilePath(path)
 	t.SetChangedSinceSave(false)
 	return true
