@@ -45,13 +45,27 @@ listed below.
 
 ### Sointu-track
 
-This is the stand-alone version of the synth-tracker. Running the tracker:
+This is the stand-alone version of the synth-tracker. Sointu-track uses
+the [gioui](https://gioui.org/) for the GUI and [oto](https://github.com/hajimehoshi/oto)
+for the audio, so the portability is currently limited by these.
+
+#### Prerequisites
+
+- [go](https://golang.org/)
+- If you want to use the faster x86 assembly written synthesizer:
+   - Follow the instructions to build the [x86 native virtual machine](#native-virtual-machine)
+     before building the tracker
+   - Set environment variable `CGO_ENABLED=1`
+   - cgo compatible compiler e.g. [gcc](https://gcc.gnu.org/). On
+     windows, you best bet is [MinGW](http://www.mingw.org/). We use the [tdm-gcc](https://jmeubank.github.io/tdm-gcc/)
+
+#### Running
 
 ```
 go run cmd/sointu-track/main.go
 ```
 
-Building the tracker:
+#### Building an executable
 
 ```
 go build -o sointu-track.exe cmd/sointu-track/main.go
@@ -60,18 +74,29 @@ go build -o sointu-track.exe cmd/sointu-track/main.go
 On other platforms than Windows, replace `-o sointu-track.exe` with
 `-o sointu-track`.
 
-Add `-tags=native` to use the [x86 native virtual machine](#native-virtual-machine)
-instead of the virtual machine written in Go.
+If you want to use the [x86 native virtual machine](#native-virtual-machine),
+add `-tags=native` to all the commands e.g.
 
-Sointu-track uses the [gioui](https://gioui.org/) for the GUI and
-[oto](https://github.com/hajimehoshi/oto) for the audio, so the portability is
-currently limited by these.
+```
+go build -o sointu-track.exe -tags=native cmd/sointu-track/main.go
+```
 
 ### Sointu-vsti
 
 This is the VST instrument plugin version of the tracker, compiled into
-a dynamically linked library and ran inside a VST host. Building the VST
-plugin:
+a dynamically linked library and ran inside a VST host.
+
+#### Prerequisites
+
+- [go](https://golang.org/)
+- Environment variable `CGO_ENABLED=1`
+- cgo compatible compiler e.g. [gcc](https://gcc.gnu.org/). On windows,
+  you best bet is [MinGW](http://www.mingw.org/). We use the [tdm-gcc](https://jmeubank.github.io/tdm-gcc/)
+- If you want to use the faster x86 assembly written synthesizer:
+   - Follow the instructions to build the [x86 native virtual machine](#native-virtual-machine)
+     before building the plugin itself
+
+#### Building
 
 ```
 go build -buildmode=c-shared -tags=plugin -o sointu-vsti.dll .\cmd\sointu-vsti\
@@ -93,13 +118,13 @@ The command line interface to it is [sointu-compile](cmd/sointu-compile/main.go)
 and the actual code resides in the [compiler](vm/compiler/) package, which is an
 ordinary [go](https://golang.org/) package with no other tool dependencies.
 
-Running the compiler:
+#### Running
 
 ```
 go run cmd/sointu-compile/main.go
 ```
 
-Building the compiler:
+#### Building an executable
 
 ```
 go build -o sointu-compile.exe cmd/sointu-compile/main.go
@@ -107,6 +132,8 @@ go build -o sointu-compile.exe cmd/sointu-compile/main.go
 
 On other platforms than Windows, replace `-o sointu-compile-exe` with
 `-o sointu-compile`.
+
+#### Usage
 
 The compiler can then be used to compile a .yml song into .asm and .h files. For
 example:
@@ -123,47 +150,16 @@ sointu-compile -o . -arch=wasm tests/test_chords.yml
 wat2wasm --enable-bulk-memory test_chords.wat
 ```
 
-### Tests
-
-Building the [regression tests](tests/) as executables (testing that they work
-the same way when you would link them in an intro) requires:
-- [go](https://golang.org/)
-- [CMake](https://cmake.org) with CTest
-- [nasm](https://www.nasm.us/) or [yasm](https://yasm.tortall.net)
-- Your favorite CMake compatible c-compiler & build tool. Results have been
-  obtained using Visual Studio 2019, gcc&make on linux, MinGW&mingw32-make, and
-  ninja&AppleClang.
-
-For example, using [ninja](https://ninja-build.org/):
-
-```
-mkdir build
-cd build
-cmake .. -GNinja
-ninja
-ninja test
-```
-
-Note that this builds 64-bit binaries on 64-bit Windows. To build 32-bit
-binaries on 64-bit Windows, replace in above:
-
-```
-cmake .. -DCMAKE_C_FLAGS="-m32" -DCMAKE_ASM_NASM_OBJECT_FORMAT="win32" -GNinja
-```
-
-Another example: on Visual Studio 2019 Community, just open the folder, choose
-either Debug or Release and either x86 or x64 build, and hit build all.
-
 ### Native virtual machine
 
 The native bridge allows Go to call the sointu compiled x86 native
 virtual machine, through cgo, instead of using the Go written bytecode
 interpreter. It's likely slightly faster than the interpreter. Before
 you can actually run it, you need to build the bridge using CMake (thus,
-***this will not work with go get***)
+***this will not work with go get***).
 
-Building the native bridge requires:
-- [go](https://golang.org/)
+#### Prerequisites
+
 - [CMake](https://cmake.org)
 - [nasm](https://www.nasm.us/) or [yasm](https://yasm.tortall.net)
 - *cgo compatible compiler* e.g. [gcc](https://gcc.gnu.org/). On windows, you
@@ -175,13 +171,9 @@ The last point is because the command line player and the tracker use
 compiled into a library. The cgo bridge resides in the package
 [bridge](vm/compiler/bridge/).
 
-> :warning: *you must build the library inside a directory called 'build' at the
-> root of the project*. This is because the path where cgo looks for the library
-> is hard coded to point to build/ in the go files.
+#### Building
 
-So, to build the library, run (this example is using
-[ninja](https://ninja-build.org/) for the build; adapt for other build tools
-accordingly):
+Assuming you are using [ninja](https://ninja-build.org/):
 
 ```
 mkdir build
@@ -189,6 +181,10 @@ cd build
 cmake .. -GNinja
 ninja sointu
 ```
+
+> :warning: *you must build the library inside a directory called 'build' at the
+> root of the project*. This is because the path where cgo looks for the library
+> is hard coded to point to build/ in the go files.
 
 Running `ninja sointu` only builds the static library that Go needs. This is a
 lot faster than building all the CTests.
@@ -203,15 +199,6 @@ go test ./...
 Play a song from the command line:
 ```
 go run -tags=native cmd/sointu-play/main.go tests/test_chords.yml
-```
-
-Run the tracker using the native bridge
-```
-go run -tags=native cmd/sointu-track/main.go
-```
-
-```
-go build -buildmode=c-shared -tags=plugin,native -o sointu-vsti.dll .\cmd\sointu-vsti\
 ```
 
 > :warning: Unlike the x86/amd64 VM compiled by Sointu, the Go written VM
@@ -231,6 +218,43 @@ go build -buildmode=c-shared -tags=plugin,native -o sointu-vsti.dll .\cmd\sointu
 > Use a newer nightly build of yasm that includes the fix. The linker had placed
 > our synth object overlapping with DLL call addresses; very funny stuff to
 > debug.
+
+### Tests
+
+There are [regression tests](tests/) that are built as executables,
+testing that they work the same way when you would link them in an
+intro.
+
+#### Prerequisites
+
+- [go](https://golang.org/)
+- [CMake](https://cmake.org) with CTest
+- [nasm](https://www.nasm.us/) or [yasm](https://yasm.tortall.net)
+- Your favorite CMake compatible c-compiler & build tool. Results have been
+  obtained using Visual Studio 2019, gcc&make on linux, MinGW&mingw32-make, and
+  ninja&AppleClang.
+
+#### Building and running
+
+Assuming you are using [ninja](https://ninja-build.org/):
+
+```
+mkdir build
+cd build
+cmake .. -GNinja
+ninja
+ninja test
+```
+
+Note that this builds 64-bit binaries on 64-bit Windows. To build 32-bit
+binaries on 64-bit Windows, replace in above:
+
+```
+cmake .. -DCMAKE_C_FLAGS="-m32" -DCMAKE_ASM_NASM_OBJECT_FORMAT="win32" -GNinja
+```
+
+Another example: on Visual Studio 2019 Community, just open the folder, choose
+either Debug or Release and either x86 or x64 build, and hit build all.
 
 ### WebAssembly tests
 
