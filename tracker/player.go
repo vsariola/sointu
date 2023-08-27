@@ -328,6 +328,9 @@ func (p *Player) trySend(message interface{}) {
 func (p *Player) triggerInstrument(instrument int, note byte) {
 	ID := idForInstrumentNote(instrument, note)
 	p.release(ID)
+	if p.patch == nil || instrument < 0 || instrument >= len(p.patch) {
+		return
+	}
 	voiceStart := p.patch.FirstVoiceForInstrument(instrument)
 	voiceEnd := voiceStart + p.patch[instrument].NumVoices
 	p.trigger(voiceStart, voiceEnd, note, ID)
