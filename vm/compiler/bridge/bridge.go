@@ -16,12 +16,14 @@ import (
 type BridgeService struct {
 }
 
+type BridgeSynth C.Synth
+
 func (s BridgeService) Compile(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	synth, err := Synth(patch, bpm)
 	return synth, err
 }
 
-func Synth(patch sointu.Patch, bpm int) (*C.Synth, error) {
+func Synth(patch sointu.Patch, bpm int) (*BridgeSynth, error) {
 	s := new(C.Synth)
 	if n := patch.NumDelayLines(); n > 64 {
 		return nil, fmt.Errorf("native bridge has currently a hard limit of 64 delaylines; patch uses %v", n)
@@ -53,7 +55,7 @@ func Synth(patch sointu.Patch, bpm int) (*C.Synth, error) {
 	s.NumVoices = C.uint(comPatch.NumVoices)
 	s.Polyphony = C.uint(comPatch.PolyphonyBitmask)
 	s.RandSeed = 1
-	return s, nil
+	return (*BridgeSynth)(s), nil
 }
 
 // Render renders until the buffer is full or the modulated time is reached, whichever
@@ -77,7 +79,8 @@ func Synth(patch sointu.Patch, bpm int) (*C.Synth, error) {
 // time > maxtime, as it is modulated and the time could advance by 2 or more, so the loop
 // exit condition would fire when the time is already past maxtime.
 // Under no conditions, nsamples >= len(buffer)/2 i.e. guaranteed to never overwrite the buffer.
-func (synth *C.Synth) Render(buffer []float32, maxtime int) (int, int, error) {
+func (bridgesynth *BridgeSynth) Render(buffer []float32, maxtime int) (int, int, error) {
+	synth := (*C.Synth)(bridgesynth)
 	// TODO: syncBuffer is not getting passed to cgo; do we want to even try to support the syncing with the native bridge
 	if len(buffer)%1 == 1 {
 		return -1, -1, errors.New("RenderTime writes stereo signals, so buffer should have even length")
@@ -92,7 +95,8 @@ func (synth *C.Synth) Render(buffer []float32, maxtime int) (int, int, error) {
 }
 
 // Trigger is part of C.Synths' implementation of sointu.Synth interface
-func (s *C.Synth) Trigger(voice int, note byte) {
+func (bridgesynth *BridgeSynth) Trigger(voice int, note byte) {
+	s := (*C.Synth)(bridgesynth)
 	if voice < 0 || voice >= len(s.SynthWrk.Voices) {
 		return
 	}
@@ -101,7 +105,8 @@ func (s *C.Synth) Trigger(voice int, note byte) {
 }
 
 // Release is part of C.Synths' implementation of sointu.Synth interface
-func (s *C.Synth) Release(voice int) {
+func (bridgesynth *BridgeSynth) Release(voice int) {
+	s := (*C.Synth)(bridgesynth)
 	if voice < 0 || voice >= len(s.SynthWrk.Voices) {
 		return
 	}
@@ -109,7 +114,8 @@ func (s *C.Synth) Release(voice int) {
 }
 
 // Update
-func (s *C.Synth) Update(patch sointu.Patch, bpm int) error {
+func (bridgesynth *BridgeSynth) Update(patch sointu.Patch, bpm int) error {
+	s := (*C.Synth)(bridgesynth)
 	if n := patch.NumDelayLines(); n > 64 {
 		return fmt.Errorf("native bridge has currently a hard limit of 64 delaylines; patch uses %v", n)
 	}
