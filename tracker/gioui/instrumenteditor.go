@@ -477,18 +477,27 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 										ie.unitTypeEditor.SetCaret(l, l)
 									case key.NameDeleteForward:
 										t.DeleteUnits(true, ie.unitDragList.SelectedItem, ie.unitDragList.SelectedItem2)
-									case "C", "X":
+										ie.unitDragList.SelectedItem2 = t.UnitIndex()
+									case "X":
 										units := t.DeleteUnits(true, ie.unitDragList.SelectedItem, ie.unitDragList.SelectedItem2)
+										ie.unitDragList.SelectedItem2 = t.UnitIndex()
 										contents, err := yaml.Marshal(units)
 										if err == nil {
 											clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
-											alertText := "Unit(s) copied to clipboard"
-											if e.Name == "X" {
-												alertText = "Unit(s) cut to clipboard"
-											}
-											t.Alert.Update(alertText, Notify, time.Second*3)
+											t.Alert.Update("Unit(s) cut to clipboard", Notify, time.Second*3)
 										}
-										ie.unitDragList.SelectedItem2 = t.UnitIndex()
+									case "C":
+										a := clamp(ie.unitDragList.SelectedItem, 0, len(t.Instrument().Units)-1)
+										b := clamp(ie.unitDragList.SelectedItem2, 0, len(t.Instrument().Units)-1)
+										if a > b {
+											a, b = b, a
+										}
+										units := t.Instrument().Units[a : b+1]
+										contents, err := yaml.Marshal(units)
+										if err == nil {
+											clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+											t.Alert.Update("Unit(s) copied to clipboard", Notify, time.Second*3)
+										}
 									case key.NameReturn:
 										if e.Modifiers.Contain(key.ModShortcut) {
 											t.AddUnit(true)
@@ -520,4 +529,14 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 			}),
 			layout.Rigid(ie.paramEditor.Bind(t)))
 	})
+}
+
+func clamp(i, min, max int) int {
+	if i < min {
+		return min
+	}
+	if i > max {
+		return max
+	}
+	return i
 }

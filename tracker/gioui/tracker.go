@@ -68,11 +68,22 @@ type Tracker struct {
 func (t *Tracker) UnmarshalContent(bytes []byte) error {
 	var units []sointu.Unit
 	if errJSON := json.Unmarshal(bytes, &units); errJSON == nil {
+		if len(units) == 0 {
+			return nil
+		}
 		t.PasteUnits(units)
+		// TODO: this is a bit hacky, but works for now. How to change the selection to the pasted units more elegantly?
+		t.InstrumentEditor.unitDragList.SelectedItem = t.UnitIndex()
+		t.InstrumentEditor.unitDragList.SelectedItem2 = t.UnitIndex() + len(units) - 1
 		return nil
 	}
 	if errYaml := yaml.Unmarshal(bytes, &units); errYaml == nil {
+		if len(units) == 0 {
+			return nil
+		}
 		t.PasteUnits(units)
+		t.InstrumentEditor.unitDragList.SelectedItem = t.UnitIndex()
+		t.InstrumentEditor.unitDragList.SelectedItem2 = t.UnitIndex() + len(units) - 1
 		return nil
 	}
 	var instr sointu.Instrument
