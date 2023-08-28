@@ -2,8 +2,9 @@
 #ifndef SU_RENDER_H
 #define SU_RENDER_H
 
+#define SU_CHANNEL_COUNT        2
 #define SU_LENGTH_IN_SAMPLES    {{.MaxSamples}}
-#define SU_BUFFER_LENGTH        (SU_LENGTH_IN_SAMPLES*2)
+#define SU_BUFFER_LENGTH        (SU_LENGTH_IN_SAMPLES*SU_CHANNEL_COUNT)
 
 #define SU_SAMPLE_RATE          44100
 #define SU_BPM                  {{.Song.BPM}}
@@ -24,23 +25,25 @@
 
 #include <stdint.h>
 #if UINTPTR_MAX == 0xffffffff
-    #if defined(__clang__) || defined(__GNUC__)
-        #define SU_CALLCONV __attribute__ ((stdcall))
-    #elif defined(_WIN32)
-        #define SU_CALLCONV __stdcall
-    #endif
+	#if defined(__clang__) || defined(__GNUC__)
+		#define SU_CALLCONV __attribute__ ((stdcall))
+	#elif defined(_WIN32)
+		#define SU_CALLCONV __stdcall
+	#endif
 #else
-    #define SU_CALLCONV
+	#define SU_CALLCONV
 #endif
 
 {{- if .Output16Bit}}
 typedef short SUsample;
 #define SU_SAMPLE_RANGE 32767.0
 #define SU_SAMPLE_PCM16
+#define SU_SAMPLE_SIZE 2
 {{- else}}
 typedef float SUsample;
 #define SU_SAMPLE_RANGE 1.0
 #define SU_SAMPLE_FLOAT
+#define SU_SAMPLE_SIZE 4
 {{- end}}
 
 

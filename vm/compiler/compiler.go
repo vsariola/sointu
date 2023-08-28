@@ -81,7 +81,7 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 	}
 	var templates []string
 	if com.Arch == "386" || com.Arch == "amd64" {
-		templates = []string{"player.asm", "player.h"}
+		templates = []string{"player.asm", "player.h", "player.inc"}
 	} else if com.Arch == "wasm" {
 		templates = []string{"player.wat"}
 	}
