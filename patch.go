@@ -204,6 +204,28 @@ func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
 				return "tracks BPM"
 			}
 		}
+	case "in", "aux":
+		switch param {
+		case "channel":
+			switch value {
+			case 0:
+				return "left"
+			case 1:
+				return "right"
+			case 2:
+				return "aux1 left"
+			case 3:
+				return "aux1 right"
+			case 4:
+				return "aux2 left"
+			case 5:
+				return "aux2 right"
+			case 6:
+				return "aux3 left"
+			case 7:
+				return "aux3 right"
+			}
+		}
 	}
 	return ""
 }
