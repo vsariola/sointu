@@ -37,9 +37,12 @@
 %define SU_SYNC
 {{- end}}
 
-section _su_symbols text
 _su_symbols:
+%ifdef MANGLED
 	extern _su_render_song@4
+%else ; MANGLED
+    extern su_render_song
+%endif ; MANGLED
 
 {{- if gt (.SampleOffsets | len) 0}}
 	extern _su_load_gmdls

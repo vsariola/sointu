@@ -9,7 +9,7 @@
 
 SUsample sound_buffer[SU_LENGTH_IN_SAMPLES * SU_CHANNEL_COUNT];
 HWAVEOUT	wave_out_handle;
-WAVEFORMATEX WaveFMT = {
+WAVEFORMATEX wave_format = {
 #ifdef SU_SAMPLE_FLOAT
 	WAVE_FORMAT_IEEE_FLOAT,
 #else
@@ -22,7 +22,7 @@ WAVEFORMATEX WaveFMT = {
 	SU_SAMPLE_SIZE*8,
 	0
 };
-WAVEHDR WaveHDR = {
+WAVEHDR wave_header = {
 	(LPSTR)sound_buffer, 
 	SU_LENGTH_IN_SAMPLES * SU_SAMPLE_SIZE * SU_CHANNEL_COUNT,
 	0,
@@ -32,7 +32,7 @@ WAVEHDR WaveHDR = {
 	0,
 	0
 };
-MMTIME MMTime = {
+MMTIME mmtime = {
 	TIME_SAMPLES,
 	0
 };
@@ -48,11 +48,11 @@ int main(int argc, char **args) {
 	// We render in the background while playing already. Fortunately,
 	// Windows is slow with the calls below, so we're not worried that
 	// we don't have enough samples ready before the track starts.
-	waveOutOpen(&wave_out_handle, WAVE_MAPPER, &WaveFMT, 0, 0, CALLBACK_NULL);
-	waveOutWrite(wave_out_handle, &WaveHDR, sizeof(WaveHDR));
+	waveOutOpen(&wave_out_handle, WAVE_MAPPER, &wave_format, 0, 0, CALLBACK_NULL);
+	waveOutWrite(wave_out_handle, &wave_header, sizeof(wave_header));
 
 	// We need to handle windows messages properly while playing, as waveOutWrite is async.
-	for(MSG msg = {0}; MMTime.u.sample != SU_LENGTH_IN_SAMPLES; waveOutGetPosition(wave_out_handle, &MMTime, sizeof(MMTIME))) {
+	for(MSG msg = {0}; mmtime.u.sample != SU_LENGTH_IN_SAMPLES; waveOutGetPosition(wave_out_handle, &mmtime, sizeof(MMTIME))) {
 		while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessageA(&msg);

@@ -1,0 +1,10 @@
+if(WIN32)
+	set(CMAKE_ASM_NASM_OBJECT_FORMAT win32)
+elseif(UNIX)
+	set(CMAKE_ASM_NASM_OBJECT_FORMAT elf32)
+endif()
+set(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <INCLUDES> <DEFINES> <FLAGS> -f ${CMAKE_ASM_NASM_OBJECT_FORMAT} -o <OBJECT> <SOURCE>")
+
+add_asm_example(asmplay "${PROJECT_SOURCE_DIR}/examples/patches/physics_girl_st.yml" 386 32 "winmm" "asound;pthread")
+add_asm_example(asmwav "${PROJECT_SOURCE_DIR}/examples/patches/physics_girl_st.yml" 386 32 "" "")
+target_compile_definitions(asmwav-386 PRIVATE FILENAME="physics_girl_st.wav")
