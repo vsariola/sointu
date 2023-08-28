@@ -1,5 +1,6 @@
 # Sointu
 ![Tests](https://github.com/vsariola/sointu/workflows/Tests/badge.svg)
+![Binaries](https://github.com/vsariola/sointu/workflows/Binaries/badge.svg)
 
 A cross-architecture and cross-platform modular software synthesizer for small
 intros, forked from [4klang](https://github.com/hzdgopher/4klang). Targetable
@@ -7,6 +8,10 @@ architectures include 386, amd64, and WebAssembly; targetable platforms include
 Windows, Mac, Linux (and related) + browser.
 
 User manual will be in the [Wiki](https://github.com/vsariola/sointu/wiki).
+
+Download prebuilt binaries from the [here](https://github.com/vsariola/sointu/actions)
+(find workflow "Binaries" and scroll down for .zip files containing the
+artifacts.)
 
 Summary
 -------

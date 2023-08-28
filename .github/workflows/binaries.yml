@@ -17,35 +17,52 @@ jobs:
       matrix:
         config:
           - os: windows-latest
-            cmakeflags: -GNinja
-            maker: ninja
             asmnasm: C:\Users\runneradmin\nasm\nasm
             output: sointu-track.exe
             params: -ldflags -H=windowsgui cmd/sointu-track/main.go
           - os: windows-latest
-            cmakeflags: -GNinja
-            maker: ninja
             asmnasm: C:\Users\runneradmin\nasm\nasm
             output: sointu-compile.exe
             params: cmd/sointu-compile/main.go
           - os: windows-latest
-            cmakeflags: -GNinja
-            maker: ninja
             asmnasm: C:\Users\runneradmin\nasm\nasm
             output: sointu-track-native.exe
             params: -ldflags -H=windowsgui -tags=native cmd/sointu-track/main.go
           - os: windows-latest
-            cmakeflags: -GNinja
-            maker: ninja
             asmnasm: C:\Users\runneradmin\nasm\nasm
             output: sointu-vsti.dll
             params: -buildmode=c-shared -tags=plugin ./cmd/sointu-vsti/
           - os: windows-latest
-            cmakeflags: -GNinja
-            maker: ninja
             asmnasm: C:\Users\runneradmin\nasm\nasm
             output: sointu-vsti-native.dll
             params: -buildmode=c-shared -tags="plugin,native" ./cmd/sointu-vsti/
+          - os: ubuntu-latest
+            asmnasm: /home/runner/nasm/nasm
+            output: sointu-track
+            params: cmd/sointu-track/main.go
+            packages: libegl-dev libvulkan-dev libxkbcommon-x11-dev libwayland-dev libasound2-dev libx11-xcb-dev libxcursor-dev libxfixes-dev
+          - os: ubuntu-latest
+            asmnasm: /home/runner/nasm/nasm
+            output: sointu-compile
+            params: cmd/sointu-compile/main.go
+            packages: libegl-dev libvulkan-dev libxkbcommon-x11-dev libwayland-dev libasound2-dev libx11-xcb-dev libxcursor-dev libxfixes-dev
+          - os: ubuntu-latest
+            asmnasm: /home/runner/nasm/nasm
+            output: sointu-track-native
+            params: -tags=native cmd/sointu-track/main.go
+            packages: libegl-dev libvulkan-dev libxkbcommon-x11-dev libwayland-dev libasound2-dev libx11-xcb-dev libxcursor-dev libxfixes-dev
+          - os: macos-latest
+            asmnasm: /Users/runner/nasm/nasm
+            output: sointu-track
+            params: cmd/sointu-track/main.go
+          - os: macos-latest
+            asmnasm: /Users/runner/nasm/nasm
+            output: sointu-compile
+            params: cmd/sointu-compile/main.go
+          - os: macos-latest
+            asmnasm: /Users/runner/nasm/nasm
+            output: sointu-track-native
+            params: -tags=native cmd/sointu-track/main.go
     steps:
     - uses: benjlevesque/short-sha@v2.2
       id: short-sha
@@ -55,19 +72,24 @@ jobs:
     - uses: actions/setup-go@v2
     - uses: actions/checkout@v2
     - uses: ilammy/setup-nasm@v1.4.0
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: ${{ matrix.config.packages }}
+        version: 1.0
+      if: runner.os == 'Linux'
     - name: Build library
       env:
         ASM_NASM: ${{ matrix.config.asmnasm }}
       run: |
         mkdir build
         cd build
-        cmake ${{ matrix.config.cmakeflags }} ..
-        ${{ matrix.config.maker }} sointu
+        cmake -GNinja ..
+        ninja sointu
     - name: Build binary
       run: |
         go build -o ${{ matrix.config.output }} ${{ matrix.config.params }}
     - name: Upload binary
       uses: actions/upload-artifact@v3
       with:
-        name: sointu-binaries-${{ steps.short-sha.outputs.sha }}
+        name: sointu-${{ runner.os }}-${{ steps.short-sha.outputs.sha }}
         path: ${{ matrix.config.output }}
