@@ -165,6 +165,11 @@ sointu-compile -o . -arch=wasm tests/test_chords.yml
 wat2wasm --enable-bulk-memory test_chords.wat
 ```
 
+#### Examples
+
+The folder `examples/code` contains usage examples in C. If you want to target smaller executable sizes, using a compressing linker
+like [Crinkler](https://github.com/runestubbe/Crinkler) on Windows is recommended.
+
 ### Native virtual machine
 
 The native bridge allows Go to call the sointu compiled x86 native

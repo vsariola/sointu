@@ -99,8 +99,8 @@ add_library(${STATICLIB} ${sointuasm})
 set_target_properties(${STATICLIB} PROPERTIES LINKER_LANGUAGE C)
 target_include_directories(${STATICLIB} INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 
-# We should put examples here
-# add_subdirectory(examples)
+# Examples are now available.
+add_subdirectory(examples)
 
 # Testing only available if this is the main app
 # Emergency override 4KLANG_CMAKE_BUILD_TESTING provided as well
