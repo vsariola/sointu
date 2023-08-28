@@ -28,8 +28,8 @@ func TestAllRegressionTests(t *testing.T) {
 		basename := filepath.Base(filename)
 		testname := strings.TrimSuffix(basename, path.Ext(basename))
 		t.Run(testname, func(t *testing.T) {
-			if strings.Contains(testname, "sample") {
-				t.Skip("Samples (gm.dls) not available in the interpreter VM at the moment")
+			if runtime.GOOS != "windows" && strings.Contains(testname, "sample") {
+				t.Skip("Samples (gm.dls) available only on Windows")
 				return
 			}
 			asmcode, err := ioutil.ReadFile(filename)

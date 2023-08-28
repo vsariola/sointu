@@ -358,12 +358,13 @@ New features since fork
     ports / 4 stereo ports, so even this method of routing is unlikely to run
     out of ports in small intros.
   - **Pattern length does not have to be a power of 2**.
-  - **Sample-based oscillators, with samples imported from gm.dls**. Reading
-    gm.dls is obviously Windows only, but with some effort the sample mechanism
-    can be used also without it, in case you are working on a 64k and have some
-    kilobytes to spare. See [this example](tests/test_oscillat_sample.yml), and
-    this go generate [program](cmd/sointu-generate/main.go) parses the gm.dls
-    file and dumps the sample offsets from it.
+  - **Sample-based oscillators, with samples imported from gm.dls**. The
+    gm.dls is available from system folder only on Windows, but the
+    non-native tracker looks for it also in the current folder, so
+    should you somehow magically get hold of gm.dls on Linux or Mac, you
+    can drop it in the same folder with the tracker. See [this example](tests/test_oscillat_sample.yml),
+    and this go generate [program](cmd/sointu-generate/main.go) parses
+    the gm.dls file and dumps the sample offsets from it.
   - **Unison oscillators**. Multiple copies of the oscillator running slightly
     detuned and added up to together. Great for trance leads (supersaw). Unison
     of up to 4, or 8 if you make stereo unison oscillator and add up both left

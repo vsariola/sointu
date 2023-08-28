@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 ### Added
+- Support for gm.dls samples in the go-written virtual machine
 - Ability to lock delay relative to beat duration
 - Ability to import 4klang patches (.4kp) and instruments (.4ki)
 - Ability to run sointu as a vsti plugin, inside vsti host

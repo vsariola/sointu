@@ -1,9 +1,12 @@
 package vm
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
+	"os"
+	"path/filepath"
 
 	"github.com/vsariola/sointu"
 )
@@ -62,6 +65,27 @@ const (
 	envStateSustain
 	envStateRelease
 )
+
+var su_sample_table [3440660]byte
+
+func init() {
+	var f *os.File
+	var err error
+	if f, err = os.Open("gm.dls"); err == nil { // try to open from current directory first
+		goto success
+	}
+	if f, err = os.Open(filepath.Join(os.Getenv("SystemRoot"), "system32", "drivers", "gm.dls")); err == nil {
+		goto success
+	}
+	if f, err = os.Open(filepath.Join(os.Getenv("SystemRoot"), "SysWOW64", "drivers", "gm.dls")); err == nil {
+		goto success
+	}
+	return
+success:
+	defer f.Close()
+	// read file, ignoring errors
+	f.Read(su_sample_table[:])
+}
 
 func Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	bytePatch, err := Encode(patch, AllFeatures{}, bpm)
@@ -429,37 +453,53 @@ func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time i
 						} else {
 							omega *= 0.000038 //  pretty random scaling constant to get LFOs into reasonable range. Historical reasons, goes all the way back to 4klang
 						}
-						*statevar += float32(omega)
-						*statevar -= float32(int(*statevar+1) - 1)
-						phase := *statevar
-						phase += params[2]
-						phase -= float32(int(phase))
-						color := params[3]
 						var amplitude float32
-						switch {
-						case flags&0x40 == 0x40: // Sine
-							if phase < color {
-								amplitude = float32(math.Sin(2 * math.Pi * float64(phase/color)))
+						*statevar += float32(omega)
+						if flags&0x80 == 0x80 { // if this is a sample oscillator
+							phase := *statevar
+							phase += params[2]
+							sampleno := valuesAtTransform[3] // reuse color as the sample number
+							sampleoffset := s.bytePatch.SampleOffsets[sampleno]
+							sampleindex := int(phase*84.28074964676522 + 0.5)
+							loopstart := int(sampleoffset.LoopStart)
+							if sampleindex >= loopstart {
+								sampleindex -= loopstart
+								sampleindex %= int(sampleoffset.LoopLength)
+								sampleindex += loopstart
 							}
-						case flags&0x20 == 0x20: // Trisaw
-							if phase >= color {
-								phase = 1 - phase
-								color = 1 - color
+							sampleindex += int(sampleoffset.Start)
+							amplitude = float32(int16(binary.LittleEndian.Uint16(su_sample_table[sampleindex*2:]))) / 32767.0
+						} else {
+							*statevar -= float32(int(*statevar+1) - 1)
+							phase := *statevar
+							phase += params[2]
+							phase -= float32(int(phase))
+							color := params[3]
+							switch {
+							case flags&0x40 == 0x40: // Sine
+								if phase < color {
+									amplitude = float32(math.Sin(2 * math.Pi * float64(phase/color)))
+								}
+							case flags&0x20 == 0x20: // Trisaw
+								if phase >= color {
+									phase = 1 - phase
+									color = 1 - color
+								}
+								amplitude = phase/color*2 - 1
+							case flags&0x10 == 0x10: // Pulse
+								if phase >= color {
+									amplitude = -1
+								} else {
+									amplitude = 1
+								}
+							case flags&0x4 == 0x4: // Gate
+								maskLow, maskHigh := valuesAtTransform[3], valuesAtTransform[4]
+								gateBits := (int(maskHigh) << 8) + int(maskLow)
+								amplitude = float32((gateBits >> (int(phase*16+.5) & 15)) & 1)
+								g := unit.state[4+i] // warning: still fucks up with unison = 3
+								amplitude += 0.99609375 * (g - amplitude)
+								unit.state[4+i] = amplitude
 							}
-							amplitude = phase/color*2 - 1
-						case flags&0x10 == 0x10: // Pulse
-							if phase >= color {
-								amplitude = -1
-							} else {
-								amplitude = 1
-							}
-						case flags&0x4 == 0x4: // Gate
-							maskLow, maskHigh := valuesAtTransform[3], valuesAtTransform[4]
-							gateBits := (int(maskHigh) << 8) + int(maskLow)
-							amplitude = float32((gateBits >> (int(phase*16+.5) & 15)) & 1)
-							g := unit.state[4+i] // warning: still fucks up with unison = 3
-							amplitude += 0.99609375 * (g - amplitude)
-							unit.state[4+i] = amplitude
 						}
 						if flags&0x4 == 0 {
 							output += waveshape(amplitude, params[4]) * params[5]
