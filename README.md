@@ -167,8 +167,14 @@ wat2wasm --enable-bulk-memory test_chords.wat
 
 #### Examples
 
-The folder `examples/code` contains usage examples in C. If you want to target smaller executable sizes, using a compressing linker
+The folder `examples/code` contains usage examples for Sointu with winmm und dsound playback under Windows and asound playback under Unix. Source code is available in C and x86 assembly (win32, elf32 and elf64 versions). 
+
+To build the examples, use `ninja examples`.
+
+If you want to target smaller executable sizes, using a compressing linker
 like [Crinkler](https://github.com/runestubbe/Crinkler) on Windows is recommended.
+
+The linux examples use ALSA and need libasound2-dev (or libasound2-dev:386) installed. The 386 version also needs pipewire-alsa:386 installed, which is not there by default.
 
 ### Native virtual machine
 

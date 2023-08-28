@@ -1,0 +1,12 @@
+if(WIN32)
+	set(CMAKE_ASM_NASM_OBJECT_FORMAT win64)
+elseif(UNIX)
+	set(CMAKE_ASM_NASM_OBJECT_FORMAT elf64)
+endif()
+set(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <INCLUDES> <DEFINES> <FLAGS> -f ${CMAKE_ASM_NASM_OBJECT_FORMAT} -o <OBJECT> <SOURCE>")
+
+if(UNIX)
+	add_asm_example(asmplay "${PROJECT_SOURCE_DIR}/examples/patches/physics_girl_st.yml" amd64 64 "winmm" "asound;pthread")
+	add_asm_example(asmwav "${PROJECT_SOURCE_DIR}/examples/patches/physics_girl_st.yml" amd64 64 "" "")
+	target_compile_definitions(asmwav-amd64 PRIVATE FILENAME="physics_girl_st.wav")
+endif()

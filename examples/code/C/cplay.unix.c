@@ -20,7 +20,19 @@ int main(int argc, char **args) {
 
 	// Play the track.
 	snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
-	snd_pcm_set_params(pcm_handle, SND_PCM_FORMAT_FLOAT, SND_PCM_ACCESS_RW_INTERLEAVED, SU_CHANNEL_COUNT, SU_SAMPLE_RATE, 0, SU_LENGTH_IN_SAMPLES);
+	snd_pcm_set_params(
+		pcm_handle,
+#ifdef SU_SAMPLE_FLOAT
+		SND_PCM_FORMAT_FLOAT,
+#else // SU_SAMPLE_FLOAT
+		SND_PCM_FORMAT_S16_LE,
+#endif // SU_SAMPLE_FLOAT
+		SND_PCM_ACCESS_RW_INTERLEAVED,
+		SU_CHANNEL_COUNT,
+		SU_SAMPLE_RATE,
+		0,
+		SU_LENGTH_IN_SAMPLES
+	);
 	snd_pcm_writei(pcm_handle, sound_buffer, SU_LENGTH_IN_SAMPLES);
 
 	return 0;
