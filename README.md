@@ -54,10 +54,15 @@ for the audio, so the portability is currently limited by these.
 - [go](https://golang.org/)
 - If you want to use the faster x86 assembly written synthesizer:
    - Follow the instructions to build the [x86 native virtual machine](#native-virtual-machine)
-     before building the tracker
-   - Set environment variable `CGO_ENABLED=1`
+     before building the tracker.
    - cgo compatible compiler e.g. [gcc](https://gcc.gnu.org/). On
-     windows, you best bet is [MinGW](http://www.mingw.org/). We use the [tdm-gcc](https://jmeubank.github.io/tdm-gcc/)
+     windows, you best bet is [MinGW](http://www.mingw.org/). We use the [tdm-gcc](https://jmeubank.github.io/tdm-gcc/).
+     The compiler can be in PATH or you can use the environment variable
+     `CC` to help go find the compiler.
+   - Setting environment variable `CGO_ENABLED=1` is a good idea,
+     because if it is not set and go fails to find the compiler, go just
+     excludes all files with `import "C"` from the build, resulting in
+     lots of errors about missing types.
 
 #### Running
 
@@ -89,9 +94,14 @@ a dynamically linked library and ran inside a VST host.
 #### Prerequisites
 
 - [go](https://golang.org/)
-- Environment variable `CGO_ENABLED=1`
 - cgo compatible compiler e.g. [gcc](https://gcc.gnu.org/). On windows,
-  you best bet is [MinGW](http://www.mingw.org/). We use the [tdm-gcc](https://jmeubank.github.io/tdm-gcc/)
+  you best bet is [MinGW](http://www.mingw.org/). We use the [tdm-gcc](https://jmeubank.github.io/tdm-gcc/).
+  The compiler can be in PATH or you can use the environment variable
+  `CC` to help go find the compiler.
+- Setting environment variable `CGO_ENABLED=1` is a good idea, because
+  if it is not set and go fails to find the compiler, go just excludes
+  all files with `import "C"` from the build, resulting in lots of
+  errors about missing types.
 - If you want to use the faster x86 assembly written synthesizer:
    - Follow the instructions to build the [x86 native virtual machine](#native-virtual-machine)
      before building the plugin itself
