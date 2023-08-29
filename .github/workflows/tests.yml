@@ -19,19 +19,13 @@ jobs:
         config:
           - os: ubuntu-latest
             asmnasm: /home/runner/nasm/nasm
-            cmakeflags: -GNinja
-            maker: ninja
             gotests: yes
             cgo_ldflags:
           - os: windows-latest
-            cmakeflags: -GNinja
-            maker: ninja
             asmnasm: C:\Users\runneradmin\nasm\nasm
             gotests: yes
             cgo_ldflags:
           - os: macos-latest
-            cmakeflags: -GNinja
-            maker: ninja
             asmnasm: /Users/runner/nasm/nasm
             gotests: yes
             cgo_ldflags: # -Wl,-no_pie
@@ -56,8 +50,8 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake ${{ matrix.config.cmakeflags }} ..
-        ${{ matrix.config.maker }}
+        cmake -GNinja ..
+        ninja tests/all sointu
         ctest --output-on-failure
     - name: Run go test
       if: ${{ matrix.config.gotests == 'yes' }}
