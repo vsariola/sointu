@@ -507,17 +507,9 @@ Veikko Sariola - pestis_bc on discord - firstname.lastname@gmail.com
 
 Project Link: [https://github.com/vsariola/sointu](https://github.com/vsariola/sointu)
 
-Acknowledgements
-----------------
+Credits
+-------
 
-The original 4klang was developed by Dominik Ries
-([gopher](https://github.com/hzdgopher/4klang)) and Paul Kraus (pOWL) of
-Alcatraz. :heart:
+The original 4klang: Dominik Ries ([gopher/Alcatraz](https://github.com/hzdgopher/4klang)) & Paul Kraus (pOWL/Alcatraz) :heart:
 
-Sointu was initiated by Veikko Sariola (pestis/bC!).
-
-Apollo/bC! put the project on the path to Go, and wrote the prototype of the
-tracker GUI.
-
-PoroCYon's [4klang fork](https://github.com/PoroCYon/4klang) inspired the macros
-for better cross-platform support.
+Sointu: Veikko Sariola (pestis/bC!), [Apollo/bC!](https://github.com/moitias), [NR4/Team210](https://github.com/LeStahL/), [PoroCYon](https://github.com/PoroCYon/4klang), [kendfss](https://github.com/kendfss)
