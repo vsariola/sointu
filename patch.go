@@ -168,6 +168,8 @@ func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
 		}
 	case "send":
 		switch param {
+		case "amount":
+			return fmt.Sprintf("%.2f", float32(value)/64-1)
 		case "voice":
 			if value == 0 {
 				return "auto"
