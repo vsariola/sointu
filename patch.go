@@ -166,6 +166,11 @@ func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
 		case "ratio":
 			return fmt.Sprintf("1 : %.3f", 1-float64(value)/128)
 		}
+	case "loadval":
+		switch param {
+		case "value":
+			return fmt.Sprintf("%.2f", float32(value)/64-1)
+		}
 	case "send":
 		switch param {
 		case "amount":
