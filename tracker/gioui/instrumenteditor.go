@@ -334,7 +334,7 @@ func (ie *InstrumentEditor) layoutInstrumentNames(gtx C, t *Tracker) D {
 	ie.instrumentDragList.SelectedItem = t.InstrIndex()
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-	key.InputOp{Tag: ie.instrumentDragList, Keys: "↓"}.Add(gtx.Ops)
+	key.InputOp{Tag: ie.instrumentDragList, Keys: "↓|⏎|⌤"}.Add(gtx.Ops)
 
 	for _, event := range gtx.Events(ie.instrumentDragList) {
 		switch e := event.(type) {
@@ -346,6 +346,8 @@ func (ie *InstrumentEditor) layoutInstrumentNames(gtx C, t *Tracker) D {
 					ie.unitDragList.Focus()
 				case key.NameReturn, key.NameEnter:
 					ie.nameEditor.Focus()
+					l := len(ie.nameEditor.Text())
+					ie.nameEditor.SetCaret(l, l)
 				}
 			}
 		}
