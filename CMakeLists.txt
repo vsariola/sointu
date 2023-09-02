@@ -62,8 +62,8 @@ else()
 endif()
 
 # the tests include the entire ASM but we still want to rebuild when they change
-file(GLOB x86templates ${PROJECT_SOURCE_DIR}/templates/amd64-386/*.asm)
-file(GLOB wasmtemplates ${PROJECT_SOURCE_DIR}/templates/wasm/*.wat)
+file(GLOB x86templates "${PROJECT_SOURCE_DIR}/vm/compiler/templates/amd64-386/*.asm")
+file(GLOB wasmtemplates "${PROJECT_SOURCE_DIR}/vm/compiler/templates/wasm/*.wat")
 file(GLOB sointusrc "${PROJECT_SOURCE_DIR}/*.go")
 file(GLOB compilersrc "${PROJECT_SOURCE_DIR}/compiler/*.go")
 file(GLOB compilecmdsrc "${PROJECT_SOURCE_DIR}/cmd/sointu-compile/*.go")
@@ -83,16 +83,23 @@ set(sointuasm sointu.asm)
 
 # Build sointu-cli only once because go run has everytime quite a bit of delay when
 # starting
+add_custom_command(
+    OUTPUT
+        "${compilecmd}"
+    COMMAND
+        ${GO} build -o "${compilecmd}" ${PROJECT_SOURCE_DIR}/cmd/sointu-compile/main.go
+    DEPENDS ${x86templates} ${wasmtemplates} ${sointusrc} ${compilersrc} ${compilecmdsrc}
+)
+
 add_custom_target(
     sointu-compiler
-    COMMAND ${GO} build -o ${compilecmd} ${PROJECT_SOURCE_DIR}/cmd/sointu-compile/main.go
-    SOURCES "${sointusrc}" "${compilersrc}" "${compilecmdsrc}"
+    DEPENDS ${compilecmd}
 )
 
 add_custom_command(
     OUTPUT ${sointuasm}
     COMMAND ${compilecmd} -arch=${arch} -a -o ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS "${templates}" sointu-compiler
+    DEPENDS ${compilecmd}
 )
 
 add_library(${STATICLIB} ${sointuasm})

@@ -15,6 +15,7 @@ function(add_asm_example identifier songfile architecture sizeof_void_ptr window
 			${CMAKE_CURRENT_BINARY_DIR}
 		DEPENDS
 			${songfile}
+			${compilecmd}
 		OUTPUT
 			${songprefix}_${architecture}.asm
 			${songprefix}_${architecture}.h
@@ -50,7 +51,6 @@ function(add_asm_example identifier songfile architecture sizeof_void_ptr window
 	target_compile_definitions(${identifier}-${architecture} PRIVATE TRACK_INCLUDE="${songprefix}_${architecture}.inc")
 
 	# Set up dependencies
-	add_dependencies(${identifier}-${architecture} sointu-compiler)
 	add_dependencies(examples ${identifier}-${architecture})
 endfunction()
 

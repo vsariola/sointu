@@ -16,7 +16,7 @@ function(regression_test testname)
         add_custom_command(
             OUTPUT ${asmfile}
             COMMAND ${compilecmd} ${ARGV4} -arch=${arch} -o ${CMAKE_CURRENT_BINARY_DIR}/${asmfile} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
-            DEPENDS ${source} ${x86templates} sointu-compiler
+            DEPENDS ${source} ${x86templates} ${compilecmd}
         )
 
         add_executable(${testname} test_renderer.c ${asmfile})
@@ -26,11 +26,17 @@ function(regression_test testname)
             set(wasmfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.wasm)
             set(watfile ${CMAKE_CURRENT_BINARY_DIR}/${testname}.wat)
             set(wasmtarget wasm_${testname})
-            add_custom_target(${wasmtarget} ALL
+            add_custom_command(
+                OUTPUT ${wasmfile}
                 COMMAND ${compilecmd} ${ARGV4} -arch=wasm -o ${watfile} ${CMAKE_CURRENT_SOURCE_DIR}/${source} && ${WAT2WASM} -o ${wasmfile} ${watfile}
-                SOURCES "${source}" "${wasmtemplates}"
-                DEPENDS sointu-compiler
+                DEPENDS ${source} ${wasmtemplates} ${compilecmd}
             )
+            
+            add_custom_target(${wasmtarget} ALL
+                SOURCES "${source}" "${wasmtemplates}"
+                DEPENDS ${wasmfile}
+            )
+
             add_test(${wasmtarget} ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/wasm_test_renderer.es6 ${wasmfile} ${CMAKE_CURRENT_SOURCE_DIR}/expected_output/${testname}.raw)
         endif()    
     endif()

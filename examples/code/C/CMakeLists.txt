@@ -12,6 +12,7 @@ add_custom_command(
 		${CMAKE_CURRENT_BINARY_DIR}
 	DEPENDS
 		"${PROJECT_SOURCE_DIR}/examples/patches/physics_girl_st.yml"
+		${compilecmd}
 	OUTPUT
 		physics_girl_st.asm
 		physics_girl_st.h
@@ -21,7 +22,6 @@ add_custom_command(
 )
 
 add_library(physics_girl_st physics_girl_st.asm)
-add_dependencies(physics_girl_st sointu-compiler)
 
 if(WIN32)
 	add_executable(cplay-winmm
