@@ -32,7 +32,7 @@ func (t *Tracker) OpenSongFile(forced bool) {
 
 func (t *Tracker) SaveSongFile() bool {
 	if p := t.FilePath(); p != "" {
-		if f, err := os.OpenFile(p, os.O_WRONLY|os.O_CREATE, 0644); err == nil {
+		if f, err := os.Create(p); err == nil {
 			return t.saveSong(f)
 		}
 	}
