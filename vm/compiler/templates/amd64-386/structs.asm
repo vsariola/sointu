@@ -12,7 +12,7 @@ endstruc
 ;-------------------------------------------------------------------------------
 struc su_voice
     .note       resd    1
-    .release    resd    1
+    .sustain    resd    1
     .inputs     resd    8
     .reserved   resd    6 ; this is done to so the whole voice is 2^n long, see polyphonic player
     .workspace  resb    63 * su_unit.size

@@ -272,7 +272,7 @@
                     )
                     (i32.const 4096)
                 )
-                (i32.const 1)
+                (i32.const 0)
             ) ;; release the note
             (if (i32.gt_u (local.get $note) (i32.const {{.Hold}}))(then
                 (local.set $di (i32.add
@@ -290,6 +290,7 @@
                 ))
                 (memory.fill (local.get $di) (i32.const 0) (i32.const 4096))
                 (i32.store (local.get $di) (local.get $note))
+                (i32.store offset=4 (local.get $di) (local.get $note))
                 (i32.store8 offset={{index .Labels "su_trackcurrentvoice"}} (local.get $tracksRemaining) (local.get $voiceNo))
             ))
         ))
@@ -311,10 +312,11 @@
         (i32.load8_u offset={{index .Labels "su_patterns"}})
         (local.tee $note)
         (if (i32.ne (i32.const {{.Hold}}))(then
-            (i32.store offset=4 (local.get $di) (i32.const 1)) ;; release the note
+            (i32.store offset=4 (local.get $di) (i32.const 0)) ;; release the note
             (if (i32.gt_u (local.get $note) (i32.const {{.Hold}}))(then
                 (memory.fill (local.get $di) (i32.const 0) (i32.const 4096))
                 (i32.store (local.get $di) (local.get $note))
+                (i32.store offset=4 (local.get $di) (local.get $note))
             ))
         ))
         (local.set $di (i32.add (local.get $di) (i32.const 4096)))

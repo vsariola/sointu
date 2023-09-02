@@ -30,7 +30,7 @@
 ;;   Stereo: push the envelope valeu on stack twice
 ;;-------------------------------------------------------------------------------
 (func $su_op_envelope (param $stereo i32) (local $state i32) (local $level f32) (local $delta f32)
-    (if (i32.load offset=4 (global.get $voice)) (then ;; if voice.release > 0
+    (if (i32.eqz (i32.load offset=4 (global.get $voice))) (then ;; if voice.sustain == 0
         (i32.store (global.get $WRK) (i32.const {{.InputNumber "envelope" "release"}})) ;; set envelope state to release
     ))
     (local.set $state (i32.load (global.get $WRK)))

@@ -41,7 +41,7 @@ type unit struct {
 
 type voice struct {
 	note    byte
-	release bool
+	sustain bool
 	units   [MAX_UNITS]unit
 }
 
@@ -105,10 +105,11 @@ func (s SynthService) Compile(patch sointu.Patch, bpm int) (sointu.Synth, error)
 func (s *Interpreter) Trigger(voiceIndex int, note byte) {
 	s.synth.voices[voiceIndex] = voice{}
 	s.synth.voices[voiceIndex].note = note
+	s.synth.voices[voiceIndex].sustain = true
 }
 
 func (s *Interpreter) Release(voiceIndex int) {
-	s.synth.voices[voiceIndex].release = true
+	s.synth.voices[voiceIndex].sustain = false
 }
 
 func (s *Interpreter) Update(patch sointu.Patch, bpm int) error {
@@ -297,7 +298,7 @@ func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time i
 				stack = append(stack, synth.outputs[channel])
 				synth.outputs[channel] = 0
 			case opEnvelope:
-				if voices[0].release {
+				if !voices[0].sustain {
 					unit.state[0] = envStateRelease // set state to release
 				}
 				state := unit.state[0]

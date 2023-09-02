@@ -137,7 +137,7 @@ su_calculate_voices_loop:                           ; do {
         add     edi, ebx
         shl     edi, 12           ; each unit = 64 bytes and there are 1<<MAX_UNITS_SHIFT units + small header
 {{- .Prepare "su_synth_obj" | indent 4}}
-        inc     dword [{{.Use "su_synth_obj"}} + su_synthworkspace.voices + su_voice.release + {{.DI}}] ; set the voice currently active to release; notice that it could increment any number of times
+        and     dword [{{.Use "su_synth_obj"}} + su_synthworkspace.voices + su_voice.sustain + {{.DI}}], 0 ; set the voice currently active to release; notice that it could increment any number of times
         cmp     al, {{.Hold}}                    ; if cl < HLD (no new note triggered)
         jl      su_update_voices_nexttrack          ;   goto nexttrack
         inc     ecx                                 ; curvoice++
@@ -150,7 +150,8 @@ su_update_voices_skipreset:
         shl     ecx, 12                           ; each unit = 64 bytes and there are 1<<6 units + small header
         lea     {{.DI}},[{{.Use "su_synth_obj"}} + su_synthworkspace.voices + {{.CX}}]
         stosd                                       ; save note
-        mov     ecx, (su_voice.size - su_voice.release)/4
+        stosd                                       ; save release
+        mov     ecx, (su_voice.size - su_voice.inputs)/4
         xor     eax, eax
         rep stosd                                   ; clear the workspace of the new voice, retriggering oscillators
 su_update_voices_nexttrack:
@@ -180,11 +181,12 @@ su_update_voices_trackloop:
         movzx   eax, byte [{{.Use "su_patterns" .AX}} + {{.DX}}]  ; ecx = note
         cmp     al, {{.Hold}}                   ; anything but hold causes action
         je      short su_update_voices_nexttrack
-        inc     dword [{{.DI}}+su_voice.release]        ; set the voice currently active to release; notice that it could increment any number of times
+        mov     dword [{{.DI}}+su_voice.sustain], eax     ; set the voice currently active to release
         jb      su_update_voices_nexttrack          ; if cl < HLD (no new note triggered)  goto nexttrack
 su_update_voices_retrigger:
         stosd                                       ; save note
-        mov     ecx, (su_voice.size - su_voice.release)/4  ; could be xor ecx, ecx; mov ch,...>>8, but will it actually be smaller after compression?
+        stosd                                       ; save sustain
+        mov     ecx, (su_voice.size - su_voice.inputs)/4  ; could be xor ecx, ecx; mov ch,...>>8, but will it actually be smaller after compression?
         xor     eax, eax
         rep stosd                                   ; clear the workspace of the new voice, retriggering oscillators
         jmp     short su_update_voices_skipadd

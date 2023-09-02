@@ -15,9 +15,9 @@
     ret
 su_op_envelope_mono:
 {{- end}}
-    mov     eax, dword [{{.INP}}-su_voice.inputs+su_voice.release] ; eax = su_instrument.release
-    test    eax, eax                            ; if (eax == 0)
-    je      su_op_envelope_process              ;   goto process
+    mov     eax, dword [{{.INP}}-su_voice.inputs+su_voice.sustain] ; eax = su_instrument.sustain
+    test    eax, eax                            ; if (eax != 0)
+    jne     su_op_envelope_process              ;   goto process
     mov     al, {{.InputNumber "envelope" "release"}}  ; [state]=RELEASE
     mov     dword [{{.WRK}}], eax               ; note that mov al, XXX; mov ..., eax is less bytes than doing it directly
 su_op_envelope_process:

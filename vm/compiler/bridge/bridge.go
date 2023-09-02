@@ -102,6 +102,7 @@ func (bridgesynth *BridgeSynth) Trigger(voice int, note byte) {
 	}
 	s.SynthWrk.Voices[voice] = C.Voice{}
 	s.SynthWrk.Voices[voice].Note = C.int(note)
+	s.SynthWrk.Voices[voice].Sustain = 1
 }
 
 // Release is part of C.Synths' implementation of sointu.Synth interface
@@ -110,7 +111,7 @@ func (bridgesynth *BridgeSynth) Release(voice int) {
 	if voice < 0 || voice >= len(s.SynthWrk.Voices) {
 		return
 	}
-	s.SynthWrk.Voices[voice].Release = 1
+	s.SynthWrk.Voices[voice].Sustain = 0
 }
 
 // Update

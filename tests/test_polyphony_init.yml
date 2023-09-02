@@ -1,0 +1,18 @@
+bpm: 100
+rowsperbeat: 4
+score:
+    rowsperpattern: 16
+    length: 1
+    tracks:
+        - numvoices: 2
+          order: [0]
+          patterns: [[0,0, 0, 0,  64, 1, 0, 0, 64, 1, 64, 1, 0, 0, 0, 0]]
+patch:
+    - numvoices: 2
+      units:
+        - type: envelope
+          parameters: {attack: 32, decay: 32, gain: 64, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          parameters: {attack: 32, decay: 32, gain: 64, release: 64, stereo: 0, sustain: 64}
+        - type: out
+          parameters: {gain: 128, stereo: 1}

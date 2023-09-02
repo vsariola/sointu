@@ -37,6 +37,7 @@ int main(int argc, char* argv[]) {
     buffer = (float*)malloc(2 * sizeof(float) * su_max_samples);
     // triger first voice    
     synth->SynthWrk.Voices[0].Note = 64;
+    synth->SynthWrk.Voices[0].Sustain = 1;
     totalrendered = 0;
     // First check that when we render using su_render with 0 time
     // we get nothing done    
@@ -110,7 +111,7 @@ int main(int argc, char* argv[]) {
             goto fail;
         }
         if (i == 8)
-            synth->SynthWrk.Voices[0].Release++;
+            synth->SynthWrk.Voices[0].Sustain = 0;
     }
     if (totalrendered != su_max_samples)
     {

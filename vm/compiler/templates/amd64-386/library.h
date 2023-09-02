@@ -9,7 +9,7 @@ typedef struct Unit {
 
 typedef struct Voice {
     int Note;
-    int Release;
+    int Sustain;
     float Inputs[8];
     float Reserved[6];
     struct Unit Units[63];
