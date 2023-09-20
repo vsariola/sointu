@@ -15,6 +15,7 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget"
+	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"gopkg.in/yaml.v3"
@@ -185,7 +186,7 @@ func (pe *ParamEditor) layoutUnitFooter(t *Tracker) layout.Widget {
 		}
 		for pe.CopyUnitBtn.Clickable.Clicked() {
 			op.InvalidateOp{}.Add(gtx.Ops)
-			contents, err := yaml.Marshal(t.Unit())
+			contents, err := yaml.Marshal([]sointu.Unit{t.Unit()})
 			if err == nil {
 				clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
 				t.Alert.Update("Unit copied to clipboard", Notify, time.Second*3)
