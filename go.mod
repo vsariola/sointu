@@ -3,7 +3,7 @@ module github.com/vsariola/sointu
 go 1.17
 
 require (
-	gioui.org v0.2.1-0.20230823193131-cf5ae4aad92e
+	gioui.org v0.3.0
 	gioui.org/x v0.1.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/hajimehoshi/oto v0.6.6
