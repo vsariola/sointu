@@ -54,14 +54,14 @@
 ;;   Mono:   x   ->  e*int(x/e)
 ;;   Stereo: l r ->  e*int(l/e) e*int(r/e)
 ;;-------------------------------------------------------------------------------
-(func $su_op_crush (param $stereo i32)
+(func $su_op_crush (param $stereo i32) (local $e f32)
 {{- if .Stereo "crush"}}
     (call $stereoHelper (local.get $stereo) (i32.const {{div (.GetOp "crush") 2}}))
 {{- end}}
     call $pop
-    (f32.div (call $input (i32.const {{.InputNumber "crush" "resolution"}})))
+    (f32.div (local.tee $e (call $nonLinearMap (i32.const {{.InputNumber "crush" "resolution"}}))))
     f32.nearest
-    (f32.mul (call $input (i32.const {{.InputNumber "crush" "resolution"}})))
+    (f32.mul (local.get $e))
     call $push
 )
 {{end}}

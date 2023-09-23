@@ -25,6 +25,6 @@ patch:
         - type: mulp
           parameters: {stereo: 0}
         - type: crush
-          parameters: {resolution: 64, stereo: 0}
+          parameters: {resolution: 32, stereo: 0}
         - type: out
           parameters: {gain: 128, stereo: 1}

@@ -22,6 +22,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - In the WebAssembly core, $WRK was messed after stereo oscillators,
   making modulations not work
 
+### Changed
+- The crush resolution is now in bits instead of linear range; this is a
+  breaking change and changes the meaning of the resolution values. But
+  now there are more usable values in the resolution.
+
 ## v0.1.0
 ### Added
 - An instrument (set of opcodes & accompanying values) can have any number of voices.

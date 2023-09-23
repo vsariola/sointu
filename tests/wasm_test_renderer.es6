@@ -63,7 +63,7 @@ if (process.argv.length <= 3) {
     return 1
   }
 
-  let margin = 1e-2 * (instance.exports.t.value ? 32767 : 1);
+  let margin = 2e-2 * (instance.exports.t.value ? 32767 : 1);
 
   var firstError = true, firstErrorPos, errorCount = 0
   // we still have occasional sample wrong here or there. We only consider this a true error

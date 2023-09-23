@@ -34,16 +34,19 @@ su_op_hold_holding:
 ;-------------------------------------------------------------------------------
 ;   CRUSH opcode: quantize the signal to finite number of levels
 ;-------------------------------------------------------------------------------
-;   Mono:   x   ->  e*int(x/e)
+;   Mono:   x   ->  e*int(x/e)              where e=2**(-24*resolution)
 ;   Stereo: l r ->  e*int(l/e) e*int(r/e)
 ;-------------------------------------------------------------------------------
 {{.Func "su_op_crush" "Opcode"}}
 {{- if .Stereo "crush"}}
     {{.Call "su_effects_stereohelper"}}
 {{- end}}
-    fdiv    dword [{{.Input "crush" "resolution"}}]
+    xor     eax, eax
+    {{.Call "su_nonlinear_map"}}
+    fxch    st0, st1
+    fdiv    st0, st1
     frndint
-    fmul    dword [{{.Input "crush" "resolution"}}]
+    fmulp   st1, st0
     ret
 {{end}}
 

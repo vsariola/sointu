@@ -611,7 +611,8 @@ func clip(value float32) float32 {
 }
 
 func crush(value, amount float32) float32 {
-	return float32(math.Round(float64(value/amount)) * float64(amount))
+	n := nonLinearMap(amount)
+	return float32(math.Round(float64(value/n)) * float64(n))
 }
 
 func waveshape(value, amount float32) float32 {

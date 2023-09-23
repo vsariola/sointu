@@ -233,6 +233,11 @@ func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
 				return "aux3 right"
 			}
 		}
+	case "crush":
+		switch param {
+		case "resolution":
+			return fmt.Sprintf("%v bits", 24*float32(value)/128)
+		}
 	}
 	return ""
 }
