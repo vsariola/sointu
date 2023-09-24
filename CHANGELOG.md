@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 - In the WebAssembly core, $WRK was messed after stereo oscillators,
   making modulations not work
+- The Webassembly implementation of mono version of "out" unit
 
 ### Changed
 - The crush resolution is now in bits instead of linear range; this is a

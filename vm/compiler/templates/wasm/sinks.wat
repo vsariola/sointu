@@ -147,7 +147,11 @@
             (f32.load (local.get $ptr))
         )
     )
-    (local.set $ptr (i32.const {{add (index .Labels "su_globalports") 4}})) ;; synth.right, note that ATM does not seem to support mono ocpode at all
+    {{- if .StereoAndMono "out"}}
+    (if (local.get $stereo)(then
+    {{- end}}
+    {{- if .Stereo "out"}}
+    (local.set $ptr (i32.const {{add (index .Labels "su_globalports") 4}})) ;; synth.right
     (f32.store (local.get $ptr)
         (f32.add
             (f32.mul
@@ -157,6 +161,10 @@
             (f32.load (local.get $ptr))
         )
     )
+    {{- end}}
+    {{- if .StereoAndMono "out"}}
+    ))
+    {{- end}}
 )
 {{end}}
 

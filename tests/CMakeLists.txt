@@ -65,6 +65,7 @@ endfunction(regression_test)
 
 regression_test(test_envelope "" ENVELOPE)
 regression_test(test_envelope_stereo ENVELOPE)
+regression_test(test_out ENVELOPE)
 regression_test(test_loadval "" LOADVAL)
 regression_test(test_loadval_stereo LOADVAL LOADVAL_STEREO)
 regression_test(test_gain LOADVAL GAIN)
