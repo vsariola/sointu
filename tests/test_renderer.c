@@ -1,4 +1,4 @@
-#if defined (_WIN32)
+#if defined(_WIN32)
 #define _CRT_SECURE_NO_DEPRECATE
 #include <windows.h>
 #else
@@ -21,9 +21,9 @@ float syncBuf[SU_SYNCBUFFER_LENGTH];
 float fileSyncBuf[SU_BUFFER_LENGTH];
 #endif
 
-
-int main(int argc, char* argv[]) {
-    FILE* f;
+int main(int argc, char *argv[])
+{
+    FILE *f;
     char filename[256];
     int n;
     char test_name[] = TEST_NAME;
@@ -33,18 +33,19 @@ int main(int argc, char* argv[]) {
     float max_diff;
     float diff;
 
-    if (argc < 2) {
+    if (argc < 2)
+    {
         fprintf(stderr, "usage: [test] path/to/expected_wave.raw");
         return 1;
     }
 
-    #ifdef SU_LOAD_GMDLS
+#ifdef SU_LOAD_GMDLS
     su_load_gmdls();
-    #endif
+#endif
 
     su_render_song(buf);
 
-#if defined (_WIN32)
+#if defined(_WIN32)
     CreateDirectory(actual_output_folder, NULL);
 #else
     mkdir(actual_output_folder, 0777);
@@ -52,19 +53,20 @@ int main(int argc, char* argv[]) {
 
     snprintf(filename, sizeof filename, "%s%s%s", actual_output_folder, test_name, ".raw");
     f = fopen(filename, "wb");
-    fwrite((void*)buf, sizeof(SUsample), SU_BUFFER_LENGTH, f);
+    fwrite((void *)buf, sizeof(SUsample), SU_BUFFER_LENGTH, f);
     fclose(f);
 
-    #ifdef SU_SYNC
+#ifdef SU_SYNC
     snprintf(filename, sizeof filename, "%s%s%s", actual_output_folder, test_name, "_syncbuf.raw");
     f = fopen(filename, "wb");
-    fwrite((void*)syncBuf, sizeof(float), SU_SYNCBUFFER_LENGTH, f);
+    fwrite((void *)syncBuf, sizeof(float), SU_SYNCBUFFER_LENGTH, f);
     fclose(f);
-    #endif
+#endif
 
     f = fopen(argv[1], "rb");
 
-    if (f == NULL) {
+    if (f == NULL)
+    {
         fprintf(stderr, "No expected waveform found!\n");
         goto fail;
     }
@@ -73,42 +75,49 @@ int main(int argc, char* argv[]) {
     fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    if (SU_BUFFER_LENGTH * sizeof(SUsample) < fsize) {
+    if (SU_BUFFER_LENGTH * sizeof(SUsample) < fsize)
+    {
         fprintf(stderr, "Sointu rendered shorter wave than expected\n");
         goto fail;
     }
 
-    if (SU_BUFFER_LENGTH * sizeof(SUsample) > fsize) {
+    if (SU_BUFFER_LENGTH * sizeof(SUsample) > fsize)
+    {
         fprintf(stderr, "Sointu rendered longer wave than expected\n");
         goto fail;
     }
 
-    fread((void*)filebuf, fsize, 1, f);
+    fread((void *)filebuf, fsize, 1, f);
     fclose(f);
     f = NULL;
 
     max_diff = 0.0f;
 
-    for (n = 0; n < SU_BUFFER_LENGTH; n++) {
-        diff = (float)fabs((float)(buf[n] - filebuf[n])/SU_SAMPLE_RANGE);
-        if (diff > 1e-3f || isnan(diff)) {
+    for (n = 0; n < SU_BUFFER_LENGTH; n++)
+    {
+        diff = (float)fabs((float)(buf[n] - filebuf[n]) / SU_SAMPLE_RANGE);
+        if (diff > 1e-3f || isnan(diff))
+        {
             fprintf(stderr, "Sointu rendered different wave than expected\n");
             goto fail;
         }
 
-        if (diff > max_diff) {
+        if (diff > max_diff)
+        {
             max_diff = diff;
         }
     }
 
-    if (max_diff > 1e-6) {
-        fprintf(stderr, "Warning: Sointu rendered almost correct wave, but a small maximum error of %f\n",max_diff);
+    if (max_diff > 1e-6)
+    {
+        fprintf(stderr, "Warning: Sointu rendered almost correct wave, but a small maximum error of %f\n", max_diff);
     }
 
 #ifdef SU_SYNC
     f = fopen(argv[2], "rb");
 
-    if (f == NULL) {
+    if (f == NULL)
+    {
         fprintf(stderr, "No expected sync waveform found!\n");
         goto fail;
     }
@@ -117,25 +126,29 @@ int main(int argc, char* argv[]) {
     fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    if (SU_SYNCBUFFER_LENGTH * sizeof(float) < fsize) {
+    if (SU_SYNCBUFFER_LENGTH * sizeof(float) < fsize)
+    {
         fprintf(stderr, "Sointu rendered shorter sync wave than expected\n");
         goto fail;
     }
 
-    if (SU_SYNCBUFFER_LENGTH * sizeof(float) > fsize) {
+    if (SU_SYNCBUFFER_LENGTH * sizeof(float) > fsize)
+    {
         fprintf(stderr, "Sointu rendered longer sync wave than expected\n");
         goto fail;
     }
 
-    fread((void*)fileSyncBuf, fsize, 1, f);
+    fread((void *)fileSyncBuf, fsize, 1, f);
     fclose(f);
     f = NULL;
 
     max_diff = 0.0f;
 
-    for (n = 0; n < SU_SYNCBUFFER_LENGTH; n++) {
+    for (n = 0; n < SU_SYNCBUFFER_LENGTH; n++)
+    {
         diff = (float)fabs(syncBuf[n] - fileSyncBuf[n]);
-        if (diff > 1e-3f || isnan(diff)) {
+        if (diff > 1e-3f || isnan(diff))
+        {
             fprintf(stderr, "Sointu rendered different sync wave than expected\n");
             goto fail;
         }
@@ -144,7 +157,8 @@ int main(int argc, char* argv[]) {
     return 0;
 
 fail:
-    if (f != NULL) {
+    if (f != NULL)
+    {
         fclose(f);
         f = NULL;
     }

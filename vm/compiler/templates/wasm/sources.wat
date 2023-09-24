@@ -206,7 +206,7 @@
 {{- end}}
 {{- if .Stereo "oscillator"}}
     (local.set $detune (f32.neg (local.get $detune))) ;; flip the detune for secon round
-    (global.set $WRK (i32.add (global.get $WRK) (i32.const 4))) 
+    (global.set $WRK (i32.add (global.get $WRK) (i32.const 4)))
     (br_if $stereoLoop (i32.eqz (local.tee $stereo (i32.eqz (local.get $stereo)))))
     end
     (global.set $WRK (local.get $WRK_stereostash))

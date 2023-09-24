@@ -5,8 +5,8 @@ function(regression_test testname)
         add_executable(${testname} ${source} test_renderer.c)
     else()
         if(ARGV3)
-            set(source ${ARGV3}.yml)            
-        else()           
+            set(source ${ARGV3}.yml)
+        else()
             set(source ${testname}.yml)
         endif()
 
@@ -31,14 +31,14 @@ function(regression_test testname)
                 COMMAND ${compilecmd} ${ARGV4} -arch=wasm -o ${watfile} ${CMAKE_CURRENT_SOURCE_DIR}/${source} && ${WAT2WASM} -o ${wasmfile} ${watfile}
                 DEPENDS ${source} ${wasmtemplates} ${compilecmd}
             )
-            
+
             add_custom_target(${wasmtarget} ALL
                 SOURCES "${source}" "${wasmtemplates}"
                 DEPENDS ${wasmfile}
             )
 
             add_test(${wasmtarget} ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/wasm_test_renderer.es6 ${wasmfile} ${CMAKE_CURRENT_SOURCE_DIR}/expected_output/${testname}.raw)
-        endif()    
+        endif()
     endif()
 
     if (${testname} MATCHES "sync")
@@ -50,12 +50,12 @@ function(regression_test testname)
 
     target_include_directories(${testname} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
     target_compile_definitions(${testname} PUBLIC TEST_NAME="${testname}")
-    
+
     if (ARGV1)
         message("${testname} requires ${ARGV1}")
         set_tests_properties(${testname} PROPERTIES FIXTURES_REQUIRED "${ARGV1}")
     endif()
-  
+
     if (ARGV2)
         message("${testname} setups ${ARGV2}")
         set_tests_properties(${testname} PROPERTIES FIXTURES_SETUP "${ARGV2}")
