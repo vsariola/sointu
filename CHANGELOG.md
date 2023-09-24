@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+### Fixed
+- The sointu-vsti-native plugin has different plugin ID and plugin name
+  to not confuse it with the non-native one
+
 ## v0.2.0
 ### Added
 - Saving and loading instruments

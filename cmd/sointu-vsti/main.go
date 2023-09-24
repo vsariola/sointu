@@ -44,8 +44,7 @@ func (c *VSTIProcessContext) BPM() (bpm float64, ok bool) {
 
 func init() {
 	var (
-		uniqueID = [4]byte{'S', 'n', 't', 'u'}
-		version  = int32(100)
+		version = int32(100)
 	)
 	vst2.PluginAllocator = func(h vst2.Host) (vst2.Plugin, vst2.Dispatcher) {
 		modelMessages := make(chan interface{}, 1024)
@@ -58,11 +57,11 @@ func init() {
 		context := VSTIProcessContext{make([]vst2.MIDIEvent, 100), h}
 		buf := make([]float32, 2048)
 		return vst2.Plugin{
-				UniqueID:       uniqueID,
+				UniqueID:       PLUGIN_ID,
 				Version:        version,
 				InputChannels:  0,
 				OutputChannels: 2,
-				Name:           "Sointu",
+				Name:           PLUGIN_NAME,
 				Vendor:         "vsariola/sointu",
 				Category:       vst2.PluginCategorySynth,
 				Flags:          vst2.PluginIsSynth,
