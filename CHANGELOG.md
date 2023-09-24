@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## Unreleased
+## v0.2.0
 ### Added
 - Saving and loading instruments
 - Comment field to instruments
@@ -69,5 +69,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - a command line utility to convert .yml songs to .asm
   - a command line utility to play the songs on command line
 
-[Unreleased]: https://github.com/vsariola/sointu/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/vsariola/sointu/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/vsariola/sointu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/vsariola/sointu/compare/4klang-3.11...v0.1.0

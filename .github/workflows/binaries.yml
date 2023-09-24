@@ -5,13 +5,36 @@ on:
     branches:
       - master
       - dev
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - master
       - dev
 
 jobs:
+  create_release:
+    name: Create release
+    runs-on: ubuntu-latest
+    # Note this. We are going to use that in further jobs.
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref_name }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+        if: startsWith(github.ref, 'refs/tags/')
   binaries:
+    needs: create_release # we need to know the upload URL
     runs-on: ${{ matrix.config.os }}
     strategy:
       matrix:
@@ -93,3 +116,35 @@ jobs:
       with:
         name: sointu-${{ runner.os }}-${{ steps.short-sha.outputs.sha }}
         path: ${{ matrix.config.output }}
+  upload_release_asset:
+    needs: [create_release, binaries]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    strategy:
+      matrix:
+        config:
+          - os: Windows
+          - os: Linux
+          - os: macOS
+    steps:
+    - uses: benjlevesque/short-sha@v2.2
+      id: short-sha
+      with:
+        length: 7
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: sointu-${{ matrix.config.os }}-${{ steps.short-sha.outputs.sha }}
+        path: sointu-${{ matrix.config.os }}
+    - name: Zip binaries
+      run: |
+        zip ./sointu-${{ matrix.config.os }}.zip sointu-${{ matrix.config.os }}/*
+    - name: Upload release assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
+        asset_name: sointu-${{ matrix.config.os }}.zip
+        asset_path: ./sointu-${{ matrix.config.os }}.zip
+        asset_content_type: application/octet-stream
