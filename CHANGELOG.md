@@ -4,9 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
+### Added
+- Save the GUI state periodically to a recovery file and load it on
+  startup of the app, if present. The recovery file is located in the
+  home directory of the user.
+
 ### Fixed
 - The sointu-vsti-native plugin has different plugin ID and plugin name
   to not confuse it with the non-native one
+- The VSTI waits for the gioui actually have quit when closing the
+  plugin
 
 ## v0.2.0
 ### Added

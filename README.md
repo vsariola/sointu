@@ -9,9 +9,18 @@ Windows, Mac, Linux (and related) + browser.
 
 User manual will be in the [Wiki](https://github.com/vsariola/sointu/wiki).
 
-Download prebuilt binaries from the [here](https://github.com/vsariola/sointu/actions)
+Installation
+------------
+
+You can either 1) download the prebuilt release binaries from the [releases](https://github.com/vsariola/sointu/releases);
+or 2) download the latest build from the master branch from the [actions](https://github.com/vsariola/sointu/actions)
 (find workflow "Binaries" and scroll down for .zip files containing the
-artifacts.)
+artifacts). Then just run one of the executables or, in the case of the
+VST plugins library files, copy them wherever you keep you VST2 plugins.
+
+The pre 1.0 version tags are mostly for reference: no backwards
+compatibility will be guaranteed while upgrading to a newer version.
+Backwards compatibility will be attempted from 1.0 onwards.
 
 Summary
 -------
