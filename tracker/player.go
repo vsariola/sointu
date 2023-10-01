@@ -296,6 +296,9 @@ loop:
 }
 
 func (p *Player) compileOrUpdateSynth() {
+	if p.bpm <= 0 {
+		return // bpm not set yet
+	}
 	if p.synth != nil {
 		err := p.synth.Update(p.patch, p.bpm)
 		if err != nil {

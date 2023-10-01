@@ -49,7 +49,10 @@ func init() {
 	vst2.PluginAllocator = func(h vst2.Host) (vst2.Plugin, vst2.Dispatcher) {
 		modelMessages := make(chan interface{}, 1024)
 		playerMessages := make(chan tracker.PlayerMessage, 1024)
-		model := tracker.NewModel(modelMessages, playerMessages)
+		model, err := tracker.LoadRecovery(modelMessages, playerMessages)
+		if err != nil {
+			model = tracker.NewModel(modelMessages, playerMessages)
+		}
 		player := tracker.NewPlayer(cmd.DefaultService, playerMessages, modelMessages)
 		tracker := gioui.NewTracker(model, cmd.DefaultService)
 		tracker.SetInstrEnlarged(true) // start the vsti with the instrument editor enlarged

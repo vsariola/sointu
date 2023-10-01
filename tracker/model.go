@@ -4,11 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
+	"gopkg.in/yaml.v2"
 )
 
 // Model implements the mutable state for the tracker program GUI.
@@ -19,32 +22,36 @@ import (
 // It is owned by the GUI thread (goroutine), while the player is owned by
 // by the audioprocessing thread. They communicate using the two channels
 type (
+	// modelData is the part of the model that gets save to recovery file
+	modelData struct {
+		Song             sointu.Song
+		SelectionCorner  SongPoint
+		Cursor           SongPoint
+		LowNibble        bool
+		InstrIndex       int
+		UnitIndex        int
+		ParamIndex       int
+		Octave           int
+		NoteTracking     bool
+		UsedIDs          map[int]bool
+		MaxID            int
+		FilePath         string
+		ChangedSinceSave bool
+		PatternUseCount  [][]int
+		Panic            bool
+		Playing          bool
+		Recording        bool
+		PlayPosition     SongRow
+		InstrEnlarged    bool
+
+		PrevUndoType    string
+		UndoSkipCounter int
+		UndoStack       []sointu.Song
+		RedoStack       []sointu.Song
+	}
+
 	Model struct {
-		song             sointu.Song
-		selectionCorner  SongPoint
-		cursor           SongPoint
-		lowNibble        bool
-		instrIndex       int
-		unitIndex        int
-		paramIndex       int
-		octave           int
-		noteTracking     bool
-		usedIDs          map[int]bool
-		maxID            int
-		filePath         string
-		changedSinceSave bool
-		patternUseCount  [][]int
-		panic            bool
-		playing          bool
-		recording        bool
-		playPosition     SongRow
-		instrEnlarged    bool
-
-		prevUndoType    string
-		undoSkipCounter int
-		undoStack       []sointu.Song
-		redoStack       []sointu.Song
-
+		d              modelData
 		PlayerMessages <-chan PlayerMessage
 		modelMessages  chan<- interface{}
 	}
@@ -105,35 +112,81 @@ const (
 )
 
 const maxUndo = 256
+const RECOVERY_FILE = ".sointu_recovery.yml"
 
 func NewModel(modelMessages chan<- interface{}, playerMessages <-chan PlayerMessage) *Model {
 	ret := new(Model)
 	ret.modelMessages = modelMessages
 	ret.PlayerMessages = playerMessages
 	ret.setSongNoUndo(defaultSong.Copy())
+	ret.d.Octave = 4
 	return ret
 }
 
+func LoadRecovery(modelMessages chan<- interface{}, playerMessages <-chan PlayerMessage) (*Model, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("could not get user home directory: %w", err)
+	}
+	filePath := filepath.Join(homeDir, RECOVERY_FILE)
+	b, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("could not read recovery file: %w", err)
+	}
+	var ret Model
+	err = yaml.Unmarshal(b, &ret.d)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal recovery file: %w", err)
+	}
+	ret.modelMessages = modelMessages
+	ret.PlayerMessages = playerMessages
+	ret.notifyPatchChange()
+	ret.notifySamplesPerRowChange()
+	ret.notifyScoreChange()
+	return &ret, nil
+}
+
+func (m *Model) SaveRecovery() error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("could not get user home directory: %w", err)
+	}
+	out, err := yaml.Marshal(m.d)
+	if err != nil {
+		return fmt.Errorf("could not marshal the model: %w", err)
+	}
+	filePath := filepath.Join(homeDir, RECOVERY_FILE)
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("could not open recovery file: %w", err)
+	}
+	_, err = file.Write(out)
+	if err != nil {
+		return fmt.Errorf("could not write recovery file: %w", err)
+	}
+	return nil
+}
+
 func (m *Model) FilePath() string {
-	return m.filePath
+	return m.d.FilePath
 }
 
 func (m *Model) SetFilePath(value string) {
-	m.filePath = value
+	m.d.FilePath = value
 }
 
 func (m *Model) ChangedSinceSave() bool {
-	return m.changedSinceSave
+	return m.d.ChangedSinceSave
 }
 
 func (m *Model) SetChangedSinceSave(value bool) {
-	m.changedSinceSave = value
+	m.d.ChangedSinceSave = value
 }
 
 func (m *Model) ResetSong() {
 	m.SetSong(defaultSong.Copy())
-	m.filePath = ""
-	m.changedSinceSave = false
+	m.d.FilePath = ""
+	m.d.ChangedSinceSave = false
 }
 
 func (m *Model) SetSong(song sointu.Song) {
@@ -152,25 +205,25 @@ func (m *Model) SetOctave(value int) bool {
 	if value > 9 {
 		value = 9
 	}
-	if m.octave == value {
+	if m.d.Octave == value {
 		return false
 	}
-	m.octave = value
+	m.d.Octave = value
 	return true
 }
 
 func (m *Model) ProcessPlayerMessage(msg PlayerMessage) {
-	m.playPosition = msg.SongRow
+	m.d.PlayPosition = msg.SongRow
 	switch e := msg.Inner.(type) {
 	case PlayerCrashMessage:
-		m.panic = true
+		m.d.Panic = true
 	case PlayerRecordedMessage:
 		if e.BPM == 0 {
-			e.BPM = float64(m.song.BPM)
+			e.BPM = float64(m.d.Song.BPM)
 		}
-		song := RecordingToSong(m.song.Patch, m.song.RowsPerBeat, m.song.Score.RowsPerPattern, e)
+		song := RecordingToSong(m.d.Song.Patch, m.d.Song.RowsPerBeat, m.d.Song.Score.RowsPerPattern, e)
 		m.SetSong(song)
-		m.instrEnlarged = false
+		m.d.InstrEnlarged = false
 	default:
 	}
 }
@@ -180,16 +233,16 @@ func (m *Model) SetInstrument(instrument sointu.Instrument) bool {
 		return false
 	}
 	m.saveUndo("SetInstrument", 0)
-	m.freeUnitIDs(m.song.Patch[m.instrIndex].Units)
+	m.freeUnitIDs(m.d.Song.Patch[m.d.InstrIndex].Units)
 	m.assignUnitIDs(instrument.Units)
-	m.song.Patch[m.instrIndex] = instrument
+	m.d.Song.Patch[m.d.InstrIndex] = instrument
 	m.clampPositions()
 	m.notifyPatchChange()
 	return true
 }
 
 func (m *Model) SetInstrIndex(value int) {
-	m.instrIndex = value
+	m.d.InstrIndex = value
 	m.clampPositions()
 }
 
@@ -205,12 +258,12 @@ func (m *Model) SetInstrumentVoices(value int) {
 		return
 	}
 	m.saveUndo("SetInstrumentVoices", 10)
-	m.song.Patch[m.instrIndex].NumVoices = value
+	m.d.Song.Patch[m.d.InstrIndex].NumVoices = value
 	m.notifyPatchChange()
 }
 
 func (m *Model) MaxInstrumentVoices() int {
-	maxRemain := 32 - m.song.Patch.NumVoices() + m.Instrument().NumVoices
+	maxRemain := 32 - m.d.Song.Patch.NumVoices() + m.Instrument().NumVoices
 	if maxRemain < 1 {
 		return 1
 	}
@@ -223,7 +276,7 @@ func (m *Model) SetInstrumentName(name string) {
 		return
 	}
 	m.saveUndo("SetInstrumentName", 10)
-	m.song.Patch[m.instrIndex].Name = name
+	m.d.Song.Patch[m.d.InstrIndex].Name = name
 }
 
 func (m *Model) SetInstrumentComment(comment string) {
@@ -231,7 +284,7 @@ func (m *Model) SetInstrumentComment(comment string) {
 		return
 	}
 	m.saveUndo("SetInstrumentComment", 10)
-	m.song.Patch[m.instrIndex].Comment = comment
+	m.d.Song.Patch[m.d.InstrIndex].Comment = comment
 }
 
 func (m *Model) SetBPM(value int) {
@@ -241,11 +294,11 @@ func (m *Model) SetBPM(value int) {
 	if value > 999 {
 		value = 999
 	}
-	if m.song.BPM == value {
+	if m.d.Song.BPM == value {
 		return
 	}
 	m.saveUndo("SetBPM", 100)
-	m.song.BPM = value
+	m.d.Song.BPM = value
 	m.notifySamplesPerRowChange()
 }
 
@@ -256,11 +309,11 @@ func (m *Model) SetRowsPerBeat(value int) {
 	if value > 32 {
 		value = 32
 	}
-	if m.song.RowsPerBeat == value {
+	if m.d.Song.RowsPerBeat == value {
 		return
 	}
 	m.saveUndo("SetRowsPerBeat", 10)
-	m.song.RowsPerBeat = value
+	m.d.Song.RowsPerBeat = value
 	m.notifySamplesPerRowChange()
 }
 
@@ -269,23 +322,23 @@ func (m *Model) AddTrack(after bool) {
 		return
 	}
 	m.saveUndo("AddTrack", 0)
-	newTracks := make([]sointu.Track, len(m.song.Score.Tracks)+1)
+	newTracks := make([]sointu.Track, len(m.d.Song.Score.Tracks)+1)
 	if after {
-		m.cursor.Track++
+		m.d.Cursor.Track++
 	}
-	copy(newTracks, m.song.Score.Tracks[:m.cursor.Track])
-	copy(newTracks[m.cursor.Track+1:], m.song.Score.Tracks[m.cursor.Track:])
-	newTracks[m.cursor.Track] = sointu.Track{
+	copy(newTracks, m.d.Song.Score.Tracks[:m.d.Cursor.Track])
+	copy(newTracks[m.d.Cursor.Track+1:], m.d.Song.Score.Tracks[m.d.Cursor.Track:])
+	newTracks[m.d.Cursor.Track] = sointu.Track{
 		NumVoices: 1,
 		Patterns:  []sointu.Pattern{},
 	}
-	m.song.Score.Tracks = newTracks
+	m.d.Song.Score.Tracks = newTracks
 	m.clampPositions()
 	m.notifyScoreChange()
 }
 
 func (m *Model) CanAddTrack() bool {
-	return m.song.Score.NumVoices() < 32
+	return m.d.Song.Score.NumVoices() < 32
 }
 
 func (m *Model) DeleteTrack(forward bool) {
@@ -293,29 +346,29 @@ func (m *Model) DeleteTrack(forward bool) {
 		return
 	}
 	m.saveUndo("DeleteTrack", 0)
-	newTracks := make([]sointu.Track, len(m.song.Score.Tracks)-1)
-	copy(newTracks, m.song.Score.Tracks[:m.cursor.Track])
-	copy(newTracks[m.cursor.Track:], m.song.Score.Tracks[m.cursor.Track+1:])
-	m.song.Score.Tracks = newTracks
+	newTracks := make([]sointu.Track, len(m.d.Song.Score.Tracks)-1)
+	copy(newTracks, m.d.Song.Score.Tracks[:m.d.Cursor.Track])
+	copy(newTracks[m.d.Cursor.Track:], m.d.Song.Score.Tracks[m.d.Cursor.Track+1:])
+	m.d.Song.Score.Tracks = newTracks
 	if !forward {
-		m.cursor.Track--
+		m.d.Cursor.Track--
 	}
-	m.selectionCorner = m.cursor
+	m.d.SelectionCorner = m.d.Cursor
 	m.clampPositions()
 	m.computePatternUseCounts()
 	m.notifyScoreChange()
 }
 
 func (m *Model) CanDeleteTrack() bool {
-	return len(m.song.Score.Tracks) > 1
+	return len(m.d.Song.Score.Tracks) > 1
 }
 
 func (m *Model) SwapTracks(i, j int) {
-	if i < 0 || j < 0 || i >= len(m.song.Score.Tracks) || j >= len(m.song.Score.Tracks) || i == j {
+	if i < 0 || j < 0 || i >= len(m.d.Song.Score.Tracks) || j >= len(m.d.Song.Score.Tracks) || i == j {
 		return
 	}
 	m.saveUndo("SwapTracks", 10)
-	tracks := m.song.Score.Tracks
+	tracks := m.d.Song.Score.Tracks
 	tracks[i], tracks[j] = tracks[j], tracks[i]
 	m.clampPositions()
 	m.notifyScoreChange()
@@ -329,16 +382,16 @@ func (m *Model) SetTrackVoices(value int) {
 	if value > maxRemain {
 		value = maxRemain
 	}
-	if m.song.Score.Tracks[m.cursor.Track].NumVoices == value {
+	if m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices == value {
 		return
 	}
 	m.saveUndo("SetTrackVoices", 10)
-	m.song.Score.Tracks[m.cursor.Track].NumVoices = value
+	m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices = value
 	m.notifyScoreChange()
 }
 
 func (m *Model) MaxTrackVoices() int {
-	maxRemain := 32 - m.song.Score.NumVoices() + m.song.Score.Tracks[m.cursor.Track].NumVoices
+	maxRemain := 32 - m.d.Song.Score.NumVoices() + m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices
 	if maxRemain < 1 {
 		maxRemain = 1
 	}
@@ -350,18 +403,18 @@ func (m *Model) AddInstrument(after bool) {
 		return
 	}
 	m.saveUndo("AddInstrument", 0)
-	newInstruments := make([]sointu.Instrument, len(m.song.Patch)+1)
+	newInstruments := make([]sointu.Instrument, len(m.d.Song.Patch)+1)
 	if after {
-		m.instrIndex++
+		m.d.InstrIndex++
 	}
-	copy(newInstruments, m.song.Patch[:m.instrIndex])
-	copy(newInstruments[m.instrIndex+1:], m.song.Patch[m.instrIndex:])
+	copy(newInstruments, m.d.Song.Patch[:m.d.InstrIndex])
+	copy(newInstruments[m.d.InstrIndex+1:], m.d.Song.Patch[m.d.InstrIndex:])
 	newInstr := defaultInstrument.Copy()
 	m.assignUnitIDs(newInstr.Units)
-	newInstruments[m.instrIndex] = newInstr
-	m.unitIndex = 0
-	m.paramIndex = 0
-	m.song.Patch = newInstruments
+	newInstruments[m.d.InstrIndex] = newInstr
+	m.d.UnitIndex = 0
+	m.d.ParamIndex = 0
+	m.d.Song.Patch = newInstruments
 	m.notifyPatchChange()
 }
 
@@ -374,30 +427,30 @@ func (m *Model) NoteOff(id NoteID) {
 }
 
 func (m *Model) Playing() bool {
-	return m.playing
+	return m.d.Playing
 }
 
 func (m *Model) SetPlaying(val bool) {
-	if m.playing != val {
-		m.playing = val
+	if m.d.Playing != val {
+		m.d.Playing = val
 		m.modelMessages <- ModelPlayingChangedMessage{val}
 	}
 }
 
 func (m *Model) PlayPosition() SongRow {
-	return m.playPosition
+	return m.d.PlayPosition
 }
 
 func (m *Model) CanAddInstrument() bool {
-	return m.song.Patch.NumVoices() < 32
+	return m.d.Song.Patch.NumVoices() < 32
 }
 
 func (m *Model) SwapInstruments(i, j int) {
-	if i < 0 || j < 0 || i >= len(m.song.Patch) || j >= len(m.song.Patch) || i == j {
+	if i < 0 || j < 0 || i >= len(m.d.Song.Patch) || j >= len(m.d.Song.Patch) || i == j {
 		return
 	}
 	m.saveUndo("SwapInstruments", 10)
-	instruments := m.song.Patch
+	instruments := m.d.Song.Patch
 	instruments[i], instruments[j] = instruments[j], instruments[i]
 	m.clampPositions()
 	m.notifyPatchChange()
@@ -408,58 +461,58 @@ func (m *Model) DeleteInstrument(forward bool) {
 		return
 	}
 	m.saveUndo("DeleteInstrument", 0)
-	m.freeUnitIDs(m.song.Patch[m.instrIndex].Units)
-	m.song.Patch = append(m.song.Patch[:m.instrIndex], m.song.Patch[m.instrIndex+1:]...)
-	if (!forward && m.instrIndex > 0) || m.instrIndex >= len(m.song.Patch) {
-		m.instrIndex--
+	m.freeUnitIDs(m.d.Song.Patch[m.d.InstrIndex].Units)
+	m.d.Song.Patch = append(m.d.Song.Patch[:m.d.InstrIndex], m.d.Song.Patch[m.d.InstrIndex+1:]...)
+	if (!forward && m.d.InstrIndex > 0) || m.d.InstrIndex >= len(m.d.Song.Patch) {
+		m.d.InstrIndex--
 	}
 	m.clampPositions()
 	m.notifyPatchChange()
 }
 
 func (m *Model) CanDeleteInstrument() bool {
-	return len(m.song.Patch) > 1
+	return len(m.d.Song.Patch) > 1
 }
 
 func (m *Model) Note() byte {
-	trk := m.song.Score.Tracks[m.cursor.Track]
-	pat := trk.Order.Get(m.cursor.Pattern)
+	trk := m.d.Song.Score.Tracks[m.d.Cursor.Track]
+	pat := trk.Order.Get(m.d.Cursor.Pattern)
 	if pat < 0 || pat >= len(trk.Patterns) {
 		return 1
 	}
-	return trk.Patterns[pat].Get(m.cursor.Row)
+	return trk.Patterns[pat].Get(m.d.Cursor.Row)
 }
 
 // SetCurrentNote sets the (note) value in current pattern under cursor to iv
 func (m *Model) SetNote(iv byte) {
 	m.saveUndo("SetNote", 10)
-	tracks := m.song.Score.Tracks
-	if m.cursor.Pattern < 0 || m.cursor.Row < 0 {
+	tracks := m.d.Song.Score.Tracks
+	if m.d.Cursor.Pattern < 0 || m.d.Cursor.Row < 0 {
 		return
 	}
-	patIndex := tracks[m.cursor.Track].Order.Get(m.cursor.Pattern)
+	patIndex := tracks[m.d.Cursor.Track].Order.Get(m.d.Cursor.Pattern)
 	if patIndex < 0 {
-		patIndex = len(tracks[m.cursor.Track].Patterns)
-		for _, pi := range tracks[m.cursor.Track].Order {
+		patIndex = len(tracks[m.d.Cursor.Track].Patterns)
+		for _, pi := range tracks[m.d.Cursor.Track].Order {
 			if pi >= patIndex {
 				patIndex = pi + 1 // we find a pattern that is not in the pattern table nor in the order list i.e. completely new pattern
 			}
 		}
-		tracks[m.cursor.Track].Order.Set(m.cursor.Pattern, patIndex)
+		tracks[m.d.Cursor.Track].Order.Set(m.d.Cursor.Pattern, patIndex)
 	}
-	for len(tracks[m.cursor.Track].Patterns) <= patIndex {
-		tracks[m.cursor.Track].Patterns = append(tracks[m.cursor.Track].Patterns, nil)
+	for len(tracks[m.d.Cursor.Track].Patterns) <= patIndex {
+		tracks[m.d.Cursor.Track].Patterns = append(tracks[m.d.Cursor.Track].Patterns, nil)
 	}
-	tracks[m.cursor.Track].Patterns[patIndex].Set(m.cursor.Row, iv)
+	tracks[m.d.Cursor.Track].Patterns[patIndex].Set(m.d.Cursor.Row, iv)
 	m.notifyScoreChange()
 }
 
 func (m *Model) AdjustPatternNumber(delta int, swap bool) {
-	r1, r2 := m.cursor.Pattern, m.selectionCorner.Pattern
+	r1, r2 := m.d.Cursor.Pattern, m.d.SelectionCorner.Pattern
 	if r1 > r2 {
 		r1, r2 = r2, r1
 	}
-	t1, t2 := m.cursor.Track, m.selectionCorner.Track
+	t1, t2 := m.d.Cursor.Track, m.d.SelectionCorner.Track
 	if t1 > t2 {
 		t1, t2 = t2, t1
 	}
@@ -471,7 +524,7 @@ func (m *Model) AdjustPatternNumber(delta int, swap bool) {
 	usedIds := map[k]bool{}
 	for t := t1; t <= t2; t++ {
 		for r := r1; r <= r2; r++ {
-			p := m.song.Score.Tracks[t].Order.Get(r)
+			p := m.d.Song.Score.Tracks[t].Order.Get(r)
 			if p < 0 {
 				continue
 			}
@@ -485,9 +538,9 @@ func (m *Model) AdjustPatternNumber(delta int, swap bool) {
 	m.saveUndo("AdjustPatternNumber", 10)
 	for t := t1; t <= t2; t++ {
 		if swap {
-			maxId := len(m.song.Score.Tracks[t].Patterns) - 1
+			maxId := len(m.d.Song.Score.Tracks[t].Patterns) - 1
 			// check if song uses patterns that are not in the table yet
-			for _, o := range m.song.Score.Tracks[t].Order {
+			for _, o := range m.d.Song.Score.Tracks[t].Order {
 				if maxId < o {
 					maxId = o
 				}
@@ -511,28 +564,28 @@ func (m *Model) AdjustPatternNumber(delta int, swap bool) {
 				newIds[k{t, j}] = nextId
 				usedIds[k{t, nextId}] = true
 			}
-			for i, o := range m.song.Score.Tracks[t].Order {
+			for i, o := range m.d.Song.Score.Tracks[t].Order {
 				if o < 0 {
 					continue
 				}
-				m.song.Score.Tracks[t].Order[i] = newIds[k{t, o}]
+				m.d.Song.Score.Tracks[t].Order[i] = newIds[k{t, o}]
 			}
-			newPatterns := make([]sointu.Pattern, len(m.song.Score.Tracks[t].Patterns))
-			for p, pat := range m.song.Score.Tracks[t].Patterns {
+			newPatterns := make([]sointu.Pattern, len(m.d.Song.Score.Tracks[t].Patterns))
+			for p, pat := range m.d.Song.Score.Tracks[t].Patterns {
 				id := newIds[k{t, p}]
 				for len(newPatterns) <= id {
 					newPatterns = append(newPatterns, nil)
 				}
 				newPatterns[id] = pat
 			}
-			m.song.Score.Tracks[t].Patterns = newPatterns
+			m.d.Song.Score.Tracks[t].Patterns = newPatterns
 		} else {
 			for r := r1; r <= r2; r++ {
-				p := m.song.Score.Tracks[t].Order.Get(r)
+				p := m.d.Song.Score.Tracks[t].Order.Get(r)
 				if p < 0 {
 					continue
 				}
-				m.song.Score.Tracks[t].Order.Set(r, p+delta)
+				m.d.Song.Score.Tracks[t].Order.Set(r, p+delta)
 			}
 		}
 	}
@@ -541,53 +594,53 @@ func (m *Model) AdjustPatternNumber(delta int, swap bool) {
 }
 
 func (m *Model) SetRecording(val bool) {
-	if m.recording != val {
-		m.recording = val
-		m.instrEnlarged = val
+	if m.d.Recording != val {
+		m.d.Recording = val
+		m.d.InstrEnlarged = val
 		m.modelMessages <- ModelRecordingMessage{val}
 	}
 }
 
 func (m *Model) Recording() bool {
-	return m.recording
+	return m.d.Recording
 }
 
 func (m *Model) SetPanic(val bool) {
-	if m.panic != val {
-		m.panic = val
+	if m.d.Panic != val {
+		m.d.Panic = val
 		m.modelMessages <- ModelPanicMessage{val}
 	}
 }
 
 func (m *Model) Panic() bool {
-	return m.panic
+	return m.d.Panic
 }
 
 func (m *Model) SetInstrEnlarged(val bool) {
-	m.instrEnlarged = val
+	m.d.InstrEnlarged = val
 }
 
 func (m *Model) InstrEnlarged() bool {
-	return m.instrEnlarged
+	return m.d.InstrEnlarged
 }
 
 func (m *Model) PlayFromPosition(sr SongRow) {
-	m.playing = true
+	m.d.Playing = true
 	m.modelMessages <- ModelPlayFromPositionMessage{sr}
 }
 
 func (m *Model) SetCurrentPattern(pat int) {
 	m.saveUndo("SetCurrentPattern", 0)
-	m.song.Score.Tracks[m.cursor.Track].Order.Set(m.cursor.Pattern, pat)
+	m.d.Song.Score.Tracks[m.d.Cursor.Track].Order.Set(m.d.Cursor.Pattern, pat)
 	m.computePatternUseCounts()
 	m.notifyScoreChange()
 }
 
 func (m *Model) IsPatternUnique(track, pattern int) bool {
-	if track < 0 || track >= len(m.patternUseCount) {
+	if track < 0 || track >= len(m.d.PatternUseCount) {
 		return false
 	}
-	p := m.patternUseCount[track]
+	p := m.d.PatternUseCount[track]
 	if pattern < 0 || pattern >= len(p) {
 		return false
 	}
@@ -598,11 +651,11 @@ func (m *Model) SetSongLength(value int) {
 	if value < 1 {
 		value = 1
 	}
-	if value == m.song.Score.Length {
+	if value == m.d.Song.Score.Length {
 		return
 	}
 	m.saveUndo("SetSongLength", 10)
-	m.song.Score.Length = value
+	m.d.Song.Score.Length = value
 	m.clampPositions()
 	m.computePatternUseCounts()
 	m.notifyScoreChange()
@@ -615,11 +668,11 @@ func (m *Model) SetRowsPerPattern(value int) {
 	if value > 255 {
 		value = 255
 	}
-	if value == m.song.Score.RowsPerPattern {
+	if value == m.d.Song.Score.RowsPerPattern {
 		return
 	}
 	m.saveUndo("SetRowsPerPattern", 10)
-	m.song.Score.RowsPerPattern = value
+	m.d.Song.Score.RowsPerPattern = value
 	m.clampPositions()
 	m.notifyScoreChange()
 }
@@ -636,34 +689,34 @@ func (m *Model) SetUnitType(t string) {
 	}
 	m.saveUndo("SetUnitType", 0)
 	oldID := m.Unit().ID
-	m.Instrument().Units[m.unitIndex] = unit
-	m.Instrument().Units[m.unitIndex].ID = oldID // keep the ID of the replaced unit
+	m.Instrument().Units[m.d.UnitIndex] = unit
+	m.Instrument().Units[m.d.UnitIndex].ID = oldID // keep the ID of the replaced unit
 	m.notifyPatchChange()
 }
 
 func (m *Model) PasteUnits(units []sointu.Unit) {
 	m.saveUndo("PasteUnits", 0)
 	newUnits := make([]sointu.Unit, len(m.Instrument().Units)+len(units))
-	m.unitIndex++
-	copy(newUnits, m.Instrument().Units[:m.unitIndex])
-	copy(newUnits[m.unitIndex+len(units):], m.Instrument().Units[m.unitIndex:])
+	m.d.UnitIndex++
+	copy(newUnits, m.Instrument().Units[:m.d.UnitIndex])
+	copy(newUnits[m.d.UnitIndex+len(units):], m.Instrument().Units[m.d.UnitIndex:])
 	for _, unit := range units {
-		if _, ok := m.usedIDs[unit.ID]; ok {
-			m.maxID++
-			unit.ID = m.maxID
+		if _, ok := m.d.UsedIDs[unit.ID]; ok {
+			m.d.MaxID++
+			unit.ID = m.d.MaxID
 		}
-		m.usedIDs[unit.ID] = true
+		m.d.UsedIDs[unit.ID] = true
 	}
-	copy(newUnits[m.unitIndex:m.unitIndex+len(units)], units)
-	m.song.Patch[m.instrIndex].Units = newUnits
-	m.paramIndex = 0
+	copy(newUnits[m.d.UnitIndex:m.d.UnitIndex+len(units)], units)
+	m.d.Song.Patch[m.d.InstrIndex].Units = newUnits
+	m.d.ParamIndex = 0
 	m.clampPositions()
 	m.notifyPatchChange()
 }
 
 func (m *Model) SetUnitIndex(value int) {
-	m.unitIndex = value
-	m.paramIndex = 0
+	m.d.UnitIndex = value
+	m.d.ParamIndex = 0
 	m.clampPositions()
 }
 
@@ -671,13 +724,13 @@ func (m *Model) AddUnit(after bool) {
 	m.saveUndo("AddUnit", 10)
 	newUnits := make([]sointu.Unit, len(m.Instrument().Units)+1)
 	if after {
-		m.unitIndex++
+		m.d.UnitIndex++
 	}
-	copy(newUnits, m.Instrument().Units[:m.unitIndex])
-	copy(newUnits[m.unitIndex+1:], m.Instrument().Units[m.unitIndex:])
-	m.assignUnitIDs(newUnits[m.unitIndex : m.unitIndex+1])
-	m.song.Patch[m.instrIndex].Units = newUnits
-	m.paramIndex = 0
+	copy(newUnits, m.Instrument().Units[:m.d.UnitIndex])
+	copy(newUnits[m.d.UnitIndex+1:], m.Instrument().Units[m.d.UnitIndex:])
+	m.assignUnitIDs(newUnits[m.d.UnitIndex : m.d.UnitIndex+1])
+	m.d.Song.Patch[m.d.InstrIndex].Units = newUnits
+	m.d.ParamIndex = 0
 	m.clampPositions()
 	m.notifyPatchChange()
 }
@@ -685,42 +738,42 @@ func (m *Model) AddUnit(after bool) {
 func (m *Model) AddOrderRow(after bool) {
 	m.saveUndo("AddOrderRow", 10)
 	if after {
-		m.cursor.Pattern++
+		m.d.Cursor.Pattern++
 	}
-	for i, trk := range m.song.Score.Tracks {
-		if l := len(trk.Order); l > m.cursor.Pattern {
+	for i, trk := range m.d.Song.Score.Tracks {
+		if l := len(trk.Order); l > m.d.Cursor.Pattern {
 			newOrder := make([]int, l+1)
-			copy(newOrder, trk.Order[:m.cursor.Pattern])
-			copy(newOrder[m.cursor.Pattern+1:], trk.Order[m.cursor.Pattern:])
-			newOrder[m.cursor.Pattern] = -1
-			m.song.Score.Tracks[i].Order = newOrder
+			copy(newOrder, trk.Order[:m.d.Cursor.Pattern])
+			copy(newOrder[m.d.Cursor.Pattern+1:], trk.Order[m.d.Cursor.Pattern:])
+			newOrder[m.d.Cursor.Pattern] = -1
+			m.d.Song.Score.Tracks[i].Order = newOrder
 		}
 	}
-	m.song.Score.Length++
-	m.selectionCorner = m.cursor
+	m.d.Song.Score.Length++
+	m.d.SelectionCorner = m.d.Cursor
 	m.clampPositions()
 	m.computePatternUseCounts()
 	m.notifyScoreChange()
 }
 
 func (m *Model) DeleteOrderRow(forward bool) {
-	if m.song.Score.Length <= 1 {
+	if m.d.Song.Score.Length <= 1 {
 		return
 	}
 	m.saveUndo("DeleteOrderRow", 0)
-	for i, trk := range m.song.Score.Tracks {
-		if l := len(trk.Order); l > m.cursor.Pattern {
+	for i, trk := range m.d.Song.Score.Tracks {
+		if l := len(trk.Order); l > m.d.Cursor.Pattern {
 			newOrder := make([]int, l-1)
-			copy(newOrder, trk.Order[:m.cursor.Pattern])
-			copy(newOrder[m.cursor.Pattern:], trk.Order[m.cursor.Pattern+1:])
-			m.song.Score.Tracks[i].Order = newOrder
+			copy(newOrder, trk.Order[:m.d.Cursor.Pattern])
+			copy(newOrder[m.d.Cursor.Pattern:], trk.Order[m.d.Cursor.Pattern+1:])
+			m.d.Song.Score.Tracks[i].Order = newOrder
 		}
 	}
-	if !forward && m.cursor.Pattern > 0 {
-		m.cursor.Pattern--
+	if !forward && m.d.Cursor.Pattern > 0 {
+		m.d.Cursor.Pattern--
 	}
-	m.song.Score.Length--
-	m.selectionCorner = m.cursor
+	m.d.Song.Score.Length--
+	m.d.SelectionCorner = m.d.Cursor
 	m.clampPositions()
 	m.computePatternUseCounts()
 	m.notifyScoreChange()
@@ -737,24 +790,24 @@ func (m *Model) DeleteUnits(forward bool, a, b int) []sointu.Unit {
 		b = len(instr.Units) - 1
 	}
 	for i := a; i <= b; i++ {
-		delete(m.usedIDs, instr.Units[i].ID)
+		delete(m.d.UsedIDs, instr.Units[i].ID)
 	}
 	var newUnits []sointu.Unit
 	if a == 0 && b == len(instr.Units)-1 {
 		newUnits = make([]sointu.Unit, 1)
-		m.unitIndex = 0
+		m.d.UnitIndex = 0
 	} else {
 		newUnits = make([]sointu.Unit, len(instr.Units)-(b-a+1))
 		copy(newUnits, instr.Units[:a])
 		copy(newUnits[a:], instr.Units[b+1:])
-		m.unitIndex = a
+		m.d.UnitIndex = a
 		if forward {
-			m.unitIndex--
+			m.d.UnitIndex--
 		}
 	}
 	deletedUnits := instr.Units[a : b+1]
-	m.song.Patch[m.instrIndex].Units = newUnits
-	m.paramIndex = 0
+	m.d.Song.Patch[m.d.InstrIndex].Units = newUnits
+	m.d.ParamIndex = 0
 	m.clampPositions()
 	m.notifyPatchChange()
 	return deletedUnits
@@ -765,16 +818,16 @@ func (m *Model) CanDeleteUnit() bool {
 }
 
 func (m *Model) ResetParam() {
-	p, err := m.Param(m.paramIndex)
+	p, err := m.Param(m.d.ParamIndex)
 	if err != nil {
 		return
 	}
 	unit := m.Unit()
 	paramList, ok := sointu.UnitTypes[unit.Type]
-	if !ok || m.paramIndex < 0 || m.paramIndex >= len(paramList) {
+	if !ok || m.d.ParamIndex < 0 || m.d.ParamIndex >= len(paramList) {
 		return
 	}
-	paramType := paramList[m.paramIndex]
+	paramType := paramList[m.d.ParamIndex]
 	defaultValue, ok := defaultUnits[unit.Type].Parameters[paramType.Name]
 	if unit.Parameters[p.Name] == defaultValue {
 		return
@@ -786,7 +839,7 @@ func (m *Model) ResetParam() {
 }
 
 func (m *Model) SetParamIndex(value int) {
-	m.paramIndex = value
+	m.d.ParamIndex = value
 	m.clampPositions()
 }
 
@@ -822,13 +875,13 @@ func (m *Model) SwapUnits(i, j int) {
 }
 
 func (m *Model) getSelectionRange() (int, int, int, int) {
-	r1 := m.cursor.Pattern*m.song.Score.RowsPerPattern + m.cursor.Row
-	r2 := m.selectionCorner.Pattern*m.song.Score.RowsPerPattern + m.selectionCorner.Row
+	r1 := m.d.Cursor.Pattern*m.d.Song.Score.RowsPerPattern + m.d.Cursor.Row
+	r2 := m.d.SelectionCorner.Pattern*m.d.Song.Score.RowsPerPattern + m.d.SelectionCorner.Row
 	if r2 < r1 {
 		r1, r2 = r2, r1
 	}
-	t1 := m.cursor.Track
-	t2 := m.selectionCorner.Track
+	t1 := m.d.Cursor.Track
+	t2 := m.d.SelectionCorner.Track
 	if t2 < t1 {
 		t1, t2 = t2, t1
 	}
@@ -844,11 +897,11 @@ func (m *Model) AdjustSelectionPitch(delta int) {
 			Row int
 		}]bool{}
 		for r := r1; r <= r2; r++ {
-			s := SongRow{Row: r}.Wrap(m.song.Score)
-			if s.Pattern >= len(m.song.Score.Tracks[c].Order) {
+			s := SongRow{Row: r}.Wrap(m.d.Song.Score)
+			if s.Pattern >= len(m.d.Song.Score.Tracks[c].Order) {
 				break
 			}
-			p := m.song.Score.Tracks[c].Order[s.Pattern]
+			p := m.d.Song.Score.Tracks[c].Order[s.Pattern]
 			if p < 0 {
 				continue
 			}
@@ -857,7 +910,7 @@ func (m *Model) AdjustSelectionPitch(delta int) {
 				Row int
 			}{p, s.Row}
 			if !adjustedNotes[noteIndex] {
-				patterns := m.song.Score.Tracks[c].Patterns
+				patterns := m.d.Song.Score.Tracks[c].Patterns
 				if p >= len(patterns) {
 					continue
 				}
@@ -885,16 +938,16 @@ func (m *Model) DeleteSelection() {
 	m.saveUndo("DeleteSelection", 0)
 	r1, r2, t1, t2 := m.getSelectionRange()
 	for r := r1; r <= r2; r++ {
-		s := SongRow{Row: r}.Wrap(m.song.Score)
+		s := SongRow{Row: r}.Wrap(m.d.Song.Score)
 		for c := t1; c <= t2; c++ {
-			if len(m.song.Score.Tracks[c].Order) <= s.Pattern {
+			if len(m.d.Song.Score.Tracks[c].Order) <= s.Pattern {
 				continue
 			}
-			p := m.song.Score.Tracks[c].Order[s.Pattern]
+			p := m.d.Song.Score.Tracks[c].Order[s.Pattern]
 			if p < 0 {
 				continue
 			}
-			patterns := m.song.Score.Tracks[c].Patterns
+			patterns := m.d.Song.Score.Tracks[c].Patterns
 			if p >= len(patterns) {
 				continue
 			}
@@ -902,7 +955,7 @@ func (m *Model) DeleteSelection() {
 			if s.Row >= len(pattern) {
 				continue
 			}
-			m.song.Score.Tracks[c].Patterns[p][s.Row] = 1
+			m.d.Song.Score.Tracks[c].Patterns[p][s.Row] = 1
 		}
 	}
 	m.notifyScoreChange()
@@ -911,12 +964,12 @@ func (m *Model) DeleteSelection() {
 func (m *Model) DeletePatternSelection() {
 	m.saveUndo("DeletePatternSelection", 0)
 	r1, r2, t1, t2 := m.getSelectionRange()
-	p1 := SongRow{Row: r1}.Wrap(m.song.Score).Pattern
-	p2 := SongRow{Row: r2}.Wrap(m.song.Score).Pattern
+	p1 := SongRow{Row: r1}.Wrap(m.d.Song.Score).Pattern
+	p2 := SongRow{Row: r2}.Wrap(m.d.Song.Score).Pattern
 	for p := p1; p <= p2; p++ {
 		for c := t1; c <= t2; c++ {
-			if p < len(m.song.Score.Tracks[c].Order) {
-				m.song.Score.Tracks[c].Order[p] = -1
+			if p < len(m.d.Song.Score.Tracks[c].Order) {
+				m.d.Song.Score.Tracks[c].Order[p] = -1
 			}
 		}
 	}
@@ -928,24 +981,24 @@ func (m *Model) Undo() {
 	if !m.CanUndo() {
 		return
 	}
-	if len(m.redoStack) >= maxUndo {
-		m.redoStack = m.redoStack[1:]
+	if len(m.d.RedoStack) >= maxUndo {
+		m.d.RedoStack = m.d.RedoStack[1:]
 	}
-	m.redoStack = append(m.redoStack, m.song.Copy())
-	m.setSongNoUndo(m.undoStack[len(m.undoStack)-1])
-	m.undoStack = m.undoStack[:len(m.undoStack)-1]
+	m.d.RedoStack = append(m.d.RedoStack, m.d.Song.Copy())
+	m.setSongNoUndo(m.d.UndoStack[len(m.d.UndoStack)-1])
+	m.d.UndoStack = m.d.UndoStack[:len(m.d.UndoStack)-1]
 }
 
 func (m *Model) CanUndo() bool {
-	return len(m.undoStack) > 0
+	return len(m.d.UndoStack) > 0
 }
 
 func (m *Model) ClearUndoHistory() {
-	if len(m.undoStack) > 0 {
-		m.undoStack = m.undoStack[:0]
+	if len(m.d.UndoStack) > 0 {
+		m.d.UndoStack = m.d.UndoStack[:0]
 	}
-	if len(m.redoStack) > 0 {
-		m.redoStack = m.redoStack[:0]
+	if len(m.d.RedoStack) > 0 {
+		m.d.RedoStack = m.d.RedoStack[:0]
 	}
 }
 
@@ -953,93 +1006,93 @@ func (m *Model) Redo() {
 	if !m.CanRedo() {
 		return
 	}
-	if len(m.undoStack) >= maxUndo {
-		m.undoStack = m.undoStack[1:]
+	if len(m.d.UndoStack) >= maxUndo {
+		m.d.UndoStack = m.d.UndoStack[1:]
 	}
-	m.undoStack = append(m.undoStack, m.song.Copy())
-	m.setSongNoUndo(m.redoStack[len(m.redoStack)-1])
-	m.redoStack = m.redoStack[:len(m.redoStack)-1]
+	m.d.UndoStack = append(m.d.UndoStack, m.d.Song.Copy())
+	m.setSongNoUndo(m.d.RedoStack[len(m.d.RedoStack)-1])
+	m.d.RedoStack = m.d.RedoStack[:len(m.d.RedoStack)-1]
 }
 
 func (m *Model) CanRedo() bool {
-	return len(m.redoStack) > 0
+	return len(m.d.RedoStack) > 0
 }
 
 func (m *Model) SetNoteTracking(value bool) {
-	m.noteTracking = value
+	m.d.NoteTracking = value
 }
 
 func (m *Model) NoteTracking() bool {
-	return m.noteTracking
+	return m.d.NoteTracking
 }
 
 func (m *Model) Octave() int {
-	return m.octave
+	return m.d.Octave
 }
 
 func (m *Model) Song() sointu.Song {
-	return m.song
+	return m.d.Song
 }
 
 func (m *Model) SelectionCorner() SongPoint {
-	return m.selectionCorner
+	return m.d.SelectionCorner
 }
 
 func (m *Model) SetSelectionCorner(value SongPoint) {
-	m.selectionCorner = value
+	m.d.SelectionCorner = value
 	m.clampPositions()
 }
 
 func (m *Model) Cursor() SongPoint {
-	return m.cursor
+	return m.d.Cursor
 }
 
 func (m *Model) SetCursor(value SongPoint) {
-	m.cursor = value
+	m.d.Cursor = value
 	m.clampPositions()
 }
 
 func (m *Model) LowNibble() bool {
-	return m.lowNibble
+	return m.d.LowNibble
 }
 
 func (m *Model) SetLowNibble(value bool) {
-	m.lowNibble = value
+	m.d.LowNibble = value
 }
 
 func (m *Model) InstrIndex() int {
-	return m.instrIndex
+	return m.d.InstrIndex
 }
 
 func (m *Model) Track() sointu.Track {
-	return m.song.Score.Tracks[m.cursor.Track]
+	return m.d.Song.Score.Tracks[m.d.Cursor.Track]
 }
 
 func (m *Model) Instrument() sointu.Instrument {
-	return m.song.Patch[m.instrIndex]
+	return m.d.Song.Patch[m.d.InstrIndex]
 }
 
 func (m *Model) Unit() sointu.Unit {
-	return m.song.Patch[m.instrIndex].Units[m.unitIndex]
+	return m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex]
 }
 
 func (m *Model) UnitIndex() int {
-	return m.unitIndex
+	return m.d.UnitIndex
 }
 
 func (m *Model) ParamIndex() int {
-	return m.paramIndex
+	return m.d.ParamIndex
 }
 
 func (m *Model) clampPositions() {
-	m.cursor = m.cursor.Wrap(m.song.Score)
-	m.selectionCorner = m.selectionCorner.Wrap(m.song.Score)
+	m.d.Cursor = m.d.Cursor.Wrap(m.d.Song.Score)
+	m.d.SelectionCorner = m.d.SelectionCorner.Wrap(m.d.Song.Score)
 	if !m.Track().Effect {
-		m.lowNibble = false
+		m.d.LowNibble = false
 	}
-	m.instrIndex = clamp(m.instrIndex, 0, len(m.song.Patch)-1)
-	m.unitIndex = clamp(m.unitIndex, 0, len(m.Instrument().Units)-1)
-	m.paramIndex = clamp(m.paramIndex, 0, m.NumParams()-1)
+	m.d.InstrIndex = clamp(m.d.InstrIndex, 0, len(m.d.Song.Patch)-1)
+	m.d.UnitIndex = clamp(m.d.UnitIndex, 0, len(m.Instrument().Units)-1)
+	m.d.ParamIndex = clamp(m.d.ParamIndex, 0, m.NumParams()-1)
 }
 
 func (m *Model) NumParams() int {
@@ -1084,7 +1137,7 @@ func (m *Model) Param(index int) (Parameter, error) {
 		}
 		val := m.Unit().Parameters[t.Name]
 		name := t.Name
-		hint := m.song.Patch.ParamHintString(m.instrIndex, m.unitIndex, name)
+		hint := m.d.Song.Patch.ParamHintString(m.d.InstrIndex, m.d.UnitIndex, name)
 		var text string
 		if hint != "" {
 			text = fmt.Sprintf("%v / %v", val, hint)
@@ -1094,9 +1147,9 @@ func (m *Model) Param(index int) (Parameter, error) {
 		min, max := t.MinValue, t.MaxValue
 		if unit.Type == "send" {
 			if t.Name == "voice" {
-				i, _, err := m.song.Patch.FindSendTarget(unit.Parameters["target"])
+				i, _, err := m.d.Song.Patch.FindSendTarget(unit.Parameters["target"])
 				if err == nil {
-					max = m.song.Patch[i].NumVoices
+					max = m.d.Song.Patch[i].NumVoices
 				}
 			} else if t.Name == "target" {
 				typ = IDParameter
@@ -1133,7 +1186,7 @@ func (m *Model) Param(index int) (Parameter, error) {
 			switch unit.Parameters["notetracking"] {
 			default:
 			case 0:
-				text = fmt.Sprintf("%v / %.3f rows", val, float32(val)/float32(m.song.SamplesPerRow()))
+				text = fmt.Sprintf("%v / %.3f rows", val, float32(val)/float32(m.d.Song.SamplesPerRow()))
 				return Parameter{Type: IntegerParameter, Min: 1, Max: 65535, Name: "delaytime", Hint: text, Value: val, LargeStep: 256}, nil
 			case 1:
 				relPitch := float64(val) / 10787
@@ -1174,13 +1227,13 @@ func (m *Model) Param(index int) (Parameter, error) {
 
 func (m *Model) RemoveUnusedData() {
 	m.saveUndo("RemoveUnusedData", 0)
-	for trkIndex, trk := range m.song.Score.Tracks {
+	for trkIndex, trk := range m.d.Song.Score.Tracks {
 		// assign new indices to patterns
 		newIndex := map[int]int{}
 		runningIndex := 0
 		length := 0
-		if len(trk.Order) > m.song.Score.Length {
-			trk.Order = trk.Order[:m.song.Score.Length]
+		if len(trk.Order) > m.d.Song.Score.Length {
+			trk.Order = trk.Order[:m.d.Song.Score.Length]
 		}
 		for i, p := range trk.Order {
 			// if the pattern hasn't been considered and is within limits
@@ -1217,21 +1270,21 @@ func (m *Model) RemoveUnusedData() {
 						patLength = j + 1
 					}
 				}
-				if patLength > m.song.Score.RowsPerPattern {
-					patLength = m.song.Score.RowsPerPattern
+				if patLength > m.d.Song.Score.RowsPerPattern {
+					patLength = m.d.Song.Score.RowsPerPattern
 				}
 				newPatterns[ind] = pat[:patLength] // crop to either RowsPerPattern or last row having something else than hold
 			}
 		}
 		trk.Patterns = newPatterns
-		m.song.Score.Tracks[trkIndex] = trk
+		m.d.Song.Score.Tracks[trkIndex] = trk
 	}
 	m.computePatternUseCounts()
 	m.notifyScoreChange()
 }
 
 func (m *Model) SetParam(value int) {
-	p, err := m.Param(m.paramIndex)
+	p, err := m.Param(m.d.ParamIndex)
 	if err != nil {
 		return
 	}
@@ -1251,17 +1304,17 @@ func (m *Model) SetParam(value int) {
 		if unit.Parameters["stereo"] == 1 {
 			targetLines *= 2
 		}
-		for len(m.Instrument().Units[m.unitIndex].VarArgs) < targetLines {
-			m.Instrument().Units[m.unitIndex].VarArgs = append(m.Instrument().Units[m.unitIndex].VarArgs, 1)
+		for len(m.Instrument().Units[m.d.UnitIndex].VarArgs) < targetLines {
+			m.Instrument().Units[m.d.UnitIndex].VarArgs = append(m.Instrument().Units[m.d.UnitIndex].VarArgs, 1)
 		}
-		m.Instrument().Units[m.unitIndex].VarArgs = m.Instrument().Units[m.unitIndex].VarArgs[:targetLines]
+		m.Instrument().Units[m.d.UnitIndex].VarArgs = m.Instrument().Units[m.d.UnitIndex].VarArgs[:targetLines]
 	} else if p.Name == "delaytime" {
 		m.saveUndo("SetParam", 20)
-		index := m.paramIndex - 7
-		for len(m.Instrument().Units[m.unitIndex].VarArgs) <= index {
-			m.Instrument().Units[m.unitIndex].VarArgs = append(m.Instrument().Units[m.unitIndex].VarArgs, 1)
+		index := m.d.ParamIndex - 7
+		for len(m.Instrument().Units[m.d.UnitIndex].VarArgs) <= index {
+			m.Instrument().Units[m.d.UnitIndex].VarArgs = append(m.Instrument().Units[m.d.UnitIndex].VarArgs, 1)
 		}
-		m.Instrument().Units[m.unitIndex].VarArgs[index] = value
+		m.Instrument().Units[m.d.UnitIndex].VarArgs[index] = value
 	} else {
 		if unit.Parameters[p.Name] == value {
 			return
@@ -1274,17 +1327,17 @@ func (m *Model) SetParam(value int) {
 }
 
 func (m *Model) setSongNoUndo(song sointu.Song) {
-	m.song = song
-	m.usedIDs = make(map[int]bool)
-	m.maxID = 0
-	for _, instr := range m.song.Patch {
+	m.d.Song = song
+	m.d.UsedIDs = make(map[int]bool)
+	m.d.MaxID = 0
+	for _, instr := range m.d.Song.Patch {
 		for _, unit := range instr.Units {
-			if m.maxID < unit.ID {
-				m.maxID = unit.ID
+			if m.d.MaxID < unit.ID {
+				m.d.MaxID = unit.ID
 			}
 		}
 	}
-	for _, instr := range m.song.Patch {
+	for _, instr := range m.d.Song.Patch {
 		m.assignUnitIDs(instr.Units)
 	}
 	m.clampPositions()
@@ -1295,61 +1348,61 @@ func (m *Model) setSongNoUndo(song sointu.Song) {
 }
 
 func (m *Model) notifyPatchChange() {
-	m.panic = false
+	m.d.Panic = false
 	select {
-	case m.modelMessages <- ModelPatchChangedMessage{m.song.Patch.Copy()}:
+	case m.modelMessages <- ModelPatchChangedMessage{m.d.Song.Patch.Copy()}:
 	default:
 	}
 }
 
 func (m *Model) notifyScoreChange() {
 	select {
-	case m.modelMessages <- ModelScoreChangedMessage{m.song.Score.Copy()}:
+	case m.modelMessages <- ModelScoreChangedMessage{m.d.Song.Score.Copy()}:
 	default:
 	}
 }
 
 func (m *Model) notifySamplesPerRowChange() {
 	select {
-	case m.modelMessages <- ModelSamplesPerRowChangedMessage{m.song.BPM, m.song.RowsPerBeat}:
+	case m.modelMessages <- ModelSamplesPerRowChangedMessage{m.d.Song.BPM, m.d.Song.RowsPerBeat}:
 	default:
 	}
 }
 
 func (m *Model) saveUndo(undoType string, undoSkipping int) {
-	if m.prevUndoType == undoType && m.undoSkipCounter < undoSkipping {
-		m.undoSkipCounter++
+	if m.d.PrevUndoType == undoType && m.d.UndoSkipCounter < undoSkipping {
+		m.d.UndoSkipCounter++
 		return
 	}
-	m.changedSinceSave = true
-	m.prevUndoType = undoType
-	m.undoSkipCounter = 0
-	if len(m.undoStack) >= maxUndo {
-		m.undoStack = m.undoStack[1:]
+	m.d.ChangedSinceSave = true
+	m.d.PrevUndoType = undoType
+	m.d.UndoSkipCounter = 0
+	if len(m.d.UndoStack) >= maxUndo {
+		m.d.UndoStack = m.d.UndoStack[1:]
 	}
-	m.undoStack = append(m.undoStack, m.song.Copy())
-	m.redoStack = m.redoStack[:0]
+	m.d.UndoStack = append(m.d.UndoStack, m.d.Song.Copy())
+	m.d.RedoStack = m.d.RedoStack[:0]
 }
 
 func (m *Model) freeUnitIDs(units []sointu.Unit) {
 	for _, u := range units {
-		delete(m.usedIDs, u.ID)
+		delete(m.d.UsedIDs, u.ID)
 	}
 }
 
 func (m *Model) assignUnitIDs(units []sointu.Unit) {
 	rewrites := map[int]int{}
 	for i := range units {
-		if id := units[i].ID; id == 0 || m.usedIDs[id] {
-			m.maxID++
+		if id := units[i].ID; id == 0 || m.d.UsedIDs[id] {
+			m.d.MaxID++
 			if id > 0 {
-				rewrites[id] = m.maxID
+				rewrites[id] = m.d.MaxID
 			}
-			units[i].ID = m.maxID
+			units[i].ID = m.d.MaxID
 		}
-		m.usedIDs[units[i].ID] = true
-		if m.maxID < units[i].ID {
-			m.maxID = units[i].ID
+		m.d.UsedIDs[units[i].ID] = true
+		if m.d.MaxID < units[i].ID {
+			m.d.MaxID = units[i].ID
 		}
 	}
 	for i, u := range units {
@@ -1362,25 +1415,25 @@ func (m *Model) assignUnitIDs(units []sointu.Unit) {
 }
 
 func (m *Model) computePatternUseCounts() {
-	for i, track := range m.song.Score.Tracks {
-		for len(m.patternUseCount) <= i {
-			m.patternUseCount = append(m.patternUseCount, nil)
+	for i, track := range m.d.Song.Score.Tracks {
+		for len(m.d.PatternUseCount) <= i {
+			m.d.PatternUseCount = append(m.d.PatternUseCount, nil)
 		}
-		for j := range m.patternUseCount[i] {
-			m.patternUseCount[i][j] = 0
+		for j := range m.d.PatternUseCount[i] {
+			m.d.PatternUseCount[i][j] = 0
 		}
-		for j := 0; j < m.song.Score.Length; j++ {
+		for j := 0; j < m.d.Song.Score.Length; j++ {
 			if j >= len(track.Order) {
 				break
 			}
 			p := track.Order[j]
-			for len(m.patternUseCount[i]) <= p {
-				m.patternUseCount[i] = append(m.patternUseCount[i], 0)
+			for len(m.d.PatternUseCount[i]) <= p {
+				m.d.PatternUseCount[i] = append(m.d.PatternUseCount[i], 0)
 			}
 			if p < 0 {
 				continue
 			}
-			m.patternUseCount[i][p]++
+			m.d.PatternUseCount[i][p]++
 		}
 	}
 }

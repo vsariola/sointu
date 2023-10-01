@@ -148,8 +148,6 @@ func NewTracker(model *tracker.Model, synthService sointu.SynthService) *Tracker
 	t.Theme.Palette.Fg = primaryColor
 	t.Theme.Palette.ContrastFg = black
 	t.TrackEditor.Focus()
-	t.SetOctave(4)
-	t.ResetSong()
 	t.quitWG.Add(1)
 	return t
 }
@@ -160,6 +158,7 @@ func (t *Tracker) Main() {
 		app.Size(unit.Dp(800), unit.Dp(600)),
 		app.Title("Sointu Tracker"),
 	)
+	recoveryTicker := time.NewTicker(time.Second * 10)
 	t.Explorer = explorer.NewExplorer(w)
 	var ops op.Ops
 mainloop:
@@ -180,6 +179,7 @@ mainloop:
 		}
 		select {
 		case <-t.quitChannel:
+			recoveryTicker.Stop()
 			break mainloop
 		case e := <-t.errorChannel:
 			t.Alert.Update(e.Error(), Error, time.Second*5)
@@ -211,9 +211,12 @@ mainloop:
 				t.Layout(gtx, w)
 				e.Frame(gtx.Ops)
 			}
+		case <-recoveryTicker.C:
+			go t.SaveRecovery()
 		}
 	}
 	w.Perform(system.ActionClose)
+	t.SaveRecovery()
 	t.quitWG.Done()
 }
 
