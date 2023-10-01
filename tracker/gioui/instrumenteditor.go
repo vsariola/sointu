@@ -34,6 +34,7 @@ type InstrumentEditor struct {
 	loadInstrumentBtn   *TipClickable
 	addUnitBtn          *TipClickable
 	commentExpandBtn    *TipClickable
+	presetMenuBtn       *TipClickable
 	commentEditor       *widget.Editor
 	nameEditor          *widget.Editor
 	unitTypeEditor      *widget.Editor
@@ -48,10 +49,12 @@ type InstrumentEditor struct {
 	wasFocused          bool
 	commentExpanded     bool
 	voiceStates         [vm.MAX_VOICES]float32
+	presetMenuItems     []MenuItem
+	presetMenu          Menu
 }
 
 func NewInstrumentEditor() *InstrumentEditor {
-	return &InstrumentEditor{
+	ret := &InstrumentEditor{
 		newInstrumentBtn:    new(TipClickable),
 		enlargeBtn:          new(TipClickable),
 		deleteInstrumentBtn: new(TipClickable),
@@ -60,6 +63,7 @@ func NewInstrumentEditor() *InstrumentEditor {
 		loadInstrumentBtn:   new(TipClickable),
 		addUnitBtn:          new(TipClickable),
 		commentExpandBtn:    new(TipClickable),
+		presetMenuBtn:       new(TipClickable),
 		commentEditor:       new(widget.Editor),
 		nameEditor:          &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle},
 		unitTypeEditor:      &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Start},
@@ -69,7 +73,12 @@ func NewInstrumentEditor() *InstrumentEditor {
 		unitScrollBar:       &ScrollBar{Axis: layout.Vertical},
 		confirmInstrDelete:  new(Dialog),
 		paramEditor:         NewParamEditor(),
+		presetMenuItems:     []MenuItem{},
 	}
+	for _, instr := range tracker.Presets {
+		ret.presetMenuItems = append(ret.presetMenuItems, MenuItem{Text: instr.Name, IconBytes: icons.ImageAudiotrack})
+	}
+	return ret
 }
 
 func (t *InstrumentEditor) ExpandComment() {
@@ -85,7 +94,8 @@ func (ie *InstrumentEditor) Focused() bool {
 }
 
 func (ie *InstrumentEditor) ChildFocused() bool {
-	return ie.paramEditor.Focused() || ie.instrumentDragList.Focused() || ie.commentEditor.Focused() || ie.nameEditor.Focused() || ie.unitTypeEditor.Focused()
+	return ie.paramEditor.Focused() || ie.instrumentDragList.Focused() || ie.commentEditor.Focused() || ie.nameEditor.Focused() || ie.unitTypeEditor.Focused() ||
+		ie.addUnitBtn.Clickable.Focused() || ie.commentExpandBtn.Clickable.Focused() || ie.presetMenuBtn.Clickable.Focused() || ie.deleteInstrumentBtn.Clickable.Focused() || ie.copyInstrumentBtn.Clickable.Focused()
 }
 
 func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
@@ -109,6 +119,7 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 		icon = icons.NavigationFullscreenExit
 		enlargeTip = "Shrink"
 	}
+
 	fullscreenBtnStyle := IconButton(t.Theme, ie.enlargeBtn, icon, true, enlargeTip)
 	for ie.enlargeBtn.Clickable.Clicked() {
 		t.SetInstrEnlarged(!t.InstrEnlarged())
@@ -175,10 +186,17 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		}
 
 		commentExpandBtnStyle := IconButton(t.Theme, ie.commentExpandBtn, collapseIcon, true, commentTip)
+		presetMenuBtnStyle := IconButton(t.Theme, ie.presetMenuBtn, icons.NavigationMenu, true, "Load preset")
 		copyInstrumentBtnStyle := IconButton(t.Theme, ie.copyInstrumentBtn, icons.ContentContentCopy, true, "Copy instrument")
 		saveInstrumentBtnStyle := IconButton(t.Theme, ie.saveInstrumentBtn, icons.ContentSave, true, "Save instrument")
 		loadInstrumentBtnStyle := IconButton(t.Theme, ie.loadInstrumentBtn, icons.FileFolderOpen, true, "Load instrument")
 		deleteInstrumentBtnStyle := IconButton(t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, t.CanDeleteInstrument(), "Delete\ninstrument")
+
+		m := PopupMenu(t.Theme, &ie.presetMenu)
+
+		for item, clicked := ie.presetMenu.Clicked(); clicked; item, clicked = ie.presetMenu.Clicked() {
+			t.SetInstrument(tracker.Presets[item])
+		}
 
 		header := func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
@@ -193,11 +211,24 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				}),
 				layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 				layout.Rigid(commentExpandBtnStyle.Layout),
+				layout.Rigid(func(gtx C) D {
+					//defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
+					dims := presetMenuBtnStyle.Layout(gtx)
+					op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
+					gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(500))
+					m.Layout(gtx, ie.presetMenuItems...)
+					return dims
+				}),
 				layout.Rigid(saveInstrumentBtnStyle.Layout),
 				layout.Rigid(loadInstrumentBtnStyle.Layout),
 				layout.Rigid(copyInstrumentBtnStyle.Layout),
 				layout.Rigid(deleteInstrumentBtnStyle.Layout))
 		}
+
+		for ie.presetMenuBtn.Clickable.Clicked() {
+			ie.presetMenu.Visible = true
+		}
+
 		for ie.commentExpandBtn.Clickable.Clicked() {
 			ie.commentExpanded = !ie.commentExpanded
 			if !ie.commentExpanded {
@@ -234,6 +265,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		}
 		return header(gtx)
 	}
+
 	for ie.copyInstrumentBtn.Clickable.Clicked() {
 		contents, err := yaml.Marshal(t.Instrument())
 		if err == nil {

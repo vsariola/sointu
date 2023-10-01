@@ -1,0 +1,46 @@
+name: Pad2
+numvoices: 1
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 72, decay: 96, gain: 128, release: 88, stereo: 0, sustain: 96}
+    - type: send
+      id: 2
+      parameters: {amount: 64, port: 4, sendpop: 0, target: 1}
+    - type: oscillator
+      id: 3
+      parameters: {color: 80, detune: 60, gain: 128, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 64, type: 1}
+    - type: oscillator
+      id: 4
+      parameters: {color: 128, detune: 72, gain: 64, lfo: 0, phase: 32, shape: 112, stereo: 0, transpose: 64, type: 0}
+    - type: oscillator
+      id: 5
+      parameters: {color: 64, detune: 112, gain: 128, lfo: 1, phase: 0, shape: 16, stereo: 0, transpose: 80, type: 2}
+    - type: send
+      id: 6
+      parameters: {amount: 68, port: 1, sendpop: 0, target: 3}
+    - type: send
+      id: 81
+      parameters: {amount: 60, port: 1, sendpop: 1, target: 4}
+    - type: addp
+      id: 83
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 10
+      parameters: {stereo: 0}
+    - type: filter
+      id: 11
+      parameters: {bandpass: 0, frequency: 80, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 24, stereo: 0}
+    - type: filter
+      id: 12
+      parameters: {bandpass: 0, frequency: 48, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 24, stereo: 0}
+    - type: pan
+      id: 13
+      parameters: {panning: 64, stereo: 0}
+    - type: delay
+      id: 14
+      parameters: {damp: 64, dry: 128, feedback: 96, notetracking: 2, pregain: 96, stereo: 1}
+      varargs: [24, 48]
+    - type: outaux
+      id: 18
+      parameters: {auxgain: 32, outgain: 0, stereo: 1}

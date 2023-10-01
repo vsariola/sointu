@@ -1,0 +1,37 @@
+name: Piano2
+numvoices: 1
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 0, decay: 48, gain: 128, release: 64, stereo: 0, sustain: 128}
+    - type: send
+      id: 2
+      parameters: {amount: 116, port: 4, sendpop: 0, target: 1}
+    - type: envelope
+      id: 3
+      parameters: {attack: 0, decay: 56, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: noise
+      id: 4
+      parameters: {gain: 128, shape: 64, stereo: 0}
+    - type: mulp
+      id: 5
+      parameters: {stereo: 0}
+    - type: filter
+      id: 6
+      parameters: {bandpass: 0, frequency: 48, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: delay
+      id: 60
+      parameters: {damp: 8, dry: 128, feedback: 127, notetracking: 1, pregain: 128, stereo: 0}
+      varargs: [10787]
+    - type: filter
+      id: 61
+      parameters: {bandpass: 0, frequency: 48, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: mulp
+      id: 62
+      parameters: {stereo: 0}
+    - type: pan
+      id: 10
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 11
+      parameters: {auxgain: 16, outgain: 64, stereo: 1}

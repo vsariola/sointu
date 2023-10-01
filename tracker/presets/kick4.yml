@@ -1,0 +1,30 @@
+name: Kick4
+numvoices: 1
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 0, decay: 32, gain: 128, release: 82, stereo: 0, sustain: 96}
+    - type: send
+      id: 2
+      parameters: {amount: 128, port: 4, sendpop: 0, target: 1}
+    - type: envelope
+      id: 3
+      parameters: {attack: 0, decay: 64, gain: 128, release: 106, stereo: 0, sustain: 41}
+    - type: distort
+      id: 4
+      parameters: {drive: 29, stereo: 0}
+    - type: send
+      id: 6
+      parameters: {amount: 77, port: 0, sendpop: 1, target: 115}
+    - type: oscillator
+      id: 115
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 32, shape: 66, stereo: 0, transpose: 45, type: 0}
+    - type: mulp
+      id: 116
+      parameters: {stereo: 0}
+    - type: pan
+      id: 10
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 11
+      parameters: {auxgain: 0, outgain: 128, stereo: 1}

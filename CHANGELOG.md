@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Save the GUI state periodically to a recovery file and load it on
   startup of the app, if present. The recovery file is located in the
   home directory of the user.
+- Instrument presets. The presets are embedded in the executable and
+  there's a button to open a menu to load one of the presets.
 
 ### Fixed
 - The sointu-vsti-native plugin has different plugin ID and plugin name

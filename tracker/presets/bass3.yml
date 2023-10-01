@@ -1,0 +1,52 @@
+name: Bass3
+numvoices: 1
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 0, decay: 72, gain: 128, release: 16, stereo: 0, sustain: 0}
+    - type: send
+      id: 2
+      parameters: {amount: 88, port: 0, sendpop: 0, target: 13}
+    - type: distort
+      id: 3
+      parameters: {drive: 16, stereo: 0}
+    - type: noise
+      id: 5
+      parameters: {gain: 128, shape: 64, stereo: 0}
+    - type: distort
+      id: 6
+      parameters: {drive: 64, stereo: 0}
+    - type: hold
+      id: 66
+      parameters: {holdfreq: 0, stereo: 0}
+    - type: send
+      id: 67
+      parameters: {amount: 74, port: 0, sendpop: 1, target: 14}
+    - type: oscillator
+      id: 10
+      parameters: {color: 64, detune: 62, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2}
+    - type: oscillator
+      id: 11
+      parameters: {color: 16, detune: 74, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2}
+    - type: addp
+      id: 12
+      parameters: {stereo: 0}
+    - type: filter
+      id: 13
+      parameters: {bandpass: 0, frequency: 48, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: filter
+      id: 14
+      parameters: {bandpass: 0, frequency: 48, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 64, stereo: 0}
+    - type: mulp
+      id: 15
+      parameters: {stereo: 0}
+    - type: delay
+      id: 16
+      parameters: {damp: 64, dry: 128, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}
+      varargs: [32]
+    - type: pan
+      id: 17
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 18
+      parameters: {auxgain: 16, outgain: 128, stereo: 1}

@@ -1,0 +1,24 @@
+name: Piano
+numvoices: 1
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 0, decay: 74, gain: 128, release: 74, stereo: 0, sustain: 0}
+    - type: oscillator
+      id: 2
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 64, type: 0}
+    - type: oscillator
+      id: 3
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 64, type: 0}
+    - type: mulp
+      id: 4
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 5
+      parameters: {stereo: 0}
+    - type: pan
+      id: 6
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 59
+      parameters: {auxgain: 93, outgain: 64, stereo: 1}

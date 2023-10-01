@@ -1,0 +1,52 @@
+name: MoreAndMore
+numvoices: 1
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 0, decay: 80, gain: 128, release: 32, stereo: 0, sustain: 0}
+    - type: oscillator
+      id: 2
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 0}
+    - type: send
+      id: 3
+      parameters: {amount: 56, port: 1, sendpop: 0, target: 6}
+    - type: send
+      id: 4
+      parameters: {amount: 72, port: 1, sendpop: 1, target: 226}
+    - type: oscillator
+      id: 6
+      parameters: {color: 0, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
+    - type: oscillator
+      id: 226
+      parameters: {color: 0, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
+    - type: addp
+      id: 227
+      parameters: {stereo: 0}
+    - type: envelope
+      id: 228
+      parameters: {attack: 0, decay: 76, gain: 128, release: 32, stereo: 0, sustain: 0}
+    - type: send
+      id: 10
+      parameters: {amount: 88, port: 0, sendpop: 0, target: 13}
+    - type: send
+      id: 11
+      parameters: {amount: 88, port: 0, sendpop: 1, target: 14}
+    - type: filter
+      id: 13
+      parameters: {bandpass: 0, frequency: 80, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: filter
+      id: 14
+      parameters: {bandpass: 0, frequency: 80, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: mulp
+      id: 15
+      parameters: {stereo: 0}
+    - type: delay
+      id: 16
+      parameters: {damp: 64, dry: 128, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}
+      varargs: [48]
+    - type: pan
+      id: 17
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 18
+      parameters: {auxgain: 32, outgain: 128, stereo: 1}

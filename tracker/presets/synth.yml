@@ -1,0 +1,37 @@
+name: Synth
+numvoices: 1
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 64, decay: 64, gain: 128, release: 64, stereo: 0, sustain: 64}
+    - type: oscillator
+      id: 2
+      parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
+    - type: send
+      id: 3
+      parameters: {amount: 96, port: 2, sendpop: 1, target: 5}
+    - type: oscillator
+      id: 5
+      parameters: {color: 64, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 48, type: 1}
+    - type: send
+      id: 6
+      parameters: {amount: 81, port: 2, sendpop: 1, target: 73}
+    - type: oscillator
+      id: 73
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 8, stereo: 0, transpose: 32, type: 0}
+    - type: filter
+      id: 74
+      parameters: {bandpass: 1, frequency: 32, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 32, stereo: 0}
+    - type: mulp
+      id: 10
+      parameters: {stereo: 0}
+    - type: delay
+      id: 11
+      parameters: {damp: 64, dry: 128, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}
+      varargs: [24]
+    - type: pan
+      id: 12
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 13
+      parameters: {auxgain: 64, outgain: 64, stereo: 1}
