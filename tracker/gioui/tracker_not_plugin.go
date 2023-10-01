@@ -10,6 +10,6 @@ func (t *Tracker) Quit(forced bool) bool {
 		t.ConfirmSongDialog.Visible = true
 		return false
 	}
-	t.quitted = true
+	t.sendQuit()
 	return true
 }

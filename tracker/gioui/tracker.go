@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"gioui.org/app"
@@ -57,7 +58,8 @@ type Tracker struct {
 	lastVolume tracker.Volume
 
 	wavFilePath  string
-	refresh      chan struct{}
+	quitChannel  chan struct{}
+	quitWG       sync.WaitGroup
 	errorChannel chan error
 	quitted      bool
 	synthService sointu.SynthService
@@ -126,7 +128,7 @@ func NewTracker(model *tracker.Model, synthService sointu.SynthService) *Tracker
 		TrackHexCheckBox: new(widget.Bool),
 		Menus:            make([]Menu, 2),
 		MenuBar:          make([]widget.Clickable, 2),
-		refresh:          make(chan struct{}, 1), // use non-blocking sends; no need to queue extra ticks if one is queued already
+		quitChannel:      make(chan struct{}, 1), // use non-blocking sends; no need to queue extra ticks if one is queued already
 
 		TopHorizontalSplit:    &Split{Ratio: -.6},
 		BottomHorizontalSplit: &Split{Ratio: -.6},
@@ -148,6 +150,7 @@ func NewTracker(model *tracker.Model, synthService sointu.SynthService) *Tracker
 	t.TrackEditor.Focus()
 	t.SetOctave(4)
 	t.ResetSong()
+	t.quitWG.Add(1)
 	return t
 }
 
@@ -176,8 +179,8 @@ mainloop:
 			}
 		}
 		select {
-		case <-t.refresh:
-			w.Invalidate()
+		case <-t.quitChannel:
+			break mainloop
 		case e := <-t.errorChannel:
 			t.Alert.Update(e.Error(), Error, time.Second*5)
 			w.Invalidate()
@@ -209,9 +212,18 @@ mainloop:
 				e.Frame(gtx.Ops)
 			}
 		}
-		if t.quitted {
-			break mainloop
-		}
 	}
 	w.Perform(system.ActionClose)
+	t.quitWG.Done()
+}
+
+func (t *Tracker) sendQuit() {
+	select {
+	case t.quitChannel <- struct{}{}:
+	default:
+	}
+}
+
+func (t *Tracker) WaitQuitted() {
+	t.quitWG.Wait()
 }

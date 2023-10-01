@@ -97,6 +97,7 @@ func init() {
 				},
 				CloseFunc: func() {
 					tracker.Quit(true)
+					tracker.WaitQuitted()
 				},
 			}
 

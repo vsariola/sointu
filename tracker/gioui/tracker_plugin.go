@@ -5,6 +5,6 @@ package gioui
 const CAN_QUIT = false
 
 func (t *Tracker) Quit(forced bool) bool {
-	t.quitted = forced
+	t.sendQuit()
 	return forced
 }
