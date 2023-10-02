@@ -507,6 +507,13 @@ first Linux 4k intro using sointu
 
 [Physics Girl St.](https://www.pouet.net/prod.php?which=94890) by Team210
 
+[Delusions of mediocrity](https://www.pouet.net/prod.php?which=95222) by
+mrange & Virgill.
+
+[Xorverse](https://www.pouet.net/prod.php?which=95221) by Alcatraz.
+
+[l'enveloppe](https://www.pouet.net/prod.php?which=95215) by Team210 & epoqe.
+
 Contributing
 ------------
 
