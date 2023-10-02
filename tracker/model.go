@@ -981,12 +981,10 @@ func (m *Model) Undo() {
 	if !m.CanUndo() {
 		return
 	}
-	if len(m.d.RedoStack) >= maxUndo {
-		m.d.RedoStack = m.d.RedoStack[1:]
-	}
 	m.d.RedoStack = append(m.d.RedoStack, m.d.Song.Copy())
 	m.setSongNoUndo(m.d.UndoStack[len(m.d.UndoStack)-1])
 	m.d.UndoStack = m.d.UndoStack[:len(m.d.UndoStack)-1]
+	m.limitUndoRedoLengths()
 }
 
 func (m *Model) CanUndo() bool {
@@ -1006,12 +1004,10 @@ func (m *Model) Redo() {
 	if !m.CanRedo() {
 		return
 	}
-	if len(m.d.UndoStack) >= maxUndo {
-		m.d.UndoStack = m.d.UndoStack[1:]
-	}
 	m.d.UndoStack = append(m.d.UndoStack, m.d.Song.Copy())
 	m.setSongNoUndo(m.d.RedoStack[len(m.d.RedoStack)-1])
 	m.d.RedoStack = m.d.RedoStack[:len(m.d.RedoStack)-1]
+	m.limitUndoRedoLengths()
 }
 
 func (m *Model) CanRedo() bool {
@@ -1082,6 +1078,15 @@ func (m *Model) UnitIndex() int {
 
 func (m *Model) ParamIndex() int {
 	return m.d.ParamIndex
+}
+
+func (m *Model) limitUndoRedoLengths() {
+	if len(m.d.UndoStack) >= maxUndo {
+		m.d.UndoStack = m.d.UndoStack[len(m.d.UndoStack)-maxUndo:]
+	}
+	if len(m.d.RedoStack) >= maxUndo {
+		m.d.RedoStack = m.d.RedoStack[len(m.d.RedoStack)-maxUndo:]
+	}
 }
 
 func (m *Model) clampPositions() {
@@ -1377,11 +1382,9 @@ func (m *Model) saveUndo(undoType string, undoSkipping int) {
 	m.d.ChangedSinceSave = true
 	m.d.PrevUndoType = undoType
 	m.d.UndoSkipCounter = 0
-	if len(m.d.UndoStack) >= maxUndo {
-		m.d.UndoStack = m.d.UndoStack[1:]
-	}
 	m.d.UndoStack = append(m.d.UndoStack, m.d.Song.Copy())
 	m.d.RedoStack = m.d.RedoStack[:0]
+	m.limitUndoRedoLengths()
 }
 
 func (m *Model) freeUnitIDs(units []sointu.Unit) {
