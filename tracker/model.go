@@ -111,7 +111,7 @@ const (
 	IDParameter
 )
 
-const maxUndo = 256
+const maxUndo = 64
 const RECOVERY_FILE = ".sointu_recovery.yml"
 
 func NewModel(modelMessages chan<- interface{}, playerMessages <-chan PlayerMessage) *Model {

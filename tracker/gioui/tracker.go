@@ -158,7 +158,7 @@ func (t *Tracker) Main() {
 		app.Size(unit.Dp(800), unit.Dp(600)),
 		app.Title("Sointu Tracker"),
 	)
-	recoveryTicker := time.NewTicker(time.Second * 10)
+	recoveryTicker := time.NewTicker(time.Second * 30)
 	t.Explorer = explorer.NewExplorer(w)
 	var ops op.Ops
 mainloop:
@@ -212,7 +212,7 @@ mainloop:
 				e.Frame(gtx.Ops)
 			}
 		case <-recoveryTicker.C:
-			go t.SaveRecovery()
+			t.SaveRecovery()
 		}
 	}
 	w.Perform(system.ActionClose)
