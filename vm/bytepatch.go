@@ -33,68 +33,50 @@ type SampleOffset struct {
 	LoopLength uint16
 }
 
+type bytePatchBuilder struct {
+	sampleOffsetMap map[SampleOffset]int
+	globalAddrs     map[int]uint16
+	globalFixups    map[int]([]int)
+	localAddrs      map[int]uint16
+	localFixups     map[int]([]int)
+	voiceNo         int
+	delayIndices    [][]int
+	unitNo          int
+	BytePatch
+}
+
 func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, error) {
-	c := BytePatch{PolyphonyBitmask: polyphonyBitmask(patch), NumVoices: uint32(patch.NumVoices())}
-	if c.NumVoices > 32 {
-		return nil, fmt.Errorf("Sointu does not support more than 32 concurrent voices; patch uses %v", c.NumVoices)
+	if patch.NumVoices() > 32 {
+		return nil, fmt.Errorf("Sointu does not support more than 32 concurrent voices; patch uses %v", patch.NumVoices())
 	}
-	var values []byte
-	var commands []byte
-	var instrCommands []byte
-	sampleOffsetMap := map[SampleOffset]int{}
-	globalAddrs := map[int]uint16{}
-	globalFixups := map[int]([]int){}
-	voiceNo := 0
-	delayTable, delayIndices := constructDelayTimeTable(patch, bpm)
-	c.DelayTimes = make([]uint16, len(delayTable))
-	for i := range delayTable {
-		c.DelayTimes[i] = uint16(delayTable[i])
-	}
+	b := newBytePatchBuilder(patch, bpm)
 	for instrIndex, instr := range patch {
-		instrCommands = instrCommands[:0]
 		if instr.NumVoices < 1 {
 			return nil, errors.New("Each instrument must have at least 1 voice")
 		}
-		localAddrs := map[int]uint16{}
-		localFixups := map[int]([]int){}
-		localUnitNo := 0
 		for unitIndex, unit := range instr.Units {
 			if unit.Type == "" { // empty units are just ignored & skipped
 				continue
 			}
-			if unit.Type == "oscillator" && unit.Parameters["type"] == 4 {
-				s := SampleOffset{Start: uint32(unit.Parameters["samplestart"]), LoopStart: uint16(unit.Parameters["loopstart"]), LoopLength: uint16(unit.Parameters["looplength"])}
-				if s.LoopLength == 0 {
-					// hacky quick fix: looplength 0 causes div by zero so avoid crashing
-					s.LoopLength = 1
-				}
-				index, ok := sampleOffsetMap[s]
-				if !ok {
-					index = len(c.SampleOffsets)
-					sampleOffsetMap[s] = index
-					c.SampleOffsets = append(c.SampleOffsets, s)
-				}
-				unit.Parameters["color"] = index
-			}
 			opcode, ok := featureSet.Opcode(unit.Type)
-			commands = commands[:0]
-			commands = append(commands, byte(opcode+unit.Parameters["stereo"]))
 			if !ok {
-				return nil, fmt.Errorf(`the targeted virtual machine is not configured to support unit type "%v"`, unit.Type)
+				return nil, fmt.Errorf(`VM is not configured to support unit type "%v"`, unit.Type)
 			}
-			values = values[:0]
-			for _, v := range sointu.UnitTypes[unit.Type] {
-				if v.CanModulate && v.CanSet {
-					values = append(values, byte(unit.Parameters[v.Name]))
+			if unit.ID != 0 {
+				b.idLabel(unit.ID)
+			}
+			p := unit.Parameters
+			switch unit.Type {
+			case "oscillator":
+				color := p["color"]
+				if unit.Parameters["type"] == 4 {
+					color = b.getSampleIndex(unit)
+					if color > 255 {
+						return nil, errors.New("Patch uses over 256 samples")
+					}
 				}
-			}
-			if unit.Type == "aux" {
-				values = append(values, byte(unit.Parameters["channel"]))
-			} else if unit.Type == "in" {
-				values = append(values, byte(unit.Parameters["channel"]))
-			} else if unit.Type == "oscillator" {
 				flags := 0
-				switch unit.Parameters["type"] {
+				switch p["type"] {
 				case sointu.Sine:
 					flags = 0x40
 				case sointu.Trisaw:
@@ -106,12 +88,29 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, err
 				case sointu.Sample:
 					flags = 0x80
 				}
-				if unit.Parameters["lfo"] == 1 {
+				if p["lfo"] == 1 {
 					flags += 0x08
 				}
-				flags += unit.Parameters["unison"]
-				values = append(values, byte(flags))
-			} else if unit.Type == "filter" {
+				flags += p["unison"]
+				b.cmd(opcode + p["stereo"])
+				b.vals(p["transpose"], p["detune"], p["phase"], color, p["shape"], p["gain"], flags)
+			case "delay":
+				count := len(unit.VarArgs)
+				if unit.Parameters["stereo"] == 1 {
+					count /= 2
+				}
+				if count == 0 {
+					continue // skip encoding delays without any delay lines
+				}
+				countTrack := count*2 - 1 + (unit.Parameters["notetracking"] & 1) // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
+				b.cmd(opcode + p["stereo"])
+				b.defaultVals(unit)
+				b.vals(b.delayIndices[instrIndex][unitIndex], countTrack)
+			case "aux", "in":
+				b.cmd(opcode + p["stereo"])
+				b.defaultVals(unit)
+				b.vals(unit.Parameters["channel"])
+			case "filter":
 				flags := 0
 				if unit.Parameters["lowpass"] == 1 {
 					flags += 0x40
@@ -128,13 +127,14 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, err
 				if unit.Parameters["neghighpass"] == 1 {
 					flags += 0x04
 				}
-				values = append(values, byte(flags))
-			} else if unit.Type == "send" {
+				b.cmd(opcode + p["stereo"])
+				b.defaultVals(unit)
+				b.vals(flags)
+			case "send":
 				targetID := unit.Parameters["target"]
 				targetInstrIndex, _, err := patch.FindSendTarget(targetID)
 				targetVoice := unit.Parameters["voice"]
-				var addr uint16 = uint16(unit.Parameters["port"]) & 7
-
+				addr := unit.Parameters["port"] & 7
 				if err == nil {
 					// local send is only possible if targetVoice is "auto" (0) and
 					// the targeted unit is in the same instrument as send
@@ -142,12 +142,9 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, err
 						if unit.Parameters["sendpop"] == 1 {
 							addr += 0x8
 						}
-						if v, ok := localAddrs[targetID]; ok {
-							addr += v
-						} else {
-							localFixups[targetID] = append(localFixups[targetID], len(c.Values)+len(values))
-						}
-						values = append(values, byte(addr&255), byte(addr>>8))
+						b.cmd(opcode + p["stereo"])
+						b.defaultVals(unit)
+						b.localIDRef(targetID, addr)
 					} else {
 						addr += 0x8000
 						voiceStart := 0
@@ -156,85 +153,152 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, err
 							voiceStart = targetVoice - 1
 							voiceEnd = targetVoice
 						}
+						addr += voiceStart * 0x400
 						for i := voiceStart; i < voiceEnd; i++ {
-							if i > voiceStart { // we have already one opcode in commands, but with multiple voices we need to repeat it
-								commands = append(commands, byte(opcode+unit.Parameters["stereo"]))
-								values = append(values, byte(unit.Parameters["amount"]))
-							}
-							addr2 := addr + uint16(i)*0x400
-							if v, ok := globalAddrs[targetID]; ok {
-								addr2 += v
-							} else {
-								globalFixups[targetID] = append(globalFixups[targetID], len(c.Values)+len(values))
-							}
+							b.cmd(opcode + p["stereo"])
+							b.defaultVals(unit)
 							if i == voiceEnd-1 && unit.Parameters["sendpop"] == 1 {
-								addr2 += 0x8 // when making multi unit send, only the last one should have POP bit set if popping
+								addr += 0x8 // when making multi unit send, only the last one should have POP bit set if popping
 							}
-							values = append(values, byte(addr2&255), byte(addr2>>8))
+							b.globalIDRef(targetID, addr)
+							addr += 0x400
 						}
 					}
 				} else {
 					// if no target will be found, the send will trash some of
 					// the last values of the last port of the last voice, which
 					// is unlikely to cause issues. We still honor the POP bit.
-					addr = 0
+					addr = 0xFFF7
 					if unit.Parameters["sendpop"] == 1 {
-						addr = 0x8
+						addr |= 0x8
 					}
-					addr |= 0xFFF7
-					values = append(values, byte(addr&255), byte(addr>>8))
+					b.cmd(opcode + p["stereo"])
+					b.defaultVals(unit)
+					b.Values = append(b.Values, byte(addr&255), byte(addr>>8))
 				}
-			} else if unit.Type == "delay" {
-				count := len(unit.VarArgs)
-				if unit.Parameters["stereo"] == 1 {
-					count /= 2
-				}
-				if count == 0 {
-					continue // skip encoding delays without any delay lines
-				}
-				countTrack := count*2 - 1 + (unit.Parameters["notetracking"] & 1) // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
-				values = append(values, byte(delayIndices[instrIndex][unitIndex]), byte(countTrack))
+			default:
+				b.cmd(opcode + p["stereo"])
+				b.defaultVals(unit)
 			}
-			instrCommands = append(instrCommands, commands...)
-			c.Values = append(c.Values, values...)
-			if unit.ID != 0 {
-				localAddr := uint16((localUnitNo + 1) << 4)
-				fixUp(c.Values, localFixups[unit.ID], localAddr)
-				localFixups[unit.ID] = nil
-				localAddrs[unit.ID] = localAddr
-				globalAddr := localAddr + 16 + uint16(voiceNo)*1024
-				fixUp(c.Values, globalFixups[unit.ID], globalAddr)
-				globalFixups[unit.ID] = nil
-				globalAddrs[unit.ID] = globalAddr
+			if b.unitNo > 63 {
+				return nil, fmt.Errorf(`Instrument %v has over 63 units`, instrIndex)
 			}
-			if len(instrCommands) > 63 {
-				return nil, errors.New("An instrument can have a maximum of 63 units")
-			}
-			localUnitNo += len(commands) // a command in command stream means the wrkspace addr gets also increased
 		}
-		c.Commands = append(c.Commands, instrCommands...)
-		c.Commands = append(c.Commands, byte(0)) // advance
-		voiceNo += instr.NumVoices
+		b.cmdFinish(instr)
 	}
-	return &c, nil
+	return &b.BytePatch, nil
 }
 
-func polyphonyBitmask(patch sointu.Patch) uint32 {
-	var ret uint32 = 0
+func newBytePatchBuilder(patch sointu.Patch, bpm int) *bytePatchBuilder {
+	var polyphonyBitmask uint32 = 0
 	for _, instr := range patch {
 		for j := 0; j < instr.NumVoices-1; j++ {
-			ret = (ret << 1) + 1 // for each instrument, NumVoices - 1 bits are ones
+			polyphonyBitmask = (polyphonyBitmask << 1) + 1 // for each instrument, NumVoices - 1 bits are ones
 		}
-		ret <<= 1 // ...and the last bit is zero, to denote "change instrument"
+		polyphonyBitmask <<= 1 // ...and the last bit is zero, to denote "change instrument"
 	}
-	return ret
+	delayTimesInt, delayIndices := constructDelayTimeTable(patch, bpm)
+	delayTimesU16 := make([]uint16, len(delayTimesInt))
+	for i, d := range delayTimesInt {
+		delayTimesU16[i] = uint16(d)
+	}
+	c := bytePatchBuilder{
+		BytePatch:       BytePatch{PolyphonyBitmask: polyphonyBitmask, NumVoices: uint32(patch.NumVoices()), DelayTimes: delayTimesU16},
+		sampleOffsetMap: map[SampleOffset]int{},
+		globalAddrs:     map[int]uint16{},
+		globalFixups:    map[int]([]int){},
+		localAddrs:      map[int]uint16{},
+		localFixups:     map[int]([]int){},
+		delayIndices:    delayIndices}
+	return &c
 }
 
-func fixUp(values []byte, positions []int, delta uint16) {
-	for _, pos := range positions {
-		orig := (uint16(values[pos+1]) << 8) + uint16(values[pos])
-		new := orig + delta
-		values[pos] = byte(new & 255)
-		values[pos+1] = byte(new >> 8)
+// cmd adds a command to the bytecode, and increments the unit number
+func (b *bytePatchBuilder) cmd(opcode int) {
+	b.Commands = append(b.Commands, byte(opcode))
+	b.unitNo++
+}
+
+// cmdFinish adds a command to the bytecode that marks the end of an instrument, resets the unit number and increments the voice number
+// local addresses are forgotten when instrument ends
+func (b *bytePatchBuilder) cmdFinish(instr sointu.Instrument) {
+	b.Commands = append(b.Commands, 0)
+	b.unitNo = 0
+	b.voiceNo += instr.NumVoices
+	b.localAddrs = map[int]uint16{}
+	b.localFixups = map[int]([]int){}
+}
+
+// vals appends values to the value stream
+func (b *bytePatchBuilder) vals(values ...int) {
+	for _, v := range values {
+		b.Values = append(b.Values, byte(v))
 	}
+}
+
+// defaultVals appends the values to the value stream for all parameters that can be modulated and set
+func (b *bytePatchBuilder) defaultVals(unit sointu.Unit) {
+	for _, v := range sointu.UnitTypes[unit.Type] {
+		if v.CanModulate && v.CanSet {
+			b.Values = append(b.Values, byte(unit.Parameters[v.Name]))
+		}
+	}
+}
+
+// localIDRef adds a reference to a local id label to the value stream; if the targeted ID has not been seen yet, it is added to the fixup list
+func (b *bytePatchBuilder) localIDRef(id int, addr int) {
+	if v, ok := b.localAddrs[id]; ok {
+		addr += int(v)
+	} else {
+		b.localFixups[id] = append(b.localFixups[id], len(b.Values))
+	}
+	b.Values = append(b.Values, byte(addr&255), byte(addr>>8))
+}
+
+// globalIDRef adds a reference to a global id label to the value stream; if the targeted ID has not been seen yet, it is added to the fixup list
+func (b *bytePatchBuilder) globalIDRef(id int, addr int) {
+	if v, ok := b.globalAddrs[id]; ok {
+		addr += int(v)
+	} else {
+		b.globalFixups[id] = append(b.globalFixups[id], len(b.Values))
+	}
+	b.Values = append(b.Values, byte(addr&255), byte(addr>>8))
+}
+
+// idLabel adds a label to the value stream for the given id; all earlier references to the id are fixed up
+func (b *bytePatchBuilder) idLabel(id int) {
+	localAddr := uint16((b.unitNo + 1) << 4)
+	b.fixUp(b.localFixups[id], localAddr)
+	b.localFixups[id] = nil
+	b.localAddrs[id] = localAddr
+	globalAddr := localAddr + 16 + uint16(b.voiceNo)*1024
+	b.fixUp(b.globalFixups[id], globalAddr)
+	b.globalFixups[id] = nil
+	b.globalAddrs[id] = globalAddr
+}
+
+// fixUp fixes up the references to the given id with the given delta
+func (b *bytePatchBuilder) fixUp(positions []int, delta uint16) {
+	for _, pos := range positions {
+		orig := (uint16(b.Values[pos+1]) << 8) + uint16(b.Values[pos])
+		new := orig + delta
+		b.Values[pos] = byte(new & 255)
+		b.Values[pos+1] = byte(new >> 8)
+	}
+}
+
+// getSampleIndex returns the index of the sample in the sample offset table; if the sample has not been seen yet, it is added to the table
+func (b *bytePatchBuilder) getSampleIndex(unit sointu.Unit) int {
+	s := SampleOffset{Start: uint32(unit.Parameters["samplestart"]), LoopStart: uint16(unit.Parameters["loopstart"]), LoopLength: uint16(unit.Parameters["looplength"])}
+	if s.LoopLength == 0 {
+		// hacky quick fix: looplength 0 causes div by zero so avoid crashing
+		s.LoopLength = 1
+	}
+	index, ok := b.sampleOffsetMap[s]
+	if !ok {
+		index = len(b.SampleOffsets)
+		b.sampleOffsetMap[s] = index
+		b.SampleOffsets = append(b.SampleOffsets, s)
+	}
+	return index
 }
