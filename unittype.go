@@ -105,6 +105,7 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "color", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "shape", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "frequency", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true},
 		{Name: "type", MinValue: int(Sine), MaxValue: int(Sample), CanSet: true, CanModulate: false},
 		{Name: "lfo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "unison", MinValue: 0, MaxValue: 3, CanSet: true, CanModulate: false},

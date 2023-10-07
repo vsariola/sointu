@@ -454,6 +454,7 @@ func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time i
 						} else {
 							omega *= 0.000038 //  pretty random scaling constant to get LFOs into reasonable range. Historical reasons, goes all the way back to 4klang
 						}
+						omega += float64(unit.ports[6]) // add frequency modulation
 						var amplitude float32
 						*statevar += float32(omega)
 						if flags&0x80 == 0x80 { // if this is a sample oscillator
@@ -515,6 +516,7 @@ func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time i
 					stack = append(stack, output)
 					detuneStereo = -detuneStereo
 				}
+				unit.ports[6] = 0
 			case opDelay:
 				pregain2 := params[0] * params[0]
 				damp := params[3]

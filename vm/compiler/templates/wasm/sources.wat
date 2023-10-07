@@ -107,9 +107,16 @@
 {{- if .SupportsParamValueOtherThan "oscillator" "unison" 0}}
     (local $unison i32) (local $WRK_stash i32) (local $detune_stash f32)
 {{- end}}
+{{- if .SupportsModulation "oscillator" "frequency"}}
+    (local $freqMod f32)
+{{- end}}
 {{- if .Stereo "oscillator"}}
     (local $WRK_stereostash i32)
     (local.set $WRK_stereostash (global.get $WRK))
+{{- end}}
+{{- if .SupportsModulation "oscillator" "frequency"}}
+    (local.set $freqMod (f32.load offset={{.InputNumber "oscillator" "frequency" | mul 4 | add 32}} (global.get $WRK)))
+    (f32.store offset={{.InputNumber "oscillator" "frequency" | mul 4 | add 32}} (global.get $WRK) (f32.const 0))
 {{- end}}
     (local.set $flags (call $scanValueByte))
     (local.set $detune (call $inputSigned (i32.const {{.InputNumber "oscillator" "detune"}})))
@@ -146,6 +153,9 @@
                         (f32.const 0.000092696138) ;; scaling constant to get middle-C to where it should be
                         (i32.and (local.get $flags) (i32.const 0x8))
                     ))
+{{- if .SupportsModulation "oscillator" "frequency"}}
+                    (f32.add (local.get $freqMod))
+{{- end}}
                     (f32.add (f32.load (global.get $WRK))) ;; add the current phase of the oscillator
                 )
                 (f32.floor (local.get $phase))

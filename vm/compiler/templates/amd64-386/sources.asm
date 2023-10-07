@@ -99,6 +99,11 @@ su_op_noise_mono:
 ;   Stereo: push l r on stack, where l has opposite detune compared to r
 ;-------------------------------------------------------------------------------
 {{.Func "su_op_oscillator" "Opcode"}}
+{{- if .SupportsModulation "oscillator" "frequency"}}
+    push    0
+    pop     {{.CX}}     ; clear cx without affecting flags
+    xchg    ecx, dword [{{.Modulation "oscillator" "frequency"}}]
+{{- end}}
     lodsb                                   ; load the flags
 {{- if .Library}}
     mov     {{.DI}}, [{{.Stack "SampleTable"}}]; we need to put this in a register, as the stereo & unisons screw the stack positions
@@ -175,6 +180,11 @@ su_op_oscillat_normalize_note:
     fmul    dword [{{.Float 0.000092696138 | .Use}}]   ; // st0 is now frequency
 su_op_oscillat_normalized:
     fadd    dword [{{.WRK}}]
+{{- if .SupportsModulation "oscillator" "frequency"}}
+    push    {{.CX}}
+    fadd    dword [{{.SP}}]
+    pop     {{.CX}}
+{{- end}}
 {{- if .SupportsParamValue "oscillator" "type" .Sample}}
     test    al, byte 0x80
     jz      short su_op_oscillat_not_sample
