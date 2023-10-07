@@ -177,7 +177,11 @@ func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
 			return fmt.Sprintf("%.2f", float32(value)/64-1)
 		case "voice":
 			if value == 0 {
-				return "auto"
+				targetIndex, _, err := p.FindSendTarget(unit.Parameters["target"])
+				if err == nil && targetIndex != instrIndex {
+					return "all"
+				}
+				return "self"
 			}
 			return fmt.Sprintf("%v", value)
 		case "target":

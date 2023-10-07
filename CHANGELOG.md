@@ -17,6 +17,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - The VSTI waits for the gioui actually have quit when closing the
   plugin
 
+### Changed
+- BREAKING CHANGE: The meaning of default modulation mode ("auto") has
+  been changed for cross-instrument modulations: it now means "all"
+  voices, instead of first voice (which was redundant, as it was same as
+  defining voice = 0). This means that for cross-instrument modulations,
+  one "all vocies" send gets actually compiled into multiple sends, one
+  for each targeted voice. For intra-instrument modulations, the meaning
+  stays the same, but the label was changed to "self", to highlight that
+  this means the voice modulates only itself and not other voices.
+
 ## v0.2.0
 ### Added
 - Saving and loading instruments

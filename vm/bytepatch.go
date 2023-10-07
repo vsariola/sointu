@@ -38,6 +38,9 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, err
 	if c.NumVoices > 32 {
 		return nil, fmt.Errorf("Sointu does not support more than 32 concurrent voices; patch uses %v", c.NumVoices)
 	}
+	var values []byte
+	var commands []byte
+	var instrCommands []byte
 	sampleOffsetMap := map[SampleOffset]int{}
 	globalAddrs := map[int]uint16{}
 	globalFixups := map[int]([]int){}
@@ -48,9 +51,7 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, err
 		c.DelayTimes[i] = uint16(delayTable[i])
 	}
 	for instrIndex, instr := range patch {
-		if len(instr.Units) > 63 {
-			return nil, errors.New("An instrument can have a maximum of 63 units")
-		}
+		instrCommands = instrCommands[:0]
 		if instr.NumVoices < 1 {
 			return nil, errors.New("Each instrument must have at least 1 voice")
 		}
@@ -76,10 +77,12 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, err
 				unit.Parameters["color"] = index
 			}
 			opcode, ok := featureSet.Opcode(unit.Type)
+			commands = commands[:0]
+			commands = append(commands, byte(opcode+unit.Parameters["stereo"]))
 			if !ok {
 				return nil, fmt.Errorf(`the targeted virtual machine is not configured to support unit type "%v"`, unit.Type)
 			}
-			var values []byte
+			values = values[:0]
 			for _, v := range sointu.UnitTypes[unit.Type] {
 				if v.CanModulate && v.CanSet {
 					values = append(values, byte(unit.Parameters[v.Name]))
@@ -131,38 +134,56 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, err
 				targetInstrIndex, _, err := patch.FindSendTarget(targetID)
 				targetVoice := unit.Parameters["voice"]
 				var addr uint16 = uint16(unit.Parameters["port"]) & 7
-				if unit.Parameters["sendpop"] == 1 {
-					addr += 0x8
-				}
 
 				if err == nil {
 					// local send is only possible if targetVoice is "auto" (0) and
 					// the targeted unit is in the same instrument as send
 					if targetInstrIndex == instrIndex && targetVoice == 0 {
+						if unit.Parameters["sendpop"] == 1 {
+							addr += 0x8
+						}
 						if v, ok := localAddrs[targetID]; ok {
 							addr += v
 						} else {
 							localFixups[targetID] = append(localFixups[targetID], len(c.Values)+len(values))
 						}
+						values = append(values, byte(addr&255), byte(addr>>8))
 					} else {
 						addr += 0x8000
-						if targetVoice > 0 { // "auto" (0) means for global send that it targets voice 0 of that instrument
-							addr += uint16((targetVoice - 1) * 0x400)
+						voiceStart := 0
+						voiceEnd := patch[targetInstrIndex].NumVoices
+						if targetVoice > 0 { // "all" (0) means for global send that it targets all voices of that instrument
+							voiceStart = targetVoice - 1
+							voiceEnd = targetVoice
 						}
-						if v, ok := globalAddrs[targetID]; ok {
-							addr += v
-						} else {
-							globalFixups[targetID] = append(globalFixups[targetID], len(c.Values)+len(values))
+						for i := voiceStart; i < voiceEnd; i++ {
+							if i > voiceStart { // we have already one opcode in commands, but with multiple voices we need to repeat it
+								commands = append(commands, byte(opcode+unit.Parameters["stereo"]))
+								values = append(values, byte(unit.Parameters["amount"]))
+							}
+							addr2 := addr + uint16(i)*0x400
+							if v, ok := globalAddrs[targetID]; ok {
+								addr2 += v
+							} else {
+								globalFixups[targetID] = append(globalFixups[targetID], len(c.Values)+len(values))
+							}
+							if i == voiceEnd-1 && unit.Parameters["sendpop"] == 1 {
+								addr2 += 0x8 // when making multi unit send, only the last one should have POP bit set if popping
+							}
+							values = append(values, byte(addr2&255), byte(addr2>>8))
 						}
 					}
 				} else {
 					// if no target will be found, the send will trash some of
 					// the last values of the last port of the last voice, which
 					// is unlikely to cause issues. We still honor the POP bit.
-					addr &= 0x8
+					addr = 0
+					if unit.Parameters["sendpop"] == 1 {
+						addr = 0x8
+					}
 					addr |= 0xFFF7
+					values = append(values, byte(addr&255), byte(addr>>8))
 				}
-				values = append(values, byte(addr&255), byte(addr>>8))
 			} else if unit.Type == "delay" {
 				count := len(unit.VarArgs)
 				if unit.Parameters["stereo"] == 1 {
@@ -174,7 +195,7 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, err
 				countTrack := count*2 - 1 + (unit.Parameters["notetracking"] & 1) // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
 				values = append(values, byte(delayIndices[instrIndex][unitIndex]), byte(countTrack))
 			}
-			c.Commands = append(c.Commands, byte(opcode+unit.Parameters["stereo"]))
+			instrCommands = append(instrCommands, commands...)
 			c.Values = append(c.Values, values...)
 			if unit.ID != 0 {
 				localAddr := uint16((localUnitNo + 1) << 4)
@@ -186,8 +207,12 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, err
 				globalFixups[unit.ID] = nil
 				globalAddrs[unit.ID] = globalAddr
 			}
-			localUnitNo++ // a command in command stream means the wrkspace addr gets also increased
+			if len(instrCommands) > 63 {
+				return nil, errors.New("An instrument can have a maximum of 63 units")
+			}
+			localUnitNo += len(commands) // a command in command stream means the wrkspace addr gets also increased
 		}
+		c.Commands = append(c.Commands, instrCommands...)
 		c.Commands = append(c.Commands, byte(0)) // advance
 		voiceNo += instr.NumVoices
 	}
