@@ -1,0 +1,14 @@
+# Embed Sointu in Python
+This is an example for embedding Sointu into Python code.
+
+# Configure the track
+Edit the `track` field in the `[tool.sointu]` section inside `pyproject.toml` according to your needs.
+
+# Build
+* Install Python 3.11 and poetry.
+* Download nasm and golang; place both of them in your system `PATH`.
+* Enable cgo by downloading a gcc and placing it into your system PATH.
+* Get the dependencies with `poetry install`.
+* Build the example track bindings with `poetry build`.
+* Update the bindings module with `poetry install`.
+* Run the player using `poetry run python -m sointu_python`.

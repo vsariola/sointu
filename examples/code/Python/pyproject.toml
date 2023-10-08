@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "sointu-python"
+version = "0.1.0"
+description = "Play back Sointu tracks in Python."
+authors = ["Alexander Kraus <nr4@z10.info>"]
+license = "MIT"
+readme = "README.md"
+packages = [
+    { include = "sointu_python" },
+]
+
+[tool.poetry.build]
+script = "build.py"
+generate-setup-file = true
+
+[tool.poetry.dependencies]
+python = "^3.11"
+sounddevice = "^0.4.6"
+
+[tool.poetry.group.dev.dependencies]
+setuptools = "^68.2.2"
+
+[build-system]
+requires = ["poetry-core", "setuptools"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.sointu]
+track = "../../patches/physics_girl_st.yml"
