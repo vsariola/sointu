@@ -985,6 +985,7 @@ func (m *Model) Undo() {
 	m.setSongNoUndo(m.d.UndoStack[len(m.d.UndoStack)-1])
 	m.d.UndoStack = m.d.UndoStack[:len(m.d.UndoStack)-1]
 	m.limitUndoRedoLengths()
+	m.d.PrevUndoType = ""
 }
 
 func (m *Model) CanUndo() bool {
@@ -998,6 +999,7 @@ func (m *Model) ClearUndoHistory() {
 	if len(m.d.RedoStack) > 0 {
 		m.d.RedoStack = m.d.RedoStack[:0]
 	}
+	m.d.PrevUndoType = ""
 }
 
 func (m *Model) Redo() {
@@ -1008,6 +1010,7 @@ func (m *Model) Redo() {
 	m.setSongNoUndo(m.d.RedoStack[len(m.d.RedoStack)-1])
 	m.d.RedoStack = m.d.RedoStack[:len(m.d.RedoStack)-1]
 	m.limitUndoRedoLengths()
+	m.d.PrevUndoType = ""
 }
 
 func (m *Model) CanRedo() bool {
@@ -1375,11 +1378,11 @@ func (m *Model) notifySamplesPerRowChange() {
 }
 
 func (m *Model) saveUndo(undoType string, undoSkipping int) {
+	m.d.ChangedSinceSave = true
 	if m.d.PrevUndoType == undoType && m.d.UndoSkipCounter < undoSkipping {
 		m.d.UndoSkipCounter++
 		return
 	}
-	m.d.ChangedSinceSave = true
 	m.d.PrevUndoType = undoType
 	m.d.UndoSkipCounter = 0
 	m.d.UndoStack = append(m.d.UndoStack, m.d.Song.Copy())
