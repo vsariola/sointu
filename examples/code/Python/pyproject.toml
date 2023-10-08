@@ -14,11 +14,11 @@ script = "build.py"
 generate-setup-file = true
 
 [tool.poetry.dependencies]
-python = "^3.11"
-sounddevice = "^0.4.6"
+python = ">=3.11,<3.13"
 
 [tool.poetry.group.dev.dependencies]
 setuptools = "^68.2.2"
+pyinstaller = "^6.0.0"
 
 [build-system]
 requires = ["poetry-core", "setuptools"]
