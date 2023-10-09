@@ -141,7 +141,6 @@ static PyObject *sointu_playback_position(PyObject *self, PyObject *args) {
     snd_htimestamp_t ts;
     snd_pcm_uframes_t avail;
     snd_pcm_htimestamp(pcm_handle, &avail, &ts);
-    // printf("%ld @ %ld\n", ts.tv_sec - start_ts.tv_sec, ts.tv_nsec - start_);
 
     return Py_BuildValue("i", (int)((ts.tv_sec - start_ts.tv_sec + 1.e-9 * (ts.tv_nsec - start_ts.tv_nsec)) * SU_SAMPLE_RATE));
 #endif /* UNIX */
