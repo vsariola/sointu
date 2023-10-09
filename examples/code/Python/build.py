@@ -18,6 +18,8 @@ from subprocess import run
 from platform import system
 from sys import exit
 
+track = "../../patches/physics_girl_st.yml"
+
 class BuildFailed(Exception):
     pass
 
@@ -66,7 +68,7 @@ def build(setup_kwargs):
         print(result.stdout)
         exit(1)
 
-    track_file_name = abspath(join(current_source_dir, "../../patches/physics_girl_st.yml"))
+    track_file_name = abspath(join(current_source_dir, track))
     (track_name_base, _) = splitext(basename(track_file_name)) 
     print("Compiling track:", track_file_name)
 

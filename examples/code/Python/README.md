@@ -2,7 +2,7 @@
 This is an example for embedding Sointu into Python code.
 
 # Configure the track
-Edit the `track` field in the `[tool.sointu]` section inside `pyproject.toml` according to your needs.
+Edit the `track` variable in `build.py` according to your needs.
 
 # Build
 * Install Python 3.11 and poetry.
