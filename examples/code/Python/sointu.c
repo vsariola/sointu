@@ -45,25 +45,20 @@ static LPDIRECTSOUND direct_sound;
 static LPDIRECTSOUNDBUFFER direct_sound_buffer;
 static LPVOID p1;
 static DWORD l1;
-/*
- * Note: The DirectSound API design is annoyingly bad. The
- *       playback position obtained by `IDirectSoundBuffer_GetCurrentPosition`
- *       will wrap around after the track is finished, so we really
- *       only have shady means of checking whether or not playback has finished.
- */
 static DWORD last_play_cursor = 0;
 #endif /* WIN32 */
 
 #ifdef UNIX
 #include <alsa/asoundlib.h>
 #include <pthread.h>
+#include <time.h>
 
-static SUsample sound_buffer[SU_LENGTH_IN_SAMPLES * SU_CHANNEL_COUNT];
 static snd_pcm_t *pcm_handle;
 static pthread_t render_thread;
 static uint32_t render_thread_handle;
 static pthread_t playback_thread;
 static uint32_t playback_thread_handle;
+snd_htimestamp_t start_ts;
 
 static int _snd_pcm_writei(void *params) {
     (void) params;
@@ -121,11 +116,15 @@ static PyObject *sointu_play_song(PyObject *self, PyObject *args) {
     snd_pcm_sw_params_t *swparams;
     snd_pcm_sw_params_alloca(&swparams);
     snd_pcm_sw_params_current(pcm_handle, swparams);
-    snd_pcm_sw_params_get_tstamp_mode(swparams, SND_PCM_TSTAMP_ENABLE);
+    snd_pcm_sw_params_set_tstamp_mode(pcm_handle, swparams, SND_PCM_TSTAMP_ENABLE);
     snd_pcm_sw_params_set_tstamp_type(pcm_handle, swparams, SND_PCM_TSTAMP_TYPE_GETTIMEOFDAY);
     snd_pcm_sw_params(pcm_handle, swparams);
 
     playback_thread_handle = pthread_create(&playback_thread, 0, (void *(*)(void *))_snd_pcm_writei, 0);
+
+    // Get the start time stamp.
+    snd_pcm_uframes_t avail;
+    snd_pcm_htimestamp(pcm_handle, &avail, &start_ts);
 #endif /* UNIX */
 
     return PyLong_FromLong(0);
@@ -141,14 +140,15 @@ static PyObject *sointu_playback_position(PyObject *self, PyObject *args) {
 #ifdef UNIX
     snd_htimestamp_t ts;
     snd_pcm_uframes_t avail;
-    err = snd_pcm_htimestamp(pcm_handle, &avail, &ts);
+    snd_pcm_htimestamp(pcm_handle, &avail, &ts);
+    // printf("%ld @ %ld\n", ts.tv_sec - start_ts.tv_sec, ts.tv_nsec - start_);
 
-    // TODO: return the correct timestamp
+    return Py_BuildValue("i", (int)((ts.tv_sec - start_ts.tv_sec + 1.e-9 * (ts.tv_nsec - start_ts.tv_nsec)) * SU_SAMPLE_RATE));
 #endif /* UNIX */
 }
 
 static PyObject *sointu_playback_finished(PyObject *self, PyObject *args) {
-    bool result;
+    bool result = false;
 
 #ifdef WIN32
     DWORD play_cursor = 0;
@@ -158,7 +158,11 @@ static PyObject *sointu_playback_finished(PyObject *self, PyObject *args) {
 #endif /* WIN32 */
 
 #ifdef UNIX
-    // TODO: Return the correct check.
+    snd_htimestamp_t ts;
+    snd_pcm_uframes_t avail;
+    snd_pcm_htimestamp(pcm_handle, &avail, &ts);
+    
+    result = ts.tv_sec - start_ts.tv_sec < 0;
 #endif /* UNIX */
 
     return PyBool_FromLong(result);
@@ -206,38 +210,4 @@ PyMODINIT_FUNC PyInit_sointu(void) {
     }
 
     return module;
-}
-
-int main(int argc, char *argv[])
-{
-    wchar_t *program = Py_DecodeLocale(argv[0], NULL);
-    if (program == NULL) {
-        fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
-        exit(1);
-    }
-
-    /* Add a built-in module, before Py_Initialize */
-    if (PyImport_AppendInittab("sointu", PyInit_sointu) == -1) {
-        fprintf(stderr, "Error: could not extend in-built modules table\n");
-        exit(1);
-    }
-
-    /* Pass argv[0] to the Python interpreter */
-    Py_SetProgramName(program);
-
-    /* Initialize the Python interpreter.  Required.
-       If this step fails, it will be a fatal error. */
-    Py_Initialize();
-
-    /* Optionally import the module; alternatively,
-       import can be deferred until the embedded script
-       imports it. */
-    PyObject *pmodule = PyImport_ImportModule("sointu");
-    if (!pmodule) {
-        PyErr_Print();
-        fprintf(stderr, "Error: could not import module 'sointu'\n");
-    }
-
-    PyMem_RawFree(program);
-    return 0;
 }

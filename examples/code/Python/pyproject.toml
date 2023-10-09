@@ -8,6 +8,9 @@ readme = "README.md"
 packages = [
     { include = "sointu_python" },
 ]
+include = [
+    { path = "sointu*.so", format="wheel" }
+]
 
 [tool.poetry.build]
 script = "build.py"
@@ -17,12 +20,8 @@ generate-setup-file = true
 python = ">=3.11,<3.13"
 
 [tool.poetry.group.dev.dependencies]
-setuptools = "^68.2.2"
 pyinstaller = "^6.0.0"
 
 [build-system]
-requires = ["poetry-core", "setuptools"]
+requires = ["poetry-core>=1.0.0a3", "poetry>=0.12", "setuptools", "wheel"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.sointu]
-track = "../../patches/physics_girl_st.yml"

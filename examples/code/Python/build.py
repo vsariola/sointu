@@ -5,7 +5,6 @@ from distutils.errors import (
     DistutilsPlatformError,
 )
 from distutils.core import Extension
-from tomllib import load
 from os.path import (
     dirname,
     join,
@@ -17,11 +16,10 @@ from os.path import (
 from os import mkdir
 from subprocess import run
 from platform import system
-
+from sys import exit
 
 class BuildFailed(Exception):
     pass
-
 
 class ExtBuilder(build_ext):
 
@@ -37,9 +35,12 @@ class ExtBuilder(build_ext):
         except (CCompilerError, DistutilsExecError, DistutilsPlatformError, ValueError):
             raise BuildFailed('Could not compile C extension.')
 
-
 def build(setup_kwargs):
-    # Make sure the build directory exists.
+    # Make sure the build directory exists and setup the
+    # relative paths correctly.
+    cwd = abspath(".")
+    print("Running from:", cwd)
+
     current_source_dir = abspath(dirname(__file__))
     project_source_dir = abspath(join(current_source_dir, "..", "..", ".."))
     current_binary_dir = join(current_source_dir, 'build')
@@ -58,25 +59,21 @@ def build(setup_kwargs):
             "cmd/sointu-compile/main.go",
         ],
         cwd=project_source_dir,
-        shell=True,
+        shell=True if host_is_windows else False,
     )
     if result.returncode != 0:
         print("sointu-compile build process exited with:", result.returncode)
         print(result.stdout)
+        exit(1)
 
-    # Load the track path to compile from pyproject.toml.
-    config_file = open(join(current_source_dir, "pyproject.toml"), 'rb')
-    config = load(config_file)
-    config_file.close()
-
-    track_file_name = abspath(config['tool']['sointu']['track'])
+    track_file_name = abspath(join(current_source_dir, "../../patches/physics_girl_st.yml"))
     (track_name_base, _) = splitext(basename(track_file_name)) 
     print("Compiling track:", track_file_name)
 
     # Compile the track.
     sointu_compiler_arch = "amd64"
     track_asm_file = join(current_binary_dir, '{}.asm'.format(track_name_base))
-    run(
+    result = run(
         args=[
             compiler_executable,
             "-o", track_asm_file,
@@ -84,11 +81,16 @@ def build(setup_kwargs):
             track_file_name,
         ],
     )
+    if result.returncode != 0:
+        print("sointu-compile process exited with:", result.returncode)
+        print(result.stdout)
+        exit(1)
 
     # Assemble the track.
-    nasm_abi = "Win64" if host_is_windows else "Elf32"
+    nasm_abi = "Win64" if host_is_windows else "Elf64"
     track_object_file = join(current_binary_dir, '{}{}'.format(track_name_base, object_suffix))
-    run(
+    print("Assembling track asm source:", track_asm_file)
+    result = run(
         args=[
             'nasm',
             '-o', track_object_file,
@@ -96,8 +98,13 @@ def build(setup_kwargs):
             track_asm_file,
         ],
     )
+    if result.returncode != 0:
+        print("nasm process exited with:", result.returncode)
+        print(result.stdout)
+        exit(1)
     
     # Export the plugin.
+    print("Linking object file into Python extension module:", track_object_file)
     setup_kwargs.update({
         "ext_modules": [
             Extension(
@@ -107,12 +114,16 @@ def build(setup_kwargs):
                     current_source_dir,
                 ],
                 sources=[
-                    "sointumodule.c",
+                    "sointu.c",
                 ],
                 extra_compile_args=[
                     "-DTRACK_HEADER=\"{}.h\"".format(track_name_base),
-                    "-DWIN32" if host_is_windows else "-DUNIX",
-                ],
+                ] + ([
+                    "-DWIN32",
+                ] if host_is_windows else [
+                    "-DUNIX",
+                    "-fPIC",
+                ]),
                 extra_objects=[
                     track_object_file,
                 ],
@@ -121,6 +132,12 @@ def build(setup_kwargs):
                     "ws2_32.lib",
                     "ucrt.lib",
                     "user32.lib",
+                ] if host_is_windows else [
+                    "-z", "noexecstack",
+                    "--no-pie",
+                    "-lasound",
+                    "-lpthread",
+                    "-lpython3.11",
                 ],
             ),
         ],
@@ -128,6 +145,3 @@ def build(setup_kwargs):
             "build_ext": ExtBuilder,
         },
     })
-
-if __name__ == '__main__':
-    build()
