@@ -78,6 +78,20 @@ var defaultSong = sointu.Song{
 		}}},
 }
 
+type delayPreset struct {
+	name    string
+	stereo  int
+	varArgs []int
+}
+
+var reverbs = []delayPreset{
+	{"stereo", 1, []int{1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618,
+		1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642,
+	}},
+	{"left", 0, []int{1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618}},
+	{"right", 0, []int{1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642}},
+}
+
 func init() {
 	UnitTypeNames = make([]string, 0, len(sointu.UnitTypes))
 	for k := range sointu.UnitTypes {

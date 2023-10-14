@@ -11,6 +11,7 @@ import (
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
+	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v2"
 )
 
@@ -863,6 +864,23 @@ func (m *Model) setGmDlsEntry(index int) {
 	m.notifyPatchChange()
 }
 
+func (m *Model) setReverb(index int) {
+	if index < 0 || index >= len(reverbs) {
+		return
+	}
+	entry := reverbs[index]
+	unit := &m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex]
+	if unit.Type != "delay" {
+		return
+	}
+	m.saveUndo("setReverb", 20)
+	unit.Parameters["stereo"] = entry.stereo
+	unit.Parameters["notetracking"] = 0
+	unit.VarArgs = make([]int, len(entry.varArgs))
+	copy(unit.VarArgs, entry.varArgs)
+	m.notifyPatchChange()
+}
+
 func (m *Model) SwapUnits(i, j int) {
 	units := m.Instrument().Units
 	if i < 0 || j < 0 || i >= len(units) || j >= len(units) || i == j {
@@ -1121,7 +1139,7 @@ func (m *Model) NumParams() int {
 		numSettableParams = 1
 	}
 	if unit.Type == "delay" {
-		numSettableParams += 1 + len(unit.VarArgs)
+		numSettableParams += 2 + len(unit.VarArgs)
 		if len(unit.VarArgs)%2 == 1 && unit.Parameters["stereo"] == 1 {
 			numSettableParams++
 		}
@@ -1181,13 +1199,23 @@ func (m *Model) Param(index int) (Parameter, error) {
 	}
 	if unit.Type == "delay" {
 		if index == 0 {
+			i := slices.IndexFunc(reverbs, func(p delayPreset) bool {
+				return p.stereo == unit.Parameters["stereo"] && unit.Parameters["notetracking"] == 0 && slices.Equal(p.varArgs, unit.VarArgs)
+			})
+			hint := "0 / custom"
+			if i >= 0 {
+				hint = fmt.Sprintf("%v / %v", i+1, reverbs[i].name)
+			}
+			return Parameter{Type: IntegerParameter, Min: 0, Max: len(reverbs), Name: "reverb", Hint: hint, Value: i + 1}, nil
+		}
+		if index == 1 {
 			l := len(unit.VarArgs)
 			if unit.Parameters["stereo"] == 1 {
 				l = (l + 1) / 2
 			}
 			return Parameter{Type: IntegerParameter, Min: 1, Max: 32, Name: "delaylines", Hint: strconv.Itoa(l), Value: l}, nil
 		}
-		index--
+		index -= 2
 		if index < len(unit.VarArgs) {
 			val := unit.VarArgs[index]
 			var text string
@@ -1305,6 +1333,10 @@ func (m *Model) SetParam(value int) {
 		m.setGmDlsEntry(value - 1)
 		return
 	}
+	if p.Name == "reverb" {
+		m.setReverb(value - 1)
+		return
+	}
 	unit := m.Unit()
 	if p.Name == "delaylines" {
 		m.saveUndo("SetParam", 20)
@@ -1318,7 +1350,7 @@ func (m *Model) SetParam(value int) {
 		m.Instrument().Units[m.d.UnitIndex].VarArgs = m.Instrument().Units[m.d.UnitIndex].VarArgs[:targetLines]
 	} else if p.Name == "delaytime" {
 		m.saveUndo("SetParam", 20)
-		index := m.d.ParamIndex - 7
+		index := m.d.ParamIndex - 8
 		for len(m.Instrument().Units[m.d.UnitIndex].VarArgs) <= index {
 			m.Instrument().Units[m.d.UnitIndex].VarArgs = append(m.Instrument().Units[m.d.UnitIndex].VarArgs, 1)
 		}
