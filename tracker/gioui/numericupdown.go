@@ -76,14 +76,14 @@ func NumericUpDown(th *material.Theme, number *NumberInput, min, max int, toolti
 	}
 }
 
-func (s NumericUpDownStyle) Layout(gtx C) D {
+func (s *NumericUpDownStyle) Layout(gtx C) D {
 	if s.Tooltip.Text.Text != "" {
 		return s.NumberInput.tipArea.Layout(gtx, s.Tooltip, s.actualLayout)
 	}
 	return s.actualLayout(gtx)
 }
 
-func (s NumericUpDownStyle) actualLayout(gtx C) D {
+func (s *NumericUpDownStyle) actualLayout(gtx C) D {
 	size := image.Pt(gtx.Dp(s.Width), gtx.Dp(s.Height))
 	gtx.Constraints.Min = size
 	rr := gtx.Dp(s.CornerRadius)
@@ -115,7 +115,7 @@ func (s NumericUpDownStyle) actualLayout(gtx C) D {
 	return layout.Dimensions{Size: size}
 }
 
-func (s NumericUpDownStyle) button(height int, icon *widget.Icon, delta int, click *gesture.Click) layout.Widget {
+func (s *NumericUpDownStyle) button(height int, icon *widget.Icon, delta int, click *gesture.Click) layout.Widget {
 	return func(gtx C) D {
 		btnWidth := gtx.Dp(s.ButtonWidth)
 		return layout.Stack{Alignment: layout.Center}.Layout(gtx,
@@ -148,7 +148,7 @@ func (s NumericUpDownStyle) button(height int, icon *widget.Icon, delta int, cli
 	}
 }
 
-func (s NumericUpDownStyle) layoutText(gtx C) D {
+func (s *NumericUpDownStyle) layoutText(gtx C) D {
 	return layout.Stack{Alignment: layout.Center}.Layout(gtx,
 		layout.Stacked(func(gtx C) D {
 			paint.FillShape(gtx.Ops, s.BackgroundColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
@@ -162,7 +162,7 @@ func (s NumericUpDownStyle) layoutText(gtx C) D {
 	)
 }
 
-func (s NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
+func (s *NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
 	{ // handle dragging
 		pxPerStep := float32(gtx.Dp(s.UnitsPerStep))
 		for _, ev := range gtx.Events(s.NumberInput) {
@@ -195,7 +195,7 @@ func (s NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
 	return layout.Dimensions{Size: gtx.Constraints.Min}
 }
 
-func (s NumericUpDownStyle) layoutClick(gtx layout.Context, delta int, click *gesture.Click) layout.Dimensions {
+func (s *NumericUpDownStyle) layoutClick(gtx layout.Context, delta int, click *gesture.Click) layout.Dimensions {
 	// handle clicking
 	for _, e := range click.Events(gtx) {
 		switch e.Type {
