@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -12,7 +13,7 @@ import (
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
 	"golang.org/x/exp/slices"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // Model implements the mutable state for the tracker program GUI.
@@ -113,7 +114,7 @@ const (
 )
 
 const maxUndo = 64
-const RECOVERY_FILE = ".sointu_recovery.yml"
+const RECOVERY_FILE = ".sointu_recovery"
 
 func NewModel(modelMessages chan<- interface{}, playerMessages <-chan PlayerMessage) *Model {
 	ret := new(Model)
@@ -135,10 +136,14 @@ func LoadRecovery(modelMessages chan<- interface{}, playerMessages <-chan Player
 		return nil, fmt.Errorf("could not read recovery file: %w", err)
 	}
 	var ret Model
-	err = yaml.Unmarshal(b, &ret.d)
+	err = json.Unmarshal(b, &ret.d)
 	if err != nil {
-		return nil, fmt.Errorf("could not unmarshal recovery file: %w", err)
+		err = yaml.Unmarshal(b, &ret.d)
+		if err != nil {
+			return nil, fmt.Errorf("could not unmarshal recovery file: %w", err)
+		}
 	}
+
 	ret.modelMessages = modelMessages
 	ret.PlayerMessages = playerMessages
 	ret.notifyPatchChange()
@@ -152,7 +157,7 @@ func (m *Model) SaveRecovery() error {
 	if err != nil {
 		return fmt.Errorf("could not get user home directory: %w", err)
 	}
-	out, err := yaml.Marshal(m.d)
+	out, err := json.Marshal(m.d)
 	if err != nil {
 		return fmt.Errorf("could not marshal the model: %w", err)
 	}
