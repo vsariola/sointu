@@ -7,10 +7,11 @@ require (
 	gioui.org/x v0.1.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/hajimehoshi/oto v0.6.6
+	golang.org/x/exp v0.0.0-20221012211006-4de253d81b95
 	golang.org/x/exp/shiny v0.0.0-20220827204233-334a2380cb91
 	gopkg.in/yaml.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
-	pipelined.dev/audio/vst2 v0.10.1-0.20230718065422-be1242fca4ab
+	pipelined.dev/audio/vst2 v0.10.1-0.20231016195025-8c5c6a64c826
 )
 
 require (
@@ -28,7 +29,6 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.0 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
-	golang.org/x/exp v0.0.0-20221012211006-4de253d81b95 // indirect
 	golang.org/x/image v0.7.0 // indirect
 	golang.org/x/mobile v0.0.0-20201217150744-e6ae53a27f4f // indirect
 	golang.org/x/sys v0.7.0 // indirect

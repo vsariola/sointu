@@ -13,7 +13,6 @@ import (
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
 	"golang.org/x/exp/slices"
-	"gopkg.in/yaml.v3"
 )
 
 // Model implements the mutable state for the tracker program GUI.
@@ -26,25 +25,27 @@ import (
 type (
 	// modelData is the part of the model that gets save to recovery file
 	modelData struct {
-		Song             sointu.Song
-		SelectionCorner  SongPoint
-		Cursor           SongPoint
-		LowNibble        bool
-		InstrIndex       int
-		UnitIndex        int
-		ParamIndex       int
-		Octave           int
-		NoteTracking     bool
-		UsedIDs          map[int]bool
-		MaxID            int
-		FilePath         string
-		ChangedSinceSave bool
-		PatternUseCount  [][]int
-		Panic            bool
-		Playing          bool
-		Recording        bool
-		PlayPosition     SongRow
-		InstrEnlarged    bool
+		Song                 sointu.Song
+		SelectionCorner      SongPoint
+		Cursor               SongPoint
+		LowNibble            bool
+		InstrIndex           int
+		UnitIndex            int
+		ParamIndex           int
+		Octave               int
+		NoteTracking         bool
+		UsedIDs              map[int]bool
+		MaxID                int
+		FilePath             string
+		ChangedSinceSave     bool
+		PatternUseCount      [][]int
+		Panic                bool
+		Playing              bool
+		Recording            bool
+		PlayPosition         SongRow
+		InstrEnlarged        bool
+		RecoveryFilePath     string
+		ChangedSinceRecovery bool
 
 		PrevUndoType    string
 		UndoSkipCounter int
@@ -116,61 +117,74 @@ const (
 const maxUndo = 64
 const RECOVERY_FILE = ".sointu_recovery"
 
-func NewModel(modelMessages chan<- interface{}, playerMessages <-chan PlayerMessage) *Model {
+func NewModel(modelMessages chan<- interface{}, playerMessages <-chan PlayerMessage, recoveryFilePath string) *Model {
 	ret := new(Model)
 	ret.modelMessages = modelMessages
 	ret.PlayerMessages = playerMessages
 	ret.setSongNoUndo(defaultSong.Copy())
 	ret.d.Octave = 4
+	ret.d.RecoveryFilePath = recoveryFilePath
+	if recoveryFilePath != "" {
+		if bytes2, err := os.ReadFile(ret.d.RecoveryFilePath); err == nil {
+			json.Unmarshal(bytes2, &ret.d)
+		}
+	}
 	return ret
 }
 
-func LoadRecovery(modelMessages chan<- interface{}, playerMessages <-chan PlayerMessage) (*Model, error) {
-	homeDir, err := os.UserHomeDir()
+func (m *Model) MarshalRecovery() []byte {
+	out, err := json.Marshal(m.d)
 	if err != nil {
-		return nil, fmt.Errorf("could not get user home directory: %w", err)
+		return nil
 	}
-	filePath := filepath.Join(homeDir, RECOVERY_FILE)
-	b, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("could not read recovery file: %w", err)
+	if m.d.RecoveryFilePath != "" {
+		os.Remove(m.d.RecoveryFilePath)
 	}
-	var ret Model
-	err = json.Unmarshal(b, &ret.d)
-	if err != nil {
-		err = yaml.Unmarshal(b, &ret.d)
-		if err != nil {
-			return nil, fmt.Errorf("could not unmarshal recovery file: %w", err)
-		}
-	}
-
-	ret.modelMessages = modelMessages
-	ret.PlayerMessages = playerMessages
-	ret.notifyPatchChange()
-	ret.notifySamplesPerRowChange()
-	ret.notifyScoreChange()
-	return &ret, nil
+	m.d.ChangedSinceRecovery = false
+	return out
 }
 
 func (m *Model) SaveRecovery() error {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("could not get user home directory: %w", err)
+	if !m.d.ChangedSinceRecovery {
+		return nil
+	}
+	if m.d.RecoveryFilePath == "" {
+		return errors.New("no backup file path")
 	}
 	out, err := json.Marshal(m.d)
 	if err != nil {
-		return fmt.Errorf("could not marshal the model: %w", err)
+		return fmt.Errorf("could not marshal recovery data: %w", err)
 	}
-	filePath := filepath.Join(homeDir, RECOVERY_FILE)
-	file, err := os.Create(filePath)
+	dir := filepath.Dir(m.d.RecoveryFilePath)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		os.MkdirAll(dir, os.ModePerm)
+	}
+	file, err := os.Create(m.d.RecoveryFilePath)
 	if err != nil {
-		return fmt.Errorf("could not open recovery file: %w", err)
+		return fmt.Errorf("could not create recovery file: %w", err)
 	}
 	_, err = file.Write(out)
 	if err != nil {
 		return fmt.Errorf("could not write recovery file: %w", err)
 	}
+	m.d.ChangedSinceRecovery = false
 	return nil
+}
+
+func (m *Model) UnmarshalRecovery(bytes []byte) {
+	err := json.Unmarshal(bytes, &m.d)
+	if err != nil {
+		return
+	}
+	if m.d.RecoveryFilePath != "" { // check if there's a recovery file on disk and load it instead
+		if bytes2, err := os.ReadFile(m.d.RecoveryFilePath); err == nil {
+			json.Unmarshal(bytes2, &m.d)
+		}
+	}
+	m.d.ChangedSinceRecovery = false
+	m.notifyPatchChange()
+	m.notifySamplesPerRowChange()
+	m.notifyScoreChange()
 }
 
 func (m *Model) FilePath() string {
@@ -1416,6 +1430,7 @@ func (m *Model) notifySamplesPerRowChange() {
 
 func (m *Model) saveUndo(undoType string, undoSkipping int) {
 	m.d.ChangedSinceSave = true
+	m.d.ChangedSinceRecovery = true
 	if m.d.PrevUndoType == undoType && m.d.UndoSkipCounter < undoSkipping {
 		m.d.UndoSkipCounter++
 		return

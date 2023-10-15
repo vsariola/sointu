@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 	"runtime/pprof"
 
@@ -50,10 +51,11 @@ func main() {
 	defer audioContext.Close()
 	modelMessages := make(chan interface{}, 1024)
 	playerMessages := make(chan tracker.PlayerMessage, 1024)
-	model, err := tracker.LoadRecovery(modelMessages, playerMessages)
-	if err != nil {
-		model = tracker.NewModel(modelMessages, playerMessages)
+	recoveryFile := ""
+	if configDir, err := os.UserConfigDir(); err == nil {
+		recoveryFile = filepath.Join(configDir, "Sointu", "sointu-track-recovery")
 	}
+	model := tracker.NewModel(modelMessages, playerMessages, recoveryFile)
 	player := tracker.NewPlayer(cmd.DefaultService, playerMessages, modelMessages)
 	tracker := gioui.NewTracker(model, cmd.DefaultService)
 	output := audioContext.Output()

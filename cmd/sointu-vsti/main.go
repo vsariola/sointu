@@ -3,6 +3,11 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"os"
+	"path/filepath"
+
 	"github.com/vsariola/sointu/cmd"
 	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/tracker/gioui"
@@ -49,10 +54,13 @@ func init() {
 	vst2.PluginAllocator = func(h vst2.Host) (vst2.Plugin, vst2.Dispatcher) {
 		modelMessages := make(chan interface{}, 1024)
 		playerMessages := make(chan tracker.PlayerMessage, 1024)
-		model, err := tracker.LoadRecovery(modelMessages, playerMessages)
-		if err != nil {
-			model = tracker.NewModel(modelMessages, playerMessages)
+		recoveryFile := ""
+		if configDir, err := os.UserConfigDir(); err == nil {
+			randBytes := make([]byte, 16)
+			rand.Read(randBytes)
+			recoveryFile = filepath.Join(configDir, "Sointu", "sointu-vsti-recovery-"+hex.EncodeToString(randBytes))
 		}
+		model := tracker.NewModel(modelMessages, playerMessages, recoveryFile)
 		player := tracker.NewPlayer(cmd.DefaultService, playerMessages, modelMessages)
 		tracker := gioui.NewTracker(model, cmd.DefaultService)
 		tracker.SetInstrEnlarged(true) // start the vsti with the instrument editor enlarged
@@ -101,6 +109,12 @@ func init() {
 				CloseFunc: func() {
 					tracker.Quit(true)
 					tracker.WaitQuitted()
+				},
+				GetChunkFunc: func(isPreset bool) []byte {
+					return tracker.SafeMarshalRecovery()
+				},
+				SetChunkFunc: func(data []byte, isPreset bool) {
+					tracker.SafeUnmarshalRecovery(data)
 				},
 			}
 

@@ -57,15 +57,19 @@ type Tracker struct {
 
 	lastVolume tracker.Volume
 
-	wavFilePath  string
-	quitChannel  chan struct{}
-	quitWG       sync.WaitGroup
-	errorChannel chan error
-	quitted      bool
-	synthService sointu.SynthService
+	wavFilePath              string
+	quitChannel              chan struct{}
+	quitWG                   sync.WaitGroup
+	errorChannel             chan error
+	quitted                  bool
+	unmarshalRecoveryChannel chan []byte
+	marshalRecoveryChannel   chan (chan []byte)
+	synthService             sointu.SynthService
 
-	*tracker.Model
+	*trackerModel
 }
+
+type trackerModel = tracker.Model
 
 func (t *Tracker) UnmarshalContent(bytes []byte) error {
 	var units []sointu.Unit
@@ -143,7 +147,10 @@ func NewTracker(model *tracker.Model, synthService sointu.SynthService) *Tracker
 
 		errorChannel: make(chan error, 32),
 		synthService: synthService,
-		Model:        model,
+		trackerModel: model,
+
+		marshalRecoveryChannel:   make(chan (chan []byte)),
+		unmarshalRecoveryChannel: make(chan []byte),
 	}
 	t.Theme.Palette.Fg = primaryColor
 	t.Theme.Palette.ContrastFg = black
@@ -213,11 +220,27 @@ mainloop:
 			}
 		case <-recoveryTicker.C:
 			t.SaveRecovery()
+		case retChn := <-t.marshalRecoveryChannel:
+			retChn <- t.MarshalRecovery()
+		case bytes := <-t.unmarshalRecoveryChannel:
+			t.UnmarshalRecovery(bytes)
 		}
 	}
 	w.Perform(system.ActionClose)
 	t.SaveRecovery()
 	t.quitWG.Done()
+}
+
+// thread safe, executed in the GUI thread
+func (t *Tracker) SafeMarshalRecovery() []byte {
+	retChn := make(chan []byte)
+	t.marshalRecoveryChannel <- retChn
+	return <-retChn
+}
+
+// thread safe, executed in the GUI thread
+func (t *Tracker) SafeUnmarshalRecovery(data []byte) {
+	t.unmarshalRecoveryChannel <- data
 }
 
 func (t *Tracker) sendQuit() {

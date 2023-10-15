@@ -6,8 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## Unreleased
 ### Added
 - Save the GUI state periodically to a recovery file and load it on
-  startup of the app, if present. The recovery file is located in the
-  home directory of the user.
+  startup of the app, if present. The recovery files are located in the
+  app config directory (e.g. AppData/Roaming/Sointu on Windows).
+- Save the VSTI GUI state to the DAW project file, through GetChunk /
+  SetChunk mechanisms.
 - Instrument presets. The presets are embedded in the executable and
   there's a button to open a menu to load one of the presets.
 - Frequency modulation target for oscillator, as it was in 4klang
