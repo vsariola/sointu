@@ -22,6 +22,11 @@ The pre 1.0 version tags are mostly for reference: no backwards
 compatibility will be guaranteed while upgrading to a newer version.
 Backwards compatibility will be attempted from 1.0 onwards.
 
+**Uninstallation**: Sointu stores recovery data in OS-specific folders
+e.g. `AppData/Roaming/Sointu` on Windows. For clean uninstall, delete
+also this folder. See [here](https://pkg.go.dev/os#UserConfigDir) where
+to find those folders on other platforms.
+
 Summary
 -------
 
@@ -535,6 +540,9 @@ Project Link: [https://github.com/vsariola/sointu](https://github.com/vsariola/s
 Credits
 -------
 
-The original 4klang: Dominik Ries ([gopher/Alcatraz](https://github.com/hzdgopher/4klang)) & Paul Kraus (pOWL/Alcatraz) :heart:
+The original 4klang: Dominik Ries ([gopher/Alcatraz](https://github.com/hzdgopher/4klang))
+& Paul Kraus (pOWL/Alcatraz) :heart:
 
-Sointu: Veikko Sariola (pestis/bC!), [Apollo/bC!](https://github.com/moitias), [NR4/Team210](https://github.com/LeStahL/), [PoroCYon](https://github.com/PoroCYon/4klang), [kendfss](https://github.com/kendfss)
+Sointu: Veikko Sariola (pestis/bC!), [Apollo/bC!](https://github.com/moitias),
+[NR4/Team210](https://github.com/LeStahL/), [PoroCYon](https://github.com/PoroCYon/4klang),
+[kendfss](https://github.com/kendfss)
