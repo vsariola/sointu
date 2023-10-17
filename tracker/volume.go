@@ -12,11 +12,7 @@ type Volume struct {
 	Peak    [2]float64
 }
 
-// VuAnalyzer receives stereo from the bc channel and converts these into peak &
-// average volume measurements, and pushes Volume values into the vc channel.
-// The pushes are nonblocking so if e.g. a GUI does not have enough time to
-// process redraw the volume meter, the values is just skipped. Thus, the vc
-// chan should have a capacity of at least 1 (!).
+// Analyze updates Average and Peak fields, by analyzing the given buffer.
 //
 // Internally, it first converts the signal to decibels (0 dB = +-1). Then, the
 // average volume level is computed by smoothing the decibel values with a
@@ -27,8 +23,8 @@ type Volume struct {
 // constants for attack and release are different. Generally attack << release.
 // Typical values could be attack 1.5e-3 and release 1.5 (seconds)
 //
-// minVolume is just a hard limit for the vuanalyzer volumes, in decibels, just to
-// prevent negative infinities for volumes
+// minVolume and maxVolume are hard limits in decibels to prevent negative
+// infinities for volumes
 func (v *Volume) Analyze(buffer []float32, tau float64, attack float64, release float64, minVolume float64, maxVolume float64) error {
 	alpha := 1 - math.Exp(-1.0/(tau*44100)) // from https://en.wikipedia.org/wiki/Exponential_smoothing
 	alphaAttack := 1 - math.Exp(-1.0/(attack*44100))
