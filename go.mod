@@ -3,7 +3,7 @@ module github.com/vsariola/sointu
 go 1.18
 
 require (
-	gioui.org v0.3.0
+	gioui.org v0.3.1
 	gioui.org/x v0.1.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/hajimehoshi/oto v0.6.6
@@ -16,7 +16,7 @@ require (
 
 require (
 	gioui.org/cpu v0.0.0-20210817075930-8d6a761490d2 // indirect
-	gioui.org/shader v1.0.6 // indirect
+	gioui.org/shader v1.0.8 // indirect
 	git.wow.st/gmp/jni v0.0.0-20210610011705-34026c7e22d0 // indirect
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
