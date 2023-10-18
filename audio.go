@@ -9,8 +9,7 @@ import (
 
 type (
 	// AudioBuffer is a buffer of stereo audio samples of variable length, each
-	// sample represented by a slice of [2]float32. [0] is left channel, [1] is
-	// right
+	// sample represented by [2]float32. [0] is left channel, [1] is right
 	AudioBuffer [][2]float32
 
 	// AudioOutput represents something where we can send audio e.g. audio output.
@@ -32,8 +31,8 @@ type (
 	}
 )
 
-// Wav converts a stereo signal of 32-bit floats (L R L R..., length should be
-// divisible by 2) into a valid WAV-file, returned as a []byte array.
+// Wav converts an AudioBuffer into a valid WAV-file, returned as a []byte
+// array.
 //
 // If pcm16 is set to true, the samples in the WAV-file will be 16-bit signed
 // integers; otherwise the samples will be 32-bit floats
@@ -47,8 +46,8 @@ func (buffer AudioBuffer) Wav(pcm16 bool) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Raw converts a stereo signal of 32-bit floats (L R L R..., length should be
-// divisible by 2) into a raw audio file, returned as a []byte array.
+// Raw converts an AudioBuffer into a raw audio file, returned as a []byte
+// array.
 //
 // If pcm16 is set to true, the samples will be 16-bit signed integers;
 // otherwise the samples will be 32-bit floats
