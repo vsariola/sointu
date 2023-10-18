@@ -100,7 +100,7 @@ func main() {
 			}
 		}
 		if *rawOut {
-			raw, err := sointu.Raw(buffer, *pcm)
+			raw, err := buffer.Raw(*pcm)
 			if err != nil {
 				return fmt.Errorf("could not generate .raw file: %v", err)
 			}
@@ -109,7 +109,7 @@ func main() {
 			}
 		}
 		if *wavOut {
-			wav, err := sointu.Wav(buffer, *pcm)
+			wav, err := buffer.Wav(*pcm)
 			if err != nil {
 				return fmt.Errorf("could not generate .wav file: %v", err)
 			}

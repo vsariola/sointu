@@ -145,7 +145,7 @@ func (t *Tracker) exportWav(w io.WriteCloser, pcm16 bool) {
 		t.Alert.Update(fmt.Sprintf("Error rendering the song during export: %v", err), Error, time.Second*3)
 		return
 	}
-	buffer, err := sointu.Wav(data, pcm16)
+	buffer, err := data.Wav(pcm16)
 	if err != nil {
 		t.Alert.Update(fmt.Sprintf("Error converting to .wav: %v", err), Error, time.Second*3)
 		return
