@@ -108,7 +108,7 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 				FeatureSetMacros
 				X86Macros
 				SongMacros
-				*vm.BytePatch
+				*vm.Bytecode
 				Patterns       [][]byte
 				Sequences      [][]byte
 				PatternLength  int
@@ -123,7 +123,7 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 				FeatureSetMacros
 				WasmMacros
 				SongMacros
-				*vm.BytePatch
+				*vm.Bytecode
 				Patterns       [][]byte
 				Sequences      [][]byte
 				PatternLength  int

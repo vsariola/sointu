@@ -7,33 +7,55 @@ import (
 	"github.com/vsariola/sointu"
 )
 
-// BytePatch is the compiler Sointu VM bytecode & data (delay times, sample
-// offsets) ready to interpret or from which the ASM/WASM code can be generate.
-//
-// PolyphonyBitmask is a rather peculiar bitmask used by Sointu VM to store the
-// information about which voices use which instruments: bit MAXVOICES - n - 1
-// corresponds to voice n. If the bit 1, the next voice uses the same
-// instrument. If the bit 0, the next voice uses different instrument. For
-// example, if first instrument has 3 voices, second instrument has 2 voices,
-// and third instrument four voices, the PolyphonyBitmask is:
-//
-// (MSB) 110101110 (LSB)
-type BytePatch struct {
-	Commands         []byte
-	Values           []byte
-	DelayTimes       []uint16
-	SampleOffsets    []SampleOffset
-	PolyphonyBitmask uint32
-	NumVoices        uint32
-}
+type (
+	// Bytecode is the Sointu VM bytecode & data (delay times, sample offsets)
+	// which is executed by the synthesizer. It is generated from a Sointu patch.
+	Bytecode struct {
+		// Commands is the bytecode, which is a sequence of opcode bytes, one
+		// per unit in the patch. A byte of 0 denotes the end of an instrument,
+		// at which point if that instrument has more than one voice, the
+		// commands are repeated for each voice.
+		Commands []byte
 
-type SampleOffset struct {
-	Start      uint32
-	LoopStart  uint16
-	LoopLength uint16
-}
+		// Values are the operands of the opcodes. Every opcode reads 0 or more
+		// values from the value sequence.
+		Values []byte
 
-type bytePatchBuilder struct {
+		// DelayTimes is a table of delay times in samples. The delay times are
+		// used by the delay units in the patch. The delay unit only stores
+		// index and count of delay lines, and the delay times are looked up
+		// from this table. This way multiple reverb units do not have to repeat
+		// the same delay times.
+		DelayTimes []uint16
+
+		// SampleOffsets is a table of sample offsets, which tell where to find
+		// a particular sample in the sample data loaded from gm.dls. The sample
+		// offsets are used by the oscillator units that are configured to use
+		// samples. The unit only stores the index pointing to this table.
+		SampleOffsets []SampleOffset
+
+		// PolyphonyBitmask is a rather peculiar bitmask used by Sointu VM to store
+		// the information about which voices use which instruments: bit MAXVOICES -
+		// n - 1 corresponds to voice n. If the bit 1, the next voice uses the same
+		// instrument. If the bit 0, the next voice uses different instrument. For
+		// example, if first instrument has 3 voices, second instrument has 2
+		// voices, and third instrument four voices, the PolyphonyBitmask is: (MSB)
+		// 110101110 (LSB)
+		PolyphonyBitmask uint32
+
+		// NumVoices is the total number of voices in the patch
+		NumVoices uint32
+	}
+
+	// SampleOffset is an entry in the sample offset table
+	SampleOffset struct {
+		Start      uint32 // start offset in words (1 word = 2 bytes)
+		LoopStart  uint16 // loop start offset in words, relative to Start
+		LoopLength uint16 // loop length in words
+	}
+)
+
+type bytecodeBuilder struct {
 	sampleOffsetMap map[SampleOffset]int
 	globalAddrs     map[int]uint16
 	globalFixups    map[int]([]int)
@@ -42,14 +64,14 @@ type bytePatchBuilder struct {
 	voiceNo         int
 	delayIndices    [][]int
 	unitNo          int
-	BytePatch
+	Bytecode
 }
 
-func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, error) {
+func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode, error) {
 	if patch.NumVoices() > 32 {
 		return nil, fmt.Errorf("Sointu does not support more than 32 concurrent voices; patch uses %v", patch.NumVoices())
 	}
-	b := newBytePatchBuilder(patch, bpm)
+	b := newBytecodeBuilder(patch, bpm)
 	for instrIndex, instr := range patch {
 		if instr.NumVoices < 1 {
 			return nil, errors.New("Each instrument must have at least 1 voice")
@@ -186,10 +208,10 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*BytePatch, err
 		}
 		b.cmdFinish(instr)
 	}
-	return &b.BytePatch, nil
+	return &b.Bytecode, nil
 }
 
-func newBytePatchBuilder(patch sointu.Patch, bpm int) *bytePatchBuilder {
+func newBytecodeBuilder(patch sointu.Patch, bpm int) *bytecodeBuilder {
 	var polyphonyBitmask uint32 = 0
 	for _, instr := range patch {
 		for j := 0; j < instr.NumVoices-1; j++ {
@@ -202,8 +224,8 @@ func newBytePatchBuilder(patch sointu.Patch, bpm int) *bytePatchBuilder {
 	for i, d := range delayTimesInt {
 		delayTimesU16[i] = uint16(d)
 	}
-	c := bytePatchBuilder{
-		BytePatch:       BytePatch{PolyphonyBitmask: polyphonyBitmask, NumVoices: uint32(patch.NumVoices()), DelayTimes: delayTimesU16},
+	c := bytecodeBuilder{
+		Bytecode:        Bytecode{PolyphonyBitmask: polyphonyBitmask, NumVoices: uint32(patch.NumVoices()), DelayTimes: delayTimesU16},
 		sampleOffsetMap: map[SampleOffset]int{},
 		globalAddrs:     map[int]uint16{},
 		globalFixups:    map[int]([]int){},
@@ -214,14 +236,14 @@ func newBytePatchBuilder(patch sointu.Patch, bpm int) *bytePatchBuilder {
 }
 
 // cmd adds a command to the bytecode, and increments the unit number
-func (b *bytePatchBuilder) cmd(opcode int) {
+func (b *bytecodeBuilder) cmd(opcode int) {
 	b.Commands = append(b.Commands, byte(opcode))
 	b.unitNo++
 }
 
 // cmdFinish adds a command to the bytecode that marks the end of an instrument, resets the unit number and increments the voice number
 // local addresses are forgotten when instrument ends
-func (b *bytePatchBuilder) cmdFinish(instr sointu.Instrument) {
+func (b *bytecodeBuilder) cmdFinish(instr sointu.Instrument) {
 	b.Commands = append(b.Commands, 0)
 	b.unitNo = 0
 	b.voiceNo += instr.NumVoices
@@ -230,14 +252,14 @@ func (b *bytePatchBuilder) cmdFinish(instr sointu.Instrument) {
 }
 
 // vals appends values to the value stream
-func (b *bytePatchBuilder) vals(values ...int) {
+func (b *bytecodeBuilder) vals(values ...int) {
 	for _, v := range values {
 		b.Values = append(b.Values, byte(v))
 	}
 }
 
 // defaultVals appends the values to the value stream for all parameters that can be modulated and set
-func (b *bytePatchBuilder) defaultVals(unit sointu.Unit) {
+func (b *bytecodeBuilder) defaultVals(unit sointu.Unit) {
 	for _, v := range sointu.UnitTypes[unit.Type] {
 		if v.CanModulate && v.CanSet {
 			b.Values = append(b.Values, byte(unit.Parameters[v.Name]))
@@ -246,7 +268,7 @@ func (b *bytePatchBuilder) defaultVals(unit sointu.Unit) {
 }
 
 // localIDRef adds a reference to a local id label to the value stream; if the targeted ID has not been seen yet, it is added to the fixup list
-func (b *bytePatchBuilder) localIDRef(id int, addr int) {
+func (b *bytecodeBuilder) localIDRef(id int, addr int) {
 	if v, ok := b.localAddrs[id]; ok {
 		addr += int(v)
 	} else {
@@ -256,7 +278,7 @@ func (b *bytePatchBuilder) localIDRef(id int, addr int) {
 }
 
 // globalIDRef adds a reference to a global id label to the value stream; if the targeted ID has not been seen yet, it is added to the fixup list
-func (b *bytePatchBuilder) globalIDRef(id int, addr int) {
+func (b *bytecodeBuilder) globalIDRef(id int, addr int) {
 	if v, ok := b.globalAddrs[id]; ok {
 		addr += int(v)
 	} else {
@@ -266,7 +288,7 @@ func (b *bytePatchBuilder) globalIDRef(id int, addr int) {
 }
 
 // idLabel adds a label to the value stream for the given id; all earlier references to the id are fixed up
-func (b *bytePatchBuilder) idLabel(id int) {
+func (b *bytecodeBuilder) idLabel(id int) {
 	localAddr := uint16((b.unitNo + 1) << 4)
 	b.fixUp(b.localFixups[id], localAddr)
 	b.localFixups[id] = nil
@@ -278,7 +300,7 @@ func (b *bytePatchBuilder) idLabel(id int) {
 }
 
 // fixUp fixes up the references to the given id with the given delta
-func (b *bytePatchBuilder) fixUp(positions []int, delta uint16) {
+func (b *bytecodeBuilder) fixUp(positions []int, delta uint16) {
 	for _, pos := range positions {
 		orig := (uint16(b.Values[pos+1]) << 8) + uint16(b.Values[pos])
 		new := orig + delta
@@ -288,7 +310,7 @@ func (b *bytePatchBuilder) fixUp(positions []int, delta uint16) {
 }
 
 // getSampleIndex returns the index of the sample in the sample offset table; if the sample has not been seen yet, it is added to the table
-func (b *bytePatchBuilder) getSampleIndex(unit sointu.Unit) int {
+func (b *bytecodeBuilder) getSampleIndex(unit sointu.Unit) int {
 	s := SampleOffset{Start: uint32(unit.Parameters["samplestart"]), LoopStart: uint16(unit.Parameters["loopstart"]), LoopLength: uint16(unit.Parameters["looplength"])}
 	if s.LoopLength == 0 {
 		// hacky quick fix: looplength 0 causes div by zero so avoid crashing

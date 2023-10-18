@@ -22,7 +22,7 @@ import (
 // number of signals, so be warned that if you compose patches for it, they
 // might not work with the x87 implementation, as it has only 8-level stack.
 type GoSynth struct {
-	bytePatch  BytePatch
+	bytecode   Bytecode
 	stack      []float32
 	synth      synth
 	delaylines []delayline
@@ -88,11 +88,11 @@ success:
 }
 
 func Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
-	bytePatch, err := Encode(patch, AllFeatures{}, bpm)
+	bytecode, err := Encode(patch, AllFeatures{}, bpm)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling %v", err)
 	}
-	ret := &GoSynth{bytePatch: *bytePatch, stack: make([]float32, 0, 4), delaylines: make([]delayline, patch.NumDelayLines())}
+	ret := &GoSynth{bytecode: *bytecode, stack: make([]float32, 0, 4), delaylines: make([]delayline, patch.NumDelayLines())}
 	ret.synth.randSeed = 1
 	return ret, nil
 }
@@ -113,20 +113,20 @@ func (s *GoSynth) Release(voiceIndex int) {
 }
 
 func (s *GoSynth) Update(patch sointu.Patch, bpm int) error {
-	bytePatch, err := Encode(patch, AllFeatures{}, bpm)
+	bytecode, err := Encode(patch, AllFeatures{}, bpm)
 	if err != nil {
 		return fmt.Errorf("error compiling %v", err)
 	}
-	needsRefresh := len(bytePatch.Commands) != len(s.bytePatch.Commands)
+	needsRefresh := len(bytecode.Commands) != len(s.bytecode.Commands)
 	if !needsRefresh {
-		for i, c := range bytePatch.Commands {
-			if s.bytePatch.Commands[i] != c {
+		for i, c := range bytecode.Commands {
+			if s.bytecode.Commands[i] != c {
 				needsRefresh = true
 				break
 			}
 		}
 	}
-	s.bytePatch = *bytePatch
+	s.bytecode = *bytecode
 	for len(s.delaylines) < patch.NumDelayLines() {
 		s.delaylines = append(s.delaylines, delayline{})
 	}
@@ -151,11 +151,11 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 	stack = append(stack, []float32{0, 0, 0, 0}...)
 	synth := &s.synth
 	for time < maxtime && len(buffer) > 0 {
-		commandInstr := s.bytePatch.Commands
-		valuesInstr := s.bytePatch.Values
+		commandInstr := s.bytecode.Commands
+		valuesInstr := s.bytecode.Values
 		commands, values := commandInstr, valuesInstr
 		delaylines := s.delaylines
-		voicesRemaining := s.bytePatch.NumVoices
+		voicesRemaining := s.bytecode.NumVoices
 		voices := s.synth.voices[:]
 		units := voices[0].units[:]
 		for voicesRemaining > 0 {
@@ -170,7 +170,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 					voices = voices[1:]
 					units = voices[0].units[:]
 				}
-				if mask := uint32(1) << uint32(voicesRemaining); s.bytePatch.PolyphonyBitmask&mask == mask {
+				if mask := uint32(1) << uint32(voicesRemaining); s.bytecode.PolyphonyBitmask&mask == mask {
 					commands, values = commandInstr, valuesInstr
 				} else {
 					commandInstr, valuesInstr = commands, values
@@ -461,7 +461,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 							phase := *statevar
 							phase += params[2]
 							sampleno := valuesAtTransform[3] // reuse color as the sample number
-							sampleoffset := s.bytePatch.SampleOffsets[sampleno]
+							sampleoffset := s.bytecode.SampleOffsets[sampleno]
 							sampleindex := int(phase*84.28074964676522 + 0.5)
 							loopstart := int(sampleoffset.LoopStart)
 							if sampleindex >= loopstart {
@@ -531,7 +531,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 					output := params[1] * signal // dry output
 					for j := byte(0); j < count; j += 2 {
 						d, delaylines = &delaylines[0], delaylines[1:]
-						delay := float32(s.bytePatch.DelayTimes[index]) + unit.ports[4]*32767
+						delay := float32(s.bytecode.DelayTimes[index]) + unit.ports[4]*32767
 						if count&1 == 0 {
 							delay /= float32(math.Exp2(float64(voice.note) * 0.083333333333))
 						}
