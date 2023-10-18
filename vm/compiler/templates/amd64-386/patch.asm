@@ -5,15 +5,15 @@
 ;               su_synth_obj.right  :   Set to 0 before calling
 ;               _CX                 :   Pointer to delay workspace (if needed)
 ;               _DX                 :   Pointer to synth object
-;               COM                 :   Pointer to command stream
-;               VAL                 :   Pointer to value stream
+;               COM                 :   Pointer to opcode stream
+;               VAL                 :   Pointer to operand stream
 ;               WRK                 :   Pointer to the last workspace processed
 ;   Output:     su_synth_obj.left   :   left sample
 ;               su_synth_obj.right  :   right sample
 ;   Dirty:      everything
 ;-------------------------------------------------------------------------------
 {{.Func "su_run_vm"}}
-    {{- .PushRegs .CX "DelayWorkSpace" .DX "Synth" .COM "CommandStream" .WRK "Voice" .VAL "ValueStream" | indent 4}}
+    {{- .PushRegs .CX "DelayWorkSpace" .DX "Synth" .COM "OpcodeStream" .WRK "Voice" .VAL "OperandStream" | indent 4}}
     {{- if .RowSync}}
     fild    dword [{{.Stack "Sample"}}]
     {{.Int .Song.SamplesPerRow | .Prepare | indent 8}}
@@ -33,13 +33,13 @@ su_run_vm_loop:                                     ; loop until all voices done
     add     {{.INP}}, su_voice.inputs
     xor     ecx, ecx                                ; counter = 0
     xor     eax, eax                                ; clear out high bits of eax, as lodsb only sets al
-su_transform_values_loop:
+su_transform_operands_loop:
     {{- .Prepare "su_vm_transformcounts-1" | indent 4}}
     cmp     cl, byte [{{.Use "su_vm_transformcounts-1"}}+{{.DI}}]   ; compare the counter to the value in the param count table
-    je      su_transform_values_out
-    lodsb                                           ; load the byte value from VAL stream
+    je      su_transform_operands_out
+    lodsb                                           ; load the operand from VAL stream
     push    {{.AX}}                                     ; push it to memory so FPU can read it
-    fild    dword [{{.SP}}]                             ; load the value to FPU stack
+    fild    dword [{{.SP}}]                             ; load the operand value to FPU stack
     {{- .Prepare (.Float 0.0078125) | indent 4}}
     fmul    dword [{{.Use (.Float 0.0078125)}}]          ; divide it by 128 (0 => 0, 128 => 1.0)
     fadd    dword [{{.WRK}}+su_unit.ports+{{.CX}}*4]         ; add the modulations in the current workspace
@@ -48,8 +48,8 @@ su_transform_values_loop:
     mov     dword [{{.WRK}}+su_unit.ports+{{.CX}}*4], eax    ; clear out the modulation ports
     pop     {{.AX}}
     inc     ecx
-    jmp     su_transform_values_loop
-su_transform_values_out:
+    jmp     su_transform_operands_loop
+su_transform_operands_out:
     popf                                          ; pop flags for the carry bit = stereo bit
     {{- .SaveStack "Opcode"}}
     {{- $x := printf "su_vm_jumptable-%v" .PTRSIZE}}
@@ -65,11 +65,11 @@ su_run_vm_advance:
     dec     ecx                             ; decrement number of voices to process
     bt      dword [{{.Stack "PolyphonyBitmask"}}], ecx ; if voice bit of su_polyphonism not set
     jnc     su_op_advance_next_instrument   ; goto next_instrument
-    mov     {{.VAL}}, [{{.Stack "ValueStream"}}] ; if it was set, then repeat the opcodes for the current voice
-    mov     {{.COM}}, [{{.Stack "CommandStream"}}]
+    mov     {{.VAL}}, [{{.Stack "OperandStream"}}] ; if it was set, then repeat the opcodes for the current voice
+    mov     {{.COM}}, [{{.Stack "OpcodeStream"}}]
 su_op_advance_next_instrument:
-    mov     [{{.Stack "ValueStream"}}], {{.VAL}} ; save current VAL as a checkpoint
-    mov     [{{.Stack "CommandStream"}}], {{.COM}} ; save current COM as a checkpoint
+    mov     [{{.Stack "OperandStream"}}], {{.VAL}} ; save current VAL as a checkpoint
+    mov     [{{.Stack "OpcodeStream"}}], {{.COM}} ; save current COM as a checkpoint
 su_op_advance_finish:
     mov     [{{.Stack "VoicesRemain"}}], ecx
     jne     su_run_vm_loop  ; ZF was set by dec ecx
@@ -95,7 +95,7 @@ su_op_advance_finish:
 ;   su_nonlinear_map function: returns 2^(-24*x) of parameter number _AX
 ;-------------------------------------------------------------------------------
 ;   Input:      _AX     :   parameter number (e.g. for envelope: 0 = attac, 1 = decay...)
-;               INP     :   pointer to transformed values
+;               INP     :   pointer to transformed operands
 ;   Output:     st0     :   2^(-24*x), where x is the parameter in the range 0-1
 ;-------------------------------------------------------------------------------
 {{.Func "su_nonlinear_map"}}

@@ -60,8 +60,8 @@ su_render_sampleloop:                   ; loop through every sample in the row
             {{- end}}
             {{.Push (.Song.Patch.NumVoices | printf "%v") "VoicesRemain"}}
             mov     {{.DX}}, {{.PTRWORD}} su_synth_obj                       ; {{.DX}} points to the synth object
-            mov     {{.COM}}, {{.PTRWORD}} su_patch_code           ; COM points to vm code
-            mov     {{.VAL}}, {{.PTRWORD}} su_patch_parameters             ; VAL points to unit params
+            mov     {{.COM}}, {{.PTRWORD}} su_patch_opcodes           ; COM points to vm code
+            mov     {{.VAL}}, {{.PTRWORD}} su_patch_operands             ; VAL points to unit params
             {{- if .HasOp "delay"}}
             mov     {{.CX}}, {{.PTRWORD}} su_synth_obj + su_synthworkspace.size - su_delayline_wrk.filtstate
             {{- end}}
@@ -240,14 +240,14 @@ su_update_voices_skipadd:
 ;-------------------------------------------------------------------------------
 ;    The code for this patch, basically indices to vm jump table
 ;-------------------------------------------------------------------------------
-{{.Data "su_patch_code"}}
-    db {{.Commands | toStrings | join ","}}
+{{.Data "su_patch_opcodes"}}
+    db {{.Opcodes | toStrings | join ","}}
 
 ;-------------------------------------------------------------------------------
 ;    The parameters / inputs to each opcode
 ;-------------------------------------------------------------------------------
-{{.Data "su_patch_parameters"}}
-    db {{.Values | toStrings | join ","}}
+{{.Data "su_patch_operands"}}
+    db {{.Operands | toStrings | join ","}}
 
 ;-------------------------------------------------------------------------------
 ;    Constants

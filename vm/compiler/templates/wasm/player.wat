@@ -31,8 +31,8 @@
 ;    The code for this patch, basically indices to vm jump table
 ;-------------------------------------------------------------------------------
 */}}
-{{- .SetDataLabel "su_patch_code"}}
-{{- range .Commands}}
+{{- .SetDataLabel "su_patch_opcodes"}}
+{{- range .Opcodes}}
 {{- $.DataB .}}
 {{- end}}
 
@@ -41,8 +41,8 @@
 ;    The parameters / inputs to each opcode
 ;-------------------------------------------------------------------------------
 */}}
-{{- .SetDataLabel "su_patch_parameters"}}
-{{- range .Values}}
+{{- .SetDataLabel "su_patch_operands"}}
+{{- range .Operands}}
 {{- $.DataB .}}
 {{- end}}
 
@@ -79,11 +79,11 @@
 
 {{- /*
 ;-------------------------------------------------------------------------------
-; Allocate memory for transformed values.
+; Allocate memory for transformed operands.
 ;-------------------------------------------------------------------------------
 */}}
 {{- .Align}}
-{{- .SetBlockLabel "su_transformedvalues"}}
+{{- .SetBlockLabel "su_transformedoperands"}}
 {{- .Block 32}}
 
 {{- /*
@@ -193,7 +193,7 @@
     local.get 0
 )
 
-(func $scanValueByte (result i32)        ;; scans positions $VAL for a byte, incrementing $VAL afterwards
+(func $scanOperand (result i32)        ;; scans positions $VAL for a byte, incrementing $VAL afterwards
     (i32.load8_u (global.get $VAL))      ;; in other words: returns byte [$VAL++]
     (global.set $VAL (i32.add (global.get $VAL) (i32.const 1))) ;; $VAL++
 )
@@ -211,8 +211,8 @@
             (call $su_update_voices)
             (global.set $sample (i32.const 0))
             loop $sample_loop
-                (global.set $COM (i32.const {{index .Labels "su_patch_code"}}))
-                (global.set $VAL (i32.const {{index .Labels "su_patch_parameters"}}))
+                (global.set $COM (i32.const {{index .Labels "su_patch_opcodes"}}))
+                (global.set $VAL (i32.const {{index .Labels "su_patch_operands"}}))
 {{- if .SupportsPolyphony}}
                 (global.set $COM_instr_start (global.get $COM))
                 (global.set $VAL_instr_start (global.get $VAL))

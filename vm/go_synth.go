@@ -117,10 +117,10 @@ func (s *GoSynth) Update(patch sointu.Patch, bpm int) error {
 	if err != nil {
 		return fmt.Errorf("error compiling %v", err)
 	}
-	needsRefresh := len(bytecode.Commands) != len(s.bytecode.Commands)
+	needsRefresh := len(bytecode.Opcodes) != len(s.bytecode.Opcodes)
 	if !needsRefresh {
-		for i, c := range bytecode.Commands {
-			if s.bytecode.Commands[i] != c {
+		for i, c := range bytecode.Opcodes {
+			if s.bytecode.Opcodes[i] != c {
 				needsRefresh = true
 				break
 			}
@@ -151,16 +151,16 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 	stack = append(stack, []float32{0, 0, 0, 0}...)
 	synth := &s.synth
 	for time < maxtime && len(buffer) > 0 {
-		commandInstr := s.bytecode.Commands
-		valuesInstr := s.bytecode.Values
-		commands, values := commandInstr, valuesInstr
+		opcodesInstr := s.bytecode.Opcodes
+		operandsInstr := s.bytecode.Operands
+		opcodes, operands := opcodesInstr, operandsInstr
 		delaylines := s.delaylines
 		voicesRemaining := s.bytecode.NumVoices
 		voices := s.synth.voices[:]
 		units := voices[0].units[:]
 		for voicesRemaining > 0 {
-			op := commands[0]
-			commands = commands[1:]
+			op := opcodes[0]
+			opcodes = opcodes[1:]
 			channels := int((op & 1) + 1)
 			stereo := channels == 2
 			opNoStereo := (op & 0xFE) >> 1
@@ -171,23 +171,23 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 					units = voices[0].units[:]
 				}
 				if mask := uint32(1) << uint32(voicesRemaining); s.bytecode.PolyphonyBitmask&mask == mask {
-					commands, values = commandInstr, valuesInstr
+					opcodes, operands = opcodesInstr, operandsInstr
 				} else {
-					commandInstr, valuesInstr = commands, values
+					opcodesInstr, operandsInstr = opcodes, operands
 				}
 				continue
 			}
 			tcount := transformCounts[opNoStereo-1]
-			if len(values) < tcount {
-				return samples, time, errors.New("value stream ended prematurely")
+			if len(operands) < tcount {
+				return samples, time, errors.New("operand stream ended prematurely")
 			}
 			voice := &voices[0]
 			unit := &units[0]
-			valuesAtTransform := values
+			operandsAtTransform := operands
 			for i := 0; i < tcount; i++ {
-				params[i] = float32(values[0])/128.0 + unit.ports[i]
+				params[i] = float32(operands[0])/128.0 + unit.ports[i]
 				unit.ports[i] = 0
-				values = values[1:]
+				operands = operands[1:]
 			}
 			l := len(stack)
 			switch opNoStereo {
@@ -276,7 +276,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 				}
 			case opAux:
 				var channel byte
-				channel, values = values[0], values[1:]
+				channel, operands = operands[0], operands[1:]
 				if stereo {
 					synth.outputs[channel+1] += params[0] * stack[l-2]
 				}
@@ -290,7 +290,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 				stack = stack[:l-1]
 			case opIn:
 				var channel byte
-				channel, values = values[0], values[1:]
+				channel, operands = operands[0], operands[1:]
 				if stereo {
 					stack = append(stack, synth.outputs[channel+1])
 					synth.outputs[channel+1] = 0
@@ -368,7 +368,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 				}
 			case opSend:
 				var addrLow, addrHigh byte
-				addrLow, addrHigh, values = values[0], values[1], values[2:]
+				addrLow, addrHigh, operands = operands[0], operands[1], operands[2:]
 				addr := (uint16(addrHigh) << 8) + uint16(addrLow)
 				targetVoice := voice
 				if addr&0x8000 == 0x8000 {
@@ -408,7 +408,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 				freq2 := params[0] * params[0]
 				res := params[1]
 				var flags byte
-				flags, values = values[0], values[1:]
+				flags, operands = operands[0], operands[1:]
 				for i := 0; i < channels; i++ {
 					low, band := unit.state[0+i], unit.state[2+i]
 					low += freq2 * band
@@ -435,7 +435,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 				}
 			case opOscillator:
 				var flags byte
-				flags, values = values[0], values[1:]
+				flags, operands = operands[0], operands[1:]
 				detuneStereo := params[1]*2 - 1
 				unison := flags & 3
 				for i := 0; i < channels; i++ {
@@ -460,7 +460,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 						if flags&0x80 == 0x80 { // if this is a sample oscillator
 							phase := *statevar
 							phase += params[2]
-							sampleno := valuesAtTransform[3] // reuse color as the sample number
+							sampleno := operandsAtTransform[3] // reuse color as the sample number
 							sampleoffset := s.bytecode.SampleOffsets[sampleno]
 							sampleindex := int(phase*84.28074964676522 + 0.5)
 							loopstart := int(sampleoffset.LoopStart)
@@ -495,7 +495,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 									amplitude = 1
 								}
 							case flags&0x4 == 0x4: // Gate
-								maskLow, maskHigh := valuesAtTransform[3], valuesAtTransform[4]
+								maskLow, maskHigh := operandsAtTransform[3], operandsAtTransform[4]
 								gateBits := (int(maskHigh) << 8) + int(maskLow)
 								amplitude = float32((gateBits >> (int(phase*16+.5) & 15)) & 1)
 								g := unit.state[4+i] // warning: still fucks up with unison = 3
@@ -522,7 +522,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 				damp := params[3]
 				feedback := params[2]
 				var index, count byte
-				index, count, values = values[0], values[1], values[2:]
+				index, count, operands = operands[0], operands[1], operands[2:]
 				t := uint16(s.synth.globalTime)
 				stackIndex := l - channels
 				for i := 0; i < channels; i++ {

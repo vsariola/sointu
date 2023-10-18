@@ -7,8 +7,8 @@ struc su_synth
     .sampleoffs resb    su_sample_offset.size * 256
     .randseed   resd    1
     .globaltime resd    1
-    .commands   resb    32 * 64
-    .values     resb    32 * 64 * 8
+    .opcodes    resb    32 * 64
+    .operands   resb    32 * 64 * 8
     .polyphony  resd    1
     .numvoices  resd    1
 endstruc
@@ -73,8 +73,8 @@ su_render_samples_loop:
         mov     eax, [{{.CX}} + su_synth.numvoices]
         {{.Push .AX "VoicesRemain"}}
         lea     {{.DX}}, [{{.CX}}+ su_synth.synth_wrk]
-        lea     {{.COM}}, [{{.CX}}+ su_synth.commands]
-        lea     {{.VAL}}, [{{.CX}}+ su_synth.values]
+        lea     {{.COM}}, [{{.CX}}+ su_synth.opcodes]
+        lea     {{.VAL}}, [{{.CX}}+ su_synth.operands]
         lea     {{.WRK}}, [{{.DX}} + su_synthworkspace.voices]
         lea     {{.CX}}, [{{.CX}}+ su_synth.delay_wrks - su_delayline_wrk.filtstate]
         {{.Call "su_run_vm"}}

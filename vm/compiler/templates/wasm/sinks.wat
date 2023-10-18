@@ -47,7 +47,7 @@
 ;;   Stereo: also add gain*ST1 to right port
 ;;-------------------------------------------------------------------------------
 (func $su_op_aux (param $stereo i32) (local $addr i32)
-    (local.set $addr (i32.add (i32.mul (call $scanValueByte) (i32.const 4)) (i32.const {{index .Labels "su_globalports"}})))
+    (local.set $addr (i32.add (i32.mul (call $scanOperand) (i32.const 4)) (i32.const {{index .Labels "su_globalports"}})))
 {{- if .Stereo "aux"}}
     loop $stereoLoop
 {{- end}}
@@ -78,7 +78,7 @@
 ;;   Stereo: also add right signal to the following address
 ;;-------------------------------------------------------------------------------
 (func $su_op_send (param $stereo i32) (local $address i32) (local $scaledAddress i32)
-    (local.set $address (i32.add (call $scanValueByte) (i32.shl (call $scanValueByte) (i32.const 8))))
+    (local.set $address (i32.add (call $scanOperand) (i32.shl (call $scanOperand) (i32.const 8))))
     (if (i32.eqz (i32.and (local.get $address) (i32.const 8)))(then
 {{- if .Stereo "send"}}
         (if (local.get $stereo)(then

@@ -14,13 +14,13 @@ int main(int argc, char *argv[])
 {
     Synth *synth;
     float *buffer;
-    const unsigned char commands[] = {SU_ENVELOPE_ID,    // MONO
-                                      SU_ENVELOPE_ID,    // MONO
-                                      SU_OUT_ID + 1,     // STEREO
-                                      SU_ADVANCE_ID};    // MONO
-    const unsigned char values[] = {64, 64, 64, 80, 128, // envelope 1
-                                    95, 64, 64, 80, 128, // envelope 2
-                                    128};
+    const unsigned char opcodes[] = {SU_ENVELOPE_ID,       // MONO
+                                     SU_ENVELOPE_ID,       // MONO
+                                     SU_OUT_ID + 1,        // STEREO
+                                     SU_ADVANCE_ID};       // MONO
+    const unsigned char operands[] = {64, 64, 64, 80, 128, // envelope 1
+                                      95, 64, 64, 80, 128, // envelope 2
+                                      128};
     int errcode;
     int time;
     int samples;
@@ -29,8 +29,8 @@ int main(int argc, char *argv[])
     // initialize Synth
     synth = (Synth *)malloc(sizeof(Synth));
     memset(synth, 0, sizeof(Synth));
-    memcpy(synth->Commands, commands, sizeof(commands));
-    memcpy(synth->Values, values, sizeof(values));
+    memcpy(synth->Opcodes, opcodes, sizeof(opcodes));
+    memcpy(synth->Operands, operands, sizeof(operands));
     synth->NumVoices = 1;
     synth->Polyphony = 0;
     synth->RandSeed = 1;

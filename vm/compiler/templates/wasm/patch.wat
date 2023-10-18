@@ -9,15 +9,15 @@
         (if (local.tee $opcode (i32.shr_u (local.get $opcodeWithStereo) (i32.const 1)))(then ;; if $opcode = $opcodeStereo >> 1; $opcode != 0 {
             (local.set $paramNum (i32.const 0))
             (local.set $paramX4 (i32.const 0))
-            loop $transform_values_loop
+            loop $transform_operands_loop
                 {{- $addr := sub (index .Labels "su_vm_transformcounts") 1}}
                 (if (i32.lt_u (local.get $paramNum) (i32.load8_u offset={{$addr}} (local.get $opcode)))(then ;;(i32.ge (local.get $paramNum) (i32.load8_u (local.get $opcode)))  /*TODO: offset to transformvalues
                     (local.set $WRKplusparam (i32.add (global.get $WRK) (local.get $paramX4)))
-                    (f32.store offset={{index .Labels "su_transformedvalues"}}
+                    (f32.store offset={{index .Labels "su_transformedoperands"}}
                         (local.get $paramX4)
                         (f32.add
                             (f32.mul
-                                (f32.convert_i32_u (call $scanValueByte))
+                                (f32.convert_i32_u (call $scanOperand))
                                 (f32.const 0.0078125) ;; scale from 0-128 to 0.0 - 1.0
                             )
                             (f32.load offset=32 (local.get $WRKplusparam)) ;; add modulation
@@ -26,7 +26,7 @@
                     (f32.store offset=32 (local.get $WRKplusparam) (f32.const 0.0)) ;; clear modulations
                     (local.set $paramNum (i32.add (local.get $paramNum) (i32.const 1))) ;; $paramNum++
                     (local.set $paramX4 (i32.add (local.get $paramX4) (i32.const 4)))
-                    br $transform_values_loop ;; continue looping
+                    br $transform_operands_loop ;; continue looping
                 ))
                 ;; paramNum was >= the number of parameters to transform, exiting loop
             end
@@ -59,7 +59,7 @@
 ;; The transformed values start at 512 (TODO: change magic constants somehow)
 ;;-------------------------------------------------------------------------------
 (func $input (param $inputNumber i32) (result f32)
-    (f32.load offset={{index .Labels "su_transformedvalues"}} (i32.mul (local.get $inputNumber) (i32.const 4)))
+    (f32.load offset={{index .Labels "su_transformedoperands"}} (i32.mul (local.get $inputNumber) (i32.const 4)))
 )
 
 ;;-------------------------------------------------------------------------------

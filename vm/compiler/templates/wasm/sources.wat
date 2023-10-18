@@ -118,7 +118,7 @@
     (local.set $freqMod (f32.load offset={{.InputNumber "oscillator" "frequency" | mul 4 | add 32}} (global.get $WRK)))
     (f32.store offset={{.InputNumber "oscillator" "frequency" | mul 4 | add 32}} (global.get $WRK) (f32.const 0))
 {{- end}}
-    (local.set $flags (call $scanValueByte))
+    (local.set $flags (call $scanOperand))
     (local.set $detune (call $inputSigned (i32.const {{.InputNumber "oscillator" "detune"}})))
 {{- if .Stereo "oscillator"}}
     loop $stereoLoop
@@ -197,7 +197,7 @@
 {{- if .SupportsParamValueOtherThan "oscillator" "unison" 0}}
     (call $push (f32.add (call $pop) (call $pop)))
     (if (local.tee $unison (i32.sub (local.get $unison) (i32.const 1)))(then
-        (f32.store offset={{.InputNumber "oscillator" "phase" | mul 4 | add (index .Labels "su_transformedvalues")}} (i32.const 0)
+        (f32.store offset={{.InputNumber "oscillator" "phase" | mul 4 | add (index .Labels "su_transformedoperands")}} (i32.const 0)
             (f32.add
                 (call $input (i32.const {{.InputNumber "oscillator" "phase"}}))
                 (f32.const 0.08333333) ;; 1/12, add small phase shift so all oscillators don't start in phase
@@ -341,7 +341,7 @@
 ;;   Stereo: also push the right channel (stack in l r order)
 ;;-------------------------------------------------------------------------------
 (func $su_op_in (param $stereo i32) (local $addr i32)
-    call $scanValueByte
+    call $scanOperand
 {{- if .Stereo "in"}}
     (i32.add (local.get $stereo)) ;; start from right channel if stereo
 {{- end}}

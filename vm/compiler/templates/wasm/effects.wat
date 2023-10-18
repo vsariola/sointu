@@ -115,7 +115,7 @@
         (global.set $VAL (i32.sub (global.get $VAL) (i32.const 1)))
     ))
 {{- end}}
-    (local.set $flags (call $scanValueByte))
+    (local.set $flags (call $scanOperand))
     (local.set $freq (f32.mul
         (call $input (i32.const {{.InputNumber "filter" "frequency"}}))
         (call $input (i32.const {{.InputNumber "filter" "frequency"}}))
@@ -252,16 +252,16 @@
 (func $su_op_delay (param $stereo i32) (local $delayIndex i32) (local $delayCount i32) (local $output f32) (local $s f32) (local $filtstate f32)
 {{- if .Stereo "delay"}} (local $delayCountStash i32) {{- end}}
 {{- if or (.SupportsModulation "delay" "delaytime") (.SupportsParamValue "delay" "notetracking" 1)}} (local $delayTime f32) {{- end}}
-    (local.set $delayIndex (i32.mul (call $scanValueByte) (i32.const 2)))
+    (local.set $delayIndex (i32.mul (call $scanOperand) (i32.const 2)))
 {{- if .Stereo "delay"}}
-    (local.set $delayCountStash (call $scanValueByte))
+    (local.set $delayCountStash (call $scanOperand))
     (if (local.get $stereo)(then
         (call $su_op_xch (i32.const 0))
     ))
     loop $stereoLoop
     (local.set $delayCount (local.get $delayCountStash))
 {{- else}}
-    (local.set $delayCount (call $scanValueByte))
+    (local.set $delayCount (call $scanOperand))
 {{- end}}
     (local.set $output (f32.mul
         (call $input (i32.const {{.InputNumber "delay" "dry"}}))

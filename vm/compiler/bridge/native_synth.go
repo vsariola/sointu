@@ -32,17 +32,17 @@ func Synth(patch sointu.Patch, bpm int) (*NativeSynth, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error compiling patch: %v", err)
 	}
-	if len(comPatch.Commands) > 2048 { // TODO: 2048 could probably be pulled automatically from cgo
-		return nil, errors.New("bridge supports at most 2048 commands; the compiled patch has more")
+	if len(comPatch.Opcodes) > 2048 { // TODO: 2048 could probably be pulled automatically from cgo
+		return nil, errors.New("bridge supports at most 2048 opcodes; the compiled patch has more")
 	}
-	if len(comPatch.Values) > 16384 { // TODO: 16384 could probably be pulled automatically from cgo
-		return nil, errors.New("bridge supports at most 16384 values; the compiled patch has more")
+	if len(comPatch.Operands) > 16384 { // TODO: 16384 could probably be pulled automatically from cgo
+		return nil, errors.New("bridge supports at most 16384 operands; the compiled patch has more")
 	}
-	for i, v := range comPatch.Commands {
-		s.Commands[i] = (C.uchar)(v)
+	for i, v := range comPatch.Opcodes {
+		s.Opcodes[i] = (C.uchar)(v)
 	}
-	for i, v := range comPatch.Values {
-		s.Values[i] = (C.uchar)(v)
+	for i, v := range comPatch.Operands {
+		s.Operands[i] = (C.uchar)(v)
 	}
 	for i, v := range comPatch.DelayTimes {
 		s.DelayTimes[i] = (C.ushort)(v)
@@ -124,21 +124,21 @@ func (bridgesynth *NativeSynth) Update(patch sointu.Patch, bpm int) error {
 	if err != nil {
 		return fmt.Errorf("error compiling patch: %v", err)
 	}
-	if len(comPatch.Commands) > 2048 { // TODO: 2048 could probably be pulled automatically from cgo
-		return errors.New("bridge supports at most 2048 commands; the compiled patch has more")
+	if len(comPatch.Opcodes) > 2048 { // TODO: 2048 could probably be pulled automatically from cgo
+		return errors.New("bridge supports at most 2048 opcodes; the compiled patch has more")
 	}
-	if len(comPatch.Values) > 16384 { // TODO: 16384 could probably be pulled automatically from cgo
-		return errors.New("bridge supports at most 16384 values; the compiled patch has more")
+	if len(comPatch.Operands) > 16384 { // TODO: 16384 could probably be pulled automatically from cgo
+		return errors.New("bridge supports at most 16384 operands; the compiled patch has more")
 	}
 	needsRefresh := false
-	for i, v := range comPatch.Commands {
-		if cmdChar := (C.uchar)(v); s.Commands[i] != cmdChar {
-			s.Commands[i] = cmdChar
-			needsRefresh = true // if any of the commands change, we retrigger all units
+	for i, v := range comPatch.Opcodes {
+		if cmdChar := (C.uchar)(v); s.Opcodes[i] != cmdChar {
+			s.Opcodes[i] = cmdChar
+			needsRefresh = true // if any of the opcodes change, we retrigger all units
 		}
 	}
-	for i, v := range comPatch.Values {
-		s.Values[i] = (C.uchar)(v)
+	for i, v := range comPatch.Operands {
+		s.Operands[i] = (C.uchar)(v)
 	}
 	for i, v := range comPatch.DelayTimes {
 		s.DelayTimes[i] = (C.ushort)(v)
@@ -152,7 +152,7 @@ func (bridgesynth *NativeSynth) Update(patch sointu.Patch, bpm int) error {
 	s.Polyphony = C.uint(comPatch.PolyphonyBitmask)
 	if needsRefresh {
 		for i := range s.SynthWrk.Voices {
-			// if any of the commands change, we retrigger all units
+			// if any of the opcodes change, we retrigger all units
 			// note that we don't change the notes or release states, just the units
 			for j := range s.SynthWrk.Voices[i].Units {
 				s.SynthWrk.Voices[i].Units[j] = C.Unit{}

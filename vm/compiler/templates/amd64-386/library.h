@@ -43,8 +43,8 @@ typedef struct Synth {
     struct SampleOffset SampleOffsets[256];
     unsigned int RandSeed;
     unsigned int GlobalTick;
-    unsigned char Commands[32 * 64];
-    unsigned char Values[32 * 64 * 8];
+    unsigned char Opcodes[32 * 64];
+    unsigned char Operands[32 * 64 * 8];
     unsigned int Polyphony;
     unsigned int NumVoices;
 } Synth;

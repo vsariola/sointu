@@ -11,15 +11,16 @@ type (
 	// Bytecode is the Sointu VM bytecode & data (delay times, sample offsets)
 	// which is executed by the synthesizer. It is generated from a Sointu patch.
 	Bytecode struct {
-		// Commands is the bytecode, which is a sequence of opcode bytes, one
+		// Opcodes is the bytecode, which is a sequence of opcode bytes, one
 		// per unit in the patch. A byte of 0 denotes the end of an instrument,
 		// at which point if that instrument has more than one voice, the
-		// commands are repeated for each voice.
-		Commands []byte
+		// opcodes are repeated for each voice.
+		Opcodes []byte
 
-		// Values are the operands of the opcodes. Every opcode reads 0 or more
-		// values from the value sequence.
-		Values []byte
+		// Operands are the operands of the opcodes. When executing the
+		// bytecodes, every opcode reads 0 or more operands from it and advances
+		// in the sequence.
+		Operands []byte
 
 		// DelayTimes is a table of delay times in samples. The delay times are
 		// used by the delay units in the patch. The delay unit only stores
@@ -114,8 +115,8 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode, erro
 					flags += 0x08
 				}
 				flags += p["unison"]
-				b.cmd(opcode + p["stereo"])
-				b.vals(p["transpose"], p["detune"], p["phase"], color, p["shape"], p["gain"], flags)
+				b.op(opcode + p["stereo"])
+				b.operand(p["transpose"], p["detune"], p["phase"], color, p["shape"], p["gain"], flags)
 			case "delay":
 				count := len(unit.VarArgs)
 				if unit.Parameters["stereo"] == 1 {
@@ -125,13 +126,13 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode, erro
 					continue // skip encoding delays without any delay lines
 				}
 				countTrack := count*2 - 1 + (unit.Parameters["notetracking"] & 1) // 1 means no note tracking and 1 delay, 2 means notetracking with 1 delay, 3 means no note tracking and 2 delays etc.
-				b.cmd(opcode + p["stereo"])
-				b.defaultVals(unit)
-				b.vals(b.delayIndices[instrIndex][unitIndex], countTrack)
+				b.op(opcode + p["stereo"])
+				b.defOperands(unit)
+				b.operand(b.delayIndices[instrIndex][unitIndex], countTrack)
 			case "aux", "in":
-				b.cmd(opcode + p["stereo"])
-				b.defaultVals(unit)
-				b.vals(unit.Parameters["channel"])
+				b.op(opcode + p["stereo"])
+				b.defOperands(unit)
+				b.operand(unit.Parameters["channel"])
 			case "filter":
 				flags := 0
 				if unit.Parameters["lowpass"] == 1 {
@@ -149,9 +150,9 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode, erro
 				if unit.Parameters["neghighpass"] == 1 {
 					flags += 0x04
 				}
-				b.cmd(opcode + p["stereo"])
-				b.defaultVals(unit)
-				b.vals(flags)
+				b.op(opcode + p["stereo"])
+				b.defOperands(unit)
+				b.operand(flags)
 			case "send":
 				targetID := unit.Parameters["target"]
 				targetInstrIndex, _, err := patch.FindSendTarget(targetID)
@@ -164,8 +165,8 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode, erro
 						if unit.Parameters["sendpop"] == 1 {
 							addr += 0x8
 						}
-						b.cmd(opcode + p["stereo"])
-						b.defaultVals(unit)
+						b.op(opcode + p["stereo"])
+						b.defOperands(unit)
 						b.localIDRef(targetID, addr)
 					} else {
 						addr += 0x8000
@@ -177,8 +178,8 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode, erro
 						}
 						addr += voiceStart * 0x400
 						for i := voiceStart; i < voiceEnd; i++ {
-							b.cmd(opcode + p["stereo"])
-							b.defaultVals(unit)
+							b.op(opcode + p["stereo"])
+							b.defOperands(unit)
 							if i == voiceEnd-1 && unit.Parameters["sendpop"] == 1 {
 								addr += 0x8 // when making multi unit send, only the last one should have POP bit set if popping
 							}
@@ -194,19 +195,19 @@ func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode, erro
 					if unit.Parameters["sendpop"] == 1 {
 						addr |= 0x8
 					}
-					b.cmd(opcode + p["stereo"])
-					b.defaultVals(unit)
-					b.Values = append(b.Values, byte(addr&255), byte(addr>>8))
+					b.op(opcode + p["stereo"])
+					b.defOperands(unit)
+					b.Operands = append(b.Operands, byte(addr&255), byte(addr>>8))
 				}
 			default:
-				b.cmd(opcode + p["stereo"])
-				b.defaultVals(unit)
+				b.op(opcode + p["stereo"])
+				b.defOperands(unit)
 			}
 			if b.unitNo > 63 {
 				return nil, fmt.Errorf(`Instrument %v has over 63 units`, instrIndex)
 			}
 		}
-		b.cmdFinish(instr)
+		b.opFinish(instr)
 	}
 	return &b.Bytecode, nil
 }
@@ -235,34 +236,35 @@ func newBytecodeBuilder(patch sointu.Patch, bpm int) *bytecodeBuilder {
 	return &c
 }
 
-// cmd adds a command to the bytecode, and increments the unit number
-func (b *bytecodeBuilder) cmd(opcode int) {
-	b.Commands = append(b.Commands, byte(opcode))
+// op adds a command to the bytecode, and increments the unit number
+func (b *bytecodeBuilder) op(opcode int) {
+	b.Opcodes = append(b.Opcodes, byte(opcode))
 	b.unitNo++
 }
 
-// cmdFinish adds a command to the bytecode that marks the end of an instrument, resets the unit number and increments the voice number
+// opFinish adds a command to the bytecode that marks the end of an instrument, resets the unit number and increments the voice number
 // local addresses are forgotten when instrument ends
-func (b *bytecodeBuilder) cmdFinish(instr sointu.Instrument) {
-	b.Commands = append(b.Commands, 0)
+func (b *bytecodeBuilder) opFinish(instr sointu.Instrument) {
+	b.Opcodes = append(b.Opcodes, 0)
 	b.unitNo = 0
 	b.voiceNo += instr.NumVoices
 	b.localAddrs = map[int]uint16{}
 	b.localFixups = map[int]([]int){}
 }
 
-// vals appends values to the value stream
-func (b *bytecodeBuilder) vals(values ...int) {
-	for _, v := range values {
-		b.Values = append(b.Values, byte(v))
+// operand appends operands to the operand stream
+func (b *bytecodeBuilder) operand(operands ...int) {
+	for _, v := range operands {
+		b.Operands = append(b.Operands, byte(v))
 	}
 }
 
-// defaultVals appends the values to the value stream for all parameters that can be modulated and set
-func (b *bytecodeBuilder) defaultVals(unit sointu.Unit) {
+// defOperands appends the operands to the stream for all parameters that can be
+// modulated and set
+func (b *bytecodeBuilder) defOperands(unit sointu.Unit) {
 	for _, v := range sointu.UnitTypes[unit.Type] {
 		if v.CanModulate && v.CanSet {
-			b.Values = append(b.Values, byte(unit.Parameters[v.Name]))
+			b.Operands = append(b.Operands, byte(unit.Parameters[v.Name]))
 		}
 	}
 }
@@ -272,9 +274,9 @@ func (b *bytecodeBuilder) localIDRef(id int, addr int) {
 	if v, ok := b.localAddrs[id]; ok {
 		addr += int(v)
 	} else {
-		b.localFixups[id] = append(b.localFixups[id], len(b.Values))
+		b.localFixups[id] = append(b.localFixups[id], len(b.Operands))
 	}
-	b.Values = append(b.Values, byte(addr&255), byte(addr>>8))
+	b.Operands = append(b.Operands, byte(addr&255), byte(addr>>8))
 }
 
 // globalIDRef adds a reference to a global id label to the value stream; if the targeted ID has not been seen yet, it is added to the fixup list
@@ -282,9 +284,9 @@ func (b *bytecodeBuilder) globalIDRef(id int, addr int) {
 	if v, ok := b.globalAddrs[id]; ok {
 		addr += int(v)
 	} else {
-		b.globalFixups[id] = append(b.globalFixups[id], len(b.Values))
+		b.globalFixups[id] = append(b.globalFixups[id], len(b.Operands))
 	}
-	b.Values = append(b.Values, byte(addr&255), byte(addr>>8))
+	b.Operands = append(b.Operands, byte(addr&255), byte(addr>>8))
 }
 
 // idLabel adds a label to the value stream for the given id; all earlier references to the id are fixed up
@@ -302,10 +304,10 @@ func (b *bytecodeBuilder) idLabel(id int) {
 // fixUp fixes up the references to the given id with the given delta
 func (b *bytecodeBuilder) fixUp(positions []int, delta uint16) {
 	for _, pos := range positions {
-		orig := (uint16(b.Values[pos+1]) << 8) + uint16(b.Values[pos])
+		orig := (uint16(b.Operands[pos+1]) << 8) + uint16(b.Operands[pos])
 		new := orig + delta
-		b.Values[pos] = byte(new & 255)
-		b.Values[pos+1] = byte(new >> 8)
+		b.Operands[pos] = byte(new & 255)
+		b.Operands[pos+1] = byte(new >> 8)
 	}
 }
 
