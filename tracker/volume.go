@@ -3,6 +3,8 @@ package tracker
 import (
 	"errors"
 	"math"
+
+	"github.com/vsariola/sointu"
 )
 
 // Volume represents an average and peak volume measurement, in decibels. 0 dB =
@@ -25,14 +27,14 @@ type Volume struct {
 //
 // minVolume and maxVolume are hard limits in decibels to prevent negative
 // infinities for volumes
-func (v *Volume) Analyze(buffer []float32, tau float64, attack float64, release float64, minVolume float64, maxVolume float64) error {
+func (v *Volume) Analyze(buffer sointu.AudioBuffer, tau float64, attack float64, release float64, minVolume float64, maxVolume float64) error {
 	alpha := 1 - math.Exp(-1.0/(tau*44100)) // from https://en.wikipedia.org/wiki/Exponential_smoothing
 	alphaAttack := 1 - math.Exp(-1.0/(attack*44100))
 	alphaRelease := 1 - math.Exp(-1.0/(release*44100))
 	var err error
 	for j := 0; j < 2; j++ {
-		for i := 0; i < len(buffer); i += 2 {
-			sample2 := float64(buffer[i+j] * buffer[i+j])
+		for i := 0; i < len(buffer); i++ {
+			sample2 := float64(buffer[i][j] * buffer[i][j])
 			if math.IsNaN(sample2) {
 				if err == nil {
 					err = errors.New("NaN detected in master output")

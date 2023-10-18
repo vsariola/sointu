@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/cmd"
 	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/tracker/gioui"
@@ -66,7 +67,7 @@ func init() {
 		tracker.SetInstrEnlarged(true) // start the vsti with the instrument editor enlarged
 		go tracker.Main()
 		context := VSTIProcessContext{make([]vst2.MIDIEvent, 100), h}
-		buf := make([]float32, 2048)
+		buf := make(sointu.AudioBuffer, 1024)
 		return vst2.Plugin{
 				UniqueID:       PLUGIN_ID,
 				Version:        version,
@@ -79,13 +80,13 @@ func init() {
 				ProcessFloatFunc: func(in, out vst2.FloatBuffer) {
 					left := out.Channel(0)
 					right := out.Channel(1)
-					if len(buf) < out.Frames*2 {
-						buf = append(buf, make([]float32, out.Frames*2-len(buf))...)
+					if len(buf) < out.Frames {
+						buf = append(buf, make(sointu.AudioBuffer, out.Frames-len(buf))...)
 					}
-					buf = buf[:out.Frames*2]
+					buf = buf[:out.Frames]
 					player.Process(buf, &context)
 					for i := 0; i < out.Frames; i++ {
-						left[i], right[i] = buf[i*2], buf[i*2+1]
+						left[i], right[i] = buf[i][0], buf[i][1]
 					}
 					context.events = context.events[:0]
 				},

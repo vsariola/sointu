@@ -10,6 +10,7 @@ import (
 	"runtime/pprof"
 
 	"gioui.org/app"
+	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/cmd"
 	"github.com/vsariola/sointu/oto"
 	"github.com/vsariola/sointu/tracker"
@@ -61,7 +62,7 @@ func main() {
 	output := audioContext.Output()
 	defer output.Close()
 	go func() {
-		buf := make([]float32, 2048)
+		buf := make(sointu.AudioBuffer, 1024)
 		ctx := NullContext{}
 		for {
 			player.Process(buf, ctx)

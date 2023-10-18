@@ -140,7 +140,7 @@ func (s *Interpreter) Update(patch sointu.Patch, bpm int) error {
 	return nil
 }
 
-func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time int, renderError error) {
+func (s *Interpreter) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, time int, renderError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			renderError = fmt.Errorf("render panicced: %v", err)
@@ -150,7 +150,7 @@ func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time i
 	stack := s.stack[:]
 	stack = append(stack, []float32{0, 0, 0, 0}...)
 	synth := &s.synth
-	for time < maxtime && len(buffer) > 1 {
+	for time < maxtime && len(buffer) > 0 {
 		commandInstr := s.bytePatch.Commands
 		valuesInstr := s.bytePatch.Values
 		commands, values := commandInstr, valuesInstr
@@ -580,11 +580,10 @@ func (s *Interpreter) Render(buffer []float32, maxtime int) (samples int, time i
 		if len(stack) > 4 {
 			return samples, time, errors.New("stack not empty")
 		}
-		buffer[0] = synth.outputs[0]
-		buffer[1] = synth.outputs[1]
+		buffer[0][0], buffer[0][1] = synth.outputs[0], synth.outputs[1]
 		synth.outputs[0] = 0
 		synth.outputs[1] = 0
-		buffer = buffer[2:]
+		buffer = buffer[1:]
 		samples++
 		time++
 		s.synth.globalTime++

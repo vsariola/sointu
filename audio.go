@@ -1,9 +1,14 @@
 package sointu
 
+// AudioBuffer is a buffer of stereo audio samples of variable length, each
+// sample represented by a slice of [2]float32. [0] is left channel, [1] is
+// right
+type AudioBuffer [][2]float32
+
 // AudioOutput represents something where we can send audio e.g. audio output.
 // WriteAudio should block if not ready to accept audio e.g. buffer full.
 type AudioOutput interface {
-	WriteAudio(buffer []float32) error
+	WriteAudio(buffer AudioBuffer) error
 	Close() error
 }
 

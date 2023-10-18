@@ -59,7 +59,7 @@ func TestRenderSamples(t *testing.T) {
 		t.Fatalf("bridge compile error: %v", err)
 	}
 	synth.Trigger(0, 64)
-	buffer := make([]float32, 2*su_max_samples)
+	buffer := make(sointu.AudioBuffer, su_max_samples)
 	err = sointu.Render(synth, buffer[:len(buffer)/2])
 	if err != nil {
 		t.Fatalf("first render gave an error")
@@ -96,7 +96,7 @@ func TestAllRegressionTests(t *testing.T) {
 				t.Fatalf("could not parse the .yml file: %v", err)
 			}
 			buffer, err := sointu.Play(bridge.BridgeService{}, song, false)
-			buffer = buffer[:song.Score.LengthInRows()*song.SamplesPerRow()*2] // extend to the nominal length always.
+			buffer = buffer[:song.Score.LengthInRows()*song.SamplesPerRow()] // extend to the nominal length always.
 			if err != nil {
 				t.Fatalf("Play failed: %v", err)
 			}
@@ -134,7 +134,7 @@ func TestStackUnderflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
-	buffer := make([]float32, 2)
+	buffer := make(sointu.AudioBuffer, 1)
 	err = sointu.Render(synth, buffer)
 	if err == nil {
 		t.Fatalf("rendering should have failed due to stack underflow")
@@ -150,7 +150,7 @@ func TestStackBalancing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
-	buffer := make([]float32, 2)
+	buffer := make(sointu.AudioBuffer, 1)
 	err = sointu.Render(synth, buffer)
 	if err == nil {
 		t.Fatalf("rendering should have failed due to unbalanced stack push/pop")
@@ -183,7 +183,7 @@ func TestStackOverflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
-	buffer := make([]float32, 2)
+	buffer := make(sointu.AudioBuffer, 1)
 	err = sointu.Render(synth, buffer)
 	if err == nil {
 		t.Fatalf("rendering should have failed due to stack overflow, despite balanced push/pops")
@@ -200,20 +200,20 @@ func TestDivideByZero(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
-	buffer := make([]float32, 2)
+	buffer := make(sointu.AudioBuffer, 1)
 	err = sointu.Render(synth, buffer)
 	if err == nil {
 		t.Fatalf("rendering should have failed due to divide by zero")
 	}
 }
 
-func compareToRawFloat32(t *testing.T, buffer []float32, rawname string) {
+func compareToRawFloat32(t *testing.T, buffer sointu.AudioBuffer, rawname string) {
 	_, filename, _, _ := runtime.Caller(0)
 	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "..", "..", "tests", "expected_output", rawname))
 	if err != nil {
 		t.Fatalf("cannot read expected: %v", err)
 	}
-	expected := make([]float32, len(expectedb)/4)
+	expected := make(sointu.AudioBuffer, len(expectedb)/8)
 	buf := bytes.NewReader(expectedb)
 	err = binary.Read(buf, binary.LittleEndian, &expected)
 	if err != nil {
@@ -223,8 +223,10 @@ func compareToRawFloat32(t *testing.T, buffer []float32, rawname string) {
 		t.Fatalf("buffer length mismatch, got %v, expected %v", len(buffer), len(expected))
 	}
 	for i, v := range expected {
-		if math.IsNaN(float64(buffer[i])) || math.Abs(float64(v-buffer[i])) > 1e-6 {
-			t.Fatalf("error bigger than 1e-6 detected, at sample position %v", i)
+		for j, s := range v {
+			if math.IsNaN(float64(buffer[i][j])) || math.Abs(float64(s-buffer[i][j])) > 1e-6 {
+				t.Fatalf("error bigger than 1e-6 detected, at sample position %v", i)
+			}
 		}
 	}
 }

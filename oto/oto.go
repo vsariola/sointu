@@ -36,7 +36,7 @@ func (c *OtoContext) Close() error {
 }
 
 // Play implements the audio.Player interface for OtoPlayer
-func (o *OtoOutput) WriteAudio(floatBuffer []float32) (err error) {
+func (o *OtoOutput) WriteAudio(floatBuffer sointu.AudioBuffer) (err error) {
 	// we reuse the old capacity tmpBuffer by setting its length to zero. then,
 	// we save the tmpBuffer so we can reuse it next time
 	o.tmpBuffer = FloatBufferTo16BitLE(floatBuffer, o.tmpBuffer[:0])

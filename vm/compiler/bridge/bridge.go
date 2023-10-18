@@ -79,15 +79,15 @@ func Synth(patch sointu.Patch, bpm int) (*BridgeSynth, error) {
 // time > maxtime, as it is modulated and the time could advance by 2 or more, so the loop
 // exit condition would fire when the time is already past maxtime.
 // Under no conditions, nsamples >= len(buffer)/2 i.e. guaranteed to never overwrite the buffer.
-func (bridgesynth *BridgeSynth) Render(buffer []float32, maxtime int) (int, int, error) {
+func (bridgesynth *BridgeSynth) Render(buffer sointu.AudioBuffer, maxtime int) (int, int, error) {
 	synth := (*C.Synth)(bridgesynth)
 	// TODO: syncBuffer is not getting passed to cgo; do we want to even try to support the syncing with the native bridge
 	if len(buffer)%1 == 1 {
 		return -1, -1, errors.New("RenderTime writes stereo signals, so buffer should have even length")
 	}
-	samples := C.int(len(buffer) / 2)
+	samples := C.int(len(buffer))
 	time := C.int(maxtime)
-	errcode := int(C.su_render(synth, (*C.float)(&buffer[0]), &samples, &time))
+	errcode := int(C.su_render(synth, (*C.float)(&buffer[0][0]), &samples, &time))
 	if errcode > 0 {
 		return int(samples), int(time), &RenderError{errcode: errcode}
 	}

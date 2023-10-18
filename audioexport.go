@@ -12,9 +12,9 @@ import (
 //
 // If pcm16 is set to true, the samples in the WAV-file will be 16-bit signed
 // integers; otherwise the samples will be 32-bit floats
-func Wav(buffer []float32, pcm16 bool) ([]byte, error) {
+func Wav(buffer AudioBuffer, pcm16 bool) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	wavHeader(len(buffer), pcm16, buf)
+	wavHeader(len(buffer)*2, pcm16, buf)
 	err := rawToBuffer(buffer, pcm16, buf)
 	if err != nil {
 		return nil, fmt.Errorf("Wav failed: %v", err)
@@ -27,7 +27,7 @@ func Wav(buffer []float32, pcm16 bool) ([]byte, error) {
 //
 // If pcm16 is set to true, the samples will be 16-bit signed integers;
 // otherwise the samples will be 32-bit floats
-func Raw(buffer []float32, pcm16 bool) ([]byte, error) {
+func Raw(buffer AudioBuffer, pcm16 bool) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := rawToBuffer(buffer, pcm16, buf)
 	if err != nil {
@@ -36,12 +36,13 @@ func Raw(buffer []float32, pcm16 bool) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func rawToBuffer(data []float32, pcm16 bool, buf *bytes.Buffer) error {
+func rawToBuffer(data AudioBuffer, pcm16 bool, buf *bytes.Buffer) error {
 	var err error
 	if pcm16 {
-		int16data := make([]int16, len(data))
+		int16data := make([][2]int16, len(data))
 		for i, v := range data {
-			int16data[i] = int16(clamp(int(v*math.MaxInt16), math.MinInt16, math.MaxInt16))
+			int16data[i][0] = int16(clamp(int(v[0]*math.MaxInt16), math.MinInt16, math.MaxInt16))
+			int16data[i][1] = int16(clamp(int(v[1]*math.MaxInt16), math.MinInt16, math.MaxInt16))
 		}
 		err = binary.Write(buf, binary.LittleEndian, int16data)
 	} else {

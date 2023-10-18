@@ -18,6 +18,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const errorThreshold = 1e-2
+
 func TestAllRegressionTests(t *testing.T) {
 	_, myname, _, _ := runtime.Caller(0)
 	files, err := filepath.Glob(path.Join(path.Dir(myname), "..", "tests", "*.yml"))
@@ -42,7 +44,7 @@ func TestAllRegressionTests(t *testing.T) {
 				t.Fatalf("could not parse the .yml file: %v", err)
 			}
 			buffer, err := sointu.Play(vm.SynthService{}, song, false)
-			buffer = buffer[:song.Score.LengthInRows()*song.SamplesPerRow()*2] // extend to the nominal length always.
+			buffer = buffer[:song.Score.LengthInRows()*song.SamplesPerRow()] // extend to the nominal length always.
 			if err != nil {
 				t.Fatalf("Play failed: %v", err)
 			}
@@ -80,7 +82,7 @@ func TestStackUnderflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
-	buffer := make([]float32, 2)
+	buffer := make(sointu.AudioBuffer, 1)
 	err = sointu.Render(synth, buffer)
 	if err == nil {
 		t.Fatalf("rendering should have failed due to stack underflow")
@@ -96,20 +98,20 @@ func TestStackBalancing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
-	buffer := make([]float32, 2)
+	buffer := make(sointu.AudioBuffer, 1)
 	err = sointu.Render(synth, buffer)
 	if err == nil {
 		t.Fatalf("rendering should have failed due to unbalanced stack push/pop")
 	}
 }
 
-func compareToRawFloat32(t *testing.T, buffer []float32, rawname string) {
+func compareToRawFloat32(t *testing.T, buffer sointu.AudioBuffer, rawname string) {
 	_, filename, _, _ := runtime.Caller(0)
 	expectedb, err := ioutil.ReadFile(path.Join(path.Dir(filename), "..", "tests", "expected_output", rawname))
 	if err != nil {
 		t.Fatalf("cannot read expected: %v", err)
 	}
-	expected := make([]float32, len(expectedb)/4)
+	expected := make(sointu.AudioBuffer, len(expectedb)/8)
 	buf := bytes.NewReader(expectedb)
 	err = binary.Read(buf, binary.LittleEndian, &expected)
 	if err != nil {
@@ -121,14 +123,16 @@ func compareToRawFloat32(t *testing.T, buffer []float32, rawname string) {
 	firsterr := -1
 	errs := 0
 	for i, v := range expected[1 : len(expected)-1] {
-		if math.IsNaN(float64(buffer[i])) || (math.Abs(float64(v-buffer[i])) > 1e-2 &&
-			math.Abs(float64(v-buffer[i+1])) > 1e-2 && math.Abs(float64(v-buffer[i+2])) > 1e-2) {
-			errs++
-			if firsterr == -1 {
-				firsterr = i
-			}
-			if errs > 200 { // we are again quite liberal with rounding errors, as different platforms have minor differences in floating point rounding
-				t.Fatalf("more than 200 errors bigger than 1e-2 detected, first at sample position %v", firsterr)
+		for j, s := range v {
+			if math.IsNaN(float64(buffer[i][j])) || (math.Abs(float64(s-buffer[i][j])) > errorThreshold &&
+				math.Abs(float64(s-buffer[i+1][j])) > errorThreshold && math.Abs(float64(s-buffer[i+2][j])) > errorThreshold) {
+				errs++
+				if firsterr == -1 {
+					firsterr = i
+				}
+				if errs > 200 { // we are again quite liberal with rounding errors, as different platforms have minor differences in floating point rounding
+					t.Fatalf("more than 200 errors bigger than %v detected, first at sample position %v", errorThreshold, firsterr)
+				}
 			}
 		}
 	}

@@ -95,13 +95,13 @@ func NewPlayer(synthService sointu.SynthService, playerMessages chan<- PlayerMes
 	return p
 }
 
-func (p *Player) Process(buffer []float32, context PlayerProcessContext) {
+func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext) {
 	p.processMessages(context)
 	midi, midiOk := context.NextEvent()
 	frame := 0
 
 	if p.recording && p.recordingNoteArrived {
-		p.recordingFrames += len(buffer) / 2
+		p.recordingFrames += len(buffer)
 	}
 
 	oldBuffer := buffer
@@ -110,11 +110,11 @@ func (p *Player) Process(buffer []float32, context PlayerProcessContext) {
 		for midiOk && frame >= midi.Frame {
 			if p.recording {
 				if !p.recordingNoteArrived {
-					p.recordingFrames = len(buffer) / 2
+					p.recordingFrames = len(buffer)
 					p.recordingNoteArrived = true
 				}
 				midiTotalFrame := midi
-				midiTotalFrame.Frame = p.recordingFrames - len(buffer)/2
+				midiTotalFrame.Frame = p.recordingFrames - len(buffer)
 				p.recordingEvents = append(p.recordingEvents, midiTotalFrame)
 			}
 			if midi.On {
@@ -124,7 +124,7 @@ func (p *Player) Process(buffer []float32, context PlayerProcessContext) {
 			}
 			midi, midiOk = context.NextEvent()
 		}
-		framesUntilMidi := len(buffer) / 2
+		framesUntilMidi := len(buffer)
 		if delta := midi.Frame - frame; midiOk && delta < framesUntilMidi {
 			framesUntilMidi = delta
 		}
@@ -138,14 +138,14 @@ func (p *Player) Process(buffer []float32, context PlayerProcessContext) {
 		var rendered, timeAdvanced int
 		var err error
 		if p.synth != nil {
-			rendered, timeAdvanced, err = p.synth.Render(buffer[:framesUntilMidi*2], timeUntilRowAdvance)
+			rendered, timeAdvanced, err = p.synth.Render(buffer[:framesUntilMidi], timeUntilRowAdvance)
 		} else {
 			mx := framesUntilMidi
 			if timeUntilRowAdvance < mx {
 				mx = timeUntilRowAdvance
 			}
-			for i := 0; i < mx*2; i++ {
-				buffer[i] = 0
+			for i := 0; i < mx; i++ {
+				buffer[i] = [2]float32{}
 			}
 			rendered = mx
 			timeAdvanced = mx
@@ -154,7 +154,7 @@ func (p *Player) Process(buffer []float32, context PlayerProcessContext) {
 			p.synth = nil
 			p.trySend(PlayerCrashMessage{fmt.Errorf("synth.Render: %w", err)})
 		}
-		buffer = buffer[rendered*2:]
+		buffer = buffer[rendered:]
 		frame += rendered
 		p.rowtime += timeAdvanced
 		for i := range p.samplesSinceEvent {
