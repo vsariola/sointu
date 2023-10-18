@@ -17,6 +17,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   options
 
 ### Fixed
+- The stereo version of delay in the go virtual machine (executables / plugins
+  not ending with -native) applied the left delay taps on the right channel, and
+  the right delay taps on the left channel.
 - The sointu-vsti-native plugin has different plugin ID and plugin name
   to not confuse it with the non-native one
 - The VSTI waits for the gioui actually have quit when closing the

@@ -524,9 +524,10 @@ func (s *Interpreter) Render(buffer sointu.AudioBuffer, maxtime int) (samples in
 				var index, count byte
 				index, count, values = values[0], values[1], values[2:]
 				t := uint16(s.synth.globalTime)
+				stackIndex := l - channels
 				for i := 0; i < channels; i++ {
 					var d *delayline
-					signal := stack[l-1-i]
+					signal := stack[stackIndex]
 					output := params[1] * signal // dry output
 					for j := byte(0); j < count; j += 2 {
 						d, delaylines = &delaylines[0], delaylines[1:]
@@ -542,7 +543,8 @@ func (s *Interpreter) Render(buffer sointu.AudioBuffer, maxtime int) (samples in
 					}
 					d.dcFiltState = output + (0.99609375*d.dcFiltState - d.dcIn)
 					d.dcIn = output
-					stack[l-1-i] = d.dcFiltState
+					stack[stackIndex] = d.dcFiltState
+					stackIndex++
 				}
 				unit.ports[4] = 0
 			case opCompressor:
