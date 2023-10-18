@@ -29,7 +29,7 @@ type (
 		recordingFrames      int
 		recordingEvents      []PlayerProcessEvent
 
-		synthService   sointu.SynthService
+		synther        sointu.Synther
 		playerMessages chan<- PlayerMessage
 		modelMessages  <-chan interface{}
 	}
@@ -85,11 +85,11 @@ type (
 
 const NUM_RENDER_TRIES = 10000
 
-func NewPlayer(synthService sointu.SynthService, playerMessages chan<- PlayerMessage, modelMessages <-chan interface{}) *Player {
+func NewPlayer(synther sointu.Synther, playerMessages chan<- PlayerMessage, modelMessages <-chan interface{}) *Player {
 	p := &Player{
 		playerMessages: playerMessages,
 		modelMessages:  modelMessages,
-		synthService:   synthService,
+		synther:        synther,
 		volume:         Volume{Average: [2]float64{1e-9, 1e-9}, Peak: [2]float64{1e-9, 1e-9}},
 	}
 	return p
@@ -308,10 +308,10 @@ func (p *Player) compileOrUpdateSynth() {
 		}
 	} else {
 		var err error
-		p.synth, err = p.synthService.Compile(p.patch, p.bpm)
+		p.synth, err = p.synther.Synth(p.patch, p.bpm)
 		if err != nil {
 			p.synth = nil
-			p.trySend(PlayerCrashMessage{fmt.Errorf("synthService.Compile: %w", err)})
+			p.trySend(PlayerCrashMessage{fmt.Errorf("synther.Synth: %w", err)})
 			return
 		}
 		for i := 0; i < 32; i++ {

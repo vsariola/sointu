@@ -62,8 +62,8 @@ func init() {
 			recoveryFile = filepath.Join(configDir, "Sointu", "sointu-vsti-recovery-"+hex.EncodeToString(randBytes))
 		}
 		model := tracker.NewModel(modelMessages, playerMessages, recoveryFile)
-		player := tracker.NewPlayer(cmd.DefaultService, playerMessages, modelMessages)
-		tracker := gioui.NewTracker(model, cmd.DefaultService)
+		player := tracker.NewPlayer(cmd.MainSynther, playerMessages, modelMessages)
+		tracker := gioui.NewTracker(model, cmd.MainSynther)
 		tracker.SetInstrEnlarged(true) // start the vsti with the instrument editor enlarged
 		go tracker.Main()
 		context := VSTIProcessContext{make([]vst2.MIDIEvent, 100), h}

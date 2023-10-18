@@ -33,10 +33,10 @@ type (
 		Release(voice int)
 	}
 
-	// SynthService compiles a given Patch into a Synth, throwing errors if the
+	// Synther compiles a given Patch into a Synth, throwing errors if the
 	// Patch is malformed.
-	SynthService interface {
-		Compile(patch Patch, bpm int) (Synth, error)
+	Synther interface {
+		Synth(patch Patch, bpm int) (Synth, error)
 	}
 )
 
@@ -53,18 +53,18 @@ func Render(synth Synth, buffer AudioBuffer) error {
 	return nil
 }
 
-// Play plays the Song using a given SynthService, returning the stereo audio
+// Play plays the Song using a given Synther, returning the stereo audio
 // buffer and the sync buffer as a result (and possible errors). Passing
 // 'release' as true means that all the notes are released when the synth is
 // created. The default behaviour during runtime rendering is to leave them
 // playing, meaning that envelopes start attacking right away unless an explicit
 // note release is put to every track.
-func Play(synthService SynthService, song Song, release bool) (AudioBuffer, error) {
+func Play(synther Synther, song Song, release bool) (AudioBuffer, error) {
 	err := song.Validate()
 	if err != nil {
 		return nil, err
 	}
-	synth, err := synthService.Compile(song.Patch, song.BPM)
+	synth, err := synther.Synth(song.Patch, song.BPM)
 	if err != nil {
 		return nil, fmt.Errorf("sointu.Play failed: %v", err)
 	}

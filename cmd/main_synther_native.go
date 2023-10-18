@@ -4,4 +4,4 @@ package cmd
 
 import "github.com/vsariola/sointu/vm/compiler/bridge"
 
-var DefaultService = bridge.BridgeService{}
+var MainSynther = bridge.NativeSynther{}

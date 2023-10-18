@@ -64,7 +64,7 @@ type Tracker struct {
 	quitted                  bool
 	unmarshalRecoveryChannel chan []byte
 	marshalRecoveryChannel   chan (chan []byte)
-	synthService             sointu.SynthService
+	synther                  sointu.Synther
 
 	*trackerModel
 }
@@ -116,7 +116,7 @@ func (t *Tracker) UnmarshalContent(bytes []byte) error {
 	return errors.New("was able to unmarshal a song, but the bpm was 0")
 }
 
-func NewTracker(model *tracker.Model, synthService sointu.SynthService) *Tracker {
+func NewTracker(model *tracker.Model, synther sointu.Synther) *Tracker {
 	t := &Tracker{
 		Theme:             material.NewTheme(),
 		BPM:               new(NumberInput),
@@ -146,7 +146,7 @@ func NewTracker(model *tracker.Model, synthService sointu.SynthService) *Tracker
 		TrackEditor:       NewTrackEditor(),
 
 		errorChannel: make(chan error, 32),
-		synthService: synthService,
+		synther:      synther,
 		trackerModel: model,
 
 		marshalRecoveryChannel:   make(chan (chan []byte)),

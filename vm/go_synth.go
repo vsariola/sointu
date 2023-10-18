@@ -13,22 +13,22 @@ import (
 
 //go:generate go run generate/generate.go
 
-// Interpreter is a pure-Go bytecode interpreter for the Sointu VM bytecode. It
+// GoSynth is a pure-Go bytecode interpreter for the Sointu VM bytecode. It
 // can only simulate bytecode compiled for AllFeatures, as the opcodes hard
 // coded in it for speed. If you are interested exactly how opcodes / units
-// work, studying Interpreter.Render is a good place to start.
+// work, studying GoSynth.Render is a good place to start.
 //
 // Internally, it uses software stack with practically no limitations in the
 // number of signals, so be warned that if you compose patches for it, they
 // might not work with the x87 implementation, as it has only 8-level stack.
-type Interpreter struct {
+type GoSynth struct {
 	bytePatch  BytePatch
 	stack      []float32
 	synth      synth
 	delaylines []delayline
 }
 
-type SynthService struct {
+type GoSynther struct {
 }
 
 const MAX_VOICES = 32
@@ -92,27 +92,27 @@ func Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error compiling %v", err)
 	}
-	ret := &Interpreter{bytePatch: *bytePatch, stack: make([]float32, 0, 4), delaylines: make([]delayline, patch.NumDelayLines())}
+	ret := &GoSynth{bytePatch: *bytePatch, stack: make([]float32, 0, 4), delaylines: make([]delayline, patch.NumDelayLines())}
 	ret.synth.randSeed = 1
 	return ret, nil
 }
 
-func (s SynthService) Compile(patch sointu.Patch, bpm int) (sointu.Synth, error) {
+func (s GoSynther) Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	synth, err := Synth(patch, bpm)
 	return synth, err
 }
 
-func (s *Interpreter) Trigger(voiceIndex int, note byte) {
+func (s *GoSynth) Trigger(voiceIndex int, note byte) {
 	s.synth.voices[voiceIndex] = voice{}
 	s.synth.voices[voiceIndex].note = note
 	s.synth.voices[voiceIndex].sustain = true
 }
 
-func (s *Interpreter) Release(voiceIndex int) {
+func (s *GoSynth) Release(voiceIndex int) {
 	s.synth.voices[voiceIndex].sustain = false
 }
 
-func (s *Interpreter) Update(patch sointu.Patch, bpm int) error {
+func (s *GoSynth) Update(patch sointu.Patch, bpm int) error {
 	bytePatch, err := Encode(patch, AllFeatures{}, bpm)
 	if err != nil {
 		return fmt.Errorf("error compiling %v", err)
@@ -140,7 +140,7 @@ func (s *Interpreter) Update(patch sointu.Patch, bpm int) error {
 	return nil
 }
 
-func (s *Interpreter) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, time int, renderError error) {
+func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, time int, renderError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			renderError = fmt.Errorf("render panicced: %v", err)

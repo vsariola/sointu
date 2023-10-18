@@ -57,8 +57,8 @@ func main() {
 		recoveryFile = filepath.Join(configDir, "Sointu", "sointu-track-recovery")
 	}
 	model := tracker.NewModel(modelMessages, playerMessages, recoveryFile)
-	player := tracker.NewPlayer(cmd.DefaultService, playerMessages, modelMessages)
-	tracker := gioui.NewTracker(model, cmd.DefaultService)
+	player := tracker.NewPlayer(cmd.MainSynther, playerMessages, modelMessages)
+	tracker := gioui.NewTracker(model, cmd.MainSynther)
 	output := audioContext.Output()
 	defer output.Close()
 	go func() {
