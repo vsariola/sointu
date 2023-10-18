@@ -6,37 +6,39 @@ import (
 	"math"
 )
 
-// Synth represents a state of a synthesizer, compiled from a Patch.
-type Synth interface {
-	// Render tries to fill a stereo signal buffer with sound from the
-	// synthesizer, until either the buffer is full or a given number of
-	// timesteps is advanced. Normally, 1 sample = 1 unit of time, but speed
-	// modulations may change this. It returns the number of samples filled (in
-	// stereo samples i.e. number of elements of AudioBuffer filled), the
-	// number of sync outputs written, the number of time steps time advanced,
-	// and a possible error.
-	Render(buffer AudioBuffer, maxtime int) (sample int, time int, err error)
+type (
+	// Synth represents a state of a synthesizer, compiled from a Patch.
+	Synth interface {
+		// Render tries to fill a stereo signal buffer with sound from the
+		// synthesizer, until either the buffer is full or a given number of
+		// timesteps is advanced. Normally, 1 sample = 1 unit of time, but speed
+		// modulations may change this. It returns the number of samples filled (in
+		// stereo samples i.e. number of elements of AudioBuffer filled), the
+		// number of sync outputs written, the number of time steps time advanced,
+		// and a possible error.
+		Render(buffer AudioBuffer, maxtime int) (sample int, time int, err error)
 
-	// Update recompiles a patch, but should maintain as much as possible of its
-	// state as reasonable. For example, filters should keep their state and
-	// delaylines should keep their content. Every change in the Patch triggers
-	// an Update and if the Patch would be started fresh every time, it would
-	// lead to very choppy audio.
-	Update(patch Patch, bpm int) error
+		// Update recompiles a patch, but should maintain as much as possible of its
+		// state as reasonable. For example, filters should keep their state and
+		// delaylines should keep their content. Every change in the Patch triggers
+		// an Update and if the Patch would be started fresh every time, it would
+		// lead to very choppy audio.
+		Update(patch Patch, bpm int) error
 
-	// Trigger triggers a note for a given voice. Called between synth.Renders.
-	Trigger(voice int, note byte)
+		// Trigger triggers a note for a given voice. Called between synth.Renders.
+		Trigger(voice int, note byte)
 
-	// Release releases the currently playing note for a given voice. Called
-	// between synth.Renders.
-	Release(voice int)
-}
+		// Release releases the currently playing note for a given voice. Called
+		// between synth.Renders.
+		Release(voice int)
+	}
 
-// SynthService compiles a given Patch into a Synth, throwing errors if the
-// Patch is malformed.
-type SynthService interface {
-	Compile(patch Patch, bpm int) (Synth, error)
-}
+	// SynthService compiles a given Patch into a Synth, throwing errors if the
+	// Patch is malformed.
+	SynthService interface {
+		Compile(patch Patch, bpm int) (Synth, error)
+	}
+)
 
 // Render fills an stereo audio buffer using a Synth, disregarding all syncs and
 // time limits.

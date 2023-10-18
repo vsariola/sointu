@@ -4,17 +4,157 @@ import (
 	"errors"
 )
 
-// Song includes a Score(the arrangement of notes in the song in one or more
-// tracks) and a Patch (the list of one or more instruments). Additionally, BPM
-// and RowsPerBeat fields set how fast the song should be played. Currently, BPM
-// is an integer as it offers already quite much granularity for controlling the
-// playback speed, but this could be changed to a floating point in future if
-// finer adjustments are necessary.
-type Song struct {
-	BPM         int
-	RowsPerBeat int
-	Score       Score
-	Patch       Patch
+type (
+	// Song includes a Score (the arrangement of notes in the song in one or more
+	// tracks) and a Patch (the list of one or more instruments). Additionally,
+	// BPM and RowsPerBeat fields set how fast the song should be played.
+	// Currently, BPM is an integer as it offers already quite much granularity
+	// for controlling the playback speed, but this could be changed to a
+	// floating point in future if finer adjustments are necessary.
+	Song struct {
+		BPM         int
+		RowsPerBeat int
+		Score       Score
+		Patch       Patch
+	}
+
+	// Score represents the arrangement of notes in a song; just a list of
+	// tracks and RowsPerPattern and Length (in patterns) to know the desired
+	// length of a song in rows. If any of the tracks is too short, all the
+	// notes outside the range should be just considered as holding the last
+	// note.
+	Score struct {
+		Tracks         []Track
+		RowsPerPattern int // number of rows in each pattern
+		Length         int // length of the song, in number of patterns
+	}
+
+	// Track represents the patterns and orderlist for each track. Note that
+	// each track has its own patterns, so one track cannot use another tracks
+	// patterns. This makes the data more intuitive to humans, as the reusing of
+	// patterns over tracks is a rather rare occurence. However, the compiler
+	// will put all the patterns in one global table (identical patterns only
+	// appearing once), to optimize the runtime code.
+	Track struct {
+		// NumVoices is the number of voices this track triggers, cycling through
+		// the voices. When this track triggers a new voice, the previous should be
+		// released.
+		NumVoices int
+
+		// Effect hints the GUI if this is more of an effect track than a note
+		// track: if true, e.g. the GUI can display the values as hexadecimals
+		// instead of note values.
+		Effect bool `yaml:",omitempty"`
+
+		// Order is a list telling which pattern comes in which order in the song in
+		// this track.
+		Order Order `yaml:",flow"`
+
+		// Patterns is a list of Patterns for this track.
+		Patterns []Pattern `yaml:",flow"`
+	}
+
+	// Pattern represents a single pattern of note, in practice just a slice of
+	// bytes, but provides convenience functions that return 1 values (hold) for
+	// indices out of bounds of the array, and functions to increase the size of
+	// the slice only by necessary amount when a new item is added, filling the
+	// unused slots with 1s.
+	Pattern []byte
+
+	// Order is the pattern order for a track, in practice just a slice of
+	// integers, but provides convenience functions that return -1 values for
+	// indices out of bounds of the array, and functions to increase the size of
+	// the slice only by necessary amount when a new item is added, filling the
+	// unused slots with -1s.
+	Order []int
+)
+
+// Get returns the value at index; or -1 is the index is out of range
+func (s Order) Get(index int) int {
+	if index < 0 || index >= len(s) {
+		return -1
+	}
+	return s[index]
+}
+
+// Set sets the value at index; appending -1s until the slice is long enough.
+func (s *Order) Set(index, value int) {
+	for len(*s) <= index {
+		*s = append(*s, -1)
+	}
+	(*s)[index] = value
+}
+
+// Get returns the value at index; or 1 is the index is out of range
+func (s Pattern) Get(index int) byte {
+	if index < 0 || index >= len(s) {
+		return 1
+	}
+	return s[index]
+}
+
+// Set sets the value at index; appending 1s until the slice is long enough.
+func (s *Pattern) Set(index int, value byte) {
+	for len(*s) <= index {
+		*s = append(*s, 1)
+	}
+	(*s)[index] = value
+}
+
+// Copy makes a deep copy of a Track.
+func (t *Track) Copy() Track {
+	order := make([]int, len(t.Order))
+	copy(order, t.Order)
+	patterns := make([]Pattern, len(t.Patterns))
+	for i, oldPat := range t.Patterns {
+		newPat := make(Pattern, len(oldPat))
+		copy(newPat, oldPat)
+		patterns[i] = newPat
+	}
+	return Track{
+		NumVoices: t.NumVoices,
+		Effect:    t.Effect,
+		Order:     order,
+		Patterns:  patterns,
+	}
+}
+
+// Copy makes a deep copy of a Score.
+func (l Score) Copy() Score {
+	tracks := make([]Track, len(l.Tracks))
+	for i, t := range l.Tracks {
+		tracks[i] = t.Copy()
+	}
+	return Score{Tracks: tracks, RowsPerPattern: l.RowsPerPattern, Length: l.Length}
+}
+
+// NumVoices returns the total number of voices used in the Score; summing the
+// voices of every track
+func (l Score) NumVoices() int {
+	ret := 0
+	for _, t := range l.Tracks {
+		ret += t.NumVoices
+	}
+	return ret
+}
+
+// FirstVoiceForTrack returns the index of the first voice of given track. For
+// example, if the Score has three tracks (0, 1 and 2), with 1, 3, 2 voices,
+// respectively, then FirstVoiceForTrack(0) returns 0, FirstVoiceForTrack(1)
+// returns 1 and FirstVoiceForTrack(2) returns 4. Essentially computes just the
+// cumulative sum.
+func (l Score) FirstVoiceForTrack(track int) int {
+	ret := 0
+	for _, t := range l.Tracks[:track] {
+		ret += t.NumVoices
+	}
+	return ret
+}
+
+// LengthInRows returns just RowsPerPattern * Length, as the length is the
+// length in the number of patterns.
+func (l Score) LengthInRows() int {
+	return l.RowsPerPattern * l.Length
 }
 
 // Copy makes a deep copy of a Score.
