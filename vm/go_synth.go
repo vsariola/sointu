@@ -13,51 +13,57 @@ import (
 
 //go:generate go run generate/generate.go
 
-// GoSynth is a pure-Go bytecode interpreter for the Sointu VM bytecode. It
-// can only simulate bytecode compiled for AllFeatures, as the opcodes hard
-// coded in it for speed. If you are interested exactly how opcodes / units
-// work, studying GoSynth.Render is a good place to start.
-//
-// Internally, it uses software stack with practically no limitations in the
-// number of signals, so be warned that if you compose patches for it, they
-// might not work with the x87 implementation, as it has only 8-level stack.
-type GoSynth struct {
-	bytecode   Bytecode
-	stack      []float32
-	synth      synth
-	delaylines []delayline
-}
+type (
+	// GoSynth is a pure-Go bytecode interpreter for the Sointu VM bytecode. It
+	// can only simulate bytecode compiled for AllFeatures, as the opcodes hard
+	// coded in it for speed. If you are interested exactly how opcodes / units
+	// work, studying GoSynth.Render is a good place to start.
+	//
+	// Internally, it uses software stack with practically no limitations in the
+	// number of signals, so be warned that if you compose patches for it, they
+	// might not work with the x87 implementation, as it has only 8-level stack.
+	GoSynth struct {
+		bytecode   Bytecode
+		stack      []float32
+		state      synthState
+		delaylines []delayline
+	}
 
-type GoSynther struct {
-}
+	// GoSynther is a Synther implementation that can converts patches into
+	// GoSynths.
+	GoSynther struct {
+	}
+)
 
 const MAX_VOICES = 32
 const MAX_UNITS = 63
 
-type unit struct {
-	state [8]float32
-	ports [8]float32
-}
+type (
+	unit struct {
+		state [8]float32
+		ports [8]float32
+	}
 
-type voice struct {
-	note    byte
-	sustain bool
-	units   [MAX_UNITS]unit
-}
+	voice struct {
+		note    byte
+		sustain bool
+		units   [MAX_UNITS]unit
+	}
 
-type synth struct {
-	outputs    [8]float32
-	randSeed   uint32
-	globalTime uint32
-	voices     [MAX_VOICES]voice
-}
+	synthState struct {
+		outputs    [8]float32
+		randSeed   uint32
+		globalTime uint32
+		voices     [MAX_VOICES]voice
+	}
 
-type delayline struct {
-	buffer      [65536]float32
-	dampState   float32
-	dcIn        float32
-	dcFiltState float32
-}
+	delayline struct {
+		buffer      [65536]float32
+		dampState   float32
+		dcIn        float32
+		dcFiltState float32
+	}
+)
 
 const (
 	envStateAttack = iota
@@ -93,7 +99,7 @@ func Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 		return nil, fmt.Errorf("error compiling %v", err)
 	}
 	ret := &GoSynth{bytecode: *bytecode, stack: make([]float32, 0, 4), delaylines: make([]delayline, patch.NumDelayLines())}
-	ret.synth.randSeed = 1
+	ret.state.randSeed = 1
 	return ret, nil
 }
 
@@ -103,13 +109,13 @@ func (s GoSynther) Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 }
 
 func (s *GoSynth) Trigger(voiceIndex int, note byte) {
-	s.synth.voices[voiceIndex] = voice{}
-	s.synth.voices[voiceIndex].note = note
-	s.synth.voices[voiceIndex].sustain = true
+	s.state.voices[voiceIndex] = voice{}
+	s.state.voices[voiceIndex].note = note
+	s.state.voices[voiceIndex].sustain = true
 }
 
 func (s *GoSynth) Release(voiceIndex int) {
-	s.synth.voices[voiceIndex].sustain = false
+	s.state.voices[voiceIndex].sustain = false
 }
 
 func (s *GoSynth) Update(patch sointu.Patch, bpm int) error {
@@ -131,9 +137,9 @@ func (s *GoSynth) Update(patch sointu.Patch, bpm int) error {
 		s.delaylines = append(s.delaylines, delayline{})
 	}
 	if needsRefresh {
-		for i := range s.synth.voices {
-			for j := range s.synth.voices[i].units {
-				s.synth.voices[i].units[j] = unit{}
+		for i := range s.state.voices {
+			for j := range s.state.voices[i].units {
+				s.state.voices[i].units[j] = unit{}
 			}
 		}
 	}
@@ -149,14 +155,14 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 	var params [8]float32
 	stack := s.stack[:]
 	stack = append(stack, []float32{0, 0, 0, 0}...)
-	synth := &s.synth
+	synth := &s.state
 	for time < maxtime && len(buffer) > 0 {
 		opcodesInstr := s.bytecode.Opcodes
 		operandsInstr := s.bytecode.Operands
 		opcodes, operands := opcodesInstr, operandsInstr
 		delaylines := s.delaylines
 		voicesRemaining := s.bytecode.NumVoices
-		voices := s.synth.voices[:]
+		voices := s.state.voices[:]
 		units := voices[0].units[:]
 		for voicesRemaining > 0 {
 			op := opcodes[0]
@@ -523,7 +529,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 				feedback := params[2]
 				var index, count byte
 				index, count, operands = operands[0], operands[1], operands[2:]
-				t := uint16(s.synth.globalTime)
+				t := uint16(s.state.globalTime)
 				stackIndex := l - channels
 				for i := 0; i < channels; i++ {
 					var d *delayline
@@ -588,13 +594,13 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 		buffer = buffer[1:]
 		samples++
 		time++
-		s.synth.globalTime++
+		s.state.globalTime++
 	}
 	s.stack = stack[:0]
 	return samples, time, nil
 }
 
-func (s *synth) rand() float32 {
+func (s *synthState) rand() float32 {
 	s.randSeed *= 16007
 	return float32(int32(s.randSeed)) / -2147483648.0
 }
