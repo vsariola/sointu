@@ -75,7 +75,7 @@ func NewInstrumentEditor() *InstrumentEditor {
 		paramEditor:         NewParamEditor(),
 		presetMenuItems:     []MenuItem{},
 	}
-	for _, instr := range tracker.Presets {
+	for _, instr := range tracker.InstrumentPresets {
 		ret.presetMenuItems = append(ret.presetMenuItems, MenuItem{Text: instr.Name, IconBytes: icons.ImageAudiotrack})
 	}
 	return ret
@@ -195,7 +195,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		m := PopupMenu(t.Theme, &ie.presetMenu)
 
 		for item, clicked := ie.presetMenu.Clicked(); clicked; item, clicked = ie.presetMenu.Clicked() {
-			t.SetInstrument(tracker.Presets[item])
+			t.SetInstrument(tracker.InstrumentPresets[item])
 		}
 
 		header := func(gtx C) D {
