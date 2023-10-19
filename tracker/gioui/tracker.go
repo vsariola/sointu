@@ -55,7 +55,8 @@ type Tracker struct {
 	TrackEditor           *TrackEditor
 	Explorer              *explorer.Explorer
 
-	lastVolume tracker.Volume
+	lastAvgVolume  tracker.Volume
+	lastPeakVolume tracker.Volume
 
 	wavFilePath              string
 	quitChannel              chan struct{}
@@ -198,7 +199,8 @@ mainloop:
 			if err, ok := e.Inner.(tracker.PlayerVolumeErrorMessage); ok {
 				t.Alert.Update(err.Error(), Warning, time.Second*3)
 			}
-			t.lastVolume = e.Volume
+			t.lastAvgVolume = e.AverageVolume
+			t.lastPeakVolume = e.PeakVolume
 			t.InstrumentEditor.voiceStates = e.VoiceStates
 			t.ProcessPlayerMessage(e)
 			w.Invalidate()

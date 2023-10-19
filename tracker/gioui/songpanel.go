@@ -218,6 +218,6 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 			gtx.Constraints.Min = image.Pt(0, 0)
 			return recordBtnStyle.Layout(gtx)
 		}),
-		layout.Rigid(VuMeter{Volume: t.lastVolume, Range: 100}.Layout),
+		layout.Rigid(VuMeter{AverageVolume: t.lastAvgVolume, PeakVolume: t.lastPeakVolume, Range: 100}.Layout),
 	)
 }

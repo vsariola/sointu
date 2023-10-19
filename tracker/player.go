@@ -21,7 +21,8 @@ type (
 		samplesSinceEvent []int
 		samplesPerRow     int
 		bpm               int
-		volume            Volume
+		avgVolumeMeter    VolumeAnalyzer
+		peakVolumeMeter   VolumeAnalyzer
 		voiceStates       [vm.MAX_VOICES]float32
 
 		recording            bool
@@ -59,10 +60,11 @@ type (
 	// Volume and SongRow are transmitted so frequently that they are treated specially, to avoid boxing. All the
 	// rest messages can be boxed to interface{}
 	PlayerMessage struct {
-		Volume      Volume
-		SongRow     SongRow
-		VoiceStates [vm.MAX_VOICES]float32
-		Inner       interface{}
+		AverageVolume Volume
+		PeakVolume    Volume
+		SongRow       SongRow
+		VoiceStates   [vm.MAX_VOICES]float32
+		Inner         interface{}
 	}
 
 	PlayerCrashMessage struct {
@@ -87,10 +89,11 @@ const NUM_RENDER_TRIES = 10000
 
 func NewPlayer(synther sointu.Synther, playerMessages chan<- PlayerMessage, modelMessages <-chan interface{}) *Player {
 	p := &Player{
-		playerMessages: playerMessages,
-		modelMessages:  modelMessages,
-		synther:        synther,
-		volume:         Volume{Average: [2]float64{1e-9, 1e-9}, Peak: [2]float64{1e-9, 1e-9}},
+		playerMessages:  playerMessages,
+		modelMessages:   modelMessages,
+		synther:         synther,
+		avgVolumeMeter:  VolumeAnalyzer{Attack: 0.3, Release: 0.3, Min: -100, Max: 20},
+		peakVolumeMeter: VolumeAnalyzer{Attack: 1e-4, Release: 1, Min: -100, Max: 20},
 	}
 	return p
 }
@@ -170,9 +173,13 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		}
 		// when the buffer is full, return
 		if len(buffer) == 0 {
-			err := p.volume.Analyze(oldBuffer, 0.3, 1e-4, 1, -100, 20)
+			err := p.avgVolumeMeter.Update(oldBuffer)
+			err2 := p.peakVolumeMeter.Update(oldBuffer)
 			var msg interface{}
 			if err != nil {
+				msg = PlayerVolumeErrorMessage{err}
+			}
+			if err2 != nil {
 				msg = PlayerVolumeErrorMessage{err}
 			}
 			p.trySend(msg)
@@ -323,7 +330,7 @@ func (p *Player) compileOrUpdateSynth() {
 // all sends from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
 func (p *Player) trySend(message interface{}) {
 	select {
-	case p.playerMessages <- PlayerMessage{Volume: p.volume, SongRow: p.position, VoiceStates: p.voiceStates, Inner: message}:
+	case p.playerMessages <- PlayerMessage{AverageVolume: p.avgVolumeMeter.Level, PeakVolume: p.peakVolumeMeter.Level, SongRow: p.position, VoiceStates: p.voiceStates, Inner: message}:
 	default:
 	}
 }
