@@ -59,14 +59,6 @@ type (
 		modelMessages  chan<- interface{}
 	}
 
-	ModelPatchChangedMessage struct {
-		sointu.Patch
-	}
-
-	ModelScoreChangedMessage struct {
-		sointu.Score
-	}
-
 	ModelPlayingChangedMessage struct {
 		bool
 	}
@@ -75,8 +67,12 @@ type (
 		ScoreRow
 	}
 
-	ModelSamplesPerRowChangedMessage struct {
-		BPM, RowsPerBeat int
+	ModelBPMChangedMessage struct {
+		int
+	}
+
+	ModelRowsPerBeatChangedMessage struct {
+		int
 	}
 
 	ModelPanicMessage struct {
@@ -88,11 +84,11 @@ type (
 	}
 
 	ModelNoteOnMessage struct {
-		id NoteID
+		NoteID
 	}
 
 	ModelNoteOffMessage struct {
-		id NoteID
+		NoteID
 	}
 )
 
@@ -127,9 +123,7 @@ func NewModel(modelMessages chan<- interface{}, playerMessages <-chan PlayerMess
 	if recoveryFilePath != "" {
 		if bytes2, err := os.ReadFile(ret.d.RecoveryFilePath); err == nil {
 			json.Unmarshal(bytes2, &ret.d)
-			ret.notifyPatchChange()
-			ret.notifySamplesPerRowChange()
-			ret.notifyScoreChange()
+			ret.send(ret.d.Song.Copy())
 		}
 	}
 	return ret
@@ -185,9 +179,7 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 		}
 	}
 	m.d.ChangedSinceRecovery = false
-	m.notifyPatchChange()
-	m.notifySamplesPerRowChange()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Copy())
 }
 
 func (m *Model) FilePath() string {
@@ -237,9 +229,8 @@ func (m *Model) SetOctave(value int) bool {
 
 func (m *Model) ProcessPlayerMessage(msg PlayerMessage) {
 	m.d.PlayPosition = msg.SongRow
+	m.d.Panic = msg.Panic
 	switch e := msg.Inner.(type) {
-	case PlayerCrashMessage:
-		m.d.Panic = true
 	case Recording:
 		if e.BPM == 0 {
 			e.BPM = float64(m.d.Song.BPM)
@@ -263,7 +254,7 @@ func (m *Model) SetInstrument(instrument sointu.Instrument) bool {
 	m.assignUnitIDs(instrument.Units)
 	m.d.Song.Patch[m.d.InstrIndex] = instrument
 	m.clampPositions()
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 	return true
 }
 
@@ -285,7 +276,7 @@ func (m *Model) SetInstrumentVoices(value int) {
 	}
 	m.saveUndo("SetInstrumentVoices", 10)
 	m.d.Song.Patch[m.d.InstrIndex].NumVoices = value
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 }
 
 func (m *Model) MaxInstrumentVoices() int {
@@ -325,7 +316,7 @@ func (m *Model) SetBPM(value int) {
 	}
 	m.saveUndo("SetBPM", 100)
 	m.d.Song.BPM = value
-	m.notifySamplesPerRowChange()
+	m.send(ModelBPMChangedMessage{value})
 }
 
 func (m *Model) SetRowsPerBeat(value int) {
@@ -340,7 +331,7 @@ func (m *Model) SetRowsPerBeat(value int) {
 	}
 	m.saveUndo("SetRowsPerBeat", 10)
 	m.d.Song.RowsPerBeat = value
-	m.notifySamplesPerRowChange()
+	m.send(ModelRowsPerBeatChangedMessage{value})
 }
 
 func (m *Model) AddTrack(after bool) {
@@ -360,7 +351,7 @@ func (m *Model) AddTrack(after bool) {
 	}
 	m.d.Song.Score.Tracks = newTracks
 	m.clampPositions()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) CanAddTrack() bool {
@@ -382,7 +373,7 @@ func (m *Model) DeleteTrack(forward bool) {
 	m.d.SelectionCorner = m.d.Cursor
 	m.clampPositions()
 	m.computePatternUseCounts()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) CanDeleteTrack() bool {
@@ -397,7 +388,7 @@ func (m *Model) SwapTracks(i, j int) {
 	tracks := m.d.Song.Score.Tracks
 	tracks[i], tracks[j] = tracks[j], tracks[i]
 	m.clampPositions()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) SetTrackVoices(value int) {
@@ -413,7 +404,7 @@ func (m *Model) SetTrackVoices(value int) {
 	}
 	m.saveUndo("SetTrackVoices", 10)
 	m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices = value
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) MaxTrackVoices() int {
@@ -441,15 +432,15 @@ func (m *Model) AddInstrument(after bool) {
 	m.d.UnitIndex = 0
 	m.d.ParamIndex = 0
 	m.d.Song.Patch = newInstruments
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 }
 
 func (m *Model) NoteOn(id NoteID) {
-	m.modelMessages <- ModelNoteOnMessage{id}
+	m.send(ModelNoteOnMessage{id})
 }
 
 func (m *Model) NoteOff(id NoteID) {
-	m.modelMessages <- ModelNoteOffMessage{id}
+	m.send(ModelNoteOffMessage{id})
 }
 
 func (m *Model) Playing() bool {
@@ -459,7 +450,7 @@ func (m *Model) Playing() bool {
 func (m *Model) SetPlaying(val bool) {
 	if m.d.Playing != val {
 		m.d.Playing = val
-		m.modelMessages <- ModelPlayingChangedMessage{val}
+		m.send(ModelPlayingChangedMessage{val})
 	}
 }
 
@@ -479,7 +470,7 @@ func (m *Model) SwapInstruments(i, j int) {
 	instruments := m.d.Song.Patch
 	instruments[i], instruments[j] = instruments[j], instruments[i]
 	m.clampPositions()
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 }
 
 func (m *Model) DeleteInstrument(forward bool) {
@@ -493,7 +484,7 @@ func (m *Model) DeleteInstrument(forward bool) {
 		m.d.InstrIndex--
 	}
 	m.clampPositions()
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 }
 
 func (m *Model) CanDeleteInstrument() bool {
@@ -530,7 +521,7 @@ func (m *Model) SetNote(iv byte) {
 		tracks[m.d.Cursor.Track].Patterns = append(tracks[m.d.Cursor.Track].Patterns, nil)
 	}
 	tracks[m.d.Cursor.Track].Patterns[patIndex].Set(m.d.Cursor.Row, iv)
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) AdjustPatternNumber(delta int, swap bool) {
@@ -616,14 +607,14 @@ func (m *Model) AdjustPatternNumber(delta int, swap bool) {
 		}
 	}
 	m.computePatternUseCounts()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) SetRecording(val bool) {
 	if m.d.Recording != val {
 		m.d.Recording = val
 		m.d.InstrEnlarged = val
-		m.modelMessages <- ModelRecordingMessage{val}
+		m.send(ModelRecordingMessage{val})
 	}
 }
 
@@ -634,7 +625,7 @@ func (m *Model) Recording() bool {
 func (m *Model) SetPanic(val bool) {
 	if m.d.Panic != val {
 		m.d.Panic = val
-		m.modelMessages <- ModelPanicMessage{val}
+		m.send(ModelPanicMessage{val})
 	}
 }
 
@@ -652,14 +643,14 @@ func (m *Model) InstrEnlarged() bool {
 
 func (m *Model) PlayFromPosition(sr ScoreRow) {
 	m.d.Playing = true
-	m.modelMessages <- ModelPlayFromPositionMessage{sr}
+	m.send(ModelPlayFromPositionMessage{sr})
 }
 
 func (m *Model) SetCurrentPattern(pat int) {
 	m.saveUndo("SetCurrentPattern", 0)
 	m.d.Song.Score.Tracks[m.d.Cursor.Track].Order.Set(m.d.Cursor.Pattern, pat)
 	m.computePatternUseCounts()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) IsPatternUnique(track, pattern int) bool {
@@ -684,7 +675,7 @@ func (m *Model) SetSongLength(value int) {
 	m.d.Song.Score.Length = value
 	m.clampPositions()
 	m.computePatternUseCounts()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) SetRowsPerPattern(value int) {
@@ -700,7 +691,7 @@ func (m *Model) SetRowsPerPattern(value int) {
 	m.saveUndo("SetRowsPerPattern", 10)
 	m.d.Song.Score.RowsPerPattern = value
 	m.clampPositions()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) SetUnitType(t string) {
@@ -717,7 +708,7 @@ func (m *Model) SetUnitType(t string) {
 	oldID := m.Unit().ID
 	m.Instrument().Units[m.d.UnitIndex] = unit
 	m.Instrument().Units[m.d.UnitIndex].ID = oldID // keep the ID of the replaced unit
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 }
 
 func (m *Model) PasteUnits(units []sointu.Unit) {
@@ -737,7 +728,7 @@ func (m *Model) PasteUnits(units []sointu.Unit) {
 	m.d.Song.Patch[m.d.InstrIndex].Units = newUnits
 	m.d.ParamIndex = 0
 	m.clampPositions()
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 }
 
 func (m *Model) SetUnitIndex(value int) {
@@ -758,7 +749,7 @@ func (m *Model) AddUnit(after bool) {
 	m.d.Song.Patch[m.d.InstrIndex].Units = newUnits
 	m.d.ParamIndex = 0
 	m.clampPositions()
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 }
 
 func (m *Model) AddOrderRow(after bool) {
@@ -779,7 +770,7 @@ func (m *Model) AddOrderRow(after bool) {
 	m.d.SelectionCorner = m.d.Cursor
 	m.clampPositions()
 	m.computePatternUseCounts()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) DeleteOrderRow(forward bool) {
@@ -802,7 +793,7 @@ func (m *Model) DeleteOrderRow(forward bool) {
 	m.d.SelectionCorner = m.d.Cursor
 	m.clampPositions()
 	m.computePatternUseCounts()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) DeleteUnits(forward bool, a, b int) []sointu.Unit {
@@ -835,7 +826,7 @@ func (m *Model) DeleteUnits(forward bool, a, b int) []sointu.Unit {
 	m.d.Song.Patch[m.d.InstrIndex].Units = newUnits
 	m.d.ParamIndex = 0
 	m.clampPositions()
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 	return deletedUnits
 }
 
@@ -861,7 +852,7 @@ func (m *Model) ResetParam() {
 	m.saveUndo("ResetParam", 0)
 	unit.Parameters[paramType.Name] = defaultValue
 	m.clampPositions()
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 }
 
 func (m *Model) SetParamIndex(value int) {
@@ -886,7 +877,7 @@ func (m *Model) setGmDlsEntry(index int) {
 	unit.Parameters["loopstart"] = entry.LoopStart
 	unit.Parameters["looplength"] = entry.LoopLength
 	unit.Parameters["transpose"] = 64 + entry.SuggestedTranspose
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 }
 
 func (m *Model) setReverb(index int) {
@@ -903,7 +894,7 @@ func (m *Model) setReverb(index int) {
 	unit.Parameters["notetracking"] = 0
 	unit.VarArgs = make([]int, len(entry.varArgs))
 	copy(unit.VarArgs, entry.varArgs)
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 }
 
 func (m *Model) SwapUnits(i, j int) {
@@ -914,7 +905,7 @@ func (m *Model) SwapUnits(i, j int) {
 	m.saveUndo("SwapUnits", 10)
 	units[i], units[j] = units[j], units[i]
 	m.clampPositions()
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 }
 
 func (m *Model) getSelectionRange() (int, int, int, int) {
@@ -974,7 +965,7 @@ func (m *Model) AdjustSelectionPitch(delta int) {
 			}
 		}
 	}
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) DeleteSelection() {
@@ -1001,7 +992,7 @@ func (m *Model) DeleteSelection() {
 			m.d.Song.Score.Tracks[c].Patterns[p][s.Row] = 1
 		}
 	}
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) DeletePatternSelection() {
@@ -1017,7 +1008,7 @@ func (m *Model) DeletePatternSelection() {
 		}
 	}
 	m.computePatternUseCounts()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) Undo() {
@@ -1341,7 +1332,7 @@ func (m *Model) RemoveUnusedData() {
 		m.d.Song.Score.Tracks[trkIndex] = trk
 	}
 	m.computePatternUseCounts()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Score.Copy())
 }
 
 func (m *Model) SetParam(value int) {
@@ -1388,7 +1379,7 @@ func (m *Model) SetParam(value int) {
 		unit.Parameters[p.Name] = value
 	}
 	m.clampPositions()
-	m.notifyPatchChange()
+	m.send(m.d.Song.Patch.Copy())
 }
 
 func (m *Model) setSongNoUndo(song sointu.Song) {
@@ -1407,31 +1398,12 @@ func (m *Model) setSongNoUndo(song sointu.Song) {
 	}
 	m.clampPositions()
 	m.computePatternUseCounts()
-	m.notifySamplesPerRowChange()
-	m.notifyPatchChange()
-	m.notifyScoreChange()
+	m.send(m.d.Song.Copy())
 }
 
-func (m *Model) notifyPatchChange() {
-	m.d.Panic = false
-	select {
-	case m.modelMessages <- ModelPatchChangedMessage{m.d.Song.Patch.Copy()}:
-	default:
-	}
-}
-
-func (m *Model) notifyScoreChange() {
-	select {
-	case m.modelMessages <- ModelScoreChangedMessage{m.d.Song.Score.Copy()}:
-	default:
-	}
-}
-
-func (m *Model) notifySamplesPerRowChange() {
-	select {
-	case m.modelMessages <- ModelSamplesPerRowChangedMessage{m.d.Song.BPM, m.d.Song.RowsPerBeat}:
-	default:
-	}
+// send sends a message to the player
+func (m *Model) send(message interface{}) {
+	m.modelMessages <- message
 }
 
 func (m *Model) saveUndo(undoType string, undoSkipping int) {
