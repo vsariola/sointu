@@ -127,6 +127,9 @@ func NewModel(modelMessages chan<- interface{}, playerMessages <-chan PlayerMess
 	if recoveryFilePath != "" {
 		if bytes2, err := os.ReadFile(ret.d.RecoveryFilePath); err == nil {
 			json.Unmarshal(bytes2, &ret.d)
+			ret.notifyPatchChange()
+			ret.notifySamplesPerRowChange()
+			ret.notifyScoreChange()
 		}
 	}
 	return ret
