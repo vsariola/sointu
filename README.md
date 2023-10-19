@@ -501,23 +501,18 @@ so I thought it would fun to learn some Finnish for a change. And
 Prods using Sointu
 ------------------
 
-[Adam](https://github.com/vsariola/adam) by brainlez Coders! - My first
-test-driving of Sointu. Some ideas how to integrate Sointu to the build
-chain.
-
-[Roadtrip](https://www.pouet.net/prod.php?which=94105) by LJ & Virgill
-
-[|](https://www.pouet.net/prod.php?which=94721) by epoqe - Likely the
-first Linux 4k intro using sointu
-
-[Physics Girl St.](https://www.pouet.net/prod.php?which=94890) by Team210
-
-[Delusions of mediocrity](https://www.pouet.net/prod.php?which=95222) by
-mrange & Virgill.
-
-[Xorverse](https://www.pouet.net/prod.php?which=95221) by Alcatraz.
-
-[l'enveloppe](https://www.pouet.net/prod.php?which=95215) by Team210 & epoqe.
+  - [Adam](https://github.com/vsariola/adam) by brainlez Coders! My first
+    test-driving of Sointu. The repository has some ideas how to integrate
+    Sointu to the build chain.
+  - [Roadtrip](https://www.pouet.net/prod.php?which=94105) by LJ & Virgill
+  - [|](https://www.pouet.net/prod.php?which=94721) by epoqe. Likely the first
+    Linux 4k intro using sointu.
+  - [Physics Girl St.](https://www.pouet.net/prod.php?which=94890) by Team210
+  - [Delusions of mediocrity](https://www.pouet.net/prod.php?which=95222) by
+    mrange & Virgill
+  - [Xorverse](https://www.pouet.net/prod.php?which=95221) by Alcatraz
+  - [l'enveloppe](https://www.pouet.net/prod.php?which=95215) by Team210 &
+    epoqe
 
 Contributing
 ------------
