@@ -9,35 +9,45 @@ import (
 )
 
 type (
+	// Player is the audio player for the tracker, run in a separate thread. It
+	// is controlled by messages from the model and MIDI messages via the
+	// context, typically from the VSTI host. The player sends messages to the
+	// model via the playerMessages channel. The model sends messages to the
+	// player via the modelMessages channel.
 	Player struct {
-		voiceNoteID       []int
-		voiceReleased     []bool
-		synth             sointu.Synth
-		patch             sointu.Patch
-		score             sointu.Score
-		playing           bool
-		rowtime           int
-		position          ScoreRow
-		samplesSinceEvent []int
-		samplesPerRow     int
-		bpm               int
-		avgVolumeMeter    VolumeAnalyzer
-		peakVolumeMeter   VolumeAnalyzer
-		voiceStates       [vm.MAX_VOICES]float32
+		voiceNoteID       []int                  // the ID of the note that triggered the voice
+		voiceReleased     []bool                 // is the voice released
+		synth             sointu.Synth           // the synth used to render audio
+		patch             sointu.Patch           // the patch used to create the synth
+		score             sointu.Score           // the score being played
+		playing           bool                   // is the player playing the score or not
+		rowtime           int                    // how many samples have been played in the current row
+		position          ScoreRow               // the current position in the score
+		samplesSinceEvent []int                  // how many samples have been played since the last event in each voice
+		samplesPerRow     int                    // how many samples is one row equal to
+		bpm               int                    // the current BPM
+		avgVolumeMeter    VolumeAnalyzer         // the volume analyzer used to calculate the average volume
+		peakVolumeMeter   VolumeAnalyzer         // the volume analyzer used to calculate the peak volume
+		voiceStates       [vm.MAX_VOICES]float32 // the current state of each voice
 
-		recState  recState
-		recording Recording
+		recState  recState  // is the recording off; are we waiting for a note; or are we recording
+		recording Recording // the recorded MIDI events and BPM
 
-		synther        sointu.Synther
+		synther        sointu.Synther // the synther used to create new synths
 		playerMessages chan<- PlayerMessage
 		modelMessages  <-chan interface{}
 	}
 
+	// PlayerProcessContext is the context given to the player when processing
+	// audio. It is used to get MIDI events and the current BPM.
 	PlayerProcessContext interface {
 		NextEvent() (event MIDINoteEvent, ok bool)
 		BPM() (bpm float64, ok bool)
 	}
 
+	// MIDINoteEvent is a MIDI event triggering or releasing a note. In
+	// processing, the Frame is relative to the start of the current buffer. In
+	// a Recording, the Frame is relative to the start of the recording.
 	MIDINoteEvent struct {
 		Frame   int
 		On      bool
@@ -45,12 +55,17 @@ type (
 		Note    byte
 	}
 
+	// PlayerPlayingMessage is sent to the model when the player starts or stops
+	// playing the score.
 	PlayerPlayingMessage struct {
 		bool
 	}
 
-	// Volume and SongRow are transmitted so frequently that they are treated specially, to avoid boxing. All the
-	// rest messages can be boxed to interface{}
+	// PlayerMessage is a message sent from the player to the model. The Inner
+	// field can contain any message. AverageVolume, PeakVolume, SongRow and
+	// VoiceStates transmitted frequently, with every message, so they are
+	// treated specially, to avoid boxing. All the rest messages can be boxed to
+	// Inner interface{}
 	PlayerMessage struct {
 		AverageVolume Volume
 		PeakVolume    Volume
@@ -59,10 +74,13 @@ type (
 		Inner         interface{}
 	}
 
+	// PlayerCrashMessage is sent to the model when the player crashes.
 	PlayerCrashMessage struct {
 		error
 	}
 
+	// PlayerVolumeErrorMessage is sent to the model there is an error in the
+	// volume analyzer. The error is not fatal.
 	PlayerVolumeErrorMessage struct {
 		error
 	}
@@ -89,6 +107,9 @@ const (
 
 const NUM_RENDER_TRIES = 10000
 
+// NewPlayer creates a new player. The playerMessages channel is used to send
+// messages to the model. The modelMessages channel is used to receive messages
+// from the model. The synther is used to create new synths.
 func NewPlayer(synther sointu.Synther, playerMessages chan<- PlayerMessage, modelMessages <-chan interface{}) *Player {
 	p := &Player{
 		playerMessages:  playerMessages,
@@ -100,6 +121,11 @@ func NewPlayer(synther sointu.Synther, playerMessages chan<- PlayerMessage, mode
 	return p
 }
 
+// Process renders audio to the given buffer, trying to fill it completely. If
+// the buffer is not filled, the synth is destroyed and an error is sent to the
+// model. context tells the player which MIDI events happen during the current
+// buffer. It is used to trigger and release notes during processing. The
+// context is also used to get the current BPM from the host.
 func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext) {
 	p.processMessages(context)
 	midi, midiOk := context.NextEvent()
