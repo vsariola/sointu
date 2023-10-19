@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sort"
 )
 
 type (
@@ -177,6 +178,18 @@ const (
 	Gate   = iota
 	Sample = iota
 )
+
+// UnitNames is a list of all the names of units, sorted
+// alphabetically.
+var UnitNames []string
+
+func init() {
+	UnitNames = make([]string, 0, len(UnitTypes))
+	for k := range UnitTypes {
+		UnitNames = append(UnitNames, k)
+	}
+	sort.Strings(UnitNames)
+}
 
 // Ports is static map allowing quickly finding the parameters of a unit that
 // can be modulated. This is populated based on the UnitTypes list during

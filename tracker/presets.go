@@ -113,16 +113,6 @@ var reverbs = []delayPreset{
 	{"right", 0, []int{1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642}},
 }
 
-var UnitTypeNames []string
-
-func init() {
-	UnitTypeNames = make([]string, 0, len(sointu.UnitTypes))
-	for k := range sointu.UnitTypes {
-		UnitTypeNames = append(UnitTypeNames, k)
-	}
-	sort.Strings(UnitTypeNames)
-}
-
 type instrumentPresets []sointu.Instrument
 
 //go:embed presets/*

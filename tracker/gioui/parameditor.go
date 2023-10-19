@@ -16,7 +16,6 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"gopkg.in/yaml.v3"
 )
@@ -50,7 +49,7 @@ func NewParamEditor() *ParamEditor {
 		list:          &layout.List{Axis: layout.Vertical},
 		scrollBar:     &ScrollBar{Axis: layout.Vertical},
 	}
-	for range tracker.UnitTypeNames {
+	for range sointu.UnitNames {
 		ret.ChooseUnitTypeBtns = append(ret.ChooseUnitTypeBtns, new(widget.Clickable))
 	}
 	return ret
@@ -220,10 +219,10 @@ func (pe *ParamEditor) layoutUnitFooter(t *Tracker) layout.Widget {
 func (pe *ParamEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 	listElem := func(gtx C, i int) D {
 		for pe.ChooseUnitTypeBtns[i].Clicked() {
-			t.SetUnitType(tracker.UnitTypeNames[i])
-			t.InstrumentEditor.unitTypeEditor.SetText(tracker.UnitTypeNames[i])
+			t.SetUnitType(sointu.UnitNames[i])
+			t.InstrumentEditor.unitTypeEditor.SetText(sointu.UnitNames[i])
 		}
-		text := tracker.UnitTypeNames[i]
+		text := sointu.UnitNames[i]
 		if t.InstrumentEditor.unitTypeEditor.Focused() && !strings.HasPrefix(text, t.InstrumentEditor.unitTypeEditor.Text()) {
 			return D{}
 		}
@@ -248,10 +247,10 @@ func (pe *ParamEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 	}
 	return layout.Stack{}.Layout(gtx,
 		layout.Stacked(func(gtx C) D {
-			return pe.list.Layout(gtx, len(tracker.UnitTypeNames), listElem)
+			return pe.list.Layout(gtx, len(sointu.UnitNames), listElem)
 		}),
 		layout.Expanded(func(gtx C) D {
-			return pe.scrollBar.Layout(gtx, unit.Dp(10), len(tracker.UnitTypeNames), &pe.list.Position)
+			return pe.scrollBar.Layout(gtx, unit.Dp(10), len(sointu.UnitNames), &pe.list.Position)
 		}),
 	)
 }

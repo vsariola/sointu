@@ -19,6 +19,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/eventx"
+	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/vm"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -447,7 +448,7 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 				if ok {
 					ie.unitDragList.Focus()
 					if text := ie.unitTypeEditor.Text(); text != "" {
-						for _, n := range tracker.UnitTypeNames {
+						for _, n := range sointu.UnitNames {
 							if strings.HasPrefix(n, ie.unitTypeEditor.Text()) {
 								t.SetUnitType(n)
 								break
