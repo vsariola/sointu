@@ -93,7 +93,7 @@ success:
 	f.Read(su_sample_table[:])
 }
 
-func Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
+func (s GoSynther) Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	bytecode, err := NewBytecode(patch, AllFeatures{}, bpm)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling %v", err)
@@ -101,11 +101,6 @@ func Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	ret := &GoSynth{bytecode: *bytecode, stack: make([]float32, 0, 4), delaylines: make([]delayline, patch.NumDelayLines())}
 	ret.state.randSeed = 1
 	return ret, nil
-}
-
-func (s GoSynther) Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
-	synth, err := Synth(patch, bpm)
-	return synth, err
 }
 
 func (s *GoSynth) Trigger(voiceIndex int, note byte) {
