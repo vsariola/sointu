@@ -91,7 +91,7 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf(`could not encode patch: %v`, err)
 	}
-	patterns, sequences, err := vm.ConstructPatterns(song)
+	patterns, sequences, err := ConstructPatterns(song)
 	if err != nil {
 		return nil, fmt.Errorf(`could not encode song: %v`, err)
 	}
