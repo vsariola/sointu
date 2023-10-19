@@ -15,17 +15,15 @@ type (
 	// model via the playerMessages channel. The model sends messages to the
 	// player via the modelMessages channel.
 	Player struct {
-		voiceNoteID       []int                  // the ID of the note that triggered the voice
-		voiceReleased     []bool                 // is the voice released
-		synth             sointu.Synth           // the synth used to render audio
-		song              sointu.Song            // the song being played
-		playing           bool                   // is the player playing the score or not
-		rowtime           int                    // how many samples have been played in the current row
-		position          ScoreRow               // the current position in the score
-		samplesSinceEvent []int                  // how many samples have been played since the last event in each voice
-		avgVolumeMeter    VolumeAnalyzer         // the volume analyzer used to calculate the average volume
-		peakVolumeMeter   VolumeAnalyzer         // the volume analyzer used to calculate the peak volume
-		voiceStates       [vm.MAX_VOICES]float32 // the current state of each voice
+		synth           sointu.Synth           // the synth used to render audio
+		song            sointu.Song            // the song being played
+		playing         bool                   // is the player playing the score or not
+		rowtime         int                    // how many samples have been played in the current row
+		position        ScoreRow               // the current position in the score
+		avgVolumeMeter  VolumeAnalyzer         // the volume analyzer used to calculate the average volume
+		peakVolumeMeter VolumeAnalyzer         // the volume analyzer used to calculate the peak volume
+		voiceLevels     [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
+		voices          [vm.MAX_VOICES]voice
 
 		recState  recState  // is the recording off; are we waiting for a note; or are we recording
 		recording Recording // the recorded MIDI events and BPM
@@ -62,7 +60,7 @@ type (
 		AverageVolume Volume
 		PeakVolume    Volume
 		SongRow       ScoreRow
-		VoiceStates   [vm.MAX_VOICES]float32
+		VoiceLevels   [vm.MAX_VOICES]float32
 		Inner         interface{}
 	}
 
@@ -85,13 +83,10 @@ type (
 type (
 	recState int
 
-	voiceNote struct {
-		voice int
-		note  byte
-	}
-
-	recordEvent struct {
-		frame int
+	voice struct {
+		noteID            int
+		sustain           bool
+		samplesSinceEvent int
 	}
 )
 
@@ -184,15 +179,15 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		buffer = buffer[rendered:]
 		frame += rendered
 		p.rowtime += timeAdvanced
-		for i := range p.samplesSinceEvent {
-			p.samplesSinceEvent[i] += rendered
+		for i := range p.voices {
+			p.voices[i].samplesSinceEvent += rendered
 		}
 		alpha := float32(math.Exp(-float64(rendered) / 15000))
-		for i, released := range p.voiceReleased {
-			if released {
-				p.voiceStates[i] *= alpha
+		for i, state := range p.voices {
+			if state.sustain {
+				p.voiceLevels[i] = (p.voiceLevels[i]-0.5)*alpha + 0.5
 			} else {
-				p.voiceStates[i] = (p.voiceStates[i]-0.5)*alpha + 0.5
+				p.voiceLevels[i] *= alpha
 			}
 		}
 		// when the buffer is full, return
@@ -346,16 +341,13 @@ func (p *Player) compileOrUpdateSynth() {
 			p.send(PlayerCrashMessage{fmt.Errorf("synther.Synth: %w", err)})
 			return
 		}
-		for i := 0; i < 32; i++ {
-			p.synth.Release(i)
-		}
 	}
 }
 
 // all sends from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
 func (p *Player) send(message interface{}) {
 	select {
-	case p.playerMessages <- PlayerMessage{Panic: p.synth == nil, AverageVolume: p.avgVolumeMeter.Level, PeakVolume: p.peakVolumeMeter.Level, SongRow: p.position, VoiceStates: p.voiceStates, Inner: message}:
+	case p.playerMessages <- PlayerMessage{Panic: p.synth == nil, AverageVolume: p.avgVolumeMeter.Level, PeakVolume: p.peakVolumeMeter.Level, SongRow: p.position, VoiceLevels: p.voiceLevels, Inner: message}:
 	default:
 	}
 }
@@ -395,30 +387,19 @@ func (p *Player) trigger(voiceStart, voiceEnd int, note byte, ID int) {
 	oldestReleased := false
 	oldestVoice := 0
 	for i := voiceStart; i < voiceEnd; i++ {
-		for len(p.voiceReleased) <= i {
-			p.voiceReleased = append(p.voiceReleased, true)
-		}
-		for len(p.samplesSinceEvent) <= i {
-			p.samplesSinceEvent = append(p.samplesSinceEvent, 0)
-		}
-		for len(p.voiceNoteID) <= i {
-			p.voiceNoteID = append(p.voiceNoteID, 0)
-		}
 		// find a suitable voice to trigger. if the voice has been released,
 		// then we prefer to trigger that over a voice that is still playing. in
 		// case two voices are both playing or or both are released, we prefer
 		// the older one
-		if (p.voiceReleased[i] && !oldestReleased) ||
-			(p.voiceReleased[i] == oldestReleased && p.samplesSinceEvent[i] >= age) {
+		if (!p.voices[i].sustain && !oldestReleased) ||
+			(!p.voices[i].sustain == oldestReleased && p.voices[i].samplesSinceEvent >= age) {
 			oldestVoice = i
-			oldestReleased = p.voiceReleased[i]
-			age = p.samplesSinceEvent[i]
+			oldestReleased = !p.voices[i].sustain
+			age = p.voices[i].samplesSinceEvent
 		}
 	}
-	p.voiceNoteID[oldestVoice] = ID
-	p.voiceReleased[oldestVoice] = false
-	p.voiceStates[oldestVoice] = 1.0
-	p.samplesSinceEvent[oldestVoice] = 0
+	p.voices[oldestVoice] = voice{noteID: ID, sustain: true, samplesSinceEvent: 0}
+	p.voiceLevels[oldestVoice] = 1.0
 	if p.synth != nil {
 		p.synth.Trigger(oldestVoice, note)
 	}
@@ -428,10 +409,10 @@ func (p *Player) release(ID int) {
 	if p.synth == nil {
 		return
 	}
-	for i := 0; i < len(p.voiceNoteID); i++ {
-		if p.voiceNoteID[i] == ID && !p.voiceReleased[i] {
-			p.voiceReleased[i] = true
-			p.samplesSinceEvent[i] = 0
+	for i := range p.voices {
+		if p.voices[i].noteID == ID && p.voices[i].sustain {
+			p.voices[i].sustain = false
+			p.voices[i].samplesSinceEvent = 0
 			p.synth.Release(i)
 			return
 		}

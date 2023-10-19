@@ -48,7 +48,7 @@ type InstrumentEditor struct {
 	tag                 bool
 	wasFocused          bool
 	commentExpanded     bool
-	voiceStates         [vm.MAX_VOICES]float32
+	voiceLevels         [vm.MAX_VOICES]float32
 	presetMenuItems     []MenuItem
 	presetMenu          Menu
 }
@@ -314,7 +314,7 @@ func (ie *InstrumentEditor) layoutInstrumentNames(gtx C, t *Tracker) D {
 				loopMax = vm.MAX_VOICES
 			}
 			for j := 0; j < loopMax; j++ {
-				vc := ie.voiceStates[voice]
+				vc := ie.voiceLevels[voice]
 				if c < vc {
 					c = vc
 				}

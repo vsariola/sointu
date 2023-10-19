@@ -201,7 +201,7 @@ mainloop:
 			}
 			t.lastAvgVolume = e.AverageVolume
 			t.lastPeakVolume = e.PeakVolume
-			t.InstrumentEditor.voiceStates = e.VoiceStates
+			t.InstrumentEditor.voiceLevels = e.VoiceLevels
 			t.ProcessPlayerMessage(e)
 			w.Invalidate()
 		case e := <-w.Events():
