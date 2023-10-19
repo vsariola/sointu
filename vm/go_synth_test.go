@@ -76,7 +76,7 @@ func TestAllRegressionTests(t *testing.T) {
 
 func TestStackUnderflow(t *testing.T) {
 	patch := sointu.Patch{sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
-		sointu.Unit{Type: "pop", Parameters: map[string]int{}},
+		{Type: "pop", Parameters: map[string]int{}},
 	}}}
 	synth, err := vm.GoSynther{}.Synth(patch, 120)
 	if err != nil {
@@ -92,7 +92,7 @@ func TestStackUnderflow(t *testing.T) {
 func TestStackBalancing(t *testing.T) {
 	patch := sointu.Patch{
 		sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
-			sointu.Unit{Type: "push", Parameters: map[string]int{}},
+			{Type: "push", Parameters: map[string]int{}},
 		}}}
 	synth, err := vm.GoSynther{}.Synth(patch, 120)
 	if err != nil {

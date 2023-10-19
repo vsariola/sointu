@@ -30,13 +30,13 @@ const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
 
 func TestOscillatSine(t *testing.T) {
 	patch := sointu.Patch{sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
-		sointu.Unit{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
-		sointu.Unit{Type: "oscillator", Parameters: map[string]int{"stereo": 0, "transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "type": sointu.Sine, "lfo": 0, "unison": 0}},
-		sointu.Unit{Type: "mulp", Parameters: map[string]int{"stereo": 0}},
-		sointu.Unit{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
-		sointu.Unit{Type: "oscillator", Parameters: map[string]int{"stereo": 0, "transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "type": sointu.Sine, "lfo": 0, "unison": 0}},
-		sointu.Unit{Type: "mulp", Parameters: map[string]int{"stereo": 0}},
-		sointu.Unit{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
+		{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
+		{Type: "oscillator", Parameters: map[string]int{"stereo": 0, "transpose": 64, "detune": 64, "phase": 0, "color": 96, "shape": 64, "gain": 128, "type": sointu.Sine, "lfo": 0, "unison": 0}},
+		{Type: "mulp", Parameters: map[string]int{"stereo": 0}},
+		{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},
+		{Type: "oscillator", Parameters: map[string]int{"stereo": 0, "transpose": 72, "detune": 64, "phase": 64, "color": 64, "shape": 96, "gain": 128, "type": sointu.Sine, "lfo": 0, "unison": 0}},
+		{Type: "mulp", Parameters: map[string]int{"stereo": 0}},
+		{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
 	}}}
 	tracks := []sointu.Track{{NumVoices: 1, Order: []int{0}, Patterns: []sointu.Pattern{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}}}}
 	song := sointu.Song{BPM: 100, RowsPerBeat: 4, Score: sointu.Score{RowsPerPattern: 16, Length: 1, Tracks: tracks}, Patch: patch}
@@ -49,9 +49,9 @@ func TestOscillatSine(t *testing.T) {
 
 func TestRenderSamples(t *testing.T) {
 	patch := sointu.Patch{sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
-		sointu.Unit{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 64, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
-		sointu.Unit{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 95, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
-		sointu.Unit{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
+		{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 64, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
+		{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 95, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
+		{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
 	}}}
 
 	synth, err := bridge.Synth(patch, 120)
@@ -128,7 +128,7 @@ func TestAllRegressionTests(t *testing.T) {
 
 func TestStackUnderflow(t *testing.T) {
 	patch := sointu.Patch{sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
-		sointu.Unit{Type: "pop", Parameters: map[string]int{}},
+		{Type: "pop", Parameters: map[string]int{}},
 	}}}
 	synth, err := bridge.Synth(patch, 120)
 	if err != nil {
@@ -144,7 +144,7 @@ func TestStackUnderflow(t *testing.T) {
 func TestStackBalancing(t *testing.T) {
 	patch := sointu.Patch{
 		sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
-			sointu.Unit{Type: "push", Parameters: map[string]int{}},
+			{Type: "push", Parameters: map[string]int{}},
 		}}}
 	synth, err := bridge.Synth(patch, 120)
 	if err != nil {
@@ -160,24 +160,24 @@ func TestStackBalancing(t *testing.T) {
 func TestStackOverflow(t *testing.T) {
 	patch := sointu.Patch{
 		sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
-			sointu.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
-			sointu.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
-			sointu.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
-			sointu.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
-			sointu.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
-			sointu.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
-			sointu.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
-			sointu.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
-			sointu.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
-			sointu.Unit{Type: "pop", Parameters: map[string]int{}},
-			sointu.Unit{Type: "pop", Parameters: map[string]int{}},
-			sointu.Unit{Type: "pop", Parameters: map[string]int{}},
-			sointu.Unit{Type: "pop", Parameters: map[string]int{}},
-			sointu.Unit{Type: "pop", Parameters: map[string]int{}},
-			sointu.Unit{Type: "pop", Parameters: map[string]int{}},
-			sointu.Unit{Type: "pop", Parameters: map[string]int{}},
-			sointu.Unit{Type: "pop", Parameters: map[string]int{}},
-			sointu.Unit{Type: "pop", Parameters: map[string]int{}},
+			{Type: "loadval", Parameters: map[string]int{"value": 128}},
+			{Type: "loadval", Parameters: map[string]int{"value": 128}},
+			{Type: "loadval", Parameters: map[string]int{"value": 128}},
+			{Type: "loadval", Parameters: map[string]int{"value": 128}},
+			{Type: "loadval", Parameters: map[string]int{"value": 128}},
+			{Type: "loadval", Parameters: map[string]int{"value": 128}},
+			{Type: "loadval", Parameters: map[string]int{"value": 128}},
+			{Type: "loadval", Parameters: map[string]int{"value": 128}},
+			{Type: "loadval", Parameters: map[string]int{"value": 128}},
+			{Type: "pop", Parameters: map[string]int{}},
+			{Type: "pop", Parameters: map[string]int{}},
+			{Type: "pop", Parameters: map[string]int{}},
+			{Type: "pop", Parameters: map[string]int{}},
+			{Type: "pop", Parameters: map[string]int{}},
+			{Type: "pop", Parameters: map[string]int{}},
+			{Type: "pop", Parameters: map[string]int{}},
+			{Type: "pop", Parameters: map[string]int{}},
+			{Type: "pop", Parameters: map[string]int{}},
 		}}}
 	synth, err := bridge.Synth(patch, 120)
 	if err != nil {
@@ -192,9 +192,9 @@ func TestStackOverflow(t *testing.T) {
 
 func TestDivideByZero(t *testing.T) {
 	patch := sointu.Patch{sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
-		sointu.Unit{Type: "loadval", Parameters: map[string]int{"value": 128}},
-		sointu.Unit{Type: "invgain", Parameters: map[string]int{"invgain": 0}},
-		sointu.Unit{Type: "pop", Parameters: map[string]int{}},
+		{Type: "loadval", Parameters: map[string]int{"value": 128}},
+		{Type: "invgain", Parameters: map[string]int{"invgain": 0}},
+		{Type: "pop", Parameters: map[string]int{}},
 	}}}
 	synth, err := bridge.Synth(patch, 120)
 	if err != nil {
