@@ -216,6 +216,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 					dims := presetMenuBtnStyle.Layout(gtx)
 					op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
 					gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(500))
+					gtx.Constraints.Max.X = gtx.Dp(unit.Dp(180))
 					m.Layout(gtx, ie.presetMenuItems...)
 					return dims
 				}),
