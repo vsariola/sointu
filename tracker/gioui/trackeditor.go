@@ -160,7 +160,7 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 					} else {
 						if val, ok := noteMap[e.Name]; ok {
 							if _, ok := t.KeyPlaying[e.Name]; !ok {
-								n := tracker.NoteAsValue(t.OctaveNumberInput.Value, val)
+								n := noteAsValue(t.OctaveNumberInput.Value, val)
 								t.SetNote(n)
 								step = true
 								trk := t.Cursor().Track
@@ -287,6 +287,45 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 
 	area.Pop()
 	return dims
+}
+
+const baseNote = 24
+
+var notes = []string{
+	"C-",
+	"C#",
+	"D-",
+	"D#",
+	"E-",
+	"F-",
+	"F#",
+	"G-",
+	"G#",
+	"A-",
+	"A#",
+	"B-",
+}
+
+func noteStr(val byte) string {
+	if val == 1 {
+		return "..." // hold
+	}
+	if val == 0 {
+		return "---" // release
+	}
+	oNote := mod(int(val-baseNote), 12)
+	octave := (int(val) - oNote - baseNote) / 12
+	if octave < 0 {
+		return fmt.Sprintf("%s%s", notes[oNote], string(byte('Z'+1+octave)))
+	}
+	if octave >= 10 {
+		return fmt.Sprintf("%s%s", notes[oNote], string(byte('A'+octave-10)))
+	}
+	return fmt.Sprintf("%s%d", notes[oNote], octave)
+}
+
+func noteAsValue(octave, note int) byte {
+	return byte(baseNote + (octave * 12) + note)
 }
 
 func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
@@ -450,7 +489,7 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 				}
 				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(text), op.CallOp{})
 			} else {
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, tracker.NoteStr(c), op.CallOp{})
+				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, noteStr(c), op.CallOp{})
 			}
 			op.Offset(image.Point{-patmarkWidth, trackRowHeight}).Add(gtx.Ops)
 		}

@@ -183,7 +183,7 @@ func (t *Tracker) NumberPressed(iv byte) {
 func (t *Tracker) JammingPressed(e key.Event) byte {
 	if val, ok := noteMap[e.Name]; ok {
 		if _, ok := t.KeyPlaying[e.Name]; !ok {
-			n := tracker.NoteAsValue(t.OctaveNumberInput.Value, val)
+			n := noteAsValue(t.OctaveNumberInput.Value, val)
 			instr := t.InstrIndex()
 			noteID := tracker.NoteIDInstr(instr, n)
 			t.NoteOn(noteID)
