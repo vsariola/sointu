@@ -83,7 +83,7 @@ func TestStackUnderflow(t *testing.T) {
 		t.Fatalf("bridge compile error: %v", err)
 	}
 	buffer := make(sointu.AudioBuffer, 1)
-	err = sointu.Render(synth, buffer)
+	err = buffer.Fill(synth)
 	if err == nil {
 		t.Fatalf("rendering should have failed due to stack underflow")
 	}
@@ -99,7 +99,7 @@ func TestStackBalancing(t *testing.T) {
 		t.Fatalf("bridge compile error: %v", err)
 	}
 	buffer := make(sointu.AudioBuffer, 1)
-	err = sointu.Render(synth, buffer)
+	err = buffer.Fill(synth)
 	if err == nil {
 		t.Fatalf("rendering should have failed due to unbalanced stack push/pop")
 	}

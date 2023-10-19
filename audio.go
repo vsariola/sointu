@@ -3,6 +3,7 @@ package sointu
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math"
 )
@@ -30,6 +31,19 @@ type (
 		Close() error
 	}
 )
+
+// Fill fills the AudioBuffer using a Synth, disregarding all syncs and time
+// limits. Note that this will change the state of the Synth.
+func (buffer AudioBuffer) Fill(synth Synth) error {
+	s, _, err := synth.Render(buffer, math.MaxInt32)
+	if err != nil {
+		return fmt.Errorf("synth.Render failed: %v", err)
+	}
+	if s != len(buffer) {
+		return errors.New("in AudioBuffer.Fill, synth.Render should have filled the whole buffer but did not")
+	}
+	return nil
+}
 
 // Wav converts an AudioBuffer into a valid WAV-file, returned as a []byte
 // array.

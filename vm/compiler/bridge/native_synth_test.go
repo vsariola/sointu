@@ -60,12 +60,12 @@ func TestRenderSamples(t *testing.T) {
 	}
 	synth.Trigger(0, 64)
 	buffer := make(sointu.AudioBuffer, su_max_samples)
-	err = sointu.Render(synth, buffer[:len(buffer)/2])
+	err = buffer[:len(buffer)/2].Fill(synth)
 	if err != nil {
 		t.Fatalf("first render gave an error")
 	}
 	synth.Release(0)
-	err = sointu.Render(synth, buffer[len(buffer)/2:])
+	err = buffer[len(buffer)/2:].Fill(synth)
 	if err != nil {
 		t.Fatalf("first render gave an error")
 	}
@@ -135,7 +135,7 @@ func TestStackUnderflow(t *testing.T) {
 		t.Fatalf("bridge compile error: %v", err)
 	}
 	buffer := make(sointu.AudioBuffer, 1)
-	err = sointu.Render(synth, buffer)
+	err = buffer.Fill(synth)
 	if err == nil {
 		t.Fatalf("rendering should have failed due to stack underflow")
 	}
@@ -151,7 +151,7 @@ func TestStackBalancing(t *testing.T) {
 		t.Fatalf("bridge compile error: %v", err)
 	}
 	buffer := make(sointu.AudioBuffer, 1)
-	err = sointu.Render(synth, buffer)
+	err = buffer.Fill(synth)
 	if err == nil {
 		t.Fatalf("rendering should have failed due to unbalanced stack push/pop")
 	}
@@ -184,7 +184,7 @@ func TestStackOverflow(t *testing.T) {
 		t.Fatalf("bridge compile error: %v", err)
 	}
 	buffer := make(sointu.AudioBuffer, 1)
-	err = sointu.Render(synth, buffer)
+	err = buffer.Fill(synth)
 	if err == nil {
 		t.Fatalf("rendering should have failed due to stack overflow, despite balanced push/pops")
 	}
@@ -201,7 +201,7 @@ func TestDivideByZero(t *testing.T) {
 		t.Fatalf("bridge compile error: %v", err)
 	}
 	buffer := make(sointu.AudioBuffer, 1)
-	err = sointu.Render(synth, buffer)
+	err = buffer.Fill(synth)
 	if err == nil {
 		t.Fatalf("rendering should have failed due to divide by zero")
 	}

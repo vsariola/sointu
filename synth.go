@@ -1,9 +1,7 @@
 package sointu
 
 import (
-	"errors"
 	"fmt"
-	"math"
 )
 
 type (
@@ -39,19 +37,6 @@ type (
 		Synth(patch Patch, bpm int) (Synth, error)
 	}
 )
-
-// Render fills an stereo audio buffer using a Synth, disregarding all syncs and
-// time limits.
-func Render(synth Synth, buffer AudioBuffer) error {
-	s, _, err := synth.Render(buffer, math.MaxInt32)
-	if err != nil {
-		return fmt.Errorf("sointu.Render failed: %v", err)
-	}
-	if s != len(buffer) {
-		return errors.New("in sointu.Render, synth.Render should have filled the whole buffer but did not")
-	}
-	return nil
-}
 
 // Play plays the Song by first compiling the patch with the given Synther,
 // returning the stereo audio buffer as a result (and possible errors).
