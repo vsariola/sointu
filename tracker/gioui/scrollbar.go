@@ -50,6 +50,9 @@ func (s *ScrollBar) Layout(gtx C, width unit.Dp, numItems int, pos *layout.Posit
 		totalPixelsEstimate = float32(gtx.Constraints.Min.X+pos.Offset-pos.OffsetLast) * float32(numItems) / float32(pos.Count)
 		scrollBarRelLength = float32(gtx.Constraints.Min.X) / float32(totalPixelsEstimate)
 	}
+	if scrollBarRelLength < 1e-2 {
+		scrollBarRelLength = 1e-2 // make sure it doesn't disappear completely
+	}
 
 	scrollBarRelStart := (float32(pos.First)*totalPixelsEstimate/float32(numItems) + float32(pos.Offset)) / totalPixelsEstimate
 	scrWidth := gtx.Dp(width)
@@ -97,10 +100,10 @@ func (s *ScrollBar) Layout(gtx C, width unit.Dp, numItems int, pos *layout.Posit
 			}
 		case pointer.Drag:
 			if s.Axis == layout.Horizontal {
-				pos.Offset += int(e.Position.X - s.dragStart + 0.5)
+				pos.Offset += int((e.Position.X-s.dragStart)/scrollBarRelLength + 0.5)
 				s.dragStart = e.Position.X
 			} else {
-				pos.Offset += int(e.Position.Y - s.dragStart + 0.5)
+				pos.Offset += int((e.Position.Y-s.dragStart)/scrollBarRelLength + 0.5)
 				s.dragStart = e.Position.Y
 			}
 		case pointer.Release, pointer.Cancel:
