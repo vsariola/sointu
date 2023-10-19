@@ -7,6 +7,10 @@ import (
 	"io"
 )
 
+// Read4klangPatch reads a 4klang patch (a file usually with .4kp extension)
+// from r and returns a Patch, making best attempt to convert 4klang file to a
+// sointu Patch. It returns an error if the file is malformed or if the 4kp file
+// version is not supported.
 func Read4klangPatch(r io.Reader) (patch Patch, err error) {
 	var versionTag uint32
 	var version int
@@ -53,6 +57,10 @@ func Read4klangPatch(r io.Reader) (patch Patch, err error) {
 	return
 }
 
+// Read4klangInstrument reads a 4klang instrument (a file usually with .4ki
+// extension) from r and returns an Instrument, making best attempt to convert
+// 4ki file to a sointu Instrument. It returns an error if the file is malformed
+// or if the 4ki file version is not supported.
 func Read4klangInstrument(r io.Reader) (instr Instrument, err error) {
 	var versionTag uint32
 	var version int
