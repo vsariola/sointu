@@ -54,12 +54,8 @@ func Render(synth Synth, buffer AudioBuffer) error {
 }
 
 // Play plays the Song by first compiling the patch with the given Synther,
-// returning the stereo audio buffer and the sync buffer as a result (and
-// possible errors). Passing 'release' as true means that all the notes are
-// released when the synth is created. The default behaviour during runtime
-// rendering is to leave them playing, meaning that envelopes start attacking
-// right away unless an explicit note release is put to every track.
-func Play(synther Synther, song Song, release bool) (AudioBuffer, error) {
+// returning the stereo audio buffer as a result (and possible errors).
+func Play(synther Synther, song Song) (AudioBuffer, error) {
 	err := song.Validate()
 	if err != nil {
 		return nil, err
@@ -67,11 +63,6 @@ func Play(synther Synther, song Song, release bool) (AudioBuffer, error) {
 	synth, err := synther.Synth(song.Patch, song.BPM)
 	if err != nil {
 		return nil, fmt.Errorf("sointu.Play failed: %v", err)
-	}
-	if release {
-		for i := 0; i < 32; i++ {
-			synth.Release(i)
-		}
 	}
 	curVoices := make([]int, len(song.Score.Tracks))
 	for i := range curVoices {

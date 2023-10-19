@@ -140,7 +140,7 @@ func (t *Tracker) saveSong(w io.WriteCloser) bool {
 }
 
 func (t *Tracker) exportWav(w io.WriteCloser, pcm16 bool) {
-	data, err := sointu.Play(t.synther, t.Song(), true) // render the song to calculate its length
+	data, err := sointu.Play(t.synther, t.Song()) // render the song to calculate its length
 	if err != nil {
 		t.Alert.Update(fmt.Sprintf("Error rendering the song during export: %v", err), Error, time.Second*3)
 		return
