@@ -21,6 +21,7 @@ type Menu struct {
 	clicks    []int
 	hover     int
 	list      layout.List
+	scrollBar ScrollBar
 }
 
 type MenuStyle struct {
@@ -80,56 +81,64 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 			}
 		}
 		m.Menu.list.Axis = layout.Vertical
-		return m.Menu.list.Layout(gtx, len(items), func(gtx C, i int) D {
-			defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-			var macro op.MacroOp
-			item := &items[i]
-			if i == m.Menu.hover-1 && !item.Disabled {
-				macro = op.Record(gtx.Ops)
-			}
-			icon := widgetForIcon(item.IconBytes)
-			iconColor := m.IconColor
-			if item.Disabled {
-				iconColor = mediumEmphasisTextColor
-			}
-			iconInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(6)}
-			textLabel := LabelStyle{Text: item.Text, FontSize: m.FontSize, Color: m.TextColor}
-			if item.Disabled {
-				textLabel.Color = mediumEmphasisTextColor
-			}
-			shortcutLabel := LabelStyle{Text: item.ShortcutText, FontSize: m.FontSize, Color: m.ShortCutColor}
-			shortcutInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(12), Bottom: unit.Dp(2), Top: unit.Dp(2)}
-			dims := layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx C) D {
-					return iconInset.Layout(gtx, func(gtx C) D {
-						p := gtx.Dp(unit.Dp(m.IconSize))
-						gtx.Constraints.Min = image.Pt(p, p)
-						return icon.Layout(gtx, iconColor)
-					})
-				}),
-				layout.Rigid(textLabel.Layout),
-				layout.Flexed(1, func(gtx C) D { return D{Size: image.Pt(gtx.Constraints.Max.X, 1)} }),
-				layout.Rigid(func(gtx C) D {
-					return shortcutInset.Layout(gtx, shortcutLabel.Layout)
-				}),
-			)
-			if i == m.Menu.hover-1 && !item.Disabled {
-				recording := macro.Stop()
-				paint.FillShape(gtx.Ops, m.HoverColor, clip.Rect{
-					Max: image.Pt(dims.Size.X, dims.Size.Y),
-				}.Op())
-				recording.Add(gtx.Ops)
-			}
-			if !item.Disabled {
-				rect := image.Rect(0, 0, dims.Size.X, dims.Size.Y)
-				area := clip.Rect(rect).Push(gtx.Ops)
-				pointer.InputOp{Tag: &m.Menu.tags[i],
-					Types: pointer.Press | pointer.Enter | pointer.Leave,
-				}.Add(gtx.Ops)
-				area.Pop()
-			}
-			return dims
-		})
+		m.Menu.scrollBar.Axis = layout.Vertical
+		return layout.Stack{Alignment: layout.SE}.Layout(gtx,
+			layout.Expanded(func(gtx C) D {
+				return m.Menu.list.Layout(gtx, len(items), func(gtx C, i int) D {
+					defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
+					var macro op.MacroOp
+					item := &items[i]
+					if i == m.Menu.hover-1 && !item.Disabled {
+						macro = op.Record(gtx.Ops)
+					}
+					icon := widgetForIcon(item.IconBytes)
+					iconColor := m.IconColor
+					if item.Disabled {
+						iconColor = mediumEmphasisTextColor
+					}
+					iconInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(6)}
+					textLabel := LabelStyle{Text: item.Text, FontSize: m.FontSize, Color: m.TextColor}
+					if item.Disabled {
+						textLabel.Color = mediumEmphasisTextColor
+					}
+					shortcutLabel := LabelStyle{Text: item.ShortcutText, FontSize: m.FontSize, Color: m.ShortCutColor}
+					shortcutInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(12), Bottom: unit.Dp(2), Top: unit.Dp(2)}
+					dims := layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+						layout.Rigid(func(gtx C) D {
+							return iconInset.Layout(gtx, func(gtx C) D {
+								p := gtx.Dp(unit.Dp(m.IconSize))
+								gtx.Constraints.Min = image.Pt(p, p)
+								return icon.Layout(gtx, iconColor)
+							})
+						}),
+						layout.Rigid(textLabel.Layout),
+						layout.Flexed(1, func(gtx C) D { return D{Size: image.Pt(gtx.Constraints.Max.X, 1)} }),
+						layout.Rigid(func(gtx C) D {
+							return shortcutInset.Layout(gtx, shortcutLabel.Layout)
+						}),
+					)
+					if i == m.Menu.hover-1 && !item.Disabled {
+						recording := macro.Stop()
+						paint.FillShape(gtx.Ops, m.HoverColor, clip.Rect{
+							Max: image.Pt(dims.Size.X, dims.Size.Y),
+						}.Op())
+						recording.Add(gtx.Ops)
+					}
+					if !item.Disabled {
+						rect := image.Rect(0, 0, dims.Size.X, dims.Size.Y)
+						area := clip.Rect(rect).Push(gtx.Ops)
+						pointer.InputOp{Tag: &m.Menu.tags[i],
+							Types: pointer.Press | pointer.Enter | pointer.Leave,
+						}.Add(gtx.Ops)
+						area.Pop()
+					}
+					return dims
+				})
+			}),
+			layout.Expanded(func(gtx C) D {
+				return m.Menu.scrollBar.Layout(gtx, unit.Dp(10), len(items), &m.Menu.list.Position)
+			}),
+		)
 	}
 	popup := Popup(&m.Menu.Visible)
 	popup.NE = unit.Dp(0)

@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 ### Added
+- Scroll bars to menus, shown when a menu is too long to fit.
 - Save the GUI state periodically to a recovery file and load it on
   startup of the app, if present. The recovery files are located in the
   app config directory (e.g. AppData/Roaming/Sointu on Windows).
