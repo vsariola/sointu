@@ -155,7 +155,7 @@ func NewBytecode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode,
 				b.operand(flags)
 			case "send":
 				targetID := unit.Parameters["target"]
-				targetInstrIndex, _, err := patch.FindSendTarget(targetID)
+				targetInstrIndex, _, err := patch.FindUnit(targetID)
 				targetVoice := unit.Parameters["voice"]
 				addr := unit.Parameters["port"] & 7
 				if err == nil {

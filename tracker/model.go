@@ -1195,7 +1195,7 @@ func (m *Model) Param(index int) (Parameter, error) {
 		min, max := t.MinValue, t.MaxValue
 		if unit.Type == "send" {
 			if t.Name == "voice" {
-				i, _, err := m.d.Song.Patch.FindSendTarget(unit.Parameters["target"])
+				i, _, err := m.d.Song.Patch.FindUnit(unit.Parameters["target"])
 				if err == nil {
 					max = m.d.Song.Patch[i].NumVoices
 				}

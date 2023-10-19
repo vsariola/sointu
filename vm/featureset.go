@@ -134,7 +134,7 @@ func NecessaryFeaturesFor(patch sointu.Patch) NecessaryFeatures {
 				features.supportsParamValue[key][v] = true
 			}
 			if unit.Type == "send" {
-				targetInstrIndex, targetUnitIndex, err := patch.FindSendTarget(unit.Parameters["target"])
+				targetInstrIndex, targetUnitIndex, err := patch.FindUnit(unit.Parameters["target"])
 				if err != nil {
 					continue
 				}

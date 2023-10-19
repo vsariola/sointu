@@ -125,7 +125,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 				var unitItems []MenuItem
 				instrName := "<instr>"
 				unitName := "<unit>"
-				targetI, targetU, err := p.tracker.Song().Patch.FindSendTarget(p.Parameter.Value)
+				targetI, targetU, err := p.tracker.Song().Patch.FindUnit(p.Parameter.Value)
 				if err == nil {
 					targetInstrument := p.tracker.Song().Patch[targetI]
 					instrName = targetInstrument.Name

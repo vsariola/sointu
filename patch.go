@@ -330,14 +330,14 @@ func (p Patch) InstrumentForVoice(voice int) (int, error) {
 	return 0, errors.New("voice number is beyond the total voices of an instrument")
 }
 
-// FindSendTarget searches the instrument number and unit index for a unit with
-// the given id. Two units should never have the same id, but if they do, then
-// the first match is returned. Id 0 is interpreted as "no id", thus searching
-// for id 0 returns an error. Error is also returned if the searched id is not
+// FindUnit searches the instrument index and unit index for a unit with the
+// given id. Two units should never have the same id, but if they do, then the
+// first match is returned. Id 0 is interpreted as "no id", thus searching for
+// id 0 returns an error. Error is also returned if the searched id is not
 // found.
-func (p Patch) FindSendTarget(id int) (int, int, error) {
+func (p Patch) FindUnit(id int) (instrIndex int, unitIndex int, err error) {
 	if id == 0 {
-		return 0, 0, errors.New("send targets unit id 0")
+		return 0, 0, errors.New("FindUnit called with id 0")
 	}
 	for i, instr := range p {
 		for u, unit := range instr.Units {
@@ -346,7 +346,7 @@ func (p Patch) FindSendTarget(id int) (int, int, error) {
 			}
 		}
 	}
-	return 0, 0, fmt.Errorf("send targets an unit with id %v, could not find a unit with such an ID in the patch", id)
+	return 0, 0, fmt.Errorf("could not find a unit with id %v", id)
 }
 
 // ParamHintString returns a human readable string representing the current
@@ -421,7 +421,7 @@ func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
 			return fmt.Sprintf("%.2f", float32(value)/64-1)
 		case "voice":
 			if value == 0 {
-				targetIndex, _, err := p.FindSendTarget(unit.Parameters["target"])
+				targetIndex, _, err := p.FindUnit(unit.Parameters["target"])
 				if err == nil && targetIndex != instrIndex {
 					return "all"
 				}
@@ -429,7 +429,7 @@ func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
 			}
 			return fmt.Sprintf("%v", value)
 		case "target":
-			instrIndex, unitIndex, err := p.FindSendTarget(unit.Parameters["target"])
+			instrIndex, unitIndex, err := p.FindUnit(unit.Parameters["target"])
 			if err != nil {
 				return "invalid target"
 			}
@@ -437,7 +437,7 @@ func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
 			unit := instr.Units[unitIndex]
 			return fmt.Sprintf("%v / %v%v", instr.Name, unit.Type, unitIndex)
 		case "port":
-			instrIndex, unitIndex, err := p.FindSendTarget(unit.Parameters["target"])
+			instrIndex, unitIndex, err := p.FindUnit(unit.Parameters["target"])
 			if err != nil {
 				return fmt.Sprintf("%v ???", value)
 			}
