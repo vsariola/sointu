@@ -88,7 +88,7 @@ success:
 }
 
 func Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
-	bytecode, err := Encode(patch, AllFeatures{}, bpm)
+	bytecode, err := NewBytecode(patch, AllFeatures{}, bpm)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling %v", err)
 	}
@@ -113,7 +113,7 @@ func (s *GoSynth) Release(voiceIndex int) {
 }
 
 func (s *GoSynth) Update(patch sointu.Patch, bpm int) error {
-	bytecode, err := Encode(patch, AllFeatures{}, bpm)
+	bytecode, err := NewBytecode(patch, AllFeatures{}, bpm)
 	if err != nil {
 		return fmt.Errorf("error compiling %v", err)
 	}

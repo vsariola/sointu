@@ -28,7 +28,7 @@ func Synth(patch sointu.Patch, bpm int) (*NativeSynth, error) {
 	if n := patch.NumDelayLines(); n > 64 {
 		return nil, fmt.Errorf("native bridge has currently a hard limit of 64 delaylines; patch uses %v", n)
 	}
-	comPatch, err := vm.Encode(patch, vm.AllFeatures{}, bpm)
+	comPatch, err := vm.NewBytecode(patch, vm.AllFeatures{}, bpm)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling patch: %v", err)
 	}
@@ -120,7 +120,7 @@ func (bridgesynth *NativeSynth) Update(patch sointu.Patch, bpm int) error {
 	if n := patch.NumDelayLines(); n > 64 {
 		return fmt.Errorf("native bridge has currently a hard limit of 64 delaylines; patch uses %v", n)
 	}
-	comPatch, err := vm.Encode(patch, vm.AllFeatures{}, bpm)
+	comPatch, err := vm.NewBytecode(patch, vm.AllFeatures{}, bpm)
 	if err != nil {
 		return fmt.Errorf("error compiling patch: %v", err)
 	}

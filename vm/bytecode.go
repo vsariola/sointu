@@ -68,7 +68,7 @@ type bytecodeBuilder struct {
 	Bytecode
 }
 
-func Encode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode, error) {
+func NewBytecode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode, error) {
 	if patch.NumVoices() > 32 {
 		return nil, fmt.Errorf("Sointu does not support more than 32 concurrent voices; patch uses %v", patch.NumVoices())
 	}
