@@ -20,8 +20,8 @@ import (
 type NullContext struct {
 }
 
-func (NullContext) NextEvent() (event tracker.PlayerProcessEvent, ok bool) {
-	return tracker.PlayerProcessEvent{}, false
+func (NullContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
+	return tracker.MIDINoteEvent{}, false
 }
 
 func (NullContext) BPM() (bpm float64, ok bool) {

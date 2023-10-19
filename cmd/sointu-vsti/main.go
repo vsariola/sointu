@@ -20,7 +20,7 @@ type VSTIProcessContext struct {
 	host   vst2.Host
 }
 
-func (c *VSTIProcessContext) NextEvent() (event tracker.PlayerProcessEvent, ok bool) {
+func (c *VSTIProcessContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
 	var ev vst2.MIDIEvent
 	for len(c.events) > 0 {
 		ev, c.events = c.events[0], c.events[1:]
@@ -28,16 +28,16 @@ func (c *VSTIProcessContext) NextEvent() (event tracker.PlayerProcessEvent, ok b
 		case ev.Data[0] >= 0x80 && ev.Data[0] < 0x90:
 			channel := ev.Data[0] - 0x80
 			note := ev.Data[1]
-			return tracker.PlayerProcessEvent{Frame: int(ev.DeltaFrames), On: false, Channel: int(channel), Note: note}, true
+			return tracker.MIDINoteEvent{Frame: int(ev.DeltaFrames), On: false, Channel: int(channel), Note: note}, true
 		case ev.Data[0] >= 0x90 && ev.Data[0] < 0xA0:
 			channel := ev.Data[0] - 0x90
 			note := ev.Data[1]
-			return tracker.PlayerProcessEvent{Frame: int(ev.DeltaFrames), On: true, Channel: int(channel), Note: note}, true
+			return tracker.MIDINoteEvent{Frame: int(ev.DeltaFrames), On: true, Channel: int(channel), Note: note}, true
 		default:
 			// ignore all other MIDI messages
 		}
 	}
-	return tracker.PlayerProcessEvent{}, false
+	return tracker.MIDINoteEvent{}, false
 }
 
 func (c *VSTIProcessContext) BPM() (bpm float64, ok bool) {

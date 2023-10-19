@@ -240,11 +240,14 @@ func (m *Model) ProcessPlayerMessage(msg PlayerMessage) {
 	switch e := msg.Inner.(type) {
 	case PlayerCrashMessage:
 		m.d.Panic = true
-	case PlayerRecordedMessage:
+	case Recording:
 		if e.BPM == 0 {
 			e.BPM = float64(m.d.Song.BPM)
 		}
-		song := RecordingToSong(m.d.Song.Patch, m.d.Song.RowsPerBeat, m.d.Song.Score.RowsPerPattern, e)
+		song, err := e.Song(m.d.Song.Patch, m.d.Song.RowsPerBeat, m.d.Song.Score.RowsPerPattern)
+		if err != nil {
+			break
+		}
 		m.SetSong(song)
 		m.d.InstrEnlarged = false
 	default:

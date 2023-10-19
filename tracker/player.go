@@ -25,10 +25,8 @@ type (
 		peakVolumeMeter   VolumeAnalyzer
 		voiceStates       [vm.MAX_VOICES]float32
 
-		recording            bool
-		recordingNoteArrived bool
-		recordingFrames      int
-		recordingEvents      []PlayerProcessEvent
+		recState  recState
+		recording Recording
 
 		synther        sointu.Synther
 		playerMessages chan<- PlayerMessage
@@ -36,11 +34,11 @@ type (
 	}
 
 	PlayerProcessContext interface {
-		NextEvent() (event PlayerProcessEvent, ok bool)
+		NextEvent() (event MIDINoteEvent, ok bool)
 		BPM() (bpm float64, ok bool)
 	}
 
-	PlayerProcessEvent struct {
+	MIDINoteEvent struct {
 		Frame   int
 		On      bool
 		Channel int
@@ -49,12 +47,6 @@ type (
 
 	PlayerPlayingMessage struct {
 		bool
-	}
-
-	PlayerRecordedMessage struct {
-		BPM         float64 // vsts allow bpms as floats so for accurate reconstruction, keep it as float for recording
-		Events      []PlayerProcessEvent
-		TotalFrames int
 	}
 
 	// Volume and SongRow are transmitted so frequently that they are treated specially, to avoid boxing. All the
@@ -74,6 +66,10 @@ type (
 	PlayerVolumeErrorMessage struct {
 		error
 	}
+)
+
+type (
+	recState int
 
 	voiceNote struct {
 		voice int
@@ -83,6 +79,12 @@ type (
 	recordEvent struct {
 		frame int
 	}
+)
+
+const (
+	recStateNone recState = iota
+	recStateWaitingForNote
+	recStateRecording
 )
 
 const NUM_RENDER_TRIES = 10000
@@ -103,22 +105,22 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 	midi, midiOk := context.NextEvent()
 	frame := 0
 
-	if p.recording && p.recordingNoteArrived {
-		p.recordingFrames += len(buffer)
+	if p.recState == recStateRecording {
+		p.recording.TotalFrames += len(buffer)
 	}
 
 	oldBuffer := buffer
 
 	for i := 0; i < NUM_RENDER_TRIES; i++ {
 		for midiOk && frame >= midi.Frame {
-			if p.recording {
-				if !p.recordingNoteArrived {
-					p.recordingFrames = len(buffer)
-					p.recordingNoteArrived = true
-				}
+			if p.recState == recStateWaitingForNote {
+				p.recording.TotalFrames = len(buffer)
+				p.recState = recStateRecording
+			}
+			if p.recState == recStateRecording {
 				midiTotalFrame := midi
-				midiTotalFrame.Frame = p.recordingFrames - len(buffer)
-				p.recordingEvents = append(p.recordingEvents, midiTotalFrame)
+				midiTotalFrame.Frame = p.recording.TotalFrames - len(buffer)
+				p.recording.Events = append(p.recording.Events, midiTotalFrame)
 			}
 			if midi.On {
 				p.triggerInstrument(midi.Channel, midi.Note)
@@ -278,20 +280,14 @@ loop:
 				}
 			case ModelRecordingMessage:
 				if m.bool {
-					p.recording = true
-					p.recordingEvents = make([]PlayerProcessEvent, 0)
-					p.recordingFrames = 0
-					p.recordingNoteArrived = false
+					p.recState = recStateWaitingForNote
+					p.recording = Recording{}
 				} else {
-					if p.recording && len(p.recordingEvents) > 0 {
-						bpm, _ := context.BPM()
-						p.trySend(PlayerRecordedMessage{
-							BPM:         bpm,
-							Events:      p.recordingEvents,
-							TotalFrames: p.recordingFrames,
-						})
+					if p.recState == recStateRecording && len(p.recording.Events) > 0 {
+						p.recording.BPM, _ = context.BPM()
+						p.trySend(p.recording)
 					}
-					p.recording = false
+					p.recState = recStateNone
 				}
 			default:
 				// ignore unknown messages

@@ -1,20 +1,31 @@
 package tracker
 
 import (
+	"bytes"
+	"errors"
 	"math"
 
 	"github.com/vsariola/sointu"
 )
 
-type (
-	recordingNote struct {
-		note     byte
-		startRow int
-		endRow   int
-	}
-)
+type Recording struct {
+	BPM         float64 // vsts allow bpms as floats so for accurate reconstruction, keep it as float for recording
+	Events      []MIDINoteEvent
+	TotalFrames int
+}
 
-func RecordingToSong(patch sointu.Patch, rowsPerBeat, rowsPerPattern int, recording PlayerRecordedMessage) sointu.Song {
+type recordingNote struct {
+	note     byte
+	startRow int
+	endRow   int
+}
+
+var ErrInvalidRows = errors.New("rows per beat and rows per pattern must be greater than 1")
+
+func (recording *Recording) Song(patch sointu.Patch, rowsPerBeat, rowsPerPattern int) (sointu.Song, error) {
+	if rowsPerBeat <= 1 || rowsPerPattern <= 1 {
+		return sointu.Song{}, ErrInvalidRows
+	}
 	channelNotes := make([][]recordingNote, 0)
 	// find the length of each note and assign it to its respective channel
 	for i, m := range recording.Events {
@@ -109,7 +120,7 @@ func RecordingToSong(patch sointu.Patch, rowsPerBeat, rowsPerPattern int, record
 					continue L
 				}
 				for l, p2 := range patterns {
-					if testEq(p, p2) {
+					if bytes.Equal(p, p2) {
 						order[k] = l
 						continue L
 					}
@@ -125,21 +136,9 @@ func RecordingToSong(patch sointu.Patch, rowsPerBeat, rowsPerPattern int, record
 		}
 	}
 	score := sointu.Score{Length: songLengthPatterns, RowsPerPattern: rowsPerPattern, Tracks: songTracks}
-	return sointu.Song{BPM: int(recording.BPM + 0.5), RowsPerBeat: rowsPerBeat, Score: score, Patch: patch.Copy()}
+	return sointu.Song{BPM: int(recording.BPM + 0.5), RowsPerBeat: rowsPerBeat, Score: score, Patch: patch.Copy()}, nil
 }
 
 func frameToRow(BPM float64, rowsPerBeat, frame int) int {
 	return int(float64(frame)/44100/60*BPM*float64(rowsPerBeat) + 0.5)
-}
-
-func testEq(a, b []byte) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }
