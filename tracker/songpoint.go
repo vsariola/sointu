@@ -2,37 +2,42 @@ package tracker
 
 import "github.com/vsariola/sointu"
 
-type SongRow struct {
-	Pattern int
-	Row     int
+type (
+	// ScoreRow identifies a row of the song score.
+	ScoreRow struct {
+		Pattern int
+		Row     int
+	}
+
+	// ScorePoint identifies a row and a track in a song score.
+	ScorePoint struct {
+		Track int
+		ScoreRow
+	}
+
+	// ScoreRect identifies a rectangular area in a song score.
+	ScoreRect struct {
+		Corner1 ScorePoint
+		Corner2 ScorePoint
+	}
+)
+
+func (r ScoreRow) AddRows(rows int) ScoreRow {
+	return ScoreRow{Row: r.Row + rows, Pattern: r.Pattern}
 }
 
-type SongPoint struct {
-	Track int
-	SongRow
+func (r ScoreRow) AddPatterns(patterns int) ScoreRow {
+	return ScoreRow{Row: r.Row, Pattern: r.Pattern + patterns}
 }
 
-type SongRect struct {
-	Corner1 SongPoint
-	Corner2 SongPoint
-}
-
-func (r SongRow) AddRows(rows int) SongRow {
-	return SongRow{Row: r.Row + rows, Pattern: r.Pattern}
-}
-
-func (r SongRow) AddPatterns(patterns int) SongRow {
-	return SongRow{Row: r.Row, Pattern: r.Pattern + patterns}
-}
-
-func (r SongRow) Wrap(score sointu.Score) SongRow {
+func (r ScoreRow) Wrap(score sointu.Score) ScoreRow {
 	totalRow := r.Pattern*score.RowsPerPattern + r.Row
 	r.Row = mod(totalRow, score.RowsPerPattern)
 	r.Pattern = mod((totalRow-r.Row)/score.RowsPerPattern, score.Length)
 	return r
 }
 
-func (r SongRow) Clamp(score sointu.Score) SongRow {
+func (r ScoreRow) Clamp(score sointu.Score) ScoreRow {
 	totalRow := r.Pattern*score.RowsPerPattern + r.Row
 	if totalRow < 0 {
 		totalRow = 0
@@ -45,31 +50,31 @@ func (r SongRow) Clamp(score sointu.Score) SongRow {
 	return r
 }
 
-func (r SongPoint) AddRows(rows int) SongPoint {
-	return SongPoint{Track: r.Track, SongRow: r.SongRow.AddRows(rows)}
+func (r ScorePoint) AddRows(rows int) ScorePoint {
+	return ScorePoint{Track: r.Track, ScoreRow: r.ScoreRow.AddRows(rows)}
 }
 
-func (r SongPoint) AddPatterns(patterns int) SongPoint {
-	return SongPoint{Track: r.Track, SongRow: r.SongRow.AddPatterns(patterns)}
+func (r ScorePoint) AddPatterns(patterns int) ScorePoint {
+	return ScorePoint{Track: r.Track, ScoreRow: r.ScoreRow.AddPatterns(patterns)}
 }
 
-func (p SongPoint) Wrap(score sointu.Score) SongPoint {
+func (p ScorePoint) Wrap(score sointu.Score) ScorePoint {
 	p.Track = mod(p.Track, len(score.Tracks))
-	p.SongRow = p.SongRow.Wrap(score)
+	p.ScoreRow = p.ScoreRow.Wrap(score)
 	return p
 }
 
-func (p SongPoint) Clamp(score sointu.Score) SongPoint {
+func (p ScorePoint) Clamp(score sointu.Score) ScorePoint {
 	if p.Track < 0 {
 		p.Track = 0
 	} else if l := len(score.Tracks); p.Track >= l {
 		p.Track = l - 1
 	}
-	p.SongRow = p.SongRow.Clamp(score)
+	p.ScoreRow = p.ScoreRow.Clamp(score)
 	return p
 }
 
-func (r *SongRect) Contains(p SongPoint) bool {
+func (r *ScoreRect) Contains(p ScorePoint) bool {
 	track1, track2 := r.Corner1.Track, r.Corner2.Track
 	if track2 < track1 {
 		track1, track2 = track2, track1

@@ -173,7 +173,7 @@ mainloop:
 	for {
 		if pos, playing := t.PlayPosition(), t.Playing(); t.NoteTracking() && playing {
 			cursor := t.Cursor()
-			cursor.SongRow = pos
+			cursor.ScoreRow = pos
 			t.SetCursor(cursor)
 			t.SetSelectionCorner(cursor)
 		}

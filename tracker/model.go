@@ -26,8 +26,8 @@ type (
 	// modelData is the part of the model that gets save to recovery file
 	modelData struct {
 		Song                 sointu.Song
-		SelectionCorner      SongPoint
-		Cursor               SongPoint
+		SelectionCorner      ScorePoint
+		Cursor               ScorePoint
 		LowNibble            bool
 		InstrIndex           int
 		UnitIndex            int
@@ -42,7 +42,7 @@ type (
 		Panic                bool
 		Playing              bool
 		Recording            bool
-		PlayPosition         SongRow
+		PlayPosition         ScoreRow
 		InstrEnlarged        bool
 		RecoveryFilePath     string
 		ChangedSinceRecovery bool
@@ -72,7 +72,7 @@ type (
 	}
 
 	ModelPlayFromPositionMessage struct {
-		SongRow
+		ScoreRow
 	}
 
 	ModelSamplesPerRowChangedMessage struct {
@@ -460,7 +460,7 @@ func (m *Model) SetPlaying(val bool) {
 	}
 }
 
-func (m *Model) PlayPosition() SongRow {
+func (m *Model) PlayPosition() ScoreRow {
 	return m.d.PlayPosition
 }
 
@@ -647,7 +647,7 @@ func (m *Model) InstrEnlarged() bool {
 	return m.d.InstrEnlarged
 }
 
-func (m *Model) PlayFromPosition(sr SongRow) {
+func (m *Model) PlayFromPosition(sr ScoreRow) {
 	m.d.Playing = true
 	m.modelMessages <- ModelPlayFromPositionMessage{sr}
 }
@@ -937,7 +937,7 @@ func (m *Model) AdjustSelectionPitch(delta int) {
 			Row int
 		}]bool{}
 		for r := r1; r <= r2; r++ {
-			s := SongRow{Row: r}.Wrap(m.d.Song.Score)
+			s := ScoreRow{Row: r}.Wrap(m.d.Song.Score)
 			if s.Pattern >= len(m.d.Song.Score.Tracks[c].Order) {
 				break
 			}
@@ -978,7 +978,7 @@ func (m *Model) DeleteSelection() {
 	m.saveUndo("DeleteSelection", 0)
 	r1, r2, t1, t2 := m.getSelectionRange()
 	for r := r1; r <= r2; r++ {
-		s := SongRow{Row: r}.Wrap(m.d.Song.Score)
+		s := ScoreRow{Row: r}.Wrap(m.d.Song.Score)
 		for c := t1; c <= t2; c++ {
 			if len(m.d.Song.Score.Tracks[c].Order) <= s.Pattern {
 				continue
@@ -1004,8 +1004,8 @@ func (m *Model) DeleteSelection() {
 func (m *Model) DeletePatternSelection() {
 	m.saveUndo("DeletePatternSelection", 0)
 	r1, r2, t1, t2 := m.getSelectionRange()
-	p1 := SongRow{Row: r1}.Wrap(m.d.Song.Score).Pattern
-	p2 := SongRow{Row: r2}.Wrap(m.d.Song.Score).Pattern
+	p1 := ScoreRow{Row: r1}.Wrap(m.d.Song.Score).Pattern
+	p2 := ScoreRow{Row: r2}.Wrap(m.d.Song.Score).Pattern
 	for p := p1; p <= p2; p++ {
 		for c := t1; c <= t2; c++ {
 			if p < len(m.d.Song.Score.Tracks[c].Order) {
@@ -1073,20 +1073,20 @@ func (m *Model) Song() sointu.Song {
 	return m.d.Song
 }
 
-func (m *Model) SelectionCorner() SongPoint {
+func (m *Model) SelectionCorner() ScorePoint {
 	return m.d.SelectionCorner
 }
 
-func (m *Model) SetSelectionCorner(value SongPoint) {
+func (m *Model) SetSelectionCorner(value ScorePoint) {
 	m.d.SelectionCorner = value
 	m.clampPositions()
 }
 
-func (m *Model) Cursor() SongPoint {
+func (m *Model) Cursor() ScorePoint {
 	return m.d.Cursor
 }
 
-func (m *Model) SetCursor(value SongPoint) {
+func (m *Model) SetCursor(value ScorePoint) {
 	m.d.Cursor = value
 	m.clampPositions()
 }

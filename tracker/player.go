@@ -17,7 +17,7 @@ type (
 		score             sointu.Score
 		playing           bool
 		rowtime           int
-		position          SongRow
+		position          ScoreRow
 		samplesSinceEvent []int
 		samplesPerRow     int
 		bpm               int
@@ -62,7 +62,7 @@ type (
 	PlayerMessage struct {
 		AverageVolume Volume
 		PeakVolume    Volume
-		SongRow       SongRow
+		SongRow       ScoreRow
 		VoiceStates   [vm.MAX_VOICES]float32
 		Inner         interface{}
 	}
@@ -255,7 +255,7 @@ loop:
 				p.compileOrUpdateSynth()
 			case ModelPlayFromPositionMessage:
 				p.playing = true
-				p.position = m.SongRow
+				p.position = m.ScoreRow
 				p.position.Row--
 				p.rowtime = math.MaxInt
 				for i, t := range p.score.Tracks {

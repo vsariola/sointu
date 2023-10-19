@@ -302,7 +302,7 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 			te.Focus()
 			track := int(e.Position.X) / trackColWidth
 			row := int((e.Position.Y-float32(gtx.Constraints.Max.Y-trackRowHeight)/2)/trackRowHeight + float32(cursorSongRow))
-			cursor := tracker.SongPoint{Track: track, SongRow: tracker.SongRow{Row: row}}.Clamp(t.Song().Score)
+			cursor := tracker.ScorePoint{Track: track, ScoreRow: tracker.ScoreRow{Row: row}}.Clamp(t.Song().Score)
 			t.SetCursor(cursor)
 			t.SetSelectionCorner(cursor)
 			cursorSongRow = cursor.Pattern*t.Song().Score.RowsPerPattern + cursor.Row

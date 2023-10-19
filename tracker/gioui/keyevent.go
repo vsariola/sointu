@@ -102,12 +102,12 @@ func (t *Tracker) KeyEvent(e key.Event, o *op.Ops) {
 			return
 		case "F5":
 			t.SetNoteTracking(true)
-			startRow := t.Cursor().SongRow
+			startRow := t.Cursor().ScoreRow
 			t.PlayFromPosition(startRow)
 			return
 		case "F6":
 			t.SetNoteTracking(false)
-			startRow := t.Cursor().SongRow
+			startRow := t.Cursor().ScoreRow
 			t.PlayFromPosition(startRow)
 			return
 		case "F8":
@@ -116,7 +116,7 @@ func (t *Tracker) KeyEvent(e key.Event, o *op.Ops) {
 		case "Space":
 			if !t.Playing() && !t.InstrEnlarged() {
 				t.SetNoteTracking(!e.Modifiers.Contain(key.ModShortcut))
-				startRow := t.Cursor().SongRow
+				startRow := t.Cursor().ScoreRow
 				t.PlayFromPosition(startRow)
 			} else {
 				t.SetPlaying(false)

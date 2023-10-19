@@ -80,7 +80,7 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 			case "Space":
 				if !t.Playing() {
 					t.SetNoteTracking(!e.Modifiers.Contain(key.ModShortcut))
-					startRow := t.Cursor().SongRow
+					startRow := t.Cursor().ScoreRow
 					startRow.Row = 0
 					t.PlayFromPosition(startRow)
 				} else {
@@ -91,7 +91,7 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 			case key.NameUpArrow:
 				cursor := t.Cursor()
 				if e.Modifiers.Contain(key.ModShortcut) {
-					cursor.SongRow = tracker.SongRow{}
+					cursor.ScoreRow = tracker.ScoreRow{}
 				} else {
 					cursor.Row -= t.Song().Score.RowsPerPattern
 				}
@@ -175,9 +175,9 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 
 	key.InputOp{Tag: &oe.tag, Keys: "←|→|↑|↓|Shift-←|Shift-→|Shift-↑|Shift-↓|⏎|⇱|⇲|⌫|⌦|Ctrl-⌫|Ctrl-⌦|+|-|Space|0|1|2|3|4|5|6|7|8|9|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z"}.Add(gtx.Ops)
 
-	patternRect := tracker.SongRect{
-		Corner1: tracker.SongPoint{SongRow: tracker.SongRow{Pattern: t.Cursor().Pattern}, Track: t.Cursor().Track},
-		Corner2: tracker.SongPoint{SongRow: tracker.SongRow{Pattern: t.SelectionCorner().Pattern}, Track: t.SelectionCorner().Track},
+	patternRect := tracker.ScoreRect{
+		Corner1: tracker.ScorePoint{ScoreRow: tracker.ScoreRow{Pattern: t.Cursor().Pattern}, Track: t.Cursor().Track},
+		Corner2: tracker.ScorePoint{ScoreRow: tracker.ScoreRow{Pattern: t.SelectionCorner().Pattern}, Track: t.SelectionCorner().Track},
 	}
 
 	// draw the single letter titles for tracks
@@ -223,7 +223,7 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 				widget.Label{Alignment: text.Middle}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(track.Order[j]), op.CallOp{})
 				op.Offset(image.Pt(0, 2)).Add(gtx.Ops)
 			}
-			point := tracker.SongPoint{Track: i, SongRow: tracker.SongRow{Pattern: j}}
+			point := tracker.ScorePoint{Track: i, ScoreRow: tracker.ScoreRow{Pattern: j}}
 			if oe.focused || t.TrackEditor.Focused() {
 				if patternRect.Contains(point) {
 					color := inactiveSelectionColor
