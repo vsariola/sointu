@@ -123,7 +123,6 @@ const (
 )
 
 const maxUndo = 64
-const RECOVERY_FILE = ".sointu_recovery"
 
 func NewModel(modelMessages chan<- interface{}, playerMessages <-chan PlayerMessage, recoveryFilePath string) *Model {
 	ret := new(Model)
