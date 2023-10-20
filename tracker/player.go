@@ -64,11 +64,6 @@ type (
 		Inner         interface{}
 	}
 
-	// PlayerPlayingMessage is sent to the model when the player starts or stops playing the score.
-	PlayerPlayingMessage struct {
-		bool
-	}
-
 	// PlayerCrashMessage is sent to the model when the player crashes.
 	PlayerCrashMessage struct {
 		error
