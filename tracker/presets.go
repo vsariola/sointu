@@ -12,14 +12,17 @@ import (
 
 //go:generate go run generate/main.go
 
+// GmDlsEntry is a single sample entry from the gm.dls file
 type GmDlsEntry struct {
-	Start              int
-	LoopStart          int
-	LoopLength         int
-	SuggestedTranspose int
-	Name               string
+	Start              int    // sample start offset in words
+	LoopStart          int    // loop start offset in words
+	LoopLength         int    // loop length in words
+	SuggestedTranspose int    // suggested transpose in semitones, so that all samples play at same pitch
+	Name               string // sample name
 }
 
+// GmDlsEntryMap is a reverse map, to find the index of the GmDlsEntry in the
+// GmDlsEntries list based on the sample offset. Do not modify during runtime.
 var GmDlsEntryMap = make(map[vm.SampleOffset]int)
 
 func init() {
