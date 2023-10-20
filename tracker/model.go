@@ -33,16 +33,11 @@ type (
 		UnitIndex            int
 		ParamIndex           int
 		Octave               int
-		NoteTracking         bool
 		UsedIDs              map[int]bool
 		MaxID                int
 		FilePath             string
 		ChangedSinceSave     bool
 		PatternUseCount      [][]int
-		Panic                bool
-		Playing              bool
-		Recording            bool
-		PlayPosition         ScoreRow
 		InstrEnlarged        bool
 		RecoveryFilePath     string
 		ChangedSinceRecovery bool
@@ -55,6 +50,12 @@ type (
 		undoSkipCounter int
 		undoStack       []modelData
 		redoStack       []modelData
+
+		panic        bool
+		playing      bool
+		recording    bool
+		playPosition ScoreRow
+		noteTracking bool
 
 		PlayerMessages <-chan PlayerMessage
 		modelMessages  chan<- interface{}
@@ -241,8 +242,8 @@ func (m *Model) SetOctave(value int) bool {
 }
 
 func (m *Model) ProcessPlayerMessage(msg PlayerMessage) {
-	m.d.PlayPosition = msg.SongRow
-	m.d.Panic = msg.Panic
+	m.playPosition = msg.SongRow
+	m.panic = msg.Panic
 	switch e := msg.Inner.(type) {
 	case Recording:
 		if e.BPM == 0 {
@@ -457,18 +458,18 @@ func (m *Model) NoteOff(id NoteID) {
 }
 
 func (m *Model) Playing() bool {
-	return m.d.Playing
+	return m.playing
 }
 
 func (m *Model) SetPlaying(val bool) {
-	if m.d.Playing != val {
-		m.d.Playing = val
+	if m.playing != val {
+		m.playing = val
 		m.send(ModelPlayingChangedMessage{val})
 	}
 }
 
 func (m *Model) PlayPosition() ScoreRow {
-	return m.d.PlayPosition
+	return m.playPosition
 }
 
 func (m *Model) CanAddInstrument() bool {
@@ -624,26 +625,26 @@ func (m *Model) AdjustPatternNumber(delta int, swap bool) {
 }
 
 func (m *Model) SetRecording(val bool) {
-	if m.d.Recording != val {
-		m.d.Recording = val
+	if m.recording != val {
+		m.recording = val
 		m.d.InstrEnlarged = val
 		m.send(ModelRecordingMessage{val})
 	}
 }
 
 func (m *Model) Recording() bool {
-	return m.d.Recording
+	return m.recording
 }
 
 func (m *Model) SetPanic(val bool) {
-	if m.d.Panic != val {
-		m.d.Panic = val
+	if m.panic != val {
+		m.panic = val
 		m.send(ModelPanicMessage{val})
 	}
 }
 
 func (m *Model) Panic() bool {
-	return m.d.Panic
+	return m.panic
 }
 
 func (m *Model) SetInstrEnlarged(val bool) {
@@ -655,7 +656,7 @@ func (m *Model) InstrEnlarged() bool {
 }
 
 func (m *Model) PlayFromPosition(sr ScoreRow) {
-	m.d.Playing = true
+	m.playing = true
 	m.send(ModelPlayFromPositionMessage{sr})
 }
 
@@ -1067,11 +1068,11 @@ func (m *Model) CanRedo() bool {
 }
 
 func (m *Model) SetNoteTracking(value bool) {
-	m.d.NoteTracking = value
+	m.noteTracking = value
 }
 
 func (m *Model) NoteTracking() bool {
-	return m.d.NoteTracking
+	return m.noteTracking
 }
 
 func (m *Model) Song() sointu.Song {
