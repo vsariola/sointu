@@ -46,15 +46,16 @@ type (
 		InstrEnlarged        bool
 		RecoveryFilePath     string
 		ChangedSinceRecovery bool
-
-		PrevUndoType    string
-		UndoSkipCounter int
-		UndoStack       []sointu.Song
-		RedoStack       []sointu.Song
 	}
 
 	Model struct {
-		d              modelData
+		d modelData
+
+		prevUndoType    string
+		undoSkipCounter int
+		undoStack       []modelData
+		redoStack       []modelData
+
 		PlayerMessages <-chan PlayerMessage
 		modelMessages  chan<- interface{}
 	}
@@ -223,13 +224,15 @@ func (m *Model) SetSong(song sointu.Song) {
 	m.setSongNoUndo(song)
 }
 
+// Returns the current octave for jamming and inputting nodes
+func (m *Model) Octave() int {
+	return m.d.Octave
+}
+
+// Sets the current octave for jamming and inputting nodes and returns true if
+// it changed. The value is clamped to 0..9
 func (m *Model) SetOctave(value int) bool {
-	if value < 0 {
-		value = 0
-	}
-	if value > 9 {
-		value = 9
-	}
+	value = clamp(value, 0, 9)
 	if m.d.Octave == value {
 		return false
 	}
@@ -1025,40 +1028,42 @@ func (m *Model) Undo() {
 	if !m.CanUndo() {
 		return
 	}
-	m.d.RedoStack = append(m.d.RedoStack, m.d.Song.Copy())
-	m.setSongNoUndo(m.d.UndoStack[len(m.d.UndoStack)-1])
-	m.d.UndoStack = m.d.UndoStack[:len(m.d.UndoStack)-1]
+	m.redoStack = append(m.redoStack, m.d.Copy())
+	m.d = m.undoStack[len(m.undoStack)-1]
+	m.undoStack = m.undoStack[:len(m.undoStack)-1]
 	m.limitUndoRedoLengths()
-	m.d.PrevUndoType = ""
+	m.prevUndoType = ""
+	m.send(m.d.Song.Copy())
 }
 
 func (m *Model) CanUndo() bool {
-	return len(m.d.UndoStack) > 0
+	return len(m.undoStack) > 0
 }
 
 func (m *Model) ClearUndoHistory() {
-	if len(m.d.UndoStack) > 0 {
-		m.d.UndoStack = m.d.UndoStack[:0]
+	if len(m.undoStack) > 0 {
+		m.undoStack = m.undoStack[:0]
 	}
-	if len(m.d.RedoStack) > 0 {
-		m.d.RedoStack = m.d.RedoStack[:0]
+	if len(m.redoStack) > 0 {
+		m.redoStack = m.redoStack[:0]
 	}
-	m.d.PrevUndoType = ""
+	m.prevUndoType = ""
 }
 
 func (m *Model) Redo() {
 	if !m.CanRedo() {
 		return
 	}
-	m.d.UndoStack = append(m.d.UndoStack, m.d.Song.Copy())
-	m.setSongNoUndo(m.d.RedoStack[len(m.d.RedoStack)-1])
-	m.d.RedoStack = m.d.RedoStack[:len(m.d.RedoStack)-1]
+	m.undoStack = append(m.undoStack, m.d.Copy())
+	m.d = m.redoStack[len(m.redoStack)-1]
+	m.redoStack = m.redoStack[:len(m.redoStack)-1]
 	m.limitUndoRedoLengths()
-	m.d.PrevUndoType = ""
+	m.prevUndoType = ""
+	m.send(m.d.Song.Copy())
 }
 
 func (m *Model) CanRedo() bool {
-	return len(m.d.RedoStack) > 0
+	return len(m.redoStack) > 0
 }
 
 func (m *Model) SetNoteTracking(value bool) {
@@ -1067,10 +1072,6 @@ func (m *Model) SetNoteTracking(value bool) {
 
 func (m *Model) NoteTracking() bool {
 	return m.d.NoteTracking
-}
-
-func (m *Model) Octave() int {
-	return m.d.Octave
 }
 
 func (m *Model) Song() sointu.Song {
@@ -1128,11 +1129,11 @@ func (m *Model) ParamIndex() int {
 }
 
 func (m *Model) limitUndoRedoLengths() {
-	if len(m.d.UndoStack) >= maxUndo {
-		m.d.UndoStack = m.d.UndoStack[len(m.d.UndoStack)-maxUndo:]
+	if len(m.undoStack) >= maxUndo {
+		m.undoStack = m.undoStack[len(m.undoStack)-maxUndo:]
 	}
-	if len(m.d.RedoStack) >= maxUndo {
-		m.d.RedoStack = m.d.RedoStack[len(m.d.RedoStack)-maxUndo:]
+	if len(m.redoStack) >= maxUndo {
+		m.redoStack = m.redoStack[len(m.redoStack)-maxUndo:]
 	}
 }
 
@@ -1419,14 +1420,14 @@ func (m *Model) send(message interface{}) {
 func (m *Model) saveUndo(undoType string, undoSkipping int) {
 	m.d.ChangedSinceSave = true
 	m.d.ChangedSinceRecovery = true
-	if m.d.PrevUndoType == undoType && m.d.UndoSkipCounter < undoSkipping {
-		m.d.UndoSkipCounter++
+	if m.prevUndoType == undoType && m.undoSkipCounter < undoSkipping {
+		m.undoSkipCounter++
 		return
 	}
-	m.d.PrevUndoType = undoType
-	m.d.UndoSkipCounter = 0
-	m.d.UndoStack = append(m.d.UndoStack, m.d.Song.Copy())
-	m.d.RedoStack = m.d.RedoStack[:0]
+	m.prevUndoType = undoType
+	m.undoSkipCounter = 0
+	m.undoStack = append(m.undoStack, m.d.Copy())
+	m.redoStack = m.redoStack[:0]
 	m.limitUndoRedoLengths()
 }
 
@@ -1490,6 +1491,21 @@ func NoteIDInstr(instr int, note byte) NoteID {
 
 func NoteIDTrack(track int, note byte) NoteID {
 	return NoteID{IsInstr: false, Track: track, Note: note}
+}
+
+func (d *modelData) Copy() modelData {
+	ret := *d
+	ret.Song = d.Song.Copy()
+	ret.PatternUseCount = make([][]int, len(d.PatternUseCount))
+	for i := range ret.PatternUseCount {
+		ret.PatternUseCount[i] = make([]int, len(d.PatternUseCount[i]))
+		copy(ret.PatternUseCount[i], d.PatternUseCount[i])
+	}
+	ret.UsedIDs = make(map[int]bool)
+	for k, v := range d.UsedIDs {
+		ret.UsedIDs[k] = v
+	}
+	return ret
 }
 
 func clamp(a, min, max int) int {
