@@ -91,7 +91,7 @@ const (
 	recStateRecording
 )
 
-const NUM_RENDER_TRIES = 10000
+const numRenderTries = 10000
 
 // NewPlayer creates a new player. The playerMessages channel is used to send
 // messages to the model. The modelMessages channel is used to receive messages
@@ -123,7 +123,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 
 	oldBuffer := buffer
 
-	for i := 0; i < NUM_RENDER_TRIES; i++ {
+	for i := 0; i < numRenderTries; i++ {
 		for midiOk && frame >= midi.Frame {
 			if p.recState == recStateWaitingForNote {
 				p.recording.TotalFrames = len(buffer)
@@ -204,7 +204,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 	}
 	// we were not able to fill the buffer with NUM_RENDER_TRIES attempts, destroy synth and throw an error
 	p.synth = nil
-	p.send(PlayerCrashMessage{fmt.Errorf("synth did not fill the audio buffer even with %d render calls", NUM_RENDER_TRIES)})
+	p.send(PlayerCrashMessage{fmt.Errorf("synth did not fill the audio buffer even with %d render calls", numRenderTries)})
 }
 
 func (p *Player) advanceRow() {
