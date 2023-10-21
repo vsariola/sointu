@@ -16,14 +16,15 @@ import (
 )
 
 type VSTIProcessContext struct {
-	events []vst2.MIDIEvent
-	host   vst2.Host
+	events     []vst2.MIDIEvent
+	eventIndex int
+	host       vst2.Host
 }
 
 func (c *VSTIProcessContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
-	var ev vst2.MIDIEvent
-	for len(c.events) > 0 {
-		ev, c.events = c.events[0], c.events[1:]
+	for c.eventIndex < len(c.events) {
+		ev := c.events[c.eventIndex]
+		c.eventIndex++
 		switch {
 		case ev.Data[0] >= 0x80 && ev.Data[0] < 0x90:
 			channel := ev.Data[0] - 0x80
@@ -66,7 +67,7 @@ func init() {
 		tracker := gioui.NewTracker(model, cmd.MainSynther)
 		tracker.SetInstrEnlarged(true) // start the vsti with the instrument editor enlarged
 		go tracker.Main()
-		context := VSTIProcessContext{make([]vst2.MIDIEvent, 100), h}
+		context := VSTIProcessContext{host: h}
 		buf := make(sointu.AudioBuffer, 1024)
 		return vst2.Plugin{
 				UniqueID:       PLUGIN_ID,
@@ -88,7 +89,8 @@ func init() {
 					for i := 0; i < out.Frames; i++ {
 						left[i], right[i] = buf[i][0], buf[i][1]
 					}
-					context.events = context.events[:0]
+					context.events = context.events[:0] // reset buffer, but keep the allocated memory
+					context.eventIndex = 0
 				},
 			}, vst2.Dispatcher{
 				CanDoFunc: func(pcds vst2.PluginCanDoString) vst2.CanDoResponse {
