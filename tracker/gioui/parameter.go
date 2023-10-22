@@ -52,7 +52,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 		layout.Rigid(func(gtx C) D {
 			return p.ParameterWidget.labelBtn.Layout(gtx, func(gtx C) D {
 				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(110))
-				return layout.E.Layout(gtx, Label(p.Parameter.Name, white))
+				return layout.E.Layout(gtx, Label(p.Parameter.Name, white, p.tracker.TextShaper))
 			})
 		}),
 		layout.Rigid(func(gtx C) D {
@@ -154,7 +154,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 		}),
 		layout.Rigid(func(gtx C) D {
 			if p.Parameter.Type != tracker.IDParameter {
-				return Label(p.Parameter.Hint, white)(gtx)
+				return Label(p.Parameter.Hint, white, p.tracker.TextShaper)(gtx)
 			}
 			return D{}
 		}),

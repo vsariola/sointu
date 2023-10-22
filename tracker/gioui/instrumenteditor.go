@@ -155,7 +155,7 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 					inset := layout.UniformInset(unit.Dp(6))
 					return inset.Layout(gtx, func(gtx C) D {
 						return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-							layout.Rigid(Label("OCT:", white)),
+							layout.Rigid(Label("OCT:", white, t.TextShaper)),
 							layout.Rigid(octave),
 						)
 					})
@@ -193,7 +193,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		loadInstrumentBtnStyle := IconButton(t.Theme, ie.loadInstrumentBtn, icons.FileFolderOpen, true, "Load instrument")
 		deleteInstrumentBtnStyle := IconButton(t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, t.CanDeleteInstrument(), "Delete\ninstrument")
 
-		m := PopupMenu(t.Theme, &ie.presetMenu)
+		m := t.PopupMenu(&ie.presetMenu)
 
 		for item, clicked := ie.presetMenu.Clicked(); clicked; item, clicked = ie.presetMenu.Clicked() {
 			t.SetInstrument(tracker.InstrumentPresets[item])
@@ -201,7 +201,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 
 		header := func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(Label("Voices: ", white)),
+				layout.Rigid(Label("Voices: ", white, t.TextShaper)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					maxRemain := t.MaxInstrumentVoices()
 					t.InstrumentVoices.Value = t.Instrument().NumVoices
@@ -277,7 +277,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 	}
 	for ie.deleteInstrumentBtn.Clickable.Clicked() {
 		if t.CanDeleteInstrument() {
-			dialogStyle := ConfirmDialog(t.Theme, ie.confirmInstrDelete, "Are you sure you want to delete this instrument?")
+			dialogStyle := ConfirmDialog(t.Theme, ie.confirmInstrDelete, "Are you sure you want to delete this instrument?", t.TextShaper)
 			ie.confirmInstrDelete.Visible = true
 			t.ModalDialog = dialogStyle.Layout
 		}
@@ -303,7 +303,7 @@ func (ie *InstrumentEditor) layoutInstrumentNames(gtx C, t *Tracker) D {
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 		gtx.Constraints.Min.X = gtx.Dp(unit.Dp(30))
-		grabhandle := LabelStyle{Text: "", ShadeColor: black, Color: white, FontSize: unit.Sp(10), Alignment: layout.Center}
+		grabhandle := LabelStyle{Text: "", ShadeColor: black, Color: white, FontSize: unit.Sp(10), Alignment: layout.Center, Shaper: t.TextShaper}
 		if i == t.InstrIndex() {
 			grabhandle.Text = ":::"
 		}
@@ -346,7 +346,7 @@ func (ie *InstrumentEditor) layoutInstrumentNames(gtx C, t *Tracker) D {
 			if text == "" {
 				text = "Instr"
 			}
-			labelStyle := LabelStyle{Text: text, ShadeColor: black, Color: color, FontSize: unit.Sp(12)}
+			labelStyle := LabelStyle{Text: text, ShadeColor: black, Color: color, FontSize: unit.Sp(12), Shaper: t.TextShaper}
 			return layout.Center.Layout(gtx, labelStyle.Layout)
 		}
 		return layout.Inset{Left: unit.Dp(6), Right: unit.Dp(6)}.Layout(gtx, func(gtx C) D {
@@ -470,14 +470,14 @@ func (ie *InstrumentEditor) layoutInstrumentEditor(gtx C, t *Tracker) D {
 			editor.Font = labelDefaultFont
 			unitName = editor.Layout
 		} else {
-			unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: color, Font: labelDefaultFont, FontSize: unit.Sp(12)}
+			unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: color, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.TextShaper}
 			if unitNameLabel.Text == "" {
 				unitNameLabel.Text = "---"
 			}
 			unitName = unitNameLabel.Layout
 		}
 
-		stackLabel := LabelStyle{Text: stackText, ShadeColor: black, Color: mediumEmphasisTextColor, Font: labelDefaultFont, FontSize: unit.Sp(12)}
+		stackLabel := LabelStyle{Text: stackText, ShadeColor: black, Color: mediumEmphasisTextColor, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.TextShaper}
 		rightMargin := layout.Inset{Right: unit.Dp(10)}
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 			layout.Flexed(1, unitName),

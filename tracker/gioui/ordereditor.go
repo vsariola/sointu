@@ -194,7 +194,7 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 			} else {
 				title = "?"
 			}
-			LabelStyle{Alignment: layout.N, Text: title, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor}.Layout(gtx)
+			LabelStyle{Alignment: layout.N, Text: title, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor, Shaper: t.TextShaper}.Layout(gtx)
 			return D{Size: gtx.Constraints.Min}
 		}
 		style := FilledDragList(t.Theme, oe.titleList, len(t.Song().Score.Tracks), elem, t.SwapTracks)
@@ -211,7 +211,7 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 			paint.FillShape(gtx.Ops, patternPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, patternCellHeight)}.Op())
 		}
 		paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)
-		widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)), op.CallOp{})
+		widget.Label{}.Layout(gtx, t.TextShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)), op.CallOp{})
 		stack := op.Offset(image.Pt(patternRowMarkerWidth, 0)).Push(gtx.Ops)
 		for i, track := range t.Song().Score.Tracks {
 			paint.FillShape(gtx.Ops, patternCellColor, clip.Rect{Min: image.Pt(1, 1), Max: image.Pt(patternCellWidth-1, patternCellHeight-1)}.Op())
@@ -220,7 +220,7 @@ func (oe *OrderEditor) doLayout(gtx C, t *Tracker) D {
 				gtx := gtx
 				gtx.Constraints.Max.X = patternCellWidth
 				op.Offset(image.Pt(0, -2)).Add(gtx.Ops)
-				widget.Label{Alignment: text.Middle}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(track.Order[j]), op.CallOp{})
+				widget.Label{Alignment: text.Middle}.Layout(gtx, t.TextShaper, trackerFont, trackerFontSize, patternIndexToString(track.Order[j]), op.CallOp{})
 				op.Offset(image.Pt(0, 2)).Add(gtx.Ops)
 			}
 			point := tracker.ScorePoint{Track: i, ScoreRow: tracker.ScoreRow{Pattern: j}}

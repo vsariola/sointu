@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   options
 
 ### Fixed
+- Crash when running more than one sointu VSTI plugins in parallel
 - The scroll bars move in sync with the cursor.
 - The stereo version of delay in the go virtual machine (executables / plugins
   not ending with -native) applied the left delay taps on the right channel, and

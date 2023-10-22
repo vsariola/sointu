@@ -3,6 +3,7 @@ package gioui
 import (
 	"gioui.org/layout"
 	"gioui.org/op/paint"
+	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
@@ -23,9 +24,10 @@ type DialogStyle struct {
 	AltStyle    material.ButtonStyle
 	OkStyle     material.ButtonStyle
 	CancelStyle material.ButtonStyle
+	Shaper      *text.Shaper
 }
 
-func ConfirmDialog(th *material.Theme, dialog *Dialog, text string) DialogStyle {
+func ConfirmDialog(th *material.Theme, dialog *Dialog, text string, shaper *text.Shaper) DialogStyle {
 	ret := DialogStyle{
 		dialog:      dialog,
 		Text:        text,
@@ -33,6 +35,7 @@ func ConfirmDialog(th *material.Theme, dialog *Dialog, text string) DialogStyle 
 		AltStyle:    HighEmphasisButton(th, &dialog.BtnAlt, "Alt"),
 		OkStyle:     HighEmphasisButton(th, &dialog.BtnOk, "Ok"),
 		CancelStyle: HighEmphasisButton(th, &dialog.BtnCancel, "Cancel"),
+		Shaper:      shaper,
 	}
 	return ret
 }
@@ -44,7 +47,7 @@ func (d *DialogStyle) Layout(gtx C) D {
 			return Popup(&d.dialog.Visible).Layout(gtx, func(gtx C) D {
 				return d.Inset.Layout(gtx, func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-						layout.Rigid(Label(d.Text, highEmphasisTextColor)),
+						layout.Rigid(Label(d.Text, highEmphasisTextColor, d.Shaper)),
 						layout.Rigid(func(gtx C) D {
 							gtx.Constraints.Min.X = gtx.Dp(unit.Dp(120))
 							if d.ShowAlt {

@@ -44,7 +44,7 @@ func (t *Tracker) layoutMenu(title string, clickable *widget.Clickable, menu *Me
 	for clickable.Clicked() {
 		menu.Visible = true
 	}
-	m := PopupMenu(t.Theme, menu)
+	m := t.PopupMenu(menu)
 	return func(gtx C) D {
 		defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 		titleBtn := material.Button(t.Theme, clickable, title)
@@ -145,7 +145,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("LEN:", white)),
+				layout.Rigid(Label("LEN:", white, t.TextShaper)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					t.SongLength.Value = t.Song().Score.Length
 					numStyle := NumericUpDown(t.Theme, t.SongLength, 1, math.MaxInt32, "Song length")
@@ -159,7 +159,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 		}),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("BPM:", white)),
+				layout.Rigid(Label("BPM:", white, t.TextShaper)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					t.BPM.Value = t.Song().BPM
 					numStyle := NumericUpDown(t.Theme, t.BPM, 1, 999, "Beats per minute")
@@ -173,7 +173,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 		}),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("RPP:", white)),
+				layout.Rigid(Label("RPP:", white, t.TextShaper)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					t.RowsPerPattern.Value = t.Song().Score.RowsPerPattern
 					numStyle := NumericUpDown(t.Theme, t.RowsPerPattern, 1, 255, "Rows per pattern")
@@ -187,7 +187,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 		}),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("RPB:", white)),
+				layout.Rigid(Label("RPB:", white, t.TextShaper)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					t.RowsPerBeat.Value = t.Song().RowsPerBeat
 					numStyle := NumericUpDown(t.Theme, t.RowsPerBeat, 1, 32, "Rows per beat")
@@ -201,7 +201,7 @@ func (t *Tracker) layoutSongOptions(gtx C) D {
 		}),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("STP:", white)),
+				layout.Rigid(Label("STP:", white, t.TextShaper)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					numStyle := NumericUpDown(t.Theme, t.Step, 0, 8, "Cursor step")
 					numStyle.UnitsPerStep = unit.Dp(20)

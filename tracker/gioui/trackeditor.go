@@ -253,7 +253,7 @@ func (te *TrackEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions 
 			layout.Rigid(subtractOctaveBtnStyle.Layout),
 			layout.Rigid(noteOffBtnStyle.Layout),
 			layout.Rigid(hexCheckBoxStyle.Layout),
-			layout.Rigid(Label("  Voices:", white)),
+			layout.Rigid(Label("  Voices:", white, t.TextShaper)),
 			layout.Rigid(voiceUpDown),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(deleteTrackBtnStyle.Layout),
@@ -388,7 +388,7 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 			}
 		}
 		gtx.Constraints.Max.X = trackColWidth
-		LabelStyle{Alignment: layout.N, Text: instrName, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor}.Layout(gtx)
+		LabelStyle{Alignment: layout.N, Text: instrName, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor, Shaper: t.TextShaper}.Layout(gtx)
 		op.Offset(image.Point{trackColWidth, 0}).Add(gtx.Ops)
 		curVoice += trk.NumVoices
 	}
@@ -461,11 +461,11 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 			}
 			if s >= 0 && patRow == 0 {
 				paint.ColorOp{Color: trackerPatMarker}.Add(gtx.Ops)
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, patternIndexToString(s), op.CallOp{})
+				widget.Label{}.Layout(gtx, t.TextShaper, trackerFont, trackerFontSize, patternIndexToString(s), op.CallOp{})
 			}
 			if s >= 0 && patRow == 1 && t.IsPatternUnique(trkIndex, s) {
 				paint.ColorOp{Color: mediumEmphasisTextColor}.Add(gtx.Ops)
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, "*", op.CallOp{})
+				widget.Label{}.Layout(gtx, t.TextShaper, trackerFont, trackerFontSize, "*", op.CallOp{})
 			}
 			op.Offset(image.Point{patmarkWidth, 0}).Add(gtx.Ops)
 			if te.Focused() && t.Cursor().Row == patRow && t.Cursor().Pattern == pat {
@@ -487,9 +487,9 @@ func (te *TrackEditor) layoutTracks(gtx C, t *Tracker) D {
 				default:
 					text = fmt.Sprintf("%02x", c)
 				}
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(text), op.CallOp{})
+				widget.Label{}.Layout(gtx, t.TextShaper, trackerFont, trackerFontSize, strings.ToUpper(text), op.CallOp{})
 			} else {
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, noteStr(c), op.CallOp{})
+				widget.Label{}.Layout(gtx, t.TextShaper, trackerFont, trackerFontSize, noteStr(c), op.CallOp{})
 			}
 			op.Offset(image.Point{-patmarkWidth, trackRowHeight}).Add(gtx.Ops)
 		}

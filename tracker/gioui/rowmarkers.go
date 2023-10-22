@@ -43,7 +43,7 @@ func (t *Tracker) layoutRowMarkers(gtx C) D {
 			}
 			if j == 0 {
 				paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)
-				widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", i)), op.CallOp{})
+				widget.Label{}.Layout(gtx, t.TextShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", i)), op.CallOp{})
 			}
 			if t.TrackEditor.Focused() && songRow == cursorSongRow {
 				paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
@@ -51,7 +51,7 @@ func (t *Tracker) layoutRowMarkers(gtx C) D {
 				paint.ColorOp{Color: rowMarkerRowTextColor}.Add(gtx.Ops)
 			}
 			op.Offset(image.Pt(rowMarkerWidth/2, 0)).Add(gtx.Ops)
-			widget.Label{}.Layout(gtx, textShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)), op.CallOp{})
+			widget.Label{}.Layout(gtx, t.TextShaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)), op.CallOp{})
 			op.Offset(image.Pt(-rowMarkerWidth/2, trackRowHeight)).Add(gtx.Ops)
 		}
 	}

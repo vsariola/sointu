@@ -199,7 +199,7 @@ func (pe *ParamEditor) layoutUnitFooter(t *Tracker) layout.Widget {
 		} else {
 			text = strings.Title(text)
 		}
-		hintText := Label(text, white)
+		hintText := Label(text, white, t.TextShaper)
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(deleteUnitBtnStyle.Layout),
 			layout.Rigid(copyUnitBtnStyle.Layout),
@@ -226,7 +226,7 @@ func (pe *ParamEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 		if t.InstrumentEditor.unitTypeEditor.Focused() && !strings.HasPrefix(text, t.InstrumentEditor.unitTypeEditor.Text()) {
 			return D{}
 		}
-		labelStyle := LabelStyle{Text: text, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12)}
+		labelStyle := LabelStyle{Text: text, ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.TextShaper}
 		bg := func(gtx C) D {
 			gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, 20))
 			var color color.NRGBA

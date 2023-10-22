@@ -9,9 +9,9 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
+	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"gioui.org/widget/material"
 )
 
 type Menu struct {
@@ -33,6 +33,7 @@ type MenuStyle struct {
 	FontSize      unit.Sp
 	IconSize      unit.Dp
 	HoverColor    color.NRGBA
+	Shaper        *text.Shaper
 }
 
 type MenuItem struct {
@@ -97,11 +98,11 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 						iconColor = mediumEmphasisTextColor
 					}
 					iconInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(6)}
-					textLabel := LabelStyle{Text: item.Text, FontSize: m.FontSize, Color: m.TextColor}
+					textLabel := LabelStyle{Text: item.Text, FontSize: m.FontSize, Color: m.TextColor, Shaper: m.Shaper}
 					if item.Disabled {
 						textLabel.Color = mediumEmphasisTextColor
 					}
-					shortcutLabel := LabelStyle{Text: item.ShortcutText, FontSize: m.FontSize, Color: m.ShortCutColor}
+					shortcutLabel := LabelStyle{Text: item.ShortcutText, FontSize: m.FontSize, Color: m.ShortCutColor, Shaper: m.Shaper}
 					shortcutInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(12), Bottom: unit.Dp(2), Top: unit.Dp(2)}
 					dims := layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
@@ -147,7 +148,7 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 	return popup.Layout(gtx, contents)
 }
 
-func PopupMenu(th *material.Theme, menu *Menu) MenuStyle {
+func (t *Tracker) PopupMenu(menu *Menu) MenuStyle {
 	return MenuStyle{
 		Menu:          menu,
 		IconColor:     white,
@@ -156,5 +157,6 @@ func PopupMenu(th *material.Theme, menu *Menu) MenuStyle {
 		FontSize:      unit.Sp(16),
 		IconSize:      unit.Dp(16),
 		HoverColor:    menuHoverColor,
+		Shaper:        t.TextShaper,
 	}
 }

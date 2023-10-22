@@ -38,7 +38,7 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 			t.layoutBottom)
 	}
 	t.Alert.Layout(gtx)
-	dstyle := ConfirmDialog(t.Theme, t.ConfirmSongDialog, "Do you want to save your changes to the song? Your changes will be lost if you don't save them.")
+	dstyle := ConfirmDialog(t.Theme, t.ConfirmSongDialog, "Do you want to save your changes to the song? Your changes will be lost if you don't save them.", t.TextShaper)
 	dstyle.ShowAlt = true
 	dstyle.OkStyle.Text = "Save"
 	dstyle.AltStyle.Text = "Don't save"
@@ -56,7 +56,7 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 	for t.ConfirmSongDialog.BtnCancel.Clicked() {
 		t.ConfirmSongDialog.Visible = false
 	}
-	dstyle = ConfirmDialog(t.Theme, t.WaveTypeDialog, "Export .wav in int16 or float32 sample format?")
+	dstyle = ConfirmDialog(t.Theme, t.WaveTypeDialog, "Export .wav in int16 or float32 sample format?", t.TextShaper)
 	dstyle.ShowAlt = true
 	dstyle.OkStyle.Text = "Int16"
 	dstyle.AltStyle.Text = "Float32"

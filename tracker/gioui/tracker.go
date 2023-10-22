@@ -11,6 +11,7 @@ import (
 	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
@@ -54,6 +55,8 @@ type Tracker struct {
 	OrderEditor           *OrderEditor
 	TrackEditor           *TrackEditor
 	Explorer              *explorer.Explorer
+
+	TextShaper *text.Shaper
 
 	lastAvgVolume  tracker.Volume
 	lastPeakVolume tracker.Volume
@@ -153,6 +156,8 @@ func NewTracker(model *tracker.Model, synther sointu.Synther) *Tracker {
 		marshalRecoveryChannel:   make(chan (chan []byte)),
 		unmarshalRecoveryChannel: make(chan []byte),
 	}
+	t.TextShaper = text.NewShaper(text.WithCollection(fontCollection))
+	t.Alert.shaper = t.TextShaper
 	t.Theme.Palette.Fg = primaryColor
 	t.Theme.Palette.ContrastFg = black
 	t.TrackEditor.Focus()

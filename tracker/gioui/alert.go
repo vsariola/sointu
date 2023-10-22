@@ -9,6 +9,7 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
+	"gioui.org/text"
 	"gioui.org/unit"
 )
 
@@ -22,6 +23,7 @@ type Alert struct {
 	showTime      time.Time
 	pos           float64
 	lastUpdate    time.Time
+	shaper        *text.Shaper
 }
 
 type AlertType int
@@ -94,7 +96,7 @@ func (a *Alert) Layout(gtx C) D {
 		}.Op())
 		return D{Size: gtx.Constraints.Min}
 	}
-	labelStyle := LabelStyle{Text: a.showMessage, Color: textColor, ShadeColor: shadeColor, Font: labelDefaultFont, Alignment: layout.Center, FontSize: unit.Sp(16)}
+	labelStyle := LabelStyle{Text: a.showMessage, Color: textColor, ShadeColor: shadeColor, Font: labelDefaultFont, Alignment: layout.Center, FontSize: unit.Sp(16), Shaper: a.shaper}
 	return alertMargin.Layout(gtx, func(gtx C) D {
 		return layout.S.Layout(gtx, func(gtx C) D {
 			defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
