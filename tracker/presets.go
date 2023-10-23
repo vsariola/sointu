@@ -49,6 +49,7 @@ var defaultUnits = map[string]sointu.Unit{
 	"pan":        {Type: "pan", Parameters: map[string]int{"stereo": 0, "panning": 64}},
 	"gain":       {Type: "gain", Parameters: map[string]int{"stereo": 0, "gain": 64}},
 	"invgain":    {Type: "invgain", Parameters: map[string]int{"stereo": 0, "invgain": 64}},
+	"dbgain":     {Type: "dbgain", Parameters: map[string]int{"stereo": 0, "decibels": 64}},
 	"crush":      {Type: "crush", Parameters: map[string]int{"stereo": 0, "resolution": 64}},
 	"clip":       {Type: "clip", Parameters: map[string]int{"stereo": 0}},
 	"hold":       {Type: "hold", Parameters: map[string]int{"stereo": 0, "holdfreq": 64}},

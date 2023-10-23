@@ -346,6 +346,12 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 					stack[l-2] /= params[0]
 				}
 				stack[l-1] /= params[0]
+			case opDbgain:
+				gain := float32(math.Pow(2, float64(params[0]*2-1)*6.643856189774724))
+				if stereo {
+					stack[l-2] *= gain
+				}
+				stack[l-1] *= gain
 			case opClip:
 				if stereo {
 					stack[l-2] = clip(stack[l-2])

@@ -98,6 +98,26 @@
 )
 {{end}}
 
+{{- if .HasOp "dbgain"}}
+;;-------------------------------------------------------------------------------
+;;   DBGAIN opcode: apply gain on the signal, with gain given in decibels
+;;-------------------------------------------------------------------------------
+;;   Mono:   x   ->  x*g, where g = 2**((2*d-1)*6.643856189774724) i.e. -40dB to 40dB, d=[0..1]
+;;   Stereo: l r ->  l*g r*g
+;;-------------------------------------------------------------------------------
+(func $su_op_dbgain (param $stereo i32)
+{{- if .Stereo "dbgain"}}
+    (call $stereoHelper (local.get $stereo) (i32.const {{div (.GetOp "dbgain") 2}}))
+{{- end}}
+    (call $input (i32.const {{.InputNumber "dbgain" "decibels"}}))
+    (f32.sub (f32.const 0.5))
+    (f32.mul (f32.const 13.287712379549449))
+    (call $pow2)
+    (f32.mul (call $pop))
+    (call $push)
+)
+{{end}}
+
 
 {{- if .HasOp "filter"}}
 ;;-------------------------------------------------------------------------------

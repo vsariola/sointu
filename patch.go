@@ -82,6 +82,9 @@ var UnitTypes = map[string]([]UnitParameter){
 	"invgain": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "invgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+	"dbgain": []UnitParameter{
+		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+		{Name: "decibels", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"filter": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "frequency", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
@@ -493,6 +496,11 @@ func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
 			case 7:
 				return "aux3 right"
 			}
+		}
+	case "dbgain":
+		switch param {
+		case "decibels":
+			return fmt.Sprintf("%.2f dB", 40*(float32(value)/64-1))
 		}
 	case "crush":
 		switch param {

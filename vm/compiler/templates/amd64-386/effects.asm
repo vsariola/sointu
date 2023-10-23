@@ -98,6 +98,41 @@ su_op_invgain_mono:
 {{- end}}
 {{end}}
 
+{{- if .HasOp "dbgain"}}
+;-------------------------------------------------------------------------------
+;   DBGAIN opcode: apply gain on the signal, with gain given in decibels
+;-------------------------------------------------------------------------------
+;   Mono:   x   ->  x*g, where g = 2**((2*d-1)*6.643856189774724) i.e. -40dB to 40dB, d=[0..1]
+;   Stereo: l r ->  l*g r*g
+;-------------------------------------------------------------------------------
+{{.Func "su_op_dbgain" "Opcode"}}
+{{- if .Stereo "dbgain"}}
+    fld     dword [{{.Input "dbgain" "decibels"}}] ; d l r
+{{- .Prepare (.Float 0.5)}}
+    fsub    dword [{{.Use (.Float 0.5)}}]          ; d-.5
+    fadd    st0, st0                               ; 2*d-1
+{{- .Prepare (.Float 6.643856189774724)}}
+    fmul    dword [{{.Use (.Float 6.643856189774724)}}] ; (2*d-1)*6.643856189774724
+    {{.Call "su_power"}}
+{{- if .Mono "dbgain"}}
+    jnc     su_op_dbgain_mono
+{{- end}}
+    fmul    st2, st0                             ; g l r/g
+su_op_dbgain_mono:
+    fmulp   st1, st0                             ; l/g (r/)
+    ret
+{{- else}}
+    fld     dword [{{.Input "dbgain" "decibels"}}] ; d l
+{{- .Prepare (.Float 0.5)}}
+    fsub    dword [{{.Use (.Float 0.5)}}]          ; d-.5
+    fadd    st0, st0                               ; 2*d-1
+{{- .Prepare (.Float 6.643856189774724)}}
+    fmul    dword [{{.Use (.Float 6.643856189774724)}}] ; (2*d-1)*6.643856189774724
+    {{.Call "su_power"}}
+    fmulp   st1, st0
+    ret
+{{- end}}
+{{end}}
 
 {{- if .HasOp "filter"}}
 ;-------------------------------------------------------------------------------

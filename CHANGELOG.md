@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+### Added
+- Dbgain unit, which allows defining the gain in decibels (-40 dB to +40dB)
+
 ## v0.3.0
 ### Added
 - Scroll bars to menus, shown when a menu is too long to fit.
