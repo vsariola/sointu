@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## Unreleased
+## v0.3.0
 ### Added
 - Scroll bars to menus, shown when a menu is too long to fit.
 - Save the GUI state periodically to a recovery file and load it on
@@ -104,6 +104,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - a command line utility to convert .yml songs to .asm
   - a command line utility to play the songs on command line
 
-[Unreleased]: https://github.com/vsariola/sointu/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/vsariola/sointu/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/vsariola/sointu/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/vsariola/sointu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/vsariola/sointu/compare/4klang-3.11...v0.1.0
