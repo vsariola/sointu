@@ -43,7 +43,7 @@ func TestAllRegressionTests(t *testing.T) {
 			if err != nil {
 				t.Fatalf("could not parse the .yml file: %v", err)
 			}
-			buffer, err := sointu.Play(vm.GoSynther{}, song)
+			buffer, err := sointu.Play(vm.GoSynther{}, song, nil)
 			buffer = buffer[:song.Score.LengthInRows()*song.SamplesPerRow()] // extend to the nominal length always.
 			if err != nil {
 				t.Fatalf("Play failed: %v", err)

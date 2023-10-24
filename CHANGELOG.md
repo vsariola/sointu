@@ -5,11 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 ### Added
+- Massive rewrite of the GUI, in particular allowing better copying, pasting and
+  scrolling of table-based data (order list and note data).
 - Dbgain unit, which allows defining the gain in decibels (-40 dB to +40dB)
 
 ### Fixed
 - 32-bit su_load_gmdls clobbered ebx, even though __stdcall demands it to be not
   touched
+- Spaces are allowed in instrument names (#120)
 
 ## v0.3.0
 ### Added

@@ -24,28 +24,25 @@ type LabelStyle struct {
 }
 
 func (l LabelStyle) Layout(gtx layout.Context) layout.Dimensions {
-	return layout.Stack{Alignment: l.Alignment}.Layout(gtx,
-		layout.Stacked(func(gtx layout.Context) layout.Dimensions {
-			defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-			paint.ColorOp{Color: l.ShadeColor}.Add(gtx.Ops)
-			op.Offset(image.Pt(2, 2)).Add(gtx.Ops)
-			dims := widget.Label{
-				Alignment: text.Start,
-				MaxLines:  1,
-			}.Layout(gtx, l.Shaper, l.Font, l.FontSize, l.Text, op.CallOp{})
-			return layout.Dimensions{
-				Size:     dims.Size.Add(image.Pt(2, 2)),
-				Baseline: dims.Baseline,
-			}
-		}),
-		layout.Stacked(func(gtx layout.Context) layout.Dimensions {
-			paint.ColorOp{Color: l.Color}.Add(gtx.Ops)
-			return widget.Label{
-				Alignment: text.Start,
-				MaxLines:  1,
-			}.Layout(gtx, l.Shaper, l.Font, l.FontSize, l.Text, op.CallOp{})
-		}),
-	)
+	return l.Alignment.Layout(gtx, func(gtx C) D {
+		gtx.Constraints.Min = image.Point{}
+		paint.ColorOp{Color: l.ShadeColor}.Add(gtx.Ops)
+		offs := op.Offset(image.Pt(2, 2)).Push(gtx.Ops)
+		widget.Label{
+			Alignment: text.Start,
+			MaxLines:  1,
+		}.Layout(gtx, l.Shaper, l.Font, l.FontSize, l.Text, op.CallOp{})
+		offs.Pop()
+		paint.ColorOp{Color: l.Color}.Add(gtx.Ops)
+		dims := widget.Label{
+			Alignment: text.Start,
+			MaxLines:  1,
+		}.Layout(gtx, l.Shaper, l.Font, l.FontSize, l.Text, op.CallOp{})
+		return layout.Dimensions{
+			Size:     dims.Size,
+			Baseline: dims.Baseline,
+		}
+	})
 }
 
 func Label(str string, color color.NRGBA, shaper *text.Shaper) layout.Widget {

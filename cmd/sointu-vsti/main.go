@@ -54,19 +54,16 @@ func init() {
 		version = int32(100)
 	)
 	vst2.PluginAllocator = func(h vst2.Host) (vst2.Plugin, vst2.Dispatcher) {
-		modelMessages := make(chan interface{}, 1024)
-		playerMessages := make(chan tracker.PlayerMessage, 1024)
 		recoveryFile := ""
 		if configDir, err := os.UserConfigDir(); err == nil {
 			randBytes := make([]byte, 16)
 			rand.Read(randBytes)
 			recoveryFile = filepath.Join(configDir, "Sointu", "sointu-vsti-recovery-"+hex.EncodeToString(randBytes))
 		}
-		model := tracker.NewModel(modelMessages, playerMessages, recoveryFile)
-		player := tracker.NewPlayer(cmd.MainSynther, playerMessages, modelMessages)
-		tracker := gioui.NewTracker(model, cmd.MainSynther)
-		tracker.SetInstrEnlarged(true) // start the vsti with the instrument editor enlarged
-		go tracker.Main()
+		model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
+		t := gioui.NewTracker(model)
+		tracker.Bool{BoolData: (*tracker.InstrEnlarged)(model)}.Set(true)
+		go t.Main()
 		context := VSTIProcessContext{host: h}
 		buf := make(sointu.AudioBuffer, 1024)
 		return vst2.Plugin{
@@ -110,14 +107,16 @@ func init() {
 					}
 				},
 				CloseFunc: func() {
-					tracker.Quit(true)
-					tracker.WaitQuitted()
+					t.Exec() <- func() { t.ForceQuit().Do() }
+					t.WaitQuitted()
 				},
 				GetChunkFunc: func(isPreset bool) []byte {
-					return tracker.SafeMarshalRecovery()
+					retChn := make(chan []byte)
+					t.Exec() <- func() { retChn <- t.MarshalRecovery() }
+					return <-retChn
 				},
 				SetChunkFunc: func(data []byte, isPreset bool) {
-					tracker.SafeUnmarshalRecovery(data)
+					t.Exec() <- func() { t.UnmarshalRecovery(data) }
 				},
 			}
 

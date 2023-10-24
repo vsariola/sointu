@@ -1,14 +1,14 @@
 package gioui
 
 import (
-	"time"
-
 	"gioui.org/io/clipboard"
 	"gioui.org/io/key"
 	"gioui.org/op"
-	"github.com/vsariola/sointu/tracker"
-	"gopkg.in/yaml.v3"
 )
+
+// globalKeys is a list of keys that are handled globally by the app.
+// All Editors should capture these keys to prevent them flowing to the global handler.
+var globalKeys = key.Set("Space|\\|<|>|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|1|2|3|4|5|6|7|8|9|0|,|.")
 
 var noteMap = map[string]int{
 	"Z": -12,
@@ -49,15 +49,6 @@ var noteMap = map[string]int{
 func (t *Tracker) KeyEvent(e key.Event, o *op.Ops) {
 	if e.State == key.Press {
 		switch e.Name {
-		case "C":
-			if e.Modifiers.Contain(key.ModShortcut) {
-				contents, err := yaml.Marshal(t.Song())
-				if err == nil {
-					clipboard.WriteOp{Text: string(contents)}.Add(o)
-					t.Alert.Update("Song copied to clipboard", Notify, time.Second*3)
-				}
-				return
-			}
 		case "V":
 			if e.Modifiers.Contain(key.ModShortcut) {
 				clipboard.ReadOp{Tag: t}.Add(o)
@@ -65,97 +56,118 @@ func (t *Tracker) KeyEvent(e key.Event, o *op.Ops) {
 			}
 		case "Z":
 			if e.Modifiers.Contain(key.ModShortcut) {
-				t.Undo()
+				t.Model.Undo().Do()
 				return
 			}
 		case "Y":
 			if e.Modifiers.Contain(key.ModShortcut) {
-				t.Redo()
+				t.Model.Redo().Do()
 				return
 			}
 		case "N":
 			if e.Modifiers.Contain(key.ModShortcut) {
-				t.NewSong(false)
+				t.NewSong().Do()
 				return
 			}
 		case "S":
 			if e.Modifiers.Contain(key.ModShortcut) {
-				t.SaveSongFile()
+				t.SaveSong().Do()
 				return
 			}
 		case "O":
 			if e.Modifiers.Contain(key.ModShortcut) {
-				t.OpenSongFile(false)
+				t.OpenSong().Do()
+				return
+			}
+		case "I":
+			if e.Modifiers.Contain(key.ModShortcut) {
+				if e.Modifiers.Contain(key.ModShift) {
+					t.DeleteInstrument().Do()
+				} else {
+					t.AddInstrument().Do()
+				}
+				return
+			}
+		case "T":
+			if e.Modifiers.Contain(key.ModShortcut) {
+				if e.Modifiers.Contain(key.ModShift) {
+					t.DeleteTrack().Do()
+				} else {
+					t.AddTrack().Do()
+				}
+				return
+			}
+		case "E":
+			if e.Modifiers.Contain(key.ModShortcut) {
+				t.InstrEnlarged().Bool().Toggle()
+				return
+			}
+		case "W":
+			if e.Modifiers.Contain(key.ModShortcut) && canQuit {
+				t.Quit().Do()
 				return
 			}
 		case "F1":
-			t.OrderEditor.Focus()
+			t.OrderEditor.scrollTable.Focus()
 			return
 		case "F2":
-			t.TrackEditor.Focus()
+			t.TrackEditor.scrollTable.Focus()
 			return
 		case "F3":
 			t.InstrumentEditor.Focus()
 			return
-		case "F4":
-			t.TrackEditor.Focus()
-			return
 		case "F5":
-			t.SetNoteTracking(true)
-			startRow := t.Cursor().ScoreRow
-			t.PlayFromPosition(startRow)
+			t.SongPanel.RewindBtn.Action.Do()
+			t.SongPanel.NoteTracking.Bool.Set(!e.Modifiers.Contain(key.ModCtrl))
 			return
-		case "F6":
-			t.SetNoteTracking(false)
-			startRow := t.Cursor().ScoreRow
-			t.PlayFromPosition(startRow)
+		case "F6", "Space":
+			t.SongPanel.PlayingBtn.Bool.Toggle()
+			t.SongPanel.NoteTracking.Bool.Set(!e.Modifiers.Contain(key.ModCtrl))
+			return
+		case "F7":
+			t.SongPanel.RecordBtn.Bool.Toggle()
 			return
 		case "F8":
-			t.SetPlaying(false)
+			t.SongPanel.NoteTracking.Bool.Toggle()
 			return
-		case "Space":
-			if !t.Playing() && !t.InstrEnlarged() {
-				t.SetNoteTracking(!e.Modifiers.Contain(key.ModShortcut))
-				startRow := t.Cursor().ScoreRow
-				t.PlayFromPosition(startRow)
-			} else {
-				t.SetPlaying(false)
-			}
+		case "F12":
+			t.Panic().Bool().Toggle()
+			return
 		case `\`, `<`, `>`:
 			if e.Modifiers.Contain(key.ModShift) {
-				t.SetOctave(t.Octave() + 1)
+				t.OctaveNumberInput.Int.Add(1)
 			} else {
-				t.SetOctave(t.Octave() - 1)
+				t.OctaveNumberInput.Int.Add(-1)
 			}
 		case key.NameTab:
 			if e.Modifiers.Contain(key.ModShift) {
 				switch {
-				case t.OrderEditor.Focused():
-					t.InstrumentEditor.paramEditor.Focus()
-				case t.TrackEditor.Focused():
-					t.OrderEditor.Focus()
+				case t.OrderEditor.scrollTable.Focused():
+					t.InstrumentEditor.unitEditor.sliderList.Focus()
+				case t.TrackEditor.scrollTable.Focused():
+					t.OrderEditor.scrollTable.Focus()
 				case t.InstrumentEditor.Focused():
-					if t.InstrEnlarged() {
-						t.InstrumentEditor.paramEditor.Focus()
+					if t.InstrumentEditor.enlargeBtn.Bool.Value() {
+						t.InstrumentEditor.unitEditor.sliderList.Focus()
 					} else {
-						t.TrackEditor.Focus()
+						t.TrackEditor.scrollTable.Focus()
 					}
 				default:
 					t.InstrumentEditor.Focus()
 				}
 			} else {
 				switch {
-				case t.OrderEditor.Focused():
-					t.TrackEditor.Focus()
-				case t.TrackEditor.Focused():
+				case t.OrderEditor.scrollTable.Focused():
+					t.TrackEditor.scrollTable.Focus()
+				case t.TrackEditor.scrollTable.Focused():
 					t.InstrumentEditor.Focus()
 				case t.InstrumentEditor.Focused():
-					t.InstrumentEditor.paramEditor.Focus()
+					t.InstrumentEditor.unitEditor.sliderList.Focus()
 				default:
-					if t.InstrEnlarged() {
+					if t.InstrumentEditor.enlargeBtn.Bool.Value() {
 						t.InstrumentEditor.Focus()
 					} else {
-						t.OrderEditor.Focus()
+						t.OrderEditor.scrollTable.Focus()
 					}
 				}
 			}
@@ -166,28 +178,12 @@ func (t *Tracker) KeyEvent(e key.Event, o *op.Ops) {
 	}
 }
 
-// NumberPressed handles incoming presses while in either of the hex number columns
-func (t *Tracker) NumberPressed(iv byte) {
-	val := t.Note()
-	if val == 1 {
-		val = 0
-	}
-	if t.LowNibble() {
-		val = (val & 0xF0) | (iv & 0xF)
-	} else {
-		val = ((iv & 0xF) << 4) | (val & 0xF)
-	}
-	t.SetNote(val)
-}
-
 func (t *Tracker) JammingPressed(e key.Event) byte {
 	if val, ok := noteMap[e.Name]; ok {
 		if _, ok := t.KeyPlaying[e.Name]; !ok {
-			n := noteAsValue(t.OctaveNumberInput.Value, val)
-			instr := t.InstrIndex()
-			noteID := tracker.NoteIDInstr(instr, n)
-			t.NoteOn(noteID)
-			t.KeyPlaying[e.Name] = noteID
+			n := noteAsValue(t.OctaveNumberInput.Int.Value(), val)
+			instr := t.InstrumentEditor.instrumentDragList.TrackerList.Selected()
+			t.KeyPlaying[e.Name] = t.InstrNoteOn(instr, n)
 			return n
 		}
 	}
@@ -196,7 +192,7 @@ func (t *Tracker) JammingPressed(e key.Event) byte {
 
 func (t *Tracker) JammingReleased(e key.Event) bool {
 	if noteID, ok := t.KeyPlaying[e.Name]; ok {
-		t.NoteOff(noteID)
+		noteID.NoteOff()
 		delete(t.KeyPlaying, e.Name)
 		return true
 	}

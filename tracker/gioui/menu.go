@@ -12,6 +12,8 @@ import (
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
+	"gioui.org/widget/material"
+	"github.com/vsariola/sointu/tracker"
 )
 
 type Menu struct {
@@ -40,7 +42,7 @@ type MenuItem struct {
 	IconBytes    []byte
 	Text         string
 	ShortcutText string
-	Disabled     bool
+	Doer         tracker.Action
 }
 
 func (m *Menu) Clicked() (int, bool) {
@@ -57,7 +59,7 @@ func (m *Menu) Clicked() (int, bool) {
 
 func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 	contents := func(gtx C) D {
-		for i := range items {
+		for i, item := range items {
 			// make sure we have a tag for every item
 			for len(m.Menu.tags) <= i {
 				m.Menu.tags = append(m.Menu.tags, false)
@@ -70,7 +72,7 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 				}
 				switch e.Type {
 				case pointer.Press:
-					m.Menu.clicks = append(m.Menu.clicks, i)
+					item.Doer.Do()
 					m.Menu.Visible = false
 				case pointer.Enter:
 					m.Menu.hover = i + 1
@@ -89,17 +91,17 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 					defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 					var macro op.MacroOp
 					item := &items[i]
-					if i == m.Menu.hover-1 && !item.Disabled {
+					if i == m.Menu.hover-1 && item.Doer.Allowed() {
 						macro = op.Record(gtx.Ops)
 					}
 					icon := widgetForIcon(item.IconBytes)
 					iconColor := m.IconColor
-					if item.Disabled {
+					if !item.Doer.Allowed() {
 						iconColor = mediumEmphasisTextColor
 					}
 					iconInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(6)}
 					textLabel := LabelStyle{Text: item.Text, FontSize: m.FontSize, Color: m.TextColor, Shaper: m.Shaper}
-					if item.Disabled {
+					if !item.Doer.Allowed() {
 						textLabel.Color = mediumEmphasisTextColor
 					}
 					shortcutLabel := LabelStyle{Text: item.ShortcutText, FontSize: m.FontSize, Color: m.ShortCutColor, Shaper: m.Shaper}
@@ -118,14 +120,14 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 							return shortcutInset.Layout(gtx, shortcutLabel.Layout)
 						}),
 					)
-					if i == m.Menu.hover-1 && !item.Disabled {
+					if i == m.Menu.hover-1 && item.Doer.Allowed() {
 						recording := macro.Stop()
 						paint.FillShape(gtx.Ops, m.HoverColor, clip.Rect{
 							Max: image.Pt(dims.Size.X, dims.Size.Y),
 						}.Op())
 						recording.Add(gtx.Ops)
 					}
-					if !item.Disabled {
+					if item.Doer.Allowed() {
 						rect := image.Rect(0, 0, dims.Size.X, dims.Size.Y)
 						area := clip.Rect(rect).Push(gtx.Ops)
 						pointer.InputOp{Tag: &m.Menu.tags[i],
@@ -148,7 +150,7 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 	return popup.Layout(gtx, contents)
 }
 
-func (t *Tracker) PopupMenu(menu *Menu) MenuStyle {
+func PopupMenu(menu *Menu, shaper *text.Shaper) MenuStyle {
 	return MenuStyle{
 		Menu:          menu,
 		IconColor:     white,
@@ -157,6 +159,26 @@ func (t *Tracker) PopupMenu(menu *Menu) MenuStyle {
 		FontSize:      unit.Sp(16),
 		IconSize:      unit.Dp(16),
 		HoverColor:    menuHoverColor,
-		Shaper:        t.TextShaper,
+		Shaper:        shaper,
+	}
+}
+
+func (tr *Tracker) layoutMenu(title string, clickable *widget.Clickable, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
+	for clickable.Clicked() {
+		menu.Visible = true
+	}
+	m := PopupMenu(menu, tr.Theme.Shaper)
+	return func(gtx C) D {
+		defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
+		titleBtn := material.Button(tr.Theme, clickable, title)
+		titleBtn.Color = white
+		titleBtn.Background = transparent
+		titleBtn.CornerRadius = unit.Dp(0)
+		dims := titleBtn.Layout(gtx)
+		op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
+		gtx.Constraints.Max.X = gtx.Dp(width)
+		gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(1000))
+		m.Layout(gtx, items...)
+		return dims
 	}
 }

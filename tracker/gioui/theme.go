@@ -63,7 +63,7 @@ var inactiveLightSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
 var activeLightSurfaceColor = color.NRGBA{R: 45, G: 45, B: 45, A: 255}
 
 var cursorColor = color.NRGBA{R: 100, G: 140, B: 255, A: 48}
-var selectionColor = color.NRGBA{R: 100, G: 140, B: 255, A: 8}
+var selectionColor = color.NRGBA{R: 100, G: 140, B: 255, A: 12}
 var inactiveSelectionColor = color.NRGBA{R: 140, G: 140, B: 140, A: 16}
 
 var errorColor = color.NRGBA{R: 207, G: 102, B: 121, A: 255}

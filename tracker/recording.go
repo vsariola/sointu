@@ -22,9 +22,9 @@ type recordingNote struct {
 
 var ErrInvalidRows = errors.New("rows per beat and rows per pattern must be greater than 1")
 
-func (recording *Recording) Song(patch sointu.Patch, rowsPerBeat, rowsPerPattern int) (sointu.Song, error) {
+func (recording *Recording) Score(patch sointu.Patch, rowsPerBeat, rowsPerPattern int) (sointu.Score, error) {
 	if rowsPerBeat <= 1 || rowsPerPattern <= 1 {
-		return sointu.Song{}, ErrInvalidRows
+		return sointu.Score{}, ErrInvalidRows
 	}
 	channelNotes := make([][]recordingNote, 0)
 	// find the length of each note and assign it to its respective channel
@@ -88,15 +88,18 @@ func (recording *Recording) Song(patch sointu.Patch, rowsPerBeat, rowsPerPattern
 				flatPattern[k] = 1 // set all notes as holds at first
 			}
 			for _, n := range t {
-				flatPattern.Set(n.startRow, n.note)
+				if n.startRow >= songLengthRows {
+					continue
+				}
+				flatPattern[n.startRow] = n.note
 				if n.endRow < songLengthRows {
 					for l := n.startRow + 1; l < n.endRow; l++ {
-						flatPattern.Set(l, 1)
+						flatPattern[l] = 1
 					}
-					flatPattern.Set(n.endRow, 0)
+					flatPattern[n.endRow] = 0
 				} else {
 					for l := n.startRow + 1; l < songLengthRows; l++ {
-						flatPattern.Set(l, 1)
+						flatPattern[l] = 1
 					}
 				}
 			}
@@ -136,7 +139,7 @@ func (recording *Recording) Song(patch sointu.Patch, rowsPerBeat, rowsPerPattern
 		}
 	}
 	score := sointu.Score{Length: songLengthPatterns, RowsPerPattern: rowsPerPattern, Tracks: songTracks}
-	return sointu.Song{BPM: int(recording.BPM + 0.5), RowsPerBeat: rowsPerBeat, Score: score, Patch: patch.Copy()}, nil
+	return score, nil
 }
 
 func frameToRow(BPM float64, rowsPerBeat, frame int) int {

@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 
+	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 
 	"gioui.org/font"
@@ -23,7 +24,7 @@ import (
 )
 
 type NumberInput struct {
-	Value          int
+	Int            tracker.Int
 	dragStartValue int
 	dragStartXY    float32
 	clickDecrease  gesture.Click
@@ -33,8 +34,6 @@ type NumberInput struct {
 
 type NumericUpDownStyle struct {
 	NumberInput     *NumberInput
-	Min             int
-	Max             int
 	Color           color.NRGBA
 	Font            font.Font
 	TextSize        unit.Sp
@@ -51,15 +50,17 @@ type NumericUpDownStyle struct {
 	shaper          text.Shaper
 }
 
-func NumericUpDown(th *material.Theme, number *NumberInput, min, max int, tooltip string) NumericUpDownStyle {
+func NewNumberInput(v tracker.Int) *NumberInput {
+	return &NumberInput{Int: v}
+}
+
+func NumericUpDown(th *material.Theme, number *NumberInput, tooltip string) NumericUpDownStyle {
 	bgColor := th.Palette.Fg
 	bgColor.R /= 4
 	bgColor.G /= 4
 	bgColor.B /= 4
 	return NumericUpDownStyle{
 		NumberInput:     number,
-		Min:             min,
-		Max:             max,
 		Color:           white,
 		BorderColor:     th.Palette.Fg,
 		IconColor:       th.Palette.ContrastFg,
@@ -104,12 +105,6 @@ func (s *NumericUpDownStyle) actualLayout(gtx C) D {
 		layout.Flexed(1, s.layoutText),
 		layout.Rigid(s.button(gtx.Constraints.Max.Y, widgetForIcon(icons.NavigationArrowForward), 1, &s.NumberInput.clickIncrease)),
 	)
-	if s.NumberInput.Value < s.Min {
-		s.NumberInput.Value = s.Min
-	}
-	if s.NumberInput.Value > s.Max {
-		s.NumberInput.Value = s.Max
-	}
 	off.Pop()
 	c2.Pop()
 	return layout.Dimensions{Size: size}
@@ -156,7 +151,7 @@ func (s *NumericUpDownStyle) layoutText(gtx C) D {
 		}),
 		layout.Expanded(func(gtx layout.Context) layout.Dimensions {
 			paint.ColorOp{Color: s.Color}.Add(gtx.Ops)
-			return widget.Label{Alignment: text.Middle}.Layout(gtx, &s.shaper, s.Font, s.TextSize, fmt.Sprintf("%v", s.NumberInput.Value), op.CallOp{})
+			return widget.Label{Alignment: text.Middle}.Layout(gtx, &s.shaper, s.Font, s.TextSize, fmt.Sprintf("%v", s.NumberInput.Int.Value()), op.CallOp{})
 		}),
 		layout.Expanded(s.layoutDrag),
 	)
@@ -169,13 +164,13 @@ func (s *NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
 			if e, ok := ev.(pointer.Event); ok {
 				switch e.Type {
 				case pointer.Press:
-					s.NumberInput.dragStartValue = s.NumberInput.Value
+					s.NumberInput.dragStartValue = s.NumberInput.Int.Value()
 					s.NumberInput.dragStartXY = e.Position.X - e.Position.Y
 
 				case pointer.Drag:
 					var deltaCoord float32
 					deltaCoord = e.Position.X - e.Position.Y - s.NumberInput.dragStartXY
-					s.NumberInput.Value = s.NumberInput.dragStartValue + int(deltaCoord/pxPerStep+0.5)
+					s.NumberInput.Int.Set(s.NumberInput.dragStartValue + int(deltaCoord/pxPerStep+0.5))
 				}
 			}
 		}
@@ -200,7 +195,7 @@ func (s *NumericUpDownStyle) layoutClick(gtx layout.Context, delta int, click *g
 	for _, e := range click.Events(gtx) {
 		switch e.Type {
 		case gesture.TypeClick:
-			s.NumberInput.Value += delta
+			s.NumberInput.Int.Add(delta)
 		}
 	}
 	// Avoid affecting the input tree with pointer events.

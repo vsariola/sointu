@@ -33,16 +33,16 @@ var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 
 func main() {
 	flag.Parse()
+	var f *os.File
 	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
+		var err error
+		f, err = os.Create(*cpuprofile)
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
 		}
-		defer f.Close() // error handling omitted for example
 		if err := pprof.StartCPUProfile(f); err != nil {
 			log.Fatal("could not start CPU profile: ", err)
 		}
-		defer pprof.StopCPUProfile()
 	}
 	audioContext, err := oto.NewContext()
 	if err != nil {
@@ -50,15 +50,12 @@ func main() {
 		os.Exit(1)
 	}
 	defer audioContext.Close()
-	modelMessages := make(chan interface{}, 1024)
-	playerMessages := make(chan tracker.PlayerMessage, 1024)
 	recoveryFile := ""
 	if configDir, err := os.UserConfigDir(); err == nil {
 		recoveryFile = filepath.Join(configDir, "Sointu", "sointu-track-recovery")
 	}
-	model := tracker.NewModel(modelMessages, playerMessages, recoveryFile)
-	player := tracker.NewPlayer(cmd.MainSynther, playerMessages, modelMessages)
-	tracker := gioui.NewTracker(model, cmd.MainSynther)
+	model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
+	tracker := gioui.NewTracker(model)
 	output := audioContext.Output()
 	defer output.Close()
 	go func() {
@@ -71,6 +68,10 @@ func main() {
 	}()
 	go func() {
 		tracker.Main()
+		if *cpuprofile != "" {
+			pprof.StopCPUProfile()
+			f.Close()
+		}
 		if *memprofile != "" {
 			f, err := os.Create(*memprofile)
 			if err != nil {

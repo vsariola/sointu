@@ -4,6 +4,7 @@ import (
 	"image/color"
 
 	"gioui.org/layout"
+	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 )
@@ -39,10 +40,13 @@ func (s Surface) Layout(gtx C, widget layout.Widget) D {
 		return s.Inset.Layout(gtx, widget)
 	}
 	if s.FitSize {
-		return layout.Stack{}.Layout(gtx,
-			layout.Expanded(bg),
-			layout.Stacked(fg),
-		)
+		macro := op.Record(gtx.Ops)
+		dims := fg(gtx)
+		call := macro.Stop()
+		gtx.Constraints = layout.Exact(dims.Size)
+		bg(gtx)
+		call.Add(gtx.Ops)
+		return dims
 	}
 	gtxbg := gtx
 	gtxbg.Constraints.Min = gtxbg.Constraints.Max

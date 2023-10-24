@@ -14,13 +14,8 @@ func flattenSequence(t sointu.Track, songLength int, rowsPerPattern int, release
 	notes := make([]int, sumLen)
 	k := 0
 	for i := 0; i < songLength; i++ {
-		patIndex := t.Order.Get(i)
-		var pattern sointu.Pattern = nil
-		if patIndex >= 0 && patIndex < len(t.Patterns) {
-			pattern = t.Patterns[patIndex]
-		}
 		for j := 0; j < rowsPerPattern; j++ {
-			note := int(pattern.Get(j))
+			note := int(t.Note(sointu.SongPos{OrderRow: i, PatternRow: j}))
 			if releaseFirst && i == 0 && j == 0 && note == 1 {
 				note = 0
 			}

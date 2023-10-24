@@ -67,7 +67,45 @@ type (
 	// the slice only by necessary amount when a new item is added, filling the
 	// unused slots with -1s.
 	Order []int
+
+	// SongPos represents a position in a song, in terms of order row and
+	// pattern row. The order row is the index of the pattern in the order list,
+	// and the pattern row is the index of the row in the pattern.
+	SongPos struct {
+		OrderRow   int
+		PatternRow int
+	}
 )
+
+func (s *Score) SongPos(songRow int) SongPos {
+	if s.RowsPerPattern == 0 {
+		return SongPos{OrderRow: 0, PatternRow: 0}
+	}
+	orderRow := songRow / s.RowsPerPattern
+	patternRow := songRow % s.RowsPerPattern
+	return SongPos{OrderRow: orderRow, PatternRow: patternRow}
+}
+
+func (s *Score) SongRow(songPos SongPos) int {
+	return songPos.OrderRow*s.RowsPerPattern + songPos.PatternRow
+}
+
+func (s *Score) Wrap(songPos SongPos) SongPos {
+	ret := s.SongPos(s.SongRow(songPos))
+	ret.OrderRow %= s.Length
+	return ret
+}
+
+func (s *Score) Clamp(songPos SongPos) SongPos {
+	r := s.SongRow(songPos)
+	if l := s.LengthInRows(); r >= l {
+		r = l - 1
+	}
+	if r < 0 {
+		r = 0
+	}
+	return s.SongPos(r)
+}
 
 // Get returns the value at index; or -1 is the index is out of range
 func (s Order) Get(index int) int {
@@ -83,6 +121,55 @@ func (s *Order) Set(index, value int) {
 		*s = append(*s, -1)
 	}
 	(*s)[index] = value
+}
+
+func (s Track) Note(pos SongPos) byte {
+	if pos.OrderRow < 0 || pos.OrderRow >= len(s.Order) {
+		return 1
+	}
+	pat := s.Order[pos.OrderRow]
+	if pat < 0 || pat >= len(s.Patterns) {
+		return 1
+	}
+	if pos.PatternRow < 0 || pos.PatternRow >= len(s.Patterns[pat]) {
+		return 1
+	}
+	return s.Patterns[pat][pos.PatternRow]
+}
+
+func (s *Track) SetNote(pos SongPos, note byte) {
+	if pos.OrderRow < 0 || pos.PatternRow < 0 {
+		return
+	}
+	pat := s.Order.Get(pos.OrderRow)
+	if pat < 0 {
+		if note == 1 {
+			return
+		}
+		for _, o := range s.Order {
+			if pat <= o {
+				pat = o
+			}
+		}
+		pat += 1
+		if pat >= 36 {
+			return
+		}
+		s.Order.Set(pos.OrderRow, pat)
+	}
+	if pat >= len(s.Patterns) && note == 1 {
+		return
+	}
+	for pat >= len(s.Patterns) {
+		s.Patterns = append(s.Patterns, Pattern{})
+	}
+	if pos.PatternRow >= len(s.Patterns[pat]) && note == 1 {
+		return
+	}
+	for pos.PatternRow >= len(s.Patterns[pat]) {
+		s.Patterns[pat] = append(s.Patterns[pat], 1)
+	}
+	s.Patterns[pat][pos.PatternRow] = note
 }
 
 // Get returns the value at index; or 1 is the index is out of range
@@ -165,7 +252,10 @@ func (s *Song) Copy() Song {
 // Assuming 44100 Hz playback speed, return the number of samples of each row of
 // the song.
 func (s *Song) SamplesPerRow() int {
-	return 44100 * 60 / (s.BPM * s.RowsPerBeat)
+	if divisor := s.BPM * s.RowsPerBeat; divisor > 0 {
+		return 44100 * 60 / divisor
+	}
+	return 0
 }
 
 // Validate checks if the Song looks like a valid song: BPM > 0, one or more

@@ -31,3 +31,5 @@ actual_output/
 **/__debug_bin
 *.exe
 *.dll
+
+**/testdata/fuzz/

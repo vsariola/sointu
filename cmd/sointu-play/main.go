@@ -87,7 +87,7 @@ func main() {
 				return fmt.Errorf("the song could not be parsed as .json (%v) or .yml (%v)", errJSON, errYaml)
 			}
 		}
-		buffer, err := sointu.Play(bridge.NativeSynther{}, song) // render the song to calculate its length
+		buffer, err := sointu.Play(bridge.NativeSynther{}, song, nil) // render the song to calculate its length
 		if err != nil {
 			return fmt.Errorf("sointu.Play failed: %v", err)
 		}

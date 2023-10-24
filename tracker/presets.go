@@ -12,23 +12,31 @@ import (
 
 //go:generate go run generate/main.go
 
-// GmDlsEntry is a single sample entry from the gm.dls file
-type GmDlsEntry struct {
-	Start              int    // sample start offset in words
-	LoopStart          int    // loop start offset in words
-	LoopLength         int    // loop length in words
-	SuggestedTranspose int    // suggested transpose in semitones, so that all samples play at same pitch
-	Name               string // sample name
-}
+type (
+	// GmDlsEntry is a single sample entry from the gm.dls file
+	GmDlsEntry struct {
+		Start              int    // sample start offset in words
+		LoopStart          int    // loop start offset in words
+		LoopLength         int    // loop length in words
+		SuggestedTranspose int    // suggested transpose in semitones, so that all samples play at same pitch
+		Name               string // sample name
+	}
 
-// GmDlsEntryMap is a reverse map, to find the index of the GmDlsEntry in the
+	InstrumentPresetYieldFunc func(index int, item string) (ok bool)
+	LoadPreset                struct {
+		Index int
+		*Model
+	}
+)
+
+// gmDlsEntryMap is a reverse map, to find the index of the GmDlsEntry in the
 // GmDlsEntries list based on the sample offset. Do not modify during runtime.
-var GmDlsEntryMap = make(map[vm.SampleOffset]int)
+var gmDlsEntryMap = make(map[vm.SampleOffset]int)
 
 func init() {
 	for i, e := range GmDlsEntries {
 		key := vm.SampleOffset{Start: uint32(e.Start), LoopStart: uint16(e.LoopStart), LoopLength: uint16(e.LoopLength)}
-		GmDlsEntryMap[key] = i
+		gmDlsEntryMap[key] = i
 	}
 }
 
@@ -103,12 +111,6 @@ var defaultSong = sointu.Song{
 		}}},
 }
 
-type delayPreset struct {
-	name    string
-	stereo  int
-	varArgs []int
-}
-
 var reverbs = []delayPreset{
 	{"stereo", 1, []int{1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618,
 		1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642,
@@ -117,11 +119,41 @@ var reverbs = []delayPreset{
 	{"right", 0, []int{1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642}},
 }
 
-type instrumentPresets []sointu.Instrument
+type delayPreset struct {
+	name    string
+	stereo  int
+	varArgs []int
+}
+
+func (m *Model) IterateInstrumentPresets(yield InstrumentPresetYieldFunc) {
+	for index, instr := range instrumentPresets {
+		if !yield(index, instr.Name) {
+			return
+		}
+	}
+}
+
+func (m *Model) LoadPreset(index int) Action {
+	return Action{do: func() {
+		defer m.change("LoadPreset", PatchChange, MajorChange)()
+		if m.d.InstrIndex < 0 {
+			m.d.InstrIndex = 0
+		}
+		m.d.InstrIndex2 = m.d.InstrIndex
+		for m.d.InstrIndex >= len(m.d.Song.Patch) {
+			m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
+		}
+		m.d.Song.Patch[m.d.InstrIndex] = instrumentPresets[index].Copy()
+	}, allowed: func() bool {
+		return true
+	}}
+}
+
+type instrumentPresetsSlice []sointu.Instrument
 
 //go:embed presets/*
 var instrumentPresetFS embed.FS
-var InstrumentPresets instrumentPresets
+var instrumentPresets instrumentPresetsSlice
 
 func init() {
 	fs.WalkDir(instrumentPresetFS, ".", func(path string, d fs.DirEntry, err error) error {
@@ -139,20 +171,12 @@ func init() {
 		if yaml.Unmarshal(data, &instr) != nil {
 			return nil
 		}
-		InstrumentPresets = append(InstrumentPresets, instr)
+		instrumentPresets = append(instrumentPresets, instr)
 		return nil
 	})
-	sort.Sort(InstrumentPresets)
+	sort.Sort(instrumentPresets)
 }
 
-func (p instrumentPresets) Len() int {
-	return len(p)
-}
-
-func (p instrumentPresets) Less(i, j int) bool {
-	return p[i].Name < p[j].Name
-}
-
-func (p instrumentPresets) Swap(i, j int) {
-	p[i], p[j] = p[j], p[i]
-}
+func (p instrumentPresetsSlice) Len() int           { return len(p) }
+func (p instrumentPresetsSlice) Less(i, j int) bool { return p[i].Name < p[j].Name }
+func (p instrumentPresetsSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }

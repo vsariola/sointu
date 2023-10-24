@@ -66,7 +66,7 @@ type (
 
 // Play plays the Song by first compiling the patch with the given Synther,
 // returning the stereo audio buffer as a result (and possible errors).
-func Play(synther Synther, song Song) (AudioBuffer, error) {
+func Play(synther Synther, song Song, progress func(float32)) (AudioBuffer, error) {
 	err := song.Validate()
 	if err != nil {
 		return nil, err
@@ -124,6 +124,9 @@ func Play(synther Synther, song Song) (AudioBuffer, error) {
 			if tries > 100 {
 				return nil, fmt.Errorf("Song speed modulation likely so slow that row never advances; error at pattern %v, row %v", pattern, patternRow)
 			}
+		}
+		if progress != nil {
+			progress(float32(row+1) / float32(song.Score.LengthInRows()))
 		}
 	}
 	return buffer, nil

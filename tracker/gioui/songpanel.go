@@ -2,222 +2,180 @@ package gioui
 
 import (
 	"image"
-	"math"
-	"time"
 
-	"gioui.org/io/clipboard"
 	"gioui.org/layout"
-	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"gioui.org/widget/material"
+	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
-	"gopkg.in/yaml.v3"
 )
+
+type SongPanel struct {
+	MenuBar        []widget.Clickable
+	Menus          []Menu
+	BPM            *NumberInput
+	RowsPerPattern *NumberInput
+	RowsPerBeat    *NumberInput
+	Step           *NumberInput
+	SongLength     *NumberInput
+
+	RewindBtn    *ActionClickable
+	PlayingBtn   *BoolClickable
+	RecordBtn    *BoolClickable
+	NoteTracking *BoolClickable
+	PanicBtn     *BoolClickable
+
+	// File menu items
+	fileMenuItems  []MenuItem
+	NewSong        tracker.Action
+	OpenSongFile   tracker.Action
+	SaveSongFile   tracker.Action
+	SaveSongAsFile tracker.Action
+	ExportWav      tracker.Action
+	Quit           tracker.Action
+
+	// Edit menu items
+	editMenuItems []MenuItem
+}
+
+func NewSongPanel(model *tracker.Model) *SongPanel {
+	ret := &SongPanel{
+		MenuBar:        make([]widget.Clickable, 2),
+		Menus:          make([]Menu, 2),
+		BPM:            NewNumberInput(model.BPM().Int()),
+		RowsPerPattern: NewNumberInput(model.RowsPerPattern().Int()),
+		RowsPerBeat:    NewNumberInput(model.RowsPerBeat().Int()),
+		Step:           NewNumberInput(model.Step().Int()),
+		SongLength:     NewNumberInput(model.SongLength().Int()),
+		PanicBtn:       NewBoolClickable(model.Panic().Bool()),
+		RecordBtn:      NewBoolClickable(model.IsRecording().Bool()),
+		NoteTracking:   NewBoolClickable(model.NoteTracking().Bool()),
+		PlayingBtn:     NewBoolClickable(model.Playing().Bool()),
+		RewindBtn:      NewActionClickable(model.Rewind()),
+	}
+	ret.fileMenuItems = []MenuItem{
+		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: shortcutKey + "N", Doer: model.NewSong()},
+		{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: shortcutKey + "O", Doer: model.OpenSong()},
+		{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: shortcutKey + "S", Doer: model.SaveSong()},
+		{IconBytes: icons.ContentSave, Text: "Save Song As...", Doer: model.SaveSongAs()},
+		{IconBytes: icons.ImageAudiotrack, Text: "Export Wav...", Doer: model.Export()},
+	}
+	if canQuit {
+		ret.fileMenuItems = append(ret.fileMenuItems, MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit", Doer: model.Quit()})
+	}
+	ret.editMenuItems = []MenuItem{
+		{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: shortcutKey + "Z", Doer: model.Undo()},
+		{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: shortcutKey + "Y", Doer: model.Redo()},
+		{IconBytes: icons.ImageCrop, Text: "Remove unused data", Doer: model.RemoveUnused()},
+	}
+	return ret
+}
 
 const shortcutKey = "Ctrl+"
 
-var fileMenuItems []MenuItem = []MenuItem{
-	{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: shortcutKey + "N"},
-	{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: shortcutKey + "O"},
-	{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: shortcutKey + "S"},
-	{IconBytes: icons.ContentSave, Text: "Save Song As..."},
-	{IconBytes: icons.ImageAudiotrack, Text: "Export Wav..."},
-}
-
-func init() {
-	if CAN_QUIT {
-		fileMenuItems = append(fileMenuItems, MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit"})
-	}
-}
-
-func (t *Tracker) layoutSongPanel(gtx C) D {
+func (s *SongPanel) Layout(gtx C, t *Tracker) D {
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(t.layoutMenuBar),
-		layout.Rigid(t.layoutSongOptions),
+		layout.Rigid(func(gtx C) D {
+			return s.layoutMenuBar(gtx, t)
+		}),
+		layout.Rigid(func(gtx C) D {
+			return s.layoutSongOptions(gtx, t)
+		}),
 	)
 }
 
-func (t *Tracker) layoutMenu(title string, clickable *widget.Clickable, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
-	for clickable.Clicked() {
-		menu.Visible = true
-	}
-	m := t.PopupMenu(menu)
-	return func(gtx C) D {
-		defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-		titleBtn := material.Button(t.Theme, clickable, title)
-		titleBtn.Color = white
-		titleBtn.Background = transparent
-		titleBtn.CornerRadius = unit.Dp(0)
-		dims := titleBtn.Layout(gtx)
-		op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
-		gtx.Constraints.Max.X = gtx.Dp(width)
-		gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(1000))
-		m.Layout(gtx, items...)
-		return dims
-	}
-}
-
-func (t *Tracker) layoutMenuBar(gtx C) D {
+func (t *SongPanel) layoutMenuBar(gtx C, tr *Tracker) D {
 	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(36))
 	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 
-	for clickedItem, hasClicked := t.Menus[0].Clicked(); hasClicked; {
-		switch clickedItem {
-		case 0:
-			t.NewSong(false)
-		case 1:
-			t.OpenSongFile(false)
-		case 2:
-			t.SaveSongFile()
-		case 3:
-			t.SaveSongAsFile()
-		case 4:
-			t.WaveTypeDialog.Visible = true
-		case 5:
-			t.Quit(false)
-		}
-		clickedItem, hasClicked = t.Menus[0].Clicked()
-	}
-
-	for clickedItem, hasClicked := t.Menus[1].Clicked(); hasClicked; {
-		switch clickedItem {
-		case 0:
-			t.Undo()
-		case 1:
-			t.Redo()
-		case 2:
-			if contents, err := yaml.Marshal(t.Song()); err == nil {
-				clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
-				t.Alert.Update("Song copied to clipboard", Notify, time.Second*3)
-			}
-		case 3:
-			clipboard.ReadOp{Tag: t}.Add(gtx.Ops)
-		case 4:
-			t.RemoveUnusedData()
-		}
-		clickedItem, hasClicked = t.Menus[1].Clicked()
-	}
-
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		layout.Rigid(t.layoutMenu("File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200),
-			fileMenuItems...,
-		)),
-		layout.Rigid(t.layoutMenu("Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200),
-			MenuItem{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: shortcutKey + "Z", Disabled: !t.CanUndo()},
-			MenuItem{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: shortcutKey + "Y", Disabled: !t.CanRedo()},
-			MenuItem{IconBytes: icons.ContentContentCopy, Text: "Copy", ShortcutText: shortcutKey + "C"},
-			MenuItem{IconBytes: icons.ContentContentPaste, Text: "Paste", ShortcutText: shortcutKey + "V"},
-			MenuItem{IconBytes: icons.ImageCrop, Text: "Remove unused data"},
-		)),
+		layout.Rigid(tr.layoutMenu("File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
+		layout.Rigid(tr.layoutMenu("Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...)),
 	)
 }
 
-func (t *Tracker) layoutSongOptions(gtx C) D {
+func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 	paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 
 	in := layout.UniformInset(unit.Dp(1))
 
-	var panicBtnStyle material.ButtonStyle
-	if !t.Panic() {
-		panicBtnStyle = LowEmphasisButton(t.Theme, t.PanicBtn, "Panic")
-	} else {
-		panicBtnStyle = HighEmphasisButton(t.Theme, t.PanicBtn, "Panic")
-	}
-
-	for t.PanicBtn.Clicked() {
-		t.SetPanic(!t.Panic())
-	}
-
-	var recordBtnStyle material.ButtonStyle
-	if !t.Recording() {
-		recordBtnStyle = LowEmphasisButton(t.Theme, t.RecordBtn, "Record")
-	} else {
-		recordBtnStyle = HighEmphasisButton(t.Theme, t.RecordBtn, "Record")
-	}
-
-	for t.RecordBtn.Clicked() {
-		t.SetRecording(!t.Recording())
-	}
+	panicBtnStyle := ToggleButton(tr.Theme, t.PanicBtn, "Panic (F12)")
+	rewindBtnStyle := ActionIcon(tr.Theme, t.RewindBtn, icons.AVFastRewind, "Rewind\n(F5)")
+	playBtnStyle := ToggleIcon(tr.Theme, t.PlayingBtn, icons.AVPlayArrow, icons.AVStop, "Play (F6 / Space)", "Stop (F6 / Space)")
+	recordBtnStyle := ToggleIcon(tr.Theme, t.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, "Record (F7)", "Stop (F7)")
+	noteTrackBtnStyle := ToggleIcon(tr.Theme, t.NoteTracking, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, "Follow\nOff\n(F8)", "Follow\nOn\n(F8)")
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("LEN:", white, t.TextShaper)),
+				layout.Rigid(Label("LEN:", white, tr.Theme.Shaper)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					t.SongLength.Value = t.Song().Score.Length
-					numStyle := NumericUpDown(t.Theme, t.SongLength, 1, math.MaxInt32, "Song length")
+					numStyle := NumericUpDown(tr.Theme, t.SongLength, "Song length")
 					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
 					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
-					t.SetSongLength(t.SongLength.Value)
 					return dims
 				}),
 			)
 		}),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("BPM:", white, t.TextShaper)),
+				layout.Rigid(Label("BPM:", white, tr.Theme.Shaper)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					t.BPM.Value = t.Song().BPM
-					numStyle := NumericUpDown(t.Theme, t.BPM, 1, 999, "Beats per minute")
+					numStyle := NumericUpDown(tr.Theme, t.BPM, "Beats per minute")
 					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
 					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
-					t.SetBPM(t.BPM.Value)
 					return dims
 				}),
 			)
 		}),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("RPP:", white, t.TextShaper)),
+				layout.Rigid(Label("RPP:", white, tr.Theme.Shaper)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					t.RowsPerPattern.Value = t.Song().Score.RowsPerPattern
-					numStyle := NumericUpDown(t.Theme, t.RowsPerPattern, 1, 255, "Rows per pattern")
+					numStyle := NumericUpDown(tr.Theme, t.RowsPerPattern, "Rows per pattern")
 					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
 					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
-					t.SetRowsPerPattern(t.RowsPerPattern.Value)
 					return dims
 				}),
 			)
 		}),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("RPB:", white, t.TextShaper)),
+				layout.Rigid(Label("RPB:", white, tr.Theme.Shaper)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					t.RowsPerBeat.Value = t.Song().RowsPerBeat
-					numStyle := NumericUpDown(t.Theme, t.RowsPerBeat, 1, 32, "Rows per beat")
+					numStyle := NumericUpDown(tr.Theme, t.RowsPerBeat, "Rows per beat")
 					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
 					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
 					dims := in.Layout(gtx, numStyle.Layout)
-					t.SetRowsPerBeat(t.RowsPerBeat.Value)
 					return dims
 				}),
 			)
 		}),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("STP:", white, t.TextShaper)),
+				layout.Rigid(Label("STP:", white, tr.Theme.Shaper)),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					numStyle := NumericUpDown(t.Theme, t.Step, 0, 8, "Cursor step")
+					numStyle := NumericUpDown(tr.Theme, t.Step, "Cursor step")
 					numStyle.UnitsPerStep = unit.Dp(20)
 					dims := in.Layout(gtx, numStyle.Layout)
 					return dims
 				}),
 			)
 		}),
+		layout.Rigid(VuMeter{AverageVolume: tr.Model.AverageVolume(), PeakVolume: tr.Model.PeakVolume(), Range: 100}.Layout),
 		layout.Rigid(func(gtx C) D {
-			gtx.Constraints.Min = image.Pt(0, 0)
-			return panicBtnStyle.Layout(gtx)
+			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(rewindBtnStyle.Layout),
+				layout.Rigid(playBtnStyle.Layout),
+				layout.Rigid(recordBtnStyle.Layout),
+				layout.Rigid(noteTrackBtnStyle.Layout),
+			)
 		}),
-		layout.Rigid(func(gtx C) D {
-			gtx.Constraints.Min = image.Pt(0, 0)
-			return recordBtnStyle.Layout(gtx)
-		}),
-		layout.Rigid(VuMeter{AverageVolume: t.lastAvgVolume, PeakVolume: t.lastPeakVolume, Range: 100}.Layout),
+		layout.Rigid(panicBtnStyle.Layout),
 	)
 }

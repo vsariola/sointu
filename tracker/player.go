@@ -19,7 +19,7 @@ type (
 		song            sointu.Song            // the song being played
 		playing         bool                   // is the player playing the score or not
 		rowtime         int                    // how many samples have been played in the current row
-		position        ScoreRow               // the current position in the score
+		songPos         sointu.SongPos         // the current position in the score
 		avgVolumeMeter  VolumeAnalyzer         // the volume analyzer used to calculate the average volume
 		peakVolumeMeter VolumeAnalyzer         // the volume analyzer used to calculate the peak volume
 		voiceLevels     [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
@@ -28,9 +28,9 @@ type (
 		recState  recState  // is the recording off; are we waiting for a note; or are we recording
 		recording Recording // the recorded MIDI events and BPM
 
-		synther        sointu.Synther // the synther used to create new synths
-		playerMessages chan<- PlayerMessage
-		modelMessages  <-chan interface{}
+		synther    sointu.Synther // the synther used to create new synths
+		playerMsgs chan<- PlayerMsg
+		modelMsgs  <-chan interface{}
 	}
 
 	// PlayerProcessContext is the context given to the player when processing
@@ -50,28 +50,18 @@ type (
 		Note    byte
 	}
 
-	// PlayerMessage is a message sent from the player to the model. The Inner
+	// PlayerMsg is a message sent from the player to the model. The Inner
 	// field can contain any message. Panic, AverageVolume, PeakVolume, SongRow
 	// and VoiceStates transmitted frequently, with every message, so they are
 	// treated specially, to avoid boxing. All the rest messages can be boxed to
 	// Inner interface{}
-	PlayerMessage struct {
+	PlayerMsg struct {
 		Panic         bool
 		AverageVolume Volume
 		PeakVolume    Volume
-		SongRow       ScoreRow
+		SongPosition  sointu.SongPos
 		VoiceLevels   [vm.MAX_VOICES]float32
 		Inner         interface{}
-	}
-
-	// PlayerCrashMessage is sent to the model when the player crashes.
-	PlayerCrashMessage struct {
-		error
-	}
-
-	// PlayerVolumeErrorMessage is sent to the model there is an error in the volume analyzer. The error is not fatal.
-	PlayerVolumeErrorMessage struct {
-		error
 	}
 )
 
@@ -92,20 +82,6 @@ const (
 )
 
 const numRenderTries = 10000
-
-// NewPlayer creates a new player. The playerMessages channel is used to send
-// messages to the model. The modelMessages channel is used to receive messages
-// from the model. The synther is used to create new synths.
-func NewPlayer(synther sointu.Synther, playerMessages chan<- PlayerMessage, modelMessages <-chan interface{}) *Player {
-	p := &Player{
-		playerMessages:  playerMessages,
-		modelMessages:   modelMessages,
-		synther:         synther,
-		avgVolumeMeter:  VolumeAnalyzer{Attack: 0.3, Release: 0.3, Min: -100, Max: 20},
-		peakVolumeMeter: VolumeAnalyzer{Attack: 1e-4, Release: 1, Min: -100, Max: 20},
-	}
-	return p
-}
 
 // Process renders audio to the given buffer, trying to fill it completely. If
 // the buffer is not filled, the synth is destroyed and an error is sent to the
@@ -152,6 +128,9 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		if p.playing {
 			timeUntilRowAdvance = p.song.SamplesPerRow() - p.rowtime
 		}
+		if timeUntilRowAdvance < 0 {
+			timeUntilRowAdvance = 0
+		}
 		var rendered, timeAdvanced int
 		var err error
 		if p.synth != nil {
@@ -169,7 +148,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		}
 		if err != nil {
 			p.synth = nil
-			p.send(PlayerCrashMessage{fmt.Errorf("synth.Render: %w", err)})
+			p.send(Alert{Message: fmt.Sprintf("synth.Render: %s", err.Error()), Priority: Error, Name: "PlayerCrash"})
 		}
 		buffer = buffer[rendered:]
 		frame += rendered
@@ -189,47 +168,37 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		if len(buffer) == 0 {
 			err := p.avgVolumeMeter.Update(oldBuffer)
 			err2 := p.peakVolumeMeter.Update(oldBuffer)
-			var msg interface{}
 			if err != nil {
-				msg = PlayerCrashMessage{err}
 				p.synth = nil
+				p.sendAlert("PlayerVolume", err.Error(), Warning)
+				return
 			}
 			if err2 != nil {
-				msg = PlayerCrashMessage{err}
 				p.synth = nil
+				p.sendAlert("PlayerVolume", err2.Error(), Warning)
+				return
 			}
-			p.send(msg)
+			p.send(nil)
 			return
 		}
 	}
 	// we were not able to fill the buffer with NUM_RENDER_TRIES attempts, destroy synth and throw an error
 	p.synth = nil
-	p.send(PlayerCrashMessage{fmt.Errorf("synth did not fill the audio buffer even with %d render calls", numRenderTries)})
+	p.sendAlert("PlayerCrash", fmt.Sprintf("synth did not fill the audio buffer even with %d render calls", numRenderTries), Error)
 }
 
 func (p *Player) advanceRow() {
 	if p.song.Score.Length == 0 || p.song.Score.RowsPerPattern == 0 {
 		return
 	}
-	p.position.Row++ // advance row (this is why we subtracted one in Play())
-	p.position = p.position.Wrap(p.song.Score)
+	p.songPos.PatternRow++ // advance row (this is why we subtracted one in Play())
+	p.songPos = p.song.Score.Wrap(p.songPos)
 	p.send(nil) // just send volume and song row information
 	lastVoice := 0
 	for i, t := range p.song.Score.Tracks {
 		start := lastVoice
 		lastVoice = start + t.NumVoices
-		if p.position.Pattern < 0 || p.position.Pattern >= len(t.Order) {
-			continue
-		}
-		o := t.Order[p.position.Pattern]
-		if o < 0 || o >= len(t.Patterns) {
-			continue
-		}
-		pat := t.Patterns[o]
-		if p.position.Row < 0 || p.position.Row >= len(pat) {
-			continue
-		}
-		n := pat[p.position.Row]
+		n := t.Note(p.songPos)
 		switch {
 		case n == 0:
 			p.releaseTrack(i)
@@ -245,9 +214,9 @@ func (p *Player) processMessages(context PlayerProcessContext) {
 loop:
 	for { // process new message
 		select {
-		case msg := <-p.modelMessages:
+		case msg := <-p.modelMsgs:
 			switch m := msg.(type) {
-			case ModelPanicMessage:
+			case PanicMsg:
 				if m.bool {
 					p.synth = nil
 				} else {
@@ -261,23 +230,23 @@ loop:
 				p.compileOrUpdateSynth()
 			case sointu.Score:
 				p.song.Score = m
-			case ModelPlayingChangedMessage:
+			case IsPlayingMsg:
 				p.playing = bool(m.bool)
 				if !p.playing {
 					for i := range p.song.Score.Tracks {
 						p.releaseTrack(i)
 					}
 				}
-			case ModelBPMChangedMessage:
+			case BPMMsg:
 				p.song.BPM = m.int
 				p.compileOrUpdateSynth()
-			case ModelRowsPerBeatChangedMessage:
+			case RowsPerBeatMsg:
 				p.song.RowsPerBeat = m.int
 				p.compileOrUpdateSynth()
-			case ModelPlayFromPositionMessage:
+			case StartPlayMsg:
 				p.playing = true
-				p.position = m.ScoreRow
-				p.position.Row--
+				p.songPos = m.SongPos
+				p.songPos.PatternRow--
 				p.rowtime = math.MaxInt
 				for i, t := range p.song.Score.Tracks {
 					if !t.Effect {
@@ -285,19 +254,19 @@ loop:
 						p.releaseTrack(i)
 					}
 				}
-			case ModelNoteOnMessage:
+			case NoteOnMsg:
 				if m.IsInstr {
 					p.triggerInstrument(m.Instr, m.Note)
 				} else {
 					p.triggerTrack(m.Track, m.Note)
 				}
-			case ModelNoteOffMessage:
+			case NoteOffMsg:
 				if m.IsInstr {
 					p.releaseInstrument(m.Instr, m.Note)
 				} else {
 					p.releaseTrack(m.Track)
 				}
-			case ModelRecordingMessage:
+			case RecordingMsg:
 				if m.bool {
 					p.recState = recStateWaitingForNote
 					p.recording = Recording{}
@@ -317,6 +286,15 @@ loop:
 	}
 }
 
+func (p *Player) sendAlert(name, message string, priority AlertPriority) {
+	p.send(Alert{
+		Name:     name,
+		Priority: priority,
+		Message:  message,
+		Duration: defaultAlertDuration,
+	})
+}
+
 func (p *Player) compileOrUpdateSynth() {
 	if p.song.BPM <= 0 {
 		return // bpm not set yet
@@ -325,7 +303,7 @@ func (p *Player) compileOrUpdateSynth() {
 		err := p.synth.Update(p.song.Patch, p.song.BPM)
 		if err != nil {
 			p.synth = nil
-			p.send(PlayerCrashMessage{fmt.Errorf("synth.Update: %w", err)})
+			p.sendAlert("PlayerCrash", fmt.Sprintf("synth.Update: %v", err), Error)
 			return
 		}
 	} else {
@@ -333,7 +311,7 @@ func (p *Player) compileOrUpdateSynth() {
 		p.synth, err = p.synther.Synth(p.song.Patch, p.song.BPM)
 		if err != nil {
 			p.synth = nil
-			p.send(PlayerCrashMessage{fmt.Errorf("synther.Synth: %w", err)})
+			p.sendAlert("PlayerCrash", fmt.Sprintf("synther.Synth: %v", err), Error)
 			return
 		}
 	}
@@ -342,7 +320,7 @@ func (p *Player) compileOrUpdateSynth() {
 // all sends from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
 func (p *Player) send(message interface{}) {
 	select {
-	case p.playerMessages <- PlayerMessage{Panic: p.synth == nil, AverageVolume: p.avgVolumeMeter.Level, PeakVolume: p.peakVolumeMeter.Level, SongRow: p.position, VoiceLevels: p.voiceLevels, Inner: message}:
+	case p.playerMsgs <- PlayerMsg{Panic: p.synth == nil, AverageVolume: p.avgVolumeMeter.Level, PeakVolume: p.peakVolumeMeter.Level, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, Inner: message}:
 	default:
 	}
 }

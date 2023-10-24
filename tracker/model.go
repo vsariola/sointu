@@ -4,15 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
-	"golang.org/x/exp/slices"
 )
 
 // Model implements the mutable state for the tracker program GUI.
@@ -25,40 +21,69 @@ import (
 type (
 	// modelData is the part of the model that gets save to recovery file
 	modelData struct {
-		Song                 sointu.Song
-		SelectionCorner      ScorePoint
-		Cursor               ScorePoint
-		LowNibble            bool
-		InstrIndex           int
-		UnitIndex            int
-		ParamIndex           int
-		Octave               int
-		UsedIDs              map[int]bool
-		MaxID                int
-		FilePath             string
-		ChangedSinceSave     bool
-		PatternUseCount      [][]int
-		InstrEnlarged        bool
-		RecoveryFilePath     string
-		ChangedSinceRecovery bool
+		Song                    sointu.Song
+		Cursor, Cursor2         Cursor
+		LowNibble               bool
+		InstrIndex, InstrIndex2 int
+		UnitIndex, UnitIndex2   int
+		ParamIndex              int
+		UnitSearchIndex         int
+		UnitSearchString        string
+		Octave                  int
+		Step                    int
+		FilePath                string
+		ChangedSinceSave        bool
+		RecoveryFilePath        string
+		ChangedSinceRecovery    bool
 	}
 
 	Model struct {
 		d modelData
 
-		prevUndoType    string
+		instrEnlarged   bool
+		commentExpanded bool
+
+		prevUndoKind    string
 		undoSkipCounter int
 		undoStack       []modelData
 		redoStack       []modelData
 
-		panic        bool
-		playing      bool
-		recording    bool
-		playPosition ScoreRow
-		noteTracking bool
+		changeLevel    int
+		changeCancel   bool
+		changeSeverity ChangeSeverity
+		changeType     ChangeType
 
-		PlayerMessages <-chan PlayerMessage
+		panic        bool
+		recording    bool
+		playing      bool
+		playPosition sointu.SongPos
+		noteTracking bool
+		quitted      bool
+
+		cachePatternUseCount [][]int
+
+		voiceLevels [vm.MAX_VOICES]float32
+		avgVolume   Volume
+		peakVolume  Volume
+
+		alerts  []Alert
+		dialog  Dialog
+		synther sointu.Synther // the synther used to create new synths
+
+		PlayerMessages chan PlayerMsg
 		modelMessages  chan<- interface{}
+	}
+
+	// Cursor identifies a row and a track in a song score.
+	Cursor struct {
+		Track int
+		sointu.SongPos
+	}
+
+	Explore struct {
+		IsSave       bool         // true if this is a save operation, false if open operation
+		IsSong       bool         // true if this is a song, false if instrument
+		Continuation func(string) // function to call with the selected file path
 	}
 
 	// Describes a note triggered either a track or an instrument
@@ -69,75 +94,164 @@ type (
 		Instr   int
 		Track   int
 		Note    byte
+
+		model *Model
 	}
 
-	ModelPlayingChangedMessage struct {
-		bool
-	}
+	IsPlayingMsg   struct{ bool }
+	StartPlayMsg   struct{ sointu.SongPos }
+	BPMMsg         struct{ int }
+	RowsPerBeatMsg struct{ int }
+	PanicMsg       struct{ bool }
+	RecordingMsg   struct{ bool }
+	NoteOnMsg      struct{ NoteID }
+	NoteOffMsg     struct{ NoteID }
 
-	ModelPlayFromPositionMessage struct {
-		ScoreRow
-	}
+	ChangeSeverity int
+	ChangeType     int
 
-	ModelBPMChangedMessage struct {
-		int
-	}
-
-	ModelRowsPerBeatChangedMessage struct {
-		int
-	}
-
-	ModelPanicMessage struct {
-		bool
-	}
-
-	ModelRecordingMessage struct {
-		bool
-	}
-
-	ModelNoteOnMessage struct {
-		NoteID
-	}
-
-	ModelNoteOffMessage struct {
-		NoteID
-	}
+	Dialog int
 )
 
-type Parameter struct {
-	Type      ParameterType
-	Name      string
-	Hint      string
-	Value     int
-	Min       int
-	Max       int
-	LargeStep int
-}
-
-type ParameterType int
+const (
+	MajorChange ChangeSeverity = iota
+	MinorChange
+)
 
 const (
-	IntegerParameter ParameterType = iota
-	BoolParameter
-	IDParameter
+	NoChange    ChangeType = 0
+	PatchChange ChangeType = 1 << iota
+	ScoreChange
+	BPMChange
+	RowsPerBeatChange
+	SongChange ChangeType = PatchChange | ScoreChange | BPMChange | RowsPerBeatChange
+)
+
+const (
+	NoDialog = iota
+	SaveAsExplorer
+	NewSongChanges
+	NewSongSaveExplorer
+	OpenSongChanges
+	OpenSongSaveExplorer
+	OpenSongOpenExplorer
+	Export
+	ExportFloatExplorer
+	ExportInt16Explorer
+	QuitChanges
+	QuitSaveExplorer
 )
 
 const maxUndo = 64
 
-func NewModel(modelMessages chan<- interface{}, playerMessages <-chan PlayerMessage, recoveryFilePath string) *Model {
-	ret := new(Model)
-	ret.modelMessages = modelMessages
-	ret.PlayerMessages = playerMessages
-	ret.setSongNoUndo(defaultSong.Copy())
-	ret.d.Octave = 4
-	ret.d.RecoveryFilePath = recoveryFilePath
+func (m *Model) AverageVolume() Volume        { return m.avgVolume }
+func (m *Model) PeakVolume() Volume           { return m.peakVolume }
+func (m *Model) PlayPosition() sointu.SongPos { return m.playPosition }
+func (m *Model) PlaySongRow() int             { return m.d.Song.Score.SongRow(m.playPosition) }
+func (m *Model) ChangedSinceSave() bool       { return m.d.ChangedSinceSave }
+func (m *Model) Dialog() Dialog               { return m.dialog }
+func (m *Model) Quitted() bool                { return m.quitted }
+
+// NewModelPlayer creates a new model and a player that communicates with it
+func NewModelPlayer(synther sointu.Synther, recoveryFilePath string) (*Model, *Player) {
+	m := new(Model)
+	m.synther = synther
+	modelMessages := make(chan interface{}, 1024)
+	playerMessages := make(chan PlayerMsg, 1024)
+	m.modelMessages = modelMessages
+	m.PlayerMessages = playerMessages
+	m.d.Octave = 4
+	m.d.RecoveryFilePath = recoveryFilePath
+	m.resetSong()
 	if recoveryFilePath != "" {
-		if bytes2, err := os.ReadFile(ret.d.RecoveryFilePath); err == nil {
-			json.Unmarshal(bytes2, &ret.d)
-			ret.send(ret.d.Song.Copy())
+		if bytes2, err := os.ReadFile(m.d.RecoveryFilePath); err == nil {
+			json.Unmarshal(bytes2, &m.d)
 		}
 	}
-	return ret
+	p := &Player{
+		playerMsgs:      playerMessages,
+		modelMsgs:       modelMessages,
+		synther:         synther,
+		song:            m.d.Song.Copy(),
+		avgVolumeMeter:  VolumeAnalyzer{Attack: 0.3, Release: 0.3, Min: -100, Max: 20},
+		peakVolumeMeter: VolumeAnalyzer{Attack: 1e-4, Release: 1, Min: -100, Max: 20},
+	}
+	p.compileOrUpdateSynth()
+	return m, p
+}
+
+func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func() {
+	if m.changeLevel == 0 {
+		m.changeType = NoChange
+		m.undoStack = append(m.undoStack, m.d.Copy())
+		m.changeCancel = false
+		m.changeSeverity = severity
+	} else {
+		if m.changeSeverity < severity {
+			m.changeSeverity = severity
+		}
+	}
+	m.changeType |= t
+	m.changeLevel++
+	return func() {
+		m.changeLevel--
+		if m.changeLevel < 0 {
+			panic("changeLevel < 0, mismatched change() calls")
+		}
+		if m.changeLevel == 0 {
+			if m.changeCancel || m.d.Song.BPM <= 0 || m.d.Song.RowsPerBeat <= 0 || m.d.Song.Score.Length <= 0 {
+				// the change was cancelled or put the song in invalid state, so we don't save it
+				m.d = m.undoStack[len(m.undoStack)-1]
+				m.undoStack = m.undoStack[:len(m.undoStack)-1]
+				return
+			}
+			m.d.ChangedSinceSave = true
+			m.d.ChangedSinceRecovery = true
+			if m.changeType&ScoreChange != 0 {
+				m.updatePatternUseCount()
+				m.d.Cursor.SongPos = m.d.Song.Score.Wrap(m.d.Cursor.SongPos)
+				m.d.Cursor2.SongPos = m.d.Song.Score.Wrap(m.d.Cursor2.SongPos)
+				m.send(m.d.Song.Score.Copy())
+			}
+			if m.changeType&PatchChange != 0 {
+				m.d.InstrIndex = clamp(m.d.InstrIndex, 0, len(m.d.Song.Patch)-1)
+				m.d.InstrIndex2 = clamp(m.d.InstrIndex2, 0, len(m.d.Song.Patch)-1)
+				unitCount := 0
+				if m.d.InstrIndex >= 0 && m.d.InstrIndex < len(m.d.Song.Patch) {
+					unitCount = len(m.d.Song.Patch[m.d.InstrIndex].Units)
+				}
+				m.d.UnitIndex = clamp(m.d.UnitIndex, 0, unitCount-1)
+				m.d.UnitIndex2 = clamp(m.d.UnitIndex2, 0, unitCount-1)
+				m.send(m.d.Song.Patch.Copy())
+			}
+			if m.changeType&BPMChange != 0 {
+				m.send(BPMMsg{m.d.Song.BPM})
+			}
+			if m.changeType&RowsPerBeatChange != 0 {
+				m.send(RowsPerBeatMsg{m.d.Song.RowsPerBeat})
+			}
+			m.undoSkipCounter++
+			var limit int
+			switch m.changeSeverity {
+			default:
+			case MajorChange:
+				limit = 1
+			case MinorChange:
+				limit = 10
+			}
+			if m.prevUndoKind == kind && m.undoSkipCounter < limit {
+				m.undoStack = m.undoStack[:len(m.undoStack)-1]
+				return
+			}
+			m.undoSkipCounter = 0
+			m.prevUndoKind = kind
+			m.redoStack = m.redoStack[:0]
+			if len(m.undoStack) > maxUndo {
+				copy(m.undoStack, m.undoStack[len(m.undoStack)-maxUndo:])
+				m.undoStack = m.undoStack[:maxUndo]
+			}
+		}
+	}
 }
 
 func (m *Model) MarshalRecovery() []byte {
@@ -191,1225 +305,83 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 	}
 	m.d.ChangedSinceRecovery = false
 	m.send(m.d.Song.Copy())
+	m.updatePatternUseCount()
 }
 
-func (m *Model) FilePath() string {
-	return m.d.FilePath
-}
-
-func (m *Model) SetFilePath(value string) {
-	m.d.FilePath = value
-}
-
-func (m *Model) ChangedSinceSave() bool {
-	return m.d.ChangedSinceSave
-}
-
-func (m *Model) SetChangedSinceSave(value bool) {
-	m.d.ChangedSinceSave = value
-}
-
-func (m *Model) ResetSong() {
-	m.SetSong(defaultSong.Copy())
-	m.d.FilePath = ""
-	m.d.ChangedSinceSave = false
-}
-
-func (m *Model) SetSong(song sointu.Song) {
-	// guard for malformed songs
-	if len(song.Score.Tracks) == 0 || song.Score.Length <= 0 || len(song.Patch) == 0 {
-		return
+func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
+	m.playPosition = msg.SongPosition
+	m.voiceLevels = msg.VoiceLevels
+	m.avgVolume = msg.AverageVolume
+	m.peakVolume = msg.PeakVolume
+	if m.playing && m.noteTracking {
+		m.d.Cursor.SongPos = msg.SongPosition
+		m.d.Cursor2.SongPos = msg.SongPosition
 	}
-	m.saveUndo("SetSong", 0)
-	m.setSongNoUndo(song)
-}
-
-// Returns the current octave for jamming and inputting nodes
-func (m *Model) Octave() int {
-	return m.d.Octave
-}
-
-// Sets the current octave for jamming and inputting nodes and returns true if
-// it changed. The value is clamped to 0..9
-func (m *Model) SetOctave(value int) bool {
-	value = clamp(value, 0, 9)
-	if m.d.Octave == value {
-		return false
-	}
-	m.d.Octave = value
-	return true
-}
-
-func (m *Model) ProcessPlayerMessage(msg PlayerMessage) {
-	m.playPosition = msg.SongRow
 	m.panic = msg.Panic
 	switch e := msg.Inner.(type) {
+	case func():
+		e()
 	case Recording:
 		if e.BPM == 0 {
 			e.BPM = float64(m.d.Song.BPM)
 		}
-		song, err := e.Song(m.d.Song.Patch, m.d.Song.RowsPerBeat, m.d.Song.Score.RowsPerPattern)
-		if err != nil {
+		score, err := e.Score(m.d.Song.Patch, m.d.Song.RowsPerBeat, m.d.Song.Score.RowsPerPattern)
+		if err != nil || score.Length <= 0 {
 			break
 		}
-		m.SetSong(song)
-		m.d.InstrEnlarged = false
+		defer m.change("Recording", SongChange, MajorChange)()
+		m.d.Song.Score = score
+		m.d.Song.BPM = int(e.BPM + 0.5)
+		m.instrEnlarged = false
+	case Alert:
+		m.Alerts().AddAlert(e)
 	default:
 	}
 }
 
-func (m *Model) SetInstrument(instrument sointu.Instrument) bool {
-	if len(instrument.Units) == 0 {
-		return false
-	}
-	m.saveUndo("SetInstrument", 0)
-	m.freeUnitIDs(m.d.Song.Patch[m.d.InstrIndex].Units)
-	m.assignUnitIDs(instrument.Units)
-	m.d.Song.Patch[m.d.InstrIndex] = instrument
-	m.clampPositions()
-	m.send(m.d.Song.Patch.Copy())
-	return true
-}
-
-func (m *Model) SetInstrIndex(value int) {
-	m.d.InstrIndex = value
-	m.clampPositions()
-}
-
-func (m *Model) SetInstrumentVoices(value int) {
-	if value < 1 {
-		value = 1
-	}
-	maxRemain := m.MaxInstrumentVoices()
-	if value > maxRemain {
-		value = maxRemain
-	}
-	if m.Instrument().NumVoices == value {
-		return
-	}
-	m.saveUndo("SetInstrumentVoices", 10)
-	m.d.Song.Patch[m.d.InstrIndex].NumVoices = value
-	m.send(m.d.Song.Patch.Copy())
-}
-
-func (m *Model) MaxInstrumentVoices() int {
-	maxRemain := 32 - m.d.Song.Patch.NumVoices() + m.Instrument().NumVoices
-	if maxRemain < 1 {
-		return 1
-	}
-	return maxRemain
-}
-
-func (m *Model) SetInstrumentName(name string) {
-	name = strings.TrimSpace(name)
-	if m.Instrument().Name == name {
-		return
-	}
-	m.saveUndo("SetInstrumentName", 10)
-	m.d.Song.Patch[m.d.InstrIndex].Name = name
-}
-
-func (m *Model) SetInstrumentComment(comment string) {
-	if m.Instrument().Comment == comment {
-		return
-	}
-	m.saveUndo("SetInstrumentComment", 10)
-	m.d.Song.Patch[m.d.InstrIndex].Comment = comment
-}
-
-func (m *Model) SetBPM(value int) {
-	if value < 1 {
-		value = 1
-	}
-	if value > 999 {
-		value = 999
-	}
-	if m.d.Song.BPM == value {
-		return
-	}
-	m.saveUndo("SetBPM", 100)
-	m.d.Song.BPM = value
-	m.send(ModelBPMChangedMessage{value})
-}
-
-func (m *Model) SetRowsPerBeat(value int) {
-	if value < 1 {
-		value = 1
-	}
-	if value > 32 {
-		value = 32
-	}
-	if m.d.Song.RowsPerBeat == value {
-		return
-	}
-	m.saveUndo("SetRowsPerBeat", 10)
-	m.d.Song.RowsPerBeat = value
-	m.send(ModelRowsPerBeatChangedMessage{value})
-}
-
-func (m *Model) AddTrack(after bool) {
-	if !m.CanAddTrack() {
-		return
-	}
-	m.saveUndo("AddTrack", 0)
-	newTracks := make([]sointu.Track, len(m.d.Song.Score.Tracks)+1)
-	if after {
-		m.d.Cursor.Track++
-	}
-	copy(newTracks, m.d.Song.Score.Tracks[:m.d.Cursor.Track])
-	copy(newTracks[m.d.Cursor.Track+1:], m.d.Song.Score.Tracks[m.d.Cursor.Track:])
-	newTracks[m.d.Cursor.Track] = sointu.Track{
-		NumVoices: 1,
-		Patterns:  []sointu.Pattern{},
-	}
-	m.d.Song.Score.Tracks = newTracks
-	m.clampPositions()
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) CanAddTrack() bool {
-	return m.d.Song.Score.NumVoices() < 32
-}
-
-func (m *Model) DeleteTrack(forward bool) {
-	if !m.CanDeleteTrack() {
-		return
-	}
-	m.saveUndo("DeleteTrack", 0)
-	newTracks := make([]sointu.Track, len(m.d.Song.Score.Tracks)-1)
-	copy(newTracks, m.d.Song.Score.Tracks[:m.d.Cursor.Track])
-	copy(newTracks[m.d.Cursor.Track:], m.d.Song.Score.Tracks[m.d.Cursor.Track+1:])
-	m.d.Song.Score.Tracks = newTracks
-	if !forward {
-		m.d.Cursor.Track--
-	}
-	m.d.SelectionCorner = m.d.Cursor
-	m.clampPositions()
-	m.computePatternUseCounts()
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) CanDeleteTrack() bool {
-	return len(m.d.Song.Score.Tracks) > 1
-}
-
-func (m *Model) SwapTracks(i, j int) {
-	if i < 0 || j < 0 || i >= len(m.d.Song.Score.Tracks) || j >= len(m.d.Song.Score.Tracks) || i == j {
-		return
-	}
-	m.saveUndo("SwapTracks", 10)
-	tracks := m.d.Song.Score.Tracks
-	tracks[i], tracks[j] = tracks[j], tracks[i]
-	m.clampPositions()
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) SetTrackVoices(value int) {
-	if value < 1 {
-		value = 1
-	}
-	maxRemain := m.MaxTrackVoices()
-	if value > maxRemain {
-		value = maxRemain
-	}
-	if m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices == value {
-		return
-	}
-	m.saveUndo("SetTrackVoices", 10)
-	m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices = value
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) MaxTrackVoices() int {
-	maxRemain := 32 - m.d.Song.Score.NumVoices() + m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices
-	if maxRemain < 1 {
-		maxRemain = 1
-	}
-	return maxRemain
-}
-
-func (m *Model) AddInstrument(after bool) {
-	if !m.CanAddInstrument() {
-		return
-	}
-	m.saveUndo("AddInstrument", 0)
-	newInstruments := make([]sointu.Instrument, len(m.d.Song.Patch)+1)
-	if after {
-		m.d.InstrIndex++
-	}
-	copy(newInstruments, m.d.Song.Patch[:m.d.InstrIndex])
-	copy(newInstruments[m.d.InstrIndex+1:], m.d.Song.Patch[m.d.InstrIndex:])
-	newInstr := defaultInstrument.Copy()
-	m.assignUnitIDs(newInstr.Units)
-	newInstruments[m.d.InstrIndex] = newInstr
-	m.d.UnitIndex = 0
-	m.d.ParamIndex = 0
-	m.d.Song.Patch = newInstruments
-	m.send(m.d.Song.Patch.Copy())
-}
-
-func (m *Model) NoteOn(id NoteID) {
-	m.send(ModelNoteOnMessage{id})
-}
-
-func (m *Model) NoteOff(id NoteID) {
-	m.send(ModelNoteOffMessage{id})
-}
-
-func (m *Model) Playing() bool {
-	return m.playing
-}
-
-func (m *Model) SetPlaying(val bool) {
-	if m.playing != val {
-		m.playing = val
-		m.send(ModelPlayingChangedMessage{val})
-	}
-}
-
-func (m *Model) PlayPosition() ScoreRow {
-	return m.playPosition
-}
-
-func (m *Model) CanAddInstrument() bool {
-	return m.d.Song.Patch.NumVoices() < 32
-}
-
-func (m *Model) SwapInstruments(i, j int) {
-	if i < 0 || j < 0 || i >= len(m.d.Song.Patch) || j >= len(m.d.Song.Patch) || i == j {
-		return
-	}
-	m.saveUndo("SwapInstruments", 10)
-	instruments := m.d.Song.Patch
-	instruments[i], instruments[j] = instruments[j], instruments[i]
-	m.clampPositions()
-	m.send(m.d.Song.Patch.Copy())
-}
-
-func (m *Model) DeleteInstrument(forward bool) {
-	if !m.CanDeleteInstrument() {
-		return
-	}
-	m.saveUndo("DeleteInstrument", 0)
-	m.freeUnitIDs(m.d.Song.Patch[m.d.InstrIndex].Units)
-	m.d.Song.Patch = append(m.d.Song.Patch[:m.d.InstrIndex], m.d.Song.Patch[m.d.InstrIndex+1:]...)
-	if (!forward && m.d.InstrIndex > 0) || m.d.InstrIndex >= len(m.d.Song.Patch) {
-		m.d.InstrIndex--
-	}
-	m.clampPositions()
-	m.send(m.d.Song.Patch.Copy())
-}
-
-func (m *Model) CanDeleteInstrument() bool {
-	return len(m.d.Song.Patch) > 1
-}
-
-func (m *Model) Note() byte {
-	trk := m.d.Song.Score.Tracks[m.d.Cursor.Track]
-	pat := trk.Order.Get(m.d.Cursor.Pattern)
-	if pat < 0 || pat >= len(trk.Patterns) {
-		return 1
-	}
-	return trk.Patterns[pat].Get(m.d.Cursor.Row)
-}
-
-// SetCurrentNote sets the (note) value in current pattern under cursor to iv
-func (m *Model) SetNote(iv byte) {
-	m.saveUndo("SetNote", 10)
-	tracks := m.d.Song.Score.Tracks
-	if m.d.Cursor.Pattern < 0 || m.d.Cursor.Row < 0 {
-		return
-	}
-	patIndex := tracks[m.d.Cursor.Track].Order.Get(m.d.Cursor.Pattern)
-	if patIndex < 0 {
-		patIndex = len(tracks[m.d.Cursor.Track].Patterns)
-		for _, pi := range tracks[m.d.Cursor.Track].Order {
-			if pi >= patIndex {
-				patIndex = pi + 1 // we find a pattern that is not in the pattern table nor in the order list i.e. completely new pattern
-			}
-		}
-		tracks[m.d.Cursor.Track].Order.Set(m.d.Cursor.Pattern, patIndex)
-	}
-	for len(tracks[m.d.Cursor.Track].Patterns) <= patIndex {
-		tracks[m.d.Cursor.Track].Patterns = append(tracks[m.d.Cursor.Track].Patterns, nil)
-	}
-	tracks[m.d.Cursor.Track].Patterns[patIndex].Set(m.d.Cursor.Row, iv)
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) AdjustPatternNumber(delta int, swap bool) {
-	r1, r2 := m.d.Cursor.Pattern, m.d.SelectionCorner.Pattern
-	if r1 > r2 {
-		r1, r2 = r2, r1
-	}
-	t1, t2 := m.d.Cursor.Track, m.d.SelectionCorner.Track
-	if t1 > t2 {
-		t1, t2 = t2, t1
-	}
-	type k = struct {
-		track int
-		pat   int
-	}
-	newIds := map[k]int{}
-	usedIds := map[k]bool{}
-	for t := t1; t <= t2; t++ {
-		for r := r1; r <= r2; r++ {
-			p := m.d.Song.Score.Tracks[t].Order.Get(r)
-			if p < 0 {
-				continue
-			}
-			if p+delta < 0 || p+delta > 35 {
-				return // if any of the patterns would go out of range, abort
-			}
-			newIds[k{t, p}] = p + delta
-			usedIds[k{t, p + delta}] = true
-		}
-	}
-	m.saveUndo("AdjustPatternNumber", 10)
-	for t := t1; t <= t2; t++ {
-		if swap {
-			maxId := len(m.d.Song.Score.Tracks[t].Patterns) - 1
-			// check if song uses patterns that are not in the table yet
-			for _, o := range m.d.Song.Score.Tracks[t].Order {
-				if maxId < o {
-					maxId = o
-				}
-			}
-			for p := 0; p <= maxId; p++ {
-				j := p
-				if delta > 0 {
-					j = maxId - p
-				}
-				if _, ok := newIds[k{t, j}]; ok {
-					continue
-				}
-				nextId := j
-				for used := usedIds[k{t, nextId}]; used; used = usedIds[k{t, nextId}] {
-					if delta < 0 {
-						nextId++
-					} else {
-						nextId--
-					}
-				}
-				newIds[k{t, j}] = nextId
-				usedIds[k{t, nextId}] = true
-			}
-			for i, o := range m.d.Song.Score.Tracks[t].Order {
-				if o < 0 {
-					continue
-				}
-				m.d.Song.Score.Tracks[t].Order[i] = newIds[k{t, o}]
-			}
-			newPatterns := make([]sointu.Pattern, len(m.d.Song.Score.Tracks[t].Patterns))
-			for p, pat := range m.d.Song.Score.Tracks[t].Patterns {
-				id := newIds[k{t, p}]
-				for len(newPatterns) <= id {
-					newPatterns = append(newPatterns, nil)
-				}
-				newPatterns[id] = pat
-			}
-			m.d.Song.Score.Tracks[t].Patterns = newPatterns
-		} else {
-			for r := r1; r <= r2; r++ {
-				p := m.d.Song.Score.Tracks[t].Order.Get(r)
-				if p < 0 {
-					continue
-				}
-				m.d.Song.Score.Tracks[t].Order.Set(r, p+delta)
-			}
-		}
-	}
-	m.computePatternUseCounts()
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) SetRecording(val bool) {
-	if m.recording != val {
-		m.recording = val
-		m.d.InstrEnlarged = val
-		m.send(ModelRecordingMessage{val})
-	}
-}
-
-func (m *Model) Recording() bool {
-	return m.recording
-}
-
-func (m *Model) SetPanic(val bool) {
-	if m.panic != val {
-		m.panic = val
-		m.send(ModelPanicMessage{val})
-	}
-}
-
-func (m *Model) Panic() bool {
-	return m.panic
-}
-
-func (m *Model) SetInstrEnlarged(val bool) {
-	m.d.InstrEnlarged = val
-}
-
-func (m *Model) InstrEnlarged() bool {
-	return m.d.InstrEnlarged
-}
-
-func (m *Model) PlayFromPosition(sr ScoreRow) {
-	m.playing = true
-	m.send(ModelPlayFromPositionMessage{sr})
-}
-
-func (m *Model) SetCurrentPattern(pat int) {
-	m.saveUndo("SetCurrentPattern", 0)
-	m.d.Song.Score.Tracks[m.d.Cursor.Track].Order.Set(m.d.Cursor.Pattern, pat)
-	m.computePatternUseCounts()
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) IsPatternUnique(track, pattern int) bool {
-	if track < 0 || track >= len(m.d.PatternUseCount) {
-		return false
-	}
-	p := m.d.PatternUseCount[track]
-	if pattern < 0 || pattern >= len(p) {
-		return false
-	}
-	return p[pattern] <= 1
-}
-
-func (m *Model) SetSongLength(value int) {
-	if value < 1 {
-		value = 1
-	}
-	if value == m.d.Song.Score.Length {
-		return
-	}
-	m.saveUndo("SetSongLength", 10)
-	m.d.Song.Score.Length = value
-	m.clampPositions()
-	m.computePatternUseCounts()
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) SetRowsPerPattern(value int) {
-	if value < 1 {
-		value = 1
-	}
-	if value > 255 {
-		value = 255
-	}
-	if value == m.d.Song.Score.RowsPerPattern {
-		return
-	}
-	m.saveUndo("SetRowsPerPattern", 10)
-	m.d.Song.Score.RowsPerPattern = value
-	m.clampPositions()
-	m.send(m.d.Song.Score.Copy())
+func (m *Model) TrackNoteOn(track int, note byte) (id NoteID) {
+	id = NoteID{IsInstr: false, Track: track, Note: note, model: m}
+	m.send(NoteOnMsg{id})
+	return id
 }
 
-func (m *Model) SetUnitType(t string) {
-	unit, ok := defaultUnits[t]
-	if !ok { // if the type is invalid, we just set it to empty unit
-		unit = sointu.Unit{Parameters: make(map[string]int)}
-	} else {
-		unit = unit.Copy()
-	}
-	if m.Unit().Type == unit.Type {
-		return
-	}
-	m.saveUndo("SetUnitType", 0)
-	oldID := m.Unit().ID
-	m.Instrument().Units[m.d.UnitIndex] = unit
-	m.Instrument().Units[m.d.UnitIndex].ID = oldID // keep the ID of the replaced unit
-	m.send(m.d.Song.Patch.Copy())
-}
-
-func (m *Model) PasteUnits(units []sointu.Unit) {
-	m.saveUndo("PasteUnits", 0)
-	newUnits := make([]sointu.Unit, len(m.Instrument().Units)+len(units))
-	m.d.UnitIndex++
-	copy(newUnits, m.Instrument().Units[:m.d.UnitIndex])
-	copy(newUnits[m.d.UnitIndex+len(units):], m.Instrument().Units[m.d.UnitIndex:])
-	for _, unit := range units {
-		if _, ok := m.d.UsedIDs[unit.ID]; ok {
-			m.d.MaxID++
-			unit.ID = m.d.MaxID
-		}
-		m.d.UsedIDs[unit.ID] = true
-	}
-	copy(newUnits[m.d.UnitIndex:m.d.UnitIndex+len(units)], units)
-	m.d.Song.Patch[m.d.InstrIndex].Units = newUnits
-	m.d.ParamIndex = 0
-	m.clampPositions()
-	m.send(m.d.Song.Patch.Copy())
-}
-
-func (m *Model) SetUnitIndex(value int) {
-	m.d.UnitIndex = value
-	m.d.ParamIndex = 0
-	m.clampPositions()
-}
-
-func (m *Model) AddUnit(after bool) {
-	m.saveUndo("AddUnit", 10)
-	newUnits := make([]sointu.Unit, len(m.Instrument().Units)+1)
-	if after {
-		m.d.UnitIndex++
-	}
-	copy(newUnits, m.Instrument().Units[:m.d.UnitIndex])
-	copy(newUnits[m.d.UnitIndex+1:], m.Instrument().Units[m.d.UnitIndex:])
-	m.assignUnitIDs(newUnits[m.d.UnitIndex : m.d.UnitIndex+1])
-	m.d.Song.Patch[m.d.InstrIndex].Units = newUnits
-	m.d.ParamIndex = 0
-	m.clampPositions()
-	m.send(m.d.Song.Patch.Copy())
-}
-
-func (m *Model) AddOrderRow(after bool) {
-	m.saveUndo("AddOrderRow", 10)
-	if after {
-		m.d.Cursor.Pattern++
-	}
-	for i, trk := range m.d.Song.Score.Tracks {
-		if l := len(trk.Order); l > m.d.Cursor.Pattern {
-			newOrder := make([]int, l+1)
-			copy(newOrder, trk.Order[:m.d.Cursor.Pattern])
-			copy(newOrder[m.d.Cursor.Pattern+1:], trk.Order[m.d.Cursor.Pattern:])
-			newOrder[m.d.Cursor.Pattern] = -1
-			m.d.Song.Score.Tracks[i].Order = newOrder
-		}
-	}
-	m.d.Song.Score.Length++
-	m.d.SelectionCorner = m.d.Cursor
-	m.clampPositions()
-	m.computePatternUseCounts()
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) DeleteOrderRow(forward bool) {
-	if m.d.Song.Score.Length <= 1 {
-		return
-	}
-	m.saveUndo("DeleteOrderRow", 0)
-	for i, trk := range m.d.Song.Score.Tracks {
-		if l := len(trk.Order); l > m.d.Cursor.Pattern {
-			newOrder := make([]int, l-1)
-			copy(newOrder, trk.Order[:m.d.Cursor.Pattern])
-			copy(newOrder[m.d.Cursor.Pattern:], trk.Order[m.d.Cursor.Pattern+1:])
-			m.d.Song.Score.Tracks[i].Order = newOrder
-		}
-	}
-	if !forward && m.d.Cursor.Pattern > 0 {
-		m.d.Cursor.Pattern--
-	}
-	m.d.Song.Score.Length--
-	m.d.SelectionCorner = m.d.Cursor
-	m.clampPositions()
-	m.computePatternUseCounts()
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) DeleteUnits(forward bool, a, b int) []sointu.Unit {
-	instr := m.Instrument()
-	m.saveUndo("DeleteUnits", 0)
-	a, b = intMin(a, b), intMax(a, b)
-	if a < 0 {
-		a = 0
-	}
-	if b > len(instr.Units)-1 {
-		b = len(instr.Units) - 1
-	}
-	for i := a; i <= b; i++ {
-		delete(m.d.UsedIDs, instr.Units[i].ID)
-	}
-	var newUnits []sointu.Unit
-	if a == 0 && b == len(instr.Units)-1 {
-		newUnits = make([]sointu.Unit, 1)
-		m.d.UnitIndex = 0
-	} else {
-		newUnits = make([]sointu.Unit, len(instr.Units)-(b-a+1))
-		copy(newUnits, instr.Units[:a])
-		copy(newUnits[a:], instr.Units[b+1:])
-		m.d.UnitIndex = a
-		if forward {
-			m.d.UnitIndex--
-		}
-	}
-	deletedUnits := instr.Units[a : b+1]
-	m.d.Song.Patch[m.d.InstrIndex].Units = newUnits
-	m.d.ParamIndex = 0
-	m.clampPositions()
-	m.send(m.d.Song.Patch.Copy())
-	return deletedUnits
-}
-
-func (m *Model) CanDeleteUnit() bool {
-	return len(m.Instrument().Units) > 1
-}
-
-func (m *Model) ResetParam() {
-	p, err := m.Param(m.d.ParamIndex)
-	if err != nil {
-		return
-	}
-	unit := m.Unit()
-	paramList, ok := sointu.UnitTypes[unit.Type]
-	if !ok || m.d.ParamIndex < 0 || m.d.ParamIndex >= len(paramList) {
-		return
-	}
-	paramType := paramList[m.d.ParamIndex]
-	defaultValue, ok := defaultUnits[unit.Type].Parameters[paramType.Name]
-	if unit.Parameters[p.Name] == defaultValue {
-		return
-	}
-	m.saveUndo("ResetParam", 0)
-	unit.Parameters[paramType.Name] = defaultValue
-	m.clampPositions()
-	m.send(m.d.Song.Patch.Copy())
-}
-
-func (m *Model) SetParamIndex(value int) {
-	m.d.ParamIndex = value
-	m.clampPositions()
-}
-
-func (m *Model) setGmDlsEntry(index int) {
-	if index < 0 || index >= len(GmDlsEntries) {
-		return
-	}
-	entry := GmDlsEntries[index]
-	unit := m.Unit()
-	if unit.Type != "oscillator" || unit.Parameters["type"] != sointu.Sample {
-		return
-	}
-	if unit.Parameters["samplestart"] == entry.Start && unit.Parameters["loopstart"] == entry.LoopStart && unit.Parameters["looplength"] == entry.LoopLength {
-		return
-	}
-	m.saveUndo("SetGmDlsEntry", 20)
-	unit.Parameters["samplestart"] = entry.Start
-	unit.Parameters["loopstart"] = entry.LoopStart
-	unit.Parameters["looplength"] = entry.LoopLength
-	unit.Parameters["transpose"] = 64 + entry.SuggestedTranspose
-	m.send(m.d.Song.Patch.Copy())
-}
-
-func (m *Model) setReverb(index int) {
-	if index < 0 || index >= len(reverbs) {
-		return
-	}
-	entry := reverbs[index]
-	unit := &m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex]
-	if unit.Type != "delay" {
-		return
-	}
-	m.saveUndo("setReverb", 20)
-	unit.Parameters["stereo"] = entry.stereo
-	unit.Parameters["notetracking"] = 0
-	unit.VarArgs = make([]int, len(entry.varArgs))
-	copy(unit.VarArgs, entry.varArgs)
-	m.send(m.d.Song.Patch.Copy())
-}
-
-func (m *Model) SwapUnits(i, j int) {
-	units := m.Instrument().Units
-	if i < 0 || j < 0 || i >= len(units) || j >= len(units) || i == j {
-		return
-	}
-	m.saveUndo("SwapUnits", 10)
-	units[i], units[j] = units[j], units[i]
-	m.clampPositions()
-	m.send(m.d.Song.Patch.Copy())
-}
-
-func (m *Model) getSelectionRange() (int, int, int, int) {
-	r1 := m.d.Cursor.Pattern*m.d.Song.Score.RowsPerPattern + m.d.Cursor.Row
-	r2 := m.d.SelectionCorner.Pattern*m.d.Song.Score.RowsPerPattern + m.d.SelectionCorner.Row
-	if r2 < r1 {
-		r1, r2 = r2, r1
-	}
-	t1 := m.d.Cursor.Track
-	t2 := m.d.SelectionCorner.Track
-	if t2 < t1 {
-		t1, t2 = t2, t1
-	}
-	return r1, r2, t1, t2
-}
-
-func (m *Model) AdjustSelectionPitch(delta int) {
-	m.saveUndo("AdjustSelectionPitch", 10)
-	r1, r2, t1, t2 := m.getSelectionRange()
-	for c := t1; c <= t2; c++ {
-		adjustedNotes := map[struct {
-			Pat int
-			Row int
-		}]bool{}
-		for r := r1; r <= r2; r++ {
-			s := ScoreRow{Row: r}.Wrap(m.d.Song.Score)
-			if s.Pattern >= len(m.d.Song.Score.Tracks[c].Order) {
-				break
-			}
-			p := m.d.Song.Score.Tracks[c].Order[s.Pattern]
-			if p < 0 {
-				continue
-			}
-			noteIndex := struct {
-				Pat int
-				Row int
-			}{p, s.Row}
-			if !adjustedNotes[noteIndex] {
-				patterns := m.d.Song.Score.Tracks[c].Patterns
-				if p >= len(patterns) {
-					continue
-				}
-				pattern := patterns[p]
-				if s.Row >= len(pattern) {
-					continue
-				}
-				if val := pattern[s.Row]; val > 1 {
-					newVal := int(val) + delta
-					if newVal < 2 {
-						newVal = 2
-					} else if newVal > 255 {
-						newVal = 255
-					}
-					pattern[s.Row] = byte(newVal)
-				}
-				adjustedNotes[noteIndex] = true
-			}
-		}
-	}
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) DeleteSelection() {
-	m.saveUndo("DeleteSelection", 0)
-	r1, r2, t1, t2 := m.getSelectionRange()
-	for r := r1; r <= r2; r++ {
-		s := ScoreRow{Row: r}.Wrap(m.d.Song.Score)
-		for c := t1; c <= t2; c++ {
-			if len(m.d.Song.Score.Tracks[c].Order) <= s.Pattern {
-				continue
-			}
-			p := m.d.Song.Score.Tracks[c].Order[s.Pattern]
-			if p < 0 {
-				continue
-			}
-			patterns := m.d.Song.Score.Tracks[c].Patterns
-			if p >= len(patterns) {
-				continue
-			}
-			pattern := patterns[p]
-			if s.Row >= len(pattern) {
-				continue
-			}
-			m.d.Song.Score.Tracks[c].Patterns[p][s.Row] = 1
-		}
-	}
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) DeletePatternSelection() {
-	m.saveUndo("DeletePatternSelection", 0)
-	r1, r2, t1, t2 := m.getSelectionRange()
-	p1 := ScoreRow{Row: r1}.Wrap(m.d.Song.Score).Pattern
-	p2 := ScoreRow{Row: r2}.Wrap(m.d.Song.Score).Pattern
-	for p := p1; p <= p2; p++ {
-		for c := t1; c <= t2; c++ {
-			if p < len(m.d.Song.Score.Tracks[c].Order) {
-				m.d.Song.Score.Tracks[c].Order[p] = -1
-			}
-		}
-	}
-	m.computePatternUseCounts()
-	m.send(m.d.Song.Score.Copy())
-}
-
-func (m *Model) Undo() {
-	if !m.CanUndo() {
-		return
-	}
-	m.redoStack = append(m.redoStack, m.d.Copy())
-	m.d = m.undoStack[len(m.undoStack)-1]
-	m.undoStack = m.undoStack[:len(m.undoStack)-1]
-	m.limitUndoRedoLengths()
-	m.prevUndoType = ""
-	m.send(m.d.Song.Copy())
-}
-
-func (m *Model) CanUndo() bool {
-	return len(m.undoStack) > 0
-}
-
-func (m *Model) ClearUndoHistory() {
-	if len(m.undoStack) > 0 {
-		m.undoStack = m.undoStack[:0]
-	}
-	if len(m.redoStack) > 0 {
-		m.redoStack = m.redoStack[:0]
-	}
-	m.prevUndoType = ""
-}
-
-func (m *Model) Redo() {
-	if !m.CanRedo() {
-		return
-	}
-	m.undoStack = append(m.undoStack, m.d.Copy())
-	m.d = m.redoStack[len(m.redoStack)-1]
-	m.redoStack = m.redoStack[:len(m.redoStack)-1]
-	m.limitUndoRedoLengths()
-	m.prevUndoType = ""
-	m.send(m.d.Song.Copy())
-}
-
-func (m *Model) CanRedo() bool {
-	return len(m.redoStack) > 0
-}
-
-func (m *Model) SetNoteTracking(value bool) {
-	m.noteTracking = value
-}
-
-func (m *Model) NoteTracking() bool {
-	return m.noteTracking
-}
-
-func (m *Model) Song() sointu.Song {
-	return m.d.Song
-}
-
-func (m *Model) SelectionCorner() ScorePoint {
-	return m.d.SelectionCorner
-}
-
-func (m *Model) SetSelectionCorner(value ScorePoint) {
-	m.d.SelectionCorner = value
-	m.clampPositions()
-}
-
-func (m *Model) Cursor() ScorePoint {
-	return m.d.Cursor
-}
-
-func (m *Model) SetCursor(value ScorePoint) {
-	m.d.Cursor = value
-	m.clampPositions()
-}
-
-func (m *Model) LowNibble() bool {
-	return m.d.LowNibble
-}
-
-func (m *Model) SetLowNibble(value bool) {
-	m.d.LowNibble = value
-}
-
-func (m *Model) InstrIndex() int {
-	return m.d.InstrIndex
-}
-
-func (m *Model) Track() sointu.Track {
-	return m.d.Song.Score.Tracks[m.d.Cursor.Track]
-}
-
-func (m *Model) Instrument() sointu.Instrument {
-	return m.d.Song.Patch[m.d.InstrIndex]
-}
-
-func (m *Model) Unit() sointu.Unit {
-	return m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex]
-}
-
-func (m *Model) UnitIndex() int {
-	return m.d.UnitIndex
-}
-
-func (m *Model) ParamIndex() int {
-	return m.d.ParamIndex
-}
-
-func (m *Model) limitUndoRedoLengths() {
-	if len(m.undoStack) >= maxUndo {
-		m.undoStack = m.undoStack[len(m.undoStack)-maxUndo:]
-	}
-	if len(m.redoStack) >= maxUndo {
-		m.redoStack = m.redoStack[len(m.redoStack)-maxUndo:]
-	}
+func (m *Model) InstrNoteOn(instr int, note byte) (id NoteID) {
+	id = NoteID{IsInstr: true, Instr: instr, Note: note, model: m}
+	m.send(NoteOnMsg{id})
+	return id
 }
 
-func (m *Model) clampPositions() {
-	m.d.Cursor = m.d.Cursor.Wrap(m.d.Song.Score)
-	m.d.SelectionCorner = m.d.SelectionCorner.Wrap(m.d.Song.Score)
-	if !m.Track().Effect {
-		m.d.LowNibble = false
-	}
-	m.d.InstrIndex = clamp(m.d.InstrIndex, 0, len(m.d.Song.Patch)-1)
-	m.d.UnitIndex = clamp(m.d.UnitIndex, 0, len(m.Instrument().Units)-1)
-	m.d.ParamIndex = clamp(m.d.ParamIndex, 0, m.NumParams()-1)
-}
-
-func (m *Model) NumParams() int {
-	unit := m.Unit()
-	if unit.Type == "oscillator" {
-		if unit.Parameters["type"] != sointu.Sample {
-			return 10
-		}
-		return 14
-	}
-	numSettableParams := 0
-	for _, t := range sointu.UnitTypes[m.Unit().Type] {
-		if t.CanSet {
-			numSettableParams++
-		}
-	}
-	if numSettableParams == 0 {
-		numSettableParams = 1
-	}
-	if unit.Type == "delay" {
-		numSettableParams += 2 + len(unit.VarArgs)
-		if len(unit.VarArgs)%2 == 1 && unit.Parameters["stereo"] == 1 {
-			numSettableParams++
-		}
-	}
-	return numSettableParams
+func (n NoteID) NoteOff() {
+	n.model.send(NoteOffMsg{n})
 }
-
-func (m *Model) Param(index int) (Parameter, error) {
-	unit := m.Unit()
-	for _, t := range sointu.UnitTypes[unit.Type] {
-		if !t.CanSet {
-			continue
-		}
-		if index != 0 {
-			index--
-			continue
-		}
-		typ := IntegerParameter
-		if t.MaxValue == t.MinValue+1 {
-			typ = BoolParameter
-		}
-		val := m.Unit().Parameters[t.Name]
-		name := t.Name
-		hint := m.d.Song.Patch.ParamHintString(m.d.InstrIndex, m.d.UnitIndex, name)
-		var text string
-		if hint != "" {
-			text = fmt.Sprintf("%v / %v", val, hint)
-		} else {
-			text = strconv.Itoa(val)
-		}
-		min, max := t.MinValue, t.MaxValue
-		if unit.Type == "send" {
-			if t.Name == "voice" {
-				i, _, err := m.d.Song.Patch.FindUnit(unit.Parameters["target"])
-				if err == nil {
-					max = m.d.Song.Patch[i].NumVoices
-				}
-			} else if t.Name == "target" {
-				typ = IDParameter
-			}
-		}
-		largeStep := 16
-		if unit.Type == "oscillator" && t.Name == "transpose" {
-			largeStep = 12
-		}
-		return Parameter{Type: typ, Min: min, Max: max, Name: name, Hint: text, Value: val, LargeStep: largeStep}, nil
-	}
-	if unit.Type == "oscillator" && index == 0 {
-		key := vm.SampleOffset{Start: uint32(unit.Parameters["samplestart"]), LoopStart: uint16(unit.Parameters["loopstart"]), LoopLength: uint16(unit.Parameters["looplength"])}
-		val := 0
-		hint := "0 / custom"
-		if v, ok := GmDlsEntryMap[key]; ok {
-			val = v + 1
-			hint = fmt.Sprintf("%v / %v", val, GmDlsEntries[v].Name)
-		}
-		return Parameter{Type: IntegerParameter, Min: 0, Max: len(GmDlsEntries), Name: "sample", Hint: hint, Value: val}, nil
-	}
-	if unit.Type == "delay" {
-		if index == 0 {
-			i := slices.IndexFunc(reverbs, func(p delayPreset) bool {
-				return p.stereo == unit.Parameters["stereo"] && unit.Parameters["notetracking"] == 0 && slices.Equal(p.varArgs, unit.VarArgs)
-			})
-			hint := "0 / custom"
-			if i >= 0 {
-				hint = fmt.Sprintf("%v / %v", i+1, reverbs[i].name)
-			}
-			return Parameter{Type: IntegerParameter, Min: 0, Max: len(reverbs), Name: "reverb", Hint: hint, Value: i + 1}, nil
-		}
-		if index == 1 {
-			l := len(unit.VarArgs)
-			if unit.Parameters["stereo"] == 1 {
-				l = (l + 1) / 2
-			}
-			return Parameter{Type: IntegerParameter, Min: 1, Max: 32, Name: "delaylines", Hint: strconv.Itoa(l), Value: l}, nil
-		}
-		index -= 2
-		if index < len(unit.VarArgs) {
-			val := unit.VarArgs[index]
-			var text string
-			switch unit.Parameters["notetracking"] {
-			default:
-			case 0:
-				text = fmt.Sprintf("%v / %.3f rows", val, float32(val)/float32(m.d.Song.SamplesPerRow()))
-				return Parameter{Type: IntegerParameter, Min: 1, Max: 65535, Name: "delaytime", Hint: text, Value: val, LargeStep: 256}, nil
-			case 1:
-				relPitch := float64(val) / 10787
-				semitones := -math.Log2(relPitch) * 12
-				text = fmt.Sprintf("%v / %.3f st", val, semitones)
-				return Parameter{Type: IntegerParameter, Min: 1, Max: 65535, Name: "delaytime", Hint: text, Value: val, LargeStep: 256}, nil
-			case 2:
-				k := 0
-				v := val
-				for v&1 == 0 { // divide val by 2 until it is odd
-					v >>= 1
-					k++
-				}
-				text := ""
-				switch v {
-				case 1:
-					if k <= 7 {
-						text = fmt.Sprintf(" (1/%d triplet)", 1<<(7-k))
-					}
-				case 3:
-					if k <= 6 {
-						text = fmt.Sprintf(" (1/%d)", 1<<(6-k))
-					}
-					break
-				case 9:
-					if k <= 5 {
-						text = fmt.Sprintf(" (1/%d dotted)", 1<<(5-k))
-					}
-				}
-				text = fmt.Sprintf("%v / %.3f beats%s", val, float32(val)/48.0, text)
-				return Parameter{Type: IntegerParameter, Min: 1, Max: 576, Name: "delaytime", Hint: text, Value: val, LargeStep: 16}, nil
-			}
 
-		}
-	}
-	return Parameter{}, errors.New("invalid parameter")
+func (m *Model) FindUnit(id int) (instrIndex, unitIndex int, err error) {
+	// TODO: this only used for choosing send target; find a better way for this
+	return m.d.Song.Patch.FindUnit(id)
 }
 
-func (m *Model) RemoveUnusedData() {
-	m.saveUndo("RemoveUnusedData", 0)
-	for trkIndex, trk := range m.d.Song.Score.Tracks {
-		// assign new indices to patterns
-		newIndex := map[int]int{}
-		runningIndex := 0
-		length := 0
-		if len(trk.Order) > m.d.Song.Score.Length {
-			trk.Order = trk.Order[:m.d.Song.Score.Length]
-		}
-		for i, p := range trk.Order {
-			// if the pattern hasn't been considered and is within limits
-			if _, ok := newIndex[p]; !ok && p >= 0 && p < len(trk.Patterns) {
-				pat := trk.Patterns[p]
-				useful := false
-				for _, n := range pat { // patterns that have anything else than all holds are useful and to be kept
-					if n != 1 {
-						useful = true
-						break
-					}
-				}
-				if useful {
-					newIndex[p] = runningIndex
-					runningIndex++
-				} else {
-					newIndex[p] = -1
-				}
-			}
-			if ind, ok := newIndex[p]; ok && ind > -1 {
-				length = i + 1
-				trk.Order[i] = ind
-			} else {
-				trk.Order[i] = -1
-			}
-		}
-		trk.Order = trk.Order[:length]
-		newPatterns := make([]sointu.Pattern, runningIndex)
-		for i, pat := range trk.Patterns {
-			if ind, ok := newIndex[i]; ok && ind > -1 {
-				patLength := 0
-				for j, note := range pat { // find last note that is something else that hold
-					if note != 1 {
-						patLength = j + 1
-					}
-				}
-				if patLength > m.d.Song.Score.RowsPerPattern {
-					patLength = m.d.Song.Score.RowsPerPattern
-				}
-				newPatterns[ind] = pat[:patLength] // crop to either RowsPerPattern or last row having something else than hold
-			}
-		}
-		trk.Patterns = newPatterns
-		m.d.Song.Score.Tracks[trkIndex] = trk
+func (m *Model) Instrument(index int) sointu.Instrument {
+	// TODO: this only used for choosing send target; find a better way for this
+	// we make a copy just so that the gui can't accidentally modify the song
+	if index < 0 || index >= len(m.d.Song.Patch) {
+		return sointu.Instrument{}
 	}
-	m.computePatternUseCounts()
-	m.send(m.d.Song.Score.Copy())
+	return m.d.Song.Patch[index].Copy()
 }
 
-func (m *Model) SetParam(value int) {
-	p, err := m.Param(m.d.ParamIndex)
-	if err != nil {
-		return
-	}
-	if value < p.Min {
-		value = p.Min
-	} else if value > p.Max {
-		value = p.Max
-	}
-	if p.Name == "sample" {
-		m.setGmDlsEntry(value - 1)
-		return
-	}
-	if p.Name == "reverb" {
-		m.setReverb(value - 1)
-		return
-	}
-	unit := m.Unit()
-	if p.Name == "delaylines" {
-		m.saveUndo("SetParam", 20)
-		targetLines := value
-		if unit.Parameters["stereo"] == 1 {
-			targetLines *= 2
-		}
-		for len(m.Instrument().Units[m.d.UnitIndex].VarArgs) < targetLines {
-			m.Instrument().Units[m.d.UnitIndex].VarArgs = append(m.Instrument().Units[m.d.UnitIndex].VarArgs, 1)
-		}
-		m.Instrument().Units[m.d.UnitIndex].VarArgs = m.Instrument().Units[m.d.UnitIndex].VarArgs[:targetLines]
-	} else if p.Name == "delaytime" {
-		m.saveUndo("SetParam", 20)
-		index := m.d.ParamIndex - 8
-		for len(m.Instrument().Units[m.d.UnitIndex].VarArgs) <= index {
-			m.Instrument().Units[m.d.UnitIndex].VarArgs = append(m.Instrument().Units[m.d.UnitIndex].VarArgs, 1)
-		}
-		m.Instrument().Units[m.d.UnitIndex].VarArgs[index] = value
-	} else {
-		if unit.Parameters[p.Name] == value {
-			return
-		}
-		m.saveUndo("SetParam", 20)
-		unit.Parameters[p.Name] = value
-	}
-	m.clampPositions()
-	m.send(m.d.Song.Patch.Copy())
+func (d *modelData) Copy() modelData {
+	ret := *d
+	ret.Song = d.Song.Copy()
+	return ret
 }
 
-func (m *Model) setSongNoUndo(song sointu.Song) {
-	m.d.Song = song
-	m.d.UsedIDs = make(map[int]bool)
-	m.d.MaxID = 0
+func (m *Model) resetSong() {
+	m.d.Song = defaultSong.Copy()
 	for _, instr := range m.d.Song.Patch {
-		for _, unit := range instr.Units {
-			if m.d.MaxID < unit.ID {
-				m.d.MaxID = unit.ID
-			}
-		}
+		(*Model)(m).assignUnitIDs(instr.Units)
 	}
-	for _, instr := range m.d.Song.Patch {
-		m.assignUnitIDs(instr.Units)
-	}
-	m.clampPositions()
-	m.computePatternUseCounts()
-	m.send(m.d.Song.Copy())
+	m.d.FilePath = ""
+	m.d.ChangedSinceSave = false
 }
 
 // send sends a message to the player
@@ -1417,39 +389,29 @@ func (m *Model) send(message interface{}) {
 	m.modelMessages <- message
 }
 
-func (m *Model) saveUndo(undoType string, undoSkipping int) {
-	m.d.ChangedSinceSave = true
-	m.d.ChangedSinceRecovery = true
-	if m.prevUndoType == undoType && m.undoSkipCounter < undoSkipping {
-		m.undoSkipCounter++
-		return
-	}
-	m.prevUndoType = undoType
-	m.undoSkipCounter = 0
-	m.undoStack = append(m.undoStack, m.d.Copy())
-	m.redoStack = m.redoStack[:0]
-	m.limitUndoRedoLengths()
-}
-
-func (m *Model) freeUnitIDs(units []sointu.Unit) {
-	for _, u := range units {
-		delete(m.d.UsedIDs, u.ID)
-	}
-}
-
 func (m *Model) assignUnitIDs(units []sointu.Unit) {
+	maxId := 0
+	usedIds := make(map[int]bool)
+	for _, instr := range m.d.Song.Patch {
+		for _, unit := range instr.Units {
+			usedIds[unit.ID] = true
+			if maxId < unit.ID {
+				maxId = unit.ID
+			}
+		}
+	}
 	rewrites := map[int]int{}
 	for i := range units {
-		if id := units[i].ID; id == 0 || m.d.UsedIDs[id] {
-			m.d.MaxID++
+		if id := units[i].ID; id == 0 || usedIds[id] {
+			maxId++
 			if id > 0 {
-				rewrites[id] = m.d.MaxID
+				rewrites[id] = maxId
 			}
-			units[i].ID = m.d.MaxID
+			units[i].ID = maxId
 		}
-		m.d.UsedIDs[units[i].ID] = true
-		if m.d.MaxID < units[i].ID {
-			m.d.MaxID = units[i].ID
+		usedIds[units[i].ID] = true
+		if maxId < units[i].ID {
+			maxId = units[i].ID
 		}
 	}
 	for i, u := range units {
@@ -1461,59 +423,36 @@ func (m *Model) assignUnitIDs(units []sointu.Unit) {
 	}
 }
 
-func (m *Model) computePatternUseCounts() {
+func (m *Model) updatePatternUseCount() {
 	for i, track := range m.d.Song.Score.Tracks {
-		for len(m.d.PatternUseCount) <= i {
-			m.d.PatternUseCount = append(m.d.PatternUseCount, nil)
+		for len(m.cachePatternUseCount) <= i {
+			m.cachePatternUseCount = append(m.cachePatternUseCount, nil)
 		}
-		for j := range m.d.PatternUseCount[i] {
-			m.d.PatternUseCount[i][j] = 0
+		for j := range m.cachePatternUseCount[i] {
+			m.cachePatternUseCount[i][j] = 0
 		}
 		for j := 0; j < m.d.Song.Score.Length; j++ {
 			if j >= len(track.Order) {
 				break
 			}
 			p := track.Order[j]
-			for len(m.d.PatternUseCount[i]) <= p {
-				m.d.PatternUseCount[i] = append(m.d.PatternUseCount[i], 0)
+			for len(m.cachePatternUseCount[i]) <= p {
+				m.cachePatternUseCount[i] = append(m.cachePatternUseCount[i], 0)
 			}
 			if p < 0 {
 				continue
 			}
-			m.d.PatternUseCount[i][p]++
+			m.cachePatternUseCount[i][p]++
 		}
 	}
 }
 
-func NoteIDInstr(instr int, note byte) NoteID {
-	return NoteID{IsInstr: true, Instr: instr, Note: note}
-}
-
-func NoteIDTrack(track int, note byte) NoteID {
-	return NoteID{IsInstr: false, Track: track, Note: note}
-}
-
-func (d *modelData) Copy() modelData {
-	ret := *d
-	ret.Song = d.Song.Copy()
-	ret.PatternUseCount = make([][]int, len(d.PatternUseCount))
-	for i := range ret.PatternUseCount {
-		ret.PatternUseCount[i] = make([]int, len(d.PatternUseCount[i]))
-		copy(ret.PatternUseCount[i], d.PatternUseCount[i])
-	}
-	ret.UsedIDs = make(map[int]bool)
-	for k, v := range d.UsedIDs {
-		ret.UsedIDs[k] = v
-	}
-	return ret
-}
-
 func clamp(a, min, max int) int {
-	if a < min {
-		return min
-	}
 	if a > max {
 		return max
+	}
+	if a < min {
+		return min
 	}
 	return a
 }
