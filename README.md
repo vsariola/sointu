@@ -179,6 +179,10 @@ sointu-compile -o . -arch=wasm tests/test_chords.yml
 wat2wasm --enable-bulk-memory test_chords.wat
 ```
 
+If you are looking for an easy way to compile an executable from a Sointu song
+(e.g. for a executable music compo), take a look at [NR4's Python-based
+tool](https://github.com/LeStahL/sointu-executable-msx) for it.
+
 #### Examples
 
 The folder `examples/code` contains usage examples for Sointu with winmm
