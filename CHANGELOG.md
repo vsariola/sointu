@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Dbgain unit, which allows defining the gain in decibels (-40 dB to +40dB)
 
+### Fixed
+- 32-bit su_load_gmdls clobbered ebx, even though __stdcall demands it to be not
+  touched
+
 ## v0.3.0
 ### Added
 - Scroll bars to menus, shown when a menu is too long to fit.

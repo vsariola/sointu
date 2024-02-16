@@ -23,15 +23,17 @@
     add     rsp, 40         ; shadow space, as required by Win64 ABI
     ret
 {{else}}
-    mov     ebx, su_sample_table
-    push    0                   ; OF_READ
-    push    ebx                 ; &ofstruct, blatantly reuse the sample table
-    push    su_gmdls_path1      ; path
-    call    dword [__imp__OpenFile@12]; eax = OpenFile(path,&ofstruct,OF_READ) // should not touch ebx according to calling convention
+    mov     eax, su_sample_table
+    ; these are the arguments for ReadFile
     push    0                       ; NULL
-    push    ebx                     ; &bytes_read, reusing sample table again; it does not matter that the first four bytes are trashed
+    push    eax                     ; &bytes_read, reusing sample table again; it does not matter that the first four bytes are trashed
     push    3440660                 ; number of bytes to read
-    push    ebx                     ; here we actually pass the sample table to readfile
+    push    eax                     ; here we actually pass the sample table to readfile
+    ; these are for OpenFile
+    push    0                   ; OF_READ
+    push    eax                 ; &ofstruct, blatantly reuse the sample table
+    push    su_gmdls_path1      ; path
+    call    dword [__imp__OpenFile@12]; eax = OpenFile(path,&ofstruct,OF_READ)
     push    eax                     ; handle to file
     call    dword [__imp__ReadFile@20] ; Readfile(handle,&su_sample_table,SAMPLE_TABLE_SIZE,&bytes_read,NULL)
     ret
