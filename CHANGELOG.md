@@ -5,18 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 ### Added
-- Passing a file name on command line immediately tries loading that file (#122)
+- Passing a file name on command line immediately tries loading that file ([#122][i122])
 - Massive rewrite of the GUI, in particular allowing better copying, pasting and
   scrolling of table-based data (order list and note data).
 - Dbgain unit, which allows defining the gain in decibels (-40 dB to +40dB)
 
 ### Fixed
 - 32-bit su_load_gmdls clobbered ebx, even though __stdcall demands it to be not
-  touched
-- Spaces are allowed in instrument names (#120)
-- Reduce the default height of popup menus so they fit on screen (fixes #121:
-  "The dropdown for targeting sends can make it impossible to choose certain
-  ops")
+  touched ([#130][i130])
+- Spaces are allowed in instrument names ([#120][i120])
+- Fixed the dropdown for targeting sends making it impossible to choose certain
+  ops. This was done just by reducing the default height of popup menus so they
+  fit on screen ([#121][i121])
 
 ## v0.3.0
 ### Added
@@ -123,3 +123,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [0.3.0]: https://github.com/vsariola/sointu/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/vsariola/sointu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/vsariola/sointu/compare/4klang-3.11...v0.1.0
+[i120]: https://github.com/vsariola/sointu/issues/120
+[i121]: https://github.com/vsariola/sointu/issues/121
+[i122]: https://github.com/vsariola/sointu/issues/122
+[i130]: https://github.com/vsariola/sointu/issues/130
