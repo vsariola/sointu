@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed the dropdown for targeting sends making it impossible to choose certain
   ops. This was done just by reducing the default height of popup menus so they
   fit on screen ([#121][i121])
+- Warn user about sample rate being other than 44100 Hz, as this lead to weird
+  behaviour. Sointu assumes the samplerate always to be 44100 Hz. ([#129][i129])
 
 ## v0.3.0
 ### Added
@@ -126,4 +128,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i120]: https://github.com/vsariola/sointu/issues/120
 [i121]: https://github.com/vsariola/sointu/issues/121
 [i122]: https://github.com/vsariola/sointu/issues/122
+[i129]: https://github.com/vsariola/sointu/issues/129
 [i130]: https://github.com/vsariola/sointu/issues/130
