@@ -92,7 +92,9 @@ jobs:
       with:
         length: 7
     - uses: lukka/get-cmake@v3.18.3
-    - uses: actions/setup-go@v2
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '>=1.21.0'
     - uses: actions/checkout@v2
     - uses: ilammy/setup-nasm@v1.4.0
     - uses: awalsh128/cache-apt-pkgs-action@latest
