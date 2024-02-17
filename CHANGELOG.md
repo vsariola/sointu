@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 ### Added
+- Passing a file name on command line immediately tries loading that file (#122)
 - Massive rewrite of the GUI, in particular allowing better copying, pasting and
   scrolling of table-based data (order list and note data).
 - Dbgain unit, which allows defining the gain in decibels (-40 dB to +40dB)
