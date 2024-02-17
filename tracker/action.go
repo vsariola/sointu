@@ -133,7 +133,6 @@ func (m *Model) AddUnit(before bool) Action {
 		(*Model)(m).assignUnitIDs(newUnits[m.d.UnitIndex : m.d.UnitIndex+1])
 		m.d.Song.Patch[m.d.InstrIndex].Units = newUnits
 		m.d.ParamIndex = 0
-		m.d.UnitSearchString = ""
 	})
 }
 
@@ -145,7 +144,6 @@ func (m *Model) DeleteUnit() Action {
 		do: func() {
 			defer (*Model)(m).change("DeleteUnitAction", PatchChange, MajorChange)()
 			m.Units().List().DeleteElements(true)
-			m.d.UnitSearchString = m.Units().SelectedType()
 		},
 	}
 }
@@ -156,7 +154,6 @@ func (m *Model) ClearUnit() Action {
 			defer (*Model)(m).change("DeleteUnitAction", PatchChange, MajorChange)()
 			m.d.UnitIndex = intMax(intMin(m.d.UnitIndex, len(m.d.Song.Patch[m.d.InstrIndex].Units)-1), 0)
 			m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex] = sointu.Unit{}
-			m.d.UnitSearchString = ""
 		},
 		allowed: func() bool {
 			return m.d.InstrIndex >= 0 &&

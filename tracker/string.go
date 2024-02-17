@@ -40,9 +40,12 @@ func (v *FilePath) change(kind string) func() { return func() {} }
 
 // UnitSearchString
 
-func (v *UnitSearch) String() String            { return String{v} }
-func (v *UnitSearch) Value() string             { return v.d.UnitSearchString }
-func (v *UnitSearch) setValue(value string)     { v.d.UnitSearchString = value }
+func (v *UnitSearch) String() String { return String{v} }
+func (v *UnitSearch) Value() string  { return v.d.UnitSearchString }
+func (v *UnitSearch) setValue(value string) {
+	v.d.UnitSearchString = value
+	v.d.UnitSearching = true
+}
 func (v *UnitSearch) change(kind string) func() { return func() {} }
 
 // InstrumentNameString

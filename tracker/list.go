@@ -209,6 +209,8 @@ func (v *Instruments) SetSelected(value int) {
 	v.d.InstrIndex = intMax(intMin(value, v.Count()-1), 0)
 	v.d.UnitIndex = 0
 	v.d.UnitIndex2 = 0
+	v.d.UnitSearching = false
+	v.d.UnitSearchString = ""
 }
 
 func (v *Instruments) SetSelected2(value int) {
@@ -310,7 +312,6 @@ func (m *Units) SetSelectedType(t string) {
 		return
 	}
 	defer m.change("SetSelectedType", MajorChange)()
-	m.d.UnitSearchString = unit.Type
 	m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex] = unit
 	m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].ID = oldUnit.ID // keep the ID of the replaced unit
 }
@@ -341,9 +342,8 @@ func (v *Units) SetSelected(value int) {
 	m := (*Model)(v)
 	m.d.UnitIndex = intMax(intMin(value, v.Count()-1), 0)
 	m.d.ParamIndex = 0
-	if m.d.UnitIndex >= 0 && m.d.UnitIndex < len(m.d.Song.Patch[m.d.InstrIndex].Units) {
-		m.d.UnitSearchString = m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].Type
-	}
+	m.d.UnitSearching = false
+	m.d.UnitSearchString = ""
 }
 
 func (v *Units) SetSelected2(value int) {

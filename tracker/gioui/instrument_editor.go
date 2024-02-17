@@ -373,6 +373,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 								}
 							}
 							t.Units().SetSelectedType(txt)
+							t.UnitSearching().Bool().Set(false)
 							continue
 						}
 					}
@@ -384,12 +385,18 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 					key.InputOp{Tag: &ie.searchEditor, Keys: globalKeys}.Add(gtx.Ops)
+					txt := u.Type
 					str := tracker.String{StringData: (*tracker.UnitSearch)(t.Model)}
-					if ie.searchEditor.Text() != str.Value() {
-						ie.searchEditor.SetText(str.Value())
+					if t.UnitSearching().Value() {
+						txt = str.Value()
+					}
+					if ie.searchEditor.Text() != txt {
+						ie.searchEditor.SetText(txt)
 					}
 					ret := editor.Layout(gtx)
-					str.Set(ie.searchEditor.Text())
+					if ie.searchEditor.Text() != txt {
+						str.Set(ie.searchEditor.Text())
+					}
 					return ret
 				} else {
 					unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: color, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}

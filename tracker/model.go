@@ -29,6 +29,7 @@ type (
 		ParamIndex              int
 		UnitSearchIndex         int
 		UnitSearchString        string
+		UnitSearching           bool
 		Octave                  int
 		Step                    int
 		FilePath                string
@@ -222,6 +223,8 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 				}
 				m.d.UnitIndex = clamp(m.d.UnitIndex, 0, unitCount-1)
 				m.d.UnitIndex2 = clamp(m.d.UnitIndex2, 0, unitCount-1)
+				m.d.UnitSearching = false // if we change anything in the patch, reset the unit searching
+				m.d.UnitSearchString = ""
 				m.send(m.d.Song.Patch.Copy())
 			}
 			if m.changeType&BPMChange != 0 {

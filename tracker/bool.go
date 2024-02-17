@@ -18,6 +18,7 @@ type (
 	Effect          Model
 	CommentExpanded Model
 	NoteTracking    Model
+	UnitSearching   Model
 )
 
 func (v Bool) Toggle() {
@@ -39,6 +40,7 @@ func (m *Model) InstrEnlarged() *InstrEnlarged     { return (*InstrEnlarged)(m) 
 func (m *Model) Effect() *Effect                   { return (*Effect)(m) }
 func (m *Model) CommentExpanded() *CommentExpanded { return (*CommentExpanded)(m) }
 func (m *Model) NoteTracking() *NoteTracking       { return (*NoteTracking)(m) }
+func (m *Model) UnitSearching() *UnitSearching     { return (*UnitSearching)(m) }
 
 // Panic methods
 
@@ -112,3 +114,15 @@ func (m *Effect) setValue(val bool) {
 	m.d.Song.Score.Tracks[m.d.Cursor.Track].Effect = val
 }
 func (m *Effect) Enabled() bool { return true }
+
+// UnitSearching methods
+
+func (m *UnitSearching) Bool() Bool  { return Bool{m} }
+func (m *UnitSearching) Value() bool { return m.d.UnitSearching }
+func (m *UnitSearching) setValue(val bool) {
+	m.d.UnitSearching = val
+	if !val {
+		m.d.UnitSearchString = ""
+	}
+}
+func (m *UnitSearching) Enabled() bool { return true }

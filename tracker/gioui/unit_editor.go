@@ -59,8 +59,8 @@ func (pe *UnitEditor) Layout(gtx C, t *Tracker) D {
 	key.InputOp{Tag: &pe.tag, Keys: "←|Shift-←|→|Shift-→|⎋"}.Add(gtx.Ops)
 
 	editorFunc := pe.layoutSliders
-	str := tracker.String{StringData: (*tracker.UnitSearch)(t.Model)}
-	if str.Value() != t.Model.Units().SelectedType() || pe.sliderList.TrackerList.Count() == 0 {
+
+	if t.UnitSearching().Value() || pe.sliderList.TrackerList.Count() == 0 {
 		editorFunc = pe.layoutUnitTypeChooser
 	}
 	return Surface{Gray: 24, Focus: t.InstrumentEditor.wasFocused}.Layout(gtx, func(gtx C) D {
