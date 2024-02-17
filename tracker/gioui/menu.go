@@ -177,7 +177,7 @@ func (tr *Tracker) layoutMenu(title string, clickable *widget.Clickable, menu *M
 		dims := titleBtn.Layout(gtx)
 		op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
 		gtx.Constraints.Max.X = gtx.Dp(width)
-		gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(1000))
+		gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(300))
 		m.Layout(gtx, items...)
 		return dims
 	}

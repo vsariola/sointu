@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - 32-bit su_load_gmdls clobbered ebx, even though __stdcall demands it to be not
   touched
 - Spaces are allowed in instrument names (#120)
+- Reduce the default height of popup menus so they fit on screen (fixes #121:
+  "The dropdown for targeting sends can make it impossible to choose certain
+  ops")
 
 ## v0.3.0
 ### Added
