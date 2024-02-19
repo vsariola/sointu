@@ -24,6 +24,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Warn user about sample rate being other than 44100 Hz, as this lead to weird
   behaviour. Sointu assumes the samplerate always to be 44100 Hz. ([#129][i129])
 
+### Changed
+- The scroll wheel behavior for unit integer parameters was flipped: scrolling
+  up now increases the value, while scrolling down decreases the value. It was
+  vice versa. ([#112][i112])
+
 ## v0.3.0
 ### Added
 - Scroll bars to menus, shown when a menu is too long to fit.
@@ -129,6 +134,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [0.3.0]: https://github.com/vsariola/sointu/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/vsariola/sointu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/vsariola/sointu/compare/4klang-3.11...v0.1.0
+[i112]: https://github.com/vsariola/sointu/issues/112
 [i116]: https://github.com/vsariola/sointu/issues/116
 [i120]: https://github.com/vsariola/sointu/issues/120
 [i121]: https://github.com/vsariola/sointu/issues/121

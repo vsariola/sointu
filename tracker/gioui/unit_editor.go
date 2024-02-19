@@ -235,7 +235,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 				for _, e := range gtx.Events(&p.w.floatWidget) {
 					if ev, ok := e.(pointer.Event); ok && ev.Type == pointer.Scroll {
 						delta := math.Min(math.Max(float64(ev.Scroll.Y), -1), 1)
-						tracker.Int{IntData: p.w.Parameter}.Add(int(delta))
+						tracker.Int{IntData: p.w.Parameter}.Add(-int(delta))
 					}
 				}
 				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(200))
