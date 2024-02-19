@@ -78,7 +78,7 @@ func NewBytecode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode,
 			return nil, errors.New("Each instrument must have at least 1 voice")
 		}
 		for unitIndex, unit := range instr.Units {
-			if unit.Type == "" { // empty units are just ignored & skipped
+			if unit.Type == "" || unit.Disabled { // empty units are just ignored & skipped
 				continue
 			}
 			opcode, ok := featureSet.Opcode(unit.Type)

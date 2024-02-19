@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 ### Added
+- Disable units temporarily. The disabled units are shown in gray and are not
+  compiled into the patch and are considered for all purposes non-existent.
+  Hitting Ctrl-D disables/re-enables the selected unit(s). The yaml file has
+  field `disabled: true` for the unit. ([#116][i116])
 - Passing a file name on command line immediately tries loading that file ([#122][i122])
 - Massive rewrite of the GUI, in particular allowing better copying, pasting and
   scrolling of table-based data (order list and note data).
@@ -125,6 +129,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [0.3.0]: https://github.com/vsariola/sointu/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/vsariola/sointu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/vsariola/sointu/compare/4klang-3.11...v0.1.0
+[i116]: https://github.com/vsariola/sointu/issues/116
 [i120]: https://github.com/vsariola/sointu/issues/120
 [i121]: https://github.com/vsariola/sointu/issues/121
 [i122]: https://github.com/vsariola/sointu/issues/122

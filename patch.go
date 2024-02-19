@@ -44,6 +44,10 @@ type (
 		// unit, VarArgs is the delaytimes, in samples, of the different delaylines
 		// in the unit.
 		VarArgs []int `yaml:",flow,omitempty"`
+
+		// Disabled is a flag that can be set to true to disable the unit.
+		// Disabled units are considered to be not present in the patch.
+		Disabled bool `yaml:",omitempty"`
 	}
 
 	// UnitParameter documents one parameter that an unit takes
@@ -220,7 +224,7 @@ func (u *Unit) Copy() Unit {
 	}
 	varArgs := make([]int, len(u.VarArgs))
 	copy(varArgs, u.VarArgs)
-	return Unit{Type: u.Type, Parameters: parameters, VarArgs: varArgs, ID: u.ID}
+	return Unit{Type: u.Type, Parameters: parameters, VarArgs: varArgs, ID: u.ID, Disabled: u.Disabled}
 }
 
 // StackChange returns how this unit will affect the signal stack. "pop" and
@@ -230,6 +234,9 @@ func (u *Unit) Copy() Unit {
 // unit). Effects that just change the topmost signal and will not change the
 // number of signals on the stack and thus return 0.
 func (u *Unit) StackChange() int {
+	if u.Disabled {
+		return 0
+	}
 	switch u.Type {
 	case "addp", "mulp", "pop", "out", "outaux", "aux":
 		return -1 - u.Parameters["stereo"]
@@ -249,6 +256,9 @@ func (u *Unit) StackChange() int {
 // this unit is executed. Used to prevent stack underflow. Units producing
 // signals do not care what is on the stack before and will return 0.
 func (u *Unit) StackNeed() int {
+	if u.Disabled {
+		return 0
+	}
 	switch u.Type {
 	case "", "envelope", "oscillator", "noise", "receive", "loadnote", "loadval", "in":
 		return 0
@@ -350,14 +360,14 @@ func (p Patch) InstrumentForVoice(voice int) (int, error) {
 // given id. Two units should never have the same id, but if they do, then the
 // first match is returned. Id 0 is interpreted as "no id", thus searching for
 // id 0 returns an error. Error is also returned if the searched id is not
-// found.
+// found. FindUnit considers disabled units as non-existent.
 func (p Patch) FindUnit(id int) (instrIndex int, unitIndex int, err error) {
 	if id == 0 {
 		return 0, 0, errors.New("FindUnit called with id 0")
 	}
 	for i, instr := range p {
 		for u, unit := range instr.Units {
-			if unit.ID == id {
+			if unit.ID == id && !unit.Disabled {
 				return i, u, nil
 			}
 		}

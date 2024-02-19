@@ -19,6 +19,7 @@ type (
 	CommentExpanded Model
 	NoteTracking    Model
 	UnitSearching   Model
+	UnitDisabled    Model
 )
 
 func (v Bool) Toggle() {
@@ -41,6 +42,7 @@ func (m *Model) Effect() *Effect                   { return (*Effect)(m) }
 func (m *Model) CommentExpanded() *CommentExpanded { return (*CommentExpanded)(m) }
 func (m *Model) NoteTracking() *NoteTracking       { return (*NoteTracking)(m) }
 func (m *Model) UnitSearching() *UnitSearching     { return (*UnitSearching)(m) }
+func (m *Model) UnitDisabled() *UnitDisabled       { return (*UnitDisabled)(m) }
 
 // Panic methods
 
@@ -126,3 +128,36 @@ func (m *UnitSearching) setValue(val bool) {
 	}
 }
 func (m *UnitSearching) Enabled() bool { return true }
+
+// UnitDisabled methods
+
+func (m *UnitDisabled) Bool() Bool { return Bool{m} }
+func (m *UnitDisabled) Value() bool {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
+		return false
+	}
+	if m.d.UnitIndex < 0 || m.d.UnitIndex >= len(m.d.Song.Patch[m.d.InstrIndex].Units) {
+		return false
+	}
+	return m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].Disabled
+}
+func (m *UnitDisabled) setValue(val bool) {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
+		return
+	}
+	l := ((*Model)(m)).Units().List()
+	a, b := l.listRange()
+	defer (*Model)(m).change("UnitDisabledSet", PatchChange, MajorChange)()
+	for i := a; i <= b; i++ {
+		m.d.Song.Patch[m.d.InstrIndex].Units[i].Disabled = val
+	}
+}
+func (m *UnitDisabled) Enabled() bool {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
+		return false
+	}
+	if len(m.d.Song.Patch[m.d.InstrIndex].Units) == 0 {
+		return false
+	}
+	return true
+}

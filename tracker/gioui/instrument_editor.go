@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"gioui.org/font"
 	"gioui.org/io/clipboard"
 	"gioui.org/io/key"
 	"gioui.org/layout"
@@ -343,6 +344,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		}
 		u := units[i]
 		var color color.NRGBA = white
+		f := labelDefaultFont
 
 		var stackText string
 		stackText = strconv.FormatInt(int64(u.StackAfter), 10)
@@ -352,6 +354,10 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		} else if i == count-1 && u.StackAfter != 0 {
 			color = warningColor
 			(*tracker.Alerts)(t.Model).AddNamed("InstrumentLeavesSignals", fmt.Sprintf("Instrument leaves %v signal(s) on the stack", u.StackAfter), tracker.Warning)
+		}
+		if u.Disabled {
+			color = disabledTextColor
+			f.Style = font.Italic
 		}
 
 		stackLabel := LabelStyle{Text: stackText, ShadeColor: black, Color: mediumEmphasisTextColor, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
@@ -381,7 +387,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 					editor.Color = color
 					editor.HintColor = instrumentNameHintColor
 					editor.TextSize = unit.Sp(12)
-					editor.Font = labelDefaultFont
+					editor.Font = f
 
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 					key.InputOp{Tag: &ie.searchEditor, Keys: globalKeys}.Add(gtx.Ops)
@@ -399,7 +405,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 					}
 					return ret
 				} else {
-					unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: color, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+					unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: color, Font: f, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
 					if unitNameLabel.Text == "" {
 						unitNameLabel.Text = "---"
 					}

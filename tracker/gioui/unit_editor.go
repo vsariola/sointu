@@ -21,25 +21,27 @@ import (
 )
 
 type UnitEditor struct {
-	sliderList    *DragList
-	searchList    *DragList
-	Parameters    []*ParameterWidget
-	DeleteUnitBtn *ActionClickable
-	CopyUnitBtn   *TipClickable
-	ClearUnitBtn  *ActionClickable
-	SelectTypeBtn *widget.Clickable
-	tag           bool
-	caser         cases.Caser
+	sliderList     *DragList
+	searchList     *DragList
+	Parameters     []*ParameterWidget
+	DeleteUnitBtn  *ActionClickable
+	CopyUnitBtn    *TipClickable
+	ClearUnitBtn   *ActionClickable
+	DisableUnitBtn *BoolClickable
+	SelectTypeBtn  *widget.Clickable
+	tag            bool
+	caser          cases.Caser
 }
 
 func NewUnitEditor(m *tracker.Model) *UnitEditor {
 	ret := &UnitEditor{
-		DeleteUnitBtn: NewActionClickable(m.DeleteUnit()),
-		ClearUnitBtn:  NewActionClickable(m.ClearUnit()),
-		CopyUnitBtn:   new(TipClickable),
-		SelectTypeBtn: new(widget.Clickable),
-		sliderList:    NewDragList(m.Params().List(), layout.Vertical),
-		searchList:    NewDragList(m.SearchResults().List(), layout.Vertical),
+		DeleteUnitBtn:  NewActionClickable(m.DeleteUnit()),
+		ClearUnitBtn:   NewActionClickable(m.ClearUnit()),
+		DisableUnitBtn: NewBoolClickable(m.UnitDisabled().Bool()),
+		CopyUnitBtn:    new(TipClickable),
+		SelectTypeBtn:  new(widget.Clickable),
+		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
+		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
 	}
 	ret.caser = cases.Title(language.English)
 	return ret
@@ -114,6 +116,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 	}
 	copyUnitBtnStyle := TipIcon(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, "Copy unit (Ctrl+C)")
 	deleteUnitBtnStyle := ActionIcon(t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
+	disableUnitBtnStyle := ToggleIcon(t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, "Disable unit (Ctrl-D)", "Enable unit (Ctrl-D)")
 	text := t.Units().SelectedType()
 	if text == "" {
 		text = "Choose unit type"
@@ -124,6 +127,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(deleteUnitBtnStyle.Layout),
 		layout.Rigid(copyUnitBtnStyle.Layout),
+		layout.Rigid(disableUnitBtnStyle.Layout),
 		layout.Rigid(func(gtx C) D {
 			var dims D
 			if t.Units().SelectedType() != "" {

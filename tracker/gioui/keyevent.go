@@ -64,6 +64,11 @@ func (t *Tracker) KeyEvent(e key.Event, o *op.Ops) {
 				t.Model.Redo().Do()
 				return
 			}
+		case "D":
+			if e.Modifiers.Contain(key.ModShortcut) {
+				t.Model.UnitDisabled().Bool().Toggle()
+				return
+			}
 		case "N":
 			if e.Modifiers.Contain(key.ModShortcut) {
 				t.NewSong().Do()

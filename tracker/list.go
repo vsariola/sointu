@@ -34,6 +34,7 @@ type (
 
 	UnitListItem struct {
 		Type                               string
+		Disabled                           bool
 		StackNeed, StackBefore, StackAfter int
 	}
 
@@ -323,7 +324,13 @@ func (v *Units) Iterate(yield UnitYieldFunc) {
 	stackBefore := 0
 	for _, unit := range v.d.Song.Patch[v.d.InstrIndex].Units {
 		stackAfter := stackBefore + unit.StackChange()
-		if !yield(UnitListItem{unit.Type, unit.StackNeed(), stackBefore, stackAfter}) {
+		if !yield(UnitListItem{
+			Type:        unit.Type,
+			Disabled:    unit.Disabled,
+			StackNeed:   unit.StackNeed(),
+			StackBefore: stackBefore,
+			StackAfter:  stackAfter,
+		}) {
 			break
 		}
 		stackBefore = stackAfter

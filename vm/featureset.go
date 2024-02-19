@@ -118,7 +118,7 @@ func NecessaryFeaturesFor(patch sointu.Patch) NecessaryFeatures {
 	features := NecessaryFeatures{opcodes: map[string]int{}, supportsParamValue: map[paramKey](map[int]bool){}, supportsModulation: map[paramKey]bool{}}
 	for instrIndex, instrument := range patch {
 		for _, unit := range instrument.Units {
-			if unit.Type == "" {
+			if unit.Type == "" || unit.Disabled {
 				continue
 			}
 			if _, ok := features.opcodes[unit.Type]; !ok {
