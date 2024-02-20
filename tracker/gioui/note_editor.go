@@ -202,9 +202,13 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		pat := j / rpp
 		row := j % rpp
 		w := pxPatMarkWidth + pxRowMarkWidth
-		paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
 		if row == 0 {
+			color := rowMarkerPatternTextColor
+			if l := t.Loop(); pat >= l.Start && pat < l.Start+l.Length {
+				color = loopMarkerColor
+			}
+			paint.ColorOp{Color: color}.Add(gtx.Ops)
 			widget.Label{}.Layout(gtx, t.Theme.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", pat)), op.CallOp{})
 		}
 		defer op.Offset(image.Pt(pxPatMarkWidth, 0)).Push(gtx.Ops).Pop()

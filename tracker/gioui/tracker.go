@@ -72,7 +72,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 		OctaveNumberInput: NewNumberInput(model.Octave().Int()),
 		InstrumentVoices:  NewNumberInput(model.InstrumentVoices().Int()),
 
-		TopHorizontalSplit:    &Split{Ratio: -.6},
+		TopHorizontalSplit:    &Split{Ratio: -.5},
 		BottomHorizontalSplit: &Split{Ratio: -.6},
 		VerticalSplit:         &Split{Axis: layout.Vertical},
 

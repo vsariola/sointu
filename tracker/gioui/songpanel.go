@@ -26,6 +26,7 @@ type SongPanel struct {
 	RecordBtn    *BoolClickable
 	NoteTracking *BoolClickable
 	PanicBtn     *BoolClickable
+	LoopBtn      *BoolClickable
 
 	// File menu items
 	fileMenuItems  []MenuItem
@@ -50,6 +51,7 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		Step:           NewNumberInput(model.Step().Int()),
 		SongLength:     NewNumberInput(model.SongLength().Int()),
 		PanicBtn:       NewBoolClickable(model.Panic().Bool()),
+		LoopBtn:        NewBoolClickable(model.LoopToggle().Bool()),
 		RecordBtn:      NewBoolClickable(model.IsRecording().Bool()),
 		NoteTracking:   NewBoolClickable(model.NoteTracking().Bool()),
 		PlayingBtn:     NewBoolClickable(model.Playing().Bool()),
@@ -106,6 +108,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 	playBtnStyle := ToggleIcon(tr.Theme, t.PlayingBtn, icons.AVPlayArrow, icons.AVStop, "Play (F6 / Space)", "Stop (F6 / Space)")
 	recordBtnStyle := ToggleIcon(tr.Theme, t.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, "Record (F7)", "Stop (F7)")
 	noteTrackBtnStyle := ToggleIcon(tr.Theme, t.NoteTracking, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, "Follow\nOff\n(F8)", "Follow\nOn\n(F8)")
+	loopBtnStyle := ToggleIcon(tr.Theme, t.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, "Loop\nOff\n(Ctrl+L)", "Loop\nOn\n(Ctrl+L)")
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
@@ -174,6 +177,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 				layout.Rigid(playBtnStyle.Layout),
 				layout.Rigid(recordBtnStyle.Layout),
 				layout.Rigid(noteTrackBtnStyle.Layout),
+				layout.Rigid(loopBtnStyle.Layout),
 			)
 		}),
 		layout.Rigid(panicBtnStyle.Layout),

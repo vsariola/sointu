@@ -20,6 +20,7 @@ type (
 	NoteTracking    Model
 	UnitSearching   Model
 	UnitDisabled    Model
+	LoopToggle      Model
 )
 
 func (v Bool) Toggle() {
@@ -43,6 +44,7 @@ func (m *Model) CommentExpanded() *CommentExpanded { return (*CommentExpanded)(m
 func (m *Model) NoteTracking() *NoteTracking       { return (*NoteTracking)(m) }
 func (m *Model) UnitSearching() *UnitSearching     { return (*UnitSearching)(m) }
 func (m *Model) UnitDisabled() *UnitDisabled       { return (*UnitDisabled)(m) }
+func (m *Model) LoopToggle() *LoopToggle           { return (*LoopToggle)(m) }
 
 // Panic methods
 
@@ -161,3 +163,20 @@ func (m *UnitDisabled) Enabled() bool {
 	}
 	return true
 }
+
+// LoopToggle methods
+
+func (m *LoopToggle) Bool() Bool  { return Bool{m} }
+func (m *LoopToggle) Value() bool { return m.d.Loop.Length > 0 }
+func (t *LoopToggle) setValue(val bool) {
+	m := (*Model)(t)
+	defer m.change("SetLoopAction", LoopChange, MinorChange)()
+	if !val {
+		m.d.Loop = Loop{}
+		return
+	}
+	l := m.OrderRows().List()
+	a, b := l.listRange()
+	m.d.Loop = Loop{a, b - a + 1}
+}
+func (m *LoopToggle) Enabled() bool { return true }

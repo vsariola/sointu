@@ -36,6 +36,7 @@ type (
 		ChangedSinceSave        bool
 		RecoveryFilePath        string
 		ChangedSinceRecovery    bool
+		Loop                    Loop
 	}
 
 	Model struct {
@@ -79,6 +80,12 @@ type (
 	Cursor struct {
 		Track int
 		sointu.SongPos
+	}
+
+	// Loop identifier the order rows, which are the loop positions
+	// Length = 0 means no loop is chosen, regardless of start
+	Loop struct {
+		Start, Length int
 	}
 
 	Explore struct {
@@ -125,6 +132,7 @@ const (
 	ScoreChange
 	BPMChange
 	RowsPerBeatChange
+	LoopChange
 	SongChange ChangeType = PatchChange | ScoreChange | BPMChange | RowsPerBeatChange
 )
 
@@ -148,6 +156,7 @@ const maxUndo = 64
 func (m *Model) AverageVolume() Volume        { return m.avgVolume }
 func (m *Model) PeakVolume() Volume           { return m.peakVolume }
 func (m *Model) PlayPosition() sointu.SongPos { return m.playPosition }
+func (m *Model) Loop() Loop                   { return m.d.Loop }
 func (m *Model) PlaySongRow() int             { return m.d.Song.Score.SongRow(m.playPosition) }
 func (m *Model) ChangedSinceSave() bool       { return m.d.ChangedSinceSave }
 func (m *Model) Dialog() Dialog               { return m.dialog }
@@ -232,6 +241,9 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			}
 			if m.changeType&RowsPerBeatChange != 0 {
 				m.send(RowsPerBeatMsg{m.d.Song.RowsPerBeat})
+			}
+			if m.changeType&LoopChange != 0 {
+				m.send(m.d.Loop)
 			}
 			m.undoSkipCounter++
 			var limit int
@@ -385,6 +397,7 @@ func (m *Model) resetSong() {
 	}
 	m.d.FilePath = ""
 	m.d.ChangedSinceSave = false
+	m.d.Loop = Loop{}
 }
 
 // send sends a message to the player

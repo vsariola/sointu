@@ -81,11 +81,15 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 	}
 
 	rowTitle := func(gtx C, j int) D {
+		w := gtx.Dp(unit.Dp(30))
 		if playPos := t.PlayPosition(); t.SongPanel.PlayingBtn.Bool.Value() && j == playPos.OrderRow {
 			paint.FillShape(gtx.Ops, patternPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, patternCellHeight)}.Op())
 		}
-		w := gtx.Dp(unit.Dp(30))
-		paint.ColorOp{Color: rowMarkerPatternTextColor}.Add(gtx.Ops)
+		color := rowMarkerPatternTextColor
+		if l := t.Loop(); j >= l.Start && j < l.Start+l.Length {
+			color = loopMarkerColor
+		}
+		paint.ColorOp{Color: color}.Add(gtx.Ops)
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
 		widget.Label{}.Layout(gtx, t.Theme.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)), op.CallOp{})
 		return D{Size: image.Pt(w, patternCellHeight)}

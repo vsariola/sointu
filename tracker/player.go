@@ -24,6 +24,7 @@ type (
 		peakVolumeMeter VolumeAnalyzer         // the volume analyzer used to calculate the peak volume
 		voiceLevels     [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
 		voices          [vm.MAX_VOICES]voice
+		loop            Loop
 
 		recState  recState  // is the recording off; are we waiting for a note; or are we recording
 		recording Recording // the recorded MIDI events and BPM
@@ -192,6 +193,10 @@ func (p *Player) advanceRow() {
 		return
 	}
 	p.songPos.PatternRow++ // advance row (this is why we subtracted one in Play())
+	if p.loop.Length > 0 && p.songPos.PatternRow >= p.song.Score.RowsPerPattern && p.songPos.OrderRow == p.loop.Start+p.loop.Length-1 {
+		p.songPos.PatternRow = 0
+		p.songPos.OrderRow = p.loop.Start
+	}
 	p.songPos = p.song.Score.Wrap(p.songPos)
 	p.send(nil) // just send volume and song row information
 	lastVoice := 0
@@ -230,6 +235,8 @@ loop:
 				p.compileOrUpdateSynth()
 			case sointu.Score:
 				p.song.Score = m
+			case Loop:
+				p.loop = m
 			case IsPlayingMsg:
 				p.playing = bool(m.bool)
 				if !p.playing {
