@@ -518,6 +518,8 @@ Prods using Sointu
   - [l'enveloppe](https://www.pouet.net/prod.php?which=95215) by Team210 &
     epoqe
   - [Phosphorescent Purple Pixel Peaks](https://www.pouet.net/prod.php?which=96198) by mrange & Virgill
+  - [21](https://demozoo.org/music/338597/) by NR4 / Team210
+  - [Tausendeins](https://www.pouet.net/prod.php?which=96192) by epoqe & Team210
 
 Contributing
 ------------
