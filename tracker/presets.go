@@ -3,6 +3,8 @@ package tracker
 import (
 	"embed"
 	"io/fs"
+	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/vsariola/sointu"
@@ -168,12 +170,31 @@ func init() {
 			return nil
 		}
 		var instr sointu.Instrument
-		if yaml.Unmarshal(data, &instr) != nil {
-			return nil
+		if yaml.Unmarshal(data, &instr) == nil {
+			instrumentPresets = append(instrumentPresets, instr)
 		}
-		instrumentPresets = append(instrumentPresets, instr)
 		return nil
 	})
+	if configDir, err := os.UserConfigDir(); err == nil {
+		userPresets := filepath.Join(configDir, "sointu", "presets")
+		filepath.WalkDir(userPresets, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				return nil
+			}
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return nil
+			}
+			var instr sointu.Instrument
+			if yaml.Unmarshal(data, &instr) == nil {
+				instrumentPresets = append(instrumentPresets, instr)
+			}
+			return nil
+		})
+	}
 	sort.Sort(instrumentPresets)
 }
 

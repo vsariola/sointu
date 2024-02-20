@@ -61,7 +61,7 @@ func init() {
 		if configDir, err := os.UserConfigDir(); err == nil {
 			randBytes := make([]byte, 16)
 			rand.Read(randBytes)
-			recoveryFile = filepath.Join(configDir, "Sointu", "sointu-vsti-recovery-"+hex.EncodeToString(randBytes))
+			recoveryFile = filepath.Join(configDir, "sointu", "sointu-vsti-recovery-"+hex.EncodeToString(randBytes))
 		}
 		model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
 		t := gioui.NewTracker(model)

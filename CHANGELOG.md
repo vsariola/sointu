@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 ### Added
+- User can drop preset instruments into `os.UserConfigDir()/sointu/presets/` and
+  they appear in the list of presets next time sointu is started.
+  ([#125][i125])
 - Ability to loop certain section of the song when playing. The loop can be set
   by using the toggle button in the song panel, or by hitting Ctrl+L.
   ([#128][i128])
@@ -142,6 +145,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i120]: https://github.com/vsariola/sointu/issues/120
 [i121]: https://github.com/vsariola/sointu/issues/121
 [i122]: https://github.com/vsariola/sointu/issues/122
+[i125]: https://github.com/vsariola/sointu/issues/125
 [i128]: https://github.com/vsariola/sointu/issues/128
 [i129]: https://github.com/vsariola/sointu/issues/129
 [i130]: https://github.com/vsariola/sointu/issues/130
