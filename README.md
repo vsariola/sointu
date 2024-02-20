@@ -517,6 +517,7 @@ Prods using Sointu
   - [Xorverse](https://www.pouet.net/prod.php?which=95221) by Alcatraz
   - [l'enveloppe](https://www.pouet.net/prod.php?which=95215) by Team210 &
     epoqe
+  - [Phosphorescent Purple Pixel Peaks](https://www.pouet.net/prod.php?which=96198) by mrange & Virgill
 
 Contributing
 ------------
