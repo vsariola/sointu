@@ -393,7 +393,7 @@ func (m *Model) completeAction(checkSave bool) {
 	}
 	switch m.dialog {
 	case NewSongChanges, NewSongSaveExplorer:
-		c := m.change("NewSong", SongChange, MajorChange)
+		c := m.change("NewSong", SongChange|LoopChange, MajorChange)
 		m.resetSong()
 		c()
 		m.d.ChangedSinceSave = false
