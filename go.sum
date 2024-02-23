@@ -112,6 +112,8 @@ gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 h1:tQIYjPdBoyREyB9XMu+nnTclp
 gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 pipelined.dev/audio/vst2 v0.10.1-0.20231016195025-8c5c6a64c826 h1:4c7O6PJ/Zl677O2VhXHUZK7LJyVBhUI7Q39+ri+gKUs=
 pipelined.dev/audio/vst2 v0.10.1-0.20231016195025-8c5c6a64c826/go.mod h1:wETLxsbBPftj6t4iVBCXvH/Xgd27ZgIC4hNnHDYNuz8=
+pipelined.dev/audio/vst2 v0.10.1-0.20240223162706-41e9b65fb5c2 h1:qrI7YY5ZH4pJflMfzum2TKvA1NaX+H4feaA6jweX2R8=
+pipelined.dev/audio/vst2 v0.10.1-0.20240223162706-41e9b65fb5c2/go.mod h1:wETLxsbBPftj6t4iVBCXvH/Xgd27ZgIC4hNnHDYNuz8=
 pipelined.dev/pipe v0.10.0/go.mod h1:aIt+NPlW0QLYByqYniG77lTxSvl7OtCNLws/m+Xz5ww=
 pipelined.dev/pipe v0.11.0 h1:yRrbntKdqw/nbFqkz9dPaSHBoM7pK1LRHHDqdBJuqtc=
 pipelined.dev/pipe v0.11.0/go.mod h1:aIt+NPlW0QLYByqYniG77lTxSvl7OtCNLws/m+Xz5ww=
