@@ -74,6 +74,16 @@ jobs:
             output: sointu-track-native
             params: -tags=native cmd/sointu-track/main.go
             packages: libegl-dev libvulkan-dev libxkbcommon-x11-dev libwayland-dev libasound2-dev libx11-xcb-dev libxcursor-dev libxfixes-dev
+          - os: ubuntu-latest
+            asmnasm: /home/runner/nasm/nasm
+            output: sointu-vsti.so
+            params: -buildmode=c-shared -tags=plugin ./cmd/sointu-vsti/
+            packages: libegl-dev libvulkan-dev libxkbcommon-x11-dev libwayland-dev libasound2-dev libx11-xcb-dev libxcursor-dev libxfixes-dev
+          - os: ubuntu-latest
+            asmnasm: /home/runner/nasm/nasm
+            output: sointu-vsti-native.so
+            params: -buildmode=c-shared -tags="plugin,native" ./cmd/sointu-vsti/
+            packages: libegl-dev libvulkan-dev libxkbcommon-x11-dev libwayland-dev libasound2-dev libx11-xcb-dev libxcursor-dev libxfixes-dev
           - os: macos-latest
             asmnasm: /Users/runner/nasm/nasm
             output: sointu-track
