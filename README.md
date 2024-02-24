@@ -12,11 +12,13 @@ User manual will be in the [Wiki](https://github.com/vsariola/sointu/wiki).
 Installation
 ------------
 
-You can either 1) download the prebuilt release binaries from the [releases](https://github.com/vsariola/sointu/releases);
-or 2) download the latest build from the master branch from the [actions](https://github.com/vsariola/sointu/actions)
-(find workflow "Binaries" and scroll down for .zip files containing the
-artifacts). Then just run one of the executables or, in the case of the
-VST plugins library files, copy them wherever you keep you VST2 plugins.
+You can either 1) download the prebuilt release binaries from the
+[releases](https://github.com/vsariola/sointu/releases); or 2) download the
+latest build from the master branch from the
+[actions](https://github.com/vsariola/sointu/actions) (find workflow "Binaries"
+and scroll down for .zip files containing the artifacts). Then just run one of
+the executables or, in the case of the VST plugins library files, copy them
+wherever you keep you VST2 plugins.
 
 The pre 1.0 version tags are mostly for reference: no backwards
 compatibility will be guaranteed while upgrading to a newer version.
@@ -131,15 +133,16 @@ a dynamically linked library and ran inside a VST host.
 go build -buildmode=c-shared -tags=plugin -o sointu-vsti.dll .\cmd\sointu-vsti\
 ```
 
-On other platforms than Windows, replace `-o sointu-track.dll`
-appropriately e.g. `-o sointu-track.so`; however, the VST instrument is
-completely untested on all other platforms than Windows at the moment.
+On other platforms than Windows, replace `-o sointu-vsti.dll` appropriately e.g.
+`-o sointu-vsti.so`; so far, the VST instrument has been built & tested on
+Windows and Linux.
 
-Notice the `-tags=plugin` build tag definition. This is required by the [vst2 library](https://github.com/pipelined/vst2);
-otherwise, you will get a lot of build errors.
+Notice the `-tags=plugin` build tag definition. This is required by the [vst2
+library](https://github.com/pipelined/vst2); otherwise, you will get a lot of
+build errors.
 
-Add `-tags=native,plugin` to use the [x86 native virtual machine](#native-virtual-machine)
-instead of the virtual machine written in Go.
+Add `-tags=native,plugin` to use the [x86 native virtual
+machine](#native-virtual-machine) instead of the virtual machine written in Go.
 
 ### Sointu-compile
 
@@ -159,7 +162,7 @@ go run cmd/sointu-compile/main.go
 go build -o sointu-compile.exe cmd/sointu-compile/main.go
 ```
 
-On other platforms than Windows, replace `-o sointu-compile-exe` with
+On other platforms than Windows, replace `-o sointu-compile.exe` with
 `-o sointu-compile`.
 
 #### Usage
@@ -185,25 +188,26 @@ tool](https://github.com/LeStahL/sointu-executable-msx) for it.
 
 #### Examples
 
-The folder `examples/code` contains usage examples for Sointu with winmm
-and dsound playback under Windows and asound playback under Unix. Source
-code is available in C and x86 assembly (win32, elf32 and elf64
-versions).
+The folder `examples/code` contains usage examples for Sointu with winmm and
+dsound playback under Windows and asound playback under Unix. Source code is
+available in C and x86 assembly (win32, elf32 and elf64 versions).
 
 To build the examples, use `ninja examples`.
 
-If you want to target smaller executable sizes, using a compressing linker
-like [Crinkler](https://github.com/runestubbe/Crinkler) on Windows is recommended.
+If you want to target smaller executable sizes, using a compressing linker like
+[Crinkler](https://github.com/runestubbe/Crinkler) on Windows is recommended.
 
-The linux examples use ALSA and need libasound2-dev (or libasound2-dev:386) installed. The 386 version also needs pipewire-alsa:386 installed, which is not there by default.
+The linux examples use ALSA and need libasound2-dev (or libasound2-dev:386)
+installed. The 386 version also needs pipewire-alsa:386 installed, which is not
+there by default.
 
 ### Native virtual machine
 
-The native bridge allows Go to call the sointu compiled x86 native
-virtual machine, through cgo, instead of using the Go written bytecode
-interpreter. It's likely slightly faster than the interpreter. Before
-you can actually run it, you need to build the bridge using CMake (thus,
-***this will not work with go get***).
+The native bridge allows Go to call the sointu compiled x86 native virtual
+machine, through cgo, instead of using the Go written bytecode interpreter. It's
+likely slightly faster than the interpreter. Before you can actually run it, you
+need to build the bridge using CMake (thus, ***this will not work with go
+get***).
 
 #### Prerequisites
 
@@ -320,8 +324,8 @@ New features since fork
     entropy as low as possible, yet we can call arbitrary go functions as
     "macros". The templates are [here](templates/) and the compiler lives
     [here](vm/compiler/).
-  - **Tracker**. Written in go. A crude version exists. Can run either
-    as a stand-alone app or a vsti plugin.
+  - **Tracker**. Written in go. Can run either as a stand-alone app or a vsti
+    plugin.
   - **Supports 32 and 64 bit builds**. The 64-bit version is done with minimal
     changes to get it work, using template macros to change the lines between
     32-bit and 64-bit modes. Mostly, it's as easy as writing {{.AX}} instead of
@@ -410,20 +414,6 @@ New features since fork
   - **A bytecode interpreter written in pure go**. It's slightly slower than the
     hand-written assembly code by sointu compiler, but with this, the tracker is
     ultraportable and does not need cgo calls.
-  - **Using Sointu as a sync-tracker**. Similar to [GNU
-    Rocket](https://github.com/rocket/rocket), but (ab)using the tracker we
-    already have for music. We use the Go rpc package to send current sync
-    values from the new SYNC opcode + optionally the current fractional row the
-    song is on. The syncs are saved every 256th sample (approximately 172 Hz).
-    For 4k intro development, the idea is to write a debug version of the intro
-    that merely loads the shader and listens to the RPC messages, and then draws
-    the shader with those as the uniforms. Then, during the actual 4k intro, one
-    can get the sync data from Sointu: if the song uses syncs, su_render_song
-    writes the syncs to a float array. During each time step, a slice of this
-    array can be sent to the shader as a uniform float array. A track with two
-    voices, triggering an instrument with a single envelope and a slow filter,
-    can even be used as a cheap smooth interpolation mechanism, provided the
-    syncs are added to each other in the shader.
 
 Future goals
 ------------
@@ -515,8 +505,7 @@ Prods using Sointu
   - [Delusions of mediocrity](https://www.pouet.net/prod.php?which=95222) by
     mrange & Virgill
   - [Xorverse](https://www.pouet.net/prod.php?which=95221) by Alcatraz
-  - [l'enveloppe](https://www.pouet.net/prod.php?which=95215) by Team210 &
-    epoqe
+  - [l'enveloppe](https://www.pouet.net/prod.php?which=95215) by Team210 & epoqe
   - [Phosphorescent Purple Pixel Peaks](https://www.pouet.net/prod.php?which=96198) by mrange & Virgill
   - [21](https://demozoo.org/music/338597/) by NR4 / Team210
   - [Tausendeins](https://www.pouet.net/prod.php?which=96192) by epoqe & Team210
@@ -535,7 +524,7 @@ Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 Contact
 -------
 
-Veikko Sariola - pestis_bc on discord - firstname.lastname@gmail.com
+Veikko Sariola - pestis_bc on Demoscene discord - firstname.lastname@gmail.com
 
 Project Link: [https://github.com/vsariola/sointu](https://github.com/vsariola/sointu)
 
