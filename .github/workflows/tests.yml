@@ -34,18 +34,18 @@ jobs:
             # than let the tests fail because of this.
           # TODO: win32 builds didn't quite work out, complains gcc broken
     steps:
-    - uses: lukka/get-cmake@v3.18.3
-    - uses: vsariola/setup-wabt@v1.0.1
+    - uses: lukka/get-cmake@latest
+    - uses: vsariola/setup-wabt@v1.0.2
       with:
         version: 1.0.29
-    - uses: actions/setup-go@v5
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5 # has to be after checkout, see https://medium.com/@s0k0mata/github-actions-and-go-the-new-cache-feature-in-actions-setup-go-v4-and-what-to-watch-out-for-aeea373ed07d
       with:
         go-version: '>=1.21.0'
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v4
       with:
         node-version: '15'
-    - uses: actions/checkout@v2
-    - uses: ilammy/setup-nasm@v1.4.0
+    - uses: ilammy/setup-nasm@v1.5.1
     - name: Run ctest
       env:
         ASM_NASM: ${{ matrix.config.asmnasm }}

@@ -20,7 +20,7 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
@@ -97,16 +97,16 @@ jobs:
             output: sointu-track-native
             params: -tags=native cmd/sointu-track/main.go
     steps:
-    - uses: benjlevesque/short-sha@v2.2
+    - uses: benjlevesque/short-sha@v3.0
       id: short-sha
       with:
         length: 7
-    - uses: lukka/get-cmake@v3.18.3
-    - uses: actions/setup-go@v5
+    - uses: lukka/get-cmake@latest
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5 # has to be after checkout, see https://medium.com/@s0k0mata/github-actions-and-go-the-new-cache-feature-in-actions-setup-go-v4-and-what-to-watch-out-for-aeea373ed07d
       with:
         go-version: '>=1.21.0'
-    - uses: actions/checkout@v2
-    - uses: ilammy/setup-nasm@v1.4.0
+    - uses: ilammy/setup-nasm@v1.5.1
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
         packages: ${{ matrix.config.packages }}
@@ -124,9 +124,9 @@ jobs:
       run: |
         go build -o ${{ matrix.config.output }} ${{ matrix.config.params }}
     - name: Upload binary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: sointu-${{ runner.os }}-${{ steps.short-sha.outputs.sha }}
+        name: ${{ runner.os }}-${{ steps.short-sha.outputs.sha }}-${{ matrix.config.output }}
         path: ${{ matrix.config.output }}
   upload_release_asset:
     needs: [create_release, binaries]
@@ -144,9 +144,10 @@ jobs:
       with:
         length: 7
     - name: Download artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
-        name: sointu-${{ matrix.config.os }}-${{ steps.short-sha.outputs.sha }}
+        pattern: ${{ matrix.config.os }}-${{ steps.short-sha.outputs.sha }}-*
+        merge-multiple: true
         path: sointu-${{ matrix.config.os }}
     - name: Zip binaries
       run: |
