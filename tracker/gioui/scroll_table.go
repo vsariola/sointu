@@ -24,8 +24,6 @@ type ScrollTable struct {
 	Table        tracker.Table
 	focused      bool
 	requestFocus bool
-	colTag       bool
-	rowTag       bool
 	cursorMoved  bool
 }
 
@@ -160,13 +158,7 @@ func (s *ScrollTableStyle) handleEvents(gtx layout.Context) {
 
 	for {
 		e, ok := gtx.Event(
-			key.FocusFilter{
-				Target: &s.ScrollTable.rowTag,
-			},
-			key.Filter{
-				Focus: &s.ScrollTable.rowTag,
-				Name:  "→",
-			},
+			key.Filter{Focus: s.ScrollTable.RowTitleList, Name: "→"},
 		)
 		if !ok {
 			break
@@ -178,13 +170,7 @@ func (s *ScrollTableStyle) handleEvents(gtx layout.Context) {
 
 	for {
 		e, ok := gtx.Event(
-			key.FocusFilter{
-				Target: &s.ScrollTable.colTag,
-			},
-			key.Filter{
-				Focus: &s.ScrollTable.colTag,
-				Name:  "↓",
-			},
+			key.Filter{Focus: s.ScrollTable.ColTitleList, Name: "↓"},
 		)
 		if !ok {
 			break
@@ -225,8 +211,6 @@ func (s *ScrollTableStyle) layoutRowTitles(gtx C, p image.Point) {
 	gtx.Constraints.Min.X = p.X
 	gtx.Constraints.Max.Y -= p.Y
 	gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
-	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
-	event.Op(gtx.Ops, &s.ScrollTable.rowTag)
 	s.RowTitleStyle.Layout(gtx)
 }
 
@@ -235,8 +219,6 @@ func (s *ScrollTableStyle) layoutColTitles(gtx C, p image.Point) {
 	gtx.Constraints.Min.Y = p.Y
 	gtx.Constraints.Max.X -= p.X
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
-	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
-	event.Op(gtx.Ops, &s.ScrollTable.colTag)
 	s.ColTitleStyle.Layout(gtx)
 }
 
