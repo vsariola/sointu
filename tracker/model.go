@@ -183,6 +183,7 @@ func NewModelPlayer(synther sointu.Synther, recoveryFilePath string) (*Model, *P
 		modelMsgs:       modelMessages,
 		synther:         synther,
 		song:            m.d.Song.Copy(),
+		loop:            m.d.Loop,
 		avgVolumeMeter:  VolumeAnalyzer{Attack: 0.3, Release: 0.3, Min: -100, Max: 20},
 		peakVolumeMeter: VolumeAnalyzer{Attack: 1e-4, Release: 1, Min: -100, Max: 20},
 	}
@@ -320,6 +321,7 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 	}
 	m.d.ChangedSinceRecovery = false
 	m.send(m.d.Song.Copy())
+	m.send(m.d.Loop)
 	m.updatePatternUseCount()
 }
 
