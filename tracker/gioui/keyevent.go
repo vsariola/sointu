@@ -3,14 +3,9 @@ package gioui
 import (
 	"gioui.org/io/clipboard"
 	"gioui.org/io/key"
-	"gioui.org/op"
 )
 
-// globalKeys is a list of keys that are handled globally by the app.
-// All Editors should capture these keys to prevent them flowing to the global handler.
-var globalKeys = key.Set("Space|\\|<|>|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|1|2|3|4|5|6|7|8|9|0|,|.")
-
-var noteMap = map[string]int{
+var noteMap = map[key.Name]int{
 	"Z": -12,
 	"S": -11,
 	"X": -10,
@@ -46,12 +41,12 @@ var noteMap = map[string]int{
 }
 
 // KeyEvent handles incoming key events and returns true if repaint is needed.
-func (t *Tracker) KeyEvent(e key.Event, o *op.Ops) {
+func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 	if e.State == key.Press {
 		switch e.Name {
 		case "V":
 			if e.Modifiers.Contain(key.ModShortcut) {
-				clipboard.ReadOp{Tag: t}.Add(o)
+				gtx.Execute(clipboard.ReadCmd{Tag: t})
 				return
 			}
 		case "Z":

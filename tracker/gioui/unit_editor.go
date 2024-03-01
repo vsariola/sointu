@@ -1,11 +1,14 @@
 package gioui
 
 import (
+	"bytes"
 	"fmt"
 	"image"
+	"io"
 	"math"
 
 	"gioui.org/io/clipboard"
+	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
@@ -29,7 +32,6 @@ type UnitEditor struct {
 	ClearUnitBtn   *ActionClickable
 	DisableUnitBtn *BoolClickable
 	SelectTypeBtn  *widget.Clickable
-	tag            bool
 	caser          cases.Caser
 }
 
@@ -48,7 +50,15 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 }
 
 func (pe *UnitEditor) Layout(gtx C, t *Tracker) D {
-	for _, e := range gtx.Events(&pe.tag) {
+	for {
+		e, ok := gtx.Event(
+			key.Filter{Focus: pe.sliderList, Name: key.NameLeftArrow, Optional: key.ModShift},
+			key.Filter{Focus: pe.sliderList, Name: key.NameRightArrow, Optional: key.ModShift},
+			key.Filter{Focus: pe.sliderList, Name: key.NameEscape},
+		)
+		if !ok {
+			break
+		}
 		switch e := e.(type) {
 		case key.Event:
 			if e.State == key.Press {
@@ -58,8 +68,6 @@ func (pe *UnitEditor) Layout(gtx C, t *Tracker) D {
 	}
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-	key.InputOp{Tag: &pe.tag, Keys: "←|Shift-←|→|Shift-→|⎋"}.Add(gtx.Ops)
-
 	editorFunc := pe.layoutSliders
 
 	if t.UnitSearching().Value() || pe.sliderList.TrackerList.Count() == 0 {
@@ -108,15 +116,15 @@ func (pe *UnitEditor) layoutSliders(gtx C, t *Tracker) D {
 }
 
 func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
-	for pe.CopyUnitBtn.Clickable.Clicked() {
+	for pe.CopyUnitBtn.Clickable.Clicked(gtx) {
 		if contents, ok := t.Units().List().CopyElements(); ok {
-			clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
 			t.Alerts().Add("Unit copied to clipboard", tracker.Info)
 		}
 	}
 	copyUnitBtnStyle := TipIcon(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, "Copy unit (Ctrl+C)")
-	deleteUnitBtnStyle := ActionIcon(t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
-	disableUnitBtnStyle := ToggleIcon(t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, "Disable unit (Ctrl-D)", "Enable unit (Ctrl-D)")
+	deleteUnitBtnStyle := ActionIcon(gtx, t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
+	disableUnitBtnStyle := ToggleIcon(gtx, t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, "Disable unit (Ctrl-D)", "Enable unit (Ctrl-D)")
 	text := t.Units().SelectedType()
 	if text == "" {
 		text = "Choose unit type"
@@ -131,7 +139,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		layout.Rigid(func(gtx C) D {
 			var dims D
 			if t.Units().SelectedType() != "" {
-				clearUnitBtnStyle := ActionIcon(t.Theme, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
+				clearUnitBtnStyle := ActionIcon(gtx, t.Theme, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
 				dims = clearUnitBtnStyle.Layout(gtx)
 			}
 			return D{Size: image.Pt(gtx.Dp(unit.Dp(48)), dims.Size.Y)}
@@ -151,7 +159,7 @@ func (pe *UnitEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 	element := func(gtx C, i int) D {
 		w := LabelStyle{Text: names[i], ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
 		if i == pe.searchList.TrackerList.Selected() {
-			for pe.SelectTypeBtn.Clicked() {
+			for pe.SelectTypeBtn.Clicked(gtx) {
 				t.Units().SetSelectedType(names[i])
 			}
 			return pe.SelectTypeBtn.Layout(gtx, w.Layout)
@@ -232,28 +240,36 @@ func (p ParameterStyle) Layout(gtx C) D {
 		layout.Rigid(func(gtx C) D {
 			switch p.w.Parameter.Type() {
 			case tracker.IntegerParameter:
-				for _, e := range gtx.Events(&p.w.floatWidget) {
-					if ev, ok := e.(pointer.Event); ok && ev.Type == pointer.Scroll {
+				for p.Focus {
+					e, ok := gtx.Event(pointer.Filter{
+						Target:       &p.w.floatWidget,
+						Kinds:        pointer.Scroll,
+						ScrollBounds: image.Rectangle{Min: image.Pt(0, -1e6), Max: image.Pt(0, 1e6)},
+					})
+					if !ok {
+						break
+					}
+					if ev, ok := e.(pointer.Event); ok && ev.Kind == pointer.Scroll {
 						delta := math.Min(math.Max(float64(ev.Scroll.Y), -1), 1)
 						tracker.Int{IntData: p.w.Parameter}.Add(-int(delta))
 					}
 				}
 				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(200))
 				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
-				if !p.w.floatWidget.Dragging() {
-					p.w.floatWidget.Value = float32(p.w.Parameter.Value())
-				}
 				ra := p.w.Parameter.Range()
-				sliderStyle := material.Slider(p.Theme, &p.w.floatWidget, float32(ra.Min), float32(ra.Max))
+				if !p.w.floatWidget.Dragging() {
+					p.w.floatWidget.Value = (float32(p.w.Parameter.Value()) - float32(ra.Min)) / float32(ra.Max-ra.Min)
+				}
+				sliderStyle := material.Slider(p.Theme, &p.w.floatWidget)
 				sliderStyle.Color = p.Theme.Fg
 				r := image.Rectangle{Max: gtx.Constraints.Min}
 				area := clip.Rect(r).Push(gtx.Ops)
 				if p.Focus {
-					pointer.InputOp{Tag: &p.w.floatWidget, Types: pointer.Scroll, ScrollBounds: image.Rectangle{Min: image.Pt(0, -1e6), Max: image.Pt(0, 1e6)}}.Add(gtx.Ops)
+					event.Op(gtx.Ops, &p.w.floatWidget)
 				}
 				dims := sliderStyle.Layout(gtx)
 				area.Pop()
-				tracker.Int{IntData: p.w.Parameter}.Set(int(p.w.floatWidget.Value + 0.5))
+				tracker.Int{IntData: p.w.Parameter}.Set(int(p.w.floatWidget.Value*float32(ra.Max-ra.Min) + float32(ra.Min) + 0.5))
 				return dims
 			case tracker.BoolParameter:
 				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(60))
@@ -305,10 +321,10 @@ func (p ParameterStyle) Layout(gtx C) D {
 					}
 				}
 				return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-					layout.Rigid(p.tracker.layoutMenu(instrName, &p.w.instrBtn, &p.w.instrMenu, unit.Dp(200),
+					layout.Rigid(p.tracker.layoutMenu(gtx, instrName, &p.w.instrBtn, &p.w.instrMenu, unit.Dp(200),
 						instrItems...,
 					)),
-					layout.Rigid(p.tracker.layoutMenu(unitName, &p.w.unitBtn, &p.w.unitMenu, unit.Dp(200),
+					layout.Rigid(p.tracker.layoutMenu(gtx, unitName, &p.w.unitBtn, &p.w.unitMenu, unit.Dp(200),
 						unitItems...,
 					)),
 				)

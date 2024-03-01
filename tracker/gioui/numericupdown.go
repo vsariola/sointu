@@ -15,6 +15,7 @@ import (
 	"gioui.org/x/component"
 
 	"gioui.org/gesture"
+	"gioui.org/io/event"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -160,9 +161,16 @@ func (s *NumericUpDownStyle) layoutText(gtx C) D {
 func (s *NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
 	{ // handle dragging
 		pxPerStep := float32(gtx.Dp(s.UnitsPerStep))
-		for _, ev := range gtx.Events(s.NumberInput) {
+		for {
+			ev, ok := gtx.Event(pointer.Filter{
+				Target: s.NumberInput,
+				Kinds:  pointer.Press | pointer.Drag | pointer.Release,
+			})
+			if !ok {
+				break
+			}
 			if e, ok := ev.(pointer.Event); ok {
-				switch e.Type {
+				switch e.Kind {
 				case pointer.Press:
 					s.NumberInput.dragStartValue = s.NumberInput.Int.Value()
 					s.NumberInput.dragStartXY = e.Position.X - e.Position.Y
@@ -180,10 +188,7 @@ func (s *NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
 		// register for input
 		dragRect := image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
 		area := clip.Rect(dragRect).Push(gtx.Ops)
-		pointer.InputOp{
-			Tag:   s.NumberInput,
-			Types: pointer.Press | pointer.Drag | pointer.Release,
-		}.Add(gtx.Ops)
+		event.Op(gtx.Ops, s.NumberInput)
 		area.Pop()
 		stack.Pop()
 	}
@@ -192,9 +197,13 @@ func (s *NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
 
 func (s *NumericUpDownStyle) layoutClick(gtx layout.Context, delta int, click *gesture.Click) layout.Dimensions {
 	// handle clicking
-	for _, e := range click.Events(gtx) {
-		switch e.Type {
-		case gesture.TypeClick:
+	for {
+		ev, ok := click.Update(gtx.Source)
+		if !ok {
+			break
+		}
+		switch ev.Kind {
+		case gesture.KindClick:
 			s.NumberInput.Int.Add(delta)
 		}
 	}

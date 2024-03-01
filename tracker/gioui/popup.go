@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 
+	"gioui.org/io/event"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -44,13 +45,19 @@ func (s PopupStyle) Layout(gtx C, contents layout.Widget) D {
 		return D{}
 	}
 
-	for _, ev := range gtx.Events(s.Visible) {
-		e, ok := ev.(pointer.Event)
+	for {
+		event, ok := gtx.Event(pointer.Filter{
+			Target: s.Visible,
+			Kinds:  pointer.Press,
+		})
+		if !ok {
+			break
+		}
+		e, ok := event.(pointer.Event)
 		if !ok {
 			continue
 		}
-
-		switch e.Type {
+		switch e.Kind {
 		case pointer.Press:
 			*s.Visible = false
 		}
@@ -70,16 +77,10 @@ func (s PopupStyle) Layout(gtx C, contents layout.Widget) D {
 		paint.FillShape(gtx.Ops, s.ShadowColor, rrect2.Op(gtx.Ops))
 		paint.FillShape(gtx.Ops, s.SurfaceColor, rrect.Op(gtx.Ops))
 		area := clip.Rect(image.Rect(-1e6, -1e6, 1e6, 1e6)).Push(gtx.Ops)
-		pointer.InputOp{Tag: s.Visible,
-			Types: pointer.Press,
-			Grab:  true,
-		}.Add(gtx.Ops)
+		event.Op(gtx.Ops, s.Visible)
 		area.Pop()
 		area = clip.Rect(rrect2.Rect).Push(gtx.Ops)
-		pointer.InputOp{Tag: &dummyTag,
-			Types: pointer.Press,
-			Grab:  true,
-		}.Add(gtx.Ops)
+		event.Op(gtx.Ops, &dummyTag)
 		area.Pop()
 		return D{Size: gtx.Constraints.Min}
 	}

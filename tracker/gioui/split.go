@@ -3,6 +3,7 @@ package gioui
 import (
 	"image"
 
+	"gioui.org/io/event"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -48,14 +49,21 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 
 	{ // handle input
 		// Avoid affecting the input tree with pointer events.
-
-		for _, ev := range gtx.Events(s) {
+		for {
+			ev, ok := gtx.Event(pointer.Filter{
+				Target: s,
+				Kinds:  pointer.Press | pointer.Drag | pointer.Release,
+				// TODO: there should be a grab; there was Grab:  s.drag,
+			})
+			if !ok {
+				break
+			}
 			e, ok := ev.(pointer.Event)
 			if !ok {
 				continue
 			}
 
-			switch e.Type {
+			switch e.Kind {
 			case pointer.Press:
 				if s.drag {
 					break
@@ -123,10 +131,7 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 			barRect = image.Rect(0, firstSize, gtx.Constraints.Max.X, secondOffset)
 		}
 		area := clip.Rect(barRect).Push(gtx.Ops)
-		pointer.InputOp{Tag: s,
-			Types: pointer.Press | pointer.Drag | pointer.Release,
-			Grab:  s.drag,
-		}.Add(gtx.Ops)
+		event.Op(gtx.Ops, s)
 		area.Pop()
 	}
 

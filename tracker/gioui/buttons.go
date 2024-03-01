@@ -51,9 +51,9 @@ func Tooltip(th *material.Theme, tip string) component.Tooltip {
 	return tooltip
 }
 
-func ActionIcon(th *material.Theme, w *ActionClickable, icon []byte, tip string) TipIconButtonStyle {
+func ActionIcon(gtx C, th *material.Theme, w *ActionClickable, icon []byte, tip string) TipIconButtonStyle {
 	ret := TipIcon(th, &w.TipClickable, icon, tip)
-	for w.Clickable.Clicked() {
+	for w.Clickable.Clicked(gtx) {
 		w.Action.Do()
 	}
 	if !w.Action.Allowed() {
@@ -74,14 +74,14 @@ func TipIcon(th *material.Theme, w *TipClickable, icon []byte, tip string) TipIc
 	}
 }
 
-func ToggleIcon(th *material.Theme, w *BoolClickable, offIcon, onIcon []byte, offTip, onTip string) TipIconButtonStyle {
+func ToggleIcon(gtx C, th *material.Theme, w *BoolClickable, offIcon, onIcon []byte, offTip, onTip string) TipIconButtonStyle {
 	icon := offIcon
 	tip := offTip
 	if w.Bool.Value() {
 		icon = onIcon
 		tip = onTip
 	}
-	for w.Clickable.Clicked() {
+	for w.Clickable.Clicked(gtx) {
 		w.Bool.Toggle()
 	}
 	ibStyle := material.IconButton(th, &w.Clickable, widgetForIcon(icon), "")
@@ -102,8 +102,8 @@ func (t *TipIconButtonStyle) Layout(gtx C) D {
 	return t.TipArea.Layout(gtx, t.Tooltip, t.IconButtonStyle.Layout)
 }
 
-func ActionButton(th *material.Theme, w *ActionClickable, text string) material.ButtonStyle {
-	for w.Clickable.Clicked() {
+func ActionButton(gtx C, th *material.Theme, w *ActionClickable, text string) material.ButtonStyle {
+	for w.Clickable.Clicked(gtx) {
 		w.Action.Do()
 	}
 	ret := material.Button(th, &w.Clickable, text)
@@ -116,8 +116,8 @@ func ActionButton(th *material.Theme, w *ActionClickable, text string) material.
 	return ret
 }
 
-func ToggleButton(th *material.Theme, b *BoolClickable, text string) material.ButtonStyle {
-	for b.Clickable.Clicked() {
+func ToggleButton(gtx C, th *material.Theme, b *BoolClickable, text string) material.ButtonStyle {
+	for b.Clickable.Clicked(gtx) {
 		b.Bool.Toggle()
 	}
 	ret := material.Button(th, &b.Clickable, text)

@@ -4,6 +4,7 @@ import (
 	"image"
 
 	"gioui.org/f32"
+	"gioui.org/io/event"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -77,19 +78,22 @@ func (s *ScrollBar) Layout(gtx C, width unit.Dp, numItems int, pos *layout.Posit
 		rect := image.Rect(0, gtx.Constraints.Min.Y-scrWidth, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
 		area = clip.Rect(rect).Push(gtx.Ops)
 	}
-	pointer.InputOp{Tag: &s.dragStart,
-		Types: pointer.Drag | pointer.Press | pointer.Cancel | pointer.Release,
-		Grab:  s.dragging,
-	}.Add(gtx.Ops)
+	event.Op(gtx.Ops, &s.dragStart)
 	area.Pop()
 	stack.Pop()
 
-	for _, ev := range gtx.Events(&s.dragStart) {
+	for {
+		ev, ok := gtx.Event(
+			pointer.Filter{Target: &s.dragStart, Kinds: pointer.Press | pointer.Cancel | pointer.Release | pointer.Drag},
+		)
+		if !ok {
+			break
+		}
 		e, ok := ev.(pointer.Event)
 		if !ok {
 			continue
 		}
-		switch e.Type {
+		switch e.Kind {
 		case pointer.Press:
 			if s.Axis == layout.Horizontal {
 				s.dragStart = e.Position.X
@@ -114,17 +118,22 @@ func (s *ScrollBar) Layout(gtx C, width unit.Dp, numItems int, pos *layout.Posit
 	rect := image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
 	area2 := clip.Rect(rect).Push(gtx.Ops)
 	defer pointer.PassOp{}.Push(gtx.Ops).Pop()
-	pointer.InputOp{Tag: &s.tag,
-		Types: pointer.Enter | pointer.Leave,
-	}.Add(gtx.Ops)
+	event.Op(gtx.Ops, &s.tag)
 	area2.Pop()
 
-	for _, ev := range gtx.Events(&s.tag) {
+	for {
+		ev, ok := gtx.Event(pointer.Filter{
+			Target: &s.tag,
+			Kinds:  pointer.Enter | pointer.Leave,
+		})
+		if !ok {
+			break
+		}
 		e, ok := ev.(pointer.Event)
 		if !ok {
 			continue
 		}
-		switch e.Type {
+		switch e.Kind {
 		case pointer.Enter:
 			s.hovering = true
 		case pointer.Leave:

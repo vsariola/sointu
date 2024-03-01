@@ -31,7 +31,7 @@ func NewPopupAlert(alerts *tracker.Alerts, shaper *text.Shaper) *PopupAlert {
 func (a *PopupAlert) Layout(gtx C) D {
 	now := time.Now()
 	if a.alerts.Update(now.Sub(a.prevUpdate)) {
-		op.InvalidateOp{At: now.Add(50 * time.Millisecond)}.Add(gtx.Ops)
+		gtx.Execute(op.InvalidateCmd{At: now.Add(50 * time.Millisecond)})
 	}
 	a.prevUpdate = now
 

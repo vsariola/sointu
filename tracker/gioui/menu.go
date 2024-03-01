@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 
+	"gioui.org/io/event"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -65,12 +66,19 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 				m.Menu.tags = append(m.Menu.tags, false)
 			}
 			// handle pointer events for this item
-			for _, ev := range gtx.Events(&m.Menu.tags[i]) {
+			for {
+				ev, ok := gtx.Event(pointer.Filter{
+					Target: &m.Menu.tags[i],
+					Kinds:  pointer.Press | pointer.Enter | pointer.Leave,
+				})
+				if !ok {
+					break
+				}
 				e, ok := ev.(pointer.Event)
 				if !ok {
 					continue
 				}
-				switch e.Type {
+				switch e.Kind {
 				case pointer.Press:
 					item.Doer.Do()
 					m.Menu.Visible = false
@@ -130,9 +138,7 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 					if item.Doer.Allowed() {
 						rect := image.Rect(0, 0, dims.Size.X, dims.Size.Y)
 						area := clip.Rect(rect).Push(gtx.Ops)
-						pointer.InputOp{Tag: &m.Menu.tags[i],
-							Types: pointer.Press | pointer.Enter | pointer.Leave,
-						}.Add(gtx.Ops)
+						event.Op(gtx.Ops, &m.Menu.tags[i])
 						area.Pop()
 					}
 					return dims
@@ -163,8 +169,8 @@ func PopupMenu(menu *Menu, shaper *text.Shaper) MenuStyle {
 	}
 }
 
-func (tr *Tracker) layoutMenu(title string, clickable *widget.Clickable, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
-	for clickable.Clicked() {
+func (tr *Tracker) layoutMenu(gtx C, title string, clickable *widget.Clickable, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
+	for clickable.Clicked(gtx) {
 		menu.Visible = true
 	}
 	m := PopupMenu(menu, tr.Theme.Shaper)

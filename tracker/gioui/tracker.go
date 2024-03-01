@@ -5,14 +5,14 @@ import (
 	"image"
 	"io"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
 	"gioui.org/app"
-	"gioui.org/io/clipboard"
+	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/io/system"
+	"gioui.org/io/transfer"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
@@ -34,7 +34,7 @@ type (
 		TopHorizontalSplit    *Split
 		BottomHorizontalSplit *Split
 		VerticalSplit         *Split
-		KeyPlaying            map[string]tracker.NoteID
+		KeyPlaying            map[key.Name]tracker.NoteID
 		PopupAlert            *PopupAlert
 
 		SaveChangesDialog *Dialog
@@ -76,7 +76,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 		BottomHorizontalSplit: &Split{Ratio: -.6},
 		VerticalSplit:         &Split{Axis: layout.Vertical},
 
-		KeyPlaying:        make(map[string]tracker.NoteID),
+		KeyPlaying:        make(map[key.Name]tracker.NoteID),
 		SaveChangesDialog: NewDialog(model.SaveSong(), model.DiscardSong(), model.Cancel()),
 		WaveTypeDialog:    NewDialog(model.ExportInt16(), model.ExportFloat(), model.Cancel()),
 		InstrumentEditor:  NewInstrumentEditor(model),
@@ -107,6 +107,11 @@ func (t *Tracker) Main() {
 	t.InstrumentEditor.Focus()
 	recoveryTicker := time.NewTicker(time.Second * 30)
 	t.Explorer = explorer.NewExplorer(w)
+	// Make a channel to read window events from.
+	events := make(chan event.Event)
+	// Make a channel to signal the end of processing a window event.
+	acks := make(chan struct{})
+	go eventLoop(w, events, acks)
 	var ops op.Ops
 	for {
 		if titleFooter != t.filePathString.Value() {
@@ -121,9 +126,10 @@ func (t *Tracker) Main() {
 		case e := <-t.PlayerMessages:
 			t.ProcessPlayerMessage(e)
 			w.Invalidate()
-		case e := <-w.Events():
+		case e := <-events:
 			switch e := e.(type) {
-			case system.DestroyEvent:
+			case app.DestroyEvent:
+				acks <- struct{}{}
 				if canQuit {
 					t.Quit().Do()
 				}
@@ -134,14 +140,18 @@ func (t *Tracker) Main() {
 						app.Title("Sointu Tracker"),
 					)
 					t.Explorer = explorer.NewExplorer(w)
+					go eventLoop(w, events, acks)
 				}
-			case system.FrameEvent:
-				gtx := layout.NewContext(&ops, e)
+			case app.FrameEvent:
+				gtx := app.NewContext(&ops, e)
 				if t.SongPanel.PlayingBtn.Bool.Value() && t.SongPanel.NoteTracking.Bool.Value() {
 					t.TrackEditor.scrollTable.RowTitleList.CenterOn(t.PlaySongRow())
 				}
 				t.Layout(gtx, w)
 				e.Frame(gtx.Ops)
+				acks <- struct{}{}
+			default:
+				acks <- struct{}{}
 			}
 		case <-recoveryTicker.C:
 			t.SaveRecovery()
@@ -158,6 +168,19 @@ func (t *Tracker) Main() {
 	t.quitWG.Done()
 }
 
+func eventLoop(w *app.Window, events chan<- event.Event, acks <-chan struct{}) {
+	// Iterate window events, sending each to the old event loop and waiting for
+	// a signal that processing is complete before iterating again.
+	for {
+		ev := w.NextEvent()
+		events <- ev
+		<-acks
+		if _, ok := ev.(app.DestroyEvent); ok {
+			return
+		}
+	}
+}
+
 func (t *Tracker) Exec() chan<- func() {
 	return t.execChan
 }
@@ -167,22 +190,6 @@ func (t *Tracker) WaitQuitted() {
 }
 
 func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
-	// this is the top level input handler for the whole app
-	// it handles all the global key events and clipboard events
-	// we need to tell gio that we handle tabs too; otherwise
-	// it will steal them for focus switching
-	key.InputOp{Tag: t, Keys: "Tab|Shift-Tab"}.Add(gtx.Ops)
-	for _, ev := range gtx.Events(t) {
-		switch e := ev.(type) {
-		case key.Event:
-			t.KeyEvent(e, gtx.Ops)
-		case clipboard.Event:
-			stringReader := strings.NewReader(e.Text)
-			stringReadCloser := io.NopCloser(stringReader)
-			t.ReadSong(stringReadCloser)
-		}
-	}
-
 	paint.FillShape(gtx.Ops, backgroundColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 	if t.InstrumentEditor.enlargeBtn.Bool.Value() {
 		t.layoutTop(gtx)
@@ -193,6 +200,27 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 	}
 	t.PopupAlert.Layout(gtx)
 	t.showDialog(gtx)
+	// this is the top level input handler for the whole app
+	// it handles all the global key events and clipboard events
+	// we need to tell gio that we handle tabs too; otherwise
+	// it will steal them for focus switching
+	for {
+		ev, ok := gtx.Event(
+			key.Filter{Name: "", Optional: key.ModAlt | key.ModCommand | key.ModShift | key.ModShortcut | key.ModSuper},
+			key.Filter{Name: key.NameTab, Optional: key.ModShift},
+			transfer.TargetFilter{Target: t, Type: "application/text"},
+		)
+		if !ok {
+			break
+		}
+		switch e := ev.(type) {
+		case key.Event:
+			t.KeyEvent(e, gtx)
+		case transfer.DataEvent:
+			t.ReadSong(e.Open())
+		}
+	}
+
 }
 
 func (t *Tracker) showDialog(gtx C) {
@@ -201,12 +229,12 @@ func (t *Tracker) showDialog(gtx C) {
 	}
 	switch t.Dialog() {
 	case tracker.NewSongChanges, tracker.OpenSongChanges, tracker.QuitChanges:
-		dstyle := ConfirmDialog(t.Theme, t.SaveChangesDialog, "Save changes to song?", "Your changes will be lost if you don't save them.")
+		dstyle := ConfirmDialog(gtx, t.Theme, t.SaveChangesDialog, "Save changes to song?", "Your changes will be lost if you don't save them.")
 		dstyle.OkStyle.Text = "Save"
 		dstyle.AltStyle.Text = "Don't save"
 		dstyle.Layout(gtx)
 	case tracker.Export:
-		dstyle := ConfirmDialog(t.Theme, t.WaveTypeDialog, "", "Export .wav in int16 or float32 sample format?")
+		dstyle := ConfirmDialog(gtx, t.Theme, t.WaveTypeDialog, "", "Export .wav in int16 or float32 sample format?")
 		dstyle.OkStyle.Text = "Int16"
 		dstyle.AltStyle.Text = "Float32"
 		dstyle.Layout(gtx)

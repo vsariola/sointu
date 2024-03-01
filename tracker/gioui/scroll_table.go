@@ -1,11 +1,15 @@
 package gioui
 
 import (
+	"bytes"
 	"image"
+	"io"
 
 	"gioui.org/io/clipboard"
+	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
+	"gioui.org/io/transfer"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
@@ -20,7 +24,6 @@ type ScrollTable struct {
 	Table        tracker.Table
 	focused      bool
 	requestFocus bool
-	tag          bool
 	colTag       bool
 	rowTag       bool
 	cursorMoved  bool
@@ -85,55 +88,10 @@ func (st *ScrollTable) ChildFocused() bool {
 
 func (s ScrollTableStyle) Layout(gtx C) D {
 	p := image.Pt(gtx.Dp(s.RowTitleWidth), gtx.Dp(s.ColumnTitleHeight))
-
-	for _, e := range gtx.Events(&s.ScrollTable.tag) {
-		switch e := e.(type) {
-		case key.FocusEvent:
-			s.ScrollTable.focused = e.Focus
-		case pointer.Event:
-			if e.Position.X >= float32(p.X) && e.Position.Y >= float32(p.Y) {
-				if e.Type == pointer.Press {
-					key.FocusOp{Tag: &s.ScrollTable.tag}.Add(gtx.Ops)
-				}
-				dx := (int(e.Position.X) + s.ScrollTable.ColTitleList.List.Position.Offset - p.X) / gtx.Dp(s.CellWidth)
-				dy := (int(e.Position.Y) + s.ScrollTable.RowTitleList.List.Position.Offset - p.Y) / gtx.Dp(s.CellHeight)
-				x := dx + s.ScrollTable.ColTitleList.List.Position.First
-				y := dy + s.ScrollTable.RowTitleList.List.Position.First
-				s.ScrollTable.Table.SetCursor(
-					tracker.Point{X: x, Y: y},
-				)
-				if !e.Modifiers.Contain(key.ModShift) {
-					s.ScrollTable.Table.SetCursor2(s.ScrollTable.Table.Cursor())
-				}
-				s.ScrollTable.cursorMoved = true
-			}
-		case key.Event:
-			if e.State == key.Press {
-				s.ScrollTable.command(gtx, e)
-			}
-		case clipboard.Event:
-			s.ScrollTable.Table.Paste([]byte(e.Text))
-		}
-	}
-
-	for _, e := range gtx.Events(&s.ScrollTable.rowTag) {
-		if e, ok := e.(key.Event); ok && e.State == key.Press {
-			s.ScrollTable.Focus()
-		}
-	}
-
-	for _, e := range gtx.Events(&s.ScrollTable.colTag) {
-		if e, ok := e.(key.Event); ok && e.State == key.Press {
-			s.ScrollTable.Focus()
-		}
-	}
+	s.handleEvents(gtx)
 
 	return Surface{Gray: 24, Focus: s.ScrollTable.Focused() || s.ScrollTable.ChildFocused()}.Layout(gtx, func(gtx C) D {
 		defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-		pointer.InputOp{
-			Tag:   &s.ScrollTable.tag,
-			Types: pointer.Press,
-		}.Add(gtx.Ops)
 		dims := gtx.Constraints.Max
 		s.layoutColTitles(gtx, p)
 		s.layoutRowTitles(gtx, p)
@@ -146,14 +104,105 @@ func (s ScrollTableStyle) Layout(gtx C) D {
 	})
 }
 
+func (s *ScrollTableStyle) handleEvents(gtx layout.Context) {
+	for {
+		e, ok := gtx.Event(
+			key.FocusFilter{Target: s.ScrollTable},
+			transfer.TargetFilter{Target: s.ScrollTable, Type: "application/text"},
+			pointer.Filter{Target: s.ScrollTable, Kinds: pointer.Press},
+			key.Filter{Focus: s.ScrollTable, Name: key.NameLeftArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
+			key.Filter{Focus: s.ScrollTable, Name: key.NameUpArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
+			key.Filter{Focus: s.ScrollTable, Name: key.NameRightArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
+			key.Filter{Focus: s.ScrollTable, Name: key.NameDownArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
+			key.Filter{Focus: s.ScrollTable, Name: key.NamePageUp, Optional: key.ModShift},
+			key.Filter{Focus: s.ScrollTable, Name: key.NamePageDown, Optional: key.ModShift},
+			key.Filter{Focus: s.ScrollTable, Name: key.NameHome, Optional: key.ModShift},
+			key.Filter{Focus: s.ScrollTable, Name: key.NameEnd, Optional: key.ModShift},
+			key.Filter{Focus: s.ScrollTable, Name: key.NameDeleteBackward},
+			key.Filter{Focus: s.ScrollTable, Name: key.NameDeleteForward},
+			key.Filter{Focus: s.ScrollTable, Name: "C", Required: key.ModShortcut},
+			key.Filter{Focus: s.ScrollTable, Name: "V", Required: key.ModShortcut},
+			key.Filter{Focus: s.ScrollTable, Name: "X", Required: key.ModShortcut},
+			key.Filter{Focus: s.ScrollTable, Name: ",", Required: key.ModShift},
+			key.Filter{Focus: s.ScrollTable, Name: ".", Required: key.ModShift},
+		)
+		if !ok {
+			break
+		}
+		switch e := e.(type) {
+		case key.FocusEvent:
+			s.ScrollTable.focused = e.Focus
+		case pointer.Event:
+			if e.Kind == pointer.Press {
+				gtx.Execute(key.FocusCmd{Tag: s.ScrollTable})
+			}
+			dx := (int(e.Position.X) + s.ScrollTable.ColTitleList.List.Position.Offset) / gtx.Dp(s.CellWidth)
+			dy := (int(e.Position.Y) + s.ScrollTable.RowTitleList.List.Position.Offset) / gtx.Dp(s.CellHeight)
+			x := dx + s.ScrollTable.ColTitleList.List.Position.First
+			y := dy + s.ScrollTable.RowTitleList.List.Position.First
+			s.ScrollTable.Table.SetCursor(
+				tracker.Point{X: x, Y: y},
+			)
+			if !e.Modifiers.Contain(key.ModShift) {
+				s.ScrollTable.Table.SetCursor2(s.ScrollTable.Table.Cursor())
+			}
+			s.ScrollTable.cursorMoved = true
+		case key.Event:
+			if e.State == key.Press {
+				s.ScrollTable.command(gtx, e)
+			}
+		case transfer.DataEvent:
+			if b, err := io.ReadAll(e.Open()); err == nil {
+				s.ScrollTable.Table.Paste(b)
+			}
+		}
+	}
+
+	for {
+		e, ok := gtx.Event(
+			key.FocusFilter{
+				Target: &s.ScrollTable.rowTag,
+			},
+			key.Filter{
+				Focus: &s.ScrollTable.rowTag,
+				Name:  "→",
+			},
+		)
+		if !ok {
+			break
+		}
+		if e, ok := e.(key.Event); ok && e.State == key.Press {
+			s.ScrollTable.Focus()
+		}
+	}
+
+	for {
+		e, ok := gtx.Event(
+			key.FocusFilter{
+				Target: &s.ScrollTable.colTag,
+			},
+			key.Filter{
+				Focus: &s.ScrollTable.colTag,
+				Name:  "↓",
+			},
+		)
+		if !ok {
+			break
+		}
+		if e, ok := e.(key.Event); ok && e.State == key.Press {
+			s.ScrollTable.Focus()
+		}
+	}
+}
+
 func (s ScrollTableStyle) layoutTable(gtx C, p image.Point) {
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Min}).Push(gtx.Ops).Pop()
 
 	if s.ScrollTable.requestFocus {
 		s.ScrollTable.requestFocus = false
-		key.FocusOp{Tag: &s.ScrollTable.tag}.Add(gtx.Ops)
+		gtx.Execute(key.FocusCmd{Tag: s.ScrollTable})
 	}
-	key.InputOp{Tag: &s.ScrollTable.tag, Keys: "←|→|↑|↓|Shift-←|Shift-→|Shift-↑|Shift-↓|Ctrl-←|Ctrl-→|Ctrl-↑|Ctrl-↓|Ctrl-Shift-←|Ctrl-Shift-→|Ctrl-Shift-↑|Ctrl-Shift-↓|Alt-←|Alt-→|Alt-↑|Alt-↓|Alt-Shift-←|Alt-Shift-→|Alt-Shift-↑|Alt-Shift-↓|⇱|⇲|Shift-⇱|Shift-⇲|⌫|⌦|⇞|⇟|Shift-⇞|Shift-⇟|Ctrl-C|Ctrl-V|Ctrl-X|Shift-,|Shift-."}.Add(gtx.Ops)
+	event.Op(gtx.Ops, s.ScrollTable)
 	cellWidth := gtx.Dp(s.CellWidth)
 	cellHeight := gtx.Dp(s.CellHeight)
 
@@ -162,14 +211,12 @@ func (s ScrollTableStyle) layoutTable(gtx C, p image.Point) {
 	colP := s.ColTitleStyle.dragList.List.Position
 	rowP := s.RowTitleStyle.dragList.List.Position
 	defer op.Offset(image.Pt(-colP.Offset, -rowP.Offset)).Push(gtx.Ops).Pop()
-	for x := colP.First; x < colP.First+colP.Count; x++ {
-		offs := op.Offset(image.Point{}).Push(gtx.Ops)
-		for y := rowP.First; y < rowP.First+rowP.Count; y++ {
-			s.element(gtx, x, y)
-			op.Offset(image.Pt(0, cellHeight)).Add(gtx.Ops)
+	for x := 0; x < colP.Count; x++ {
+		for y := 0; y < rowP.Count; y++ {
+			o := op.Offset(image.Pt(cellWidth*x, cellHeight*y)).Push(gtx.Ops)
+			s.element(gtx, x+colP.First, y+rowP.First)
+			o.Pop()
 		}
-		offs.Pop()
-		op.Offset(image.Pt(cellWidth, 0)).Add(gtx.Ops)
 	}
 }
 
@@ -179,7 +226,7 @@ func (s *ScrollTableStyle) layoutRowTitles(gtx C, p image.Point) {
 	gtx.Constraints.Max.Y -= p.Y
 	gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
-	key.InputOp{Tag: &s.ScrollTable.rowTag, Keys: "→"}.Add(gtx.Ops)
+	event.Op(gtx.Ops, &s.ScrollTable.rowTag)
 	s.RowTitleStyle.Layout(gtx)
 }
 
@@ -189,7 +236,7 @@ func (s *ScrollTableStyle) layoutColTitles(gtx C, p image.Point) {
 	gtx.Constraints.Max.X -= p.X
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
-	key.InputOp{Tag: &s.ScrollTable.colTag, Keys: "↓"}.Add(gtx.Ops)
+	event.Op(gtx.Ops, &s.ScrollTable.colTag)
 	s.ColTitleStyle.Layout(gtx)
 }
 
@@ -210,7 +257,7 @@ func (s *ScrollTable) command(gtx C, e key.Event) {
 			if !ok {
 				return
 			}
-			clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
 			if e.Name == "X" {
 				s.Table.Clear()
 			}
@@ -218,7 +265,7 @@ func (s *ScrollTable) command(gtx C, e key.Event) {
 		}
 	case "V":
 		if e.Modifiers.Contain(key.ModShortcut) {
-			clipboard.ReadOp{Tag: &s.tag}.Add(gtx.Ops)
+			gtx.Execute(clipboard.ReadCmd{Tag: s})
 		}
 		return
 	case key.NameDeleteBackward, key.NameDeleteForward:

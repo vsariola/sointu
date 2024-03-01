@@ -1,12 +1,16 @@
 package gioui
 
 import (
+	"bytes"
 	"image"
 	"image/color"
+	"io"
 
 	"gioui.org/io/clipboard"
+	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
+	"gioui.org/io/transfer"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
@@ -27,7 +31,6 @@ type DragList struct {
 	swapped      bool
 	focused      bool
 	requestFocus bool
-	mainTag      bool
 }
 
 type FilledDragListStyle struct {
@@ -72,11 +75,7 @@ func (s FilledDragListStyle) Layout(gtx C) D {
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-	keys := key.Set("↑|↓|Ctrl-↑|Ctrl-↓|Shift-↑|Shift-↓|⇞|⇟|Ctrl-⇞|Ctrl-⇟|Ctrl-A|Ctrl-C|Ctrl-X|Ctrl-V|⌦|Ctrl-⌫")
-	if s.dragList.List.Axis == layout.Horizontal {
-		keys = key.Set("←|→|Ctrl-←|Ctrl-→|Shift-←|Shift-→|Home|End|Ctrl-Home|Ctrl-End|Ctrl-A|Ctrl-C|Ctrl-X|Ctrl-V|⌦|Ctrl-⌫")
-	}
-	key.InputOp{Tag: &s.dragList.mainTag, Keys: keys}.Add(gtx.Ops)
+	event.Op(gtx.Ops, s.dragList)
 
 	if s.dragList.List.Axis == layout.Horizontal {
 		gtx.Constraints.Min.X = gtx.Constraints.Max.X
@@ -86,11 +85,39 @@ func (s FilledDragListStyle) Layout(gtx C) D {
 
 	if s.dragList.requestFocus {
 		s.dragList.requestFocus = false
-		key.FocusOp{Tag: &s.dragList.mainTag}.Add(gtx.Ops)
+		gtx.Execute(key.FocusCmd{Tag: s.dragList})
 	}
 
-	for _, ke := range gtx.Events(&s.dragList.mainTag) {
-		switch ke := ke.(type) {
+	prevKey := key.NameUpArrow
+	nextKey := key.NameDownArrow
+	firstKey := key.NamePageUp
+	lastKey := key.NamePageDown
+	if s.dragList.List.Axis == layout.Horizontal {
+		prevKey = key.NameLeftArrow
+		nextKey = key.NameRightArrow
+		firstKey = key.NameHome
+		lastKey = key.NameEnd
+	}
+
+	for {
+		event, ok := gtx.Event(
+			key.FocusFilter{Target: s.dragList},
+			transfer.TargetFilter{Target: s.dragList, Type: "application/text"},
+			key.Filter{Focus: s.dragList, Name: prevKey, Optional: key.ModShift | key.ModShortcut},
+			key.Filter{Focus: s.dragList, Name: nextKey, Optional: key.ModShift | key.ModShortcut},
+			key.Filter{Focus: s.dragList, Name: firstKey, Optional: key.ModShift | key.ModShortcut},
+			key.Filter{Focus: s.dragList, Name: lastKey, Optional: key.ModShift | key.ModShortcut},
+			key.Filter{Focus: s.dragList, Name: "A", Required: key.ModShortcut},
+			key.Filter{Focus: s.dragList, Name: "C", Required: key.ModShortcut},
+			key.Filter{Focus: s.dragList, Name: "X", Required: key.ModShortcut},
+			key.Filter{Focus: s.dragList, Name: "V", Required: key.ModShortcut},
+			key.Filter{Focus: s.dragList, Name: key.NameDeleteBackward, Required: key.ModShortcut},
+			key.Filter{Focus: s.dragList, Name: key.NameDeleteForward},
+		)
+		if !ok {
+			break
+		}
+		switch ke := event.(type) {
 		case key.FocusEvent:
 			s.dragList.focused = ke.Focus
 			if !s.dragList.focused {
@@ -101,10 +128,13 @@ func (s FilledDragListStyle) Layout(gtx C) D {
 				break
 			}
 			s.dragList.command(gtx, ke)
-		case clipboard.Event:
-			s.dragList.TrackerList.PasteElements([]byte(ke.Text))
+		case transfer.DataEvent:
+			if b, err := io.ReadAll(ke.Open()); err == nil {
+				s.dragList.TrackerList.PasteElements([]byte(b))
+			}
+
 		}
-		op.InvalidateOp{}.Add(gtx.Ops)
+		gtx.Execute(op.InvalidateCmd{})
 	}
 
 	_, isMutable := s.dragList.TrackerList.ListData.(tracker.MutableListData)
@@ -128,12 +158,19 @@ func (s FilledDragListStyle) Layout(gtx C) D {
 			}
 			paint.FillShape(gtx.Ops, color, clip.Rect{Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
 
-			for _, ev := range gtx.Events(&s.dragList.tags[index]) {
+			for {
+				ev, ok := gtx.Event(pointer.Filter{
+					Target: &s.dragList.tags[index],
+					Kinds:  pointer.Press | pointer.Enter | pointer.Leave,
+				})
+				if !ok {
+					break
+				}
 				e, ok := ev.(pointer.Event)
 				if !ok {
 					continue
 				}
-				switch e.Type {
+				switch e.Kind {
 				case pointer.Enter:
 					s.dragList.HoverItem = index
 				case pointer.Leave:
@@ -148,22 +185,28 @@ func (s FilledDragListStyle) Layout(gtx C) D {
 					if !e.Modifiers.Contain(key.ModShift) {
 						s.dragList.TrackerList.SetSelected2(index)
 					}
-					key.FocusOp{Tag: &s.dragList.mainTag}.Add(gtx.Ops)
+					gtx.Execute(key.FocusCmd{Tag: s.dragList})
 				}
 			}
 			rect := image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
 			area := clip.Rect(rect).Push(gtx.Ops)
-			pointer.InputOp{Tag: &s.dragList.tags[index],
-				Types: pointer.Press | pointer.Enter | pointer.Leave,
-			}.Add(gtx.Ops)
+			event.Op(gtx.Ops, &s.dragList.tags[index])
 			area.Pop()
 			if index == s.dragList.TrackerList.Selected() && isMutable {
-				for _, ev := range gtx.Events(&s.dragList.focused) {
+				for {
+					target := &s.dragList.focused
+					if s.dragList.drag {
+						target = nil
+					}
+					ev, ok := gtx.Event(pointer.Filter{Target: target, Kinds: pointer.Drag | pointer.Press | pointer.Release | pointer.Cancel})
+					if !ok {
+						break
+					}
 					e, ok := ev.(pointer.Event)
 					if !ok {
 						continue
 					}
-					switch e.Type {
+					switch e.Kind {
 					case pointer.Press:
 						s.dragList.dragID = e.PointerID
 						s.dragList.drag = true
@@ -186,17 +229,12 @@ func (s FilledDragListStyle) Layout(gtx C) D {
 								swap = 1
 							}
 						}
-					case pointer.Release:
-						fallthrough
-					case pointer.Cancel:
+					case pointer.Release, pointer.Cancel:
 						s.dragList.drag = false
 					}
 				}
 				area := clip.Rect(rect).Push(gtx.Ops)
-				pointer.InputOp{Tag: &s.dragList.focused,
-					Types: pointer.Drag | pointer.Press | pointer.Release,
-					Grab:  s.dragList.drag,
-				}.Add(gtx.Ops)
+				event.Op(gtx.Ops, &s.dragList.focused)
 				pointer.CursorGrab.Add(gtx.Ops)
 				area.Pop()
 			}
@@ -225,7 +263,7 @@ func (s FilledDragListStyle) Layout(gtx C) D {
 	dims := s.dragList.List.Layout(gtx, count, listElem)
 	if !s.dragList.swapped && swap != 0 {
 		if s.dragList.TrackerList.MoveElements(swap) {
-			op.InvalidateOp{}.Add(gtx.Ops)
+			gtx.Execute(op.InvalidateCmd{})
 		}
 		s.dragList.swapped = true
 	} else {
@@ -238,12 +276,12 @@ func (e *DragList) command(gtx layout.Context, k key.Event) {
 	if k.Modifiers.Contain(key.ModShortcut) {
 		switch k.Name {
 		case "V":
-			clipboard.ReadOp{Tag: &e.mainTag}.Add(gtx.Ops)
+			gtx.Execute(clipboard.ReadCmd{Tag: e})
 			return
 		case "C", "X":
 			data, ok := e.TrackerList.CopyElements()
 			if ok && (k.Name == "C" || e.TrackerList.DeleteElements(false)) {
-				clipboard.WriteOp{Text: string(data)}.Add(gtx.Ops)
+				gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(data))})
 			}
 			return
 		case "A":

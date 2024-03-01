@@ -93,8 +93,8 @@ func (t *SongPanel) layoutMenuBar(gtx C, tr *Tracker) D {
 	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 
 	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		layout.Rigid(tr.layoutMenu("File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
-		layout.Rigid(tr.layoutMenu("Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...)),
+		layout.Rigid(tr.layoutMenu(gtx, "File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
+		layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...)),
 	)
 }
 
@@ -103,12 +103,12 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 
 	in := layout.UniformInset(unit.Dp(1))
 
-	panicBtnStyle := ToggleButton(tr.Theme, t.PanicBtn, "Panic (F12)")
-	rewindBtnStyle := ActionIcon(tr.Theme, t.RewindBtn, icons.AVFastRewind, "Rewind\n(F5)")
-	playBtnStyle := ToggleIcon(tr.Theme, t.PlayingBtn, icons.AVPlayArrow, icons.AVStop, "Play (F6 / Space)", "Stop (F6 / Space)")
-	recordBtnStyle := ToggleIcon(tr.Theme, t.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, "Record (F7)", "Stop (F7)")
-	noteTrackBtnStyle := ToggleIcon(tr.Theme, t.NoteTracking, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, "Follow\nOff\n(F8)", "Follow\nOn\n(F8)")
-	loopBtnStyle := ToggleIcon(tr.Theme, t.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, "Loop\nOff\n(Ctrl+L)", "Loop\nOn\n(Ctrl+L)")
+	panicBtnStyle := ToggleButton(gtx, tr.Theme, t.PanicBtn, "Panic (F12)")
+	rewindBtnStyle := ActionIcon(gtx, tr.Theme, t.RewindBtn, icons.AVFastRewind, "Rewind\n(F5)")
+	playBtnStyle := ToggleIcon(gtx, tr.Theme, t.PlayingBtn, icons.AVPlayArrow, icons.AVStop, "Play (F6 / Space)", "Stop (F6 / Space)")
+	recordBtnStyle := ToggleIcon(gtx, tr.Theme, t.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, "Record (F7)", "Stop (F7)")
+	noteTrackBtnStyle := ToggleIcon(gtx, tr.Theme, t.NoteTracking, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, "Follow\nOff\n(F8)", "Follow\nOn\n(F8)")
+	loopBtnStyle := ToggleIcon(gtx, tr.Theme, t.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, "Loop\nOff\n(Ctrl+L)", "Loop\nOn\n(Ctrl+L)")
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {

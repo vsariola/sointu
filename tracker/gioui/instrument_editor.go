@@ -1,14 +1,17 @@
 package gioui
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
+	"io"
 	"strconv"
 	"strings"
 
 	"gioui.org/font"
 	"gioui.org/io/clipboard"
+	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -45,6 +48,9 @@ type InstrumentEditor struct {
 	wasFocused          bool
 	presetMenuItems     []MenuItem
 	presetMenu          Menu
+	commentKeyFilters   []event.Filter
+	searchkeyFilters    []event.Filter
+	nameKeyFilters      []event.Filter
 }
 
 func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
@@ -72,6 +78,17 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		ret.presetMenuItems = append(ret.presetMenuItems, MenuItem{Text: name, IconBytes: icons.ImageAudiotrack, Doer: model.LoadPreset(index)})
 		return true
 	})
+	for k := range noteMap {
+		ret.commentKeyFilters = append(ret.commentKeyFilters, key.Filter{Name: k, Focus: ret.commentEditor})
+		ret.searchkeyFilters = append(ret.searchkeyFilters, key.Filter{Name: k, Focus: ret.searchEditor})
+		ret.nameKeyFilters = append(ret.nameKeyFilters, key.Filter{Name: k, Focus: ret.nameEditor})
+	}
+	ret.commentKeyFilters = append(ret.commentKeyFilters, key.Filter{Name: key.NameEscape, Focus: ret.commentEditor})
+	ret.searchkeyFilters = append(ret.searchkeyFilters, key.Filter{Name: key.NameEscape, Focus: ret.searchEditor})
+	ret.nameKeyFilters = append(ret.nameKeyFilters, key.Filter{Name: key.NameEscape, Focus: ret.nameEditor})
+	ret.commentKeyFilters = append(ret.commentKeyFilters, key.Filter{Name: key.NameSpace, Focus: ret.commentEditor})
+	ret.searchkeyFilters = append(ret.searchkeyFilters, key.Filter{Name: key.NameSpace, Focus: ret.searchEditor})
+	ret.nameKeyFilters = append(ret.nameKeyFilters, key.Filter{Name: key.NameSpace, Focus: ret.nameEditor})
 	return ret
 }
 
@@ -83,14 +100,16 @@ func (ie *InstrumentEditor) Focused() bool {
 	return ie.unitDragList.focused
 }
 
-func (ie *InstrumentEditor) ChildFocused() bool {
-	return ie.unitEditor.sliderList.Focused() || ie.instrumentDragList.Focused() || ie.commentEditor.Focused() || ie.nameEditor.Focused() || ie.searchEditor.Focused() ||
-		ie.addUnitBtn.Clickable.Focused() || ie.commentExpandBtn.Clickable.Focused() || ie.presetMenuBtn.Clickable.Focused() || ie.deleteInstrumentBtn.Clickable.Focused() || ie.copyInstrumentBtn.Clickable.Focused()
+func (ie *InstrumentEditor) childFocused(gtx C) bool {
+	return ie.unitEditor.sliderList.Focused() ||
+		ie.instrumentDragList.Focused() || gtx.Source.Focused(ie.commentEditor) || gtx.Source.Focused(ie.nameEditor) || gtx.Source.Focused(ie.searchEditor) ||
+		gtx.Source.Focused(ie.addUnitBtn.Clickable) || gtx.Source.Focused(ie.commentExpandBtn.Clickable) || gtx.Source.Focused(ie.presetMenuBtn.Clickable) ||
+		gtx.Source.Focused(ie.deleteInstrumentBtn.Clickable) || gtx.Source.Focused(ie.copyInstrumentBtn.Clickable)
 }
 
 func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
-	ie.wasFocused = ie.Focused() || ie.ChildFocused()
-	fullscreenBtnStyle := ToggleIcon(t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, "Enlarge (Ctrl+E)", "Shrink (Ctrl+E)")
+	ie.wasFocused = ie.Focused() || ie.childFocused(gtx)
+	fullscreenBtnStyle := ToggleIcon(gtx, t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, "Enlarge (Ctrl+E)", "Shrink (Ctrl+E)")
 
 	octave := func(gtx C) D {
 		in := layout.UniformInset(unit.Dp(1))
@@ -99,7 +118,7 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 		return dims
 	}
 
-	newBtnStyle := ActionIcon(t.Theme, ie.newInstrumentBtn, icons.ContentAdd, "Add\ninstrument\n(Ctrl+I)")
+	newBtnStyle := ActionIcon(gtx, t.Theme, ie.newInstrumentBtn, icons.ContentAdd, "Add\ninstrument\n(Ctrl+I)")
 	ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{}.Layout(
@@ -142,23 +161,23 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 
 func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 	header := func(gtx C) D {
-		commentExpandBtnStyle := ToggleIcon(t.Theme, ie.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, "Expand comment", "Collapse comment")
+		commentExpandBtnStyle := ToggleIcon(gtx, t.Theme, ie.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, "Expand comment", "Collapse comment")
 		presetMenuBtnStyle := TipIcon(t.Theme, ie.presetMenuBtn, icons.NavigationMenu, "Load preset")
 		copyInstrumentBtnStyle := TipIcon(t.Theme, ie.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
 		saveInstrumentBtnStyle := TipIcon(t.Theme, ie.saveInstrumentBtn, icons.ContentSave, "Save instrument")
 		loadInstrumentBtnStyle := TipIcon(t.Theme, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
-		deleteInstrumentBtnStyle := ActionIcon(t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, "Delete\ninstrument")
+		deleteInstrumentBtnStyle := ActionIcon(gtx, t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, "Delete\ninstrument")
 
 		m := PopupMenu(&ie.presetMenu, t.Theme.Shaper)
 
-		for ie.copyInstrumentBtn.Clickable.Clicked() {
+		for ie.copyInstrumentBtn.Clickable.Clicked(gtx) {
 			if contents, ok := t.Instruments().List().CopyElements(); ok {
-				clipboard.WriteOp{Text: string(contents)}.Add(gtx.Ops)
+				gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
 				t.Alerts().Add("Instrument copied to clipboard", tracker.Info)
 			}
 		}
 
-		for ie.saveInstrumentBtn.Clickable.Clicked() {
+		for ie.saveInstrumentBtn.Clickable.Clicked(gtx) {
 			writer, err := t.Explorer.CreateFile(t.InstrumentName().Value() + ".yml")
 			if err != nil {
 				continue
@@ -166,7 +185,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 			t.SaveInstrument(writer)
 		}
 
-		for ie.loadInstrumentBtn.Clickable.Clicked() {
+		for ie.loadInstrumentBtn.Clickable.Clicked(gtx) {
 			reader, err := t.Explorer.ChooseFile(".yml", ".json", ".4ki", ".4kp")
 			if err != nil {
 				continue
@@ -199,11 +218,11 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				layout.Rigid(deleteInstrumentBtnStyle.Layout))
 		}
 
-		for ie.presetMenuBtn.Clickable.Clicked() {
+		for ie.presetMenuBtn.Clickable.Clicked(gtx) {
 			ie.presetMenu.Visible = true
 		}
 
-		if ie.commentExpandBtn.Bool.Value() || ie.commentEditor.Focused() { // we draw once the widget after it manages to lose focus
+		if ie.commentExpandBtn.Bool.Value() || gtx.Source.Focused(ie.commentEditor) { // we draw once the widget after it manages to lose focus
 			if ie.commentEditor.Text() != ie.commentString.Value() {
 				ie.commentEditor.SetText(ie.commentString.Value())
 			}
@@ -211,8 +230,11 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				layout.Rigid(header),
 				layout.Rigid(func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					key.InputOp{Tag: &ie.unitDragList, Keys: globalKeys + "|⎋"}.Add(gtx.Ops)
-					for _, event := range gtx.Events(&ie.unitDragList) {
+					for {
+						event, ok := gtx.Event(ie.commentKeyFilters...)
+						if !ok {
+							break
+						}
 						if e, ok := event.(key.Event); ok && e.State == key.Press && e.Name == key.NameEscape {
 							ie.instrumentDragList.Focus()
 						}
@@ -249,13 +271,6 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 			k := byte(255 - level*127)
 			color := color.NRGBA{R: 255, G: k, B: 255, A: 255}
 			if i == ie.instrumentDragList.TrackerList.Selected() {
-				for _, ev := range ie.nameEditor.Events() {
-					_, ok := ev.(widget.SubmitEvent)
-					if ok {
-						ie.instrumentDragList.Focus()
-						continue
-					}
-				}
 				if n := name; n != ie.nameEditor.Text() {
 					ie.nameEditor.SetText(n)
 				}
@@ -264,11 +279,30 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				editor.HintColor = instrumentNameHintColor
 				editor.TextSize = unit.Sp(12)
 				editor.Font = labelDefaultFont
+				for {
+					ev, ok := ie.nameEditor.Update(gtx)
+					if !ok {
+						break
+					}
+					_, ok = ev.(widget.SubmitEvent)
+					if ok {
+						ie.instrumentDragList.Focus()
+						continue
+					}
+				}
 				dims := layout.Center.Layout(gtx, func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					key.InputOp{Tag: &ie.nameEditor, Keys: globalKeys}.Add(gtx.Ops)
 					return editor.Layout(gtx)
 				})
+				for { // don't let key presses flow through from the editor
+					event, ok := gtx.Event(ie.nameKeyFilters...)
+					if !ok {
+						break
+					}
+					if e, ok := event.(key.Event); ok && e.State == key.Press && e.Name == key.NameEscape {
+						ie.instrumentDragList.Focus()
+					}
+				}
 				ie.nameString.Set(ie.nameEditor.Text())
 				return dims
 			}
@@ -297,9 +331,15 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-	key.InputOp{Tag: ie.instrumentDragList, Keys: "↓|⏎|⌤"}.Add(gtx.Ops)
-
-	for _, event := range gtx.Events(ie.instrumentDragList) {
+	for {
+		event, ok := gtx.Event(
+			key.Filter{Focus: ie.instrumentDragList, Name: key.NameDownArrow},
+			key.Filter{Focus: ie.instrumentDragList, Name: key.NameReturn},
+			key.Filter{Focus: ie.instrumentDragList, Name: key.NameEnter},
+		)
+		if !ok {
+			break
+		}
 		switch e := event.(type) {
 		case key.Event:
 			switch e.State {
@@ -308,7 +348,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				case key.NameDownArrow:
 					ie.unitDragList.Focus()
 				case key.NameReturn, key.NameEnter:
-					ie.nameEditor.Focus()
+					gtx.Execute(key.FocusCmd{Tag: ie.nameEditor})
 					l := len(ie.nameEditor.Text())
 					ie.nameEditor.SetCaret(l, l)
 				}
@@ -321,9 +361,10 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 	instrumentList.LayoutScrollBar(gtx)
 	return dims
 }
+
 func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	// TODO: how to ie.unitDragList.Focus()
-	addUnitBtnStyle := ActionIcon(t.Theme, ie.addUnitBtn, icons.ContentAdd, "Add unit (Enter)")
+	addUnitBtnStyle := ActionIcon(gtx, t.Theme, ie.addUnitBtn, icons.ContentAdd, "Add unit (Enter)")
 	addUnitBtnStyle.IconButtonStyle.Color = t.Theme.ContrastFg
 	addUnitBtnStyle.IconButtonStyle.Background = t.Theme.Fg
 	addUnitBtnStyle.IconButtonStyle.Inset = layout.UniformInset(unit.Dp(4))
@@ -365,8 +406,26 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 			layout.Flexed(1, func(gtx C) D {
 				if i == ie.unitDragList.TrackerList.Selected() {
-					for _, ev := range ie.searchEditor.Events() {
-						_, ok := ev.(widget.SubmitEvent)
+					editor := material.Editor(t.Theme, ie.searchEditor, "---")
+					editor.Color = color
+					editor.HintColor = instrumentNameHintColor
+					editor.TextSize = unit.Sp(12)
+					editor.Font = f
+					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
+					txt := u.Type
+					str := tracker.String{StringData: (*tracker.UnitSearch)(t.Model)}
+					if t.UnitSearching().Value() {
+						txt = str.Value()
+					}
+					if ie.searchEditor.Text() != txt {
+						ie.searchEditor.SetText(txt)
+					}
+					for {
+						ev, ok := ie.searchEditor.Update(gtx)
+						if !ok {
+							break
+						}
+						_, ok = ev.(widget.SubmitEvent)
 						if ok {
 							txt := ""
 							ie.unitDragList.Focus()
@@ -383,23 +442,16 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 							continue
 						}
 					}
-					editor := material.Editor(t.Theme, ie.searchEditor, "---")
-					editor.Color = color
-					editor.HintColor = instrumentNameHintColor
-					editor.TextSize = unit.Sp(12)
-					editor.Font = f
-
-					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					key.InputOp{Tag: &ie.searchEditor, Keys: globalKeys}.Add(gtx.Ops)
-					txt := u.Type
-					str := tracker.String{StringData: (*tracker.UnitSearch)(t.Model)}
-					if t.UnitSearching().Value() {
-						txt = str.Value()
-					}
-					if ie.searchEditor.Text() != txt {
-						ie.searchEditor.SetText(txt)
-					}
 					ret := editor.Layout(gtx)
+					for { // don't let key presses flow through from the editor
+						event, ok := gtx.Event(ie.searchkeyFilters...)
+						if !ok {
+							break
+						}
+						if e, ok := event.(key.Event); ok && e.State == key.Press && e.Name == key.NameEscape {
+							ie.instrumentDragList.Focus()
+						}
+					}
 					if ie.searchEditor.Text() != txt {
 						str.Set(ie.searchEditor.Text())
 					}
@@ -424,8 +476,18 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		return layout.Stack{Alignment: layout.SE}.Layout(gtx,
 			layout.Expanded(func(gtx C) D {
 				defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-				key.InputOp{Tag: ie.unitDragList, Keys: "→|⏎|Ctrl-⏎|⌫|⎋"}.Add(gtx.Ops)
-				for _, event := range gtx.Events(ie.unitDragList) {
+				for {
+					event, ok := gtx.Event(
+						key.Filter{Focus: ie.unitDragList, Name: key.NameRightArrow},
+						key.Filter{Focus: ie.unitDragList, Name: key.NameEnter, Optional: key.ModCtrl},
+						key.Filter{Focus: ie.unitDragList, Name: key.NameReturn, Optional: key.ModCtrl},
+						key.Filter{Focus: ie.unitDragList, Name: key.NameDeleteBackward},
+						key.Filter{Focus: ie.unitDragList, Name: key.NameEscape},
+					)
+					if !ok {
+						break
+					}
+
 					switch e := event.(type) {
 					case key.Event:
 						switch e.State {
@@ -437,13 +499,13 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 								ie.unitEditor.sliderList.Focus()
 							case key.NameDeleteBackward:
 								t.Units().SetSelectedType("")
-								ie.searchEditor.Focus()
+								gtx.Execute(key.FocusCmd{Tag: ie.searchEditor})
 								l := len(ie.searchEditor.Text())
 								ie.searchEditor.SetCaret(l, l)
-							case key.NameReturn:
+							case key.NameEnter, key.NameReturn:
 								t.Model.AddUnit(e.Modifiers.Contain(key.ModCtrl)).Do()
 								ie.searchEditor.SetText("")
-								ie.searchEditor.Focus()
+								gtx.Execute(key.FocusCmd{Tag: ie.searchEditor})
 								l := len(ie.searchEditor.Text())
 								ie.searchEditor.SetCaret(l, l)
 							}

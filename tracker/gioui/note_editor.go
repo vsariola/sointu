@@ -83,7 +83,50 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 }
 
 func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
-	for _, e := range gtx.Events(&te.tag) {
+	for {
+		e, ok := gtx.Event(
+			key.Filter{Focus: te.scrollTable, Name: "A"},
+			key.Filter{Focus: te.scrollTable, Name: "B"},
+			key.Filter{Focus: te.scrollTable, Name: "C"},
+			key.Filter{Focus: te.scrollTable, Name: "D"},
+			key.Filter{Focus: te.scrollTable, Name: "E"},
+			key.Filter{Focus: te.scrollTable, Name: "F"},
+			key.Filter{Focus: te.scrollTable, Name: "G"},
+			key.Filter{Focus: te.scrollTable, Name: "H"},
+			key.Filter{Focus: te.scrollTable, Name: "I"},
+			key.Filter{Focus: te.scrollTable, Name: "J"},
+			key.Filter{Focus: te.scrollTable, Name: "K"},
+			key.Filter{Focus: te.scrollTable, Name: "L"},
+			key.Filter{Focus: te.scrollTable, Name: "M"},
+			key.Filter{Focus: te.scrollTable, Name: "N"},
+			key.Filter{Focus: te.scrollTable, Name: "O"},
+			key.Filter{Focus: te.scrollTable, Name: "P"},
+			key.Filter{Focus: te.scrollTable, Name: "Q"},
+			key.Filter{Focus: te.scrollTable, Name: "R"},
+			key.Filter{Focus: te.scrollTable, Name: "S"},
+			key.Filter{Focus: te.scrollTable, Name: "T"},
+			key.Filter{Focus: te.scrollTable, Name: "U"},
+			key.Filter{Focus: te.scrollTable, Name: "V"},
+			key.Filter{Focus: te.scrollTable, Name: "W"},
+			key.Filter{Focus: te.scrollTable, Name: "X"},
+			key.Filter{Focus: te.scrollTable, Name: "Y"},
+			key.Filter{Focus: te.scrollTable, Name: "Z"},
+			key.Filter{Focus: te.scrollTable, Name: "0"},
+			key.Filter{Focus: te.scrollTable, Name: "1"},
+			key.Filter{Focus: te.scrollTable, Name: "2"},
+			key.Filter{Focus: te.scrollTable, Name: "3"},
+			key.Filter{Focus: te.scrollTable, Name: "4"},
+			key.Filter{Focus: te.scrollTable, Name: "5"},
+			key.Filter{Focus: te.scrollTable, Name: "6"},
+			key.Filter{Focus: te.scrollTable, Name: "7"},
+			key.Filter{Focus: te.scrollTable, Name: "8"},
+			key.Filter{Focus: te.scrollTable, Name: "9"},
+			key.Filter{Focus: te.scrollTable, Name: ","},
+			key.Filter{Focus: te.scrollTable, Name: "."},
+		)
+		if !ok {
+			break
+		}
 		switch e := e.(type) {
 		case key.Event:
 			if e.State == key.Release {
@@ -99,7 +142,6 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-	key.InputOp{Tag: &te.tag, Keys: "Ctrl-⌫|Ctrl-⌦|⏎|Ctrl-⏎|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|0|1|2|3|4|5|6|7|8|9|,|."}.Add(gtx.Ops)
 
 	return Surface{Gray: 24, Focus: te.scrollTable.Focused()}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -115,19 +157,19 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 
 func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 	return Surface{Gray: 37, Focus: te.scrollTable.Focused() || te.scrollTable.ChildFocused(), FitSize: true}.Layout(gtx, func(gtx C) D {
-		addSemitoneBtnStyle := ActionButton(t.Theme, te.AddSemitoneBtn, "+1")
-		subtractSemitoneBtnStyle := ActionButton(t.Theme, te.SubtractSemitoneBtn, "-1")
-		addOctaveBtnStyle := ActionButton(t.Theme, te.AddOctaveBtn, "+12")
-		subtractOctaveBtnStyle := ActionButton(t.Theme, te.SubtractOctaveBtn, "-12")
-		noteOffBtnStyle := ActionButton(t.Theme, te.NoteOffBtn, "Note Off")
-		deleteTrackBtnStyle := ActionIcon(t.Theme, te.DeleteTrackBtn, icons.ActionDelete, "Delete track\n(Ctrl+Shift+T)")
-		newTrackBtnStyle := ActionIcon(t.Theme, te.NewTrackBtn, icons.ContentAdd, "Add track\n(Ctrl+T)")
+		addSemitoneBtnStyle := ActionButton(gtx, t.Theme, te.AddSemitoneBtn, "+1")
+		subtractSemitoneBtnStyle := ActionButton(gtx, t.Theme, te.SubtractSemitoneBtn, "-1")
+		addOctaveBtnStyle := ActionButton(gtx, t.Theme, te.AddOctaveBtn, "+12")
+		subtractOctaveBtnStyle := ActionButton(gtx, t.Theme, te.SubtractOctaveBtn, "-12")
+		noteOffBtnStyle := ActionButton(gtx, t.Theme, te.NoteOffBtn, "Note Off")
+		deleteTrackBtnStyle := ActionIcon(gtx, t.Theme, te.DeleteTrackBtn, icons.ActionDelete, "Delete track\n(Ctrl+Shift+T)")
+		newTrackBtnStyle := ActionIcon(gtx, t.Theme, te.NewTrackBtn, icons.ContentAdd, "Add track\n(Ctrl+T)")
 		in := layout.UniformInset(unit.Dp(1))
 		voiceUpDown := func(gtx C) D {
 			numStyle := NumericUpDown(t.Theme, te.TrackVoices, "Number of voices for this track")
 			return in.Layout(gtx, numStyle.Layout)
 		}
-		effectBtnStyle := ToggleButton(t.Theme, te.EffectBtn, "Hex")
+		effectBtnStyle := ToggleButton(gtx, t.Theme, te.EffectBtn, "Hex")
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Dp(unit.Dp(12)), 0)} }),
 			layout.Rigid(addSemitoneBtnStyle.Layout),
@@ -304,7 +346,7 @@ func (te *NoteEditor) command(gtx C, t *Tracker, e key.Event) {
 	}
 	var n byte
 	if t.Model.Notes().Effect(te.scrollTable.Table.Cursor().X) {
-		if nibbleValue, err := strconv.ParseInt(e.Name, 16, 8); err == nil {
+		if nibbleValue, err := strconv.ParseInt(string(e.Name), 16, 8); err == nil {
 			n = t.Model.Notes().Value(te.scrollTable.Table.Cursor())
 			t.Model.Notes().FillNibble(byte(nibbleValue), t.Model.Notes().LowNibble())
 			goto validNote
