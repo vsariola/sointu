@@ -85,8 +85,11 @@ func (st *ScrollTable) ChildFocused() bool {
 }
 
 func (s ScrollTableStyle) Layout(gtx C) D {
+	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
+	event.Op(gtx.Ops, s.ScrollTable)
+
 	p := image.Pt(gtx.Dp(s.RowTitleWidth), gtx.Dp(s.ColumnTitleHeight))
-	s.handleEvents(gtx)
+	s.handleEvents(gtx, p)
 
 	return Surface{Gray: 24, Focus: s.ScrollTable.Focused() || s.ScrollTable.ChildFocused()}.Layout(gtx, func(gtx C) D {
 		defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
@@ -102,7 +105,7 @@ func (s ScrollTableStyle) Layout(gtx C) D {
 	})
 }
 
-func (s *ScrollTableStyle) handleEvents(gtx layout.Context) {
+func (s *ScrollTableStyle) handleEvents(gtx layout.Context, p image.Point) {
 	for {
 		e, ok := gtx.Event(
 			key.FocusFilter{Target: s.ScrollTable},
@@ -131,6 +134,11 @@ func (s *ScrollTableStyle) handleEvents(gtx layout.Context) {
 		case key.FocusEvent:
 			s.ScrollTable.focused = e.Focus
 		case pointer.Event:
+			if int(e.Position.X) < p.X || int(e.Position.Y) < p.Y {
+				break
+			}
+			e.Position.X -= float32(p.X)
+			e.Position.Y -= float32(p.Y)
 			if e.Kind == pointer.Press {
 				gtx.Execute(key.FocusCmd{Tag: s.ScrollTable})
 			}
@@ -188,7 +196,6 @@ func (s ScrollTableStyle) layoutTable(gtx C, p image.Point) {
 		s.ScrollTable.requestFocus = false
 		gtx.Execute(key.FocusCmd{Tag: s.ScrollTable})
 	}
-	event.Op(gtx.Ops, s.ScrollTable)
 	cellWidth := gtx.Dp(s.CellWidth)
 	cellHeight := gtx.Dp(s.CellHeight)
 
