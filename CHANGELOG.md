@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Massive rewrite of the GUI, in particular allowing better copying, pasting and
   scrolling of table-based data (order list and note data).
 - Dbgain unit, which allows defining the gain in decibels (-40 dB to +40dB)
+- `+` and `-` keys add/subtract values in order editor and pattern editor
+  ([#65][i65])
 
 ### Fixed
 - 32-bit su_load_gmdls clobbered ebx, even though __stdcall demands it to be not
@@ -140,6 +142,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [0.3.0]: https://github.com/vsariola/sointu/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/vsariola/sointu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/vsariola/sointu/compare/4klang-3.11...v0.1.0
+[i65]: https://github.com/vsariola/sointu/issues/65
 [i112]: https://github.com/vsariola/sointu/issues/112
 [i116]: https://github.com/vsariola/sointu/issues/116
 [i120]: https://github.com/vsariola/sointu/issues/120

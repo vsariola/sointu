@@ -123,8 +123,8 @@ func (s *ScrollTableStyle) handleEvents(gtx layout.Context) {
 			key.Filter{Focus: s.ScrollTable, Name: "C", Required: key.ModShortcut},
 			key.Filter{Focus: s.ScrollTable, Name: "V", Required: key.ModShortcut},
 			key.Filter{Focus: s.ScrollTable, Name: "X", Required: key.ModShortcut},
-			key.Filter{Focus: s.ScrollTable, Name: ",", Required: key.ModShift},
-			key.Filter{Focus: s.ScrollTable, Name: ".", Required: key.ModShift},
+			key.Filter{Focus: s.ScrollTable, Name: "+"},
+			key.Filter{Focus: s.ScrollTable, Name: "-"},
 		)
 		if !ok {
 			break
@@ -291,10 +291,12 @@ func (s *ScrollTable) command(gtx C, e key.Event) {
 		s.Table.SetCursorX(0)
 	case key.NameEnd:
 		s.Table.SetCursorX(s.Table.Width() - 1)
-	case ".":
+	case "+":
 		s.Table.Add(1)
-	case ",":
+		return
+	case "-":
 		s.Table.Add(-1)
+		return
 	}
 	if !e.Modifiers.Contain(key.ModShift) {
 		s.Table.SetCursor2(s.Table.Cursor())
