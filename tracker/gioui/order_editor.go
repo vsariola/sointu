@@ -74,11 +74,15 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 		return D{Size: image.Pt(gtx.Dp(patternCellWidth), h)}
 	}
 
-	rowTitle := func(gtx C, j int) D {
-		w := gtx.Dp(unit.Dp(30))
-		if playPos := t.PlayPosition(); t.SongPanel.PlayingBtn.Bool.Value() && j == playPos.OrderRow {
+	rowTitleBg := func(gtx C, j int) D {
+		if t.SongPanel.PlayingBtn.Bool.Value() && j == t.PlayPosition().OrderRow {
 			paint.FillShape(gtx.Ops, patternPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Dp(patternCellHeight))}.Op())
 		}
+		return D{}
+	}
+
+	rowTitle := func(gtx C, j int) D {
+		w := gtx.Dp(unit.Dp(30))
 		color := rowMarkerPatternTextColor
 		if l := t.Loop(); j >= l.Start && j < l.Start+l.Length {
 			color = loopMarkerColor
@@ -111,7 +115,7 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 		return D{Size: image.Pt(gtx.Dp(patternCellWidth), gtx.Dp(patternCellHeight))}
 	}
 
-	table := FilledScrollTable(t.Theme, oe.scrollTable, cell, colTitle, rowTitle, nil, nil)
+	table := FilledScrollTable(t.Theme, oe.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)
 	table.ColumnTitleHeight = orderTitleHeight
 
 	return table.Layout(gtx)
