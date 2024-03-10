@@ -77,6 +77,12 @@ func (recording *Recording) Score(patch sointu.Patch, rowsPerBeat, rowsPerPatter
 			tracks[i][oldestIndex] = append(tracks[i][oldestIndex], n)
 		}
 	}
+	// if there was tracks that had no notes, create empty tracks for them
+	for i := range channelNotes {
+		if l := len(tracks[i]); l == 0 && l < patch[i].NumVoices {
+			tracks[i] = append(tracks[i], []recordingNote{})
+		}
+	}
 	songLengthPatterns := (frameToRow(recording.BPM, rowsPerBeat, recording.TotalFrames) + rowsPerPattern - 1) / rowsPerPattern
 	songLengthRows := songLengthPatterns * rowsPerPattern
 	songTracks := make([]sointu.Track, 0)

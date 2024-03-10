@@ -23,6 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   ([#65][i65])
 
 ### Fixed
+- When recording notes from VSTI, no track was created for instruments that had
+  no notes triggered, resulting in misalignment of the tracks from instruments.
 - 32-bit su_load_gmdls clobbered ebx, even though __stdcall demands it to be not
   touched ([#130][i130])
 - Spaces are allowed in instrument names ([#120][i120])
