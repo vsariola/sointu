@@ -124,8 +124,8 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 func (oe *OrderEditor) handleEvents(gtx C, t *Tracker) {
 	for {
 		e, ok := gtx.Event(
-			key.Filter{Focus: oe.scrollTable, Name: key.NameDeleteBackward, Optional: key.ModShortcut},
-			key.Filter{Focus: oe.scrollTable, Name: key.NameDeleteForward, Optional: key.ModShortcut},
+			key.Filter{Focus: oe.scrollTable, Name: key.NameDeleteBackward, Required: key.ModShortcut},
+			key.Filter{Focus: oe.scrollTable, Name: key.NameDeleteForward, Required: key.ModShortcut},
 			key.Filter{Focus: oe.scrollTable, Name: key.NameReturn, Optional: key.ModShortcut},
 			key.Filter{Focus: oe.scrollTable, Name: "0"},
 			key.Filter{Focus: oe.scrollTable, Name: "1"},
