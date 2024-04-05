@@ -353,6 +353,16 @@ func (p *X86Macros) FmtStack() string {
 	return b.String()
 }
 
+func (p *X86Macros) Export(name string, numParams int) string {
+	if !p.Amd64 && p.OS == "windows" {
+		return fmt.Sprintf("global _%[1]v@%[2]v\n_%[1]v@%[2]v:", name, numParams*4)
+	}
+	if p.OS == "darwin" {
+		return fmt.Sprintf("global _%[1]v\n_%[1]v:", name)
+	}
+	return fmt.Sprintf("global %[1]v\n%[1]v:", name)
+}
+
 func (p *X86Macros) ExportFunc(name string, params ...string) string {
 	numRegisters := 0 // in 32-bit systems, we use stdcall: everything in stack
 	switch {
@@ -371,13 +381,7 @@ func (p *X86Macros) ExportFunc(name string, params ...string) string {
 		reverseParams[len(params)-1-i] = param
 	}
 	p.Stacklocs = append(reverseParams, "retaddr_"+name) // in 32-bit, we use stdcall and parameters are in the stack
-	if !p.Amd64 && p.OS == "windows" {
-		return fmt.Sprintf("%[1]v\nglobal _%[2]v@%[3]v\n_%[2]v@%[3]v:", p.SectText(name), name, len(params)*4)
-	}
-	if p.OS == "darwin" {
-		return fmt.Sprintf("%[1]v\nglobal _%[2]v\n_%[2]v:", p.SectText(name), name)
-	}
-	return fmt.Sprintf("%[1]v\nglobal %[2]v\n%[2]v:", p.SectText(name), name)
+	return fmt.Sprintf("%[1]v\n%[2]v", p.SectText(name), p.Export(name, len(params)))
 }
 
 func (p *X86Macros) Input(unit string, port string) (string, error) {

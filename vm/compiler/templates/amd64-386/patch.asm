@@ -114,6 +114,7 @@ su_op_advance_finish:
 ;   Output:     st0     :   2^x
 ;-------------------------------------------------------------------------------
 {{- if not (.HasCall "su_nonlinear_map")}}{{.SectText "su_power"}}{{end}}
+{{.Export "su_power" 0}}
 su_power:
     fld1          ; 1 x
     fld st1       ; x 1 x

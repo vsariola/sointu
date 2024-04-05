@@ -21,6 +21,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Dbgain unit, which allows defining the gain in decibels (-40 dB to +40dB)
 - `+` and `-` keys add/subtract values in order editor and pattern editor
   ([#65][i65])
+- The function `su_power` is exported so people can reuse it in the main code;
+  however, as it assumes the parameter passed in st0 on the x87 stack and
+  similarly returns it value in st0 on the x87 stack, to my knowledge there is
+  no calling convention that would correspond this behaviour, so you need to
+  define a header for it yourself and take care of putting the float value on
+  x87 stack.
 
 ### Fixed
 - When recording notes from VSTI, no track was created for instruments that had
