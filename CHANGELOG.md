@@ -29,6 +29,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   x87 stack.
 
 ### Fixed
+- Modulating delaytime in wasm could crash, because delay time was converted to
+  int with i32.trunc_f32_u. Using i32.trunc_f32_s fixed this.
 - When recording notes from VSTI, no track was created for instruments that had
   no notes triggered, resulting in misalignment of the tracks from instruments.
 - 32-bit su_load_gmdls clobbered ebx, even though __stdcall demands it to be not

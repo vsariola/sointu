@@ -313,7 +313,7 @@
                             ))
 {{- end}}
 {{- if .SupportsModulation "delay" "delaytime"}}
-                            (i32.trunc_f32_u (f32.add
+                            (i32.trunc_f32_s (f32.add
                                 (f32.add
                                     (local.get $delayTime)
                                     (f32.mul
@@ -324,7 +324,7 @@
                                 (f32.const 0.5)
                             ))
 {{- else}}
-                            (i32.trunc_f32_u (f32.add (local.get $delayTime) (f32.const 0.5)))
+                            (i32.trunc_f32_s (f32.add (local.get $delayTime) (f32.const 0.5)))
 {{- end}}
 {{- else}}
                             (i32.load16_u
