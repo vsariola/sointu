@@ -536,4 +536,4 @@ The original 4klang: Dominik Ries ([gopher/Alcatraz](https://github.com/hzdgophe
 
 Sointu: Veikko Sariola (pestis/bC!), [Apollo/bC!](https://github.com/moitias),
 [NR4/Team210](https://github.com/LeStahL/), [PoroCYon](https://github.com/PoroCYon/4klang),
-[kendfss](https://github.com/kendfss)
+[kendfss](https://github.com/kendfss), [anticore](https://github.com/anticore)
