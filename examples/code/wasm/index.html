@@ -17,31 +17,25 @@
           .then((response) => response.arrayBuffer())
           .then((bytes) => WebAssembly.instantiate(bytes, { m: Math }))
           .then(({ instance }) => {
-            const context = new AudioContext();
+            const context = new AudioContext({ sampleRate: 44100 });
 
-            let wasmBuffer = instance.exports.t.value
-              ? new Int16Array(
-                  instance.exports.m.buffer,
-                  instance.exports.s.value,
-                  instance.exports.l.value / 2
-                )
-              : new Float32Array(
-                  instance.exports.m.buffer,
-                  instance.exports.s.value,
-                  instance.exports.l.value / 4
-                );
+            let frames = instance.exports.t.value
+              ? instance.exports.l.value / 4
+              : instance.exports.l.value / 8;
 
-            const buffer = context.createBuffer(
-              2,
-              context.sampleRate * 2,
-              context.sampleRate
+            let wasmBuffer = new Float32Array(
+              instance.exports.m.buffer,
+              instance.exports.s.value,
+              frames * 2
             );
+
+            const buffer = context.createBuffer(2, frames, context.sampleRate);
 
             // convert wasm buffer to audio buffer
             for (let channel = 0; channel < 2; channel++) {
               const buffering = buffer.getChannelData(channel);
-              for (let i = 0; i < context.sampleRate * 2; i++) {
-                buffering[i] = wasmBuffer[i];
+              for (let i = 0; i < frames; i++) {
+                buffering[i] = wasmBuffer[i * 2 + channel];
               }
             }
 
