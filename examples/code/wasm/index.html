@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>sointu WASM example</title>
+  </head>
+
+  <body>
+    <script type="module">
+      // button to start audio context
+      const button = document.createElement("button");
+      button.innerHTML = "start";
+      document.body.appendChild(button);
+      button.onclick = () => {
+        document.body.removeChild(button);
+
+        fetch("test_chords.wasm")
+          .then((response) => response.arrayBuffer())
+          .then((bytes) => WebAssembly.instantiate(bytes, { m: Math }))
+          .then(({ instance }) => {
+            const context = new AudioContext({ sampleRate: 44100 });
+
+            let frames = instance.exports.t.value
+              ? instance.exports.l.value / 4
+              : instance.exports.l.value / 8;
+
+            let wasmBuffer = new Float32Array(
+              instance.exports.m.buffer,
+              instance.exports.s.value,
+              frames * 2
+            );
+
+            const buffer = context.createBuffer(2, frames, context.sampleRate);
+
+            // convert wasm buffer to audio buffer
+            for (let channel = 0; channel < 2; channel++) {
+              const buffering = buffer.getChannelData(channel);
+              for (let i = 0; i < frames; i++) {
+                buffering[i] = wasmBuffer[i * 2 + channel];
+              }
+            }
+
+            // connect to output and start playing
+            const src = context.createBufferSource();
+            src.buffer = buffer;
+            src.connect(context.destination);
+            src.start();
+          });
+      };
+    </script>
+  </body>
+</html>

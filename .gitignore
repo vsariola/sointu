@@ -33,3 +33,4 @@ actual_output/
 *.dll
 
 **/testdata/fuzz/
+.DS_Store
