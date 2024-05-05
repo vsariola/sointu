@@ -56,7 +56,7 @@ su_render_samples_loop:
         push    {{.DI}}
         fnstsw  [{{.SP}}]                         ; store the FPU status flag to stack top
         pop     {{.DI}}                           ; {{.DI}} = FPU status flag
-        and     {{.DI}}, 0b0011100001000101        ; mask TOP pointer, stack error, zero divide and in{{.VAL}}id operation
+        and     {{.DI}}, 0011100001000101b        ; mask TOP pointer, stack error, zero divide and in{{.VAL}}id operation
         test    {{.DI}},{{.DI}}                       ; all the aforementioned bits should be 0!
         jne     su_render_samples_time_finish ; otherwise, we exit due to error
         cmp     eax, [{{.Stack "RowLength"}}]                    ; if rowtick >= maxtime

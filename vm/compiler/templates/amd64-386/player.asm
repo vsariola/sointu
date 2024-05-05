@@ -120,7 +120,7 @@ su_update_voices_trackloop:
         movzx   eax, byte [{{.SI}}]                     ; eax = current pattern
         imul    eax, {{.PatternLength}}                   ; eax = offset to current pattern data
 {{- .Prepare "su_patterns" .AX | indent 4}}
-        movzx   eax,byte [{{.Use "su_patterns" .AX}},{{.DX}}]  ; eax = note
+        movzx   eax,byte [{{.Use "su_patterns" .AX}} + {{.DX}}]  ; eax = note
         push    {{.DX}}                                 ; Stack: ptrnrow
         xor     edx, edx                            ; edx=0
         mov     ecx, ebx                            ; ecx=first voice of the track to be done
