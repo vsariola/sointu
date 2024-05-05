@@ -92,7 +92,7 @@ jobs:
             asmnasm: /Users/runner/nasm/nasm
             output: sointu-compile
             params: cmd/sointu-compile/main.go
-          - os: macos-latest
+          - os: macos-12 # this is intel still
             asmnasm: /Users/runner/nasm/nasm
             output: sointu-track-native
             params: -tags=native cmd/sointu-track/main.go
