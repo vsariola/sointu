@@ -50,9 +50,9 @@ Sointu consists of two core elements:
   .yml files.
 - A compiler, likewise written in go, which can be invoked from the command line
   to compile these .yml files into .asm or .wat code. For x86/amd64, the
-  resulting .asm can be then compiled by [nasm](https://www.nasm.us/) or
-  [yasm](https://yasm.tortall.net). For browsers, the resulting .wat can be
-  compiled by [wat2wasm](https://github.com/WebAssembly/wabt).
+  resulting .asm can be then compiled by [nasm](https://www.nasm.us/). For
+  browsers, the resulting .wat can be compiled by
+  [wat2wasm](https://github.com/WebAssembly/wabt).
 
 This is how the current prototype app looks like:
 
@@ -212,7 +212,7 @@ get***).
 #### Prerequisites
 
 - [CMake](https://cmake.org)
-- [nasm](https://www.nasm.us/) or [yasm](https://yasm.tortall.net)
+- [nasm](https://www.nasm.us/)
 - *cgo compatible compiler* e.g. [gcc](https://gcc.gnu.org/). On windows, you
   best bet is [MinGW](http://www.mingw.org/). We use the
   [tdm-gcc](https://jmeubank.github.io/tdm-gcc/)
@@ -260,15 +260,16 @@ go run -tags=native cmd/sointu-play/main.go tests/test_chords.yml
 > opcodes). In future, the app should give warnings if the user is about to
 > exceed the capabilities of a target platform.
 
-> :warning: **If you are using MinGW and Yasm**: Yasm 1.3.0 (currently still the
-> latest stable release) and GNU linker do not play nicely along, trashing the
-> BSS layout. See
+> :warning: **If you are using Yasm instead of Nasm, and you are using MinGW**:
+> Yasm 1.3.0 (currently still the latest stable release) and GNU linker do not
+> play nicely along, trashing the BSS layout. The linker had placed our synth
+> object overlapping with DLL call addresses; very funny stuff to debug. See
 > [here](https://tortall.lighthouseapp.com/projects/78676/tickets/274-bss-problem-with-windows-win64)
 > and the fix
 > [here](https://github.com/yasm/yasm/commit/1910e914792399137dec0b047c59965207245df5).
-> Use a newer nightly build of yasm that includes the fix. The linker had placed
-> our synth object overlapping with DLL call addresses; very funny stuff to
-> debug.
+> Since Nasm is nowadays under BSD license, there is absolutely no reason to use
+> Yasm. However, if you do, use a newer nightly build of Yasm that includes the
+> fix.
 
 ### Tests
 
@@ -280,7 +281,7 @@ intro.
 
 - [go](https://golang.org/)
 - [CMake](https://cmake.org) with CTest
-- [nasm](https://www.nasm.us/) or [yasm](https://yasm.tortall.net)
+- [nasm](https://www.nasm.us/)
 - Your favorite CMake compatible c-compiler & build tool. Results have been
   obtained using Visual Studio 2019, gcc&make on linux, MinGW&mingw32-make, and
   ninja&AppleClang.
