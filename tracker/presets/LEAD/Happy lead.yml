@@ -1,0 +1,52 @@
+name: Happy lead
+comment: |-
+    Generic pluck generator
+    Use oscillator type, color and shape to alter the sound properties
+numvoices: 4
+units:
+    - type: envelope
+      id: 163
+      parameters: {attack: 49, decay: 87, gain: 83, release: 76, stereo: 0, sustain: 79}
+    - type: envelope
+      id: 215
+      parameters: {attack: 0, decay: 76, gain: 127, release: 74, stereo: 0, sustain: 82}
+    - type: mulp
+      id: 216
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 164
+      parameters: {color: 41, detune: 52, gain: 128, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 88, type: 1, unison: 3}
+    - type: add
+      id: 214
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 165
+      parameters: {color: 74, detune: 52, gain: 128, lfo: 0, phase: 0, shape: 58, stereo: 0, transpose: 88, type: 1, unison: 2}
+    - type: addp
+      id: 166
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 167
+      parameters: {stereo: 0}
+    - type: filter
+      id: 217
+      parameters: {bandpass: 1, frequency: 57, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 26, stereo: 0}
+    - type: filter
+      id: 218
+      parameters: {bandpass: 1, frequency: 85, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 1, resonance: 33, stereo: 0}
+    - type: pan
+      id: 168
+      parameters: {panning: 61, stereo: 0}
+    - type: delay
+      id: 169
+      parameters: {damp: 116, dry: 117, feedback: 23, notetracking: 0, pregain: 52, stereo: 1}
+      varargs: [12550, 24402, 21265, 32419]
+    - type: outaux
+      id: 172
+      parameters: {auxgain: 20, outgain: 32, stereo: 1}
+    - type: loadnote
+      id: 219
+      parameters: {stereo: 0}
+    - type: send
+      id: 220
+      parameters: {amount: 82, port: 0, sendpop: 1, stereo: 0, target: 218, unit: 0, voice: 0}

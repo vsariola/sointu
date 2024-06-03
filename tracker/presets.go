@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
@@ -24,7 +25,7 @@ type (
 		Name               string // sample name
 	}
 
-	InstrumentPresetYieldFunc func(index int, item string) (ok bool)
+	InstrumentPresetYieldFunc func(index int, item string, directory string) (ok bool)
 	LoadPreset                struct {
 		Index int
 		*Model
@@ -129,7 +130,7 @@ type delayPreset struct {
 
 func (m *Model) IterateInstrumentPresets(yield InstrumentPresetYieldFunc) {
 	for index, instr := range instrumentPresets {
-		if !yield(index, instr.Name) {
+		if !yield(index, instr.instrument.Name, instr.directory) {
 			return
 		}
 	}
@@ -145,13 +146,18 @@ func (m *Model) LoadPreset(index int) Action {
 		for m.d.InstrIndex >= len(m.d.Song.Patch) {
 			m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
 		}
-		m.d.Song.Patch[m.d.InstrIndex] = instrumentPresets[index].Copy()
+		m.d.Song.Patch[m.d.InstrIndex] = instrumentPresets[index].instrument.Copy()
 	}, allowed: func() bool {
 		return true
 	}}
 }
 
-type instrumentPresetsSlice []sointu.Instrument
+type instrumentPreset struct {
+	instrument sointu.Instrument
+	directory  string
+}
+
+type instrumentPresetsSlice []instrumentPreset
 
 //go:embed presets/*
 var instrumentPresetFS embed.FS
@@ -171,7 +177,8 @@ func init() {
 		}
 		var instr sointu.Instrument
 		if yaml.Unmarshal(data, &instr) == nil {
-			instrumentPresets = append(instrumentPresets, instr)
+			dir := strings.Split(filepath.Dir(path), "\\")
+			instrumentPresets = append(instrumentPresets, instrumentPreset{instrument: instr, directory: dir[len(dir)-1]})
 		}
 		return nil
 	})
@@ -190,7 +197,8 @@ func init() {
 			}
 			var instr sointu.Instrument
 			if yaml.Unmarshal(data, &instr) == nil {
-				instrumentPresets = append(instrumentPresets, instr)
+				dir := strings.Split(filepath.Dir(path), "\\")
+				instrumentPresets = append(instrumentPresets, instrumentPreset{instrument: instr, directory: dir[len(dir)-1]})
 			}
 			return nil
 		})
@@ -198,6 +206,8 @@ func init() {
 	sort.Sort(instrumentPresets)
 }
 
-func (p instrumentPresetsSlice) Len() int           { return len(p) }
-func (p instrumentPresetsSlice) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p instrumentPresetsSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p instrumentPresetsSlice) Len() int { return len(p) }
+func (p instrumentPresetsSlice) Less(i, j int) bool {
+	return p[i].directory < p[j].directory
+}
+func (p instrumentPresetsSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }

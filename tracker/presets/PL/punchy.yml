@@ -1,0 +1,68 @@
+name: ShortPunchy
+numvoices: 1
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 0, decay: 70, gain: 128, release: 70, stereo: 0, sustain: 0}
+    - type: envelope
+      id: 2
+      parameters: {attack: 0, decay: 65, gain: 101, release: 80, stereo: 0, sustain: 0}
+    - type: send
+      id: 3
+      parameters: {amount: 96, port: 0, sendpop: 0, target: 19}
+    - type: send
+      id: 4
+      parameters: {amount: 96, port: 0, sendpop: 0, target: 20}
+    - type: oscillator
+      id: 190
+      parameters: {color: 128, detune: 64, gain: 64, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 72, type: 0}
+    - type: addp
+      id: 191
+      parameters: {stereo: 0}
+    - type: send
+      id: 192
+      parameters: {amount: 32, port: 3, sendpop: 1, target: 14}
+    - type: oscillator
+      id: 11
+      parameters: {color: 128, detune: 64, gain: 64, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 96, type: 0}
+    - type: send
+      id: 12
+      parameters: {amount: 80, port: 1, sendpop: 1, target: 16}
+    - type: oscillator
+      id: 14
+      parameters: {color: 128, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 2}
+    - type: oscillator
+      id: 15
+      parameters: {color: 64, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2}
+    - type: oscillator
+      id: 16
+      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 1}
+    - type: addp
+      id: 17
+      parameters: {stereo: 0}
+    - type: addp
+      id: 18
+      parameters: {stereo: 0}
+    - type: filter
+      id: 19
+      parameters: {bandpass: 0, frequency: 46, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 94, stereo: 0}
+    - type: filter
+      id: 20
+      parameters: {bandpass: 0, frequency: 62, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 96, stereo: 0}
+    - type: mulp
+      id: 21
+      parameters: {stereo: 0}
+    - type: delay
+      id: 22
+      parameters: {damp: 32, dry: 128, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}
+      varargs: [36]
+    - type: pan
+      id: 23
+      parameters: {panning: 64, stereo: 0}
+    - type: delay
+      id: 24
+      parameters: {damp: 0, dry: 0, feedback: 0, notetracking: 0, pregain: 128, stereo: 0}
+      varargs: [512]
+    - type: outaux
+      id: 25
+      parameters: {auxgain: 32, outgain: 22, stereo: 1}

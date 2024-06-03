@@ -1,0 +1,41 @@
+name: SuperSaw 1
+numvoices: 3
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 3, decay: 68, gain: 64, release: 64, stereo: 0, sustain: 64}
+    - type: oscillator
+      id: 2
+      parameters: {color: 128, detune: 100, gain: 128, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+    - type: oscillator
+      id: 10
+      parameters: {color: 128, detune: 27, gain: 102, lfo: 0, phase: 71, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+    - type: addp
+      id: 11
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 17
+      parameters: {stereo: 0}
+    - id: 18
+      parameters: {}
+    - type: envelope
+      id: 12
+      parameters: {attack: 0, decay: 68, gain: 64, release: 64, stereo: 0, sustain: 64}
+    - type: oscillator
+      id: 13
+      parameters: {color: 128, detune: 31, gain: 128, phase: 78, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+    - type: oscillator
+      id: 14
+      parameters: {color: 128, detune: 96, gain: 128, lfo: 0, phase: 54, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+    - type: addp
+      id: 15
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 16
+      parameters: {stereo: 0}
+    - parameters: {}
+    - type: pan
+      parameters: {panning: 70, stereo: 1}
+    - type: outaux
+      id: 6
+      parameters: {auxgain: 0, outgain: 64, stereo: 1}

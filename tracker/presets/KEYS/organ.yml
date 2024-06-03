@@ -1,0 +1,69 @@
+name: Organ
+numvoices: 4
+units:
+    - type: envelope
+      id: 207
+      parameters: {attack: 5, decay: 79, gain: 128, release: 37, stereo: 0, sustain: 79}
+    - type: oscillator
+      id: 208
+      parameters: {color: 64, detune: 64, gain: 55, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 3}
+    - type: mul
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 213
+      parameters: {color: 113, detune: 61, gain: 28, lfo: 0, phase: 0, shape: 65, stereo: 0, transpose: 83, type: 0, unison: 0}
+    - type: addp
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 214
+      parameters: {color: 128, detune: 64, gain: 10, phase: 0, shape: 64, stereo: 0, transpose: 95, type: 0}
+    - type: addp
+      parameters: {stereo: 0}
+    - type: mulp
+      parameters: {stereo: 0}
+    - id: 225
+      parameters: {}
+    - type: envelope
+      id: 234
+      parameters: {attack: 37, decay: 79, gain: 128, release: 63, stereo: 0, sustain: 79}
+    - type: oscillator
+      id: 235
+      parameters: {color: 128, detune: 64, gain: 128, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 0, unison: 0}
+    - type: mul
+      id: 236
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 237
+      parameters: {color: 128, detune: 64, gain: 48, lfo: 0, phase: 0, shape: 63, stereo: 0, transpose: 102, type: 0, unison: 0}
+    - type: addp
+      id: 238
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 239
+      parameters: {color: 128, detune: 64, gain: 29, phase: 0, shape: 65, stereo: 0, transpose: 119, type: 0}
+    - type: addp
+      parameters: {stereo: 0}
+    - type: gain
+      parameters: {gain: 21, stereo: 0}
+    - type: mulp
+      id: 241
+      parameters: {stereo: 0}
+    - id: 233
+      parameters: {}
+    - type: addp
+      parameters: {stereo: 0}
+    - type: filter
+      id: 244
+      parameters: {bandpass: 1, frequency: 0, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: pan
+      id: 211
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 212
+      parameters: {auxgain: 31, outgain: 128, stereo: 1}
+    - type: envelope
+      id: 242
+      parameters: {attack: 0, decay: 76, gain: 83, release: 54, stereo: 0, sustain: 47}
+    - type: send
+      id: 243
+      parameters: {amount: 128, port: 0, sendpop: 1, stereo: 0, target: 244, unit: 0, voice: 0}
