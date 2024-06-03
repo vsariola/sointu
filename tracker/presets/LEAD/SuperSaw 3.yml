@@ -1,0 +1,79 @@
+name: SuperSaw 3
+comment: Automate filter frequency for the classic trance sound
+numvoices: 4
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 11, decay: 67, gain: 64, release: 64, stereo: 0, sustain: 99}
+    - type: oscillator
+      id: 2
+      parameters: {color: 128, detune: 100, gain: 128, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+    - type: oscillator
+      id: 10
+      parameters: {color: 128, detune: 27, gain: 102, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+    - type: addp
+      id: 11
+      parameters: {stereo: 0}
+    - parameters: {}
+    - parameters: {}
+    - type: mulp
+      id: 17
+      parameters: {stereo: 0}
+    - id: 18
+      parameters: {}
+    - type: envelope
+      id: 12
+      parameters: {attack: 18, decay: 67, gain: 64, release: 64, stereo: 0, sustain: 99}
+    - type: oscillator
+      id: 13
+      parameters: {color: 128, detune: 31, gain: 128, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+    - type: oscillator
+      id: 14
+      parameters: {color: 128, detune: 96, gain: 128, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+    - type: addp
+      id: 28
+      parameters: {stereo: 0}
+    - parameters: {}
+    - parameters: {}
+    - type: mulp
+      id: 26
+      parameters: {stereo: 0}
+    - type: delay
+      parameters: {damp: 0, dry: 0, feedback: 0, notetracking: 0, pregain: 128, stereo: 0}
+      varargs: [69]
+    - type: pan
+      parameters: {panning: 64, stereo: 1}
+    - type: filter
+      id: 19
+      parameters: {bandpass: 0, frequency: 128, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 68, stereo: 1}
+    - id: 34
+      parameters: {}
+    - type: compressor
+      id: 35
+      parameters: {attack: 6, invgain: 87, ratio: 60, release: 59, stereo: 1, threshold: 39}
+    - type: mulp
+      id: 36
+      parameters: {stereo: 1}
+    - type: delay
+      parameters: {damp: 91, dry: 128, feedback: 96, notetracking: 2, pregain: 65, stereo: 1}
+      varargs: [36, 41]
+    - type: outaux
+      id: 6
+      parameters: {auxgain: 33, outgain: 48, stereo: 1}
+    - type: envelope
+      id: 20
+      parameters: {attack: 60, decay: 0, gain: 128, release: 74, stereo: 0, sustain: 128}
+    - parameters: {}
+    - type: send
+      id: 21
+      parameters: {amount: 63, port: 0, sendpop: 1, stereo: 0, target: 19, unit: 0, voice: 0}
+    - id: 29
+      parameters: {}
+    - type: oscillator
+      parameters: {color: 128, detune: 64, gain: 64, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0}
+    - type: send
+      id: 30
+      parameters: {amount: 128, port: 2, sendpop: 0, stereo: 0, target: 2, unit: 0, voice: 0}
+    - type: send
+      id: 33
+      parameters: {amount: 98, port: 2, sendpop: 1, stereo: 0, target: 14, unit: 0, voice: 0}

@@ -1,0 +1,60 @@
+name: Brass
+comment: Brass sound use for short stabs at C1-C2 range
+numvoices: 4
+units:
+    - type: envelope
+      id: 163
+      parameters: {attack: 24, decay: 128, gain: 59, release: 57, stereo: 1, sustain: 114}
+    - type: envelope
+      id: 215
+      parameters: {attack: 0, decay: 69, gain: 127, release: 66, stereo: 1, sustain: 42}
+    - type: mulp
+      id: 216
+      parameters: {stereo: 1}
+    - type: oscillator
+      id: 164
+      parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 101, stereo: 1, transpose: 64, type: 1, unison: 3}
+    - type: distort
+      parameters: {drive: 60, stereo: 1}
+    - type: add
+      id: 214
+      parameters: {stereo: 1}
+    - type: oscillator
+      id: 165
+      parameters: {color: 70, detune: 72, gain: 128, lfo: 0, phase: 16, shape: 47, stereo: 1, transpose: 76, type: 1, unison: 3}
+    - type: distort
+      id: 223
+      parameters: {drive: 60, stereo: 1}
+    - type: addp
+      id: 166
+      parameters: {stereo: 1}
+    - type: distort
+      id: 221
+      parameters: {drive: 61, stereo: 1}
+    - type: mulp
+      id: 167
+      parameters: {stereo: 1}
+    - type: compressor
+      parameters: {attack: 14, invgain: 97, ratio: 38, release: 61, stereo: 1, threshold: 27}
+    - type: mulp
+      id: 222
+      parameters: {stereo: 1}
+    - type: filter
+      id: 217
+      parameters: {bandpass: 1, frequency: 40, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 65, stereo: 1}
+    - type: filter
+      id: 218
+      parameters: {bandpass: 1, frequency: 80, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 1, resonance: 86, stereo: 1}
+    - type: pan
+      id: 168
+      parameters: {panning: 50, stereo: 1}
+    - type: outaux
+      id: 172
+      parameters: {auxgain: 31, outgain: 67, stereo: 1}
+    - parameters: {}
+    - type: loadnote
+      id: 219
+      parameters: {stereo: 0}
+    - type: send
+      id: 220
+      parameters: {amount: 124, port: 0, sendpop: 1, stereo: 0, target: 218, unit: 0, voice: 0}

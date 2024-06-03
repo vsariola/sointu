@@ -1,0 +1,37 @@
+name: Bass (Adam)
+comment: |
+    Author: pestis/bC!. Suggested note: F#1. Originally from: 4k intro Adam.
+
+    Pretty standard sawtooth filter bass.
+
+    Envelope: The attack and decay were adjusted so that the sound is out when triggered every row at 144 BPM.
+    Distort: The envelope becomes more bell shape than a triangle.
+    Filter 1: High pass filter to remove the low end.
+    Filter 2: Low pass filter, with the frequency modulated by the Send (starts high and drops low, for that snap).
+    Envelope-distort-send: Make the filter 2 frequency drop quickly from high to low, for the "snap".
+numvoices: 1
+units:
+    - type: envelope
+      parameters: {attack: 36, decay: 59, gain: 128, release: 52, stereo: 0, sustain: 25}
+    - type: distort
+      parameters: {drive: 112, stereo: 0}
+    - type: oscillator
+      parameters: {color: 0, detune: 64, gain: 128, looplength: 1486, loopstart: 2536, phase: 64, samplestart: 250849, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 0}
+    - type: mulp
+      parameters: {stereo: 0}
+    - type: filter
+      parameters: {bandpass: 0, frequency: 13, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: filter
+      id: 1
+      parameters: {bandpass: 0, frequency: 22, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: pan
+      parameters: {panning: 64, stereo: 0}
+    - type: out
+      parameters: {gain: 128, stereo: 1}
+    - parameters: {}
+    - type: envelope
+      parameters: {attack: 0, decay: 64, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: distort
+      parameters: {drive: 32, stereo: 0}
+    - type: send
+      parameters: {amount: 79, port: 0, sendpop: 1, stereo: 0, target: 1}

@@ -1,0 +1,38 @@
+name: Hihat Open
+numvoices: 2
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 12, decay: 68, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: envelope
+      id: 13
+      parameters: {attack: 0, decay: 76, gain: 94, release: 0, stereo: 0, sustain: 0}
+    - type: addp
+      id: 14
+      parameters: {stereo: 0}
+    - type: noise
+      id: 2
+      parameters: {gain: 63, shape: 52, stereo: 0}
+    - type: mulp
+      id: 15
+      parameters: {stereo: 0}
+    - type: filter
+      id: 4
+      parameters: {bandpass: 1, frequency: 120, highpass: 1, lowpass: 0, negbandpass: 1, neghighpass: 0, resonance: 104, stereo: 0}
+    - type: filter
+      id: 12
+      parameters: {bandpass: 0, frequency: 119, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: pan
+      id: 5
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 6
+      parameters: {auxgain: 0, outgain: 59, stereo: 1}
+    - type: noise
+      id: 10
+      parameters: {gain: 9, shape: 65, stereo: 0}
+    - type: hold
+      parameters: {holdfreq: 0, stereo: 0}
+    - type: send
+      id: 11
+      parameters: {amount: 42, port: 0, sendpop: 1, stereo: 0, target: 4, unit: 0, voice: 0}
