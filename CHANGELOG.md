@@ -29,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   x87 stack.
 
 ### Fixed
+- The x87 native filter unit was denormalizing and eating up a lot of CPU ([#68][i68])
 - Modulating delaytime in wasm could crash, because delay time was converted to
   int with i32.trunc_f32_u. Using i32.trunc_f32_s fixed this.
 - When recording notes from VSTI, no track was created for instruments that had
@@ -153,6 +154,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [0.2.0]: https://github.com/vsariola/sointu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/vsariola/sointu/compare/4klang-3.11...v0.1.0
 [i65]: https://github.com/vsariola/sointu/issues/65
+[i68]: https://github.com/vsariola/sointu/issues/68
 [i112]: https://github.com/vsariola/sointu/issues/112
 [i116]: https://github.com/vsariola/sointu/issues/116
 [i120]: https://github.com/vsariola/sointu/issues/120

@@ -156,6 +156,9 @@ su_op_dbgain_mono:
     fsubp   st2, st0                        ; r x-l'
     fmul    dword [{{.WRK}}+8]  ; r*b x-l'
     fsubp   st1, st0                        ; x-l'-r*b
+    {{- .Float 0.5 | .Prepare | indent 4}}
+    fadd    dword [{{.Float 0.5 | .Use}}]           ; add and sub small offset to prevent denormalization
+    fsub    dword [{{.Float 0.5 | .Use}}]           ; See for example: https://stackoverflow.com/questions/36781881/why-denormalized-floats-are-so-much-slower-than-other-floats-from-hardware-arch
     fst     dword [{{.WRK}}+4]  ; h'=x-l'-r*b
     fmul    dword [{{.WRK}}+12]                   ; f2*h'
     fadd    dword [{{.WRK}}+8]  ; f2*h'+b
