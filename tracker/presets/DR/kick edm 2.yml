@@ -1,0 +1,66 @@
+name: Kick EDM 2
+comment: Suggested note to play G-2 to C-3
+numvoices: 1
+units:
+    - type: envelope
+      id: 105
+      parameters: {attack: 34, channel: 2, decay: 67, gain: 59, release: 0, stereo: 0, sustain: 0}
+    - type: oscillator
+      id: 106
+      parameters: {color: 101, detune: 64, gain: 54, lfo: 0, phase: 42, shape: 112, stereo: 0, transpose: 88, type: 0, unison: 2}
+    - type: hold
+      parameters: {holdfreq: 40, stereo: 0}
+    - type: distort
+      id: 107
+      parameters: {drive: 78, stereo: 0}
+    - type: mulp
+      id: 126
+      parameters: {stereo: 0}
+    - type: envelope
+      id: 110
+      parameters: {attack: 0, decay: 43, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: noise
+      id: 111
+      parameters: {gain: 102, shape: 84, stereo: 0}
+    - type: filter
+      id: 112
+      parameters: {bandpass: 0, frequency: 92, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 18, stereo: 0}
+    - type: filter
+      id: 113
+      parameters: {bandpass: 0, frequency: 91, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 75, stereo: 0}
+    - type: mulp
+      id: 10
+      parameters: {stereo: 0}
+    - type: addp
+      id: 127
+      parameters: {stereo: 0}
+    - type: filter
+      id: 12
+      parameters: {bandpass: 0, frequency: 14, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 75, stereo: 0}
+    - type: filter
+      id: 13
+      parameters: {bandpass: 0, frequency: 53, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: filter
+      id: 14
+      parameters: {bandpass: 0, frequency: 7, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 76, stereo: 0}
+    - type: filter
+      id: 15
+      parameters: {bandpass: 0, frequency: 13, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 54, stereo: 0}
+    - type: pan
+      id: 114
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 118
+      parameters: {auxgain: 0, outgain: 57, stereo: 1}
+    - type: envelope
+      id: 119
+      parameters: {attack: 62, decay: 128, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: envelope
+      id: 120
+      parameters: {attack: 39, decay: 61, gain: 128, release: 0, stereo: 0, sustain: 34}
+    - type: mulp
+      id: 121
+      parameters: {stereo: 0}
+    - type: send
+      id: 122
+      parameters: {amount: 0, port: 0, sendpop: 1, target: 106}

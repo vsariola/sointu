@@ -1,0 +1,59 @@
+name: Clap
+numvoices: 1
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 0, decay: 53, gain: 128, release: 0, stereo: 1, sustain: 0}
+    - type: delay
+      id: 162
+      parameters: {damp: 0, dry: 128, feedback: 0, notetracking: 0, pregain: 64, stereo: 1}
+      varargs: [1395, 350]
+    - type: noise
+      id: 3
+      parameters: {gain: 0, shape: 97, stereo: 1}
+    - type: mulp
+      id: 4
+      parameters: {stereo: 1}
+    - type: envelope
+      id: 163
+      parameters: {attack: 0, decay: 54, gain: 128, release: 0, stereo: 1, sustain: 0}
+    - type: delay
+      id: 164
+      parameters: {damp: 0, dry: 6, feedback: 0, notetracking: 0, pregain: 64, stereo: 1}
+      varargs: [1744, 1744]
+    - type: noise
+      id: 165
+      parameters: {gain: 128, shape: 79, stereo: 1}
+    - type: mulp
+      id: 166
+      parameters: {stereo: 1}
+    - type: addp
+      id: 167
+      parameters: {stereo: 1}
+    - type: envelope
+      id: 168
+      parameters: {attack: 0, decay: 52, gain: 128, release: 0, stereo: 1, sustain: 0}
+    - type: delay
+      id: 169
+      parameters: {damp: 0, dry: 52, feedback: 0, notetracking: 0, pregain: 64, stereo: 1}
+      varargs: [1395, 2441]
+    - type: noise
+      id: 170
+      parameters: {gain: 128, shape: 79, stereo: 1}
+    - type: mulp
+      id: 171
+      parameters: {stereo: 1}
+    - type: addp
+      id: 173
+      parameters: {stereo: 1}
+    - type: distort
+      parameters: {drive: 89, stereo: 1}
+    - type: filter
+      id: 5
+      parameters: {bandpass: 1, frequency: 45, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 61, stereo: 1}
+    - type: pan
+      id: 174
+      parameters: {panning: 73, stereo: 1}
+    - type: outaux
+      id: 161
+      parameters: {auxgain: 0, outgain: 59, stereo: 1}

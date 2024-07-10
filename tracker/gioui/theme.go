@@ -17,6 +17,11 @@ var transparent = color.NRGBA{A: 0}
 var primaryColor = color.NRGBA{R: 206, G: 147, B: 216, A: 255}
 var secondaryColor = color.NRGBA{R: 128, G: 222, B: 234, A: 255}
 
+var vuMeterAvg = color.NRGBA{R: 000, G: 64, B: 000, A: 255}
+var vuMeterAvgClip = color.NRGBA{R: 64, G: 000, B: 000, A: 255}
+var vuMeterPeak = color.NRGBA{R: 020, G: 127, B: 0, A: 255}
+var vuMeterPeakClip = color.NRGBA{R: 255, G: 000, B: 000, A: 255}
+
 var highEmphasisTextColor = color.NRGBA{R: 222, G: 222, B: 222, A: 222}
 var mediumEmphasisTextColor = color.NRGBA{R: 153, G: 153, B: 153, A: 153}
 var disabledTextColor = color.NRGBA{R: 255, G: 255, B: 255, A: 97}

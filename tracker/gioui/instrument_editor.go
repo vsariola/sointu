@@ -74,8 +74,12 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		unitEditor:          NewUnitEditor(model),
 		presetMenuItems:     []MenuItem{},
 	}
-	model.IterateInstrumentPresets(func(index int, name string) bool {
-		ret.presetMenuItems = append(ret.presetMenuItems, MenuItem{Text: name, IconBytes: icons.ImageAudiotrack, Doer: model.LoadPreset(index)})
+	model.IterateInstrumentPresets(func(index int, name string, directory string) bool {
+		menuText := "[" + directory + "] " + name
+		if directory == "presets" {
+			menuText = name
+		}
+		ret.presetMenuItems = append(ret.presetMenuItems, MenuItem{Text: menuText, IconBytes: icons.ImageAudiotrack, Doer: model.LoadPreset(index)})
 		return true
 	})
 	for k := range noteMap {
