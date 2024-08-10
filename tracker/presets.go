@@ -145,7 +145,9 @@ func (m *Model) LoadPreset(index int) Action {
 		for m.d.InstrIndex >= len(m.d.Song.Patch) {
 			m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
 		}
-		m.d.Song.Patch[m.d.InstrIndex] = instrumentPresets[index].Copy()
+		newInstr := instrumentPresets[index].Copy()
+		(*Model)(m).assignUnitIDs(newInstr.Units)
+		m.d.Song.Patch[m.d.InstrIndex] = newInstr
 	}, allowed: func() bool {
 		return true
 	}}

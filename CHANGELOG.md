@@ -29,6 +29,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   x87 stack.
 
 ### Fixed
+- Loading a preset did not update the IDs of the newly loaded instrument,
+  causing ID collisions and sends target wrong units.
 - The x87 native filter unit was denormalizing and eating up a lot of CPU ([#68][i68])
 - Modulating delaytime in wasm could crash, because delay time was converted to
   int with i32.trunc_f32_u. Using i32.trunc_f32_s fixed this.
