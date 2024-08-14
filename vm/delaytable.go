@@ -115,9 +115,10 @@ func constructDelayTimeTable(patch sointu.Patch, bpm int) ([]int, [][]int) {
 	for i, instr := range patch {
 		ind[i] = make([]int, len(instr.Units))
 		for j, unit := range instr.Units {
-			// only include delay times for delays. Only delays
-			// should use delay times
-			if unit.Type == "delay" {
+			// only include delay times for delays. Only delays should use delay
+			// times. Only delay times for enabled delay units should be in the
+			// table.
+			if unit.Type == "delay" && !unit.Disabled {
 				ind[i][j] = len(subarrays)
 				converted := make([]int, len(unit.VarArgs))
 				copy(converted, unit.VarArgs)

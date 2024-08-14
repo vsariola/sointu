@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+### Fixed
+- Do not include delay times in the delay time table if the delay unit is
+  disabled ([#139][i139])
+
 ## v0.4.0
 ### Added
 - User can drop preset instruments into `os.UserConfigDir()/sointu/presets/` and
@@ -167,3 +172,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i128]: https://github.com/vsariola/sointu/issues/128
 [i129]: https://github.com/vsariola/sointu/issues/129
 [i130]: https://github.com/vsariola/sointu/issues/130
+[i139]: https://github.com/vsariola/sointu/issues/139
