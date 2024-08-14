@@ -142,7 +142,7 @@ func constructDelayTimeTable(patch sointu.Patch, bpm int) ([]int, [][]int) {
 	for i, instr := range patch {
 		unitindices[i] = make([]int, len(instr.Units))
 		for j, unit := range instr.Units {
-			if unit.Type == "delay" {
+			if unit.Type == "delay" && !unit.Disabled {
 				unitindices[i][j] = indices[ind[i][j]]
 			}
 		}
