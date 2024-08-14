@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -71,6 +72,110 @@ func TestAllRegressionTests(t *testing.T) {
 			}
 			compareToRawFloat32(t, buffer, testname+".raw")
 		})
+	}
+}
+
+var defaultUnits = map[string]sointu.Unit{
+	"envelope":   {Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 64, "decay": 64, "sustain": 64, "release": 64, "gain": 64}},
+	"oscillator": {Type: "oscillator", Parameters: map[string]int{"stereo": 0, "transpose": 64, "detune": 64, "phase": 0, "color": 64, "shape": 64, "gain": 64, "type": sointu.Sine}},
+	"noise":      {Type: "noise", Parameters: map[string]int{"stereo": 0, "shape": 64, "gain": 64}},
+	"mulp":       {Type: "mulp", Parameters: map[string]int{"stereo": 0}},
+	"mul":        {Type: "mul", Parameters: map[string]int{"stereo": 0}},
+	"add":        {Type: "add", Parameters: map[string]int{"stereo": 0}},
+	"addp":       {Type: "addp", Parameters: map[string]int{"stereo": 0}},
+	"push":       {Type: "push", Parameters: map[string]int{"stereo": 0}},
+	"pop":        {Type: "pop", Parameters: map[string]int{"stereo": 0}},
+	"xch":        {Type: "xch", Parameters: map[string]int{"stereo": 0}},
+	"receive":    {Type: "receive", Parameters: map[string]int{"stereo": 0}},
+	"loadnote":   {Type: "loadnote", Parameters: map[string]int{"stereo": 0}},
+	"loadval":    {Type: "loadval", Parameters: map[string]int{"stereo": 0, "value": 64}},
+	"pan":        {Type: "pan", Parameters: map[string]int{"stereo": 0, "panning": 64}},
+	"gain":       {Type: "gain", Parameters: map[string]int{"stereo": 0, "gain": 64}},
+	"invgain":    {Type: "invgain", Parameters: map[string]int{"stereo": 0, "invgain": 64}},
+	"dbgain":     {Type: "dbgain", Parameters: map[string]int{"stereo": 0, "decibels": 64}},
+	"crush":      {Type: "crush", Parameters: map[string]int{"stereo": 0, "resolution": 64}},
+	"clip":       {Type: "clip", Parameters: map[string]int{"stereo": 0}},
+	"hold":       {Type: "hold", Parameters: map[string]int{"stereo": 0, "holdfreq": 64}},
+	"distort":    {Type: "distort", Parameters: map[string]int{"stereo": 0, "drive": 64}},
+	"filter":     {Type: "filter", Parameters: map[string]int{"stereo": 0, "frequency": 64, "resonance": 64, "lowpass": 1, "bandpass": 0, "highpass": 0, "negbandpass": 0, "neghighpass": 0}},
+	"out":        {Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 64}},
+	"outaux":     {Type: "outaux", Parameters: map[string]int{"stereo": 1, "outgain": 64, "auxgain": 64}},
+	"aux":        {Type: "aux", Parameters: map[string]int{"stereo": 1, "gain": 64, "channel": 2}},
+	"delay": {Type: "delay",
+		Parameters: map[string]int{"damp": 0, "dry": 128, "feedback": 96, "notetracking": 2, "pregain": 40, "stereo": 0},
+		VarArgs:    []int{48}},
+	"in":         {Type: "in", Parameters: map[string]int{"stereo": 1, "channel": 2}},
+	"speed":      {Type: "speed", Parameters: map[string]int{}},
+	"compressor": {Type: "compressor", Parameters: map[string]int{"stereo": 0, "attack": 64, "release": 64, "invgain": 64, "threshold": 64, "ratio": 64}},
+	"send":       {Type: "send", Parameters: map[string]int{"stereo": 0, "amount": 128, "voice": 0, "unit": 0, "port": 0, "sendpop": 1}},
+	"sync":       {Type: "sync", Parameters: map[string]int{}},
+}
+
+var defaultInstrument = sointu.Instrument{
+	Name:      "Instr",
+	NumVoices: 1,
+	Units: []sointu.Unit{
+		defaultUnits["envelope"],
+		defaultUnits["oscillator"],
+		defaultUnits["mulp"],
+		defaultUnits["pan"],
+		defaultUnits["outaux"],
+	},
+}
+
+func TestDisabledWithInstrument(t *testing.T) {
+	// Compile the default instrument and then add a version of every unit to
+	// that, but disabled, and make sure the compilation produces identical
+	// results
+	patch := sointu.Patch{defaultInstrument}
+	byteCode, err := vm.NewBytecode(patch, vm.AllFeatures{}, 120)
+	if err != nil {
+		t.Fatalf("vm.NewBytecode failed: %v", err)
+	}
+	for _, unit := range defaultUnits {
+		units := []sointu.Unit{}
+		u := unit.Copy()
+		u.Disabled = true
+		u.ID = 1000
+		units = append(units, u)
+		units = append(units, defaultInstrument.Units...)
+		u2 := unit.Copy()
+		u2.Disabled = true
+		u2.ID = 1001
+		units = append(units, u2)
+
+		patch2 := sointu.Patch{sointu.Instrument{Name: "Instr", NumVoices: 1, Units: units}}
+		byteCode2, err := vm.NewBytecode(patch2, vm.AllFeatures{}, 120)
+		if err != nil {
+			t.Fatalf("vm.NewBytecode failed: %v", err)
+		}
+		if !reflect.DeepEqual(byteCode, byteCode2) {
+			t.Fatalf("disabled unit %v produced different bytecode", unit.Type)
+		}
+	}
+}
+
+func TestDisabled(t *testing.T) {
+	patch := sointu.Patch{sointu.Instrument{Name: "Instr", NumVoices: 1, Units: []sointu.Unit{}}}
+	byteCode, err := vm.NewBytecode(patch, vm.AllFeatures{}, 120)
+	if err != nil {
+		t.Fatalf("vm.NewBytecode failed: %v", err)
+	}
+	for _, unit := range defaultUnits {
+		u := unit.Copy()
+		u.Disabled = true
+		u.ID = 1000
+		u2 := unit.Copy()
+		u2.Disabled = true
+		u2.ID = 1001
+		patch2 := sointu.Patch{sointu.Instrument{Name: "Instr", NumVoices: 1, Units: []sointu.Unit{u, u2}}}
+		byteCode2, err := vm.NewBytecode(patch2, vm.AllFeatures{}, 120)
+		if err != nil {
+			t.Fatalf("vm.NewBytecode failed: %v", err)
+		}
+		if !reflect.DeepEqual(byteCode, byteCode2) {
+			t.Fatalf("disabled unit %v produced different bytecode", unit.Type)
+		}
 	}
 }
 
