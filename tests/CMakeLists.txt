@@ -117,6 +117,7 @@ if(WIN32) # The samples are currently only GMDLs based, and thus require Windows
     regression_test(test_oscillat_sample_stereo ENVELOPE)
 endif()
 regression_test(test_oscillat_unison ENVELOPE)
+regression_test(test_oscillat_unison_phase ENVELOPE)
 regression_test(test_oscillat_unison_stereo ENVELOPE)
 regression_test(test_oscillat_lfo "ENVELOPE;VCO_SINE;VCO_PULSE;FOP_MULP2")
 regression_test(test_oscillat_transposemod "VCO_SINE;ENVELOPE;FOP_MULP;FOP_PUSH;SEND")
