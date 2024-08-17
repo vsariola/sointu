@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 ### Fixed
+- In x86 templates, do not optimize away phase modulations when unisons are used
+  even if all phase inputs are zeros, as unisons use the phase modulation
+  mechanism to offset the different oscillators
 - Do not include delay times in the delay time table if the delay unit is
   disabled ([#139][i139])
 

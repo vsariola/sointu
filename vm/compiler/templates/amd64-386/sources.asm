@@ -189,7 +189,7 @@ su_op_oscillat_normalized:
     test    al, byte 0x80
     jz      short su_op_oscillat_not_sample
     fst     dword [{{.WRK}}]  ; for samples, we store the phase without mod(p,1)
-{{- if or (.SupportsParamValueOtherThan "oscillator" "phase" 0) (.SupportsModulation "oscillator" "phase")}}
+{{- if or (.SupportsParamValueOtherThan "oscillator" "phase" 0) (.SupportsModulation "oscillator" "phase") (.SupportsParamValueOtherThan "oscillator" "unison" 0)}}
     fadd    dword [{{.Input "oscillator" "phase"}}]
 {{- end}}
     {{.Call "su_oscillat_sample"}}
@@ -202,7 +202,7 @@ su_op_oscillat_not_sample:
     fprem                    ; we actually computed mod(p+1,1) instead of mod(p,1) as the fprem takes mod
     fstp    st1              ; towards zero
     fst     dword [{{.WRK}}] ; store back the updated phase
-{{- if or (.SupportsParamValueOtherThan "oscillator" "phase" 0) (.SupportsModulation "oscillator" "phase")}}
+{{- if or (.SupportsParamValueOtherThan "oscillator" "phase" 0) (.SupportsModulation "oscillator" "phase") (.SupportsParamValueOtherThan "oscillator" "unison" 0)}}
     fadd    dword [{{.Input "oscillator" "phase"}}]
     fld1                    ; this is a bit stupid, but we need to take mod(x,1) again after phase modulations
     fadd    st1, st0        ; as the actual oscillator functions expect x in [0,1]
