@@ -17,6 +17,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Do not include delay times in the delay time table if the delay unit is
   disabled ([#139][i139])
 
+### Changed
+- Moved the error and warning popups slightly up so they don't block the unit
+  control buttons ([#142][i142])
+
 ## v0.4.0
 ### Added
 - User can drop preset instruments into `os.UserConfigDir()/sointu/presets/` and
@@ -182,5 +186,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i129]: https://github.com/vsariola/sointu/issues/129
 [i130]: https://github.com/vsariola/sointu/issues/130
 [i139]: https://github.com/vsariola/sointu/issues/139
+[i142]: https://github.com/vsariola/sointu/issues/142
 [i145]: https://github.com/vsariola/sointu/issues/145
 [i146]: https://github.com/vsariola/sointu/issues/146

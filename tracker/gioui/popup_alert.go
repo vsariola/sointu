@@ -35,7 +35,7 @@ func (a *PopupAlert) Layout(gtx C) D {
 	}
 	a.prevUpdate = now
 
-	var totalY float64
+	var totalY float64 = float64(gtx.Dp(38))
 	a.alerts.Iterate(func(alert tracker.Alert) {
 		var color, textColor, shadeColor color.NRGBA
 		switch alert.Priority {
