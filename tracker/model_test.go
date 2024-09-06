@@ -76,6 +76,8 @@ func (s *modelFuzzState) Iterate(yield func(string, func(p string, t *testing.T)
 	s.IterateAction("AddOrderRowBefore", s.model.AddOrderRow(true), yield, seed)
 	s.IterateAction("DeleteOrderRowForward", s.model.DeleteOrderRow(false), yield, seed)
 	s.IterateAction("DeleteOrderRowBackward", s.model.DeleteOrderRow(true), yield, seed)
+	// just test loading one of the presets
+	s.IterateAction("LoadPreset", s.model.LoadPreset(seed%tracker.NumPresets()), yield, seed)
 	// Tables
 	s.IterateTable("Order", s.model.Order().Table(), yield, seed)
 	s.IterateTable("Notes", s.model.Notes().Table(), yield, seed)

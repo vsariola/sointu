@@ -135,6 +135,12 @@ func (m *Model) IterateInstrumentPresets(yield InstrumentPresetYieldFunc) {
 	}
 }
 
+func NumPresets() int {
+	return len(instrumentPresets)
+}
+
+// LoadPreset loads a preset from the list of instrument presets. The index
+// should be within the range of 0 to NumPresets()-1.
 func (m *Model) LoadPreset(index int) Action {
 	return Action{do: func() {
 		defer m.change("LoadPreset", PatchChange, MajorChange)()
