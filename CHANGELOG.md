@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
+### Added
+- The vertical and horizontal split bars indicate with a cursor that they can be
+  resized ([#145][i145])
+
 ### Fixed
 - Assign new IDs to loaded instruments, and fix ID collisions in case they
   somehow still appear ([#146][i146])
@@ -178,4 +182,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i129]: https://github.com/vsariola/sointu/issues/129
 [i130]: https://github.com/vsariola/sointu/issues/130
 [i139]: https://github.com/vsariola/sointu/issues/139
+[i145]: https://github.com/vsariola/sointu/issues/145
 [i146]: https://github.com/vsariola/sointu/issues/146

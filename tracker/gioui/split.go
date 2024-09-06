@@ -132,6 +132,11 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 		}
 		area := clip.Rect(barRect).Push(gtx.Ops)
 		event.Op(gtx.Ops, s)
+		if s.Axis == layout.Horizontal {
+			pointer.CursorColResize.Add(gtx.Ops)
+		} else {
+			pointer.CursorRowResize.Add(gtx.Ops)
+		}
 		area.Pop()
 	}
 
