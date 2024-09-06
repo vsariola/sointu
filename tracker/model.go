@@ -225,6 +225,7 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 				m.send(m.d.Song.Score.Copy())
 			}
 			if m.changeType&PatchChange != 0 {
+				m.fixIDCollisions()
 				m.d.InstrIndex = clamp(m.d.InstrIndex, 0, len(m.d.Song.Patch)-1)
 				m.d.InstrIndex2 = clamp(m.d.InstrIndex2, 0, len(m.d.Song.Patch)-1)
 				unitCount := 0
@@ -436,6 +437,37 @@ func (m *Model) assignUnitIDs(units []sointu.Unit) {
 		if target, ok := u.Parameters["target"]; u.Type == "send" && ok {
 			if newId, ok := rewrites[target]; ok {
 				units[i].Parameters["target"] = newId
+			}
+		}
+	}
+}
+
+func (m *Model) fixIDCollisions() {
+	// loop over all instruments and units and check if two units have the same
+	// ID. If so, give the later units new IDs.
+	usedIDs := map[int]bool{}
+	needsFix := false
+	maxID := 0
+	for i, instr := range m.d.Song.Patch {
+		for j, unit := range instr.Units {
+			if usedIDs[unit.ID] {
+				m.d.Song.Patch[i].Units[j].ID = 0
+				needsFix = true
+			}
+			if unit.ID > maxID {
+				maxID = unit.ID
+			}
+			usedIDs[unit.ID] = true
+		}
+	}
+	if needsFix {
+		m.Alerts().Add("Some units had duplicate IDs, they were fixed", Error)
+		for i, instr := range m.d.Song.Patch {
+			for j, unit := range instr.Units {
+				if unit.ID == 0 {
+					maxID++
+					m.d.Song.Patch[i].Units[j].ID = maxID
+				}
 			}
 		}
 	}

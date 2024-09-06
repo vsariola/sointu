@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 ### Fixed
+- Assign new IDs to loaded instruments, and fix ID collisions in case they
+  somehow still appear ([#146][i146])
 - In x86 templates, do not optimize away phase modulations when unisons are used
   even if all phase inputs are zeros, as unisons use the phase modulation
   mechanism to offset the different oscillators
@@ -176,3 +178,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i129]: https://github.com/vsariola/sointu/issues/129
 [i130]: https://github.com/vsariola/sointu/issues/130
 [i139]: https://github.com/vsariola/sointu/issues/139
+[i146]: https://github.com/vsariola/sointu/issues/146

@@ -171,6 +171,7 @@ success:
 	for len(m.d.Song.Patch) <= m.d.InstrIndex {
 		m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
 	}
+	m.assignUnitIDs(instrument.Units)
 	m.d.Song.Patch[m.d.InstrIndex] = instrument
 	if m.d.Song.Patch[m.d.InstrIndex].Comment != "" {
 		m.commentExpanded = true
