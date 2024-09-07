@@ -154,6 +154,7 @@ func (m *Model) ClearUnit() Action {
 			defer (*Model)(m).change("DeleteUnitAction", PatchChange, MajorChange)()
 			m.d.UnitIndex = intMax(intMin(m.d.UnitIndex, len(m.d.Song.Patch[m.d.InstrIndex].Units)-1), 0)
 			m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex] = sointu.Unit{}
+			m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].ID = m.maxID() + 1
 		},
 		allowed: func() bool {
 			return m.d.InstrIndex >= 0 &&

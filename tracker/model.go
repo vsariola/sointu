@@ -408,6 +408,18 @@ func (m *Model) send(message interface{}) {
 	m.modelMessages <- message
 }
 
+func (m *Model) maxID() int {
+	maxID := 0
+	for _, instr := range m.d.Song.Patch {
+		for _, unit := range instr.Units {
+			if unit.ID > maxID {
+				maxID = unit.ID
+			}
+		}
+	}
+	return maxID
+}
+
 func (m *Model) assignUnitIDs(units []sointu.Unit) {
 	maxId := 0
 	usedIds := make(map[int]bool)

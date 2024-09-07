@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   resized ([#145][i145])
 
 ### Fixed
+- Potential ID collisions when clearing unit or pasteing instruments
 - Assign new IDs to loaded instruments, and fix ID collisions in case they
   somehow still appear ([#146][i146])
 - In x86 templates, do not optimize away phase modulations when unisons are used

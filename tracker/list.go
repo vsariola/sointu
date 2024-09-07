@@ -269,11 +269,13 @@ func (v *Instruments) unmarshal(data []byte) (from, to int, err error) {
 	if v.d.Song.Patch.NumVoices()+newInstr.Patch.NumVoices() > vm.MAX_VOICES {
 		return 0, 0, fmt.Errorf("InstrumentListView.unmarshal: too many voices: %d", v.d.Song.Patch.NumVoices()+newInstr.Patch.NumVoices())
 	}
-	patch := append(v.d.Song.Patch, make([]sointu.Instrument, len(newInstr.Patch))...)
+	v.d.Song.Patch = append(v.d.Song.Patch, make([]sointu.Instrument, len(newInstr.Patch))...)
 	sel := v.Selected()
-	copy(patch[sel+len(newInstr.Patch):], patch[sel:])
-	copy(patch[sel:sel+len(newInstr.Patch)], newInstr.Patch)
-	v.d.Song.Patch = patch
+	copy(v.d.Song.Patch[sel+len(newInstr.Patch):], v.d.Song.Patch[sel:])
+	for i := 0; i < len(newInstr.Patch); i++ {
+		(*Model)(v).assignUnitIDs(newInstr.Patch[i].Units)
+		v.d.Song.Patch[sel+i] = newInstr.Patch[i]
+	}
 	from = sel
 	to = sel + len(newInstr.Patch) - 1
 	return
