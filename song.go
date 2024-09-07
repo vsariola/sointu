@@ -81,8 +81,8 @@ func (s *Score) SongPos(songRow int) SongPos {
 	if s.RowsPerPattern == 0 {
 		return SongPos{OrderRow: 0, PatternRow: 0}
 	}
-	orderRow := songRow / s.RowsPerPattern
-	patternRow := songRow % s.RowsPerPattern
+	patternRow := (songRow%s.RowsPerPattern + s.RowsPerPattern) % s.RowsPerPattern
+	orderRow := ((songRow - patternRow) / s.RowsPerPattern)
 	return SongPos{OrderRow: orderRow, PatternRow: patternRow}
 }
 
@@ -92,7 +92,7 @@ func (s *Score) SongRow(songPos SongPos) int {
 
 func (s *Score) Wrap(songPos SongPos) SongPos {
 	ret := s.SongPos(s.SongRow(songPos))
-	ret.OrderRow %= s.Length
+	ret.OrderRow = (ret.OrderRow%s.Length + s.Length) % s.Length
 	return ret
 }
 
