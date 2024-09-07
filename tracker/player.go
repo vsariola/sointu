@@ -192,12 +192,21 @@ func (p *Player) advanceRow() {
 	if p.song.Score.Length == 0 || p.song.Score.RowsPerPattern == 0 {
 		return
 	}
+	origPos := p.songPos
 	p.songPos.PatternRow++ // advance row (this is why we subtracted one in Play())
 	if p.loop.Length > 0 && p.songPos.PatternRow >= p.song.Score.RowsPerPattern && p.songPos.OrderRow == p.loop.Start+p.loop.Length-1 {
 		p.songPos.PatternRow = 0
 		p.songPos.OrderRow = p.loop.Start
 	}
-	p.songPos = p.song.Score.Wrap(p.songPos)
+	p.songPos = p.song.Score.Clamp(p.songPos)
+	if p.songPos == origPos {
+		p.send(IsPlayingMsg{bool: false})
+		p.playing = false
+		for i := range p.song.Score.Tracks {
+			p.releaseTrack(i)
+		}
+		return
+	}
 	p.send(nil) // just send volume and song row information
 	lastVoice := 0
 	for i, t := range p.song.Score.Tracks {

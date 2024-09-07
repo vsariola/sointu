@@ -24,6 +24,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   disabled ([#139][i139])
 
 ### Changed
+- Do not automatically wrap around the song when playing as it was usually
+  unwanted behaviour. There is already the looping mechanism if the user really
+  wants to loop the song forever.
 - Moved the error and warning popups slightly up so they don't block the unit
   control buttons ([#142][i142])
 

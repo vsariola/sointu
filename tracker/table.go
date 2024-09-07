@@ -410,7 +410,7 @@ func (m *Notes) Cursor2() Point {
 
 func (v *Notes) SetCursor(p Point) {
 	v.d.Cursor.Track = intMax(intMin(p.X, len(v.d.Song.Score.Tracks)-1), 0)
-	newPos := v.d.Song.Score.Wrap(sointu.SongPos{PatternRow: p.Y})
+	newPos := v.d.Song.Score.Clamp(sointu.SongPos{PatternRow: p.Y})
 	if newPos != v.d.Cursor.SongPos {
 		v.noteTracking = false
 	}
@@ -419,7 +419,7 @@ func (v *Notes) SetCursor(p Point) {
 
 func (v *Notes) SetCursor2(p Point) {
 	v.d.Cursor2.Track = intMax(intMin(p.X, len(v.d.Song.Score.Tracks)-1), 0)
-	v.d.Cursor2.SongPos = v.d.Song.Score.Wrap(sointu.SongPos{PatternRow: p.Y})
+	v.d.Cursor2.SongPos = v.d.Song.Score.Clamp(sointu.SongPos{PatternRow: p.Y})
 }
 
 func (v *Notes) Width() int {

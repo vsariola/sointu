@@ -220,8 +220,8 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			m.d.ChangedSinceRecovery = true
 			if m.changeType&ScoreChange != 0 {
 				m.updatePatternUseCount()
-				m.d.Cursor.SongPos = m.d.Song.Score.Wrap(m.d.Cursor.SongPos)
-				m.d.Cursor2.SongPos = m.d.Song.Score.Wrap(m.d.Cursor2.SongPos)
+				m.d.Cursor.SongPos = m.d.Song.Score.Clamp(m.d.Cursor.SongPos)
+				m.d.Cursor2.SongPos = m.d.Song.Score.Clamp(m.d.Cursor2.SongPos)
 				m.send(m.d.Song.Score.Copy())
 			}
 			if m.changeType&PatchChange != 0 {
@@ -353,6 +353,8 @@ func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
 		m.instrEnlarged = false
 	case Alert:
 		m.Alerts().AddAlert(e)
+	case IsPlayingMsg:
+		m.playing = e.bool
 	default:
 	}
 }
