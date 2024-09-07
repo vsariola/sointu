@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   resized ([#145][i145])
 
 ### Fixed
+- When adding a unit on the last row of the unit list, the editor for entering
+  the type of the unit by text did gain focus.
 - When inputting a note to the note editor, advance the cursor by step
   ([#144][i144])
 - When loading an instrument, make sure the total number of voices does not go

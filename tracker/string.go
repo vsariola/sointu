@@ -41,7 +41,20 @@ func (v *FilePath) change(kind string) func() { return func() {} }
 // UnitSearchString
 
 func (v *UnitSearch) String() String { return String{v} }
-func (v *UnitSearch) Value() string  { return v.d.UnitSearchString }
+func (v *UnitSearch) Value() string {
+	// return current unit type string if not searching
+	if !v.d.UnitSearching {
+		if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
+			return ""
+		}
+		if v.d.UnitIndex < 0 || v.d.UnitIndex >= len(v.d.Song.Patch[v.d.InstrIndex].Units) {
+			return ""
+		}
+		return v.d.Song.Patch[v.d.InstrIndex].Units[v.d.UnitIndex].Type
+	} else {
+		return v.d.UnitSearchString
+	}
+}
 func (v *UnitSearch) setValue(value string) {
 	v.d.UnitSearchString = value
 	v.d.UnitSearching = true

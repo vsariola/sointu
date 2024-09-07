@@ -125,9 +125,15 @@ func (m *UnitSearching) Bool() Bool  { return Bool{m} }
 func (m *UnitSearching) Value() bool { return m.d.UnitSearching }
 func (m *UnitSearching) setValue(val bool) {
 	m.d.UnitSearching = val
-	if !val {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		m.d.UnitSearchString = ""
+		return
 	}
+	if m.d.UnitIndex < 0 || m.d.UnitIndex >= len(m.d.Song.Patch[m.d.InstrIndex].Units) {
+		m.d.UnitSearchString = ""
+		return
+	}
+	m.d.UnitSearchString = m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].Type
 }
 func (m *UnitSearching) Enabled() bool { return true }
 

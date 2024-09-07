@@ -299,10 +299,14 @@ func (m *Units) SelectedType() string {
 
 func (m *Units) SetSelectedType(t string) {
 	if m.d.InstrIndex < 0 ||
-		m.d.InstrIndex >= len(m.d.Song.Patch) ||
-		m.d.UnitIndex < 0 ||
-		m.d.UnitIndex >= len(m.d.Song.Patch[m.d.InstrIndex].Units) {
+		m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return
+	}
+	if m.d.UnitIndex < 0 {
+		m.d.UnitIndex = 0
+	}
+	for len(m.d.Song.Patch[m.d.InstrIndex].Units) <= m.d.UnitIndex {
+		m.d.Song.Patch[m.d.InstrIndex].Units = append(m.d.Song.Patch[m.d.InstrIndex].Units, sointu.Unit{})
 	}
 	unit, ok := defaultUnits[t]
 	if !ok { // if the type is invalid, we just set it to empty unit

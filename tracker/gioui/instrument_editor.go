@@ -380,7 +380,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 
 	element := func(gtx C, i int) D {
 		gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(unit.Dp(120)), gtx.Dp(unit.Dp(20))))
-		if i < 0 || i >= count {
+		if i < 0 || i > 255 {
 			return layout.Dimensions{Size: gtx.Constraints.Min}
 		}
 		u := units[i]
@@ -412,13 +412,9 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 					editor.TextSize = unit.Sp(12)
 					editor.Font = f
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					txt := u.Type
 					str := tracker.String{StringData: (*tracker.UnitSearch)(t.Model)}
-					if t.UnitSearching().Value() {
-						txt = str.Value()
-					}
-					if ie.searchEditor.Text() != txt {
-						ie.searchEditor.SetText(txt)
+					if ie.searchEditor.Text() != str.Value() {
+						ie.searchEditor.SetText(str.Value())
 					}
 					for {
 						ev, ok := ie.searchEditor.Update(gtx)
@@ -427,18 +423,17 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 						}
 						_, ok = ev.(widget.SubmitEvent)
 						if ok {
-							txt := ""
 							ie.unitDragList.Focus()
 							if text := ie.searchEditor.Text(); text != "" {
 								for _, n := range sointu.UnitNames {
 									if strings.HasPrefix(n, ie.searchEditor.Text()) {
-										txt = n
+										t.Units().SetSelectedType(n)
 										break
 									}
 								}
 							}
-							t.Units().SetSelectedType(txt)
 							t.UnitSearching().Bool().Set(false)
+							ie.searchEditor.SetText(str.Value())
 							continue
 						}
 					}
@@ -452,7 +447,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 							ie.instrumentDragList.Focus()
 						}
 					}
-					if ie.searchEditor.Text() != txt {
+					if ie.searchEditor.Text() != str.Value() {
 						str.Set(ie.searchEditor.Text())
 					}
 					return ret
@@ -472,46 +467,42 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	unitList := FilledDragList(t.Theme, ie.unitDragList, element, nil)
+	for {
+		event, ok := gtx.Event(
+			key.Filter{Focus: ie.unitDragList, Name: key.NameRightArrow},
+			key.Filter{Focus: ie.unitDragList, Name: key.NameEnter, Optional: key.ModCtrl},
+			key.Filter{Focus: ie.unitDragList, Name: key.NameReturn, Optional: key.ModCtrl},
+			key.Filter{Focus: ie.unitDragList, Name: key.NameDeleteBackward},
+			key.Filter{Focus: ie.unitDragList, Name: key.NameEscape},
+		)
+		if !ok {
+			break
+		}
+		switch e := event.(type) {
+		case key.Event:
+			switch e.State {
+			case key.Press:
+				switch e.Name {
+				case key.NameEscape:
+					ie.instrumentDragList.Focus()
+				case key.NameRightArrow:
+					ie.unitEditor.sliderList.Focus()
+				case key.NameDeleteBackward:
+					t.Units().SetSelectedType("")
+					t.UnitSearching().Bool().Set(true)
+					gtx.Execute(key.FocusCmd{Tag: ie.searchEditor})
+				case key.NameEnter, key.NameReturn:
+					t.Model.AddUnit(e.Modifiers.Contain(key.ModCtrl)).Do()
+					t.UnitSearching().Bool().Set(true)
+					gtx.Execute(key.FocusCmd{Tag: ie.searchEditor})
+				}
+			}
+		}
+	}
 	return Surface{Gray: 30, Focus: ie.wasFocused}.Layout(gtx, func(gtx C) D {
 		return layout.Stack{Alignment: layout.SE}.Layout(gtx,
 			layout.Expanded(func(gtx C) D {
 				defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-				for {
-					event, ok := gtx.Event(
-						key.Filter{Focus: ie.unitDragList, Name: key.NameRightArrow},
-						key.Filter{Focus: ie.unitDragList, Name: key.NameEnter, Optional: key.ModCtrl},
-						key.Filter{Focus: ie.unitDragList, Name: key.NameReturn, Optional: key.ModCtrl},
-						key.Filter{Focus: ie.unitDragList, Name: key.NameDeleteBackward},
-						key.Filter{Focus: ie.unitDragList, Name: key.NameEscape},
-					)
-					if !ok {
-						break
-					}
-
-					switch e := event.(type) {
-					case key.Event:
-						switch e.State {
-						case key.Press:
-							switch e.Name {
-							case key.NameEscape:
-								ie.instrumentDragList.Focus()
-							case key.NameRightArrow:
-								ie.unitEditor.sliderList.Focus()
-							case key.NameDeleteBackward:
-								t.Units().SetSelectedType("")
-								gtx.Execute(key.FocusCmd{Tag: ie.searchEditor})
-								l := len(ie.searchEditor.Text())
-								ie.searchEditor.SetCaret(l, l)
-							case key.NameEnter, key.NameReturn:
-								t.Model.AddUnit(e.Modifiers.Contain(key.ModCtrl)).Do()
-								ie.searchEditor.SetText("")
-								gtx.Execute(key.FocusCmd{Tag: ie.searchEditor})
-								l := len(ie.searchEditor.Text())
-								ie.searchEditor.SetCaret(l, l)
-							}
-						}
-					}
-				}
 				gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(unit.Dp(120)), gtx.Constraints.Max.Y))
 				dims := unitList.Layout(gtx)
 				unitList.LayoutScrollBar(gtx)
