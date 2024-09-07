@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   resized ([#145][i145])
 
 ### Fixed
+- When loading an instrument, make sure the total number of voices does not go
+  over the maximum number allowed by vm, and make sure a loaded instrument has
+  at least 1 voice
 - Potential ID collisions when clearing unit or pasteing instruments
 - Assign new IDs to loaded instruments, and fix ID collisions in case they
   somehow still appear ([#146][i146])

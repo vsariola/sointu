@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/vsariola/sointu"
+	"github.com/vsariola/sointu/vm"
 )
 
 func (m *Model) ReadSong(r io.ReadCloser) {
@@ -171,6 +172,16 @@ success:
 	for len(m.d.Song.Patch) <= m.d.InstrIndex {
 		m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
 	}
+	m.d.Song.Patch[m.d.InstrIndex] = sointu.Instrument{}
+	numVoices := m.d.Song.Patch.NumVoices()
+	if numVoices >= vm.MAX_VOICES {
+		// this really shouldn't happen, as we have already cleared the
+		// instrument and assuming each instrument has at least 1 voice, it
+		// should have freed up some voices
+		m.Alerts().Add(fmt.Sprintf("The patch has already %d voices", vm.MAX_VOICES), Error)
+		return false
+	}
+	instrument.NumVoices = clamp(instrument.NumVoices, 1, 32-numVoices)
 	m.assignUnitIDs(instrument.Units)
 	m.d.Song.Patch[m.d.InstrIndex] = instrument
 	if m.d.Song.Patch[m.d.InstrIndex].Comment != "" {
