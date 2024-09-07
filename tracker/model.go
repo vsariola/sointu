@@ -461,7 +461,7 @@ func (m *Model) fixIDCollisions() {
 		}
 	}
 	if needsFix {
-		m.Alerts().Add("Some units had duplicate IDs, they were fixed", Error)
+		m.Alerts().AddNamed("IDCollision", "Some units had duplicate IDs, they were fixed", Error)
 		for i, instr := range m.d.Song.Patch {
 			for j, unit := range instr.Units {
 				if unit.ID == 0 {

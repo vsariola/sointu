@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"testing"
 
 	"github.com/vsariola/sointu/tracker"
@@ -23,6 +24,16 @@ func (NullContext) BPM() (bpm float64, ok bool) {
 type modelFuzzState struct {
 	model     *tracker.Model
 	clipboard []byte
+	file      []byte
+}
+
+type myWriteCloser struct {
+	*bytes.Buffer
+}
+
+func (mwc *myWriteCloser) Close() error {
+	// Noop
+	return nil
 }
 
 func (s *modelFuzzState) Iterate(yield func(string, func(p string, t *testing.T)) bool, seed int) {
@@ -81,6 +92,32 @@ func (s *modelFuzzState) Iterate(yield func(string, func(p string, t *testing.T)
 	// Tables
 	s.IterateTable("Order", s.model.Order().Table(), yield, seed)
 	s.IterateTable("Notes", s.model.Notes().Table(), yield, seed)
+	// File reading
+	if s.file != nil {
+		yield("ReadSong", func(p string, t *testing.T) {
+			reader := bytes.NewReader(s.file)
+			readCloser := io.NopCloser(reader)
+			s.model.ReadSong(readCloser)
+		})
+		yield("LoadInstrument", func(p string, t *testing.T) {
+			reader := bytes.NewReader(s.file)
+			readCloser := io.NopCloser(reader)
+			s.model.LoadInstrument(readCloser)
+		})
+	}
+	// File saving
+	yield("WriteSong", func(p string, t *testing.T) {
+		writer := bytes.NewBuffer(nil)
+		writeCloser := &myWriteCloser{writer}
+		s.model.WriteSong(writeCloser)
+		s.file = writer.Bytes()
+	})
+	yield("SaveInstrument", func(p string, t *testing.T) {
+		writer := bytes.NewBuffer(nil)
+		writeCloser := &myWriteCloser{writer}
+		s.model.SaveInstrument(writeCloser)
+		s.file = writer.Bytes()
+	})
 }
 
 func (s *modelFuzzState) IterateInt(name string, i tracker.Int, yield func(string, func(p string, t *testing.T)) bool, seed int) {
@@ -248,6 +285,11 @@ func FuzzModel(f *testing.F) {
 				index--
 				return index > 0
 			}, seed)
+			state.model.Alerts().Iterate(func(a tracker.Alert) {
+				if a.Name == "IDCollision" {
+					t.Errorf("Path: %s Model has ID collisions", totalPath)
+				}
+			})
 		}
 		closeChan <- struct{}{}
 	})
