@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   resized ([#145][i145])
 
 ### Fixed
+- When inputting a note to the note editor, advance the cursor by step
+  ([#144][i144])
 - When loading an instrument, make sure the total number of voices does not go
   over the maximum number allowed by vm, and make sure a loaded instrument has
   at least 1 voice
@@ -191,5 +193,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i130]: https://github.com/vsariola/sointu/issues/130
 [i139]: https://github.com/vsariola/sointu/issues/139
 [i142]: https://github.com/vsariola/sointu/issues/142
+[i144]: https://github.com/vsariola/sointu/issues/144
 [i145]: https://github.com/vsariola/sointu/issues/145
 [i146]: https://github.com/vsariola/sointu/issues/146

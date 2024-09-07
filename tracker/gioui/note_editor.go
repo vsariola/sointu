@@ -341,6 +341,10 @@ func noteAsValue(octave, note int) byte {
 func (te *NoteEditor) command(gtx C, t *Tracker, e key.Event) {
 	if e.Name == "A" || e.Name == "1" {
 		t.Model.Notes().Table().Fill(0)
+		if step := t.Model.Step().Value(); step > 0 {
+			te.scrollTable.Table.MoveCursor(0, step)
+			te.scrollTable.Table.SetCursor2(te.scrollTable.Table.Cursor())
+		}
 		te.scrollTable.EnsureCursorVisible()
 		return
 	}
@@ -360,6 +364,10 @@ func (te *NoteEditor) command(gtx C, t *Tracker, e key.Event) {
 	}
 	return
 validNote:
+	if step := t.Model.Step().Value(); step > 0 {
+		te.scrollTable.Table.MoveCursor(0, step)
+		te.scrollTable.Table.SetCursor2(te.scrollTable.Table.Cursor())
+	}
 	te.scrollTable.EnsureCursorVisible()
 	if _, ok := t.KeyPlaying[e.Name]; !ok {
 		trk := te.scrollTable.Table.Cursor().X
