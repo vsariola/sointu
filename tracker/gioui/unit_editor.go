@@ -263,12 +263,12 @@ func (p ParameterStyle) Layout(gtx C) D {
 				sliderStyle := material.Slider(p.Theme, &p.w.floatWidget)
 				sliderStyle.Color = p.Theme.Fg
 				r := image.Rectangle{Max: gtx.Constraints.Min}
-				area := clip.Rect(r).Push(gtx.Ops)
+				defer clip.Rect(r).Push(gtx.Ops).Pop()
+				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
 				if p.Focus {
 					event.Op(gtx.Ops, &p.w.floatWidget)
 				}
 				dims := sliderStyle.Layout(gtx)
-				area.Pop()
 				tracker.Int{IntData: p.w.Parameter}.Set(int(p.w.floatWidget.Value*float32(ra.Max-ra.Min) + float32(ra.Min) + 0.5))
 				return dims
 			case tracker.BoolParameter:
@@ -279,6 +279,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 				boolStyle := material.Switch(p.Theme, &p.w.boolWidget, "Toggle boolean parameter")
 				boolStyle.Color.Disabled = p.Theme.Fg
 				boolStyle.Color.Enabled = white
+				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
 				dims := layout.Center.Layout(gtx, boolStyle.Layout)
 				if p.w.boolWidget.Value {
 					tracker.Int{IntData: p.w.Parameter}.Set(ra.Max)
@@ -320,6 +321,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 						})
 					}
 				}
+				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
 				return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 					layout.Rigid(p.tracker.layoutMenu(gtx, instrName, &p.w.instrBtn, &p.w.instrMenu, unit.Dp(200),
 						instrItems...,

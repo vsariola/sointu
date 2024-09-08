@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 ### Added
+- Clicking the parameter slider also selects that parameter ([#112][i112])
 - The vertical and horizontal split bars indicate with a cursor that they can be
   resized ([#145][i145])
 
