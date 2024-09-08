@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## Unreleased
+## [0.4.1]
 ### Added
 - Clicking the parameter slider also selects that parameter ([#112][i112])
 - The vertical and horizontal split bars indicate with a cursor that they can be
@@ -25,15 +25,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   mechanism to offset the different oscillators
 - Do not include delay times in the delay time table if the delay unit is
   disabled ([#139][i139])
+- Moved the error and warning popups slightly up so they don't block the unit
+  control buttons ([#142][i142])
 
 ### Changed
 - Do not automatically wrap around the song when playing as it was usually
   unwanted behaviour. There is already the looping mechanism if the user really
   wants to loop the song forever.
-- Moved the error and warning popups slightly up so they don't block the unit
-  control buttons ([#142][i142])
 
-## v0.4.0
+## [0.4.0]
 ### Added
 - User can drop preset instruments into `os.UserConfigDir()/sointu/presets/` and
   they appear in the list of presets next time sointu is started.
@@ -80,7 +80,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   up now increases the value, while scrolling down decreases the value. It was
   vice versa. ([#112][i112])
 
-## v0.3.0
+## [0.3.0]
 ### Added
 - Scroll bars to menus, shown when a menu is too long to fit.
 - Save the GUI state periodically to a recovery file and load it on
@@ -115,7 +115,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   stays the same, but the label was changed to "self", to highlight that
   this means the voice modulates only itself and not other voices.
 
-## v0.2.0
+## [0.2.0]
 ### Added
 - Saving and loading instruments
 - Comment field to instruments
@@ -153,7 +153,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   breaking change and changes the meaning of the resolution values. But
   now there are more usable values in the resolution.
 
-## v0.1.0
+## [0.1.0]
 ### Added
 - An instrument (set of opcodes & accompanying values) can have any
   number of voices.
@@ -181,7 +181,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - a command line utility to convert .yml songs to .asm
   - a command line utility to play the songs on command line
 
-[Unreleased]: https://github.com/vsariola/sointu/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/vsariola/sointu/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/vsariola/sointu/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/vsariola/sointu/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/vsariola/sointu/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/vsariola/sointu/compare/v0.1.0...v0.2.0
