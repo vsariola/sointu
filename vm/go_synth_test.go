@@ -128,7 +128,8 @@ func TestDisabledWithInstrument(t *testing.T) {
 	// that, but disabled, and make sure the compilation produces identical
 	// results
 	patch := sointu.Patch{defaultInstrument}
-	byteCode, err := vm.NewBytecode(patch, vm.AllFeatures{}, 120)
+	features := vm.NecessaryFeaturesFor(patch)
+	byteCode, err := vm.NewBytecode(patch, features, 120)
 	if err != nil {
 		t.Fatalf("vm.NewBytecode failed: %v", err)
 	}
@@ -145,19 +146,24 @@ func TestDisabledWithInstrument(t *testing.T) {
 		units = append(units, u2)
 
 		patch2 := sointu.Patch{sointu.Instrument{Name: "Instr", NumVoices: 1, Units: units}}
-		byteCode2, err := vm.NewBytecode(patch2, vm.AllFeatures{}, 120)
+		features2 := vm.NecessaryFeaturesFor(patch2)
+		byteCode2, err := vm.NewBytecode(patch2, features2, 120)
 		if err != nil {
 			t.Fatalf("vm.NewBytecode failed: %v", err)
 		}
+		if !reflect.DeepEqual(features, features2) {
+			t.Fatalf("disabled unit %v produced different FeatureSet", unit.Type)
+		}
 		if !reflect.DeepEqual(byteCode, byteCode2) {
-			t.Fatalf("disabled unit %v produced different bytecode", unit.Type)
+			t.Fatalf("disabled unit %v produced different Bytecode", unit.Type)
 		}
 	}
 }
 
 func TestDisabled(t *testing.T) {
 	patch := sointu.Patch{sointu.Instrument{Name: "Instr", NumVoices: 1, Units: []sointu.Unit{}}}
-	byteCode, err := vm.NewBytecode(patch, vm.AllFeatures{}, 120)
+	features := vm.NecessaryFeaturesFor(patch)
+	byteCode, err := vm.NewBytecode(patch, features, 120)
 	if err != nil {
 		t.Fatalf("vm.NewBytecode failed: %v", err)
 	}
@@ -169,9 +175,13 @@ func TestDisabled(t *testing.T) {
 		u2.Disabled = true
 		u2.ID = 1001
 		patch2 := sointu.Patch{sointu.Instrument{Name: "Instr", NumVoices: 1, Units: []sointu.Unit{u, u2}}}
-		byteCode2, err := vm.NewBytecode(patch2, vm.AllFeatures{}, 120)
+		features2 := vm.NecessaryFeaturesFor(patch2)
+		byteCode2, err := vm.NewBytecode(patch2, features2, 120)
 		if err != nil {
 			t.Fatalf("vm.NewBytecode failed: %v", err)
+		}
+		if !reflect.DeepEqual(features, features2) {
+			t.Fatalf("disabled unit %v produced different FeatureSet", unit.Type)
 		}
 		if !reflect.DeepEqual(byteCode, byteCode2) {
 			t.Fatalf("disabled unit %v produced different bytecode", unit.Type)
