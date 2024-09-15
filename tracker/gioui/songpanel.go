@@ -9,6 +9,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"github.com/vsariola/sointu/tracker"
+	"github.com/vsariola/sointu/version"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
@@ -92,7 +93,7 @@ func (t *SongPanel) layoutMenuBar(gtx C, tr *Tracker) D {
 	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(36))
 	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 
-	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}.Layout(gtx,
 		layout.Rigid(tr.layoutMenu(gtx, "File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
 		layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...)),
 	)
@@ -181,5 +182,10 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 			)
 		}),
 		layout.Rigid(panicBtnStyle.Layout),
+		layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+		layout.Rigid(func(gtx C) D {
+			labelStyle := LabelStyle{Text: version.VersionOrHash, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor, Shaper: tr.Theme.Shaper}
+			return labelStyle.Layout(gtx)
+		}),
 	)
 }

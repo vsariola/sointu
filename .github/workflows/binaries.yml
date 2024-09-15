@@ -42,7 +42,8 @@ jobs:
           - os: windows-latest
             asmnasm: C:\Users\runneradmin\nasm\nasm
             output: sointu-track.exe
-            params: -ldflags -H=windowsgui cmd/sointu-track/main.go
+            params: cmd/sointu-track/main.go
+            ldflags: -H=windowsgui
           - os: windows-latest
             asmnasm: C:\Users\runneradmin\nasm\nasm
             output: sointu-compile.exe
@@ -50,7 +51,8 @@ jobs:
           - os: windows-latest
             asmnasm: C:\Users\runneradmin\nasm\nasm
             output: sointu-track-native.exe
-            params: -ldflags -H=windowsgui -tags=native cmd/sointu-track/main.go
+            params: -tags=native cmd/sointu-track/main.go
+            ldflags: -H=windowsgui
           - os: windows-latest
             asmnasm: C:\Users\runneradmin\nasm\nasm
             output: sointu-vsti.dll
@@ -103,6 +105,8 @@ jobs:
         length: 7
     - uses: lukka/get-cmake@latest
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - uses: actions/setup-go@v5 # has to be after checkout, see https://medium.com/@s0k0mata/github-actions-and-go-the-new-cache-feature-in-actions-setup-go-v4-and-what-to-watch-out-for-aeea373ed07d
       with:
         go-version: '>=1.21.0'
@@ -122,7 +126,7 @@ jobs:
         ninja sointu
     - name: Build binary
       run: |
-        go build -o ${{ matrix.config.output }} ${{ matrix.config.params }}
+        go build -ldflags "-X github.com/vsariola/sointu/version.Version=$(git describe) ${{ matrix.config.ldflags}}" -o ${{ matrix.config.output }} ${{ matrix.config.params }}
     - name: Upload binary
       uses: actions/upload-artifact@v4
       with:

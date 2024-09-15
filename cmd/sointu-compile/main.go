@@ -14,6 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/vsariola/sointu"
+	"github.com/vsariola/sointu/version"
 	"github.com/vsariola/sointu/vm/compiler"
 )
 
@@ -43,8 +44,13 @@ func main() {
 	targetArch := flag.String("arch", runtime.GOARCH, "Target architecture. Defaults to OS architecture. Possible values: 386, amd64, wasm")
 	output16bit := flag.Bool("i", false, "Compiled song should output 16-bit integers, instead of floats.")
 	targetOs := flag.String("os", runtime.GOOS, "Target OS. Defaults to current OS. Possible values: windows, darwin, linux. Anything else is assumed linuxy. Ignored when targeting wasm.")
+	versionFlag := flag.Bool("v", false, "Print version.")
 	flag.Usage = printUsage
 	flag.Parse()
+	if *versionFlag {
+		fmt.Println(version.VersionOrHash)
+		os.Exit(0)
+	}
 	if (flag.NArg() == 0 && !*library) || *help {
 		flag.Usage()
 		os.Exit(0)

@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+### Added
+- Include version info in the binaries, as given be `git describe`. This version
+  info is shown as a label in the tracker and can be checked with `-v` flag in
+  the command line tools.
+
 ## [0.4.1]
 ### Added
 - Clicking the parameter slider also selects that parameter ([#112][i112])

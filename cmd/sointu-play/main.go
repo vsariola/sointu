@@ -13,6 +13,7 @@ import (
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/oto"
+	"github.com/vsariola/sointu/version"
 	"github.com/vsariola/sointu/vm/compiler/bridge"
 )
 
@@ -27,8 +28,13 @@ func main() {
 	rawOut := flag.Bool("r", false, "Output the rendered song as .raw file. By default, saves stereo float32 buffer to disk.")
 	wavOut := flag.Bool("w", false, "Output the rendered song as .wav file. By default, saves stereo float32 buffer to disk.")
 	pcm := flag.Bool("c", false, "Convert audio to 16-bit signed PCM when outputting.")
+	versionFlag := flag.Bool("v", false, "Print version.")
 	flag.Usage = printUsage
 	flag.Parse()
+	if *versionFlag {
+		fmt.Println(version.VersionOrHash)
+		os.Exit(0)
+	}
 	if flag.NArg() == 0 || *help {
 		flag.Usage()
 		os.Exit(0)
