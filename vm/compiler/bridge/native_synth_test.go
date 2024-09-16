@@ -28,6 +28,34 @@ const su_max_samples = SAMPLES_PER_ROW * TOTAL_ROWS
 
 // const bufsize = su_max_samples * 2
 
+func TestEmptyPatch(t *testing.T) {
+	patch := sointu.Patch{}
+	tracks := []sointu.Track{{NumVoices: 0, Order: []int{0}, Patterns: []sointu.Pattern{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}}}}
+	song := sointu.Song{BPM: 100, RowsPerBeat: 4, Score: sointu.Score{RowsPerPattern: 16, Length: 1, Tracks: tracks}, Patch: patch}
+	// make sure that the empty patch does not crash the synth
+	sointu.Play(bridge.NativeSynther{}, song, nil)
+}
+
+func TestUpdatingEmptyPatch(t *testing.T) {
+	patch := sointu.Patch{sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
+		{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 64, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
+		{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 95, "decay": 64, "sustain": 64, "release": 80, "gain": 128}},
+		{Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 128}},
+	}}}
+	tracks := []sointu.Track{{NumVoices: 0, Order: []int{0}, Patterns: []sointu.Pattern{{64, 0, 68, 0, 32, 0, 0, 0, 75, 0, 78, 0, 0, 0, 0, 0}}}}
+	song := sointu.Song{BPM: 100, RowsPerBeat: 4, Score: sointu.Score{RowsPerPattern: 16, Length: 1, Tracks: tracks}, Patch: patch}
+	synth, err := bridge.NativeSynther{}.Synth(patch, song.BPM)
+	if err != nil {
+		t.Fatalf("Synth creation failed: %v", err)
+	}
+	synth.Update(sointu.Patch{}, song.BPM)
+	buffer := make(sointu.AudioBuffer, su_max_samples)
+	err = buffer[:len(buffer)/2].Fill(synth)
+	if err != nil {
+		t.Fatalf("render gave an error: %v", err)
+	}
+}
+
 func TestOscillatSine(t *testing.T) {
 	patch := sointu.Patch{sointu.Instrument{NumVoices: 1, Units: []sointu.Unit{
 		{Type: "envelope", Parameters: map[string]int{"stereo": 0, "attack": 32, "decay": 32, "sustain": 64, "release": 64, "gain": 128}},

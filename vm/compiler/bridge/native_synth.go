@@ -38,6 +38,13 @@ func Synth(patch sointu.Patch, bpm int) (*NativeSynth, error) {
 	if len(comPatch.Operands) > 16384 { // TODO: 16384 could probably be pulled automatically from cgo
 		return nil, errors.New("bridge supports at most 16384 operands; the compiled patch has more")
 	}
+	// if the patch is empty, we still need to initialize the synth with a single opcode
+	if len(comPatch.Opcodes) == 0 {
+		s.Opcodes[0] = 0
+		s.NumVoices = 1
+		s.Polyphony = 0
+		return (*NativeSynth)(s), nil
+	}
 	for i, v := range comPatch.Opcodes {
 		s.Opcodes[i] = (C.uchar)(v)
 	}
@@ -129,6 +136,13 @@ func (bridgesynth *NativeSynth) Update(patch sointu.Patch, bpm int) error {
 	}
 	if len(comPatch.Operands) > 16384 { // TODO: 16384 could probably be pulled automatically from cgo
 		return errors.New("bridge supports at most 16384 operands; the compiled patch has more")
+	}
+	// if the patch is empty, we still need to initialize the synth with a single opcode
+	if len(comPatch.Opcodes) == 0 {
+		s.Opcodes[0] = 0
+		s.NumVoices = 1
+		s.Polyphony = 0
+		return nil
 	}
 	needsRefresh := false
 	for i, v := range comPatch.Opcodes {

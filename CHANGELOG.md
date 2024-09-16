@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   info is shown as a label in the tracker and can be checked with `-v` flag in
   the command line tools.
 
+### Fixed
+- Empty patch should not crash the native synth ([#148][i148])
+
 ## [0.4.1]
 ### Added
 - Clicking the parameter slider also selects that parameter ([#112][i112])
@@ -209,3 +212,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i144]: https://github.com/vsariola/sointu/issues/144
 [i145]: https://github.com/vsariola/sointu/issues/145
 [i146]: https://github.com/vsariola/sointu/issues/146
+[i148]: https://github.com/vsariola/sointu/issues/148
