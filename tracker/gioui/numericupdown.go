@@ -128,7 +128,7 @@ func (s *NumericUpDownStyle) button(height int, icon *widget.Icon, delta int, cl
 					size = 1
 				}
 				if icon != nil {
-					p := gtx.Dp(unit.Dp(size))
+					p := size
 					if p < 1 {
 						p = 1
 					}
