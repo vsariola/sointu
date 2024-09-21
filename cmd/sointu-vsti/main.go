@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/vsariola/sointu"
@@ -66,13 +67,22 @@ func (c *VSTIProcessContext) SetParams(a tracker.ExtParamArray) bool {
 		i := i
 		name := a[i].Param.Name
 		if name == "" {
-			name = "---"
+			name = fmt.Sprintf("P%d", i)
 		}
 		if p.Value != a[i].Val || p.Name != name {
 			p.Value = a[i].Val
 			p.Name = name
 			p.GetValueFunc = func(value float32) float32 {
 				return float32(a[i].Param.MinValue) + value*float32(a[i].Param.MaxValue-a[i].Param.MinValue)
+			}
+			p.GetValueLabelFunc = func(v float32) string {
+				if f := a[i].Param.DisplayFunc; f != nil {
+					s, u := a[i].Param.DisplayFunc(int(v + .5))
+					c.parameters[i].Unit = u
+					return s
+				}
+				c.parameters[i].Unit = ""
+				return strconv.Itoa(int(v + .5))
 			}
 			changed = true
 		}
@@ -109,7 +119,7 @@ func init() {
 		for i := 0; i < tracker.ExtParamCount; i++ {
 			parameters = append(parameters,
 				&vst2.Parameter{
-					Name:         "---",
+					Name:         fmt.Sprintf("P%d", i),
 					NotAutomated: true,
 				})
 		}
