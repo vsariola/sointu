@@ -32,7 +32,6 @@ type UnitEditor struct {
 	ClearUnitBtn     *ActionClickable
 	DisableUnitBtn   *BoolClickable
 	SelectTypeBtn    *widget.Clickable
-	ExtLinkMenuBtn   *TipClickable
 	ExtLinkMenuItems []MenuItem
 	ExtLinkMenu      Menu
 	caser            cases.Caser
@@ -47,7 +46,6 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 		SelectTypeBtn:    new(widget.Clickable),
 		sliderList:       NewDragList(m.Params().List(), layout.Vertical),
 		searchList:       NewDragList(m.SearchResults().List(), layout.Vertical),
-		ExtLinkMenuBtn:   new(TipClickable),
 		ExtLinkMenu:      Menu{},
 		ExtLinkMenuItems: []MenuItem{{Text: "None", IconBytes: icons.HardwarePhoneLinkOff, Doer: m.SetExtLink(-1)}},
 	}
@@ -118,6 +116,9 @@ func (pe *UnitEditor) layoutSliders(gtx C, t *Tracker) D {
 		}
 		paramStyle := t.ParamStyle(t.Theme, pe.Parameters[index])
 		paramStyle.Focus = pe.sliderList.TrackerList.Selected() == index
+		if m, ok := pe.Parameters[index].Parameter.(tracker.NamedParameter); ok {
+			paramStyle.Linked = m.Linked() == index
+		}
 		dims := paramStyle.Layout(gtx)
 		return D{Size: image.Pt(gtx.Constraints.Max.X, dims.Size.Y)}
 	}
@@ -139,7 +140,6 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 	copyUnitBtnStyle := TipIcon(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, "Copy unit (Ctrl+C)")
 	deleteUnitBtnStyle := ActionIcon(gtx, t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
 	disableUnitBtnStyle := ToggleIcon(gtx, t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, "Disable unit (Ctrl-D)", "Enable unit (Ctrl-D)")
-	extLinkMenuBtnStyle := TipIcon(t.Theme, pe.ExtLinkMenuBtn, icons.ContentLink, "Link to external parameter")
 	text := t.Units().SelectedType()
 	if text == "" {
 		text = "Choose unit type"
@@ -147,21 +147,8 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		text = pe.caser.String(text)
 	}
 	hintText := Label(text, white, t.Theme.Shaper)
-	m := PopupMenu(&pe.ExtLinkMenu, t.Theme.Shaper)
-
-	for pe.ExtLinkMenuBtn.Clickable.Clicked(gtx) {
-		pe.ExtLinkMenu.Visible = true
-	}
 
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-		layout.Rigid(func(gtx C) D {
-			dims := extLinkMenuBtnStyle.Layout(gtx)
-			op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
-			gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(300))
-			gtx.Constraints.Max.X = gtx.Dp(unit.Dp(180))
-			m.Layout(gtx, pe.ExtLinkMenuItems...)
-			return dims
-		}),
 		layout.Rigid(deleteUnitBtnStyle.Layout),
 		layout.Rigid(copyUnitBtnStyle.Layout),
 		layout.Rigid(disableUnitBtnStyle.Layout),
@@ -243,6 +230,7 @@ type ParameterWidget struct {
 	unitBtn     widget.Clickable
 	unitMenu    Menu
 	Parameter   tracker.Parameter
+	extLinkBtn  TipClickable
 }
 
 type ParameterStyle struct {
@@ -250,6 +238,7 @@ type ParameterStyle struct {
 	w       *ParameterWidget
 	Theme   *material.Theme
 	Focus   bool
+	Linked  bool
 }
 
 func (t *Tracker) ParamStyle(th *material.Theme, paramWidget *ParameterWidget) ParameterStyle {
@@ -262,6 +251,29 @@ func (t *Tracker) ParamStyle(th *material.Theme, paramWidget *ParameterWidget) P
 
 func (p ParameterStyle) Layout(gtx C) D {
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+		layout.Rigid(func(gtx C) D {
+			ue := p.tracker.InstrumentEditor.unitEditor
+			extLinkMenuBtnStyle := TipIcon(p.Theme, &p.w.extLinkBtn, icons.ContentLink, "Link to external parameter")
+			if !p.Linked {
+				extLinkMenuBtnStyle.IconButtonStyle.Color = disabledTextColor
+				if !p.Focus {
+					extLinkMenuBtnStyle.IconButtonStyle.Color = transparent
+				}
+			}
+			dims := extLinkMenuBtnStyle.Layout(gtx)
+			if p.Focus {
+				m := PopupMenu(&ue.ExtLinkMenu, p.Theme.Shaper)
+				for p.w.extLinkBtn.Clickable.Clicked(gtx) {
+					m.Menu.Visible = true
+				}
+				op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
+				gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(200))
+				gtx.Constraints.Max.X = gtx.Dp(unit.Dp(180))
+				m.Layout(gtx, ue.ExtLinkMenuItems...)
+			}
+			return dims
+
+		}),
 		layout.Rigid(func(gtx C) D {
 			gtx.Constraints.Min.X = gtx.Dp(unit.Dp(110))
 			return layout.E.Layout(gtx, Label(p.w.Parameter.Name(), white, p.tracker.Theme.Shaper))

@@ -194,6 +194,15 @@ func (p NamedParameter) LargeStep() int {
 	return 16
 }
 
+func (p NamedParameter) Linked() int {
+	for i, l := range p.m.d.ExtParamLinks {
+		if l.UnitID == p.unit.ID && l.ParamName == p.up.Name {
+			return i
+		}
+	}
+	return -1
+}
+
 // GmDlsEntryParameter
 
 func (p GmDlsEntryParameter) Name() string        { return "sample" }
