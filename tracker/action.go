@@ -176,6 +176,7 @@ func (m *Model) Undo() Action {
 			m.undoStack = m.undoStack[:len(m.undoStack)-1]
 			m.prevUndoKind = ""
 			(*Model)(m).send(m.d.Song.Copy())
+			(*Model)(m).send(m.ExtParams())
 		},
 	}
 }
@@ -193,6 +194,7 @@ func (m *Model) Redo() Action {
 			m.redoStack = m.redoStack[:len(m.redoStack)-1]
 			m.prevUndoKind = ""
 			(*Model)(m).send(m.d.Song.Copy())
+			(*Model)(m).send(m.ExtParams())
 		},
 	}
 }
@@ -406,5 +408,32 @@ func (m *Model) completeAction(checkSave bool) {
 		m.dialog = NoDialog
 	default:
 		m.dialog = NoDialog
+	}
+}
+
+func (m *Model) SetExtLink(index int) Action {
+	return Action{
+		do: func() {
+			defer m.change("SetExtLink", ExtParamLinkChange, MajorChange)()
+			p, _ := m.Params().SelectedItem().(NamedParameter)
+			for i := range p.m.d.ExtParamLinks {
+				if i == index {
+					continue
+				}
+				if p.m.d.ExtParamLinks[i].UnitID == p.unit.ID && p.m.d.ExtParamLinks[i].ParamName == p.up.Name {
+					p.m.d.ExtParamLinks[i] = ExtParamLink{}
+				}
+			}
+			if index > -1 {
+				p.m.d.ExtParamLinks[index] = ExtParamLink{UnitID: p.unit.ID, ParamName: p.up.Name}
+			}
+		},
+		allowed: func() bool {
+			if index < -1 || index >= len(m.d.ExtParamLinks) {
+				return false
+			}
+			_, ok := m.Params().SelectedItem().(NamedParameter)
+			return ok
+		},
 	}
 }

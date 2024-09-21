@@ -22,6 +22,7 @@ type VSTIProcessContext struct {
 	events     []vst2.MIDIEvent
 	eventIndex int
 	host       vst2.Host
+	parameters []*vst2.Parameter
 }
 
 func (c *VSTIProcessContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
@@ -52,6 +53,28 @@ func (c *VSTIProcessContext) BPM() (bpm float64, ok bool) {
 	return timeInfo.Tempo, true
 }
 
+func (c *VSTIProcessContext) Params() (ret tracker.ExtParamArray, ok bool) {
+	for i, p := range c.parameters {
+		ret[i] = p.Value
+	}
+	return ret, true
+}
+
+func (c *VSTIProcessContext) SetParams(val tracker.ExtParamArray) bool {
+	changed := false
+	for i, p := range c.parameters {
+		if p.Value != val[i] {
+			p.Value = val[i]
+			p.Name = fmt.Sprintf("P%f", val[i])
+			changed = true
+		}
+	}
+	if changed {
+		c.host.UpdateDisplay()
+	}
+	return true
+}
+
 func init() {
 	var (
 		version = int32(100)
@@ -74,7 +97,22 @@ func init() {
 			})
 		}
 		go t.Main()
-		context := VSTIProcessContext{host: h}
+		parameters := make([]*vst2.Parameter, 0, tracker.ExtParamCount)
+		for i := 0; i < tracker.ExtParamCount; i++ {
+			parameters = append(parameters,
+				&vst2.Parameter{
+					Name:         fmt.Sprintf("P%d", i),
+					NotAutomated: true,
+					Unit:         "foobar",
+					GetValueFunc: func(value float32) float32 {
+						return float32(int(value*128 + 1))
+					},
+					GetValueLabelFunc: func(value float32) string {
+						return fmt.Sprintf("%d", int(value))
+					},
+				})
+		}
+		context := VSTIProcessContext{host: h, parameters: parameters}
 		buf := make(sointu.AudioBuffer, 1024)
 		return vst2.Plugin{
 				UniqueID:       PLUGIN_ID,
@@ -85,6 +123,7 @@ func init() {
 				Vendor:         "vsariola/sointu",
 				Category:       vst2.PluginCategorySynth,
 				Flags:          vst2.PluginIsSynth,
+				Parameters:     parameters,
 				ProcessFloatFunc: func(in, out vst2.FloatBuffer) {
 					left := out.Channel(0)
 					right := out.Channel(1)

@@ -2,6 +2,8 @@ module github.com/vsariola/sointu
 
 go 1.21
 
+replace pipelined.dev/audio/vst2 => ../vst2
+
 require (
 	gioui.org v0.5.0
 	gioui.org/x v0.5.0

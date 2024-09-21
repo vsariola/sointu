@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
 )
+
+const ExtParamCount = 16
 
 // Model implements the mutable state for the tracker program GUI.
 //
@@ -37,6 +40,7 @@ type (
 		RecoveryFilePath        string
 		ChangedSinceRecovery    bool
 		Loop                    Loop
+		ExtParamLinks           [ExtParamCount]ExtParamLink
 	}
 
 	Model struct {
@@ -106,6 +110,16 @@ type (
 		model *Model
 	}
 
+	// ExtParamLink is for linking VST parameters to the patch parameters. There's
+	// fixed number of parameters in the VST plugin and these are linked to
+	// particular parameters of a unit.
+	ExtParamLink struct {
+		UnitID    int
+		ParamName string
+	}
+
+	ExtParamArray [ExtParamCount]float32
+
 	IsPlayingMsg   struct{ bool }
 	StartPlayMsg   struct{ sointu.SongPos }
 	BPMMsg         struct{ int }
@@ -133,6 +147,7 @@ const (
 	BPMChange
 	RowsPerBeatChange
 	LoopChange
+	ExtParamLinkChange
 	SongChange ChangeType = PatchChange | ScoreChange | BPMChange | RowsPerBeatChange
 )
 
@@ -247,6 +262,9 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			if m.changeType&LoopChange != 0 {
 				m.send(m.d.Loop)
 			}
+			if m.changeType&ExtParamLinkChange != 0 || m.changeType&PatchChange != 0 {
+				m.send(m.ExtParams())
+			}
 			m.undoSkipCounter++
 			var limit int
 			switch m.changeSeverity {
@@ -322,6 +340,7 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 	}
 	m.d.ChangedSinceRecovery = false
 	m.send(m.d.Song.Copy())
+	m.send(m.ExtParams())
 	m.send(m.d.Loop)
 	m.updatePatternUseCount()
 }
@@ -355,6 +374,8 @@ func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
 		m.Alerts().AddAlert(e)
 	case IsPlayingMsg:
 		m.playing = e.bool
+	case ExtParamArray:
+		m.SetExtParams(e)
 	default:
 	}
 }
@@ -387,6 +408,50 @@ func (m *Model) Instrument(index int) sointu.Instrument {
 		return sointu.Instrument{}
 	}
 	return m.d.Song.Patch[index].Copy()
+}
+
+func (m *Model) ExtParams() (ret ExtParamArray) {
+	for i, l := range m.d.ExtParamLinks {
+		instrIndex, unitIndex, err := m.d.Song.Patch.FindUnit(l.UnitID)
+		if err != nil {
+			continue
+		}
+		unit := m.d.Song.Patch[instrIndex].Units[unitIndex]
+		if up, ok := sointu.UnitTypes[unit.Type]; ok {
+			for _, p := range up {
+				if p.Name == l.ParamName && p.CanSet && p.MaxValue > p.MinValue {
+					ret[i] = float32(unit.Parameters[l.ParamName]-p.MinValue) / float32(p.MaxValue-p.MinValue)
+				}
+			}
+		}
+	}
+	return
+}
+
+func (m *Model) SetExtParams(params ExtParamArray) {
+	defer m.change("SetParamValue", PatchChange, MinorChange)()
+	changed := false
+	for i, l := range m.d.ExtParamLinks {
+		instrIndex, unitIndex, err := m.d.Song.Patch.FindUnit(l.UnitID)
+		if err != nil {
+			continue
+		}
+		unit := m.d.Song.Patch[instrIndex].Units[unitIndex]
+		if up, ok := sointu.UnitTypes[unit.Type]; ok {
+			for _, p := range up {
+				if p.Name == l.ParamName && p.CanSet && p.MaxValue > p.MinValue {
+					newVal := int(math.Round(float64(params[i])*float64(p.MaxValue-p.MinValue))) + p.MinValue
+					if unit.Parameters[l.ParamName] != newVal {
+						unit.Parameters[l.ParamName] = newVal
+						changed = true
+					}
+				}
+			}
+		}
+	}
+	if !changed {
+		m.changeCancel = true
+	}
 }
 
 func (d *modelData) Copy() modelData {

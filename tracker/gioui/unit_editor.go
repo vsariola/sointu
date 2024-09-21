@@ -24,27 +24,41 @@ import (
 )
 
 type UnitEditor struct {
-	sliderList     *DragList
-	searchList     *DragList
-	Parameters     []*ParameterWidget
-	DeleteUnitBtn  *ActionClickable
-	CopyUnitBtn    *TipClickable
-	ClearUnitBtn   *ActionClickable
-	DisableUnitBtn *BoolClickable
-	SelectTypeBtn  *widget.Clickable
-	caser          cases.Caser
+	sliderList       *DragList
+	searchList       *DragList
+	Parameters       []*ParameterWidget
+	DeleteUnitBtn    *ActionClickable
+	CopyUnitBtn      *TipClickable
+	ClearUnitBtn     *ActionClickable
+	DisableUnitBtn   *BoolClickable
+	SelectTypeBtn    *widget.Clickable
+	ExtLinkMenuBtn   *TipClickable
+	ExtLinkMenuItems []MenuItem
+	ExtLinkMenu      Menu
+	caser            cases.Caser
 }
 
 func NewUnitEditor(m *tracker.Model) *UnitEditor {
 	ret := &UnitEditor{
-		DeleteUnitBtn:  NewActionClickable(m.DeleteUnit()),
-		ClearUnitBtn:   NewActionClickable(m.ClearUnit()),
-		DisableUnitBtn: NewBoolClickable(m.UnitDisabled().Bool()),
-		CopyUnitBtn:    new(TipClickable),
-		SelectTypeBtn:  new(widget.Clickable),
-		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
-		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
+		DeleteUnitBtn:    NewActionClickable(m.DeleteUnit()),
+		ClearUnitBtn:     NewActionClickable(m.ClearUnit()),
+		DisableUnitBtn:   NewBoolClickable(m.UnitDisabled().Bool()),
+		CopyUnitBtn:      new(TipClickable),
+		SelectTypeBtn:    new(widget.Clickable),
+		sliderList:       NewDragList(m.Params().List(), layout.Vertical),
+		searchList:       NewDragList(m.SearchResults().List(), layout.Vertical),
+		ExtLinkMenuBtn:   new(TipClickable),
+		ExtLinkMenu:      Menu{},
+		ExtLinkMenuItems: []MenuItem{{Text: "None", IconBytes: icons.HardwarePhoneLinkOff, Doer: m.SetExtLink(-1)}},
 	}
+	for i := 0; i < tracker.ExtParamCount; i++ {
+		ret.ExtLinkMenuItems = append(ret.ExtLinkMenuItems, MenuItem{
+			Text:      fmt.Sprintf("P%v", i),
+			IconBytes: icons.HardwarePhoneLink,
+			Doer:      m.SetExtLink(i),
+		})
+	}
+
 	ret.caser = cases.Title(language.English)
 	return ret
 }
@@ -125,6 +139,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 	copyUnitBtnStyle := TipIcon(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, "Copy unit (Ctrl+C)")
 	deleteUnitBtnStyle := ActionIcon(gtx, t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
 	disableUnitBtnStyle := ToggleIcon(gtx, t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, "Disable unit (Ctrl-D)", "Enable unit (Ctrl-D)")
+	extLinkMenuBtnStyle := TipIcon(t.Theme, pe.ExtLinkMenuBtn, icons.ContentLink, "Link to external parameter")
 	text := t.Units().SelectedType()
 	if text == "" {
 		text = "Choose unit type"
@@ -132,7 +147,21 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		text = pe.caser.String(text)
 	}
 	hintText := Label(text, white, t.Theme.Shaper)
+	m := PopupMenu(&pe.ExtLinkMenu, t.Theme.Shaper)
+
+	for pe.ExtLinkMenuBtn.Clickable.Clicked(gtx) {
+		pe.ExtLinkMenu.Visible = true
+	}
+
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+		layout.Rigid(func(gtx C) D {
+			dims := extLinkMenuBtnStyle.Layout(gtx)
+			op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
+			gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(300))
+			gtx.Constraints.Max.X = gtx.Dp(unit.Dp(180))
+			m.Layout(gtx, pe.ExtLinkMenuItems...)
+			return dims
+		}),
 		layout.Rigid(deleteUnitBtnStyle.Layout),
 		layout.Rigid(copyUnitBtnStyle.Layout),
 		layout.Rigid(disableUnitBtnStyle.Layout),

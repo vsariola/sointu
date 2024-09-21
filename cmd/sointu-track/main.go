@@ -28,6 +28,14 @@ func (NullContext) BPM() (bpm float64, ok bool) {
 	return 0, false
 }
 
+func (NullContext) Params() (ret tracker.ExtParamArray, ok bool) {
+	return tracker.ExtParamArray{}, false
+}
+
+func (NullContext) SetParams(params tracker.ExtParamArray) bool {
+	return false
+}
+
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 

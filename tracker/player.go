@@ -25,6 +25,7 @@ type (
 		voiceLevels     [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
 		voices          [vm.MAX_VOICES]voice
 		loop            Loop
+		extParamValues  ExtParamArray
 
 		recState  recState  // is the recording off; are we waiting for a note; or are we recording
 		recording Recording // the recorded MIDI events and BPM
@@ -39,6 +40,8 @@ type (
 	PlayerProcessContext interface {
 		NextEvent() (event MIDINoteEvent, ok bool)
 		BPM() (bpm float64, ok bool)
+		Params() (params ExtParamArray, ok bool)
+		SetParams(params ExtParamArray) bool
 	}
 
 	// MIDINoteEvent is a MIDI event triggering or releasing a note. In
@@ -225,6 +228,10 @@ func (p *Player) advanceRow() {
 }
 
 func (p *Player) processMessages(context PlayerProcessContext) {
+	if value, ok := context.Params(); ok && value != p.extParamValues {
+		p.extParamValues = value
+		p.send(p.extParamValues)
+	}
 loop:
 	for { // process new message
 		select {
@@ -293,6 +300,8 @@ loop:
 					}
 					p.recState = recStateNone
 				}
+			case ExtParamArray:
+				context.SetParams(m)
 			default:
 				// ignore unknown messages
 			}
