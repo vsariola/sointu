@@ -53,19 +53,27 @@ func (c *VSTIProcessContext) BPM() (bpm float64, ok bool) {
 	return timeInfo.Tempo, true
 }
 
-func (c *VSTIProcessContext) Params() (ret tracker.ExtParamArray, ok bool) {
+func (c *VSTIProcessContext) Params() (ret tracker.ExtValueArray, ok bool) {
 	for i, p := range c.parameters {
 		ret[i] = p.Value
 	}
 	return ret, true
 }
 
-func (c *VSTIProcessContext) SetParams(val tracker.ExtParamArray) bool {
+func (c *VSTIProcessContext) SetParams(a tracker.ExtParamArray) bool {
 	changed := false
 	for i, p := range c.parameters {
-		if p.Value != val[i] {
-			p.Value = val[i]
-			p.Name = fmt.Sprintf("P%f", val[i])
+		i := i
+		name := a[i].Param.Name
+		if name == "" {
+			name = "---"
+		}
+		if p.Value != a[i].Val || p.Name != name {
+			p.Value = a[i].Val
+			p.Name = name
+			p.GetValueFunc = func(value float32) float32 {
+				return float32(a[i].Param.MinValue) + value*float32(a[i].Param.MaxValue-a[i].Param.MinValue)
+			}
 			changed = true
 		}
 	}
@@ -101,15 +109,8 @@ func init() {
 		for i := 0; i < tracker.ExtParamCount; i++ {
 			parameters = append(parameters,
 				&vst2.Parameter{
-					Name:         fmt.Sprintf("P%d", i),
+					Name:         "---",
 					NotAutomated: true,
-					Unit:         "foobar",
-					GetValueFunc: func(value float32) float32 {
-						return float32(int(value*128 + 1))
-					},
-					GetValueLabelFunc: func(value float32) string {
-						return fmt.Sprintf("%d", int(value))
-					},
 				})
 		}
 		context := VSTIProcessContext{host: h, parameters: parameters}

@@ -25,7 +25,7 @@ type (
 		voiceLevels     [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
 		voices          [vm.MAX_VOICES]voice
 		loop            Loop
-		extParamValues  ExtParamArray
+		extParamValues  ExtValueArray
 
 		recState  recState  // is the recording off; are we waiting for a note; or are we recording
 		recording Recording // the recorded MIDI events and BPM
@@ -40,7 +40,7 @@ type (
 	PlayerProcessContext interface {
 		NextEvent() (event MIDINoteEvent, ok bool)
 		BPM() (bpm float64, ok bool)
-		Params() (params ExtParamArray, ok bool)
+		Params() (params ExtValueArray, ok bool)
 		SetParams(params ExtParamArray) bool
 	}
 

@@ -21,8 +21,8 @@ func (NullContext) BPM() (bpm float64, ok bool) {
 	return 0, false
 }
 
-func (NullContext) Params() (params tracker.ExtParamArray, ok bool) {
-	return tracker.ExtParamArray{}, false
+func (NullContext) Params() (params tracker.ExtValueArray, ok bool) {
+	return tracker.ExtValueArray{}, false
 }
 
 func (NullContext) SetParams(params tracker.ExtParamArray) bool {

@@ -118,7 +118,11 @@ type (
 		ParamName string
 	}
 
-	ExtParamArray [ExtParamCount]float32
+	ExtValueArray [ExtParamCount]float32
+	ExtParamArray [ExtParamCount]struct {
+		Val   float32
+		Param sointu.UnitParameter
+	}
 
 	IsPlayingMsg   struct{ bool }
 	StartPlayMsg   struct{ sointu.SongPos }
@@ -374,8 +378,8 @@ func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
 		m.Alerts().AddAlert(e)
 	case IsPlayingMsg:
 		m.playing = e.bool
-	case ExtParamArray:
-		m.SetExtParams(e)
+	case ExtValueArray:
+		m.SetExtValues(e)
 	default:
 	}
 }
@@ -410,7 +414,7 @@ func (m *Model) Instrument(index int) sointu.Instrument {
 	return m.d.Song.Patch[index].Copy()
 }
 
-func (m *Model) ExtParams() (ret ExtParamArray) {
+func (m *Model) ExtParams() (params ExtParamArray) {
 	for i, l := range m.d.ExtParamLinks {
 		instrIndex, unitIndex, err := m.d.Song.Patch.FindUnit(l.UnitID)
 		if err != nil {
@@ -420,7 +424,8 @@ func (m *Model) ExtParams() (ret ExtParamArray) {
 		if up, ok := sointu.UnitTypes[unit.Type]; ok {
 			for _, p := range up {
 				if p.Name == l.ParamName && p.CanSet && p.MaxValue > p.MinValue {
-					ret[i] = float32(unit.Parameters[l.ParamName]-p.MinValue) / float32(p.MaxValue-p.MinValue)
+					params[i].Val = float32(unit.Parameters[l.ParamName]-p.MinValue) / float32(p.MaxValue-p.MinValue)
+					params[i].Param = p
 				}
 			}
 		}
@@ -428,8 +433,8 @@ func (m *Model) ExtParams() (ret ExtParamArray) {
 	return
 }
 
-func (m *Model) SetExtParams(params ExtParamArray) {
-	defer m.change("SetParamValue", PatchChange, MinorChange)()
+func (m *Model) SetExtValues(vals ExtValueArray) {
+	defer m.change("SetExtValues", PatchChange, MinorChange)()
 	changed := false
 	for i, l := range m.d.ExtParamLinks {
 		instrIndex, unitIndex, err := m.d.Song.Patch.FindUnit(l.UnitID)
@@ -440,7 +445,7 @@ func (m *Model) SetExtParams(params ExtParamArray) {
 		if up, ok := sointu.UnitTypes[unit.Type]; ok {
 			for _, p := range up {
 				if p.Name == l.ParamName && p.CanSet && p.MaxValue > p.MinValue {
-					newVal := int(math.Round(float64(params[i])*float64(p.MaxValue-p.MinValue))) + p.MinValue
+					newVal := int(math.Round(float64(vals[i])*float64(p.MaxValue-p.MinValue))) + p.MinValue
 					if unit.Parameters[l.ParamName] != newVal {
 						unit.Parameters[l.ParamName] = newVal
 						changed = true
