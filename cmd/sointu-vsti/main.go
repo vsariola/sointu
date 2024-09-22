@@ -9,7 +9,6 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/cmd"
@@ -66,13 +65,6 @@ func init() {
 		model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
 		t := gioui.NewTracker(model)
 		tracker.Bool{BoolData: (*tracker.InstrEnlarged)(model)}.Set(true)
-		if s := h.GetSampleRate(); math.Abs(float64(h.GetSampleRate()-44100.0)) > 1e-6 {
-			model.Alerts().AddAlert(tracker.Alert{
-				Message:  fmt.Sprintf("VSTi host sample rate is %.0f Hz; sointu supports 44100 Hz only", s),
-				Priority: tracker.Error,
-				Duration: 10 * time.Second,
-			})
-		}
 		go t.Main()
 		context := VSTIProcessContext{host: h}
 		buf := make(sointu.AudioBuffer, 1024)
@@ -86,6 +78,9 @@ func init() {
 				Category:       vst2.PluginCategorySynth,
 				Flags:          vst2.PluginIsSynth,
 				ProcessFloatFunc: func(in, out vst2.FloatBuffer) {
+					if s := h.GetSampleRate(); math.Abs(float64(h.GetSampleRate()-44100.0)) > 1e-6 {
+						player.SendAlert("WrongSampleRate", fmt.Sprintf("VSTi host sample rate is %.0f Hz; sointu supports 44100 Hz only", s), tracker.Error)
+					}
 					left := out.Channel(0)
 					right := out.Channel(1)
 					if len(buf) < out.Frames {

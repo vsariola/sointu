@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   the command line tools.
 
 ### Fixed
+- Warn about plugin sample rate being different from 44100 only after
+  ProcessFloatFunc has been called, so that host has time to set the sample rate
+  after initialization.
 - Crashes with sample-based oscillators in the 32-bit library, as the pointer to
   sample-table (edi) got accidentally overwritten by detune
 - Sample-based oscillators could hard crash if a x87 stack overflow happened

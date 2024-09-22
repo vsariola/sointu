@@ -171,12 +171,12 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 			err2 := p.peakVolumeMeter.Update(oldBuffer)
 			if err != nil {
 				p.synth = nil
-				p.sendAlert("PlayerVolume", err.Error(), Warning)
+				p.SendAlert("PlayerVolume", err.Error(), Warning)
 				return
 			}
 			if err2 != nil {
 				p.synth = nil
-				p.sendAlert("PlayerVolume", err2.Error(), Warning)
+				p.SendAlert("PlayerVolume", err2.Error(), Warning)
 				return
 			}
 			p.send(nil)
@@ -185,7 +185,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 	}
 	// we were not able to fill the buffer with NUM_RENDER_TRIES attempts, destroy synth and throw an error
 	p.synth = nil
-	p.sendAlert("PlayerCrash", fmt.Sprintf("synth did not fill the audio buffer even with %d render calls", numRenderTries), Error)
+	p.SendAlert("PlayerCrash", fmt.Sprintf("synth did not fill the audio buffer even with %d render calls", numRenderTries), Error)
 }
 
 func (p *Player) advanceRow() {
@@ -302,7 +302,7 @@ loop:
 	}
 }
 
-func (p *Player) sendAlert(name, message string, priority AlertPriority) {
+func (p *Player) SendAlert(name, message string, priority AlertPriority) {
 	p.send(Alert{
 		Name:     name,
 		Priority: priority,
@@ -319,7 +319,7 @@ func (p *Player) compileOrUpdateSynth() {
 		err := p.synth.Update(p.song.Patch, p.song.BPM)
 		if err != nil {
 			p.synth = nil
-			p.sendAlert("PlayerCrash", fmt.Sprintf("synth.Update: %v", err), Error)
+			p.SendAlert("PlayerCrash", fmt.Sprintf("synth.Update: %v", err), Error)
 			return
 		}
 	} else {
@@ -327,7 +327,7 @@ func (p *Player) compileOrUpdateSynth() {
 		p.synth, err = p.synther.Synth(p.song.Patch, p.song.BPM)
 		if err != nil {
 			p.synth = nil
-			p.sendAlert("PlayerCrash", fmt.Sprintf("synther.Synth: %v", err), Error)
+			p.SendAlert("PlayerCrash", fmt.Sprintf("synther.Synth: %v", err), Error)
 			return
 		}
 	}
