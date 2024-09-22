@@ -181,3 +181,8 @@ target_compile_definitions(test_render_samples PUBLIC TEST_HEADER="test_render_s
 add_executable(test_render_samples_api test_render_samples_api.c)
 target_link_libraries(test_render_samples_api ${STATICLIB})
 add_test(test_render_samples_api test_render_samples_api)
+
+add_executable(test_oscillator_crash test_oscillator_crash.c)
+target_link_libraries(test_oscillator_crash ${STATICLIB})
+add_test(test_oscillator_crash test_oscillator_crash)
+

@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   the command line tools.
 
 ### Fixed
+- Sample-based oscillators could hard crash if a x87 stack overflow happened
+  when calculating the current position in the sample ([#149][i149])
 - Numeric updown widget calculated dp-to-px conversion incorrectly, resulting in
   wrong scaling ([#150][i150])
 - Empty patch should not crash the native synth ([#148][i148])
@@ -215,4 +217,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i145]: https://github.com/vsariola/sointu/issues/145
 [i146]: https://github.com/vsariola/sointu/issues/146
 [i148]: https://github.com/vsariola/sointu/issues/148
+[i149]: https://github.com/vsariola/sointu/issues/149
 [i150]: https://github.com/vsariola/sointu/issues/150

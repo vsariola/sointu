@@ -338,7 +338,7 @@ su_oscillat_gate_bit:                           ; stack: 0/1, let's call it x
     pop     {{.DX}}                                             ; edx is now the sample number
     movzx   ebx, word [{{.DI}} + 4]    ; ecx = loopstart
     sub     edx, ebx                                        ; if sample number < loop start
-    jl      su_oscillat_sample_not_looping                  ;   then we're not looping yet
+    jb      su_oscillat_sample_not_looping                  ;   then we're not looping yet
     mov     eax, edx                                        ; eax = sample number
     movzx   ecx, word [{{.DI}} + 6]   ; edi is now the loop length
     xor     edx, edx                                        ; div wants edx to be empty
