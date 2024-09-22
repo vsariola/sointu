@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   the command line tools.
 
 ### Fixed
+- Crashes with sample-based oscillators in the 32-bit library, as the pointer to
+  sample-table (edi) got accidentally overwritten by detune
 - Sample-based oscillators could hard crash if a x87 stack overflow happened
   when calculating the current position in the sample ([#149][i149])
 - Numeric updown widget calculated dp-to-px conversion incorrectly, resulting in

@@ -127,6 +127,9 @@ su_op_oscillat_mono:
 {{- end}}
 {{- if .SupportsParamValueOtherThan "oscillator" "unison" 0}}
     {{.PushRegs .AX "" .WRK "OscWRK" .AX "OscFlags"}}
+{{- if and (not .Amd64) .Library}}
+    push     {{.AX}}                ; pushregs is pushad in 32-bit, and pushes edi last, so decrease SP because library needs to save edi and we can store detune there
+{{- end}}
     fldz                            ; 0 d
     fxch                            ; d a=0, "accumulated signal"
 su_op_oscillat_unison_loop:
@@ -147,6 +150,9 @@ su_op_oscillat_unison_loop:
     dec     eax
     jmp     short su_op_oscillat_unison_loop
 su_op_oscillat_unison_out:
+{{- if and (not .Amd64) .Library}}
+    pop     {{.AX}}                ; pushregs is pushad in 32-bit, and pushes edi last, so we inscrease SP to avoid destroying edi
+{{- end}}
     {{.PopRegs .AX .WRK .AX}}
     ret
 su_op_oscillat_single:
