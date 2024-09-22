@@ -289,6 +289,9 @@ func FuzzModel(f *testing.F) {
 				if a.Name == "IDCollision" {
 					t.Errorf("Path: %s Model has ID collisions", totalPath)
 				}
+				if a.Name == "InvalidUnitParameters" {
+					t.Errorf("Path: %s Model units with invalid parameters", totalPath)
+				}
 			})
 		}
 		closeChan <- struct{}{}

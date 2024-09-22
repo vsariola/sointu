@@ -225,6 +225,7 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			}
 			if m.changeType&PatchChange != 0 {
 				m.fixIDCollisions()
+				m.fixUnitParams()
 				m.d.InstrIndex = clamp(m.d.InstrIndex, 0, len(m.d.Song.Patch)-1)
 				m.d.InstrIndex2 = clamp(m.d.InstrIndex2, 0, len(m.d.Song.Patch)-1)
 				unitCount := 0
@@ -478,6 +479,36 @@ func (m *Model) fixIDCollisions() {
 				}
 			}
 		}
+	}
+}
+
+var validParameters = map[string](map[string]bool){}
+
+func init() {
+	for name, unitType := range sointu.UnitTypes {
+		validParameters[name] = map[string]bool{}
+		for _, param := range unitType {
+			validParameters[name][param.Name] = true
+		}
+	}
+}
+
+func (m *Model) fixUnitParams() {
+	// loop over all instruments and units and check that unit parameter table
+	// only has the parameters that are defined in the unit type
+	fixed := false
+	for i, instr := range m.d.Song.Patch {
+		for j, unit := range instr.Units {
+			for paramName := range unit.Parameters {
+				if !validParameters[unit.Type][paramName] {
+					delete(m.d.Song.Patch[i].Units[j].Parameters, paramName)
+					fixed = true
+				}
+			}
+		}
+	}
+	if fixed {
+		m.Alerts().AddNamed("InvalidUnitParameters", "Some units had invalid parameters, they were removed", Error)
 	}
 }
 

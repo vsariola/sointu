@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   the command line tools.
 
 ### Fixed
+- If units have useless parameters in their parameter maps, from bugs or from a
+  malformed yaml file, they are removed and user is warned about it
 - Pressing a or 1 when editing note values in hex mode created a note off line
   ([#162][i162])
 - Warn about plugin sample rate being different from 44100 only after
