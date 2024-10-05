@@ -28,6 +28,16 @@ func (NullContext) BPM() (bpm float64, ok bool) {
 	return 0, false
 }
 
+type PlayerAudioSource struct {
+	*tracker.Player
+	playerProcessContext tracker.PlayerProcessContext
+}
+
+func (p *PlayerAudioSource) ReadAudio(buf sointu.AudioBuffer) error {
+	p.Player.Process(buf, p.playerProcessContext)
+	return nil
+}
+
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 
@@ -49,7 +59,6 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	defer audioContext.Close()
 	recoveryFile := ""
 	if configDir, err := os.UserConfigDir(); err == nil {
 		recoveryFile = filepath.Join(configDir, "Sointu", "sointu-track-recovery")
@@ -63,18 +72,10 @@ func main() {
 		f.Close()
 	}
 	tracker := gioui.NewTracker(model)
-	output := audioContext.Output()
-	defer output.Close()
-	go func() {
-		buf := make(sointu.AudioBuffer, 1024)
-		ctx := NullContext{}
-		for {
-			player.Process(buf, ctx)
-			output.WriteAudio(buf)
-		}
-	}()
+	audioCloser := audioContext.Play(&PlayerAudioSource{player, NullContext{}})
 	go func() {
 		tracker.Main()
+		audioCloser.Close()
 		if *cpuprofile != "" {
 			pprof.StopCPUProfile()
 			f.Close()

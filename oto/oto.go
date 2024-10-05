@@ -1,55 +1,99 @@
 package oto
 
 import (
+	"encoding/binary"
+	"errors"
 	"fmt"
+	"math"
+	"sync"
 
-	"github.com/hajimehoshi/oto"
+	"github.com/ebitengine/oto/v3"
 	"github.com/vsariola/sointu"
 )
 
-type OtoContext oto.Context
-type OtoOutput struct {
-	player    *oto.Player
-	tmpBuffer []byte
-}
+const latency = 2048 // in samples at 44100 Hz = ~46 ms
 
-func (c *OtoContext) Output() sointu.AudioOutput {
-	return &OtoOutput{player: (*oto.Context)(c).NewPlayer(), tmpBuffer: make([]byte, 0)}
-}
+type (
+	OtoContext oto.Context
 
-const otoBufferSize = 8192
+	OtoPlayer struct {
+		player *oto.Player
+		reader *OtoReader
+	}
 
-// NewPlayer creates and initializes a new OtoPlayer
+	OtoReader struct {
+		audioSource sointu.AudioSource
+		tmpBuffer   sointu.AudioBuffer
+		waitGroup   sync.WaitGroup
+		err         error
+		errMutex    sync.RWMutex
+	}
+)
+
 func NewContext() (*OtoContext, error) {
-	context, err := oto.NewContext(44100, 2, 2, otoBufferSize)
+	op := oto.NewContextOptions{}
+	op.SampleRate = 44100
+	op.ChannelCount = 2
+	op.Format = oto.FormatFloat32LE
+	context, readyChan, err := oto.NewContext(&op)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create oto context: %w", err)
 	}
+	<-readyChan
 	return (*OtoContext)(context), nil
 }
 
-func (c *OtoContext) Close() error {
-	if err := (*oto.Context)(c).Close(); err != nil {
-		return fmt.Errorf("cannot close oto context: %w", err)
-	}
-	return nil
+func (c *OtoContext) Play(r sointu.AudioSource) sointu.CloserWaiter {
+	reader := &OtoReader{audioSource: r}
+	reader.waitGroup.Add(1)
+	player := (*oto.Context)(c).NewPlayer(reader)
+	player.SetBufferSize(latency * 8)
+	player.Play()
+	return OtoPlayer{player: player, reader: reader}
 }
 
-// Play implements the audio.Player interface for OtoPlayer
-func (o *OtoOutput) WriteAudio(floatBuffer sointu.AudioBuffer) (err error) {
-	// we reuse the old capacity tmpBuffer by setting its length to zero. then,
-	// we save the tmpBuffer so we can reuse it next time
-	o.tmpBuffer = FloatBufferTo16BitLE(floatBuffer, o.tmpBuffer[:0])
-	if _, err := o.player.Write(o.tmpBuffer); err != nil {
-		return fmt.Errorf("cannot write to player: %w", err)
-	}
-	return nil
+func (o OtoPlayer) Wait() {
+	o.reader.waitGroup.Wait()
 }
 
-// Close disposes of resources
-func (o *OtoOutput) Close() error {
-	if err := o.player.Close(); err != nil {
-		return fmt.Errorf("cannot close oto player: %w", err)
+func (o OtoPlayer) Close() error {
+	o.reader.closeWithError(errors.New("OtoPlayer was closed"))
+	return o.player.Close()
+}
+
+func (o *OtoReader) Read(b []byte) (n int, err error) {
+	o.errMutex.RLock()
+	if o.err != nil {
+		o.errMutex.RUnlock()
+		return 0, o.err
 	}
-	return nil
+	o.errMutex.RUnlock()
+	if len(b)%8 != 0 {
+		return o.closeWithError(fmt.Errorf("oto: Read buffer length must be a multiple of 8"))
+	}
+	samples := len(b) / 8
+	if samples > len(o.tmpBuffer) {
+		o.tmpBuffer = append(o.tmpBuffer, make(sointu.AudioBuffer, samples-len(o.tmpBuffer))...)
+	} else if samples < len(o.tmpBuffer) {
+		o.tmpBuffer = o.tmpBuffer[:samples]
+	}
+	err = o.audioSource.ReadAudio(o.tmpBuffer)
+	if err != nil {
+		return o.closeWithError(err)
+	}
+	for i := range o.tmpBuffer {
+		binary.LittleEndian.PutUint32(b[i*8:], math.Float32bits(o.tmpBuffer[i][0]))
+		binary.LittleEndian.PutUint32(b[i*8+4:], math.Float32bits(o.tmpBuffer[i][1]))
+	}
+	return samples * 8, nil
+}
+
+func (o *OtoReader) closeWithError(err error) (int, error) {
+	o.errMutex.Lock()
+	defer o.errMutex.Unlock()
+	if o.err == nil {
+		o.err = err
+		o.waitGroup.Done()
+	}
+	return 0, err
 }

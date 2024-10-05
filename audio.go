@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 )
 
@@ -13,22 +14,30 @@ type (
 	// sample represented by [2]float32. [0] is left channel, [1] is right
 	AudioBuffer [][2]float32
 
-	// AudioOutput represents something where we can send audio e.g. audio output.
-	// WriteAudio should block if not ready to accept audio e.g. buffer full.
-	AudioOutput interface {
-		WriteAudio(buffer AudioBuffer) error
-		Close() error
+	CloserWaiter interface {
+		io.Closer
+		Wait()
 	}
 
-	// AudioContext represents the low-level audio drivers. There should be at most
-	// one AudioContext at a time. The interface is implemented at least by
+	// AudioContext represents the low-level audio drivers. There should be at
+	// most one AudioContext at a time. The interface is implemented at least by
 	// oto.OtoContext, but in future we could also mock it.
 	//
-	// AudioContext is used to create one or more AudioOutputs with Output(); each
-	// can be used to output separate sound & closed when done.
+	// AudioContext is used to play one or more AudioSources. Playing can be
+	// stopped by closing the returned io.Closer.
 	AudioContext interface {
-		Output() AudioOutput
-		Close() error
+		Play(r AudioSource) CloserWaiter
+	}
+
+	// AudioSource is an interface for reading audio samples into an
+	// AudioBuffer. Returns error if the buffer is not filled.
+	AudioSource interface {
+		ReadAudio(buf AudioBuffer) error
+	}
+
+	BufferSource struct {
+		buffer AudioBuffer
+		pos    int
 	}
 
 	// Synth represents a state of a synthesizer, compiled from a Patch.
@@ -141,6 +150,21 @@ func (buffer AudioBuffer) Fill(synth Synth) error {
 	}
 	if s != len(buffer) {
 		return errors.New("in AudioBuffer.Fill, synth.Render should have filled the whole buffer but did not")
+	}
+	return nil
+}
+
+func (b AudioBuffer) Source() *BufferSource {
+	return &BufferSource{buffer: b}
+}
+
+// ReadAudio reads audio samples from an AudioSource into an AudioBuffer.
+// Returns an error when the buffer is fully consumed.
+func (a *BufferSource) ReadAudio(buf AudioBuffer) error {
+	n := copy(buf, a.buffer[a.pos:])
+	a.pos += n
+	if a.pos >= len(a.buffer) {
+		return io.EOF
 	}
 	return nil
 }

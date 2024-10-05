@@ -6,7 +6,7 @@ require (
 	gioui.org v0.7.1
 	gioui.org/x v0.7.1
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/hajimehoshi/oto v0.6.6
+	github.com/ebitengine/oto/v3 v3.3.0
 	golang.org/x/exp/shiny v0.0.0-20240707233637-46b078467d37
 	golang.org/x/text v0.16.0
 	gopkg.in/yaml.v2 v2.3.0
@@ -20,6 +20,7 @@ require (
 	git.wow.st/gmp/jni v0.0.0-20210610011705-34026c7e22d0 // indirect
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/ebitengine/purego v0.8.0 // indirect
 	github.com/go-text/typesetting v0.1.1 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/google/uuid v1.1.2 // indirect
@@ -31,8 +32,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/exp v0.0.0-20240707233637-46b078467d37 // indirect
 	golang.org/x/image v0.18.0 // indirect
-	golang.org/x/mobile v0.0.0-20231127183840-76ac6878050a // indirect
-	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
 	pipelined.dev/pipe v0.11.0 // indirect
 	pipelined.dev/signal v0.10.0 // indirect
 )

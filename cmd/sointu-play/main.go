@@ -43,6 +43,7 @@ func main() {
 		*play = true // if the user gives nothing to output, then the default behaviour is just to play the file
 	}
 	var audioContext sointu.AudioContext
+	var playWaiter sointu.CloserWaiter
 	if *play {
 		var err error
 		audioContext, err = oto.NewContext()
@@ -50,7 +51,6 @@ func main() {
 			fmt.Fprintf(os.Stderr, "could not acquire oto AudioContext: %v\n", err)
 			os.Exit(1)
 		}
-		defer audioContext.Close()
 	}
 	process := func(filename string) error {
 		output := func(extension string, contents []byte) error {
@@ -98,11 +98,7 @@ func main() {
 			return fmt.Errorf("sointu.Play failed: %v", err)
 		}
 		if *play {
-			output := audioContext.Output()
-			defer output.Close()
-			if err := output.WriteAudio(buffer); err != nil {
-				return fmt.Errorf("error playing: %v", err)
-			}
+			playWaiter = audioContext.Play(buffer.Source())
 		}
 		if *rawOut {
 			raw, err := buffer.Raw(*pcm)
@@ -121,6 +117,9 @@ func main() {
 			if err := output(".wav", wav); err != nil {
 				return fmt.Errorf("error outputting .wav file: %v", err)
 			}
+		}
+		if *play {
+			playWaiter.Wait()
 		}
 		return nil
 	}

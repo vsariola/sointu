@@ -21,6 +21,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   wrong scaling ([#150][i150])
 - Empty patch should not crash the native synth ([#148][i148])
 
+### Changed
+- The stand-alone apps now output floating point sound, as made possible by
+  upgrading oto-library to latest version. This way the tracker sound output
+  matches the compiled output better, as usually compiled intros output sound in
+  floating point. This might be important if OS sound drivers apply some audio
+  enhancemenets e.g. compressors to the audio.
+
 ## [0.4.1]
 ### Added
 - Clicking the parameter slider also selects that parameter ([#112][i112])
