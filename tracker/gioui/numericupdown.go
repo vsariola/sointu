@@ -113,49 +113,32 @@ func (s *NumericUpDownStyle) actualLayout(gtx C) D {
 
 func (s *NumericUpDownStyle) button(height int, icon *widget.Icon, delta int, click *gesture.Click) layout.Widget {
 	return func(gtx C) D {
-		btnWidth := gtx.Dp(s.ButtonWidth)
-		return layout.Stack{Alignment: layout.Center}.Layout(gtx,
-			layout.Stacked(func(gtx layout.Context) layout.Dimensions {
-				//paint.FillShape(gtx.Ops, black, clip.Rect(image.Rect(0, 0, btnWidth, height)).Op())
-				return layout.Dimensions{Size: image.Point{X: btnWidth, Y: height}}
-			}),
-			layout.Expanded(func(gtx C) D {
-				size := btnWidth
-				if height < size {
-					size = height
-				}
-				if size < 1 {
-					size = 1
-				}
+		width := gtx.Dp(s.ButtonWidth)
+		return layout.Background{}.Layout(gtx,
+			func(gtx C) D {
 				if icon != nil {
-					p := size
-					if p < 1 {
-						p = 1
-					}
-					gtx.Constraints = layout.Exact(image.Pt(p, p))
 					return icon.Layout(gtx, s.IconColor)
 				}
-				return layout.Dimensions{}
-			}),
-			layout.Expanded(func(gtx C) D {
+				return layout.Dimensions{Size: image.Point{X: width, Y: height}}
+			},
+			func(gtx C) D {
+				gtx.Constraints = layout.Exact(image.Pt(width, height))
 				return s.layoutClick(gtx, delta, click)
-			}),
-		)
+			})
 	}
 }
 
 func (s *NumericUpDownStyle) layoutText(gtx C) D {
-	return layout.Stack{Alignment: layout.Center}.Layout(gtx,
-		layout.Stacked(func(gtx C) D {
+	return layout.Background{}.Layout(gtx,
+		func(gtx C) D {
 			paint.FillShape(gtx.Ops, s.BackgroundColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
-			return layout.Dimensions{Size: gtx.Constraints.Max}
-		}),
-		layout.Expanded(func(gtx layout.Context) layout.Dimensions {
 			paint.ColorOp{Color: s.Color}.Add(gtx.Ops)
 			return widget.Label{Alignment: text.Middle}.Layout(gtx, &s.shaper, s.Font, s.TextSize, fmt.Sprintf("%v", s.NumberInput.Int.Value()), op.CallOp{})
-		}),
-		layout.Expanded(s.layoutDrag),
-	)
+		},
+		func(gtx C) D {
+			gtx.Constraints.Min = gtx.Constraints.Max
+			return s.layoutDrag(gtx)
+		})
 }
 
 func (s *NumericUpDownStyle) layoutDrag(gtx layout.Context) layout.Dimensions {
