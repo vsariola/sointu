@@ -100,10 +100,9 @@ func NewTracker(model *tracker.Model) *Tracker {
 
 func (t *Tracker) Main() {
 	titleFooter := ""
-	w := app.NewWindow(
-		app.Size(unit.Dp(800), unit.Dp(600)),
-		app.Title("Sointu Tracker"),
-	)
+	w := new(app.Window)
+	w.Option(app.Title("Sointu Tracker"))
+	w.Option(app.Size(unit.Dp(800), unit.Dp(600)))
 	t.InstrumentEditor.Focus()
 	recoveryTicker := time.NewTicker(time.Second * 30)
 	t.Explorer = explorer.NewExplorer(w)
@@ -135,10 +134,9 @@ func (t *Tracker) Main() {
 				}
 				if !t.Quitted() {
 					// TODO: uh oh, there's no way of canceling the destroyevent in gioui? so we create a new window just to show the dialog
-					w = app.NewWindow(
-						app.Size(unit.Dp(800), unit.Dp(600)),
-						app.Title("Sointu Tracker"),
-					)
+					w = new(app.Window)
+					w.Option(app.Title("Sointu Tracker"))
+					w.Option(app.Size(unit.Dp(800), unit.Dp(600)))
 					t.Explorer = explorer.NewExplorer(w)
 					go eventLoop(w, events, acks)
 				}
@@ -172,7 +170,7 @@ func eventLoop(w *app.Window, events chan<- event.Event, acks <-chan struct{}) {
 	// Iterate window events, sending each to the old event loop and waiting for
 	// a signal that processing is complete before iterating again.
 	for {
-		ev := w.NextEvent()
+		ev := w.Event()
 		events <- ev
 		<-acks
 		if _, ok := ev.(app.DestroyEvent); ok {

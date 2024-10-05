@@ -242,9 +242,9 @@ func (p ParameterStyle) Layout(gtx C) D {
 			case tracker.IntegerParameter:
 				for p.Focus {
 					e, ok := gtx.Event(pointer.Filter{
-						Target:       &p.w.floatWidget,
-						Kinds:        pointer.Scroll,
-						ScrollBounds: image.Rectangle{Min: image.Pt(0, -1e6), Max: image.Pt(0, 1e6)},
+						Target:  &p.w.floatWidget,
+						Kinds:   pointer.Scroll,
+						ScrollY: pointer.ScrollRange{-1e6, 1e6},
 					})
 					if !ok {
 						break
