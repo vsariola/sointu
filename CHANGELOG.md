@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- The filter unit frequency parameter is displayed in Hz, corresponding roughly
+  to the resonant frequency of the filter ([#158][i158])
 - Include version info in the binaries, as given be `git describe`. This version
   info is shown as a label in the tracker and can be checked with `-v` flag in
   the command line tools.
@@ -231,3 +233,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i148]: https://github.com/vsariola/sointu/issues/148
 [i149]: https://github.com/vsariola/sointu/issues/149
 [i150]: https://github.com/vsariola/sointu/issues/150
+[i158]: https://github.com/vsariola/sointu/issues/158

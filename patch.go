@@ -95,7 +95,7 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "decibels", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(40 * (float64(v)/64 - 1)), "dB" }}},
 	"filter": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "frequency", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "frequency", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: filterFrequencyDispFunc},
 		{Name: "resonance", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "lowpass", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "bandpass", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
@@ -190,6 +190,23 @@ func arrDispFunc(arr []string) UnitParameterDisplayFunc {
 		}
 		return arr[v], ""
 	}
+}
+
+func filterFrequencyDispFunc(v int) (string, string) {
+	// for reason I don't entirely understand, when r = 0, the peak seems to be
+	// at omega = f^2 I studied this with matlab, with
+	//    syms f2 r z
+	//    A = [1 f2;-f2 1-f2*f2-f2*r]; B = [0;f2]; C = [1 0]; D = 0; % C = [0 1] for the band pass filter
+	//    H = C*inv(z*eye(2)-A)*B+D % transfer function
+	// and then setting r = 0 and different values of f2 with
+	//    z = tf('z');
+	//    H = f2^2/(f2^2*z + r*f2*z - r*f2 + z^2 - 2*z + 1) % given by the above
+	//    bodeplot(H);
+	// Then had to convert omega to Hz, taking into account the 44100 sampling
+	// rate
+	f := float64(v) / 128
+	hz := 44100 * f * f / math.Pi / 2
+	return strconv.FormatFloat(hz, 'f', 0, 64), "Hz"
 }
 
 func compressorTimeDispFunc(v int) (string, string) {
