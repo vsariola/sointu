@@ -162,13 +162,29 @@ func (p NamedParameter) Type() ParameterType {
 
 func (p NamedParameter) Hint() string {
 	val := p.Value()
-	text := p.m.d.Song.Patch.ParamHintString(p.m.d.InstrIndex, p.m.d.UnitIndex, p.up.Name)
-	if text != "" {
-		text = fmt.Sprintf("%v / %v", val, text)
-	} else {
-		text = strconv.Itoa(val)
+	if p.up.DisplayFunc != nil {
+		valueInUnits, units := p.up.DisplayFunc(val)
+		return fmt.Sprintf("%d / %s %s", val, valueInUnits, units)
 	}
-	return text
+	if p.unit.Type == "send" && p.up.Name == "voice" && val == 0 {
+		targetIndex, _, err := p.m.FindUnit(p.unit.Parameters["target"])
+		if err == nil && targetIndex != p.m.d.InstrIndex {
+			return "all"
+		}
+		return "self"
+	}
+	if p.unit.Type == "send" && p.up.Name == "port" {
+		instrIndex, unitIndex, err := p.m.FindUnit(p.unit.Parameters["target"])
+		if err != nil {
+			return strconv.Itoa(val)
+		}
+		portList := sointu.Ports[p.m.d.Song.Patch[instrIndex].Units[unitIndex].Type]
+		if val < 0 || val >= len(portList) {
+			return strconv.Itoa(val)
+		}
+		return fmt.Sprintf(portList[val])
+	}
+	return strconv.Itoa(val)
 }
 
 func (p NamedParameter) LargeStep() int {

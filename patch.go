@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 )
 
 type (
@@ -57,7 +58,10 @@ type (
 		MaxValue    int    // maximum value of the parameter, inclusive
 		CanSet      bool   // if this parameter can be set before hand i.e. through the gui
 		CanModulate bool   // if this parameter can be modulated i.e. has a port number in "send" unit
+		DisplayFunc UnitParameterDisplayFunc
 	}
+
+	UnitParameterDisplayFunc func(int) (value string, unit string)
 )
 
 // UnitTypes documents all the available unit types and if they support stereo variant
@@ -79,7 +83,7 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "holdfreq", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"crush": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "resolution", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "resolution", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(24 * float64(v) / 128), "bits" }}},
 	"gain": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
@@ -88,7 +92,7 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "invgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"dbgain": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "decibels", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "decibels", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(40 * (float64(v)/64 - 1)), "dB" }}},
 	"filter": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "frequency", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
@@ -108,15 +112,15 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "dry", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "feedback", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "damp", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "notetracking", MinValue: 0, MaxValue: 2, CanSet: true, CanModulate: false},
+		{Name: "notetracking", MinValue: 0, MaxValue: 2, CanSet: true, CanModulate: false, DisplayFunc: arrDispFunc(noteTrackingNames[:])},
 		{Name: "delaytime", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true}},
 	"compressor": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
+		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
 		{Name: "invgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "threshold", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "ratio", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "ratio", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(1 - float64(v)/128), "" }}},
 	"speed": []UnitParameter{},
 	"out": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
@@ -128,20 +132,20 @@ var UnitTypes = map[string]([]UnitParameter){
 	"aux": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false}},
+		{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false, DisplayFunc: arrDispFunc(channelNames[:])}},
 	"send": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "amount", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "amount", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(float64(v)/64 - 1), "" }},
 		{Name: "voice", MinValue: 0, MaxValue: 32, CanSet: true, CanModulate: false},
 		{Name: "target", MinValue: 0, MaxValue: math.MaxInt32, CanSet: true, CanModulate: false},
 		{Name: "port", MinValue: 0, MaxValue: 7, CanSet: true, CanModulate: false},
 		{Name: "sendpop", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}},
 	"envelope": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "decay", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return engineeringTime(math.Pow(2, 24*float64(v)/128) / 44100) }},
+		{Name: "decay", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return engineeringTime(math.Pow(2, 24*float64(v)/128) / 44100) }},
 		{Name: "sustain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return engineeringTime(math.Pow(2, 24*float64(v)/128) / 44100) }},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"noise": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
@@ -149,14 +153,14 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"oscillator": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "transpose", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "detune", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "transpose", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: oscillatorTransposeDispFunc},
+		{Name: "detune", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(float64(v-64) / 64), "st" }},
 		{Name: "phase", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "color", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "shape", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "frequency", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true},
-		{Name: "type", MinValue: int(Sine), MaxValue: int(Sample), CanSet: true, CanModulate: false},
+		{Name: "type", MinValue: int(Sine), MaxValue: int(Sample), CanSet: true, CanModulate: false, DisplayFunc: arrDispFunc(oscTypes[:])},
 		{Name: "lfo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "unison", MinValue: 0, MaxValue: 3, CanSet: true, CanModulate: false},
 		{Name: "samplestart", MinValue: 0, MaxValue: 1720329, CanSet: true, CanModulate: false},
@@ -164,15 +168,57 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "looplength", MinValue: 0, MaxValue: 65535, CanSet: true, CanModulate: false}},
 	"loadval": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "value", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "value", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(float64(v)/64 - 1), "" }}},
 	"receive": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "left", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true},
 		{Name: "right", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true}},
 	"in": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false}},
+		{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false, DisplayFunc: arrDispFunc(channelNames[:])}},
 	"sync": []UnitParameter{},
+}
+
+var channelNames = [...]string{"left", "right", "aux1 left", "aux1 right", "aux2 left", "aux2 right", "aux3 left", "aux3 right"}
+var noteTrackingNames = [...]string{"fixed", "pitch", "BPM"}
+var oscTypes = [...]string{"sine", "trisaw", "pulse", "gate", "sample"}
+
+func arrDispFunc(arr []string) UnitParameterDisplayFunc {
+	return func(v int) (string, string) {
+		if v < 0 || v >= len(arr) {
+			return "???", ""
+		}
+		return arr[v], ""
+	}
+}
+
+func compressorTimeDispFunc(v int) (string, string) {
+	alpha := math.Pow(2, -24*float64(v)/128) // alpha is the "smoothing factor" of first order low pass iir
+	sec := -1 / (44100 * math.Log(1-alpha))  // from smoothing factor to time constant, https://en.wikipedia.org/wiki/Exponential_smoothing
+	return engineeringTime(sec)
+}
+
+func oscillatorTransposeDispFunc(v int) (string, string) {
+	relvalue := v - 64
+	octaves := relvalue / 12
+	semitones := relvalue % 12
+	if semitones == 0 {
+		return strconv.Itoa(octaves), "oct"
+	}
+	return strconv.Itoa(semitones), "st"
+}
+
+func engineeringTime(sec float64) (string, string) {
+	if sec < 1e-3 {
+		return fmt.Sprintf("%.2f", sec*1e6), "us"
+	} else if sec < 1 {
+		return fmt.Sprintf("%.2f", sec*1e3), "ms"
+	}
+	return fmt.Sprintf("%.2f", sec), "s"
+}
+
+func formatFloat(f float64) string {
+	return strconv.FormatFloat(f, 'f', -1, 64)
 }
 
 // When unit.Type = "oscillator", its unit.Parameter["Type"] tells the type of
@@ -373,159 +419,4 @@ func (p Patch) FindUnit(id int) (instrIndex int, unitIndex int, err error) {
 		}
 	}
 	return 0, 0, fmt.Errorf("could not find a unit with id %v", id)
-}
-
-// ParamHintString returns a human readable string representing the current
-// value of a given unit parameter.
-func (p Patch) ParamHintString(instrIndex, unitIndex int, param string) string {
-	if instrIndex < 0 || instrIndex >= len(p) {
-		return ""
-	}
-	instr := p[instrIndex]
-	if unitIndex < 0 || unitIndex >= len(instr.Units) {
-		return ""
-	}
-	unit := instr.Units[unitIndex]
-	value := unit.Parameters[param]
-	switch unit.Type {
-	case "envelope":
-		switch param {
-		case "attack":
-			return engineeringTime(math.Pow(2, 24*float64(value)/128) / 44100)
-		case "decay":
-			return engineeringTime(math.Pow(2, 24*float64(value)/128) / 44100 * (1 - float64(unit.Parameters["sustain"])/128))
-		case "release":
-			return engineeringTime(math.Pow(2, 24*float64(value)/128) / 44100 * float64(unit.Parameters["sustain"]) / 128)
-		}
-	case "oscillator":
-		switch param {
-		case "type":
-			switch value {
-			case Sine:
-				return "Sine"
-			case Trisaw:
-				return "Trisaw"
-			case Pulse:
-				return "Pulse"
-			case Gate:
-				return "Gate"
-			case Sample:
-				return "Sample"
-			default:
-				return "Unknown"
-			}
-		case "transpose":
-			relvalue := value - 64
-			octaves := relvalue / 12
-			semitones := relvalue % 12
-			if octaves != 0 {
-				return fmt.Sprintf("%v oct, %v st", octaves, semitones)
-			}
-			return fmt.Sprintf("%v st", semitones)
-		case "detune":
-			return fmt.Sprintf("%v st", float32(value-64)/64.0)
-		}
-	case "compressor":
-		switch param {
-		case "attack":
-			fallthrough
-		case "release":
-			alpha := math.Pow(2, -24*float64(value)/128) // alpha is the "smoothing factor" of first order low pass iir
-			sec := -1 / (44100 * math.Log(1-alpha))      // from smoothing factor to time constant, https://en.wikipedia.org/wiki/Exponential_smoothing
-			return engineeringTime(sec)
-		case "ratio":
-			return fmt.Sprintf("1 : %.3f", 1-float64(value)/128)
-		}
-	case "loadval":
-		switch param {
-		case "value":
-			return fmt.Sprintf("%.2f", float32(value)/64-1)
-		}
-	case "send":
-		switch param {
-		case "amount":
-			return fmt.Sprintf("%.2f", float32(value)/64-1)
-		case "voice":
-			if value == 0 {
-				targetIndex, _, err := p.FindUnit(unit.Parameters["target"])
-				if err == nil && targetIndex != instrIndex {
-					return "all"
-				}
-				return "self"
-			}
-			return fmt.Sprintf("%v", value)
-		case "target":
-			instrIndex, unitIndex, err := p.FindUnit(unit.Parameters["target"])
-			if err != nil {
-				return "invalid target"
-			}
-			instr := p[instrIndex]
-			unit := instr.Units[unitIndex]
-			return fmt.Sprintf("%v / %v%v", instr.Name, unit.Type, unitIndex)
-		case "port":
-			instrIndex, unitIndex, err := p.FindUnit(unit.Parameters["target"])
-			if err != nil {
-				return fmt.Sprintf("%v ???", value)
-			}
-			portList := Ports[p[instrIndex].Units[unitIndex].Type]
-			if value < 0 || value >= len(portList) {
-				return fmt.Sprintf("%v ???", value)
-			}
-			return fmt.Sprintf(portList[value])
-		}
-	case "delay":
-		switch param {
-		case "notetracking":
-			switch value {
-			case 0:
-				return "fixed"
-			case 1:
-				return "tracks pitch"
-			case 2:
-				return "tracks BPM"
-			}
-		}
-	case "in", "aux":
-		switch param {
-		case "channel":
-			switch value {
-			case 0:
-				return "left"
-			case 1:
-				return "right"
-			case 2:
-				return "aux1 left"
-			case 3:
-				return "aux1 right"
-			case 4:
-				return "aux2 left"
-			case 5:
-				return "aux2 right"
-			case 6:
-				return "aux3 left"
-			case 7:
-				return "aux3 right"
-			}
-		}
-	case "dbgain":
-		switch param {
-		case "decibels":
-			return fmt.Sprintf("%.2f dB", 40*(float32(value)/64-1))
-		}
-	case "crush":
-		switch param {
-		case "resolution":
-			return fmt.Sprintf("%v bits", 24*float32(value)/128)
-		}
-	}
-	return ""
-}
-
-func engineeringTime(sec float64) string {
-	if sec < 1e-3 {
-		return fmt.Sprintf("%.2f us", sec*1e6)
-	} else if sec < 1 {
-		return fmt.Sprintf("%.2f ms", sec*1e3)
-	}
-	return fmt.Sprintf("%.2f s", sec)
 }
