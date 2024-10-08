@@ -193,20 +193,24 @@ func arrDispFunc(arr []string) UnitParameterDisplayFunc {
 }
 
 func filterFrequencyDispFunc(v int) (string, string) {
-	// for reason I don't entirely understand, when r = 0, the peak seems to be
-	// at omega = f^2 I studied this with matlab, with
-	//    syms f2 r z
-	//    A = [1 f2;-f2 1-f2*f2-f2*r]; B = [0;f2]; C = [1 0]; D = 0; % C = [0 1] for the band pass filter
-	//    H = C*inv(z*eye(2)-A)*B+D % transfer function
-	// and then setting r = 0 and different values of f2 with
-	//    z = tf('z');
-	//    H = f2^2/(f2^2*z + r*f2*z - r*f2 + z^2 - 2*z + 1) % given by the above
-	//    bodeplot(H);
-	// Then had to convert omega to Hz, taking into account the 44100 sampling
-	// rate
-	f := float64(v) / 128
-	hz := 44100 * f * f / math.Pi / 2
-	return strconv.FormatFloat(hz, 'f', 0, 64), "Hz"
+	// Matlab was used to find the frequency for the singularity when r = 0:
+	// % p is the frequency parameter squared, p = freq * freq
+	// % We assume the singular case r = 0.
+	// syms p z s T
+	// A = [1 p;-p 1-p*p]; % discrete state-space matrix x(k+1)=A*x(k) + ...
+	// pol = det(z*eye(2)-A) % characteristic discrete polynomial
+	// spol = simplify(subs(pol,z,(1+s*T/2)/(1-s*T/2))) % Tustin approximation
+	// % where T = 1/(44100 Hz) is the sample period
+	// % spol is of the form N(s)/D(s), where N(s)=(-T^2*p^2*s^2+4*T^2*s^2+4*p^2)
+	// % We are interested in the roots i.e. when spol == 0 <=> N(s)==0
+	// simplify(solve((-T^2*p^2*s^2+4*T^2*s^2+4*p^2)==0,s))
+	// % Answer: s=±2*p/(T*(p^2-4)^(1/2)). For small p, this simplifies to:
+	// % s=±p*j/T. Thus, s=j*omega=j*2*pi*f => f=±p/(2*pi*T).
+	// So the singularity is when f = p / (2*pi*T) Hz.
+	freq := float64(v) / 128
+	p := freq * freq
+	f := 44100 * p / math.Pi / 2
+	return strconv.FormatFloat(f, 'f', 0, 64), "Hz"
 }
 
 func compressorTimeDispFunc(v int) (string, string) {
