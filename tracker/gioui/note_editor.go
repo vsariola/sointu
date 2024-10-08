@@ -339,15 +339,6 @@ func noteAsValue(octave, note int) byte {
 }
 
 func (te *NoteEditor) command(gtx C, t *Tracker, e key.Event) {
-	if e.Name == "A" || e.Name == "1" {
-		t.Model.Notes().Table().Fill(0)
-		if step := t.Model.Step().Value(); step > 0 {
-			te.scrollTable.Table.MoveCursor(0, step)
-			te.scrollTable.Table.SetCursor2(te.scrollTable.Table.Cursor())
-		}
-		te.scrollTable.EnsureCursorVisible()
-		return
-	}
 	var n byte
 	if t.Model.Notes().Effect(te.scrollTable.Table.Cursor().X) {
 		if nibbleValue, err := strconv.ParseInt(string(e.Name), 16, 8); err == nil {
@@ -356,6 +347,15 @@ func (te *NoteEditor) command(gtx C, t *Tracker, e key.Event) {
 			goto validNote
 		}
 	} else {
+		if e.Name == "A" || e.Name == "1" {
+			t.Model.Notes().Table().Fill(0)
+			if step := t.Model.Step().Value(); step > 0 {
+				te.scrollTable.Table.MoveCursor(0, step)
+				te.scrollTable.Table.SetCursor2(te.scrollTable.Table.Cursor())
+			}
+			te.scrollTable.EnsureCursorVisible()
+			return
+		}
 		if val, ok := noteMap[e.Name]; ok {
 			n = noteAsValue(t.OctaveNumberInput.Int.Value(), val)
 			t.Model.Notes().Table().Fill(int(n))

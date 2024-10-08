@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   the command line tools.
 
 ### Fixed
+- Pressing a or 1 when editing note values in hex mode created a note off line
+  ([#162][i162])
 - Warn about plugin sample rate being different from 44100 only after
   ProcessFloatFunc has been called, so that host has time to set the sample rate
   after initialization.
@@ -234,3 +236,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i149]: https://github.com/vsariola/sointu/issues/149
 [i150]: https://github.com/vsariola/sointu/issues/150
 [i158]: https://github.com/vsariola/sointu/issues/158
+[i162]: https://github.com/vsariola/sointu/issues/162
