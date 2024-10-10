@@ -40,17 +40,6 @@ type SongPanel struct {
 
 	// Edit menu items
 	editMenuItems []MenuItem
-
-	// Hints
-	rewindHint                  string
-	playHint, stopHint          string
-	recordHint, stopRecordHint  string
-	followOnHint, followOffHint string
-	panicHint                   string
-	loopOffHint, loopOnHint     string
-
-	// Midi menu items
-	midiMenuItems []MenuItem
 }
 
 func NewSongPanel(model *tracker.Model) *SongPanel {
@@ -123,7 +112,6 @@ func (t *SongPanel) layoutMenuBar(gtx C, tr *Tracker) D {
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}.Layout(gtx,
 		layout.Rigid(tr.layoutMenu(gtx, "File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
 		layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...)),
-		layout.Rigid(tr.layoutMenu(gtx, "MIDI", &t.MenuBar[2], &t.Menus[2], unit.Dp(200), t.midiMenuItems...)),
 	)
 }
 

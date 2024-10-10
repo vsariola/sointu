@@ -55,7 +55,7 @@ func main() {
 	}
 	midiContext := gomidi.NewContext()
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, midiContext, recoveryFile)
-	defer model.MIDI.Close()
+	defer midiContext.Close()
 	if a := flag.Args(); len(a) > 0 {
 		f, err := os.Open(a[0])
 		if err == nil {

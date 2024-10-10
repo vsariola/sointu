@@ -1,7 +1,6 @@
 package tracker
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/vsariola/sointu"
@@ -66,7 +65,16 @@ func (m *Model) AddTrack() Action {
 func (m *Model) DeleteTrack() Action {
 	return Action{
 		allowed: func() bool { return len(m.d.Song.Score.Tracks) > 0 },
-		do:      func() { m.Tracks().List().DeleteElements(false) },
+		do: func() {
+			defer (*Model)(m).change("DeleteTrackAction", ScoreChange, MajorChange)()
+			m.d.Cursor.Track = intMax(intMin(m.d.Cursor.Track, len(m.d.Song.Score.Tracks)-1), 0)
+			newTracks := make([]sointu.Track, len(m.d.Song.Score.Tracks)-1)
+			copy(newTracks, m.d.Song.Score.Tracks[:m.d.Cursor.Track])
+			copy(newTracks[m.d.Cursor.Track:], m.d.Song.Score.Tracks[m.d.Cursor.Track+1:])
+			m.d.Cursor.Track = intMax(intMin(m.d.Cursor.Track, len(m.d.Song.Score.Tracks)-1), 0)
+			m.d.Song.Score.Tracks = newTracks
+			m.d.Cursor2 = m.d.Cursor
+		},
 	}
 }
 
@@ -95,7 +103,10 @@ func (m *Model) AddInstrument() Action {
 func (m *Model) DeleteInstrument() Action {
 	return Action{
 		allowed: func() bool { return len((*Model)(m).d.Song.Patch) > 0 },
-		do:      func() { m.Instruments().List().DeleteElements(false) },
+		do: func() {
+			defer (*Model)(m).change("DeleteInstrumentAction", PatchChange, MajorChange)()
+			m.d.Song.Patch = append(m.d.Song.Patch[:m.d.InstrIndex], m.d.Song.Patch[m.d.InstrIndex+1:]...)
+		},
 	}
 }
 
@@ -451,9 +462,8 @@ func (m *Model) completeAction(checkSave bool) {
 	}
 	switch m.dialog {
 	case NewSongChanges, NewSongSaveExplorer:
-		c := m.change("NewSong", SongChange, MajorChange)
+		c := m.change("NewSong", SongChange|LoopChange, MajorChange)
 		m.resetSong()
-		m.setLoop(Loop{})
 		c()
 		m.d.ChangedSinceSave = false
 		m.dialog = NoDialog
@@ -464,19 +474,5 @@ func (m *Model) completeAction(checkSave bool) {
 		m.dialog = NoDialog
 	default:
 		m.dialog = NoDialog
-	}
-}
-
-func (m *Model) setPanic(val bool) {
-	if m.panic != val {
-		m.panic = val
-		m.send(PanicMsg{val})
-	}
-}
-
-func (m *Model) setLoop(newLoop Loop) {
-	if m.loop != newLoop {
-		m.loop = newLoop
-		m.send(newLoop)
 	}
 }

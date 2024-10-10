@@ -92,6 +92,7 @@ const numRenderTries = 10000
 func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext) {
 	p.processMessages(context)
 	midi, midiOk := context.NextEvent()
+
 	frame := 0
 
 	if p.recState == recStateRecording {

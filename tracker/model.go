@@ -36,6 +36,7 @@ type (
 		ChangedSinceSave        bool
 		RecoveryFilePath        string
 		ChangedSinceRecovery    bool
+		Loop                    Loop
 	}
 
 	Model struct {
@@ -54,14 +55,12 @@ type (
 		changeSeverity ChangeSeverity
 		changeType     ChangeType
 
-		panic          bool
-		recording      bool
-		playing        bool
-		playPosition   sointu.SongPos
-		loop           Loop
-		follow         bool
-		quitted        bool
-		uniquePatterns bool
+		panic        bool
+		recording    bool
+		playing      bool
+		playPosition sointu.SongPos
+		noteTracking bool
+		quitted      bool
 
 		cachePatternUseCount [][]int
 
@@ -122,16 +121,6 @@ type (
 	ChangeType     int
 
 	Dialog int
-
-	MIDIContext interface {
-		InputDevices(yield func(MIDIDevice) bool)
-		Close()
-	}
-
-	MIDIDevice interface {
-		String() string
-		Open() error
-	}
 )
 
 const (
@@ -145,6 +134,7 @@ const (
 	ScoreChange
 	BPMChange
 	RowsPerBeatChange
+	LoopChange
 	SongChange ChangeType = PatchChange | ScoreChange | BPMChange | RowsPerBeatChange
 )
 
@@ -168,7 +158,7 @@ const maxUndo = 64
 func (m *Model) AverageVolume() Volume        { return m.avgVolume }
 func (m *Model) PeakVolume() Volume           { return m.peakVolume }
 func (m *Model) PlayPosition() sointu.SongPos { return m.playPosition }
-func (m *Model) Loop() Loop                   { return m.loop }
+func (m *Model) Loop() Loop                   { return m.d.Loop }
 func (m *Model) PlaySongRow() int             { return m.d.Song.Score.SongRow(m.playPosition) }
 func (m *Model) ChangedSinceSave() bool       { return m.d.ChangedSinceSave }
 func (m *Model) Dialog() Dialog               { return m.dialog }
@@ -196,7 +186,7 @@ func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFil
 		modelMsgs:       modelMessages,
 		synther:         synther,
 		song:            m.d.Song.Copy(),
-		loop:            m.loop,
+		loop:            m.d.Loop,
 		avgVolumeMeter:  VolumeAnalyzer{Attack: 0.3, Release: 0.3, Min: -100, Max: 20},
 		peakVolumeMeter: VolumeAnalyzer{Attack: 1e-4, Release: 1, Min: -100, Max: 20},
 	}
@@ -239,7 +229,6 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			}
 			if m.changeType&PatchChange != 0 {
 				m.fixIDCollisions()
-				m.fixUnitParams()
 				m.d.InstrIndex = clamp(m.d.InstrIndex, 0, len(m.d.Song.Patch)-1)
 				m.d.InstrIndex2 = clamp(m.d.InstrIndex2, 0, len(m.d.Song.Patch)-1)
 				unitCount := 0
@@ -257,6 +246,9 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			}
 			if m.changeType&RowsPerBeatChange != 0 {
 				m.send(RowsPerBeatMsg{m.d.Song.RowsPerBeat})
+			}
+			if m.changeType&LoopChange != 0 {
+				m.send(m.d.Loop)
 			}
 			m.undoSkipCounter++
 			var limit int
@@ -333,6 +325,7 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 	}
 	m.d.ChangedSinceRecovery = false
 	m.send(m.d.Song.Copy())
+	m.send(m.d.Loop)
 	m.updatePatternUseCount()
 }
 
@@ -341,7 +334,7 @@ func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
 	m.voiceLevels = msg.VoiceLevels
 	m.avgVolume = msg.AverageVolume
 	m.peakVolume = msg.PeakVolume
-	if m.playing && m.follow {
+	if m.playing && m.noteTracking {
 		m.d.Cursor.SongPos = msg.SongPosition
 		m.d.Cursor2.SongPos = msg.SongPosition
 	}
@@ -412,6 +405,7 @@ func (m *Model) resetSong() {
 	}
 	m.d.FilePath = ""
 	m.d.ChangedSinceSave = false
+	m.d.Loop = Loop{}
 }
 
 // send sends a message to the player
@@ -493,36 +487,6 @@ func (m *Model) fixIDCollisions() {
 				}
 			}
 		}
-	}
-}
-
-var validParameters = map[string](map[string]bool){}
-
-func init() {
-	for name, unitType := range sointu.UnitTypes {
-		validParameters[name] = map[string]bool{}
-		for _, param := range unitType {
-			validParameters[name][param.Name] = true
-		}
-	}
-}
-
-func (m *Model) fixUnitParams() {
-	// loop over all instruments and units and check that unit parameter table
-	// only has the parameters that are defined in the unit type
-	fixed := false
-	for i, instr := range m.d.Song.Patch {
-		for j, unit := range instr.Units {
-			for paramName := range unit.Parameters {
-				if !validParameters[unit.Type][paramName] {
-					delete(m.d.Song.Patch[i].Units[j].Parameters, paramName)
-					fixed = true
-				}
-			}
-		}
-	}
-	if fixed {
-		m.Alerts().AddNamed("InvalidUnitParameters", "Some units had invalid parameters, they were removed", Error)
 	}
 }
 
