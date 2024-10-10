@@ -75,6 +75,8 @@ type (
 
 		PlayerMessages chan PlayerMsg
 		modelMessages  chan<- interface{}
+
+		MIDI *MIDIContext
 	}
 
 	// Cursor identifies a row and a track in a song score.

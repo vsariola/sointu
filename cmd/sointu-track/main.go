@@ -17,17 +17,6 @@ import (
 	"github.com/vsariola/sointu/tracker/gioui"
 )
 
-type NullContext struct {
-}
-
-func (NullContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
-	return tracker.MIDINoteEvent{}, false
-}
-
-func (NullContext) BPM() (bpm float64, ok bool) {
-	return 0, false
-}
-
 type PlayerAudioSource struct {
 	*tracker.Player
 	playerProcessContext tracker.PlayerProcessContext
@@ -42,6 +31,9 @@ var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 
 func main() {
+	var midiContext tracker.MIDIContext
+	midiContext.CreateContext()
+
 	flag.Parse()
 	var f *os.File
 	if *cpuprofile != "" {
@@ -64,6 +56,7 @@ func main() {
 		recoveryFile = filepath.Join(configDir, "Sointu", "sointu-track-recovery")
 	}
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
+	model.MIDI = &midiContext
 	if a := flag.Args(); len(a) > 0 {
 		f, err := os.Open(a[0])
 		if err == nil {
@@ -72,7 +65,7 @@ func main() {
 		f.Close()
 	}
 	tracker := gioui.NewTracker(model)
-	audioCloser := audioContext.Play(&PlayerAudioSource{player, NullContext{}})
+	audioCloser := audioContext.Play(&PlayerAudioSource{player, &midiContext})
 	go func() {
 		tracker.Main()
 		audioCloser.Close()
