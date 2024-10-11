@@ -113,14 +113,6 @@ func (t *Tracker) Main() {
 	go eventLoop(w, events, acks)
 	var ops op.Ops
 	for {
-		if titleFooter != t.filePathString.Value() {
-			titleFooter = t.filePathString.Value()
-			if titleFooter != "" {
-				w.Option(app.Title(fmt.Sprintf("Sointu Tracker - %v", titleFooter)))
-			} else {
-				w.Option(app.Title(fmt.Sprintf("Sointu Tracker")))
-			}
-		}
 		select {
 		case e := <-t.PlayerMessages:
 			t.ProcessPlayerMessage(e)
@@ -141,6 +133,14 @@ func (t *Tracker) Main() {
 					go eventLoop(w, events, acks)
 				}
 			case app.FrameEvent:
+				if titleFooter != t.filePathString.Value() {
+					titleFooter = t.filePathString.Value()
+					if titleFooter != "" {
+						w.Option(app.Title(fmt.Sprintf("Sointu Tracker - %v", titleFooter)))
+					} else {
+						w.Option(app.Title(fmt.Sprintf("Sointu Tracker")))
+					}
+				}
 				gtx := app.NewContext(&ops, e)
 				if t.SongPanel.PlayingBtn.Bool.Value() && t.SongPanel.NoteTracking.Bool.Value() {
 					t.TrackEditor.scrollTable.RowTitleList.CenterOn(t.PlaySongRow())
