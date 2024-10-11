@@ -258,10 +258,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 		gtx.Constraints.Min.X = gtx.Dp(unit.Dp(30))
-		grabhandle := LabelStyle{Text: "", ShadeColor: black, Color: white, FontSize: unit.Sp(10), Alignment: layout.Center, Shaper: t.Theme.Shaper}
-		if i == ie.instrumentDragList.TrackerList.Selected() {
-			grabhandle.Text = ":::"
-		}
+		grabhandle := LabelStyle{Text: strconv.Itoa(i + 1), ShadeColor: black, Color: mediumEmphasisTextColor, FontSize: unit.Sp(10), Alignment: layout.Center, Shaper: t.Theme.Shaper}
 		label := func(gtx C) D {
 			name, level, ok := (*tracker.Instruments)(t.Model).Item(i)
 			if !ok {
@@ -312,7 +309,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 			labelStyle := LabelStyle{Text: name, ShadeColor: black, Color: color, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
 			return layout.Center.Layout(gtx, labelStyle.Layout)
 		}
-		return layout.Inset{Left: unit.Dp(6), Right: unit.Dp(6)}.Layout(gtx, func(gtx C) D {
+		return layout.Inset{Left: unit.Dp(6), Right: unit.Dp(6), Top: unit.Dp(4)}.Layout(gtx, func(gtx C) D {
 			return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(grabhandle.Layout),
 				layout.Rigid(label),
