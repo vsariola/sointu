@@ -28,6 +28,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Empty patch should not crash the native synth ([#148][i148])
 
 ### Changed
+- The keyboard shortcuts are now again closer to what they were old trackers
+  ([#151][i151])
 - The stand-alone apps now output floating point sound, as made possible by
   upgrading oto-library to latest version. This way the tracker sound output
   matches the compiled output better, as usually compiled intros output sound in
@@ -237,6 +239,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i148]: https://github.com/vsariola/sointu/issues/148
 [i149]: https://github.com/vsariola/sointu/issues/149
 [i150]: https://github.com/vsariola/sointu/issues/150
+[i151]: https://github.com/vsariola/sointu/issues/151
 [i154]: https://github.com/vsariola/sointu/issues/154
 [i158]: https://github.com/vsariola/sointu/issues/158
 [i162]: https://github.com/vsariola/sointu/issues/162

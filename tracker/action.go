@@ -275,14 +275,71 @@ func (m *Model) RemoveUnused() Action {
 	})
 }
 
-func (m *Model) Rewind() Action {
+func (m *Model) PlayFromCurrentPosition() Action {
 	return Action{
-		allowed: func() bool {
-			return m.playing || !m.instrEnlarged
-		},
+		allowed: func() bool { return !m.instrEnlarged },
 		do: func() {
+			m.setPanic(false)
+			m.setLoop(Loop{})
+			m.playing = true
+			m.send(StartPlayMsg{m.d.Cursor.SongPos})
+		},
+	}
+}
+
+func (m *Model) PlayFromSongStart() Action {
+	return Action{
+		allowed: func() bool { return !m.instrEnlarged },
+		do: func() {
+			m.setPanic(false)
+			m.setLoop(Loop{})
 			m.playing = true
 			m.send(StartPlayMsg{})
+		},
+	}
+}
+
+func (m *Model) PlaySelected() Action {
+	return Action{
+		allowed: func() bool { return !m.instrEnlarged },
+		do: func() {
+			m.setPanic(false)
+			m.playing = true
+			l := m.OrderRows().List()
+			a, b := l.listRange()
+			newLoop := Loop{a, b - a + 1}
+			m.setLoop(newLoop)
+			m.send(StartPlayMsg{sointu.SongPos{OrderRow: a, PatternRow: 0}})
+		},
+	}
+}
+
+func (m *Model) PlayFromLoopStart() Action {
+	return Action{
+		allowed: func() bool { return !m.instrEnlarged },
+		do: func() {
+			m.setPanic(false)
+			if m.loop == (Loop{}) {
+				m.PlaySelected().Do()
+				return
+			}
+			m.playing = true
+			m.send(StartPlayMsg{sointu.SongPos{OrderRow: m.loop.Start, PatternRow: 0}})
+		},
+	}
+}
+
+func (m *Model) StopPlaying() Action {
+	return Action{
+		allowed: func() bool { return true },
+		do: func() {
+			if !m.playing {
+				m.setPanic(true)
+				m.setLoop(Loop{})
+				return
+			}
+			m.playing = false
+			(*Model)(m).send(IsPlayingMsg{false})
 		},
 	}
 }
@@ -394,8 +451,9 @@ func (m *Model) completeAction(checkSave bool) {
 	}
 	switch m.dialog {
 	case NewSongChanges, NewSongSaveExplorer:
-		c := m.change("NewSong", SongChange|LoopChange, MajorChange)
+		c := m.change("NewSong", SongChange, MajorChange)
 		m.resetSong()
+		m.setLoop(Loop{})
 		c()
 		m.d.ChangedSinceSave = false
 		m.dialog = NoDialog
@@ -406,5 +464,19 @@ func (m *Model) completeAction(checkSave bool) {
 		m.dialog = NoDialog
 	default:
 		m.dialog = NoDialog
+	}
+}
+
+func (m *Model) setPanic(val bool) {
+	if m.panic != val {
+		m.panic = val
+		m.send(PanicMsg{val})
+	}
+}
+
+func (m *Model) setLoop(newLoop Loop) {
+	if m.loop != newLoop {
+		m.loop = newLoop
+		m.send(newLoop)
 	}
 }

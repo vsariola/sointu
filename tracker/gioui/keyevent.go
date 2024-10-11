@@ -121,19 +121,34 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		case "F3":
 			t.InstrumentEditor.Focus()
 			return
-		case "F5":
-			t.SongPanel.RewindBtn.Action.Do()
-			t.SongPanel.NoteTracking.Bool.Set(!e.Modifiers.Contain(key.ModCtrl))
+		case "Space":
+			t.NoteTracking().Bool().Set(e.Modifiers.Contain(key.ModShift))
+			t.Playing().Bool().Toggle()
 			return
-		case "F6", "Space":
-			t.SongPanel.PlayingBtn.Bool.Toggle()
-			t.SongPanel.NoteTracking.Bool.Set(!e.Modifiers.Contain(key.ModCtrl))
+		case "F5":
+			t.NoteTracking().Bool().Set(e.Modifiers.Contain(key.ModShift))
+			if e.Modifiers.Contain(key.ModCtrl) {
+				t.Model.PlayFromSongStart().Do()
+			} else {
+				t.Model.PlayFromCurrentPosition().Do()
+			}
+			return
+		case "F6":
+			t.NoteTracking().Bool().Set(e.Modifiers.Contain(key.ModShift))
+			if e.Modifiers.Contain(key.ModCtrl) {
+				t.Model.PlayFromLoopStart().Do()
+			} else {
+				t.Model.PlaySelected().Do()
+			}
 			return
 		case "F7":
-			t.SongPanel.RecordBtn.Bool.Toggle()
+			t.IsRecording().Bool().Toggle()
 			return
 		case "F8":
-			t.SongPanel.NoteTracking.Bool.Toggle()
+			t.StopPlaying().Do()
+			return
+		case "F9":
+			t.NoteTracking().Bool().Toggle()
 			return
 		case "F12":
 			t.Panic().Bool().Toggle()

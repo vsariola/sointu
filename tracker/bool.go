@@ -51,8 +51,7 @@ func (m *Model) LoopToggle() *LoopToggle           { return (*LoopToggle)(m) }
 func (m *Panic) Bool() Bool  { return Bool{m} }
 func (m *Panic) Value() bool { return m.panic }
 func (m *Panic) setValue(val bool) {
-	m.panic = val
-	(*Model)(m).send(PanicMsg{val})
+	(*Model)(m).setPanic(val)
 }
 func (m *Panic) Enabled() bool { return true }
 
@@ -74,6 +73,7 @@ func (m *Playing) Value() bool { return m.playing }
 func (m *Playing) setValue(val bool) {
 	m.playing = val
 	if m.playing {
+		(*Model)(m).setPanic(false)
 		(*Model)(m).send(StartPlayMsg{m.d.Cursor.SongPos})
 	} else {
 		(*Model)(m).send(IsPlayingMsg{val})
@@ -98,9 +98,9 @@ func (m *CommentExpanded) Enabled() bool     { return true }
 // NoteTracking methods
 
 func (m *NoteTracking) Bool() Bool        { return Bool{m} }
-func (m *NoteTracking) Value() bool       { return m.playing && m.noteTracking }
+func (m *NoteTracking) Value() bool       { return m.noteTracking }
 func (m *NoteTracking) setValue(val bool) { m.noteTracking = val }
-func (m *NoteTracking) Enabled() bool     { return m.playing }
+func (m *NoteTracking) Enabled() bool     { return true }
 
 // Effect methods
 
@@ -173,16 +173,15 @@ func (m *UnitDisabled) Enabled() bool {
 // LoopToggle methods
 
 func (m *LoopToggle) Bool() Bool  { return Bool{m} }
-func (m *LoopToggle) Value() bool { return m.d.Loop.Length > 0 }
+func (m *LoopToggle) Value() bool { return m.loop.Length > 0 }
 func (t *LoopToggle) setValue(val bool) {
 	m := (*Model)(t)
-	defer m.change("SetLoopAction", LoopChange, MinorChange)()
-	if !val {
-		m.d.Loop = Loop{}
-		return
+	newLoop := Loop{}
+	if val {
+		l := m.OrderRows().List()
+		a, b := l.listRange()
+		newLoop = Loop{a, b - a + 1}
 	}
-	l := m.OrderRows().List()
-	a, b := l.listRange()
-	m.d.Loop = Loop{a, b - a + 1}
+	m.setLoop(newLoop)
 }
 func (m *LoopToggle) Enabled() bool { return true }

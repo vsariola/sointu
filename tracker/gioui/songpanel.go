@@ -56,7 +56,7 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		RecordBtn:      NewBoolClickable(model.IsRecording().Bool()),
 		NoteTracking:   NewBoolClickable(model.NoteTracking().Bool()),
 		PlayingBtn:     NewBoolClickable(model.Playing().Bool()),
-		RewindBtn:      NewActionClickable(model.Rewind()),
+		RewindBtn:      NewActionClickable(model.PlayFromSongStart()),
 	}
 	ret.fileMenuItems = []MenuItem{
 		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: shortcutKey + "N", Doer: model.NewSong()},
@@ -105,10 +105,10 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 	in := layout.UniformInset(unit.Dp(1))
 
 	panicBtnStyle := ToggleButton(gtx, tr.Theme, t.PanicBtn, "Panic (F12)")
-	rewindBtnStyle := ActionIcon(gtx, tr.Theme, t.RewindBtn, icons.AVFastRewind, "Rewind\n(F5)")
-	playBtnStyle := ToggleIcon(gtx, tr.Theme, t.PlayingBtn, icons.AVPlayArrow, icons.AVStop, "Play (F6 / Space)", "Stop (F6 / Space)")
+	rewindBtnStyle := ActionIcon(gtx, tr.Theme, t.RewindBtn, icons.AVFastRewind, "Rewind\n(Ctrl+F5)")
+	playBtnStyle := ToggleIcon(gtx, tr.Theme, t.PlayingBtn, icons.AVPlayArrow, icons.AVStop, "Play (F5 / Space)", "Stop (F8)")
 	recordBtnStyle := ToggleIcon(gtx, tr.Theme, t.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, "Record (F7)", "Stop (F7)")
-	noteTrackBtnStyle := ToggleIcon(gtx, tr.Theme, t.NoteTracking, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, "Follow\nOff\n(F8)", "Follow\nOn\n(F8)")
+	noteTrackBtnStyle := ToggleIcon(gtx, tr.Theme, t.NoteTracking, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, "Follow\nOff", "Follow\nOn")
 	loopBtnStyle := ToggleIcon(gtx, tr.Theme, t.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, "Loop\nOff\n(Ctrl+L)", "Loop\nOn\n(Ctrl+L)")
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
