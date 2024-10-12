@@ -64,7 +64,7 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		RecordBtn:      NewBoolClickable(model.IsRecording().Bool()),
 		NoteTracking:   NewBoolClickable(model.NoteTracking().Bool()),
 		PlayingBtn:     NewBoolClickable(model.Playing().Bool()),
-		RewindBtn:      NewActionClickable(model.PlayFromSongStart()),
+		RewindBtn:      NewActionClickable(model.PlaySongStart()),
 	}
 	ret.fileMenuItems = []MenuItem{
 		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: keyActionMap["NewSong"], Doer: model.NewSong()},

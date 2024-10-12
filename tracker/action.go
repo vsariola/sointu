@@ -275,7 +275,7 @@ func (m *Model) RemoveUnused() Action {
 	})
 }
 
-func (m *Model) PlayFromCurrentPosition() Action {
+func (m *Model) PlayCurrentPos() Action {
 	return Action{
 		allowed: func() bool { return !m.instrEnlarged },
 		do: func() {
@@ -287,7 +287,7 @@ func (m *Model) PlayFromCurrentPosition() Action {
 	}
 }
 
-func (m *Model) PlayFromSongStart() Action {
+func (m *Model) PlaySongStart() Action {
 	return Action{
 		allowed: func() bool { return !m.instrEnlarged },
 		do: func() {

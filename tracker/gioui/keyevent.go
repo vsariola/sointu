@@ -149,16 +149,16 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		t.RemoveUnused().Do()
 	case "PlayCurrentPosFollow":
 		t.NoteTracking().Bool().Set(true)
-		t.PlayFromCurrentPosition().Do()
+		t.PlayCurrentPos().Do()
 	case "PlayCurrentPosUnfollow":
 		t.NoteTracking().Bool().Set(false)
-		t.PlayFromCurrentPosition().Do()
+		t.PlayCurrentPos().Do()
 	case "PlaySongStartFollow":
 		t.NoteTracking().Bool().Set(true)
-		t.PlayFromSongStart().Do()
+		t.PlaySongStart().Do()
 	case "PlaySongStartUnfollow":
 		t.NoteTracking().Bool().Set(false)
-		t.PlayFromSongStart().Do()
+		t.PlaySongStart().Do()
 	case "PlaySelectedFollow":
 		t.NoteTracking().Bool().Set(true)
 		t.PlaySelected().Do()
