@@ -142,7 +142,7 @@ func (t *Tracker) Main() {
 					}
 				}
 				gtx := app.NewContext(&ops, e)
-				if t.SongPanel.PlayingBtn.Bool.Value() && t.SongPanel.NoteTracking.Bool.Value() {
+				if t.SongPanel.PlayingBtn.Bool.Value() && t.SongPanel.FollowBtn.Bool.Value() {
 					t.TrackEditor.scrollTable.RowTitleList.CenterOn(t.PlaySongRow())
 				}
 				t.Layout(gtx, w)

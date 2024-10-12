@@ -551,7 +551,7 @@ func (v *OrderRows) Selected2() int {
 func (v *OrderRows) SetSelected(value int) {
 	y := intMax(intMin(value, v.Count()-1), 0)
 	if y != v.d.Cursor.OrderRow {
-		v.noteTracking = false
+		v.follow = false
 	}
 	v.d.Cursor.OrderRow = y
 }
@@ -651,7 +651,7 @@ func (v *NoteRows) Selected2() int {
 
 func (v *NoteRows) SetSelected(value int) {
 	if value != v.d.Song.Score.SongRow(v.d.Cursor.SongPos) {
-		v.noteTracking = false
+		v.follow = false
 	}
 	v.d.Cursor.SongPos = v.d.Song.Score.Clamp(v.d.Song.Score.SongPos(value))
 }

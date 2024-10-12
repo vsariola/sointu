@@ -17,7 +17,7 @@ type (
 	InstrEnlarged   Model
 	Effect          Model
 	CommentExpanded Model
-	NoteTracking    Model
+	Follow          Model
 	UnitSearching   Model
 	UnitDisabled    Model
 	LoopToggle      Model
@@ -41,7 +41,7 @@ func (m *Model) Playing() *Playing                 { return (*Playing)(m) }
 func (m *Model) InstrEnlarged() *InstrEnlarged     { return (*InstrEnlarged)(m) }
 func (m *Model) Effect() *Effect                   { return (*Effect)(m) }
 func (m *Model) CommentExpanded() *CommentExpanded { return (*CommentExpanded)(m) }
-func (m *Model) NoteTracking() *NoteTracking       { return (*NoteTracking)(m) }
+func (m *Model) Follow() *Follow                   { return (*Follow)(m) }
 func (m *Model) UnitSearching() *UnitSearching     { return (*UnitSearching)(m) }
 func (m *Model) UnitDisabled() *UnitDisabled       { return (*UnitDisabled)(m) }
 func (m *Model) LoopToggle() *LoopToggle           { return (*LoopToggle)(m) }
@@ -95,12 +95,12 @@ func (m *CommentExpanded) Value() bool       { return m.commentExpanded }
 func (m *CommentExpanded) setValue(val bool) { m.commentExpanded = val }
 func (m *CommentExpanded) Enabled() bool     { return true }
 
-// NoteTracking methods
+// Follow methods
 
-func (m *NoteTracking) Bool() Bool        { return Bool{m} }
-func (m *NoteTracking) Value() bool       { return m.noteTracking }
-func (m *NoteTracking) setValue(val bool) { m.noteTracking = val }
-func (m *NoteTracking) Enabled() bool     { return true }
+func (m *Follow) Bool() Bool        { return Bool{m} }
+func (m *Follow) Value() bool       { return m.follow }
+func (m *Follow) setValue(val bool) { m.follow = val }
+func (m *Follow) Enabled() bool     { return true }
 
 // Effect methods
 

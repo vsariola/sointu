@@ -59,7 +59,7 @@ type (
 		playing      bool
 		playPosition sointu.SongPos
 		loop         Loop
-		noteTracking bool
+		follow       bool
 		quitted      bool
 
 		cachePatternUseCount [][]int
@@ -327,7 +327,7 @@ func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
 	m.voiceLevels = msg.VoiceLevels
 	m.avgVolume = msg.AverageVolume
 	m.peakVolume = msg.PeakVolume
-	if m.playing && m.noteTracking {
+	if m.playing && m.follow {
 		m.d.Cursor.SongPos = msg.SongPosition
 		m.d.Cursor2.SongPos = msg.SongPosition
 	}

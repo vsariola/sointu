@@ -148,28 +148,28 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 	case "RemoveUnused":
 		t.RemoveUnused().Do()
 	case "PlayCurrentPosFollow":
-		t.NoteTracking().Bool().Set(true)
+		t.Follow().Bool().Set(true)
 		t.PlayCurrentPos().Do()
 	case "PlayCurrentPosUnfollow":
-		t.NoteTracking().Bool().Set(false)
+		t.Follow().Bool().Set(false)
 		t.PlayCurrentPos().Do()
 	case "PlaySongStartFollow":
-		t.NoteTracking().Bool().Set(true)
+		t.Follow().Bool().Set(true)
 		t.PlaySongStart().Do()
 	case "PlaySongStartUnfollow":
-		t.NoteTracking().Bool().Set(false)
+		t.Follow().Bool().Set(false)
 		t.PlaySongStart().Do()
 	case "PlaySelectedFollow":
-		t.NoteTracking().Bool().Set(true)
+		t.Follow().Bool().Set(true)
 		t.PlaySelected().Do()
 	case "PlaySelectedUnfollow":
-		t.NoteTracking().Bool().Set(false)
+		t.Follow().Bool().Set(false)
 		t.PlaySelected().Do()
 	case "PlayLoopFollow":
-		t.NoteTracking().Bool().Set(true)
+		t.Follow().Bool().Set(true)
 		t.PlayFromLoopStart().Do()
 	case "PlayLoopUnfollow":
-		t.NoteTracking().Bool().Set(false)
+		t.Follow().Bool().Set(false)
 		t.PlayFromLoopStart().Do()
 	case "StopPlaying":
 		t.StopPlaying().Do()
@@ -205,17 +205,17 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 	case "RecordingToggle":
 		t.IsRecording().Bool().Toggle()
 	case "PlayingToggleFollow":
-		t.NoteTracking().Bool().Set(true)
+		t.Follow().Bool().Set(true)
 		t.Playing().Bool().Toggle()
 	case "PlayingToggleUnfollow":
-		t.NoteTracking().Bool().Set(false)
+		t.Follow().Bool().Set(false)
 		t.Playing().Bool().Toggle()
 	case "InstrEnlargedToggle":
 		t.InstrEnlarged().Bool().Toggle()
 	case "CommentExpandedToggle":
 		t.CommentExpanded().Bool().Toggle()
 	case "FollowToggle":
-		t.NoteTracking().Bool().Toggle()
+		t.Follow().Bool().Toggle()
 	case "UnitDisabledToggle":
 		t.UnitDisabled().Bool().Toggle()
 	case "LoopToggle":

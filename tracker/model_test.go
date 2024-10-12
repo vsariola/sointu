@@ -59,7 +59,7 @@ func (s *modelFuzzState) Iterate(yield func(string, func(p string, t *testing.T)
 	s.IterateBool("InstrEnlarged", s.model.InstrEnlarged().Bool(), yield, seed)
 	s.IterateBool("Effect", s.model.Effect().Bool(), yield, seed)
 	s.IterateBool("CommentExpanded", s.model.CommentExpanded().Bool(), yield, seed)
-	s.IterateBool("NoteTracking", s.model.NoteTracking().Bool(), yield, seed)
+	s.IterateBool("Follow", s.model.Follow().Bool(), yield, seed)
 	// Strings
 	s.IterateString("FilePath", s.model.FilePath().String(), yield, seed)
 	s.IterateString("InstrumentName", s.model.InstrumentName().String(), yield, seed)
