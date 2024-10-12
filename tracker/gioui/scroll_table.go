@@ -25,6 +25,7 @@ type ScrollTable struct {
 	focused      bool
 	requestFocus bool
 	cursorMoved  bool
+	eventFilters []event.Filter
 }
 
 type ScrollTableStyle struct {
@@ -40,11 +41,33 @@ type ScrollTableStyle struct {
 }
 
 func NewScrollTable(table tracker.Table, vertList, horizList tracker.List) *ScrollTable {
-	return &ScrollTable{
+	ret := &ScrollTable{
 		Table:        table,
 		ColTitleList: NewDragList(vertList, layout.Horizontal),
 		RowTitleList: NewDragList(horizList, layout.Vertical),
 	}
+	ret.eventFilters = []event.Filter{
+		key.FocusFilter{Target: ret},
+		transfer.TargetFilter{Target: ret, Type: "application/text"},
+		pointer.Filter{Target: ret, Kinds: pointer.Press},
+		key.Filter{Focus: ret, Name: key.NameLeftArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
+		key.Filter{Focus: ret, Name: key.NameUpArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
+		key.Filter{Focus: ret, Name: key.NameRightArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
+		key.Filter{Focus: ret, Name: key.NameDownArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
+		key.Filter{Focus: ret, Name: key.NamePageUp, Optional: key.ModShift},
+		key.Filter{Focus: ret, Name: key.NamePageDown, Optional: key.ModShift},
+		key.Filter{Focus: ret, Name: key.NameHome, Optional: key.ModShift},
+		key.Filter{Focus: ret, Name: key.NameEnd, Optional: key.ModShift},
+		key.Filter{Focus: ret, Name: key.NameDeleteBackward},
+		key.Filter{Focus: ret, Name: key.NameDeleteForward},
+	}
+	for k, a := range keyBindingMap {
+		switch a {
+		case "Copy", "Paste", "Cut", "Increase", "Decrease":
+			ret.eventFilters = append(ret.eventFilters, key.Filter{Focus: ret, Name: k.Name, Required: k.Modifiers})
+		}
+	}
+	return ret
 }
 
 func FilledScrollTable(th *material.Theme, scrollTable *ScrollTable, element func(gtx C, x, y int) D, colTitle, rowTitle, colTitleBg, rowTitleBg func(gtx C, i int) D) ScrollTableStyle {
@@ -107,26 +130,7 @@ func (s ScrollTableStyle) Layout(gtx C) D {
 
 func (s *ScrollTableStyle) handleEvents(gtx layout.Context, p image.Point) {
 	for {
-		e, ok := gtx.Event(
-			key.FocusFilter{Target: s.ScrollTable},
-			transfer.TargetFilter{Target: s.ScrollTable, Type: "application/text"},
-			pointer.Filter{Target: s.ScrollTable, Kinds: pointer.Press},
-			key.Filter{Focus: s.ScrollTable, Name: key.NameLeftArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
-			key.Filter{Focus: s.ScrollTable, Name: key.NameUpArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
-			key.Filter{Focus: s.ScrollTable, Name: key.NameRightArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
-			key.Filter{Focus: s.ScrollTable, Name: key.NameDownArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
-			key.Filter{Focus: s.ScrollTable, Name: key.NamePageUp, Optional: key.ModShift},
-			key.Filter{Focus: s.ScrollTable, Name: key.NamePageDown, Optional: key.ModShift},
-			key.Filter{Focus: s.ScrollTable, Name: key.NameHome, Optional: key.ModShift},
-			key.Filter{Focus: s.ScrollTable, Name: key.NameEnd, Optional: key.ModShift},
-			key.Filter{Focus: s.ScrollTable, Name: key.NameDeleteBackward},
-			key.Filter{Focus: s.ScrollTable, Name: key.NameDeleteForward},
-			key.Filter{Focus: s.ScrollTable, Name: "C", Required: key.ModShortcut},
-			key.Filter{Focus: s.ScrollTable, Name: "V", Required: key.ModShortcut},
-			key.Filter{Focus: s.ScrollTable, Name: "X", Required: key.ModShortcut},
-			key.Filter{Focus: s.ScrollTable, Name: "+"},
-			key.Filter{Focus: s.ScrollTable, Name: "-"},
-		)
+		e, ok := gtx.Event(s.ScrollTable.eventFilters...)
 		if !ok {
 			break
 		}
@@ -240,23 +244,6 @@ func (s *ScrollTable) command(gtx C, e key.Event) {
 		stepY = 1e6
 	}
 	switch e.Name {
-	case "X", "C":
-		if e.Modifiers.Contain(key.ModShortcut) {
-			contents, ok := s.Table.Copy()
-			if !ok {
-				return
-			}
-			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
-			if e.Name == "X" {
-				s.Table.Clear()
-			}
-			return
-		}
-	case "V":
-		if e.Modifiers.Contain(key.ModShortcut) {
-			gtx.Execute(clipboard.ReadCmd{Tag: s})
-		}
-		return
 	case key.NameDeleteBackward, key.NameDeleteForward:
 		s.Table.Clear()
 		return
@@ -280,12 +267,29 @@ func (s *ScrollTable) command(gtx C, e key.Event) {
 		s.Table.SetCursorX(0)
 	case key.NameEnd:
 		s.Table.SetCursorX(s.Table.Width() - 1)
-	case "+":
-		s.Table.Add(1)
-		return
-	case "-":
-		s.Table.Add(-1)
-		return
+	default:
+		a := keyBindingMap[e]
+		switch a {
+		case "Copy", "Cut":
+			contents, ok := s.Table.Copy()
+			if !ok {
+				return
+			}
+			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
+			if a == "Cut" {
+				s.Table.Clear()
+			}
+			return
+		case "Paste":
+			gtx.Execute(clipboard.ReadCmd{Tag: s})
+			return
+		case "Increase":
+			s.Table.Add(1)
+			return
+		case "Decrease":
+			s.Table.Add(-1)
+			return
+		}
 	}
 	if !e.Modifiers.Contain(key.ModShift) {
 		s.Table.SetCursor2(s.Table.Cursor())

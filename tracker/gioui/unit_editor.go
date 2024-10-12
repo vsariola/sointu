@@ -33,6 +33,10 @@ type UnitEditor struct {
 	DisableUnitBtn *BoolClickable
 	SelectTypeBtn  *widget.Clickable
 	caser          cases.Caser
+
+	copyHint        string
+	disableUnitHint string
+	enableUnitHint  string
 }
 
 func NewUnitEditor(m *tracker.Model) *UnitEditor {
@@ -46,6 +50,9 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
 	}
 	ret.caser = cases.Title(language.English)
+	ret.copyHint = makeHint("Copy unit", " (%s)", "Copy")
+	ret.disableUnitHint = makeHint("Disable unit", " (%s)", "UnitDisabledToggle")
+	ret.enableUnitHint = makeHint("Enable unit", " (%s)", "UnitDisabledToggle")
 	return ret
 }
 
@@ -122,9 +129,9 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 			t.Alerts().Add("Unit copied to clipboard", tracker.Info)
 		}
 	}
-	copyUnitBtnStyle := TipIcon(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, "Copy unit (Ctrl+C)")
+	copyUnitBtnStyle := TipIcon(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
 	deleteUnitBtnStyle := ActionIcon(gtx, t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
-	disableUnitBtnStyle := ToggleIcon(gtx, t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, "Disable unit (Ctrl-D)", "Enable unit (Ctrl-D)")
+	disableUnitBtnStyle := ToggleIcon(gtx, t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
 	text := t.Units().SelectedType()
 	if text == "" {
 		text = "Choose unit type"

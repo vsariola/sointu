@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- User can define own keybindings in
+  `os.UserConfigDir()/sointu/keybindings.yaml` ([#94][i94], [#151][i151])
 - A small number above the instrument name identifies the MIDI channel /
   instrument number, with numbering starting from 1 ([#154][i154])
 - The filter unit frequency parameter is displayed in Hz, corresponding roughly
@@ -224,6 +226,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [0.1.0]: https://github.com/vsariola/sointu/compare/4klang-3.11...v0.1.0
 [i65]: https://github.com/vsariola/sointu/issues/65
 [i68]: https://github.com/vsariola/sointu/issues/68
+[i94]: https://github.com/vsariola/sointu/issues/94
 [i112]: https://github.com/vsariola/sointu/issues/112
 [i116]: https://github.com/vsariola/sointu/issues/116
 [i120]: https://github.com/vsariola/sointu/issues/120

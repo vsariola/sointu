@@ -1,211 +1,314 @@
 package gioui
 
 import (
+	_ "embed"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"gioui.org/io/clipboard"
 	"gioui.org/io/key"
+	"gopkg.in/yaml.v2"
 )
 
-var noteMap = map[key.Name]int{
-	"Z": -12,
-	"S": -11,
-	"X": -10,
-	"D": -9,
-	"C": -8,
-	"V": -7,
-	"G": -6,
-	"B": -5,
-	"H": -4,
-	"N": -3,
-	"J": -2,
-	"M": -1,
-	",": 0,
-	"L": 1,
-	".": 2,
-	"Q": 0,
-	"2": 1,
-	"W": 2,
-	"3": 3,
-	"E": 4,
-	"R": 5,
-	"5": 6,
-	"T": 7,
-	"6": 8,
-	"Y": 9,
-	"7": 10,
-	"U": 11,
-	"I": 12,
-	"9": 13,
-	"O": 14,
-	"0": 15,
-	"P": 16,
+type (
+	KeyAction string
+
+	KeyBinding struct {
+		Key                                        string
+		Shortcut, Ctrl, Command, Shift, Alt, Super bool
+		Action                                     string
+	}
+)
+
+var keyBindingMap = map[key.Event]string{}
+var keyActionMap = map[KeyAction]string{} // holds an informative string of the first key bound to an action
+
+func loadCustomKeyBindings() []KeyBinding {
+	var keyBindings []KeyBinding
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return nil
+	}
+	path := filepath.Join(configDir, "sointu", "keybindings.yaml")
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	err = yaml.Unmarshal(bytes, &keyBindings)
+	if err != nil {
+		return nil
+	}
+	if len(keyBindings) == 0 {
+		return nil
+	}
+	return keyBindings
+}
+
+//go:embed keybindings.yaml
+var defaultKeyBindingsYaml []byte
+
+func loadDefaultKeyBindings() []KeyBinding {
+	var keyBindings []KeyBinding
+	err := yaml.Unmarshal(defaultKeyBindingsYaml, &keyBindings)
+	if err != nil {
+		panic(fmt.Errorf("failed to unmarshal keybindings: %w", err))
+	}
+	return keyBindings
+}
+
+func init() {
+	keyBindings := loadCustomKeyBindings()
+	if keyBindings == nil {
+		keyBindings = loadDefaultKeyBindings()
+	}
+	for _, kb := range keyBindings {
+		var mods key.Modifiers
+		if kb.Shortcut {
+			mods |= key.ModShortcut
+		}
+		if kb.Ctrl {
+			mods |= key.ModCtrl
+		}
+		if kb.Command {
+			mods |= key.ModCommand
+		}
+		if kb.Shift {
+			mods |= key.ModShift
+		}
+		if kb.Alt {
+			mods |= key.ModAlt
+		}
+		if kb.Super {
+			mods |= key.ModSuper
+		}
+		keyBindingMap[key.Event{Name: key.Name(kb.Key), Modifiers: mods, State: key.Press}] = kb.Action
+		if _, ok := keyActionMap[KeyAction(kb.Action)]; !ok {
+			modString := strings.Replace(mods.String(), "-", "+", -1)
+			text := kb.Key
+			if modString != "" {
+				text = modString + "+" + text
+			}
+			keyActionMap[KeyAction(kb.Action)] = text
+		}
+	}
+}
+
+func makeHint(hint, format, action string) string {
+	if keyActionMap[KeyAction(action)] != "" {
+		return hint + fmt.Sprintf(format, keyActionMap[KeyAction(action)])
+	}
+	return hint
 }
 
 // KeyEvent handles incoming key events and returns true if repaint is needed.
 func (t *Tracker) KeyEvent(e key.Event, gtx C) {
-	if e.State == key.Press {
-		switch e.Name {
-		case "V":
-			if e.Modifiers.Contain(key.ModShortcut) {
-				gtx.Execute(clipboard.ReadCmd{Tag: t})
-				return
-			}
-		case "Z":
-			if e.Modifiers.Contain(key.ModShortcut) {
-				t.Model.Undo().Do()
-				return
-			}
-		case "Y":
-			if e.Modifiers.Contain(key.ModShortcut) {
-				t.Model.Redo().Do()
-				return
-			}
-		case "D":
-			if e.Modifiers.Contain(key.ModShortcut) {
-				t.Model.UnitDisabled().Bool().Toggle()
-				return
-			}
-		case "L":
-			if e.Modifiers.Contain(key.ModShortcut) {
-				t.Model.LoopToggle().Bool().Toggle()
-				return
-			}
-		case "N":
-			if e.Modifiers.Contain(key.ModShortcut) {
-				t.NewSong().Do()
-				return
-			}
-		case "S":
-			if e.Modifiers.Contain(key.ModShortcut) {
-				t.SaveSong().Do()
-				return
-			}
-		case "O":
-			if e.Modifiers.Contain(key.ModShortcut) {
-				t.OpenSong().Do()
-				return
-			}
-		case "I":
-			if e.Modifiers.Contain(key.ModShortcut) {
-				if e.Modifiers.Contain(key.ModShift) {
-					t.DeleteInstrument().Do()
-				} else {
-					t.AddInstrument().Do()
-				}
-				return
-			}
-		case "T":
-			if e.Modifiers.Contain(key.ModShortcut) {
-				if e.Modifiers.Contain(key.ModShift) {
-					t.DeleteTrack().Do()
-				} else {
-					t.AddTrack().Do()
-				}
-				return
-			}
-		case "E":
-			if e.Modifiers.Contain(key.ModShortcut) {
-				t.InstrEnlarged().Bool().Toggle()
-				return
-			}
-		case "W":
-			if e.Modifiers.Contain(key.ModShortcut) && canQuit {
-				t.Quit().Do()
-				return
-			}
-		case "F1":
+	if e.State == key.Release {
+		t.JammingReleased(e)
+		return
+	}
+	action, ok := keyBindingMap[e]
+	if !ok {
+		return
+	}
+	switch action {
+	// Actions
+	case "AddTrack":
+		t.AddTrack().Do()
+	case "DeleteTrack":
+		t.DeleteTrack().Do()
+	case "AddInstrument":
+		t.AddInstrument().Do()
+	case "DeleteInstrument":
+		t.DeleteInstrument().Do()
+	case "AddUnitAfter":
+		t.AddUnit(false).Do()
+	case "AddUnitBefore":
+		t.AddUnit(true).Do()
+	case "DeleteUnit":
+		t.DeleteUnit().Do()
+	case "ClearUnit":
+		t.ClearUnit().Do()
+	case "Undo":
+		t.Undo().Do()
+	case "Redo":
+		t.Redo().Do()
+	case "AddSemitone":
+		t.AddSemitone().Do()
+	case "SubtractSemitone":
+		t.SubtractSemitone().Do()
+	case "AddOctave":
+		t.AddOctave().Do()
+	case "SubtractOctave":
+		t.SubtractOctave().Do()
+	case "EditNoteOff":
+		t.EditNoteOff().Do()
+	case "RemoveUnused":
+		t.RemoveUnused().Do()
+	case "PlayCurrentPosFollow":
+		t.NoteTracking().Bool().Set(true)
+		t.PlayFromCurrentPosition().Do()
+	case "PlayCurrentPosUnfollow":
+		t.NoteTracking().Bool().Set(false)
+		t.PlayFromCurrentPosition().Do()
+	case "PlaySongStartFollow":
+		t.NoteTracking().Bool().Set(true)
+		t.PlayFromSongStart().Do()
+	case "PlaySongStartUnfollow":
+		t.NoteTracking().Bool().Set(false)
+		t.PlayFromSongStart().Do()
+	case "PlaySelectedFollow":
+		t.NoteTracking().Bool().Set(true)
+		t.PlaySelected().Do()
+	case "PlaySelectedUnfollow":
+		t.NoteTracking().Bool().Set(false)
+		t.PlaySelected().Do()
+	case "PlayLoopFollow":
+		t.NoteTracking().Bool().Set(true)
+		t.PlayFromLoopStart().Do()
+	case "PlayLoopUnfollow":
+		t.NoteTracking().Bool().Set(false)
+		t.PlayFromLoopStart().Do()
+	case "StopPlaying":
+		t.StopPlaying().Do()
+	case "AddOrderRowBefore":
+		t.AddOrderRow(true).Do()
+	case "AddOrderRowAfter":
+		t.AddOrderRow(false).Do()
+	case "DeleteOrderRowBackwards":
+		t.DeleteOrderRow(true).Do()
+	case "DeleteOrderRowForwards":
+		t.DeleteOrderRow(false).Do()
+	case "NewSong":
+		t.NewSong().Do()
+	case "OpenSong":
+		t.OpenSong().Do()
+	case "Quit":
+		if canQuit {
+			t.Quit().Do()
+		}
+	case "SaveSong":
+		t.SaveSong().Do()
+	case "SaveSongAs":
+		t.SaveSongAs().Do()
+	case "ExportWav":
+		t.Export().Do()
+	case "ExportFloat":
+		t.ExportFloat().Do()
+	case "ExportInt16":
+		t.ExportInt16().Do()
+	// Booleans
+	case "PanicToggle":
+		t.Panic().Bool().Toggle()
+	case "RecordingToggle":
+		t.IsRecording().Bool().Toggle()
+	case "PlayingToggleFollow":
+		t.NoteTracking().Bool().Set(true)
+		t.Playing().Bool().Toggle()
+	case "PlayingToggleUnfollow":
+		t.NoteTracking().Bool().Set(false)
+		t.Playing().Bool().Toggle()
+	case "InstrEnlargedToggle":
+		t.InstrEnlarged().Bool().Toggle()
+	case "CommentExpandedToggle":
+		t.CommentExpanded().Bool().Toggle()
+	case "FollowToggle":
+		t.NoteTracking().Bool().Toggle()
+	case "UnitDisabledToggle":
+		t.UnitDisabled().Bool().Toggle()
+	case "LoopToggle":
+		t.LoopToggle().Bool().Toggle()
+	// Integers
+	case "InstrumentVoicesAdd":
+		t.Model.InstrumentVoices().Int().Add(1)
+	case "InstrumentVoicesSubtract":
+		t.Model.InstrumentVoices().Int().Add(-1)
+	case "TrackVoicesAdd":
+		t.TrackVoices().Int().Add(1)
+	case "TrackVoicesSubtract":
+		t.TrackVoices().Int().Add(-1)
+	case "SongLengthAdd":
+		t.SongLength().Int().Add(1)
+	case "SongLengthSubtract":
+		t.SongLength().Int().Add(-1)
+	case "BPMAdd":
+		t.BPM().Int().Add(1)
+	case "BPMSubtract":
+		t.BPM().Int().Add(-1)
+	case "RowsPerPatternAdd":
+		t.RowsPerPattern().Int().Add(1)
+	case "RowsPerPatternSubtract":
+		t.RowsPerPattern().Int().Add(-1)
+	case "RowsPerBeatAdd":
+		t.RowsPerBeat().Int().Add(1)
+	case "RowsPerBeatSubtract":
+		t.RowsPerBeat().Int().Add(-1)
+	case "StepAdd":
+		t.Step().Int().Add(1)
+	case "StepSubtract":
+		t.Step().Int().Add(-1)
+	case "OctaveAdd":
+		t.Octave().Int().Add(1)
+	case "OctaveSubtract":
+		t.Octave().Int().Add(-1)
+	// Other miscellaneous
+	case "Paste":
+		gtx.Execute(clipboard.ReadCmd{Tag: t})
+	case "OrderEditorFocus":
+		t.OrderEditor.scrollTable.Focus()
+	case "TrackEditorFocus":
+		t.TrackEditor.scrollTable.Focus()
+	case "InstrumentEditorFocus":
+		t.InstrumentEditor.Focus()
+	case "FocusPrev":
+		switch {
+		case t.OrderEditor.scrollTable.Focused():
+			t.InstrumentEditor.unitEditor.sliderList.Focus()
+		case t.TrackEditor.scrollTable.Focused():
 			t.OrderEditor.scrollTable.Focus()
-			return
-		case "F2":
-			t.TrackEditor.scrollTable.Focus()
-			return
-		case "F3":
+		case t.InstrumentEditor.Focused():
+			if t.InstrumentEditor.enlargeBtn.Bool.Value() {
+				t.InstrumentEditor.unitEditor.sliderList.Focus()
+			} else {
+				t.TrackEditor.scrollTable.Focus()
+			}
+		default:
 			t.InstrumentEditor.Focus()
-			return
-		case "Space":
-			t.NoteTracking().Bool().Set(e.Modifiers.Contain(key.ModShift))
-			t.Playing().Bool().Toggle()
-			return
-		case "F5":
-			t.NoteTracking().Bool().Set(e.Modifiers.Contain(key.ModShift))
-			if e.Modifiers.Contain(key.ModCtrl) {
-				t.Model.PlayFromSongStart().Do()
+		}
+	case "FocusNext":
+		switch {
+		case t.OrderEditor.scrollTable.Focused():
+			t.TrackEditor.scrollTable.Focus()
+		case t.TrackEditor.scrollTable.Focused():
+			t.InstrumentEditor.Focus()
+		case t.InstrumentEditor.Focused():
+			t.InstrumentEditor.unitEditor.sliderList.Focus()
+		default:
+			if t.InstrumentEditor.enlargeBtn.Bool.Value() {
+				t.InstrumentEditor.Focus()
 			} else {
-				t.Model.PlayFromCurrentPosition().Do()
-			}
-			return
-		case "F6":
-			t.NoteTracking().Bool().Set(e.Modifiers.Contain(key.ModShift))
-			if e.Modifiers.Contain(key.ModCtrl) {
-				t.Model.PlayFromLoopStart().Do()
-			} else {
-				t.Model.PlaySelected().Do()
-			}
-			return
-		case "F7":
-			t.IsRecording().Bool().Toggle()
-			return
-		case "F8":
-			t.StopPlaying().Do()
-			return
-		case "F9":
-			t.NoteTracking().Bool().Toggle()
-			return
-		case "F12":
-			t.Panic().Bool().Toggle()
-			return
-		case `\`, `<`, `>`:
-			if e.Modifiers.Contain(key.ModShift) {
-				t.OctaveNumberInput.Int.Add(1)
-			} else {
-				t.OctaveNumberInput.Int.Add(-1)
-			}
-		case key.NameTab:
-			if e.Modifiers.Contain(key.ModShift) {
-				switch {
-				case t.OrderEditor.scrollTable.Focused():
-					t.InstrumentEditor.unitEditor.sliderList.Focus()
-				case t.TrackEditor.scrollTable.Focused():
-					t.OrderEditor.scrollTable.Focus()
-				case t.InstrumentEditor.Focused():
-					if t.InstrumentEditor.enlargeBtn.Bool.Value() {
-						t.InstrumentEditor.unitEditor.sliderList.Focus()
-					} else {
-						t.TrackEditor.scrollTable.Focus()
-					}
-				default:
-					t.InstrumentEditor.Focus()
-				}
-			} else {
-				switch {
-				case t.OrderEditor.scrollTable.Focused():
-					t.TrackEditor.scrollTable.Focus()
-				case t.TrackEditor.scrollTable.Focused():
-					t.InstrumentEditor.Focus()
-				case t.InstrumentEditor.Focused():
-					t.InstrumentEditor.unitEditor.sliderList.Focus()
-				default:
-					if t.InstrumentEditor.enlargeBtn.Bool.Value() {
-						t.InstrumentEditor.Focus()
-					} else {
-						t.OrderEditor.scrollTable.Focus()
-					}
-				}
+				t.OrderEditor.scrollTable.Focus()
 			}
 		}
-		t.JammingPressed(e)
-	} else { // e.State == key.Release
-		t.JammingReleased(e)
+	default:
+		if action[:4] == "Note" {
+			val, err := strconv.Atoi(string(action[4:]))
+			if err != nil {
+				break
+			}
+			t.JammingPressed(e, val-12)
+		}
 	}
 }
 
-func (t *Tracker) JammingPressed(e key.Event) byte {
-	if val, ok := noteMap[e.Name]; ok {
-		if _, ok := t.KeyPlaying[e.Name]; !ok {
-			n := noteAsValue(t.OctaveNumberInput.Int.Value(), val)
-			instr := t.InstrumentEditor.instrumentDragList.TrackerList.Selected()
-			t.KeyPlaying[e.Name] = t.InstrNoteOn(instr, n)
-			return n
-		}
+func (t *Tracker) JammingPressed(e key.Event, val int) byte {
+	if _, ok := t.KeyPlaying[e.Name]; !ok {
+		n := noteAsValue(t.OctaveNumberInput.Int.Value(), val)
+		instr := t.InstrumentEditor.instrumentDragList.TrackerList.Selected()
+		t.KeyPlaying[e.Name] = t.InstrNoteOn(instr, n)
+		return n
 	}
 	return 0
 }

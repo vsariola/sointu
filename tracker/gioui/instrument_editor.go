@@ -51,6 +51,13 @@ type InstrumentEditor struct {
 	commentKeyFilters   []event.Filter
 	searchkeyFilters    []event.Filter
 	nameKeyFilters      []event.Filter
+
+	enlargeHint, shrinkHint string
+	addInstrumentHint       string
+	octaveHint              string
+	expandCommentHint       string
+	collapseCommentHint     string
+	deleteInstrumentHint    string
 }
 
 func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
@@ -78,10 +85,13 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		ret.presetMenuItems = append(ret.presetMenuItems, MenuItem{Text: name, IconBytes: icons.ImageAudiotrack, Doer: model.LoadPreset(index)})
 		return true
 	})
-	for k := range noteMap {
-		ret.commentKeyFilters = append(ret.commentKeyFilters, key.Filter{Name: k, Focus: ret.commentEditor})
-		ret.searchkeyFilters = append(ret.searchkeyFilters, key.Filter{Name: k, Focus: ret.searchEditor})
-		ret.nameKeyFilters = append(ret.nameKeyFilters, key.Filter{Name: k, Focus: ret.nameEditor})
+	for k, a := range keyBindingMap {
+		if len(a) < 4 || a[:4] != "Note" {
+			continue
+		}
+		ret.commentKeyFilters = append(ret.commentKeyFilters, key.Filter{Name: k.Name, Required: k.Modifiers, Focus: ret.commentEditor})
+		ret.searchkeyFilters = append(ret.searchkeyFilters, key.Filter{Name: k.Name, Required: k.Modifiers, Focus: ret.searchEditor})
+		ret.nameKeyFilters = append(ret.nameKeyFilters, key.Filter{Name: k.Name, Required: k.Modifiers, Focus: ret.nameEditor})
 	}
 	ret.commentKeyFilters = append(ret.commentKeyFilters, key.Filter{Name: key.NameEscape, Focus: ret.commentEditor})
 	ret.searchkeyFilters = append(ret.searchkeyFilters, key.Filter{Name: key.NameEscape, Focus: ret.searchEditor})
@@ -89,6 +99,13 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 	ret.commentKeyFilters = append(ret.commentKeyFilters, key.Filter{Name: key.NameSpace, Focus: ret.commentEditor})
 	ret.searchkeyFilters = append(ret.searchkeyFilters, key.Filter{Name: key.NameSpace, Focus: ret.searchEditor})
 	ret.nameKeyFilters = append(ret.nameKeyFilters, key.Filter{Name: key.NameSpace, Focus: ret.nameEditor})
+	ret.enlargeHint = makeHint("Enlarge", " (%s)", "InstrEnlargedToggle")
+	ret.shrinkHint = makeHint("Shrink", " (%s)", "InstrEnlargedToggle")
+	ret.addInstrumentHint = makeHint("Add\ninstrument", "\n(%s)", "AddInstrument")
+	ret.octaveHint = makeHint("Octave down", " (%s)", "OctaveNumberInputSubtract") + makeHint(" or up", " (%s)", "OctaveNumberInputAdd")
+	ret.expandCommentHint = makeHint("Expand comment", " (%s)", "CommentExpandedToggle")
+	ret.collapseCommentHint = makeHint("Collapse comment", " (%s)", "CommentExpandedToggle")
+	ret.deleteInstrumentHint = makeHint("Delete\ninstrument", "\n(%s)", "DeleteInstrument")
 	return ret
 }
 
@@ -109,16 +126,16 @@ func (ie *InstrumentEditor) childFocused(gtx C) bool {
 
 func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 	ie.wasFocused = ie.Focused() || ie.childFocused(gtx)
-	fullscreenBtnStyle := ToggleIcon(gtx, t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, "Enlarge (Ctrl+E)", "Shrink (Ctrl+E)")
+	fullscreenBtnStyle := ToggleIcon(gtx, t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, ie.enlargeHint, ie.shrinkHint)
 
 	octave := func(gtx C) D {
 		in := layout.UniformInset(unit.Dp(1))
-		numStyle := NumericUpDown(t.Theme, t.OctaveNumberInput, "Octave down (<) or up (>)")
+		numStyle := NumericUpDown(t.Theme, t.OctaveNumberInput, ie.octaveHint)
 		dims := in.Layout(gtx, numStyle.Layout)
 		return dims
 	}
 
-	newBtnStyle := ActionIcon(gtx, t.Theme, ie.newInstrumentBtn, icons.ContentAdd, "Add\ninstrument\n(Ctrl+I)")
+	newBtnStyle := ActionIcon(gtx, t.Theme, ie.newInstrumentBtn, icons.ContentAdd, ie.addInstrumentHint)
 	ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{}.Layout(
@@ -161,12 +178,12 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 
 func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 	header := func(gtx C) D {
-		commentExpandBtnStyle := ToggleIcon(gtx, t.Theme, ie.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, "Expand comment", "Collapse comment")
+		commentExpandBtnStyle := ToggleIcon(gtx, t.Theme, ie.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, ie.expandCommentHint, ie.collapseCommentHint)
 		presetMenuBtnStyle := TipIcon(t.Theme, ie.presetMenuBtn, icons.NavigationMenu, "Load preset")
 		copyInstrumentBtnStyle := TipIcon(t.Theme, ie.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
 		saveInstrumentBtnStyle := TipIcon(t.Theme, ie.saveInstrumentBtn, icons.ContentSave, "Save instrument")
 		loadInstrumentBtnStyle := TipIcon(t.Theme, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
-		deleteInstrumentBtnStyle := ActionIcon(gtx, t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, "Delete\ninstrument")
+		deleteInstrumentBtnStyle := ActionIcon(gtx, t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, ie.deleteInstrumentHint)
 
 		m := PopupMenu(&ie.presetMenu, t.Theme.Shaper)
 

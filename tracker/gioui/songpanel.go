@@ -40,6 +40,14 @@ type SongPanel struct {
 
 	// Edit menu items
 	editMenuItems []MenuItem
+
+	// Hints
+	rewindHint                  string
+	playHint, stopHint          string
+	recordHint, stopRecordHint  string
+	followOnHint, followOffHint string
+	panicHint                   string
+	loopOffHint, loopOnHint     string
 }
 
 func NewSongPanel(model *tracker.Model) *SongPanel {
@@ -59,24 +67,32 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		RewindBtn:      NewActionClickable(model.PlayFromSongStart()),
 	}
 	ret.fileMenuItems = []MenuItem{
-		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: shortcutKey + "N", Doer: model.NewSong()},
-		{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: shortcutKey + "O", Doer: model.OpenSong()},
-		{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: shortcutKey + "S", Doer: model.SaveSong()},
-		{IconBytes: icons.ContentSave, Text: "Save Song As...", Doer: model.SaveSongAs()},
-		{IconBytes: icons.ImageAudiotrack, Text: "Export Wav...", Doer: model.Export()},
+		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: keyActionMap["NewSong"], Doer: model.NewSong()},
+		{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: keyActionMap["OpenSong"], Doer: model.OpenSong()},
+		{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: keyActionMap["SaveSong"], Doer: model.SaveSong()},
+		{IconBytes: icons.ContentSave, Text: "Save Song As...", ShortcutText: keyActionMap["SaveSongAs"], Doer: model.SaveSongAs()},
+		{IconBytes: icons.ImageAudiotrack, Text: "Export Wav...", ShortcutText: keyActionMap["ExportWav"], Doer: model.Export()},
 	}
 	if canQuit {
-		ret.fileMenuItems = append(ret.fileMenuItems, MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit", Doer: model.Quit()})
+		ret.fileMenuItems = append(ret.fileMenuItems, MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit", ShortcutText: keyActionMap["Quit"], Doer: model.Quit()})
 	}
 	ret.editMenuItems = []MenuItem{
-		{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: shortcutKey + "Z", Doer: model.Undo()},
-		{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: shortcutKey + "Y", Doer: model.Redo()},
-		{IconBytes: icons.ImageCrop, Text: "Remove unused data", Doer: model.RemoveUnused()},
+		{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: keyActionMap["Undo"], Doer: model.Undo()},
+		{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: keyActionMap["Redo"], Doer: model.Redo()},
+		{IconBytes: icons.ImageCrop, Text: "Remove unused data", ShortcutText: keyActionMap["RemoveUnused"], Doer: model.RemoveUnused()},
 	}
+	ret.rewindHint = makeHint("Rewind", "\n(%s)", "PlaySongStartUnfollow")
+	ret.playHint = makeHint("Play", " (%s)", "PlayCurrentPosUnfollow")
+	ret.stopHint = makeHint("Stop", " (%s)", "StopPlaying")
+	ret.panicHint = makeHint("Panic", " (%s)", "PanicToggle")
+	ret.recordHint = makeHint("Record", " (%s)", "RecordingToggle")
+	ret.stopRecordHint = makeHint("Stop", " (%s)", "RecordingToggle")
+	ret.followOnHint = makeHint("Follow on", " (%s)", "FollowToggle")
+	ret.followOffHint = makeHint("Follow off", " (%s)", "FollowToggle")
+	ret.loopOffHint = makeHint("Loop off", " (%s)", "LoopToggle")
+	ret.loopOnHint = makeHint("Loop on", " (%s)", "LoopToggle")
 	return ret
 }
-
-const shortcutKey = "Ctrl+"
 
 func (s *SongPanel) Layout(gtx C, t *Tracker) D {
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -104,12 +120,12 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 
 	in := layout.UniformInset(unit.Dp(1))
 
-	panicBtnStyle := ToggleButton(gtx, tr.Theme, t.PanicBtn, "Panic (F12)")
-	rewindBtnStyle := ActionIcon(gtx, tr.Theme, t.RewindBtn, icons.AVFastRewind, "Rewind\n(Ctrl+F5)")
-	playBtnStyle := ToggleIcon(gtx, tr.Theme, t.PlayingBtn, icons.AVPlayArrow, icons.AVStop, "Play (F5 / Space)", "Stop (F8)")
-	recordBtnStyle := ToggleIcon(gtx, tr.Theme, t.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, "Record (F7)", "Stop (F7)")
-	noteTrackBtnStyle := ToggleIcon(gtx, tr.Theme, t.NoteTracking, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, "Follow\nOff", "Follow\nOn")
-	loopBtnStyle := ToggleIcon(gtx, tr.Theme, t.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, "Loop\nOff\n(Ctrl+L)", "Loop\nOn\n(Ctrl+L)")
+	panicBtnStyle := ToggleButton(gtx, tr.Theme, t.PanicBtn, t.panicHint)
+	rewindBtnStyle := ActionIcon(gtx, tr.Theme, t.RewindBtn, icons.AVFastRewind, t.rewindHint)
+	playBtnStyle := ToggleIcon(gtx, tr.Theme, t.PlayingBtn, icons.AVPlayArrow, icons.AVStop, t.playHint, t.stopHint)
+	recordBtnStyle := ToggleIcon(gtx, tr.Theme, t.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, t.recordHint, t.stopRecordHint)
+	noteTrackBtnStyle := ToggleIcon(gtx, tr.Theme, t.NoteTracking, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, t.followOffHint, t.followOnHint)
+	loopBtnStyle := ToggleIcon(gtx, tr.Theme, t.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, t.loopOffHint, t.loopOnHint)
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {

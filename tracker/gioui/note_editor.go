@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -59,12 +60,16 @@ type NoteEditor struct {
 	NoteOffBtn          *ActionClickable
 	EffectBtn           *BoolClickable
 
-	scrollTable *ScrollTable
-	tag         struct{}
+	scrollTable  *ScrollTable
+	tag          struct{}
+	eventFilters []event.Filter
+
+	deleteTrackHint string
+	addTrackHint    string
 }
 
 func NewNoteEditor(model *tracker.Model) *NoteEditor {
-	return &NoteEditor{
+	ret := &NoteEditor{
 		TrackVoices:         NewNumberInput(model.TrackVoices().Int()),
 		NewTrackBtn:         NewActionClickable(model.AddTrack()),
 		DeleteTrackBtn:      NewActionClickable(model.DeleteTrack()),
@@ -80,50 +85,20 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 			model.NoteRows().List(),
 		),
 	}
+	for k, a := range keyBindingMap {
+		if len(a) < 4 || a[:4] != "Note" {
+			continue
+		}
+		ret.eventFilters = append(ret.eventFilters, key.Filter{Focus: ret.scrollTable, Name: k.Name})
+	}
+	ret.deleteTrackHint = makeHint("Delete\ntrack", "\n(%s)", "DeleteTrack")
+	ret.addTrackHint = makeHint("Add\ntrack", "\n(%s)", "AddTrack")
+	return ret
 }
 
 func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 	for {
-		e, ok := gtx.Event(
-			key.Filter{Focus: te.scrollTable, Name: "A"},
-			key.Filter{Focus: te.scrollTable, Name: "B"},
-			key.Filter{Focus: te.scrollTable, Name: "C"},
-			key.Filter{Focus: te.scrollTable, Name: "D"},
-			key.Filter{Focus: te.scrollTable, Name: "E"},
-			key.Filter{Focus: te.scrollTable, Name: "F"},
-			key.Filter{Focus: te.scrollTable, Name: "G"},
-			key.Filter{Focus: te.scrollTable, Name: "H"},
-			key.Filter{Focus: te.scrollTable, Name: "I"},
-			key.Filter{Focus: te.scrollTable, Name: "J"},
-			key.Filter{Focus: te.scrollTable, Name: "K"},
-			key.Filter{Focus: te.scrollTable, Name: "L"},
-			key.Filter{Focus: te.scrollTable, Name: "M"},
-			key.Filter{Focus: te.scrollTable, Name: "N"},
-			key.Filter{Focus: te.scrollTable, Name: "O"},
-			key.Filter{Focus: te.scrollTable, Name: "P"},
-			key.Filter{Focus: te.scrollTable, Name: "Q"},
-			key.Filter{Focus: te.scrollTable, Name: "R"},
-			key.Filter{Focus: te.scrollTable, Name: "S"},
-			key.Filter{Focus: te.scrollTable, Name: "T"},
-			key.Filter{Focus: te.scrollTable, Name: "U"},
-			key.Filter{Focus: te.scrollTable, Name: "V"},
-			key.Filter{Focus: te.scrollTable, Name: "W"},
-			key.Filter{Focus: te.scrollTable, Name: "X"},
-			key.Filter{Focus: te.scrollTable, Name: "Y"},
-			key.Filter{Focus: te.scrollTable, Name: "Z"},
-			key.Filter{Focus: te.scrollTable, Name: "0"},
-			key.Filter{Focus: te.scrollTable, Name: "1"},
-			key.Filter{Focus: te.scrollTable, Name: "2"},
-			key.Filter{Focus: te.scrollTable, Name: "3"},
-			key.Filter{Focus: te.scrollTable, Name: "4"},
-			key.Filter{Focus: te.scrollTable, Name: "5"},
-			key.Filter{Focus: te.scrollTable, Name: "6"},
-			key.Filter{Focus: te.scrollTable, Name: "7"},
-			key.Filter{Focus: te.scrollTable, Name: "8"},
-			key.Filter{Focus: te.scrollTable, Name: "9"},
-			key.Filter{Focus: te.scrollTable, Name: ","},
-			key.Filter{Focus: te.scrollTable, Name: "."},
-		)
+		e, ok := gtx.Event(te.eventFilters...)
 		if !ok {
 			break
 		}
@@ -162,8 +137,8 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 		addOctaveBtnStyle := ActionButton(gtx, t.Theme, te.AddOctaveBtn, "+12")
 		subtractOctaveBtnStyle := ActionButton(gtx, t.Theme, te.SubtractOctaveBtn, "-12")
 		noteOffBtnStyle := ActionButton(gtx, t.Theme, te.NoteOffBtn, "Note Off")
-		deleteTrackBtnStyle := ActionIcon(gtx, t.Theme, te.DeleteTrackBtn, icons.ActionDelete, "Delete track\n(Ctrl+Shift+T)")
-		newTrackBtnStyle := ActionIcon(gtx, t.Theme, te.NewTrackBtn, icons.ContentAdd, "Add track\n(Ctrl+T)")
+		deleteTrackBtnStyle := ActionIcon(gtx, t.Theme, te.DeleteTrackBtn, icons.ActionDelete, te.deleteTrackHint)
+		newTrackBtnStyle := ActionIcon(gtx, t.Theme, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
 		in := layout.UniformInset(unit.Dp(1))
 		voiceUpDown := func(gtx C) D {
 			numStyle := NumericUpDown(t.Theme, te.TrackVoices, "Number of voices for this track")
@@ -347,7 +322,11 @@ func (te *NoteEditor) command(gtx C, t *Tracker, e key.Event) {
 			goto validNote
 		}
 	} else {
-		if e.Name == "A" || e.Name == "1" {
+		action, ok := keyBindingMap[e]
+		if !ok {
+			return
+		}
+		if action == "NoteOff" {
 			t.Model.Notes().Table().Fill(0)
 			if step := t.Model.Step().Value(); step > 0 {
 				te.scrollTable.Table.MoveCursor(0, step)
@@ -356,8 +335,12 @@ func (te *NoteEditor) command(gtx C, t *Tracker, e key.Event) {
 			te.scrollTable.EnsureCursorVisible()
 			return
 		}
-		if val, ok := noteMap[e.Name]; ok {
-			n = noteAsValue(t.OctaveNumberInput.Int.Value(), val)
+		if action[:4] == "Note" {
+			val, err := strconv.Atoi(string(action[4:]))
+			if err != nil {
+				return
+			}
+			n = noteAsValue(t.OctaveNumberInput.Int.Value(), val-12)
 			t.Model.Notes().Table().Fill(int(n))
 			goto validNote
 		}
