@@ -95,7 +95,6 @@ func NewTracker(model *tracker.Model) *Tracker {
 	t.Theme.Palette.ContrastFg = black
 	t.TrackEditor.scrollTable.Focus()
 	t.quitWG.Add(1)
-
 	return t
 }
 
