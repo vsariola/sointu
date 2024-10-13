@@ -41,6 +41,12 @@ type (
 		BPM() (bpm float64, ok bool)
 	}
 
+	// TODO @qm210: Could this go into PlayerProcessContext / elsewhere..??
+	EventProcessor interface {
+		ProcessMessages(context PlayerProcessContext)
+		ProcessEvent(event MIDINoteEvent)
+	}
+
 	// MIDINoteEvent is a MIDI event triggering or releasing a note. In
 	// processing, the Frame is relative to the start of the current buffer. In
 	// a Recording, the Frame is relative to the start of the recording.
@@ -89,8 +95,13 @@ const numRenderTries = 10000
 // model. context tells the player which MIDI events happen during the current
 // buffer. It is used to trigger and release notes during processing. The
 // context is also used to get the current BPM from the host.
-func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext) {
+func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext, ui EventProcessor) {
 	p.processMessages(context)
+
+	if ui != nil {
+		ui.ProcessMessages(context)
+	}
+
 	midi, midiOk := context.NextEvent()
 
 	frame := 0
@@ -117,6 +128,10 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 			} else {
 				p.releaseInstrument(midi.Channel, midi.Note)
 			}
+			if ui != nil {
+				ui.ProcessEvent(midi)
+			}
+
 			midi, midiOk = context.NextEvent()
 		}
 		framesUntilMidi := len(buffer)

@@ -78,6 +78,19 @@ func (m *MIDIContext) OpenInputDevice(in tracker.MIDIDevicer) bool {
 	return true
 }
 
+func (m *MIDIContext) OpenInputDeviceByName(name string) bool {
+	if name == "" {
+		return true
+	}
+	for input := range m.ListInputDevices() {
+		if input.String() == name {
+			return m.OpenInputDevice(input)
+		}
+	}
+	fmt.Printf("Could not find Midi Input by \"%s\"\n", name)
+	return false
+}
+
 func (m *MIDIContext) HandleMessage(msg midi.Message, timestampms int32) {
 	go func() {
 		m.events <- msg
