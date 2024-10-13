@@ -8,8 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - A toggle button for copying non-unique patterns before editing. When enabled
   and if the pattern is used in multiple places, the pattern is copied first.
   ([#77][i77])
-- User can define own keybindings in
-  `os.UserConfigDir()/sointu/keybindings.yaml` ([#94][i94], [#151][i151])
+- User can define own keybindings in `os.UserConfigDir()/sointu/keybindings.yml`
+  ([#94][i94], [#151][i151])
 - A small number above the instrument name identifies the MIDI channel /
   instrument number, with numbering starting from 1 ([#154][i154])
 - The filter unit frequency parameter is displayed in Hz, corresponding roughly

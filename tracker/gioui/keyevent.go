@@ -32,7 +32,7 @@ func loadCustomKeyBindings() []KeyBinding {
 	if err != nil {
 		return nil
 	}
-	path := filepath.Join(configDir, "sointu", "keybindings.yaml")
+	path := filepath.Join(configDir, "sointu", "keybindings.yml")
 	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil
@@ -47,7 +47,7 @@ func loadCustomKeyBindings() []KeyBinding {
 	return keyBindings
 }
 
-//go:embed keybindings.yaml
+//go:embed keybindings.yml
 var defaultKeyBindingsYaml []byte
 
 func loadDefaultKeyBindings() []KeyBinding {
