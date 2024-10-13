@@ -55,7 +55,7 @@ func main() {
 	}
 	midiContext := gomidi.NewContext()
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, midiContext, recoveryFile)
-	defer midiContext.Close()
+	defer model.MIDI.DestroyContext()
 	if a := flag.Args(); len(a) > 0 {
 		f, err := os.Open(a[0])
 		if err == nil {
@@ -64,7 +64,7 @@ func main() {
 		f.Close()
 	}
 	tracker := gioui.NewTracker(model)
-	audioCloser := audioContext.Play(&PlayerAudioSource{player, midiContext})
+	audioCloser := audioContext.Play(&PlayerAudioSource{player, model.MIDI})
 	go func() {
 		tracker.Main()
 		audioCloser.Close()
