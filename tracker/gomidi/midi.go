@@ -55,7 +55,7 @@ func CreateContext() *MIDIContext {
 
 // Open an input device while closing the currently open if necessary.
 func (m *MIDIContext) OpenInputDevice(in tracker.MIDIDevicer) bool {
-	fmt.Printf("Opening midi device %s\n.", in)
+	fmt.Printf("Opening midi device \"%s\".\n", in)
 	if m.driverAvailable {
 		if m.currentIn == in {
 			return false
@@ -94,8 +94,10 @@ func (c *MIDIContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
 			var controller uint8
 			var value uint8
 			if msg.GetNoteOn(&channel, &key, &velocity) {
+				fmt.Printf("Note On: Channel: %d, Key: %d, Velocity: %d\n", channel, key, velocity)
 				return tracker.MIDINoteEvent{Frame: 0, On: true, Channel: int(channel), Note: key}, true
 			} else if msg.GetNoteOff(&channel, &key, &velocity) {
+				fmt.Printf("Note Off: Channel: %d, Key: %d, Velocity: %d\n", channel, key, velocity)
 				return tracker.MIDINoteEvent{Frame: 0, On: false, Channel: int(channel), Note: key}, true
 			} else if msg.GetControlChange(&channel, &controller, &value) {
 				fmt.Printf("CC @ Channel: %d, Controller: %d, Value: %d\n", channel, controller, value)

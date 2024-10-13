@@ -30,6 +30,7 @@ func (p *PlayerAudioSource) ReadAudio(buf sointu.AudioBuffer) error {
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
+var defaultMidiInput = flag.String("midi-input", "", "connect MIDI input to matching device name")
 
 func main() {
 	flag.Parse()
@@ -56,7 +57,7 @@ func main() {
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
 	model.MIDI = gomidi.CreateContext()
 	defer model.MIDI.DestroyContext()
-	fmt.Printf("Context there.\n")
+	fmt.Printf("Context created.\n")
 	if a := flag.Args(); len(a) > 0 {
 		f, err := os.Open(a[0])
 		if err == nil {
@@ -65,7 +66,7 @@ func main() {
 		f.Close()
 	}
 	tracker := gioui.NewTracker(model)
-	// fmt.Printf("Hurensohn")
+	tracker.TryOpenMidiInput(*defaultMidiInput)
 	audioCloser := audioContext.Play(&PlayerAudioSource{player, model.MIDI})
 	go func() {
 		tracker.Main()
