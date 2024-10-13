@@ -54,13 +54,14 @@ type (
 		changeSeverity ChangeSeverity
 		changeType     ChangeType
 
-		panic        bool
-		recording    bool
-		playing      bool
-		playPosition sointu.SongPos
-		loop         Loop
-		follow       bool
-		quitted      bool
+		panic          bool
+		recording      bool
+		playing        bool
+		playPosition   sointu.SongPos
+		loop           Loop
+		follow         bool
+		quitted        bool
+		uniquePatterns bool
 
 		cachePatternUseCount [][]int
 

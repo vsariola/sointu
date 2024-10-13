@@ -137,7 +137,10 @@ func (s Track) Note(pos SongPos) byte {
 	return s.Patterns[pat][pos.PatternRow]
 }
 
-func (s *Track) SetNote(pos SongPos, note byte) {
+// SetNote sets the note at the given position. If uniquePatterns is true, the
+// pattern is copied to a new pattern if the pattern is used by more than one
+// order row.
+func (s *Track) SetNote(pos SongPos, note byte, uniquePatterns bool) {
 	if pos.OrderRow < 0 || pos.PatternRow < 0 {
 		return
 	}
@@ -163,13 +166,31 @@ func (s *Track) SetNote(pos SongPos, note byte) {
 	for pat >= len(s.Patterns) {
 		s.Patterns = append(s.Patterns, Pattern{})
 	}
-	if pos.PatternRow >= len(s.Patterns[pat]) && note == 1 {
-		return
+	if uniquePatterns {
+		uses := 0
+		maxPat := 0
+		for _, p := range s.Order {
+			if p == pat {
+				uses++
+			}
+			if p > maxPat {
+				maxPat = p
+			}
+		}
+		if uses > 1 {
+			newPattern := append(Pattern{}, s.Patterns[pat]...)
+			pat = maxPat + 1
+			if pat >= 36 {
+				return
+			}
+			for pat >= len(s.Patterns) {
+				s.Patterns = append(s.Patterns, Pattern{})
+			}
+			s.Patterns[pat] = newPattern
+			s.Order.Set(pos.OrderRow, pat)
+		}
 	}
-	for pos.PatternRow >= len(s.Patterns[pat]) {
-		s.Patterns[pat] = append(s.Patterns[pat], 1)
-	}
-	s.Patterns[pat][pos.PatternRow] = note
+	s.Patterns[pat].Set(pos.PatternRow, note)
 }
 
 // Get returns the value at index; or 1 is the index is out of range
@@ -182,6 +203,9 @@ func (s Pattern) Get(index int) byte {
 
 // Set sets the value at index; appending 1s until the slice is long enough.
 func (s *Pattern) Set(index int, value byte) {
+	if value == 1 && index >= len(*s) {
+		return
+	}
 	for len(*s) <= index {
 		*s = append(*s, 1)
 	}

@@ -220,6 +220,8 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		t.UnitDisabled().Bool().Toggle()
 	case "LoopToggle":
 		t.LoopToggle().Bool().Toggle()
+	case "UniquePatternsToggle":
+		t.UniquePatterns().Bool().Toggle()
 	// Integers
 	case "InstrumentVoicesAdd":
 		t.Model.InstrumentVoices().Int().Add(1)

@@ -59,13 +59,15 @@ type NoteEditor struct {
 	SubtractOctaveBtn   *ActionClickable
 	NoteOffBtn          *ActionClickable
 	EffectBtn           *BoolClickable
+	UniqueBtn           *BoolClickable
 
 	scrollTable  *ScrollTable
 	tag          struct{}
 	eventFilters []event.Filter
 
-	deleteTrackHint string
-	addTrackHint    string
+	deleteTrackHint           string
+	addTrackHint              string
+	uniqueOffTip, uniqueOnTip string
 }
 
 func NewNoteEditor(model *tracker.Model) *NoteEditor {
@@ -79,6 +81,7 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 		SubtractOctaveBtn:   NewActionClickable(model.SubtractOctave()),
 		NoteOffBtn:          NewActionClickable(model.EditNoteOff()),
 		EffectBtn:           NewBoolClickable(model.Effect().Bool()),
+		UniqueBtn:           NewBoolClickable(model.UniquePatterns().Bool()),
 		scrollTable: NewScrollTable(
 			model.Notes().Table(),
 			model.Tracks().List(),
@@ -93,6 +96,8 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 	}
 	ret.deleteTrackHint = makeHint("Delete\ntrack", "\n(%s)", "DeleteTrack")
 	ret.addTrackHint = makeHint("Add\ntrack", "\n(%s)", "AddTrack")
+	ret.uniqueOnTip = makeHint("Duplicate non-unique patterns", " (%s)", "UniquePatternsToggle")
+	ret.uniqueOffTip = makeHint("Allow editing non-unique patterns", " (%s)", "UniquePatternsToggle")
 	return ret
 }
 
@@ -145,6 +150,7 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			return in.Layout(gtx, numStyle.Layout)
 		}
 		effectBtnStyle := ToggleButton(gtx, t.Theme, te.EffectBtn, "Hex")
+		uniqueBtnStyle := ToggleIcon(gtx, t.Theme, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Dp(unit.Dp(12)), 0)} }),
 			layout.Rigid(addSemitoneBtnStyle.Layout),
@@ -153,6 +159,7 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			layout.Rigid(subtractOctaveBtnStyle.Layout),
 			layout.Rigid(noteOffBtnStyle.Layout),
 			layout.Rigid(effectBtnStyle.Layout),
+			layout.Rigid(uniqueBtnStyle.Layout),
 			layout.Rigid(Label("  Voices:", white, t.Theme.Shaper)),
 			layout.Rigid(voiceUpDown),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),

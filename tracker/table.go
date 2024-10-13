@@ -481,7 +481,7 @@ func (v *Notes) add(rect Rect, delta int) (ok bool) {
 				newVal = 255
 			}
 			// only do all sets after all gets, so we don't accidentally adjust single note multiple times
-			defer v.d.Song.Score.Tracks[x].SetNote(pos, byte(newVal))
+			defer v.d.Song.Score.Tracks[x].SetNote(pos, byte(newVal), v.uniquePatterns)
 		}
 	}
 	return true
@@ -540,7 +540,7 @@ func (v *Notes) unmarshalAtCursor(data []byte) bool {
 				continue
 			}
 			pos := v.d.Song.Score.SongPos(y)
-			v.d.Song.Score.Tracks[x].SetNote(pos, q)
+			v.d.Song.Score.Tracks[x].SetNote(pos, q, v.uniquePatterns)
 		}
 	}
 	return true
@@ -562,7 +562,7 @@ func (v *Notes) unmarshalRange(rect Rect, data []byte) bool {
 				continue
 			}
 			pos := v.d.Song.Score.SongPos(y)
-			v.d.Song.Score.Tracks[x].SetNote(pos, a)
+			v.d.Song.Score.Tracks[x].SetNote(pos, a, v.uniquePatterns)
 		}
 	}
 	return true
@@ -609,7 +609,7 @@ func (m *Notes) SetValue(p Point, val byte) {
 	}
 	track := &(m.d.Song.Score.Tracks[p.X])
 	pos := m.d.Song.Score.SongPos(p.Y)
-	(*track).SetNote(pos, val)
+	(*track).SetNote(pos, val, m.uniquePatterns)
 }
 
 func (v *Notes) FillNibble(value byte, lowNibble bool) {

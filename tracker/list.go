@@ -667,8 +667,8 @@ func (v *NoteRows) swap(i, j int) (ok bool) {
 	for _, track := range v.d.Song.Score.Tracks {
 		n1 := track.Note(ipos)
 		n2 := track.Note(jpos)
-		track.SetNote(ipos, n2)
-		track.SetNote(jpos, n1)
+		track.SetNote(ipos, n2, v.uniquePatterns)
+		track.SetNote(jpos, n1, v.uniquePatterns)
 	}
 	return true
 }
@@ -679,7 +679,7 @@ func (v *NoteRows) delete(i int) (ok bool) {
 	}
 	pos := v.d.Song.Score.SongPos(i)
 	for _, track := range v.d.Song.Score.Tracks {
-		track.SetNote(pos, 1)
+		track.SetNote(pos, 1, v.uniquePatterns)
 	}
 	return true
 }
@@ -730,7 +730,7 @@ func (v *NoteRows) unmarshal(data []byte) (from, to int, err error) {
 		for j, note := range arr {
 			y := j + from
 			pos := v.d.Song.Score.SongPos(y)
-			v.d.Song.Score.Tracks[i].SetNote(pos, note)
+			v.d.Song.Score.Tracks[i].SetNote(pos, note, v.uniquePatterns)
 		}
 	}
 	return

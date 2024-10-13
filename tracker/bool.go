@@ -21,6 +21,7 @@ type (
 	UnitSearching   Model
 	UnitDisabled    Model
 	LoopToggle      Model
+	UniquePatterns  Model
 )
 
 func (v Bool) Toggle() {
@@ -45,6 +46,7 @@ func (m *Model) Follow() *Follow                   { return (*Follow)(m) }
 func (m *Model) UnitSearching() *UnitSearching     { return (*UnitSearching)(m) }
 func (m *Model) UnitDisabled() *UnitDisabled       { return (*UnitDisabled)(m) }
 func (m *Model) LoopToggle() *LoopToggle           { return (*LoopToggle)(m) }
+func (m *Model) UniquePatterns() *UniquePatterns   { return (*UniquePatterns)(m) }
 
 // Panic methods
 
@@ -185,3 +187,10 @@ func (t *LoopToggle) setValue(val bool) {
 	m.setLoop(newLoop)
 }
 func (m *LoopToggle) Enabled() bool { return true }
+
+// UniquePatterns methods
+
+func (m *UniquePatterns) Bool() Bool        { return Bool{m} }
+func (m *UniquePatterns) Value() bool       { return m.uniquePatterns }
+func (m *UniquePatterns) setValue(val bool) { m.uniquePatterns = val }
+func (m *UniquePatterns) Enabled() bool     { return true }
