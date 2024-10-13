@@ -49,6 +49,11 @@ type (
 		// Disabled is a flag that can be set to true to disable the unit.
 		// Disabled units are considered to be not present in the patch.
 		Disabled bool `yaml:",omitempty"`
+
+		// Comment is a free-form comment about the unit that can be displayed
+		// instead of/besides the type of the unit in the GUI, to make it easier
+		// to track what the unit is doing & to make it easier to target sends.
+		Comment string `yaml:",omitempty"`
 	}
 
 	// UnitParameter documents one parameter that an unit takes
@@ -291,7 +296,7 @@ func (u *Unit) Copy() Unit {
 	}
 	varArgs := make([]int, len(u.VarArgs))
 	copy(varArgs, u.VarArgs)
-	return Unit{Type: u.Type, Parameters: parameters, VarArgs: varArgs, ID: u.ID, Disabled: u.Disabled}
+	return Unit{Type: u.Type, Parameters: parameters, VarArgs: varArgs, ID: u.ID, Disabled: u.Disabled, Comment: u.Comment}
 }
 
 // StackChange returns how this unit will affect the signal stack. "pop" and

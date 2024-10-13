@@ -393,7 +393,8 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	count := intMin(ie.unitDragList.TrackerList.Count(), 256)
 
 	element := func(gtx C, i int) D {
-		gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(unit.Dp(120)), gtx.Dp(unit.Dp(20))))
+		gtx.Constraints.Max.Y = gtx.Dp(20)
+		gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
 		if i < 0 || i > 255 {
 			return layout.Dimensions{Size: gtx.Constraints.Min}
 		}
@@ -418,7 +419,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		stackLabel := LabelStyle{Text: stackText, ShadeColor: black, Color: mediumEmphasisTextColor, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
 		rightMargin := layout.Inset{Right: unit.Dp(10)}
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-			layout.Flexed(1, func(gtx C) D {
+			layout.Rigid(func(gtx C) D {
 				if i == ie.unitDragList.TrackerList.Selected() {
 					editor := material.Editor(t.Theme, ie.searchEditor, "---")
 					editor.Color = color
@@ -473,6 +474,11 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 					return unitNameLabel.Layout(gtx)
 				}
 			}),
+			layout.Flexed(1, func(gtx C) D {
+				unitNameLabel := LabelStyle{Text: u.Comment, ShadeColor: black, Color: mediumEmphasisTextColor, Font: f, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+				inset := layout.Inset{Left: unit.Dp(5)}
+				return inset.Layout(gtx, unitNameLabel.Layout)
+			}),
 			layout.Rigid(func(gtx C) D {
 				return rightMargin.Layout(gtx, stackLabel.Layout)
 			}),
@@ -517,7 +523,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		return layout.Stack{Alignment: layout.SE}.Layout(gtx,
 			layout.Expanded(func(gtx C) D {
 				defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-				gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(unit.Dp(120)), gtx.Constraints.Max.Y))
+				gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(140), gtx.Constraints.Max.Y))
 				dims := unitList.Layout(gtx)
 				unitList.LayoutScrollBar(gtx)
 				return dims

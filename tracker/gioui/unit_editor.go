@@ -32,7 +32,9 @@ type UnitEditor struct {
 	ClearUnitBtn   *ActionClickable
 	DisableUnitBtn *BoolClickable
 	SelectTypeBtn  *widget.Clickable
+	commentEditor  *widget.Editor
 	caser          cases.Caser
+	commentFilters []event.Filter
 
 	copyHint        string
 	disableUnitHint string
@@ -46,10 +48,19 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 		DisableUnitBtn: NewBoolClickable(m.UnitDisabled().Bool()),
 		CopyUnitBtn:    new(TipClickable),
 		SelectTypeBtn:  new(widget.Clickable),
+		commentEditor:  &widget.Editor{SingleLine: true, Submit: true, MaxLen: 16},
 		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
 		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
 	}
 	ret.caser = cases.Title(language.English)
+	for k, a := range keyBindingMap {
+		if len(a) < 4 || a[:4] != "Note" {
+			continue
+		}
+		ret.commentFilters = append(ret.commentFilters, key.Filter{Name: k.Name, Required: k.Modifiers, Focus: ret.commentEditor})
+	}
+	ret.commentFilters = append(ret.commentFilters, key.Filter{Name: key.NameSpace, Focus: ret.commentEditor})
+	ret.commentFilters = append(ret.commentFilters, key.Filter{Name: key.NameEscape, Focus: ret.commentEditor})
 	ret.copyHint = makeHint("Copy unit", " (%s)", "Copy")
 	ret.disableUnitHint = makeHint("Disable unit", " (%s)", "UnitDisabledToggle")
 	ret.enableUnitHint = makeHint("Enable unit", " (%s)", "UnitDisabledToggle")
@@ -139,6 +150,11 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		text = pe.caser.String(text)
 	}
 	hintText := Label(text, white, t.Theme.Shaper)
+	commentStyle := material.Editor(t.Theme, pe.commentEditor, "---")
+	commentStyle.Font = labelDefaultFont
+	commentStyle.TextSize = labelDefaultFontSize
+	commentStyle.Color = mediumEmphasisTextColor
+	commentStyle.HintColor = mediumEmphasisTextColor
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(deleteUnitBtnStyle.Layout),
 		layout.Rigid(copyUnitBtnStyle.Layout),
@@ -151,7 +167,39 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 			}
 			return D{Size: image.Pt(gtx.Dp(unit.Dp(48)), dims.Size.Y)}
 		}),
-		layout.Flexed(1, hintText),
+		layout.Rigid(func(gtx C) D {
+			gtx.Constraints.Min.X = gtx.Dp(120)
+			return hintText(gtx)
+		}),
+		layout.Flexed(1, func(gtx C) D {
+			s := t.UnitComment().String()
+			if pe.commentEditor.Text() != s.Value() {
+				pe.commentEditor.SetText(s.Value())
+			}
+			for {
+				ev, ok := pe.commentEditor.Update(gtx)
+				if !ok {
+					break
+				}
+				_, ok = ev.(widget.SubmitEvent)
+				if ok {
+					t.InstrumentEditor.Focus()
+					continue
+				}
+			}
+			for {
+				event, ok := gtx.Event(pe.commentFilters...)
+				if !ok {
+					break
+				}
+				if e, ok := event.(key.Event); ok && e.State == key.Press && e.Name == key.NameEscape {
+					t.InstrumentEditor.Focus()
+				}
+			}
+			ret := commentStyle.Layout(gtx)
+			s.Set(commentStyle.Editor.Text())
+			return ret
+		}),
 	)
 }
 
@@ -317,11 +365,11 @@ func (p ParameterStyle) Layout(gtx C) D {
 					targetInstrument := p.tracker.Instrument(targetI)
 					instrName = targetInstrument.Name
 					units := targetInstrument.Units
-					unitName = fmt.Sprintf("%v: %v", targetU, units[targetU].Type)
+					unitName = fmt.Sprintf("%d: %s %s", targetU, units[targetU].Type, units[targetU].Comment)
 					unitItems = make([]MenuItem, len(units))
 					for j, unit := range units {
 						id := unit.ID
-						unitItems[j].Text = fmt.Sprintf("%v: %v", j, unit.Type)
+						unitItems[j].Text = fmt.Sprintf("%d: %s %s", j, unit.Type, unit.Comment)
 						unitItems[j].IconBytes = icons.NavigationChevronRight
 						unitItems[j].Doer = tracker.Allow(func() {
 							tracker.Int{IntData: p.w.Parameter}.Set(id)
@@ -333,7 +381,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 					layout.Rigid(p.tracker.layoutMenu(gtx, instrName, &p.w.instrBtn, &p.w.instrMenu, unit.Dp(200),
 						instrItems...,
 					)),
-					layout.Rigid(p.tracker.layoutMenu(gtx, unitName, &p.w.unitBtn, &p.w.unitMenu, unit.Dp(200),
+					layout.Rigid(p.tracker.layoutMenu(gtx, unitName, &p.w.unitBtn, &p.w.unitMenu, unit.Dp(240),
 						unitItems...,
 					)),
 				)

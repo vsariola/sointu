@@ -33,7 +33,7 @@ type (
 	}
 
 	UnitListItem struct {
-		Type                               string
+		Type, Comment                      string
 		Disabled                           bool
 		StackNeed, StackBefore, StackAfter int
 	}
@@ -332,6 +332,7 @@ func (v *Units) Iterate(yield UnitYieldFunc) {
 		stackAfter := stackBefore + unit.StackChange()
 		if !yield(UnitListItem{
 			Type:        unit.Type,
+			Comment:     unit.Comment,
 			Disabled:    unit.Disabled,
 			StackNeed:   unit.StackNeed(),
 			StackBefore: stackBefore,

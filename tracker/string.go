@@ -15,6 +15,7 @@ type (
 	InstrumentName    Model
 	InstrumentComment Model
 	UnitSearch        Model
+	UnitComment       Model
 )
 
 func (v String) Set(value string) {
@@ -30,6 +31,7 @@ func (m *Model) FilePath() *FilePath                   { return (*FilePath)(m) }
 func (m *Model) InstrumentName() *InstrumentName       { return (*InstrumentName)(m) }
 func (m *Model) InstrumentComment() *InstrumentComment { return (*InstrumentComment)(m) }
 func (m *Model) UnitSearch() *UnitSearch               { return (*UnitSearch)(m) }
+func (m *Model) UnitComment() *UnitComment             { return (*UnitComment)(m) }
 
 // FilePathString
 
@@ -107,4 +109,27 @@ func (v *InstrumentComment) setValue(value string) {
 
 func (v *InstrumentComment) change(kind string) func() {
 	return (*Model)(v).change("InstrumentComment."+kind, PatchChange, MinorChange)
+}
+
+// UnitComment
+
+func (v *UnitComment) String() String { return String{v} }
+func (v *UnitComment) Value() string {
+	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) ||
+		v.d.UnitIndex < 0 || v.d.UnitIndex >= len(v.d.Song.Patch[v.d.InstrIndex].Units) {
+		return ""
+	}
+	return v.d.Song.Patch[v.d.InstrIndex].Units[v.d.UnitIndex].Comment
+}
+
+func (v *UnitComment) setValue(value string) {
+	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) ||
+		v.d.UnitIndex < 0 || v.d.UnitIndex >= len(v.d.Song.Patch[v.d.InstrIndex].Units) {
+		return
+	}
+	v.d.Song.Patch[v.d.InstrIndex].Units[v.d.UnitIndex].Comment = value
+}
+
+func (v *UnitComment) change(kind string) func() {
+	return (*Model)(v).change("UnitComment."+kind, PatchChange, MinorChange)
 }

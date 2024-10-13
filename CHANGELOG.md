@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Units can have comments, to make it easier to distinguish between units of
+  same type within an instrument. These comments are also shown when choosing
+  the send target. ([#114][i114])
 - A toggle button for copying non-unique patterns before editing. When enabled
   and if the pattern is used in multiple places, the pattern is copied first.
   ([#77][i77])
@@ -232,6 +235,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i77]: https://github.com/vsariola/sointu/issues/77
 [i94]: https://github.com/vsariola/sointu/issues/94
 [i112]: https://github.com/vsariola/sointu/issues/112
+[i114]: https://github.com/vsariola/sointu/issues/114
 [i116]: https://github.com/vsariola/sointu/issues/116
 [i120]: https://github.com/vsariola/sointu/issues/120
 [i121]: https://github.com/vsariola/sointu/issues/121
