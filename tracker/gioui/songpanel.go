@@ -84,8 +84,7 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: keyActionMap["Redo"], Doer: model.Redo()},
 		{IconBytes: icons.ImageCrop, Text: "Remove unused data", ShortcutText: keyActionMap["RemoveUnused"], Doer: model.RemoveUnused()},
 	}
-	devices := model.MIDI.ListInputDevices()
-	for _, input := range devices {
+	for input := range model.MIDI.ListInputDevices() {
 		ret.midiMenuItems = append(ret.midiMenuItems, MenuItem{
 			IconBytes: icons.ImageControlPoint,
 			Text:      input.String(),

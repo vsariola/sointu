@@ -76,7 +76,7 @@ type (
 		PlayerMessages chan PlayerMsg
 		modelMessages  chan<- interface{}
 
-		MIDI *MIDIContext
+		MIDI MIDIContexter
 	}
 
 	// Cursor identifies a row and a track in a song score.
@@ -122,6 +122,18 @@ type (
 	ChangeType     int
 
 	Dialog int
+
+	MIDIContexter interface {
+		ListInputDevices() <-chan MIDIDevicer
+		OpenInputDevice(item MIDIDevicer) bool
+		DestroyContext()
+		BPM() (bpm float64, ok bool)
+		NextEvent() (event MIDINoteEvent, ok bool)
+	}
+
+	MIDIDevicer interface {
+		String() string
+	}
 )
 
 const (

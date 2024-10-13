@@ -6,7 +6,6 @@ import (
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
-	"gitlab.com/gomidi/midi/v2/drivers"
 )
 
 type (
@@ -446,10 +445,10 @@ func (m *Model) Cancel() Action      { return Allow(func() { m.dialog = NoDialog
 func (m *Model) Export() Action      { return Allow(func() { m.dialog = Export }) }
 func (m *Model) ExportFloat() Action { return Allow(func() { m.dialog = ExportFloatExplorer }) }
 func (m *Model) ExportInt16() Action { return Allow(func() { m.dialog = ExportInt16Explorer }) }
-func (m *Model) SelectMidiInput(input drivers.In) Action {
+func (m *Model) SelectMidiInput(item MIDIDevicer) Action {
 	return Allow(func() {
-		if !m.MIDI.OpenInputDevice(input) {
-			message := fmt.Sprintf("Could not open MIDI device %s\n", input)
+		if !m.MIDI.OpenInputDevice(item) {
+			message := fmt.Sprintf("Could not open MIDI device %s\n", item)
 			m.Alerts().Add(message, Error)
 		}
 	})
