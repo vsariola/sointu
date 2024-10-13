@@ -92,7 +92,7 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 		if len(a) < 4 || a[:4] != "Note" {
 			continue
 		}
-		ret.eventFilters = append(ret.eventFilters, key.Filter{Focus: ret.scrollTable, Name: k.Name})
+		ret.eventFilters = append(ret.eventFilters, key.Filter{Focus: ret.scrollTable, Required: k.Modifiers, Name: k.Name})
 	}
 	ret.deleteTrackHint = makeHint("Delete\ntrack", "\n(%s)", "DeleteTrack")
 	ret.addTrackHint = makeHint("Add\ntrack", "\n(%s)", "AddTrack")
