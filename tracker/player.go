@@ -43,7 +43,7 @@ type (
 
 	// TODO @qm210: Could this go into PlayerProcessContext / elsewhere..??
 	EventProcessor interface {
-		ProcessMessages(context PlayerProcessContext)
+		ProcessMessage(msg interface{})
 		ProcessEvent(event MIDINoteEvent)
 	}
 
@@ -96,11 +96,7 @@ const numRenderTries = 10000
 // buffer. It is used to trigger and release notes during processing. The
 // context is also used to get the current BPM from the host.
 func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext, ui EventProcessor) {
-	p.processMessages(context)
-
-	if ui != nil {
-		ui.ProcessMessages(context)
-	}
+	p.processMessages(context, ui)
 
 	midi, midiOk := context.NextEvent()
 
@@ -240,7 +236,7 @@ func (p *Player) advanceRow() {
 	p.rowtime = 0
 }
 
-func (p *Player) processMessages(context PlayerProcessContext) {
+func (p *Player) processMessages(context PlayerProcessContext, uiProcessor EventProcessor) {
 loop:
 	for { // process new message
 		select {
@@ -311,6 +307,9 @@ loop:
 				}
 			default:
 				// ignore unknown messages
+			}
+			if uiProcessor != nil {
+				uiProcessor.ProcessMessage(msg)
 			}
 		default:
 			break loop
@@ -434,4 +433,16 @@ func idForInstrumentNote(instrument int, note byte) int {
 
 func idForTrack(track int) int {
 	return -1 - track
+}
+
+func (m *MIDINoteEvent) String() string {
+	name := "MIDI"
+	if m.On {
+		name = "NoteOn"
+	} else {
+		name = "NoteOff"
+	}
+	return fmt.Sprintf("%s(frame=%d,ch=%d,note=%d)",
+		name, m.Frame, m.Channel, m.Note,
+	)
 }

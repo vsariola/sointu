@@ -73,7 +73,7 @@ type (
 		synther sointu.Synther // the synther used to create new synths
 
 		PlayerMessages chan PlayerMsg
-		modelMessages  chan<- interface{}
+		ModelMessages  chan<- interface{}
 
 		MIDI MIDIContexter
 	}
@@ -183,7 +183,7 @@ func NewModelPlayer(synther sointu.Synther, recoveryFilePath string) (*Model, *P
 	m.synther = synther
 	modelMessages := make(chan interface{}, 1024)
 	playerMessages := make(chan PlayerMsg, 1024)
-	m.modelMessages = modelMessages
+	m.ModelMessages = modelMessages
 	m.PlayerMessages = playerMessages
 	m.d.Octave = 4
 	m.d.RecoveryFilePath = recoveryFilePath
@@ -422,7 +422,7 @@ func (m *Model) resetSong() {
 
 // send sends a message to the player
 func (m *Model) send(message interface{}) {
-	m.modelMessages <- message
+	m.ModelMessages <- message
 }
 
 func (m *Model) maxID() int {
