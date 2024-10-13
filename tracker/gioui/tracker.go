@@ -308,15 +308,12 @@ func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
 	)
 }
 
-func (t *Tracker) TryOpenMidiInput(name string) {
-	if name == "" {
-		return
-	}
-	for input := range t.Model.MIDI.ListInputDevices() {
-		if input.String() == name {
-			t.Model.SelectMidiInput(input).Do()
-			return
-		}
-	}
-	fmt.Printf("Could not find Midi Input by \"%s\"\n", name)
+/// Event Handling (for UI updates when playing etc.)
+
+func (t *Tracker) ProcessMessages(context tracker.PlayerProcessContext) {
+	// TODO @qm210 or @LeStahL: Implement
+}
+
+func (t *Tracker) ProcessEvent(event tracker.MIDINoteEvent) {
+	// TODO @qm210 or @LestahL: Implement
 }

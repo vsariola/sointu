@@ -10,23 +10,12 @@ import (
 	"runtime/pprof"
 
 	"gioui.org/app"
-	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/cmd"
 	"github.com/vsariola/sointu/oto"
 	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/tracker/gioui"
 	"github.com/vsariola/sointu/tracker/gomidi"
 )
-
-type PlayerAudioSource struct {
-	*tracker.Player
-	playerProcessContext tracker.PlayerProcessContext
-}
-
-func (p *PlayerAudioSource) ReadAudio(buf sointu.AudioBuffer) error {
-	p.Player.Process(buf, p.playerProcessContext)
-	return nil
-}
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
@@ -57,7 +46,9 @@ func main() {
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
 	model.MIDI = gomidi.CreateContext()
 	defer model.MIDI.DestroyContext()
+	model.MIDI.OpenInputDeviceByName(*defaultMidiInput)
 	fmt.Printf("Context created.\n")
+
 	if a := flag.Args(); len(a) > 0 {
 		f, err := os.Open(a[0])
 		if err == nil {
@@ -65,11 +56,11 @@ func main() {
 		}
 		f.Close()
 	}
-	tracker := gioui.NewTracker(model)
-	tracker.TryOpenMidiInput(*defaultMidiInput)
-	audioCloser := audioContext.Play(&PlayerAudioSource{player, model.MIDI})
+	trackerUi := gioui.NewTracker(model)
+	processor := tracker.CreateProcessor(player, model.MIDI, trackerUi)
+	audioCloser := audioContext.Play(processor)
 	go func() {
-		tracker.Main()
+		trackerUi.Main()
 		audioCloser.Close()
 		if *cpuprofile != "" {
 			pprof.StopCPUProfile()
