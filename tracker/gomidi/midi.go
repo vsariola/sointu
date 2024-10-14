@@ -87,23 +87,26 @@ func (m *RTMIDIContext) HandleMessage(msg midi.Message, timestampms int32) {
 }
 
 func (c *RTMIDIContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
-	select {
-	case msg := <-c.events:
-		var channel uint8
-		var velocity uint8
-		var key uint8
-		if msg.GetNoteOn(&channel, &key, &velocity) {
-			return tracker.MIDINoteEvent{Frame: 0, On: true, Channel: int(channel), Note: key}, true
-		} else if msg.GetNoteOff(&channel, &key, &velocity) {
-			return tracker.MIDINoteEvent{Frame: 0, On: false, Channel: int(channel), Note: key}, true
+	for {
+		select {
+		case msg := <-c.events:
+			var channel uint8
+			var velocity uint8
+			var key uint8
+			if msg.GetNoteOn(&channel, &key, &velocity) {
+				return tracker.MIDINoteEvent{Frame: 0, On: true, Channel: int(channel), Note: key}, true
+			} else if msg.GetNoteOff(&channel, &key, &velocity) {
+				return tracker.MIDINoteEvent{Frame: 0, On: false, Channel: int(channel), Note: key}, true
+			}
+			// TODO: handle control messages with something like:
+			// if msg.GetControlChange(&channel, &controller, &value) {
+			//	....
+			// if the message is not any recognized type, ignore it and continue looping
+		default:
+			// Note (@LeStahL): This empty select case is needed to make the implementation non-blocking.
+			return tracker.MIDINoteEvent{}, false
 		}
-		// TODO: handle control messages with something like:
-		// if msg.GetControlChange(&channel, &controller, &value) {
-		//	....
-	default:
-		// Note (@LeStahL): This empty select case is needed to make the implementation non-blocking.
 	}
-	return tracker.MIDINoteEvent{}, false
 }
 
 func (c *RTMIDIContext) BPM() (bpm float64, ok bool) {
