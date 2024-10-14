@@ -141,11 +141,6 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		text = pe.caser.String(text)
 	}
 	hintText := Label(text, white, t.Theme.Shaper)
-	commentStyle := MaterialEditor(t.Theme, pe.commentEditor, "---")
-	commentStyle.Font = labelDefaultFont
-	commentStyle.TextSize = labelDefaultFontSize
-	commentStyle.Color = mediumEmphasisTextColor
-	commentStyle.HintColor = mediumEmphasisTextColor
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(deleteUnitBtnStyle.Layout),
 		layout.Rigid(copyUnitBtnStyle.Layout),
@@ -164,14 +159,17 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		}),
 		layout.Flexed(1, func(gtx C) D {
 			s := t.UnitComment().String()
-			if commentStyle.Editor.Text() != s.Value() {
-				commentStyle.Editor.SetText(s.Value())
-			}
+			pe.commentEditor.SetText(s.Value())
 			for pe.commentEditor.Submitted(gtx) || pe.commentEditor.Cancelled(gtx) {
 				t.InstrumentEditor.Focus()
 			}
+			commentStyle := MaterialEditor(t.Theme, pe.commentEditor, "---")
+			commentStyle.Font = labelDefaultFont
+			commentStyle.TextSize = labelDefaultFontSize
+			commentStyle.Color = mediumEmphasisTextColor
+			commentStyle.HintColor = mediumEmphasisTextColor
 			ret := commentStyle.Layout(gtx)
-			s.Set(commentStyle.Editor.Text())
+			s.Set(pe.commentEditor.Text())
 			return ret
 		}),
 	)

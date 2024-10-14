@@ -39,6 +39,16 @@ func MaterialEditor(th *material.Theme, e *Editor, hint string) EditorStyle {
 	return EditorStyle(material.Editor(th, &e.Editor, hint))
 }
 
+func (e *Editor) SetText(s string) {
+	if e.Editor.Text() != s {
+		e.Editor.SetText(s)
+	}
+}
+
+func (e *Editor) Text() string {
+	return e.Editor.Text()
+}
+
 func (e *Editor) Submitted(gtx C) bool {
 	for {
 		ev, ok := e.Editor.Update(gtx)

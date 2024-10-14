@@ -225,16 +225,14 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				layout.Rigid(header),
 				layout.Rigid(func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					style := MaterialEditor(t.Theme, ie.commentEditor, "Comment")
-					style.Color = highEmphasisTextColor
-					if style.Editor.Text() != ie.commentString.Value() {
-						style.Editor.SetText(ie.commentString.Value())
-					}
+					ie.commentEditor.SetText(ie.commentString.Value())
 					for ie.commentEditor.Submitted(gtx) || ie.commentEditor.Cancelled(gtx) {
 						ie.instrumentDragList.Focus()
 					}
+					style := MaterialEditor(t.Theme, ie.commentEditor, "Comment")
+					style.Color = highEmphasisTextColor
 					ret := layout.UniformInset(unit.Dp(6)).Layout(gtx, style.Layout)
-					ie.commentString.Set(style.Editor.Text())
+					ie.commentString.Set(ie.commentEditor.Text())
 					return ret
 				}),
 			)
@@ -261,22 +259,20 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 			k := byte(255 - level*127)
 			color := color.NRGBA{R: 255, G: k, B: 255, A: 255}
 			if i == ie.instrumentDragList.TrackerList.Selected() {
+				ie.nameEditor.SetText(name)
+				for ie.nameEditor.Submitted(gtx) || ie.nameEditor.Cancelled(gtx) {
+					ie.instrumentDragList.Focus()
+				}
 				style := MaterialEditor(t.Theme, ie.nameEditor, "Instr")
 				style.Color = color
 				style.HintColor = instrumentNameHintColor
 				style.TextSize = unit.Sp(12)
 				style.Font = labelDefaultFont
-				if n := name; n != style.Editor.Text() {
-					style.Editor.SetText(n)
-				}
-				for ie.nameEditor.Submitted(gtx) || ie.nameEditor.Cancelled(gtx) {
-					ie.instrumentDragList.Focus()
-				}
 				dims := layout.Center.Layout(gtx, func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 					return style.Layout(gtx)
 				})
-				ie.nameString.Set(style.Editor.Text())
+				ie.nameString.Set(ie.nameEditor.Text())
 				return dims
 			}
 			if name == "" {
@@ -321,7 +317,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				case key.NameDownArrow:
 					ie.unitDragList.Focus()
 				case key.NameReturn, key.NameEnter:
-					gtx.Execute(key.FocusCmd{Tag: ie.nameEditor.Editor})
+					gtx.Execute(key.FocusCmd{Tag: &ie.nameEditor.Editor})
 					l := len(ie.nameEditor.Editor.Text())
 					ie.nameEditor.Editor.SetCaret(l, l)
 				}
@@ -380,38 +376,34 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
 				if i == ie.unitDragList.TrackerList.Selected() {
-					style := MaterialEditor(t.Theme, ie.searchEditor, "---")
-					style.Color = color
-					style.HintColor = instrumentNameHintColor
-					style.TextSize = unit.Sp(12)
-					style.Font = f
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 					str := tracker.String{StringData: (*tracker.UnitSearch)(t.Model)}
-					if style.Editor.Text() != str.Value() {
-						style.Editor.SetText(str.Value())
-					}
+					ie.searchEditor.SetText(str.Value())
 					for ie.searchEditor.Submitted(gtx) {
 						ie.unitDragList.Focus()
-						if text := style.Editor.Text(); text != "" {
+						if text := ie.searchEditor.Text(); text != "" {
 							for _, n := range sointu.UnitNames {
-								if strings.HasPrefix(n, style.Editor.Text()) {
+								if strings.HasPrefix(n, ie.searchEditor.Text()) {
 									t.Units().SetSelectedType(n)
 									break
 								}
 							}
 						}
 						t.UnitSearching().Bool().Set(false)
-						style.Editor.SetText(str.Value())
+						ie.searchEditor.SetText(str.Value())
 					}
 					for ie.searchEditor.Cancelled(gtx) {
 						t.UnitSearching().Bool().Set(false)
-						style.Editor.SetText(str.Value())
+						ie.searchEditor.SetText(str.Value())
 						ie.unitDragList.Focus()
 					}
+					style := MaterialEditor(t.Theme, ie.searchEditor, "---")
+					style.Color = color
+					style.HintColor = instrumentNameHintColor
+					style.TextSize = unit.Sp(12)
+					style.Font = f
 					ret := style.Layout(gtx)
-					if style.Editor.Text() != str.Value() {
-						str.Set(style.Editor.Text())
-					}
+					str.Set(ie.searchEditor.Text())
 					return ret
 				} else {
 					unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: color, Font: f, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
@@ -457,11 +449,11 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 				case key.NameDeleteBackward:
 					t.Units().SetSelectedType("")
 					t.UnitSearching().Bool().Set(true)
-					gtx.Execute(key.FocusCmd{Tag: ie.searchEditor})
+					gtx.Execute(key.FocusCmd{Tag: &ie.searchEditor.Editor})
 				case key.NameEnter, key.NameReturn:
 					t.Model.AddUnit(e.Modifiers.Contain(key.ModCtrl)).Do()
 					t.UnitSearching().Bool().Set(true)
-					gtx.Execute(key.FocusCmd{Tag: ie.searchEditor})
+					gtx.Execute(key.FocusCmd{Tag: &ie.searchEditor.Editor})
 				}
 			}
 		}
