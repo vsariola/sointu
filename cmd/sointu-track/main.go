@@ -20,6 +20,7 @@ import (
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 var defaultMidiInput = flag.String("midi-input", "", "connect MIDI input to matching device name")
+var firstMidiInput = flag.Bool("first-midi-input", false, "connect MIDI input to first device found")
 
 func main() {
 	flag.Parse()
@@ -46,7 +47,7 @@ func main() {
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
 	model.MIDI = gomidi.CreateContext()
 	defer model.MIDI.DestroyContext()
-	model.MIDI.OpenInputDeviceByName(*defaultMidiInput)
+	model.MIDI.OpenDefaultInputDevice(*defaultMidiInput, *firstMidiInput)
 	fmt.Printf("Context created.\n")
 
 	if a := flag.Args(); len(a) > 0 {

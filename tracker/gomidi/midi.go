@@ -2,6 +2,7 @@ package gomidi
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/vsariola/sointu/tracker"
@@ -17,8 +18,7 @@ type (
 		driverAvailable bool
 		currentIn       MIDIDevicer
 
-		events     chan midi.Message
-		eventIndex int
+		events chan midi.Message
 	}
 	MIDIDevicer drivers.In
 )
@@ -53,17 +53,25 @@ func CreateContext() *MIDIContext {
 	return &m
 }
 
+func (m *MIDIContext) isCurrentInputOpen(in tracker.MIDIDevicer) bool {
+	return (m.currentIn != nil &&
+		m.currentIn.String() == in.String() &&
+		m.currentIn.IsOpen())
+}
+
 // Open an input device while closing the currently open if necessary.
 func (m *MIDIContext) OpenInputDevice(in tracker.MIDIDevicer) bool {
-	fmt.Printf("Opening midi device \"%s\".\n", in)
 	if m.driverAvailable {
-		if m.currentIn == in {
-			return false
+		if m.isCurrentInputOpen(in) {
+			// "true" because the required input device is successfully open
+			return true
 		}
 
 		if m.inputAvailable && m.currentIn.IsOpen() {
 			m.currentIn.Close()
 		}
+
+		fmt.Printf("Opening midi device \"%s\".\n", in)
 
 		m.currentIn = in.(MIDIDevicer)
 		m.currentIn.Open()
@@ -73,20 +81,23 @@ func (m *MIDIContext) OpenInputDevice(in tracker.MIDIDevicer) bool {
 			m.inputAvailable = false
 			return false
 		}
+	} else {
+		fmt.Printf("Cannot Open Input Device %s: No MIDI driver available.\n", in)
 	}
 	return true
 }
 
-func (m *MIDIContext) OpenInputDeviceByName(name string) bool {
-	if name == "" {
-		return true
-	}
+func (m *MIDIContext) OpenDefaultInputDevice(namePrefix string, takeFirst bool) bool {
 	for input := range m.ListInputDevices() {
-		if input.String() == name {
+		if takeFirst || strings.HasPrefix(input.String(), namePrefix) {
 			return m.OpenInputDevice(input)
 		}
 	}
-	fmt.Printf("Could not find Midi Input by \"%s\"\n", name)
+	if takeFirst {
+		fmt.Printf("Could not find any MIDI Input.\n")
+	} else {
+		fmt.Printf("Could not find any default MIDI Input starting with \"%s\".\n", namePrefix)
+	}
 	return false
 }
 
@@ -107,10 +118,8 @@ func (c *MIDIContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
 			var controller uint8
 			var value uint8
 			if msg.GetNoteOn(&channel, &key, &velocity) {
-				fmt.Printf("Note On: Channel: %d, Key: %d, Velocity: %d\n", channel, key, velocity)
 				return tracker.MIDINoteEvent{Frame: 0, On: true, Channel: int(channel), Note: key}, true
 			} else if msg.GetNoteOff(&channel, &key, &velocity) {
-				fmt.Printf("Note Off: Channel: %d, Key: %d, Velocity: %d\n", channel, key, velocity)
 				return tracker.MIDINoteEvent{Frame: 0, On: false, Channel: int(channel), Note: key}, true
 			} else if msg.GetControlChange(&channel, &controller, &value) {
 				fmt.Printf("CC @ Channel: %d, Controller: %d, Value: %d\n", channel, controller, value)

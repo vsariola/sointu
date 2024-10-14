@@ -125,7 +125,7 @@ type (
 	MIDIContexter interface {
 		ListInputDevices() <-chan MIDIDevicer
 		OpenInputDevice(item MIDIDevicer) bool
-		OpenInputDeviceByName(name string) bool
+		OpenDefaultInputDevice(prefix string, takeFirst bool) bool
 		DestroyContext()
 		BPM() (bpm float64, ok bool)
 		NextEvent() (event MIDINoteEvent, ok bool)
