@@ -11,7 +11,6 @@ import (
 
 	"gioui.org/font"
 	"gioui.org/io/clipboard"
-	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -19,7 +18,6 @@ import (
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"gioui.org/widget/material"
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -35,11 +33,11 @@ type InstrumentEditor struct {
 	addUnitBtn          *ActionClickable
 	presetMenuBtn       *TipClickable
 	commentExpandBtn    *BoolClickable
-	commentEditor       *widget.Editor
+	commentEditor       *Editor
 	commentString       tracker.String
-	nameEditor          *widget.Editor
+	nameEditor          *Editor
 	nameString          tracker.String
-	searchEditor        *widget.Editor
+	searchEditor        *Editor
 	instrumentDragList  *DragList
 	unitDragList        *DragList
 	presetDragList      *DragList
@@ -48,9 +46,6 @@ type InstrumentEditor struct {
 	wasFocused          bool
 	presetMenuItems     []MenuItem
 	presetMenu          Menu
-	commentKeyFilters   []event.Filter
-	searchkeyFilters    []event.Filter
-	nameKeyFilters      []event.Filter
 
 	enlargeHint, shrinkHint string
 	addInstrumentHint       string
@@ -71,9 +66,9 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		addUnitBtn:          NewActionClickable(model.AddUnit(false)),
 		commentExpandBtn:    NewBoolClickable(model.CommentExpanded().Bool()),
 		presetMenuBtn:       new(TipClickable),
-		commentEditor:       new(widget.Editor),
-		nameEditor:          &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle},
-		searchEditor:        &widget.Editor{SingleLine: true, Submit: true, Alignment: text.Start},
+		commentEditor:       NewEditor(widget.Editor{}),
+		nameEditor:          NewEditor(widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle}),
+		searchEditor:        NewEditor(widget.Editor{SingleLine: true, Submit: true, Alignment: text.Start}),
 		commentString:       model.InstrumentComment().String(),
 		nameString:          model.InstrumentName().String(),
 		instrumentDragList:  NewDragList(model.Instruments().List(), layout.Horizontal),
@@ -85,20 +80,6 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		ret.presetMenuItems = append(ret.presetMenuItems, MenuItem{Text: name, IconBytes: icons.ImageAudiotrack, Doer: model.LoadPreset(index)})
 		return true
 	})
-	for k, a := range keyBindingMap {
-		if len(a) < 4 || a[:4] != "Note" {
-			continue
-		}
-		ret.commentKeyFilters = append(ret.commentKeyFilters, key.Filter{Name: k.Name, Required: k.Modifiers, Focus: ret.commentEditor})
-		ret.searchkeyFilters = append(ret.searchkeyFilters, key.Filter{Name: k.Name, Required: k.Modifiers, Focus: ret.searchEditor})
-		ret.nameKeyFilters = append(ret.nameKeyFilters, key.Filter{Name: k.Name, Required: k.Modifiers, Focus: ret.nameEditor})
-	}
-	ret.commentKeyFilters = append(ret.commentKeyFilters, key.Filter{Name: key.NameEscape, Focus: ret.commentEditor})
-	ret.searchkeyFilters = append(ret.searchkeyFilters, key.Filter{Name: key.NameEscape, Focus: ret.searchEditor})
-	ret.nameKeyFilters = append(ret.nameKeyFilters, key.Filter{Name: key.NameEscape, Focus: ret.nameEditor})
-	ret.commentKeyFilters = append(ret.commentKeyFilters, key.Filter{Name: key.NameSpace, Focus: ret.commentEditor})
-	ret.searchkeyFilters = append(ret.searchkeyFilters, key.Filter{Name: key.NameSpace, Focus: ret.searchEditor})
-	ret.nameKeyFilters = append(ret.nameKeyFilters, key.Filter{Name: key.NameSpace, Focus: ret.nameEditor})
 	ret.enlargeHint = makeHint("Enlarge", " (%s)", "InstrEnlargedToggle")
 	ret.shrinkHint = makeHint("Shrink", " (%s)", "InstrEnlargedToggle")
 	ret.addInstrumentHint = makeHint("Add\ninstrument", "\n(%s)", "AddInstrument")
@@ -240,28 +221,23 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		}
 
 		if ie.commentExpandBtn.Bool.Value() || gtx.Source.Focused(ie.commentEditor) { // we draw once the widget after it manages to lose focus
-			if ie.commentEditor.Text() != ie.commentString.Value() {
-				ie.commentEditor.SetText(ie.commentString.Value())
-			}
 			ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 				layout.Rigid(header),
 				layout.Rigid(func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					for {
-						event, ok := gtx.Event(ie.commentKeyFilters...)
-						if !ok {
-							break
-						}
-						if e, ok := event.(key.Event); ok && e.State == key.Press && e.Name == key.NameEscape {
-							ie.instrumentDragList.Focus()
-						}
+					style := MaterialEditor(t.Theme, ie.commentEditor, "Comment")
+					style.Color = highEmphasisTextColor
+					if style.Editor.Text() != ie.commentString.Value() {
+						style.Editor.SetText(ie.commentString.Value())
 					}
-					editorStyle := material.Editor(t.Theme, ie.commentEditor, "Comment")
-					editorStyle.Color = highEmphasisTextColor
-					return layout.UniformInset(unit.Dp(6)).Layout(gtx, editorStyle.Layout)
+					for ie.commentEditor.Submitted(gtx) || ie.commentEditor.Cancelled(gtx) {
+						ie.instrumentDragList.Focus()
+					}
+					ret := layout.UniformInset(unit.Dp(6)).Layout(gtx, style.Layout)
+					ie.commentString.Set(style.Editor.Text())
+					return ret
 				}),
 			)
-			ie.commentString.Set(ie.commentEditor.Text())
 			return ret
 		}
 		return header(gtx)
@@ -285,39 +261,22 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 			k := byte(255 - level*127)
 			color := color.NRGBA{R: 255, G: k, B: 255, A: 255}
 			if i == ie.instrumentDragList.TrackerList.Selected() {
-				if n := name; n != ie.nameEditor.Text() {
-					ie.nameEditor.SetText(n)
+				style := MaterialEditor(t.Theme, ie.nameEditor, "Instr")
+				style.Color = color
+				style.HintColor = instrumentNameHintColor
+				style.TextSize = unit.Sp(12)
+				style.Font = labelDefaultFont
+				if n := name; n != style.Editor.Text() {
+					style.Editor.SetText(n)
 				}
-				editor := material.Editor(t.Theme, ie.nameEditor, "Instr")
-				editor.Color = color
-				editor.HintColor = instrumentNameHintColor
-				editor.TextSize = unit.Sp(12)
-				editor.Font = labelDefaultFont
-				for {
-					ev, ok := ie.nameEditor.Update(gtx)
-					if !ok {
-						break
-					}
-					_, ok = ev.(widget.SubmitEvent)
-					if ok {
-						ie.instrumentDragList.Focus()
-						continue
-					}
+				for ie.nameEditor.Submitted(gtx) || ie.nameEditor.Cancelled(gtx) {
+					ie.instrumentDragList.Focus()
 				}
 				dims := layout.Center.Layout(gtx, func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					return editor.Layout(gtx)
+					return style.Layout(gtx)
 				})
-				for { // don't let key presses flow through from the editor
-					event, ok := gtx.Event(ie.nameKeyFilters...)
-					if !ok {
-						break
-					}
-					if e, ok := event.(key.Event); ok && e.State == key.Press && e.Name == key.NameEscape {
-						ie.instrumentDragList.Focus()
-					}
-				}
-				ie.nameString.Set(ie.nameEditor.Text())
+				ie.nameString.Set(style.Editor.Text())
 				return dims
 			}
 			if name == "" {
@@ -362,9 +321,9 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				case key.NameDownArrow:
 					ie.unitDragList.Focus()
 				case key.NameReturn, key.NameEnter:
-					gtx.Execute(key.FocusCmd{Tag: ie.nameEditor})
-					l := len(ie.nameEditor.Text())
-					ie.nameEditor.SetCaret(l, l)
+					gtx.Execute(key.FocusCmd{Tag: ie.nameEditor.Editor})
+					l := len(ie.nameEditor.Editor.Text())
+					ie.nameEditor.Editor.SetCaret(l, l)
 				}
 			}
 		}
@@ -421,49 +380,37 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
 				if i == ie.unitDragList.TrackerList.Selected() {
-					editor := material.Editor(t.Theme, ie.searchEditor, "---")
-					editor.Color = color
-					editor.HintColor = instrumentNameHintColor
-					editor.TextSize = unit.Sp(12)
-					editor.Font = f
+					style := MaterialEditor(t.Theme, ie.searchEditor, "---")
+					style.Color = color
+					style.HintColor = instrumentNameHintColor
+					style.TextSize = unit.Sp(12)
+					style.Font = f
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 					str := tracker.String{StringData: (*tracker.UnitSearch)(t.Model)}
-					if ie.searchEditor.Text() != str.Value() {
-						ie.searchEditor.SetText(str.Value())
+					if style.Editor.Text() != str.Value() {
+						style.Editor.SetText(str.Value())
 					}
-					for {
-						ev, ok := ie.searchEditor.Update(gtx)
-						if !ok {
-							break
-						}
-						_, ok = ev.(widget.SubmitEvent)
-						if ok {
-							ie.unitDragList.Focus()
-							if text := ie.searchEditor.Text(); text != "" {
-								for _, n := range sointu.UnitNames {
-									if strings.HasPrefix(n, ie.searchEditor.Text()) {
-										t.Units().SetSelectedType(n)
-										break
-									}
+					for ie.searchEditor.Submitted(gtx) {
+						ie.unitDragList.Focus()
+						if text := style.Editor.Text(); text != "" {
+							for _, n := range sointu.UnitNames {
+								if strings.HasPrefix(n, style.Editor.Text()) {
+									t.Units().SetSelectedType(n)
+									break
 								}
 							}
-							t.UnitSearching().Bool().Set(false)
-							ie.searchEditor.SetText(str.Value())
-							continue
 						}
+						t.UnitSearching().Bool().Set(false)
+						style.Editor.SetText(str.Value())
 					}
-					ret := editor.Layout(gtx)
-					for { // don't let key presses flow through from the editor
-						event, ok := gtx.Event(ie.searchkeyFilters...)
-						if !ok {
-							break
-						}
-						if e, ok := event.(key.Event); ok && e.State == key.Press && e.Name == key.NameEscape {
-							ie.instrumentDragList.Focus()
-						}
+					for ie.searchEditor.Cancelled(gtx) {
+						t.UnitSearching().Bool().Set(false)
+						style.Editor.SetText(str.Value())
+						ie.unitDragList.Focus()
 					}
-					if ie.searchEditor.Text() != str.Value() {
-						str.Set(ie.searchEditor.Text())
+					ret := style.Layout(gtx)
+					if style.Editor.Text() != str.Value() {
+						str.Set(style.Editor.Text())
 					}
 					return ret
 				} else {

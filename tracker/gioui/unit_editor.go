@@ -32,9 +32,8 @@ type UnitEditor struct {
 	ClearUnitBtn   *ActionClickable
 	DisableUnitBtn *BoolClickable
 	SelectTypeBtn  *widget.Clickable
-	commentEditor  *widget.Editor
+	commentEditor  *Editor
 	caser          cases.Caser
-	commentFilters []event.Filter
 
 	copyHint        string
 	disableUnitHint string
@@ -48,19 +47,11 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 		DisableUnitBtn: NewBoolClickable(m.UnitDisabled().Bool()),
 		CopyUnitBtn:    new(TipClickable),
 		SelectTypeBtn:  new(widget.Clickable),
-		commentEditor:  &widget.Editor{SingleLine: true, Submit: true, MaxLen: 16},
+		commentEditor:  NewEditor(widget.Editor{SingleLine: true, Submit: true, MaxLen: 16}),
 		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
 		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
 	}
 	ret.caser = cases.Title(language.English)
-	for k, a := range keyBindingMap {
-		if len(a) < 4 || a[:4] != "Note" {
-			continue
-		}
-		ret.commentFilters = append(ret.commentFilters, key.Filter{Name: k.Name, Required: k.Modifiers, Focus: ret.commentEditor})
-	}
-	ret.commentFilters = append(ret.commentFilters, key.Filter{Name: key.NameSpace, Focus: ret.commentEditor})
-	ret.commentFilters = append(ret.commentFilters, key.Filter{Name: key.NameEscape, Focus: ret.commentEditor})
 	ret.copyHint = makeHint("Copy unit", " (%s)", "Copy")
 	ret.disableUnitHint = makeHint("Disable unit", " (%s)", "UnitDisabledToggle")
 	ret.enableUnitHint = makeHint("Enable unit", " (%s)", "UnitDisabledToggle")
@@ -150,7 +141,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		text = pe.caser.String(text)
 	}
 	hintText := Label(text, white, t.Theme.Shaper)
-	commentStyle := material.Editor(t.Theme, pe.commentEditor, "---")
+	commentStyle := MaterialEditor(t.Theme, pe.commentEditor, "---")
 	commentStyle.Font = labelDefaultFont
 	commentStyle.TextSize = labelDefaultFontSize
 	commentStyle.Color = mediumEmphasisTextColor
@@ -173,28 +164,11 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		}),
 		layout.Flexed(1, func(gtx C) D {
 			s := t.UnitComment().String()
-			if pe.commentEditor.Text() != s.Value() {
-				pe.commentEditor.SetText(s.Value())
+			if commentStyle.Editor.Text() != s.Value() {
+				commentStyle.Editor.SetText(s.Value())
 			}
-			for {
-				ev, ok := pe.commentEditor.Update(gtx)
-				if !ok {
-					break
-				}
-				_, ok = ev.(widget.SubmitEvent)
-				if ok {
-					t.InstrumentEditor.Focus()
-					continue
-				}
-			}
-			for {
-				event, ok := gtx.Event(pe.commentFilters...)
-				if !ok {
-					break
-				}
-				if e, ok := event.(key.Event); ok && e.State == key.Press && e.Name == key.NameEscape {
-					t.InstrumentEditor.Focus()
-				}
+			for pe.commentEditor.Submitted(gtx) || pe.commentEditor.Cancelled(gtx) {
+				t.InstrumentEditor.Focus()
 			}
 			ret := commentStyle.Layout(gtx)
 			s.Set(commentStyle.Editor.Text())
