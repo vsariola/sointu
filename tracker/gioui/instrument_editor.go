@@ -338,13 +338,13 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	addUnitBtnStyle.IconButtonStyle.Background = t.Theme.Fg
 	addUnitBtnStyle.IconButtonStyle.Inset = layout.UniformInset(unit.Dp(4))
 
-	index := 0
 	var units [256]tracker.UnitListItem
-	(*tracker.Units)(t.Model).Iterate(func(item tracker.UnitListItem) (ok bool) {
-		units[index] = item
-		index++
-		return index <= 256
-	})
+	for i, item := range (*tracker.Units)(t.Model).Iterate() {
+		if i >= 256 {
+			break
+		}
+		units[i] = item
+	}
 	count := intMin(ie.unitDragList.TrackerList.Count(), 256)
 
 	element := func(gtx C, i int) D {

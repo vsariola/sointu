@@ -36,7 +36,7 @@ func (a *PopupAlert) Layout(gtx C) D {
 	a.prevUpdate = now
 
 	var totalY float64 = float64(gtx.Dp(38))
-	a.alerts.Iterate(func(alert tracker.Alert) {
+	for _, alert := range a.alerts.Iterate() {
 		var color, textColor, shadeColor color.NRGBA
 		switch alert.Priority {
 		case tracker.Warning:
@@ -76,6 +76,6 @@ func (a *PopupAlert) Layout(gtx C) D {
 				return dims
 			})
 		})
-	})
+	}
 	return D{}
 }

@@ -38,8 +38,8 @@ type (
 		StackNeed, StackBefore, StackAfter int
 	}
 
-	UnitYieldFunc       func(item UnitListItem) (ok bool)
-	UnitSearchYieldFunc func(item string) (ok bool)
+	UnitYieldFunc       func(index int, item UnitListItem) (ok bool)
+	UnitSearchYieldFunc func(index int, item string) (ok bool)
 
 	Instruments   Model // Instruments is a list of instruments, implementing ListData & MutableListData interfaces
 	Units         Model // Units is a list of all the units in the selected instrument, implementing ListData & MutableListData interfaces
@@ -323,24 +323,26 @@ func (m *Units) SetSelectedType(t string) {
 	m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].ID = oldUnit.ID // keep the ID of the replaced unit
 }
 
-func (v *Units) Iterate(yield UnitYieldFunc) {
-	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
-		return
-	}
-	stackBefore := 0
-	for _, unit := range v.d.Song.Patch[v.d.InstrIndex].Units {
-		stackAfter := stackBefore + unit.StackChange()
-		if !yield(UnitListItem{
-			Type:        unit.Type,
-			Comment:     unit.Comment,
-			Disabled:    unit.Disabled,
-			StackNeed:   unit.StackNeed(),
-			StackBefore: stackBefore,
-			StackAfter:  stackAfter,
-		}) {
-			break
+func (v *Units) Iterate() func(yield UnitYieldFunc) {
+	return func(yield UnitYieldFunc) {
+		if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
+			return
 		}
-		stackBefore = stackAfter
+		stackBefore := 0
+		for i, unit := range v.d.Song.Patch[v.d.InstrIndex].Units {
+			stackAfter := stackBefore + unit.StackChange()
+			if !yield(i, UnitListItem{
+				Type:        unit.Type,
+				Comment:     unit.Comment,
+				Disabled:    unit.Disabled,
+				StackNeed:   unit.StackNeed(),
+				StackBefore: stackBefore,
+				StackAfter:  stackAfter,
+			}) {
+				break
+			}
+			stackBefore = stackAfter
+		}
 	}
 }
 
@@ -743,13 +745,17 @@ func (v *SearchResults) List() List {
 	return List{v}
 }
 
-func (l *SearchResults) Iterate(yield UnitSearchYieldFunc) {
-	for _, name := range sointu.UnitNames {
-		if !strings.HasPrefix(name, l.d.UnitSearchString) {
-			continue
-		}
-		if !yield(name) {
-			break
+func (l *SearchResults) Iterate() func(yield UnitSearchYieldFunc) {
+	return func(yield UnitSearchYieldFunc) {
+		index := 0
+		for _, name := range sointu.UnitNames {
+			if !strings.HasPrefix(name, l.d.UnitSearchString) {
+				continue
+			}
+			if !yield(index, name) {
+				break
+			}
+			index++
 		}
 	}
 }

@@ -292,14 +292,14 @@ func FuzzModel(f *testing.F) {
 				index--
 				return index > 0
 			}, seed)
-			state.model.Alerts().Iterate(func(a tracker.Alert) {
+			for _, a := range model.Alerts().Iterate() {
 				if a.Name == "IDCollision" {
 					t.Errorf("Path: %s Model has ID collisions", totalPath)
 				}
 				if a.Name == "InvalidUnitParameters" {
 					t.Errorf("Path: %s Model units with invalid parameters", totalPath)
 				}
-			})
+			}
 		}
 		closeChan <- struct{}{}
 	})

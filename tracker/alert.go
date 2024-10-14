@@ -18,7 +18,7 @@ type (
 	}
 
 	AlertPriority  int
-	AlertYieldFunc func(alert Alert)
+	AlertYieldFunc func(index int, alert Alert) bool
 	Alerts         Model
 )
 
@@ -35,9 +35,13 @@ func (m *Model) Alerts() *Alerts { return (*Alerts)(m) }
 
 // Alerts methods
 
-func (m *Alerts) Iterate(yield AlertYieldFunc) {
-	for _, a := range m.alerts {
-		yield(a)
+func (m *Alerts) Iterate() func(yield func(index int, alert Alert) bool) {
+	return func(yield func(index int, alert Alert) bool) {
+		for i, a := range m.alerts {
+			if !yield(i, a) {
+				break
+			}
+		}
 	}
 }
 
