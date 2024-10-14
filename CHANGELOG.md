@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- The standalone tracker can open a MIDI port for receiving MIDI notes
+  ([#166][i166])
 - Units can have comments, to make it easier to distinguish between units of
   same type within an instrument. These comments are also shown when choosing
   the send target. ([#114][i114])
@@ -256,3 +258,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i154]: https://github.com/vsariola/sointu/issues/154
 [i158]: https://github.com/vsariola/sointu/issues/158
 [i162]: https://github.com/vsariola/sointu/issues/162
+[i166]: https://github.com/vsariola/sointu/issues/166
