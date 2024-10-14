@@ -54,8 +54,8 @@ func main() {
 		recoveryFile = filepath.Join(configDir, "Sointu", "sointu-track-recovery")
 	}
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
-	model.MIDI = gomidi.CreateContext()
-	defer model.MIDI.DestroyContext()
+	model.MIDI = gomidi.NewContext()
+	defer model.MIDI.Close()
 	if a := flag.Args(); len(a) > 0 {
 		f, err := os.Open(a[0])
 		if err == nil {

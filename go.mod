@@ -1,6 +1,6 @@
 module github.com/vsariola/sointu
 
-go 1.22.2
+go 1.23
 
 require (
 	gioui.org v0.7.1

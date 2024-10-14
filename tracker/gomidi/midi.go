@@ -1,8 +1,8 @@
 package gomidi
 
 import (
+	"errors"
 	"fmt"
-	"time"
 
 	"github.com/vsariola/sointu/tracker"
 	"gitlab.com/gomidi/midi/v2"
@@ -11,105 +11,111 @@ import (
 )
 
 type (
-	MIDIContext struct {
-		driver          *rtmididrv.Driver
-		inputAvailable  bool
-		driverAvailable bool
-		currentIn       MIDIDevicer
-		events          chan midi.Message
+	RTMIDIContext struct {
+		driver    *rtmididrv.Driver
+		currentIn drivers.In
+		events    chan midi.Message
 	}
-	MIDIDevicer drivers.In
+
+	RTMIDIDevice struct {
+		context *RTMIDIContext
+		in      drivers.In
+	}
 )
 
-func (m *MIDIContext) ListInputDevices() <-chan tracker.MIDIDevicer {
-
-	ins, err := m.driver.Ins()
-	channel := make(chan tracker.MIDIDevicer, len(ins))
-	if err != nil {
-		m.driver.Close()
-		m.driverAvailable = false
-		return nil
-	}
-	go func() {
-		for i := 0; i < len(ins); i++ {
-			channel <- ins[i].(MIDIDevicer)
+func (m *RTMIDIContext) ListInputDevices() func(yield func(tracker.MIDIDevice) bool) {
+	return func(yield func(tracker.MIDIDevice) bool) {
+		if m.driver == nil {
+			return
 		}
-		close(channel)
-	}()
-	return channel
+		ins, err := m.driver.Ins()
+		if err != nil {
+			return
+		}
+		for i := 0; i < len(ins); i++ {
+			device := RTMIDIDevice{context: m, in: ins[i]}
+			if !yield(device) {
+				break
+			}
+		}
+	}
 }
 
 // Open the driver.
-func CreateContext() *MIDIContext {
-	m := MIDIContext{}
-	var err error
-	m.driver, err = rtmididrv.New()
-	m.driverAvailable = err == nil
-	if m.driverAvailable {
-		m.events = make(chan midi.Message)
-	}
+func NewContext() *RTMIDIContext {
+	m := RTMIDIContext{events: make(chan midi.Message, 1024)}
+	// there's not much we can do if this fails, so just use m.driver = nil to
+	// indicate no driver available
+	m.driver, _ = rtmididrv.New()
 	return &m
 }
 
 // Open an input device while closing the currently open if necessary.
-func (m *MIDIContext) OpenInputDevice(in tracker.MIDIDevicer) bool {
-	fmt.Printf("Opening midi device %s\n.", in)
-	if m.driverAvailable {
-		if m.currentIn == in {
-			return false
-		}
-		if m.inputAvailable && m.currentIn.IsOpen() {
-			m.currentIn.Close()
-		}
-		m.currentIn = in.(MIDIDevicer)
-		m.currentIn.Open()
-		_, err := midi.ListenTo(m.currentIn, m.HandleMessage)
-		if err != nil {
-			m.inputAvailable = false
-			return false
-		}
+func (m RTMIDIDevice) Open() error {
+	if m.context.currentIn == m.in {
+		return nil
 	}
-	return true
+	if m.context.driver == nil {
+		return errors.New("no driver available")
+	}
+	if m.context.currentIn != nil && m.context.currentIn.IsOpen() {
+		m.context.currentIn.Close()
+	}
+	m.context.currentIn = m.in
+	err := m.in.Open()
+	if err != nil {
+		m.context.currentIn = nil
+		return fmt.Errorf("opening MIDI input failed: %W", err)
+	}
+	_, err = midi.ListenTo(m.in, m.context.HandleMessage)
+	if err != nil {
+		m.in.Close()
+		m.context.currentIn = nil
+	}
+	return nil
 }
 
-func (m *MIDIContext) HandleMessage(msg midi.Message, timestampms int32) {
-	go func() {
-		m.events <- msg
-		time.Sleep(time.Nanosecond)
-	}()
+func (d RTMIDIDevice) String() string {
+	return d.in.String()
 }
 
-func (c *MIDIContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
+func (m *RTMIDIContext) HandleMessage(msg midi.Message, timestampms int32) {
+	select {
+	case m.events <- msg: // if the channel is full, just drop the message
+	default:
+	}
+}
+
+func (c *RTMIDIContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
 	select {
 	case msg := <-c.events:
-		{
-			var channel uint8
-			var velocity uint8
-			var key uint8
-			var controller uint8
-			var value uint8
-			if msg.GetNoteOn(&channel, &key, &velocity) {
-				return tracker.MIDINoteEvent{Frame: 0, On: true, Channel: int(channel), Note: key}, true
-			} else if msg.GetNoteOff(&channel, &key, &velocity) {
-				return tracker.MIDINoteEvent{Frame: 0, On: false, Channel: int(channel), Note: key}, true
-			} else if msg.GetControlChange(&channel, &controller, &value) {
-				fmt.Printf("CC @ Channel: %d, Controller: %d, Value: %d\n", channel, controller, value)
-			} else {
-				fmt.Printf("Unhandled MIDI message: %s\n", msg)
-			}
+		var channel uint8
+		var velocity uint8
+		var key uint8
+		if msg.GetNoteOn(&channel, &key, &velocity) {
+			return tracker.MIDINoteEvent{Frame: 0, On: true, Channel: int(channel), Note: key}, true
+		} else if msg.GetNoteOff(&channel, &key, &velocity) {
+			return tracker.MIDINoteEvent{Frame: 0, On: false, Channel: int(channel), Note: key}, true
 		}
+		// TODO: handle control messages with something like:
+		// if msg.GetControlChange(&channel, &controller, &value) {
+		//	....
 	default:
 		// Note (@LeStahL): This empty select case is needed to make the implementation non-blocking.
 	}
 	return tracker.MIDINoteEvent{}, false
 }
 
-func (c *MIDIContext) BPM() (bpm float64, ok bool) {
+func (c *RTMIDIContext) BPM() (bpm float64, ok bool) {
 	return 0, false
 }
 
-func (c *MIDIContext) DestroyContext() {
-	close(c.events)
-	c.currentIn.Close()
+func (c *RTMIDIContext) Close() {
+	if c.driver == nil {
+		return
+	}
+	if c.currentIn != nil && c.currentIn.IsOpen() {
+		c.currentIn.Close()
+	}
 	c.driver.Close()
 }
