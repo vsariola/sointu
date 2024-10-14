@@ -15,18 +15,8 @@ import (
 	"github.com/vsariola/sointu/oto"
 	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/tracker/gioui"
+	"github.com/vsariola/sointu/tracker/gomidi"
 )
-
-type NullContext struct {
-}
-
-func (NullContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
-	return tracker.MIDINoteEvent{}, false
-}
-
-func (NullContext) BPM() (bpm float64, ok bool) {
-	return 0, false
-}
 
 type PlayerAudioSource struct {
 	*tracker.Player
@@ -64,6 +54,8 @@ func main() {
 		recoveryFile = filepath.Join(configDir, "Sointu", "sointu-track-recovery")
 	}
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
+	model.MIDI = gomidi.CreateContext()
+	defer model.MIDI.DestroyContext()
 	if a := flag.Args(); len(a) > 0 {
 		f, err := os.Open(a[0])
 		if err == nil {
@@ -72,7 +64,7 @@ func main() {
 		f.Close()
 	}
 	tracker := gioui.NewTracker(model)
-	audioCloser := audioContext.Play(&PlayerAudioSource{player, NullContext{}})
+	audioCloser := audioContext.Play(&PlayerAudioSource{player, model.MIDI})
 	go func() {
 		tracker.Main()
 		audioCloser.Close()

@@ -48,12 +48,15 @@ type SongPanel struct {
 	followOnHint, followOffHint string
 	panicHint                   string
 	loopOffHint, loopOnHint     string
+
+	// Midi menu items
+	midiMenuItems []MenuItem
 }
 
 func NewSongPanel(model *tracker.Model) *SongPanel {
 	ret := &SongPanel{
-		MenuBar:        make([]widget.Clickable, 2),
-		Menus:          make([]Menu, 2),
+		MenuBar:        make([]widget.Clickable, 3),
+		Menus:          make([]Menu, 3),
 		BPM:            NewNumberInput(model.BPM().Int()),
 		RowsPerPattern: NewNumberInput(model.RowsPerPattern().Int()),
 		RowsPerBeat:    NewNumberInput(model.RowsPerBeat().Int()),
@@ -81,6 +84,13 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: keyActionMap["Redo"], Doer: model.Redo()},
 		{IconBytes: icons.ImageCrop, Text: "Remove unused data", ShortcutText: keyActionMap["RemoveUnused"], Doer: model.RemoveUnused()},
 	}
+	for input := range model.MIDI.ListInputDevices() {
+		ret.midiMenuItems = append(ret.midiMenuItems, MenuItem{
+			IconBytes: icons.ImageControlPoint,
+			Text:      input.String(),
+			Doer:      model.SelectMidiInput(input),
+		})
+	}
 	ret.rewindHint = makeHint("Rewind", "\n(%s)", "PlaySongStartUnfollow")
 	ret.playHint = makeHint("Play", " (%s)", "PlayCurrentPosUnfollow")
 	ret.stopHint = makeHint("Stop", " (%s)", "StopPlaying")
@@ -91,6 +101,7 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 	ret.followOffHint = makeHint("Follow off", " (%s)", "FollowToggle")
 	ret.loopOffHint = makeHint("Loop off", " (%s)", "LoopToggle")
 	ret.loopOnHint = makeHint("Loop on", " (%s)", "LoopToggle")
+
 	return ret
 }
 
@@ -112,6 +123,7 @@ func (t *SongPanel) layoutMenuBar(gtx C, tr *Tracker) D {
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}.Layout(gtx,
 		layout.Rigid(tr.layoutMenu(gtx, "File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
 		layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...)),
+		layout.Rigid(tr.layoutMenu(gtx, "MIDI", &t.MenuBar[2], &t.Menus[2], unit.Dp(200), t.midiMenuItems...)),
 	)
 }
 

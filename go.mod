@@ -1,6 +1,6 @@
 module github.com/vsariola/sointu
 
-go 1.21
+go 1.22.2
 
 require (
 	gioui.org v0.7.1
@@ -29,6 +29,7 @@ require (
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.0 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
+	gitlab.com/gomidi/midi/v2 v2.2.10 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/exp v0.0.0-20240707233637-46b078467d37 // indirect
 	golang.org/x/image v0.18.0 // indirect
