@@ -54,7 +54,8 @@ func main() {
 		recoveryFile = filepath.Join(configDir, "Sointu", "sointu-track-recovery")
 	}
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
-	model.MIDI = gomidi.NewContext()
+	midiContext := gomidi.NewContext()
+	model.MIDI = midiContext
 	defer model.MIDI.Close()
 	if a := flag.Args(); len(a) > 0 {
 		f, err := os.Open(a[0])
@@ -64,7 +65,7 @@ func main() {
 		f.Close()
 	}
 	tracker := gioui.NewTracker(model)
-	audioCloser := audioContext.Play(&PlayerAudioSource{player, model.MIDI})
+	audioCloser := audioContext.Play(&PlayerAudioSource{player, midiContext})
 	go func() {
 		tracker.Main()
 		audioCloser.Close()

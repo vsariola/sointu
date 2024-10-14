@@ -17,11 +17,21 @@ import (
 	"pipelined.dev/audio/vst2"
 )
 
-type VSTIProcessContext struct {
-	events     []vst2.MIDIEvent
-	eventIndex int
-	host       vst2.Host
+type (
+	VSTIProcessContext struct {
+		events     []vst2.MIDIEvent
+		eventIndex int
+		host       vst2.Host
+	}
+
+	NullMIDIContext struct{}
+)
+
+func (m *NullMIDIContext) ListInputDevices() func(yield func(tracker.MIDIDevice) bool) {
+	return func(yield func(tracker.MIDIDevice) bool) {}
 }
+
+func (m *NullMIDIContext) Close() {}
 
 func (c *VSTIProcessContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
 	for c.eventIndex < len(c.events) {
@@ -63,6 +73,8 @@ func init() {
 			recoveryFile = filepath.Join(configDir, "sointu", "sointu-vsti-recovery-"+hex.EncodeToString(randBytes))
 		}
 		model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
+		model.MIDI = &NullMIDIContext{}
+
 		t := gioui.NewTracker(model)
 		tracker.Bool{BoolData: (*tracker.InstrEnlarged)(model)}.Set(true)
 		go t.Main()

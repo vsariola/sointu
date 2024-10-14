@@ -126,7 +126,6 @@ type (
 	MIDIContext interface {
 		ListInputDevices() func(yield func(MIDIDevice) bool)
 		Close()
-		PlayerProcessContext
 	}
 
 	MIDIDevice interface {
