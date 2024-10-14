@@ -17,7 +17,6 @@ type (
 		driverAvailable bool
 		currentIn       MIDIDevicer
 		events          chan midi.Message
-		eventIndex      int
 	}
 	MIDIDevicer drivers.In
 )
