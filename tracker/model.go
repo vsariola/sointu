@@ -175,9 +175,10 @@ func (m *Model) Dialog() Dialog               { return m.dialog }
 func (m *Model) Quitted() bool                { return m.quitted }
 
 // NewModelPlayer creates a new model and a player that communicates with it
-func NewModelPlayer(synther sointu.Synther, recoveryFilePath string) (*Model, *Player) {
+func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFilePath string) (*Model, *Player) {
 	m := new(Model)
 	m.synther = synther
+	m.MIDI = midiContext
 	modelMessages := make(chan interface{}, 1024)
 	playerMessages := make(chan PlayerMsg, 1024)
 	m.modelMessages = modelMessages
