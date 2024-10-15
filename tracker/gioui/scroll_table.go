@@ -146,13 +146,11 @@ func (s *ScrollTableStyle) handleEvents(gtx layout.Context, p image.Point) {
 			if e.Kind == pointer.Press {
 				gtx.Execute(key.FocusCmd{Tag: s.ScrollTable})
 			}
-			dx := (int(e.Position.X) + s.ScrollTable.ColTitleList.List.Position.Offset) / gtx.Dp(s.CellWidth)
-			dy := (int(e.Position.Y) + s.ScrollTable.RowTitleList.List.Position.Offset) / gtx.Dp(s.CellHeight)
-			x := dx + s.ScrollTable.ColTitleList.List.Position.First
-			y := dy + s.ScrollTable.RowTitleList.List.Position.First
-			s.ScrollTable.Table.SetCursor(
-				tracker.Point{X: x, Y: y},
-			)
+			dx := (e.Position.X + float32(s.ScrollTable.ColTitleList.List.Position.Offset)) / float32(gtx.Dp(s.CellWidth))
+			dy := (e.Position.Y + float32(s.ScrollTable.RowTitleList.List.Position.Offset)) / float32(gtx.Dp(s.CellHeight))
+			x := dx + float32(s.ScrollTable.ColTitleList.List.Position.First)
+			y := dy + float32(s.ScrollTable.RowTitleList.List.Position.First)
+			s.ScrollTable.Table.SetCursorFloat(x, y)
 			if !e.Modifiers.Contain(key.ModShift) {
 				s.ScrollTable.Table.SetCursor2(s.ScrollTable.Table.Cursor())
 			}

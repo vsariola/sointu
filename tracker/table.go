@@ -1,6 +1,8 @@
 package tracker
 
 import (
+	"math"
+
 	"github.com/vsariola/sointu"
 	"gopkg.in/yaml.v3"
 )
@@ -15,6 +17,7 @@ type (
 		Cursor2() Point
 		SetCursor(Point)
 		SetCursor2(Point)
+		SetCursorFloat(x, y float32)
 		Width() int
 		Height() int
 		MoveCursor(dx, dy int) (ok bool)
@@ -176,6 +179,10 @@ func (m *Order) SetCursor2(p Point) {
 	m.d.Cursor2.Track = intMax(intMin(p.X, len(m.d.Song.Score.Tracks)-1), 0)
 	m.d.Cursor2.OrderRow = intMax(intMin(p.Y, m.d.Song.Score.Length-1), 0)
 	m.updateCursorRows()
+}
+
+func (m *Order) SetCursorFloat(x, y float32) {
+	m.SetCursor(Point{int(x), int(y)})
 }
 
 func (v *Order) updateCursorRows() {
@@ -420,6 +427,11 @@ func (v *Notes) SetCursor(p Point) {
 func (v *Notes) SetCursor2(p Point) {
 	v.d.Cursor2.Track = intMax(intMin(p.X, len(v.d.Song.Score.Tracks)-1), 0)
 	v.d.Cursor2.SongPos = v.d.Song.Score.Clamp(sointu.SongPos{PatternRow: p.Y})
+}
+
+func (m *Notes) SetCursorFloat(x, y float32) {
+	m.SetCursor(Point{int(x), int(y)})
+	m.d.LowNibble = math.Mod(float64(x), 1.0) > 0.5
 }
 
 func (v *Notes) Width() int {

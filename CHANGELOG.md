@@ -24,6 +24,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   the command line tools.
 
 ### Fixed
+- Clicking on low nibble or high nibble of a hex track selects that nibble
+  ([#160][i160])
 - If units have useless parameters in their parameter maps, from bugs or from a
   malformed yaml file, they are removed and user is warned about it
 - Pressing a or 1 when editing note values in hex mode created a note off line
@@ -257,5 +259,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i151]: https://github.com/vsariola/sointu/issues/151
 [i154]: https://github.com/vsariola/sointu/issues/154
 [i158]: https://github.com/vsariola/sointu/issues/158
+[i160]: https://github.com/vsariola/sointu/issues/160
 [i162]: https://github.com/vsariola/sointu/issues/162
 [i166]: https://github.com/vsariola/sointu/issues/166
