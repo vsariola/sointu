@@ -26,6 +26,8 @@ type ScrollTable struct {
 	requestFocus bool
 	cursorMoved  bool
 	eventFilters []event.Filter
+	drag         bool
+	dragID       pointer.ID
 }
 
 type ScrollTableStyle struct {
@@ -49,7 +51,7 @@ func NewScrollTable(table tracker.Table, vertList, horizList tracker.List) *Scro
 	ret.eventFilters = []event.Filter{
 		key.FocusFilter{Target: ret},
 		transfer.TargetFilter{Target: ret, Type: "application/text"},
-		pointer.Filter{Target: ret, Kinds: pointer.Press},
+		pointer.Filter{Target: ret, Kinds: pointer.Press | pointer.Drag | pointer.Release | pointer.Cancel},
 		key.Filter{Focus: ret, Name: key.NameLeftArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
 		key.Filter{Focus: ret, Name: key.NameUpArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
 		key.Filter{Focus: ret, Name: key.NameRightArrow, Optional: key.ModShift | key.ModCtrl | key.ModAlt},
@@ -138,23 +140,40 @@ func (s *ScrollTableStyle) handleEvents(gtx layout.Context, p image.Point) {
 		case key.FocusEvent:
 			s.ScrollTable.focused = e.Focus
 		case pointer.Event:
-			if int(e.Position.X) < p.X || int(e.Position.Y) < p.Y {
-				break
+			switch e.Kind {
+			case pointer.Press:
+				if s.ScrollTable.drag {
+					break
+				}
+				s.ScrollTable.dragID = e.PointerID
+				s.ScrollTable.drag = true
+				fallthrough
+			case pointer.Drag:
+				if s.ScrollTable.dragID != e.PointerID {
+					break
+				}
+				if int(e.Position.X) < p.X || int(e.Position.Y) < p.Y {
+					break
+				}
+				e.Position.X -= float32(p.X)
+				e.Position.Y -= float32(p.Y)
+				if e.Kind == pointer.Press {
+					gtx.Execute(key.FocusCmd{Tag: s.ScrollTable})
+				}
+				dx := (e.Position.X + float32(s.ScrollTable.ColTitleList.List.Position.Offset)) / float32(gtx.Dp(s.CellWidth))
+				dy := (e.Position.Y + float32(s.ScrollTable.RowTitleList.List.Position.Offset)) / float32(gtx.Dp(s.CellHeight))
+				x := dx + float32(s.ScrollTable.ColTitleList.List.Position.First)
+				y := dy + float32(s.ScrollTable.RowTitleList.List.Position.First)
+				s.ScrollTable.Table.SetCursor2(tracker.Point{X: int(x), Y: int(y)})
+				if e.Kind == pointer.Press && !e.Modifiers.Contain(key.ModShift) {
+					s.ScrollTable.Table.SetCursorFloat(x, y)
+				}
+				s.ScrollTable.cursorMoved = true
+			case pointer.Release:
+				fallthrough
+			case pointer.Cancel:
+				s.ScrollTable.drag = false
 			}
-			e.Position.X -= float32(p.X)
-			e.Position.Y -= float32(p.Y)
-			if e.Kind == pointer.Press {
-				gtx.Execute(key.FocusCmd{Tag: s.ScrollTable})
-			}
-			dx := (e.Position.X + float32(s.ScrollTable.ColTitleList.List.Position.Offset)) / float32(gtx.Dp(s.CellWidth))
-			dy := (e.Position.Y + float32(s.ScrollTable.RowTitleList.List.Position.Offset)) / float32(gtx.Dp(s.CellHeight))
-			x := dx + float32(s.ScrollTable.ColTitleList.List.Position.First)
-			y := dy + float32(s.ScrollTable.RowTitleList.List.Position.First)
-			s.ScrollTable.Table.SetCursorFloat(x, y)
-			if !e.Modifiers.Contain(key.ModShift) {
-				s.ScrollTable.Table.SetCursor2(s.ScrollTable.Table.Cursor())
-			}
-			s.ScrollTable.cursorMoved = true
 		case key.Event:
 			if e.State == key.Press {
 				s.ScrollTable.command(gtx, e)
