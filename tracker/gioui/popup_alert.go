@@ -20,7 +20,6 @@ type PopupAlert struct {
 	shaper     *text.Shaper
 }
 
-var alertSpeed = 150 * time.Millisecond
 var alertMargin = layout.UniformInset(unit.Dp(6))
 var alertInset = layout.UniformInset(unit.Dp(6))
 

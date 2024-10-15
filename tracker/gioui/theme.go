@@ -23,12 +23,9 @@ var disabledTextColor = color.NRGBA{R: 255, G: 255, B: 255, A: 97}
 
 var backgroundColor = color.NRGBA{R: 18, G: 18, B: 18, A: 255}
 
-var labelDefaultColor = highEmphasisTextColor
-var labelDefaultBgColor = transparent
 var labelDefaultFont = fontCollection[6].Font
 var labelDefaultFontSize = unit.Sp(18)
 
-var rowMarkerSurfaceColor = color.NRGBA{R: 0, G: 0, B: 0, A: 0}
 var rowMarkerPatternTextColor = secondaryColor
 var rowMarkerRowTextColor = mediumEmphasisTextColor
 
@@ -47,7 +44,6 @@ var patternCellColor = color.NRGBA{R: 255, G: 255, B: 255, A: 3}
 var loopMarkerColor = color.NRGBA{R: 252, G: 186, B: 3, A: 255}
 
 var instrumentHoverColor = color.NRGBA{R: 30, G: 31, B: 38, A: 255}
-var instrumentNameColor = color.NRGBA{R: 255, G: 255, B: 255, A: 255}
 var instrumentNameHintColor = color.NRGBA{R: 200, G: 200, B: 200, A: 255}
 
 var songSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
@@ -57,8 +53,6 @@ var popupShadowColor = color.NRGBA{R: 0, G: 0, B: 0, A: 192}
 
 var dragListSelectedColor = color.NRGBA{R: 55, G: 55, B: 61, A: 255}
 var dragListHoverColor = color.NRGBA{R: 42, G: 45, B: 61, A: 255}
-
-var unitTypeListHighlightColor = color.NRGBA{R: 42, G: 45, B: 61, A: 255}
 
 var inactiveLightSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
 var activeLightSurfaceColor = color.NRGBA{R: 45, G: 45, B: 45, A: 255}

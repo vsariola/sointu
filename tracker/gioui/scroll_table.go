@@ -121,7 +121,7 @@ func (s ScrollTableStyle) Layout(gtx C) D {
 		s.layoutRowTitles(gtx, p)
 		defer op.Offset(p).Push(gtx.Ops).Pop()
 		gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X-p.X, gtx.Constraints.Max.Y-p.Y))
-		s.layoutTable(gtx, p)
+		s.layoutTable(gtx)
 		s.RowTitleStyle.LayoutScrollBar(gtx)
 		s.ColTitleStyle.LayoutScrollBar(gtx)
 		return D{Size: dims}
@@ -193,7 +193,7 @@ func (s *ScrollTableStyle) handleEvents(gtx layout.Context, p image.Point) {
 	}
 }
 
-func (s ScrollTableStyle) layoutTable(gtx C, p image.Point) {
+func (s ScrollTableStyle) layoutTable(gtx C) {
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Min}).Push(gtx.Ops).Pop()
 
 	if s.ScrollTable.requestFocus {

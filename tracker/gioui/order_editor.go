@@ -22,7 +22,6 @@ import (
 
 const patternCellHeight = unit.Dp(16)
 const patternCellWidth = unit.Dp(16)
-const patternRowMarkerWidth = unit.Dp(30)
 const orderTitleHeight = unit.Dp(52)
 
 type OrderEditor struct {
@@ -171,12 +170,12 @@ func (oe *OrderEditor) handleEvents(gtx C, t *Tracker) {
 			if e.State != key.Press {
 				continue
 			}
-			oe.command(gtx, t, e)
+			oe.command(t, e)
 		}
 	}
 }
 
-func (oe *OrderEditor) command(gtx C, t *Tracker, e key.Event) {
+func (oe *OrderEditor) command(t *Tracker, e key.Event) {
 	switch e.Name {
 	case key.NameDeleteBackward:
 		if e.Modifiers.Contain(key.ModShortcut) {

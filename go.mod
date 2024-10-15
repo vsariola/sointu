@@ -7,6 +7,7 @@ require (
 	gioui.org/x v0.7.1
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/ebitengine/oto/v3 v3.3.0
+	gitlab.com/gomidi/midi/v2 v2.2.10
 	golang.org/x/exp/shiny v0.0.0-20240707233637-46b078467d37
 	golang.org/x/text v0.16.0
 	gopkg.in/yaml.v2 v2.3.0
@@ -29,7 +30,6 @@ require (
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.0 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
-	gitlab.com/gomidi/midi/v2 v2.2.10 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/exp v0.0.0-20240707233637-46b078467d37 // indirect
 	golang.org/x/image v0.18.0 // indirect

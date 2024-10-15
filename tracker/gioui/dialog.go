@@ -1,7 +1,6 @@
 package gioui
 
 import (
-	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op/paint"
@@ -12,11 +11,9 @@ import (
 )
 
 type Dialog struct {
-	BtnAlt     *ActionClickable
-	BtnOk      *ActionClickable
-	BtnCancel  *ActionClickable
-	tag        bool
-	keyFilters []event.Filter
+	BtnAlt    *ActionClickable
+	BtnOk     *ActionClickable
+	BtnCancel *ActionClickable
 }
 
 type DialogStyle struct {

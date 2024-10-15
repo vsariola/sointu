@@ -62,7 +62,6 @@ type NoteEditor struct {
 	UniqueBtn           *BoolClickable
 
 	scrollTable  *ScrollTable
-	tag          struct{}
 	eventFilters []event.Filter
 
 	deleteTrackHint           string
@@ -116,7 +115,7 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 				}
 				continue
 			}
-			te.command(gtx, t, e)
+			te.command(t, e)
 		}
 	}
 
@@ -320,7 +319,7 @@ func noteAsValue(octave, note int) byte {
 	return byte(baseNote + (octave * 12) + note)
 }
 
-func (te *NoteEditor) command(gtx C, t *Tracker, e key.Event) {
+func (te *NoteEditor) command(t *Tracker, e key.Event) {
 	var n byte
 	if t.Model.Notes().Effect(te.scrollTable.Table.Cursor().X) {
 		if nibbleValue, err := strconv.ParseInt(string(e.Name), 16, 8); err == nil {

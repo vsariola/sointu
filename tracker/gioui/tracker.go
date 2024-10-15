@@ -138,7 +138,7 @@ func (t *Tracker) Main() {
 					if titleFooter != "" {
 						w.Option(app.Title(fmt.Sprintf("Sointu Tracker - %v", titleFooter)))
 					} else {
-						w.Option(app.Title(fmt.Sprintf("Sointu Tracker")))
+						w.Option(app.Title("Sointu Tracker"))
 					}
 				}
 				gtx := app.NewContext(&ops, e)

@@ -19,7 +19,6 @@ import (
 
 type Menu struct {
 	Visible   bool
-	clickable widget.Clickable
 	tags      []bool
 	clicks    []int
 	hover     int

@@ -270,7 +270,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 					e, ok := gtx.Event(pointer.Filter{
 						Target:  &p.w.floatWidget,
 						Kinds:   pointer.Scroll,
-						ScrollY: pointer.ScrollRange{-1e6, 1e6},
+						ScrollY: pointer.ScrollRange{Min: -1e6, Max: 1e6},
 					})
 					if !ok {
 						break

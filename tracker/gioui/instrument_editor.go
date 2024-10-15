@@ -40,9 +40,7 @@ type InstrumentEditor struct {
 	searchEditor        *Editor
 	instrumentDragList  *DragList
 	unitDragList        *DragList
-	presetDragList      *DragList
 	unitEditor          *UnitEditor
-	tag                 bool
 	wasFocused          bool
 	presetMenuItems     []MenuItem
 	presetMenu          Menu
@@ -357,8 +355,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		var color color.NRGBA = white
 		f := labelDefaultFont
 
-		var stackText string
-		stackText = strconv.FormatInt(int64(u.StackAfter), 10)
+		stackText := strconv.FormatInt(int64(u.StackAfter), 10)
 		if u.StackNeed > u.StackBefore {
 			color = errorColor
 			(*tracker.Alerts)(t.Model).AddNamed("UnitNeedsInputs", fmt.Sprintf("%v needs at least %v input signals, got %v", u.Type, u.StackNeed, u.StackBefore), tracker.Error)
@@ -473,14 +470,4 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 			}),
 		)
 	})
-}
-
-func clamp(i, min, max int) int {
-	if i < min {
-		return min
-	}
-	if i > max {
-		return max
-	}
-	return i
 }
