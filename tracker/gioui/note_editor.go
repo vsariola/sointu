@@ -329,8 +329,8 @@ func (te *NoteEditor) command(t *Tracker, e key.Event) {
 	var n byte
 	if t.Model.Notes().Effect(te.scrollTable.Table.Cursor().X) {
 		if nibbleValue, err := strconv.ParseInt(string(e.Name), 16, 8); err == nil {
-			n = t.Model.Notes().Value(te.scrollTable.Table.Cursor())
 			t.Model.Notes().FillNibble(byte(nibbleValue), t.Model.Notes().LowNibble())
+			n = t.Model.Notes().Value(te.scrollTable.Table.Cursor())
 			goto validNote
 		}
 	} else {
