@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   the command line tools.
 
 ### Fixed
+- When changing a nibble of a hexadecimal note, the note played was the note
+  before changing the nibble
 - Clicking on low nibble or high nibble of a hex track selects that nibble
   ([#160][i160])
 - If units have useless parameters in their parameter maps, from bugs or from a
@@ -107,8 +109,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   x87 stack.
 
 ### Fixed
-- When changing a nibble of a hexadecimal note, the note played was the note
-  before changing the nibble
 - Loading a preset did not update the IDs of the newly loaded instrument,
   causing ID collisions and sends target wrong units.
 - The x87 native filter unit was denormalizing and eating up a lot of CPU ([#68][i68])
