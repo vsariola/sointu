@@ -23,20 +23,18 @@ type (
 	}
 )
 
-func (m *RTMIDIContext) ListInputDevices() func(yield func(tracker.MIDIDevice) bool) {
-	return func(yield func(tracker.MIDIDevice) bool) {
-		if m.driver == nil {
-			return
-		}
-		ins, err := m.driver.Ins()
-		if err != nil {
-			return
-		}
-		for i := 0; i < len(ins); i++ {
-			device := RTMIDIDevice{context: m, in: ins[i]}
-			if !yield(device) {
-				break
-			}
+func (m *RTMIDIContext) InputDevices(yield func(tracker.MIDIDevice) bool) {
+	if m.driver == nil {
+		return
+	}
+	ins, err := m.driver.Ins()
+	if err != nil {
+		return
+	}
+	for i := 0; i < len(ins); i++ {
+		device := RTMIDIDevice{context: m, in: ins[i]}
+		if !yield(device) {
+			break
 		}
 	}
 }

@@ -124,7 +124,7 @@ type (
 	Dialog int
 
 	MIDIContext interface {
-		ListInputDevices() func(yield func(MIDIDevice) bool)
+		InputDevices(yield func(MIDIDevice) bool)
 		Close()
 	}
 

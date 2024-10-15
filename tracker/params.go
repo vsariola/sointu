@@ -77,7 +77,7 @@ func (pl *Params) change(n string, severity ChangeSeverity) func() {
 
 func (pl *Params) Count() int {
 	count := 0
-	for range pl.Iterate() {
+	for range pl.Iterate {
 		count++
 	}
 	return count
@@ -85,7 +85,7 @@ func (pl *Params) Count() int {
 
 func (pl *Params) SelectedItem() (ret Parameter) {
 	index := pl.Selected()
-	for param := range pl.Iterate() {
+	for param := range pl.Iterate {
 		if index == 0 {
 			ret = param
 		}
@@ -94,53 +94,51 @@ func (pl *Params) SelectedItem() (ret Parameter) {
 	return
 }
 
-func (pl *Params) Iterate() func(yield ParamYieldFunc) {
-	return func(yield ParamYieldFunc) {
-		if pl.d.InstrIndex < 0 || pl.d.InstrIndex >= len(pl.d.Song.Patch) {
+func (pl *Params) Iterate(yield ParamYieldFunc) {
+	if pl.d.InstrIndex < 0 || pl.d.InstrIndex >= len(pl.d.Song.Patch) {
+		return
+	}
+	if pl.d.UnitIndex < 0 || pl.d.UnitIndex >= len(pl.d.Song.Patch[pl.d.InstrIndex].Units) {
+		return
+	}
+	unit := &pl.d.Song.Patch[pl.d.InstrIndex].Units[pl.d.UnitIndex]
+	unitType, ok := sointu.UnitTypes[unit.Type]
+	if !ok {
+		return
+	}
+	for i := range unitType {
+		if !unitType[i].CanSet {
+			continue
+		}
+		if unit.Type == "oscillator" && unit.Parameters["type"] != sointu.Sample && i >= 11 {
+			break // don't show the sample related params unless necessary
+		}
+		if !yield(NamedParameter{
+			parameter: parameter{m: (*Model)(pl), unit: unit},
+			up:        &unitType[i],
+		}) {
 			return
 		}
-		if pl.d.UnitIndex < 0 || pl.d.UnitIndex >= len(pl.d.Song.Patch[pl.d.InstrIndex].Units) {
+	}
+	if unit.Type == "oscillator" && unit.Parameters["type"] == sointu.Sample {
+		if !yield(GmDlsEntryParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
 			return
 		}
-		unit := &pl.d.Song.Patch[pl.d.InstrIndex].Units[pl.d.UnitIndex]
-		unitType, ok := sointu.UnitTypes[unit.Type]
-		if !ok {
+	}
+	switch {
+	case unit.Type == "delay":
+		if unit.Parameters["stereo"] == 1 && len(unit.VarArgs)%2 == 1 {
+			unit.VarArgs = append(unit.VarArgs, 1)
+		}
+		if !yield(ReverbParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
 			return
 		}
-		for i := range unitType {
-			if !unitType[i].CanSet {
-				continue
-			}
-			if unit.Type == "oscillator" && unit.Parameters["type"] != sointu.Sample && i >= 11 {
-				break // don't show the sample related params unless necessary
-			}
-			if !yield(NamedParameter{
-				parameter: parameter{m: (*Model)(pl), unit: unit},
-				up:        &unitType[i],
-			}) {
-				return
-			}
+		if !yield(DelayLinesParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
+			return
 		}
-		if unit.Type == "oscillator" && unit.Parameters["type"] == sointu.Sample {
-			if !yield(GmDlsEntryParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
+		for i := range unit.VarArgs {
+			if !yield(DelayTimeParameter{parameter: parameter{m: (*Model)(pl), unit: unit}, index: i}) {
 				return
-			}
-		}
-		switch {
-		case unit.Type == "delay":
-			if unit.Parameters["stereo"] == 1 && len(unit.VarArgs)%2 == 1 {
-				unit.VarArgs = append(unit.VarArgs, 1)
-			}
-			if !yield(ReverbParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
-				return
-			}
-			if !yield(DelayLinesParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
-				return
-			}
-			for i := range unit.VarArgs {
-				if !yield(DelayTimeParameter{parameter: parameter{m: (*Model)(pl), unit: unit}, index: i}) {
-					return
-				}
 			}
 		}
 	}

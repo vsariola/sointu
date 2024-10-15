@@ -35,12 +35,10 @@ func (m *Model) Alerts() *Alerts { return (*Alerts)(m) }
 
 // Alerts methods
 
-func (m *Alerts) Iterate() func(yield func(index int, alert Alert) bool) {
-	return func(yield func(index int, alert Alert) bool) {
-		for i, a := range m.alerts {
-			if !yield(i, a) {
-				break
-			}
+func (m *Alerts) Iterate(yield func(index int, alert Alert) bool) {
+	for i, a := range m.alerts {
+		if !yield(i, a) {
+			break
 		}
 	}
 }

@@ -339,7 +339,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	addUnitBtnStyle.IconButtonStyle.Inset = layout.UniformInset(unit.Dp(4))
 
 	var units [256]tracker.UnitListItem
-	for i, item := range (*tracker.Units)(t.Model).Iterate() {
+	for i, item := range (*tracker.Units)(t.Model).Iterate {
 		if i >= 256 {
 			break
 		}

@@ -21,9 +21,7 @@ func (NullContext) BPM() (bpm float64, ok bool) {
 	return 0, false
 }
 
-func (NullContext) ListInputDevices() func(yield func(tracker.MIDIDevice) bool) {
-	return func(yield func(tracker.MIDIDevice) bool) {}
-}
+func (NullContext) InputDevices(yield func(tracker.MIDIDevice) bool) {}
 
 func (NullContext) Close() {}
 
@@ -292,7 +290,7 @@ func FuzzModel(f *testing.F) {
 				index--
 				return index > 0
 			}, seed)
-			for _, a := range model.Alerts().Iterate() {
+			for _, a := range model.Alerts().Iterate {
 				if a.Name == "IDCollision" {
 					t.Errorf("Path: %s Model has ID collisions", totalPath)
 				}

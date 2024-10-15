@@ -27,9 +27,7 @@ type (
 	NullMIDIContext struct{}
 )
 
-func (m NullMIDIContext) ListInputDevices() func(yield func(tracker.MIDIDevice) bool) {
-	return func(yield func(tracker.MIDIDevice) bool) {}
-}
+func (m NullMIDIContext) InputDevices(yield func(tracker.MIDIDevice) bool) {}
 
 func (m NullMIDIContext) Close() {}
 

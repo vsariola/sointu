@@ -102,7 +102,7 @@ func (pe *UnitEditor) layoutSliders(gtx C, t *Tracker) D {
 	}
 
 	index := 0
-	for param := range t.Model.Params().Iterate() {
+	for param := range t.Model.Params().Iterate {
 		pe.Parameters[index].Parameter = param
 		index++
 	}
@@ -176,7 +176,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 
 func (pe *UnitEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 	var names [256]string
-	for i, item := range t.Model.SearchResults().Iterate() {
+	for i, item := range t.Model.SearchResults().Iterate {
 		if i >= 256 {
 			break
 		}

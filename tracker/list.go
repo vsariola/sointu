@@ -323,26 +323,24 @@ func (m *Units) SetSelectedType(t string) {
 	m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].ID = oldUnit.ID // keep the ID of the replaced unit
 }
 
-func (v *Units) Iterate() func(yield UnitYieldFunc) {
-	return func(yield UnitYieldFunc) {
-		if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
-			return
+func (v *Units) Iterate(yield UnitYieldFunc) {
+	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
+		return
+	}
+	stackBefore := 0
+	for i, unit := range v.d.Song.Patch[v.d.InstrIndex].Units {
+		stackAfter := stackBefore + unit.StackChange()
+		if !yield(i, UnitListItem{
+			Type:        unit.Type,
+			Comment:     unit.Comment,
+			Disabled:    unit.Disabled,
+			StackNeed:   unit.StackNeed(),
+			StackBefore: stackBefore,
+			StackAfter:  stackAfter,
+		}) {
+			break
 		}
-		stackBefore := 0
-		for i, unit := range v.d.Song.Patch[v.d.InstrIndex].Units {
-			stackAfter := stackBefore + unit.StackChange()
-			if !yield(i, UnitListItem{
-				Type:        unit.Type,
-				Comment:     unit.Comment,
-				Disabled:    unit.Disabled,
-				StackNeed:   unit.StackNeed(),
-				StackBefore: stackBefore,
-				StackAfter:  stackAfter,
-			}) {
-				break
-			}
-			stackBefore = stackAfter
-		}
+		stackBefore = stackAfter
 	}
 }
 
@@ -745,18 +743,16 @@ func (v *SearchResults) List() List {
 	return List{v}
 }
 
-func (l *SearchResults) Iterate() func(yield UnitSearchYieldFunc) {
-	return func(yield UnitSearchYieldFunc) {
-		index := 0
-		for _, name := range sointu.UnitNames {
-			if !strings.HasPrefix(name, l.d.UnitSearchString) {
-				continue
-			}
-			if !yield(index, name) {
-				break
-			}
-			index++
+func (l *SearchResults) Iterate(yield UnitSearchYieldFunc) {
+	index := 0
+	for _, name := range sointu.UnitNames {
+		if !strings.HasPrefix(name, l.d.UnitSearchString) {
+			continue
 		}
+		if !yield(index, name) {
+			break
+		}
+		index++
 	}
 }
 
