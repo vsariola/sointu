@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Mute and solo toggles for instruments ([#168][i168])
 - Compressor displays threshold and invgain in dB
 - Dragging mouse to select rectangles in the tables
 - The standalone tracker can open a MIDI port for receiving MIDI notes
@@ -266,3 +267,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i160]: https://github.com/vsariola/sointu/issues/160
 [i162]: https://github.com/vsariola/sointu/issues/162
 [i166]: https://github.com/vsariola/sointu/issues/166
+[i168]: https://github.com/vsariola/sointu/issues/168

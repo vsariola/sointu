@@ -8,6 +8,8 @@
 - {key: "L", shortcut: true, action: "LoopToggle"}
 - {key: "N", shortcut: true, action: "NewSong"}
 - {key: "S", shortcut: true, action: "SaveSong"}
+- {key: "M", shortcut: true, action: "MuteToggle"}
+- {key: ",", shortcut: true, action: "SoloToggle"}
 - {key: "O", shortcut: true, action: "OpenSong"}
 - {key: "I", shortcut: true, shift: true, action: "DeleteInstrument"}
 - {key: "I", shortcut: true, action: "AddInstrument"}

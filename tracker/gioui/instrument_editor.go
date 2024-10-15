@@ -33,6 +33,8 @@ type InstrumentEditor struct {
 	addUnitBtn          *ActionClickable
 	presetMenuBtn       *TipClickable
 	commentExpandBtn    *BoolClickable
+	soloBtn             *BoolClickable
+	muteBtn             *BoolClickable
 	commentEditor       *Editor
 	commentString       tracker.String
 	nameEditor          *Editor
@@ -51,6 +53,8 @@ type InstrumentEditor struct {
 	expandCommentHint       string
 	collapseCommentHint     string
 	deleteInstrumentHint    string
+	muteHint, unmuteHint    string
+	soloHint, unsoloHint    string
 }
 
 func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
@@ -64,6 +68,8 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		addUnitBtn:          NewActionClickable(model.AddUnit(false)),
 		commentExpandBtn:    NewBoolClickable(model.CommentExpanded().Bool()),
 		presetMenuBtn:       new(TipClickable),
+		soloBtn:             NewBoolClickable(model.Solo().Bool()),
+		muteBtn:             NewBoolClickable(model.Mute().Bool()),
 		commentEditor:       NewEditor(widget.Editor{}),
 		nameEditor:          NewEditor(widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle}),
 		searchEditor:        NewEditor(widget.Editor{SingleLine: true, Submit: true, Alignment: text.Start}),
@@ -85,6 +91,10 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 	ret.expandCommentHint = makeHint("Expand comment", " (%s)", "CommentExpandedToggle")
 	ret.collapseCommentHint = makeHint("Collapse comment", " (%s)", "CommentExpandedToggle")
 	ret.deleteInstrumentHint = makeHint("Delete\ninstrument", "\n(%s)", "DeleteInstrument")
+	ret.muteHint = makeHint("Mute", " (%s)", "MuteToggle")
+	ret.unmuteHint = makeHint("Unmute", " (%s)", "MuteToggle")
+	ret.soloHint = makeHint("Solo", " (%s)", "SoloToggle")
+	ret.unsoloHint = makeHint("Unsolo", " (%s)", "SoloToggle")
 	return ret
 }
 
@@ -163,6 +173,8 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		saveInstrumentBtnStyle := TipIcon(t.Theme, ie.saveInstrumentBtn, icons.ContentSave, "Save instrument")
 		loadInstrumentBtnStyle := TipIcon(t.Theme, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
 		deleteInstrumentBtnStyle := ActionIcon(gtx, t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, ie.deleteInstrumentHint)
+		soloBtnStyle := ToggleIcon(gtx, t.Theme, ie.soloBtn, icons.SocialGroup, icons.SocialPerson, ie.soloHint, ie.unsoloHint)
+		muteBtnStyle := ToggleIcon(gtx, t.Theme, ie.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, ie.muteHint, ie.unmuteHint)
 
 		m := PopupMenu(&ie.presetMenu, t.Theme.Shaper)
 
@@ -199,6 +211,8 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				}),
 				layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 				layout.Rigid(commentExpandBtnStyle.Layout),
+				layout.Rigid(soloBtnStyle.Layout),
+				layout.Rigid(muteBtnStyle.Layout),
 				layout.Rigid(func(gtx C) D {
 					//defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 					dims := presetMenuBtnStyle.Layout(gtx)
@@ -249,7 +263,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 		gtx.Constraints.Min.X = gtx.Dp(unit.Dp(30))
 		grabhandle := LabelStyle{Text: strconv.Itoa(i + 1), ShadeColor: black, Color: mediumEmphasisTextColor, FontSize: unit.Sp(10), Alignment: layout.Center, Shaper: t.Theme.Shaper}
 		label := func(gtx C) D {
-			name, level, ok := (*tracker.Instruments)(t.Model).Item(i)
+			name, level, mute, ok := (*tracker.Instruments)(t.Model).Item(i)
 			if !ok {
 				labelStyle := LabelStyle{Text: "", ShadeColor: black, Color: white, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
 				return layout.Center.Layout(gtx, labelStyle.Layout)
@@ -266,6 +280,10 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				style.HintColor = instrumentNameHintColor
 				style.TextSize = unit.Sp(12)
 				style.Font = labelDefaultFont
+				if mute {
+					style.Color = disabledTextColor
+					style.Font.Style = font.Italic
+				}
 				dims := layout.Center.Layout(gtx, func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 					return style.Layout(gtx)
@@ -277,6 +295,10 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				name = "Instr"
 			}
 			labelStyle := LabelStyle{Text: name, ShadeColor: black, Color: color, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+			if mute {
+				labelStyle.Color = disabledTextColor
+				labelStyle.Font.Style = font.Italic
+			}
 			return layout.Center.Layout(gtx, labelStyle.Layout)
 		}
 		return layout.Inset{Left: unit.Dp(6), Right: unit.Dp(6), Top: unit.Dp(4)}.Layout(gtx, func(gtx C) D {

@@ -331,6 +331,15 @@ func (p *Player) compileOrUpdateSynth() {
 			return
 		}
 	}
+	voice := 0
+	for _, instr := range p.song.Patch {
+		if instr.Mute {
+			for j := 0; j < instr.NumVoices; j++ {
+				p.synth.Release(voice + j)
+			}
+		}
+		voice += instr.NumVoices
+	}
 }
 
 // all sends from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
@@ -387,11 +396,13 @@ func (p *Player) trigger(voiceStart, voiceEnd int, note byte, ID int) {
 			age = p.voices[i].samplesSinceEvent
 		}
 	}
+	instrIndex, err := p.song.Patch.InstrumentForVoice(oldestVoice)
+	if err != nil || p.song.Patch[instrIndex].Mute {
+		return
+	}
 	p.voices[oldestVoice] = voice{noteID: ID, sustain: true, samplesSinceEvent: 0}
 	p.voiceLevels[oldestVoice] = 1.0
-	if p.synth != nil {
-		p.synth.Trigger(oldestVoice, note)
-	}
+	p.synth.Trigger(oldestVoice, note)
 }
 
 func (p *Player) release(ID int) {

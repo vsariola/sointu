@@ -18,6 +18,7 @@ type (
 		Comment   string `yaml:",omitempty"`
 		NumVoices int
 		Units     []Unit
+		Mute      bool `yaml:",omitempty"` // Mute is only used in the tracker for soloing/muting instruments; the compiled player ignores this field
 	}
 
 	// Unit is e.g. a filter, oscillator, envelope and its parameters
@@ -352,7 +353,7 @@ func (instr *Instrument) Copy() Instrument {
 	for i, u := range instr.Units {
 		units[i] = u.Copy()
 	}
-	return Instrument{Name: instr.Name, Comment: instr.Comment, NumVoices: instr.NumVoices, Units: units}
+	return Instrument{Name: instr.Name, Comment: instr.Comment, NumVoices: instr.NumVoices, Units: units, Mute: instr.Mute}
 }
 
 // Copy makes a deep copy of a Patch.

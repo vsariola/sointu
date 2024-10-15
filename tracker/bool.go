@@ -22,6 +22,8 @@ type (
 	UnitDisabled    Model
 	LoopToggle      Model
 	UniquePatterns  Model
+	Mute            Model
+	Solo            Model
 )
 
 func (v Bool) Toggle() {
@@ -47,6 +49,8 @@ func (m *Model) UnitSearching() *UnitSearching     { return (*UnitSearching)(m) 
 func (m *Model) UnitDisabled() *UnitDisabled       { return (*UnitDisabled)(m) }
 func (m *Model) LoopToggle() *LoopToggle           { return (*LoopToggle)(m) }
 func (m *Model) UniquePatterns() *UniquePatterns   { return (*UniquePatterns)(m) }
+func (m *Model) Mute() *Mute                       { return (*Mute)(m) }
+func (m *Model) Solo() *Solo                       { return (*Solo)(m) }
 
 // Panic methods
 
@@ -194,3 +198,53 @@ func (m *UniquePatterns) Bool() Bool        { return Bool{m} }
 func (m *UniquePatterns) Value() bool       { return m.uniquePatterns }
 func (m *UniquePatterns) setValue(val bool) { m.uniquePatterns = val }
 func (m *UniquePatterns) Enabled() bool     { return true }
+
+// Mute methods
+
+func (m *Mute) Bool() Bool { return Bool{m} }
+func (m *Mute) Value() bool {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
+		return false
+	}
+	return m.d.Song.Patch[m.d.InstrIndex].Mute
+}
+func (m *Mute) setValue(val bool) {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
+		return
+	}
+	defer (*Model)(m).change("Mute", PatchChange, MinorChange)()
+	m.d.Song.Patch[m.d.InstrIndex].Mute = val
+}
+func (m *Mute) Enabled() bool { return m.d.InstrIndex >= 0 && m.d.InstrIndex < len(m.d.Song.Patch) }
+
+// Solo methods
+
+func (m *Solo) Bool() Bool { return Bool{m} }
+func (m *Solo) Value() bool {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
+		return false
+	}
+	for i := range m.d.Song.Patch {
+		if i == m.d.InstrIndex {
+			continue
+		}
+		if !m.d.Song.Patch[i].Mute {
+			return false
+		}
+	}
+	return !m.d.Song.Patch[m.d.InstrIndex].Mute
+}
+func (m *Solo) setValue(val bool) {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
+		return
+	}
+	defer (*Model)(m).change("Solo", PatchChange, MinorChange)()
+	for i := range m.d.Song.Patch {
+		if i == m.d.InstrIndex {
+			continue
+		}
+		m.d.Song.Patch[i].Mute = val
+	}
+	m.d.Song.Patch[m.d.InstrIndex].Mute = false
+}
+func (m *Solo) Enabled() bool { return m.d.InstrIndex >= 0 && m.d.InstrIndex < len(m.d.Song.Patch) }

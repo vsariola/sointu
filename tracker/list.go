@@ -168,11 +168,12 @@ func (v *Instruments) List() List {
 	return List{v}
 }
 
-func (v *Instruments) Item(i int) (name string, maxLevel float32, ok bool) {
+func (v *Instruments) Item(i int) (name string, maxLevel float32, mute bool, ok bool) {
 	if i < 0 || i >= len(v.d.Song.Patch) {
-		return "", 0, false
+		return "", 0, false, false
 	}
 	name = v.d.Song.Patch[i].Name
+	mute = v.d.Song.Patch[i].Mute
 	start := v.d.Song.Patch.FirstVoiceForInstrument(i)
 	end := start + v.d.Song.Patch[i].NumVoices
 	if end >= vm.MAX_VOICES {

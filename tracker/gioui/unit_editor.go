@@ -319,7 +319,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 				instrItems := make([]MenuItem, p.tracker.Instruments().Count())
 				for i := range instrItems {
 					i := i
-					name, _, _ := p.tracker.Instruments().Item(i)
+					name, _, _, _ := p.tracker.Instruments().Item(i)
 					instrItems[i].Text = name
 					instrItems[i].IconBytes = icons.NavigationChevronRight
 					instrItems[i].Doer = tracker.Allow(func() {
