@@ -93,6 +93,12 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 		}
 		ret.eventFilters = append(ret.eventFilters, key.Filter{Focus: ret.scrollTable, Required: k.Modifiers, Name: k.Name})
 	}
+	for c := 'A'; c <= 'F'; c++ {
+		ret.eventFilters = append(ret.eventFilters, key.Filter{Focus: ret.scrollTable, Name: key.Name(c)})
+	}
+	for c := '0'; c <= '9'; c++ {
+		ret.eventFilters = append(ret.eventFilters, key.Filter{Focus: ret.scrollTable, Name: key.Name(c)})
+	}
 	ret.deleteTrackHint = makeHint("Delete\ntrack", "\n(%s)", "DeleteTrack")
 	ret.addTrackHint = makeHint("Add\ntrack", "\n(%s)", "AddTrack")
 	ret.uniqueOnTip = makeHint("Duplicate non-unique patterns", " (%s)", "UniquePatternsToggle")
