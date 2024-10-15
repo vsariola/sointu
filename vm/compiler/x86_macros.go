@@ -402,9 +402,9 @@ func (p *X86Macros) Prepare(value string, regs ...string) (string, error) {
 		if len(regs) > 1 {
 			return "", fmt.Errorf("macro Prepare cannot accept more than one register parameter")
 		} else if len(regs) > 0 {
-			return fmt.Sprintf("\nmov     r9, qword %v\nlea		r9, [r9 + %v]", value, regs[0]), nil
+			return fmt.Sprintf("\nlea     r9, [rel %v]\nlea		r9, [r9 + %v]", value, regs[0]), nil
 		}
-		return fmt.Sprintf("\nmov     r9, qword %v", value), nil
+		return fmt.Sprintf("\nlea     r9, [rel %v]", value), nil
 	}
 	return "", nil
 }
