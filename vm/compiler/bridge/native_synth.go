@@ -2,7 +2,9 @@ package bridge
 
 // #cgo CFLAGS: -I"${SRCDIR}/../../../build/"
 // #cgo LDFLAGS: "${SRCDIR}/../../../build/libsointu.a"
-// #include <sointu.h>
+/*
+#include <sointu.h>
+*/
 import "C"
 import (
 	"errors"
