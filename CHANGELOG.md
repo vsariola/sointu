@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Compressor displays threshold and invgain in dB
 - Dragging mouse to select rectangles in the tables
 - The standalone tracker can open a MIDI port for receiving MIDI notes
   ([#166][i166])
