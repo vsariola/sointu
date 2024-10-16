@@ -223,8 +223,52 @@ func (v *Instruments) swap(i, j int) (ok bool) {
 	if i < 0 || j < 0 || i >= len(v.d.Song.Patch) || j >= len(v.d.Song.Patch) || i == j {
 		return false
 	}
+	i, j = intMin(i, j), intMax(i, j)
 	instr := v.d.Song.Patch
 	instr[i], instr[j] = instr[j], instr[i]
+	if v.linkInstrTrack {
+		iFirst := v.d.Song.Patch.FirstVoiceForInstrument(i)
+		iLast := iFirst + instr[i].NumVoices - 1
+		jFirst := v.d.Song.Patch.FirstVoiceForInstrument(j)
+		jLast := jFirst + instr[j].NumVoices - 1
+		trackFirst := 0
+		trackLast := -1
+		a := 0
+		b := 0
+		c := 0
+		d := 0
+		// we will swap the tracks in the range [a, a+b) with the tracks in the range [a+b+c, a+b+c+d)
+		for t, track := range v.d.Song.Score.Tracks {
+			trackFirst = trackLast + 1
+			trackLast = trackFirst + track.NumVoices - 1
+			if trackLast < iFirst {
+				a = t + 1
+				continue
+			}
+			if trackFirst > jLast {
+				d = t - c - b - a
+				break // there's no need to loop anymore
+			}
+			if trackFirst < iFirst || trackLast > jLast {
+				v.cancel()
+				(*Model)(v).Alerts().AddNamed("SwapError", "Can't swap instruments because that would lose Instrument-Track association; disable Instrument-Track linking to do this anyway", Error)
+				return
+			}
+			if trackLast < jFirst {
+				b = t + 1 - a
+			}
+			if trackFirst > iLast {
+				c = t - b - a
+			}
+		}
+		var newTracks []sointu.Track
+		newTracks = append(newTracks, v.d.Song.Score.Tracks[0:a]...)
+		newTracks = append(newTracks, v.d.Song.Score.Tracks[a+b+c:a+b+c+d]...)
+		newTracks = append(newTracks, v.d.Song.Score.Tracks[a+b:a+b+c]...)
+		newTracks = append(newTracks, v.d.Song.Score.Tracks[a:a+b]...)
+		newTracks = append(newTracks, v.d.Song.Score.Tracks[a+b+c+d:]...)
+		v.d.Song.Score.Tracks = newTracks
+	}
 	return true
 }
 
@@ -237,7 +281,7 @@ func (v *Instruments) delete(i int) (ok bool) {
 }
 
 func (v *Instruments) change(n string, severity ChangeSeverity) func() {
-	return (*Model)(v).change("InstrumentListView."+n, PatchChange, severity)
+	return (*Model)(v).change("InstrumentListView."+n, SongChange, severity)
 }
 
 func (v *Instruments) cancel() {

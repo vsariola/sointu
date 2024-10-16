@@ -26,6 +26,7 @@ import (
 type InstrumentEditor struct {
 	newInstrumentBtn    *ActionClickable
 	enlargeBtn          *BoolClickable
+	linkInstrTrackBtn   *BoolClickable
 	deleteInstrumentBtn *ActionClickable
 	copyInstrumentBtn   *TipClickable
 	saveInstrumentBtn   *TipClickable
@@ -61,6 +62,7 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 	ret := &InstrumentEditor{
 		newInstrumentBtn:    NewActionClickable(model.AddInstrument()),
 		enlargeBtn:          NewBoolClickable(model.InstrEnlarged().Bool()),
+		linkInstrTrackBtn:   NewBoolClickable(model.LinkInstrTrack().Bool()),
 		deleteInstrumentBtn: NewActionClickable(model.DeleteInstrument()),
 		copyInstrumentBtn:   new(TipClickable),
 		saveInstrumentBtn:   new(TipClickable),
@@ -116,6 +118,7 @@ func (ie *InstrumentEditor) childFocused(gtx C) bool {
 func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 	ie.wasFocused = ie.Focused() || ie.childFocused(gtx)
 	fullscreenBtnStyle := ToggleIcon(gtx, t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, ie.enlargeHint, ie.shrinkHint)
+	linkBtnStyle := ToggleIcon(gtx, t.Theme, ie.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, "Link", "Unlink")
 
 	octave := func(gtx C) D {
 		in := layout.UniformInset(unit.Dp(1))
@@ -140,6 +143,9 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 							layout.Rigid(octave),
 						)
 					})
+				}),
+				layout.Rigid(func(gtx C) D {
+					return layout.E.Layout(gtx, linkBtnStyle.Layout)
 				}),
 				layout.Rigid(func(gtx C) D {
 					return layout.E.Layout(gtx, fullscreenBtnStyle.Layout)

@@ -62,6 +62,10 @@ type (
 		follow         bool
 		quitted        bool
 		uniquePatterns bool
+		// when linkInstrTrack is false, editing an instrument does not change
+		// the track. when true, editing an instrument changes the tracks (e.g.
+		// reordering or deleting instrument can delete track)
+		linkInstrTrack bool
 
 		cachePatternUseCount [][]int
 
@@ -184,6 +188,7 @@ func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFil
 	m.modelMessages = modelMessages
 	m.PlayerMessages = playerMessages
 	m.d.Octave = 4
+	m.linkInstrTrack = true
 	m.d.RecoveryFilePath = recoveryFilePath
 	m.resetSong()
 	if recoveryFilePath != "" {
