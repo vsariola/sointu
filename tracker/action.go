@@ -66,16 +66,7 @@ func (m *Model) AddTrack() Action {
 func (m *Model) DeleteTrack() Action {
 	return Action{
 		allowed: func() bool { return len(m.d.Song.Score.Tracks) > 0 },
-		do: func() {
-			defer (*Model)(m).change("DeleteTrackAction", ScoreChange, MajorChange)()
-			m.d.Cursor.Track = intMax(intMin(m.d.Cursor.Track, len(m.d.Song.Score.Tracks)-1), 0)
-			newTracks := make([]sointu.Track, len(m.d.Song.Score.Tracks)-1)
-			copy(newTracks, m.d.Song.Score.Tracks[:m.d.Cursor.Track])
-			copy(newTracks[m.d.Cursor.Track:], m.d.Song.Score.Tracks[m.d.Cursor.Track+1:])
-			m.d.Cursor.Track = intMax(intMin(m.d.Cursor.Track, len(m.d.Song.Score.Tracks)-1), 0)
-			m.d.Song.Score.Tracks = newTracks
-			m.d.Cursor2 = m.d.Cursor
-		},
+		do:      func() { m.Tracks().List().DeleteElements(false) },
 	}
 }
 
@@ -104,10 +95,7 @@ func (m *Model) AddInstrument() Action {
 func (m *Model) DeleteInstrument() Action {
 	return Action{
 		allowed: func() bool { return len((*Model)(m).d.Song.Patch) > 0 },
-		do: func() {
-			defer (*Model)(m).change("DeleteInstrumentAction", PatchChange, MajorChange)()
-			m.d.Song.Patch = append(m.d.Song.Patch[:m.d.InstrIndex], m.d.Song.Patch[m.d.InstrIndex+1:]...)
-		},
+		do:      func() { m.Instruments().List().DeleteElements(false) },
 	}
 }
 
