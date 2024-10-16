@@ -276,12 +276,38 @@ func (v *Instruments) delete(i int) (ok bool) {
 	if i < 0 || i >= len(v.d.Song.Patch) {
 		return false
 	}
+	instrFirst := v.d.Song.Patch.FirstVoiceForInstrument(i)
+	instrLast := instrFirst + v.d.Song.Patch[i].NumVoices - 1
 	v.d.Song.Patch = append(v.d.Song.Patch[:i], v.d.Song.Patch[i+1:]...)
+	if v.linkInstrTrack {
+		trackFirst := 0
+		trackLast := -1
+		var newTracks []sointu.Track
+		for _, track := range v.d.Song.Score.Tracks {
+			trackFirst = trackLast + 1
+			trackLast = trackFirst + track.NumVoices - 1
+			if trackLast < instrFirst || trackFirst > instrLast {
+				newTracks = append(newTracks, track)
+				continue
+			}
+			oFirst := max(instrFirst, trackFirst)
+			oLast := min(instrLast, trackLast)
+			voices := track.NumVoices - (oLast - oFirst + 1)
+			if voices > 0 {
+				track.NumVoices = voices
+				newTracks = append(newTracks, track)
+			}
+		}
+		v.d.Song.Score.Tracks = newTracks
+	}
 	return true
 }
 
 func (v *Instruments) change(n string, severity ChangeSeverity) func() {
-	return (*Model)(v).change("InstrumentListView."+n, SongChange, severity)
+	if v.linkInstrTrack {
+		return (*Model)(v).change("InstrumentListView."+n, SongChange, severity)
+	}
+	return (*Model)(v).change("InstrumentListView."+n, PatchChange, severity)
 }
 
 func (v *Instruments) cancel() {
