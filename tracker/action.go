@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"fmt"
+	"math"
 	"os"
 
 	"github.com/vsariola/sointu"
@@ -74,11 +75,13 @@ func (m *Model) AddInstrument() Action {
 	return Action{
 		allowed: func() bool { return (*Model)(m).d.Song.Patch.NumVoices() < vm.MAX_VOICES },
 		do: func() {
-			defer (*Model)(m).change("AddInstrumentAction", PatchChange, MajorChange)()
+			if m.linkInstrTrack {
+				defer (*Model)(m).change("AddInstrumentAction", SongChange, MajorChange)()
+			} else {
+				defer (*Model)(m).change("AddInstrumentAction", PatchChange, MajorChange)()
+			}
 			if len(m.d.Song.Patch) == 0 { // no instruments, add one
 				m.d.InstrIndex = 0
-			} else {
-				m.d.InstrIndex++
 			}
 			m.d.Song.Patch = append(m.d.Song.Patch, sointu.Instrument{})
 			copy(m.d.Song.Patch[m.d.InstrIndex+1:], m.d.Song.Patch[m.d.InstrIndex:])
@@ -88,6 +91,21 @@ func (m *Model) AddInstrument() Action {
 			m.d.InstrIndex2 = m.d.InstrIndex
 			m.d.UnitIndex = 0
 			m.d.ParamIndex = 0
+			if m.linkInstrTrack {
+				tracks := append([]sointu.Track{{NumVoices: 1}}, m.d.Song.Score.Tracks...)
+				perm := makeTrackPerm(tracks)
+				a := m.d.Song.Patch.FirstVoiceForInstrument(m.d.InstrIndex)
+				newPerm := perm.slice(1, a+1)
+				newPerm = newPerm.merge(perm.slice(0, 1))
+				newPerm = newPerm.merge(perm.slice(a+1, math.MaxInt))
+				var ok bool
+				m.d.Song.Score.Tracks, ok = newPerm.tracks(tracks)
+				if !ok { // the permutation would cause a track to split in two, so we cancel the operation
+					(*Model)(m).Alerts().AddNamed("AddInstrument", "Cannot add instrument due to Instrument-Track linking; disable it to do this", Error)
+					m.changeCancel = true
+					return
+				}
+			}
 		},
 	}
 }

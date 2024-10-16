@@ -3,6 +3,7 @@ package tracker
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/vsariola/sointu"
@@ -224,51 +225,30 @@ func (v *Instruments) swap(i, j int) (ok bool) {
 		return false
 	}
 	i, j = intMin(i, j), intMax(i, j)
-	instr := v.d.Song.Patch
-	instr[i], instr[j] = instr[j], instr[i]
+	patch := v.d.Song.Patch
 	if v.linkInstrTrack {
-		iFirst := v.d.Song.Patch.FirstVoiceForInstrument(i)
-		iLast := iFirst + instr[i].NumVoices - 1
-		jFirst := v.d.Song.Patch.FirstVoiceForInstrument(j)
-		jLast := jFirst + instr[j].NumVoices - 1
-		trackFirst := 0
-		trackLast := -1
-		a := 0
-		b := 0
-		c := 0
-		d := 0
-		// we will swap the tracks in the range [a, a+b) with the tracks in the range [a+b+c, a+b+c+d)
-		for t, track := range v.d.Song.Score.Tracks {
-			trackFirst = trackLast + 1
-			trackLast = trackFirst + track.NumVoices - 1
-			if trackLast < iFirst {
-				a = t + 1
-				continue
-			}
-			if trackFirst > jLast {
-				d = t - c - b - a
-				break // there's no need to loop anymore
-			}
-			if trackFirst < iFirst || trackLast > jLast {
-				v.cancel()
-				(*Model)(v).Alerts().AddNamed("SwapError", "Can't swap instruments because that would lose Instrument-Track association; disable Instrument-Track linking to do this anyway", Error)
-				return
-			}
-			if trackLast < jFirst {
-				b = t + 1 - a
-			}
-			if trackFirst > iLast {
-				c = t - b - a
-			}
+		perm := makeTrackPerm(v.d.Song.Score.Tracks)
+		a := patch.FirstVoiceForInstrument(i)
+		b := a + patch[i].NumVoices
+		c := patch.FirstVoiceForInstrument(j)
+		d := c + patch[j].NumVoices
+		// [0,a) are the voices before the first instrument, [a,b) are the
+		// voices of the first instrument, [b,c) are the voices between the
+		// instruments, [c,d) are the voices of the second instrument,
+		// [d,inf) are the voices after the second instrument
+		// We permute them as [0,a) + [c,d) + [b,c) + [a,b) + [d,NumVoices)
+		newPerm := perm.slice(0, a)
+		newPerm = newPerm.merge(perm.slice(c, d))
+		newPerm = newPerm.merge(perm.slice(b, c))
+		newPerm = newPerm.merge(perm.slice(a, b))
+		newPerm = newPerm.merge(perm.slice(d, math.MaxInt))
+		v.d.Song.Score.Tracks, ok = newPerm.tracks(v.d.Song.Score.Tracks)
+		if !ok { // the permutation would cause a track to split in two, so we cancel the operation
+			(*Model)(v).Alerts().AddNamed("SwapInstrument", "Cannot swap instrument due to Instrument-Track linking; disable it to do this", Error)
+			return false
 		}
-		var newTracks []sointu.Track
-		newTracks = append(newTracks, v.d.Song.Score.Tracks[0:a]...)
-		newTracks = append(newTracks, v.d.Song.Score.Tracks[a+b+c:a+b+c+d]...)
-		newTracks = append(newTracks, v.d.Song.Score.Tracks[a+b:a+b+c]...)
-		newTracks = append(newTracks, v.d.Song.Score.Tracks[a:a+b]...)
-		newTracks = append(newTracks, v.d.Song.Score.Tracks[a+b+c+d:]...)
-		v.d.Song.Score.Tracks = newTracks
 	}
+	patch[i], patch[j] = patch[j], patch[i]
 	return true
 }
 
@@ -276,30 +256,19 @@ func (v *Instruments) delete(i int) (ok bool) {
 	if i < 0 || i >= len(v.d.Song.Patch) {
 		return false
 	}
-	instrFirst := v.d.Song.Patch.FirstVoiceForInstrument(i)
-	instrLast := instrFirst + v.d.Song.Patch[i].NumVoices - 1
-	v.d.Song.Patch = append(v.d.Song.Patch[:i], v.d.Song.Patch[i+1:]...)
 	if v.linkInstrTrack {
-		trackFirst := 0
-		trackLast := -1
-		var newTracks []sointu.Track
-		for _, track := range v.d.Song.Score.Tracks {
-			trackFirst = trackLast + 1
-			trackLast = trackFirst + track.NumVoices - 1
-			if trackLast < instrFirst || trackFirst > instrLast {
-				newTracks = append(newTracks, track)
-				continue
-			}
-			oFirst := max(instrFirst, trackFirst)
-			oLast := min(instrLast, trackLast)
-			voices := track.NumVoices - (oLast - oFirst + 1)
-			if voices > 0 {
-				track.NumVoices = voices
-				newTracks = append(newTracks, track)
-			}
+		perm := makeTrackPerm(v.d.Song.Score.Tracks)
+		a := v.d.Song.Patch.FirstVoiceForInstrument(i)
+		b := a + v.d.Song.Patch[i].NumVoices
+		newPerm := perm.slice(0, a)
+		newPerm = newPerm.merge(perm.slice(b, math.MaxInt))
+		v.d.Song.Score.Tracks, ok = newPerm.tracks(v.d.Song.Score.Tracks)
+		if !ok { // the permutation would cause a track to split in two, so we cancel the operation
+			(*Model)(v).Alerts().AddNamed("DeleteInstrument", "Cannot delete instrument due to Instrument-Track linking; disable it to do this", Error)
+			return false
 		}
-		v.d.Song.Score.Tracks = newTracks
 	}
+	v.d.Song.Patch = append(v.d.Song.Patch[:i], v.d.Song.Patch[i+1:]...)
 	return true
 }
 
@@ -849,4 +818,66 @@ func (l *SearchResults) Count() (count int) {
 		}
 	}
 	return
+}
+
+// trackPerm
+type indVoices struct{ ind, voices int }
+type trackPerm []indVoices
+
+func makeTrackPerm(tracks []sointu.Track) trackPerm {
+	ret := make(trackPerm, len(tracks)+1)
+	for i, track := range tracks {
+		ret[i] = indVoices{i, track.NumVoices}
+	}
+	ret[len(tracks)] = indVoices{len(tracks), math.MaxInt} // sentinel
+	return ret
+}
+
+func (p trackPerm) slice(voiceStart, voiceEnd int) trackPerm {
+	ret := make(trackPerm, 0, len(p))
+	left := 0
+	for _, t := range p {
+		right := left + t.voices
+		if right <= voiceStart && t.voices != math.MaxInt {
+			left = right
+			continue
+		}
+		if left >= voiceEnd {
+			break
+		}
+		if left < voiceStart && t.voices != math.MaxInt {
+			t.voices -= voiceStart - left
+		}
+		if right > voiceEnd && t.voices != math.MaxInt {
+			t.voices -= right - voiceEnd
+		}
+		ret = append(ret, t)
+		left = right
+	}
+	return ret
+}
+
+func (a trackPerm) merge(b trackPerm) trackPerm {
+	ret := append(trackPerm{}, a...) // make a copy
+	if len(a) > 0 && len(b) > 0 && a[len(a)-1].ind == b[0].ind {
+		ret[len(a)-1].voices += b[0].voices
+		b = b[1:]
+	}
+	ret = append(ret, b...)
+	return ret
+}
+
+func (a trackPerm) tracks(tracks []sointu.Track) (newTracks []sointu.Track, ok bool) {
+	used := make([]bool, len(tracks))
+	newTracks = make([]sointu.Track, 0, len(a))
+	for _, t := range a[:len(a)-1] {
+		if t.voices == math.MaxInt || t.ind >= len(used) || used[t.ind] { // sentinel has leaked into the permutation, should be always last
+			return nil, false
+		}
+		used[t.ind] = true
+		tr := tracks[t.ind]
+		tr.NumVoices = t.voices
+		newTracks = append(newTracks, tr)
+	}
+	return newTracks, true
 }

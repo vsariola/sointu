@@ -96,6 +96,34 @@ func (s *Score) Wrap(songPos SongPos) SongPos {
 	return ret
 }
 
+// TrackVoiceRange finds the tracks that belong to the given voice range
+// [voiceInd:voiceInd+voiceLen]. Score.Tracks[trackInd:trackInd+trackLen] are
+// the tracks in the range. substart is the number of voices that should be
+// subtracted from Score.Tracks[trackInd] and subEnd is the number of voices
+// that should be subtracted from Score.Tracks[trackInd+trackLen-1].
+func (s *Score) TrackVoiceRange(voiceInd, voiceLen int) (trackInd, subStart, trackLen, subEnd int) {
+	left := 0
+	for _, t := range s.Tracks {
+		right := left + t.NumVoices
+		if voiceInd < right {
+			subStart = voiceInd - left
+			break
+		}
+		trackInd += 1
+		left = right
+	}
+	for _, t := range s.Tracks[trackInd:] {
+		right := left + t.NumVoices
+		if voiceEnd := voiceInd + voiceLen; right >= voiceEnd {
+			subEnd = right - voiceEnd
+			return
+		}
+		trackLen += 1
+		left = right
+	}
+	return
+}
+
 func (s *Score) Clamp(songPos SongPos) SongPos {
 	r := s.SongRow(songPos)
 	if l := s.LengthInRows(); r >= l {
