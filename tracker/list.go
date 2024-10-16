@@ -291,6 +291,7 @@ func (v *Instruments) marshal(from, to int) ([]byte, error) {
 	if from < 0 || to >= len(v.d.Song.Patch) || from > to {
 		return nil, fmt.Errorf("InstrumentListView.marshal: index out of range: %d, %d", from, to)
 	}
+	// TODO: include also track info in the marshaled data
 	ret, err := yaml.Marshal(struct{ Patch sointu.Patch }{v.d.Song.Patch[from : to+1]})
 	if err != nil {
 		return nil, fmt.Errorf("InstrumentListView.marshal: %v", err)
@@ -316,6 +317,7 @@ func (v *Instruments) unmarshal(data []byte) (from, to int, err error) {
 		(*Model)(v).assignUnitIDs(newInstr.Patch[i].Units)
 		v.d.Song.Patch[sel+i] = newInstr.Patch[i]
 	}
+	// TODO: if tracks are linked to instruments, add also the tracks here
 	from = sel
 	to = sel + len(newInstr.Patch) - 1
 	return

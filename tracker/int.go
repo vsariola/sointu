@@ -145,6 +145,7 @@ func (v *InstrumentVoices) setValue(value int) {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
 		return
 	}
+	// TODO: this should change also the track voices if the instrument is linked to track
 	v.d.Song.Patch[v.d.InstrIndex].NumVoices = value
 }
 
@@ -153,6 +154,9 @@ func (v *InstrumentVoices) Range() intRange {
 }
 
 func (v *InstrumentVoices) change(kind string) func() {
+	if v.linkInstrTrack {
+		return (*Model)(v).change("InstrumentVoicesInt."+kind, SongChange, MinorChange)
+	}
 	return (*Model)(v).change("InstrumentVoicesInt."+kind, PatchChange, MinorChange)
 }
 
