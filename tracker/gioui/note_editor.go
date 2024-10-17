@@ -227,7 +227,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	}
 
 	rowTitle := func(gtx C, j int) D {
-		rpp := intMax(t.RowsPerPattern().Value(), 1)
+		rpp := max(t.RowsPerPattern().Value(), 1)
 		pat := j / rpp
 		row := j % rpp
 		w := pxPatMarkWidth + pxRowMarkWidth
@@ -277,7 +277,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 			paint.FillShape(gtx.Ops, c, clip.Rect{Min: image.Pt(cx, 0), Max: image.Pt(cx+cw, gtx.Constraints.Min.Y)}.Op())
 		}
 		// draw the pattern marker
-		rpp := intMax(t.RowsPerPattern().Value(), 1)
+		rpp := max(t.RowsPerPattern().Value(), 1)
 		pat := y / rpp
 		row := y % rpp
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()

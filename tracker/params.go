@@ -67,7 +67,7 @@ func (p parameter) change(kind string) func() {
 func (pl *Params) List() List             { return List{pl} }
 func (pl *Params) Selected() int          { return pl.d.ParamIndex }
 func (pl *Params) Selected2() int         { return pl.Selected() }
-func (pl *Params) SetSelected(value int)  { pl.d.ParamIndex = intMax(intMin(value, pl.Count()-1), 0) }
+func (pl *Params) SetSelected(value int)  { pl.d.ParamIndex = max(min(value, pl.Count()-1), 0) }
 func (pl *Params) SetSelected2(value int) {}
 func (pl *Params) cancel()                { (*Model)(pl).changeCancel = true }
 

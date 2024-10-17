@@ -459,39 +459,67 @@ func (p Patch) FindUnit(id int) (instrIndex int, unitIndex int, err error) {
 	return 0, 0, fmt.Errorf("could not find a unit with id %v", id)
 }
 
-func (p Patch) AvoidUnitIDs(other Patch) {
+// AvoidUnitIDs rewrites the unit ids of the patch to avoid conflicts with the
+// ids in the other patch. When rewriting the ids, the function will also update
+// the target parameter of the send units to match the new ids.
+func (patch Patch) AvoidUnitIDs(other Patch) {
+	maxId := 0
+	usedIds := make(map[int]bool)
+	for _, otherInstr := range other {
+		maxId = findMaxIdAndUsed(otherInstr.Units, maxId, usedIds)
+	}
+	rewrites := map[int]int{}
+	for _, patchInstr := range patch {
+		maxId = rewriteUnitIds(patchInstr.Units, maxId, usedIds, rewrites)
+	}
+	for _, patchInstr := range patch {
+		rewriteSendTargets(patchInstr.Units, rewrites)
+	}
+}
+
+func AvoidUnitIDs(units []Unit, other Patch) {
 	maxId := 0
 	usedIds := make(map[int]bool)
 	for _, instr := range other {
-		for _, unit := range instr.Units {
-			usedIds[unit.ID] = true
-			if maxId < unit.ID {
-				maxId = unit.ID
-			}
-		}
+		maxId = findMaxIdAndUsed(instr.Units, maxId, usedIds)
 	}
 	rewrites := map[int]int{}
-	for _, instr := range p {
-		for i := range instr.Units {
-			if id := instr.Units[i].ID; id == 0 || usedIds[id] {
-				maxId++
-				if id > 0 {
-					rewrites[id] = maxId
-				}
-				instr.Units[i].ID = maxId
-			}
-			usedIds[instr.Units[i].ID] = true
-			if maxId < instr.Units[i].ID {
-				maxId = instr.Units[i].ID
-			}
+	rewriteUnitIds(units, maxId, usedIds, rewrites)
+	rewriteSendTargets(units, rewrites)
+}
+
+func findMaxIdAndUsed(units []Unit, maxId int, usedIds map[int]bool) int {
+	for _, unit := range units {
+		usedIds[unit.ID] = true
+		if maxId < unit.ID {
+			maxId = unit.ID
 		}
 	}
-	for _, instr := range p {
-		for i, u := range instr.Units {
-			if target, ok := u.Parameters["target"]; u.Type == "send" && ok {
-				if newId, ok := rewrites[target]; ok {
-					instr.Units[i].Parameters["target"] = newId
-				}
+	return maxId
+}
+
+func rewriteUnitIds(units []Unit, maxId int, usedIds map[int]bool, rewrites map[int]int) int {
+	for i := range units {
+		if id := units[i].ID; id == 0 || usedIds[id] {
+			maxId++
+			if id > 0 {
+				rewrites[id] = maxId
+			}
+			units[i].ID = maxId
+		}
+		usedIds[units[i].ID] = true
+		if maxId < units[i].ID {
+			maxId = units[i].ID
+		}
+	}
+	return maxId
+}
+
+func rewriteSendTargets(units []Unit, rewrites map[int]int) {
+	for i := range units {
+		if target, ok := units[i].Parameters["target"]; units[i].Type == "send" && ok {
+			if newId, ok := rewrites[target]; ok {
+				units[i].Parameters["target"] = newId
 			}
 		}
 	}

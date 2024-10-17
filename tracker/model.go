@@ -412,9 +412,7 @@ func (d *modelData) Copy() modelData {
 
 func (m *Model) resetSong() {
 	m.d.Song = defaultSong.Copy()
-	for _, instr := range m.d.Song.Patch {
-		(*Model)(m).assignUnitIDs(instr.Units)
-	}
+	m.d.Song.Patch.AvoidUnitIDs(nil)
 	m.d.FilePath = ""
 	m.d.ChangedSinceSave = false
 }
@@ -434,40 +432,6 @@ func (m *Model) maxID() int {
 		}
 	}
 	return maxID
-}
-
-func (m *Model) assignUnitIDs(units []sointu.Unit) {
-	maxId := 0
-	usedIds := make(map[int]bool)
-	for _, instr := range m.d.Song.Patch {
-		for _, unit := range instr.Units {
-			usedIds[unit.ID] = true
-			if maxId < unit.ID {
-				maxId = unit.ID
-			}
-		}
-	}
-	rewrites := map[int]int{}
-	for i := range units {
-		if id := units[i].ID; id == 0 || usedIds[id] {
-			maxId++
-			if id > 0 {
-				rewrites[id] = maxId
-			}
-			units[i].ID = maxId
-		}
-		usedIds[units[i].ID] = true
-		if maxId < units[i].ID {
-			maxId = units[i].ID
-		}
-	}
-	for i, u := range units {
-		if target, ok := u.Parameters["target"]; u.Type == "send" && ok {
-			if newId, ok := rewrites[target]; ok {
-				units[i].Parameters["target"] = newId
-			}
-		}
-	}
 }
 
 func (m *Model) fixIDCollisions() {
@@ -563,18 +527,4 @@ func clamp(a, min, max int) int {
 		return min
 	}
 	return a
-}
-
-func intMax(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func intMin(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

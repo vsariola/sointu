@@ -2,7 +2,6 @@ package tracker
 
 import (
 	"fmt"
-	"math"
 	"os"
 
 	"github.com/vsariola/sointu"
@@ -47,15 +46,7 @@ func (m *Model) AddTrack() Action {
 		do: func() {
 			defer (*Model)(m).change("AddTrackAction", SongChange, MajorChange)()
 			voiceIndex := m.d.Song.Score.FirstVoiceForTrack(m.d.Cursor.Track)
-			if m.linkInstrTrack {
-				_, _, err := (*Model)(m).addPatchAtVoice(sointu.Patch{defaultInstrument.Copy()}, voiceIndex)
-				if err != nil {
-					(*Model)(m).Alerts().AddNamed("AddTrack", err.Error(), Error)
-					m.changeCancel = true
-					return
-				}
-			}
-			m.d.Cursor.Track, _, _ = (*Model)(m).addTracksAtVoice([]sointu.Track{{NumVoices: 1, Patterns: []sointu.Pattern{}}}, voiceIndex)
+			m.addTrackInstrument(true, m.linkInstrTrack, voiceIndex)
 		},
 	}
 }
@@ -71,38 +62,9 @@ func (m *Model) AddInstrument() Action {
 	return Action{
 		allowed: func() bool { return (*Model)(m).d.Song.Patch.NumVoices() < vm.MAX_VOICES },
 		do: func() {
-			if m.linkInstrTrack {
-				defer (*Model)(m).change("AddInstrumentAction", SongChange, MajorChange)()
-			} else {
-				defer (*Model)(m).change("AddInstrumentAction", PatchChange, MajorChange)()
-			}
-			var a int
-			if len(m.d.Song.Patch) == 0 { // no instruments, add one
-				m.d.InstrIndex = 0
-			} else {
-				a = m.d.Song.Patch.FirstVoiceForInstrument(m.d.InstrIndex)
-			}
-			var ok bool
-			order := [...]sointu.Range{{Start: 1, End: a + 1}, {Start: 0, End: 1}, {Start: a + 1, End: math.MaxInt}}
-			newInstr := defaultInstrument.Copy()
-			(*Model)(m).assignUnitIDs(newInstr.Units)
-			m.d.Song.Patch, ok = sointu.VoiceSlice(append(sointu.Patch{newInstr}, m.d.Song.Patch...), order[:]...)
-			if !ok {
-				(*Model)(m).Alerts().AddNamed("AddInstrument", "Cannot add instrument due to Instrument-Track linking; disable it to do this", Error)
-				m.changeCancel = true
-				return
-			}
-			m.d.InstrIndex2 = m.d.InstrIndex
-			m.d.UnitIndex = 0
-			m.d.ParamIndex = 0
-			if m.linkInstrTrack {
-				m.d.Song.Score.Tracks, ok = sointu.VoiceSlice(append([]sointu.Track{{NumVoices: 1}}, m.d.Song.Score.Tracks...), order[:]...)
-				if !ok { // the permutation would cause a track to split in two, so we cancel the operation
-					(*Model)(m).Alerts().AddNamed("AddInstrument", "Cannot add instrument due to Instrument-Track linking; disable it to do this", Error)
-					m.changeCancel = true
-					return
-				}
-			}
+			defer (*Model)(m).change("AddTrackAction", SongChange, MajorChange)()
+			voiceIndex := m.d.Song.Patch.FirstVoiceForInstrument(m.d.InstrIndex)
+			m.addTrackInstrument(m.linkInstrTrack, true, voiceIndex)
 		},
 	}
 }
@@ -111,6 +73,29 @@ func (m *Model) DeleteInstrument() Action {
 	return Action{
 		allowed: func() bool { return len((*Model)(m).d.Song.Patch) > 0 },
 		do:      func() { m.Instruments().List().DeleteElements(false) },
+	}
+}
+
+func (m *Model) addTrackInstrument(addTrack, addInstrument bool, voiceIndex int) {
+	var err error
+	if addInstrument {
+		m.d.InstrIndex, m.d.InstrIndex2, err = (*Model)(m).addPatchAtVoice(voiceIndex, defaultInstrument.Copy())
+		if err != nil {
+			(*Model)(m).Alerts().AddNamed("AddTrack", err.Error(), Error)
+			m.changeCancel = true
+			return
+		}
+		m.d.UnitIndex = 0
+		m.d.UnitIndex2 = 0
+		m.d.ParamIndex = 0
+	}
+	if addTrack {
+		m.d.Cursor.Track, m.d.Cursor2.Track, err = (*Model)(m).addTracksAtVoice(voiceIndex, sointu.Track{NumVoices: 1, Patterns: []sointu.Pattern{}})
+		if err != nil {
+			(*Model)(m).Alerts().AddNamed("AddTrack", err.Error(), Error)
+			m.changeCancel = true
+			return
+		}
 	}
 }
 
@@ -127,14 +112,14 @@ func (m *Model) AddUnit(before bool) Action {
 				m.d.UnitIndex++
 			}
 		}
-		m.d.InstrIndex = intMax(intMin(m.d.InstrIndex, len(m.d.Song.Patch)-1), 0)
+		m.d.InstrIndex = max(min(m.d.InstrIndex, len(m.d.Song.Patch)-1), 0)
 		instr := m.d.Song.Patch[m.d.InstrIndex]
 		newUnits := make([]sointu.Unit, len(instr.Units)+1)
 		m.d.UnitIndex = clamp(m.d.UnitIndex, 0, len(newUnits)-1)
 		m.d.UnitIndex2 = m.d.UnitIndex
 		copy(newUnits, instr.Units[:m.d.UnitIndex])
 		copy(newUnits[m.d.UnitIndex+1:], instr.Units[m.d.UnitIndex:])
-		(*Model)(m).assignUnitIDs(newUnits[m.d.UnitIndex : m.d.UnitIndex+1])
+		sointu.AvoidUnitIDs(newUnits[m.d.UnitIndex:m.d.UnitIndex+1], m.d.Song.Patch)
 		m.d.Song.Patch[m.d.InstrIndex].Units = newUnits
 		m.d.ParamIndex = 0
 	})
@@ -156,7 +141,7 @@ func (m *Model) ClearUnit() Action {
 	return Action{
 		do: func() {
 			defer (*Model)(m).change("DeleteUnitAction", PatchChange, MajorChange)()
-			m.d.UnitIndex = intMax(intMin(m.d.UnitIndex, len(m.d.Song.Patch[m.d.InstrIndex].Units)-1), 0)
+			m.d.UnitIndex = max(min(m.d.UnitIndex, len(m.d.Song.Patch[m.d.InstrIndex].Units)-1), 0)
 			m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex] = sointu.Unit{}
 			m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].ID = m.maxID() + 1
 		},

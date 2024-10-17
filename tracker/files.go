@@ -182,7 +182,7 @@ success:
 		return false
 	}
 	instrument.NumVoices = clamp(instrument.NumVoices, 1, 32-numVoices)
-	m.assignUnitIDs(instrument.Units)
+	sointu.AvoidUnitIDs(instrument.Units, m.d.Song.Patch)
 	m.d.Song.Patch[m.d.InstrIndex] = instrument
 	if m.d.Song.Patch[m.d.InstrIndex].Comment != "" {
 		m.commentExpanded = true

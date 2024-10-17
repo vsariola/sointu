@@ -82,13 +82,16 @@ type (
 		Start, End int
 	}
 
-	// NumVoicer is used for slice elements with count, in particular for tracks
-	// and instruments with NumVoices as the count
+	// NumVoicer is used for slices where elements have NumVoices, of which
+	// there are two: Tracks and Instruments.
 	NumVoicer interface {
 		GetNumVoices() int
 		SetNumVoices(count int)
 	}
 
+	// NumVoicerPointer is a helper interface for type constraints, as
+	// SetNumVoices needs to be defined with a pointer receiver to be able to
+	// actually modify the value.
 	NumVoicerPointer[M any] interface {
 		*M
 		NumVoicer
@@ -324,6 +327,8 @@ func (t *Track) SetNumVoices(c int) {
 	t.NumVoices = c
 }
 
+// TotalVoices returns the total number of voices used in the slice; summing the
+// GetNumVoices of every element
 func TotalVoices[T any, S ~[]T, P NumVoicerPointer[T]](slice S) (ret int) {
 	for _, e := range slice {
 		ret += (P)(&e).GetNumVoices()
@@ -331,6 +336,10 @@ func TotalVoices[T any, S ~[]T, P NumVoicerPointer[T]](slice S) (ret int) {
 	return
 }
 
+// VoiceRange returns the range of voices used by element at index in the slice.
+// For example, if the slice has three elements with 2, 1, and 3 voices, and
+// index is 1, the function returns [2,3): the voices of element 1 start at 2
+// (inclusive) and end at 3 (exclusive).
 func VoiceRange[T any, S ~[]T, P NumVoicerPointer[T]](slice S, index int) (ret Range) {
 	for _, e := range slice[:index] {
 		ret.Start += (P)(&e).GetNumVoices()
@@ -339,6 +348,18 @@ func VoiceRange[T any, S ~[]T, P NumVoicerPointer[T]](slice S, index int) (ret R
 	return
 }
 
+// VoiceSlice slices works as a kind of slice operator: it treats a NumVoicer
+// slice as a "virtual slice", with element repeated by the number of voices it
+// has. For example, if parameter "slice" has three elements, returning
+// GetNumVoices 2, 1, and 3, the VoiceSlice thinks of this as a virtual slice of
+// 6 elements [0,0,1,2,2,2]. Then, the "ranges" parameter are slicing ranges to
+// this virtual slice. Continuing with the example, if "ranges" was [2,5), the
+// virtual slice would be [1,2,2], and the function would return a slice with
+// two elements: first with NumVoices 1 and second with NumVoices 2. If multiple
+// ranges are given, multiple virtual slices are concatenated. However, when
+// doing so, splitting an element is not allowed. In the previous example, if
+// the ranges were [1,3) and [0,1), the resulting concatenated virtual slice
+// would be [0,1,0], and here the 0 element would be split.
 func VoiceSlice[T any, S ~[]T, P NumVoicerPointer[T]](slice S, ranges ...Range) (ret S, ok bool) {
 	ret = make(S, 0, len(slice))
 	last := -1
@@ -378,16 +399,22 @@ outer:
 	return ret, true
 }
 
-func VoiceAdd[T any, S ~[]T, P NumVoicerPointer[T]](orig S, index int, added S) (ret S, from, to int) {
+// VoiceAdd tries adding the elements "added" to the slice "orig" at the voice
+// index "index". Notice that index is the index into a virtual slice where each
+// element is repeated by the number of voices it has. If the index is between
+// elements, the new elements are added in between the old elements. If the
+// addition would cause splitting of an element, we rather increase the number
+// of voices the element has, but do not split it.
+func VoiceAdd[T any, S ~[]T, P NumVoicerPointer[T]](orig S, index int, added ...T) (ret S, from, to int) {
 	ret = make(S, 0, len(orig)+len(added))
 	left := 0
 	for i, elem := range orig {
 		right := left + (P)(&orig[i]).GetNumVoices()
-		if left == index {
+		if left == index { // we are between elements and it's safe to add there
 			from, to = len(ret), len(ret)+len(added)-1
 			ret = append(ret, added...)
 		}
-		if left < index && index < right {
+		if left < index && index < right { // we are inside an element and would split it; just increase its voices instead of splitting
 			(P)(&elem).SetNumVoices((P)(&orig[i]).GetNumVoices() + TotalVoices[T, S, P](added))
 			from, to = len(ret), len(ret)
 		}
