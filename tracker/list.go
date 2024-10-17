@@ -225,30 +225,15 @@ func (v *Instruments) swap(i, j int) (ok bool) {
 		return false
 	}
 	i, j = intMin(i, j), intMax(i, j)
-	patch := v.d.Song.Patch
 	if v.linkInstrTrack {
-		perm := makeTrackPerm(v.d.Song.Score.Tracks)
-		a := patch.FirstVoiceForInstrument(i)
-		b := a + patch[i].NumVoices
-		c := patch.FirstVoiceForInstrument(j)
-		d := c + patch[j].NumVoices
-		// [0,a) are the voices before the first instrument, [a,b) are the
-		// voices of the first instrument, [b,c) are the voices between the
-		// instruments, [c,d) are the voices of the second instrument,
-		// [d,inf) are the voices after the second instrument
-		// We permute them as [0,a) + [c,d) + [b,c) + [a,b) + [d,NumVoices)
-		newPerm := perm.slice(0, a)
-		newPerm = newPerm.merge(perm.slice(c, d))
-		newPerm = newPerm.merge(perm.slice(b, c))
-		newPerm = newPerm.merge(perm.slice(a, b))
-		newPerm = newPerm.merge(perm.slice(d, math.MaxInt))
-		v.d.Song.Score.Tracks, ok = newPerm.tracks(v.d.Song.Score.Tracks)
+		order := generateSwapOrder(v.d.Song.Patch, i, j)
+		v.d.Song.Score.Tracks, ok = sointu.Slice(v.d.Song.Score.Tracks, order[:]...)
 		if !ok { // the permutation would cause a track to split in two, so we cancel the operation
-			(*Model)(v).Alerts().AddNamed("SwapInstrument", "Cannot swap instrument due to Instrument-Track linking; disable it to do this", Error)
+			(*Model)(v).Alerts().AddNamed("SwapInstrument", "Swapping prevented by Instrument-Track linking", Warning)
 			return false
 		}
 	}
-	patch[i], patch[j] = patch[j], patch[i]
+	v.d.Song.Patch[i], v.d.Song.Patch[j] = v.d.Song.Patch[j], v.d.Song.Patch[i]
 	return true
 }
 
@@ -257,14 +242,11 @@ func (v *Instruments) delete(i int) (ok bool) {
 		return false
 	}
 	if v.linkInstrTrack {
-		perm := makeTrackPerm(v.d.Song.Score.Tracks)
-		a := v.d.Song.Patch.FirstVoiceForInstrument(i)
-		b := a + v.d.Song.Patch[i].NumVoices
-		newPerm := perm.slice(0, a)
-		newPerm = newPerm.merge(perm.slice(b, math.MaxInt))
-		v.d.Song.Score.Tracks, ok = newPerm.tracks(v.d.Song.Score.Tracks)
-		if !ok { // the permutation would cause a track to split in two, so we cancel the operation
-			(*Model)(v).Alerts().AddNamed("DeleteInstrument", "Cannot delete instrument due to Instrument-Track linking; disable it to do this", Error)
+		r := sointu.IndexRange(v.d.Song.Patch, i)
+		order := [...]sointu.Range{{Start: 0, End: r.Start}, {Start: r.End, End: math.MaxInt}}
+		v.d.Song.Score.Tracks, ok = sointu.Slice(v.d.Song.Score.Tracks, order[:]...)
+		if !ok {
+			(*Model)(v).Alerts().AddNamed("DeleteInstrument", "Deleting prevented by Instrument-Track linking", Warning)
 			return false
 		}
 	}
@@ -273,10 +255,7 @@ func (v *Instruments) delete(i int) (ok bool) {
 }
 
 func (v *Instruments) change(n string, severity ChangeSeverity) func() {
-	if v.linkInstrTrack {
-		return (*Model)(v).change("InstrumentListView."+n, SongChange, severity)
-	}
-	return (*Model)(v).change("InstrumentListView."+n, PatchChange, severity)
+	return (*Model)(v).change("InstrumentListView."+n, SongChange, severity)
 }
 
 func (v *Instruments) cancel() {
@@ -291,8 +270,17 @@ func (v *Instruments) marshal(from, to int) ([]byte, error) {
 	if from < 0 || to >= len(v.d.Song.Patch) || from > to {
 		return nil, fmt.Errorf("InstrumentListView.marshal: index out of range: %d, %d", from, to)
 	}
-	// TODO: include also track info in the marshaled data
-	ret, err := yaml.Marshal(struct{ Patch sointu.Patch }{v.d.Song.Patch[from : to+1]})
+	rFrom := sointu.IndexRange(v.d.Song.Patch, from)
+	rTo := sointu.IndexRange(v.d.Song.Patch, to)
+	r := sointu.Range{Start: rFrom.Start, End: rTo.End}
+	tracks, ok := sointu.Slice(v.d.Song.Score.Tracks, r)
+	if !ok {
+		return nil, fmt.Errorf("InstrumentListView.marshal: tracks slice failed: %v", r)
+	}
+	ret, err := yaml.Marshal(struct {
+		Patch  sointu.Patch
+		Tracks []sointu.Track
+	}{v.d.Song.Patch[from : to+1], tracks})
 	if err != nil {
 		return nil, fmt.Errorf("InstrumentListView.marshal: %v", err)
 	}
@@ -509,14 +497,33 @@ func (v *Tracks) SetSelected2(value int) {
 	v.d.Cursor2.Track = intMax(intMin(value, v.Count()-1), 0)
 }
 
-func (v *Tracks) swap(i, j int) (ok bool) {
-	m := (*Model)(v)
+func (m *Tracks) swap(i, j int) (ok bool) {
 	if i < 0 || j < 0 || i >= len(m.d.Song.Score.Tracks) || j >= len(m.d.Song.Score.Tracks) || i == j {
 		return false
 	}
-	tracks := m.d.Song.Score.Tracks
-	tracks[i], tracks[j] = tracks[j], tracks[i]
+	if m.linkInstrTrack {
+		order := generateSwapOrder(m.d.Song.Score.Tracks, i, j)
+		m.d.Song.Patch, ok = sointu.Slice(m.d.Song.Patch, order[:]...)
+		if !ok { // the permutation would cause a track to split in two, so we cancel the operation
+			(*Model)(m).Alerts().AddNamed("SwapTracks", "Cannot swap tracks due to Instrument-Track linking; disable it to do this", Error)
+			return false
+		}
+	}
+	m.d.Song.Score.Tracks[i], m.d.Song.Score.Tracks[j] = m.d.Song.Score.Tracks[j], m.d.Song.Score.Tracks[i]
 	return true
+}
+
+func generateSwapOrder[T any, S ~[]T, P sointu.CounterPointer[T]](slice S, i int, j int) [5]sointu.Range {
+	i, j = min(i, j), max(i, j)
+	ri := sointu.IndexRange[T, S, P](slice, i)
+	rj := sointu.IndexRange[T, S, P](slice, j)
+	return [...]sointu.Range{
+		{Start: 0, End: ri.Start},
+		{Start: rj.Start, End: rj.End},
+		{Start: ri.End, End: rj.Start},
+		{Start: ri.Start, End: ri.End},
+		{Start: rj.End, End: math.MaxInt},
+	}
 }
 
 func (v *Tracks) delete(i int) (ok bool) {
@@ -524,12 +531,21 @@ func (v *Tracks) delete(i int) (ok bool) {
 	if i < 0 || i >= len(m.d.Song.Score.Tracks) {
 		return false
 	}
+	if v.linkInstrTrack {
+		r := sointu.IndexRange(v.d.Song.Score.Tracks, i)
+		order := [...]sointu.Range{{Start: 0, End: r.Start}, {Start: r.End, End: math.MaxInt}}
+		v.d.Song.Patch, ok = sointu.Slice(v.d.Song.Patch, order[:]...)
+		if !ok {
+			(*Model)(v).Alerts().AddNamed("DeleteTrack", "Deleting prevented by Instrument-Track linking", Warning)
+			return false
+		}
+	}
 	m.d.Song.Score.Tracks = append(m.d.Song.Score.Tracks[:i], m.d.Song.Score.Tracks[i+1:]...)
 	return true
 }
 
 func (v *Tracks) change(n string, severity ChangeSeverity) func() {
-	return (*Model)(v).change("TrackList."+n, ScoreChange, severity)
+	return (*Model)(v).change("TrackList."+n, SongChange, severity)
 }
 
 func (v *Tracks) cancel() {

@@ -2,6 +2,7 @@ package sointu
 
 import (
 	"errors"
+	"math"
 )
 
 type (
@@ -74,6 +75,23 @@ type (
 	SongPos struct {
 		OrderRow   int
 		PatternRow int
+	}
+
+	// Range is used to represent a range [Start,End) of integers
+	Range struct {
+		Start, End int
+	}
+
+	// Counter is used for slice elements with count, in particular for tracks
+	// and instruments with NumVoices as the count
+	Counter interface {
+		Count() int
+		SetCount(count int)
+	}
+
+	CounterPointer[M any] interface {
+		*M
+		Counter
 	}
 )
 
@@ -270,11 +288,7 @@ func (l Score) Copy() Score {
 // NumVoices returns the total number of voices used in the Score; summing the
 // voices of every track
 func (l Score) NumVoices() int {
-	ret := 0
-	for _, t := range l.Tracks {
-		ret += t.NumVoices
-	}
-	return ret
+	return TotalCount(l.Tracks)
 }
 
 // FirstVoiceForTrack returns the index of the first voice of given track. For
@@ -283,11 +297,7 @@ func (l Score) NumVoices() int {
 // returns 1 and FirstVoiceForTrack(2) returns 4. Essentially computes just the
 // cumulative sum.
 func (l Score) FirstVoiceForTrack(track int) int {
-	ret := 0
-	for _, t := range l.Tracks[:track] {
-		ret += t.NumVoices
-	}
-	return ret
+	return TotalCount(l.Tracks[:track])
 }
 
 // LengthInRows returns just RowsPerPattern * Length, as the length is the
@@ -324,4 +334,68 @@ func (s *Song) Validate() error {
 		return errors.New("Tracks use too many voices")
 	}
 	return nil
+}
+
+// Counter interface implementations
+
+func (t *Track) Count() int {
+	return t.NumVoices
+}
+
+func (t *Track) SetCount(c int) {
+	t.NumVoices = c
+}
+
+func TotalCount[T any, S ~[]T, P CounterPointer[T]](slice S) (ret int) {
+	for _, e := range slice {
+		ret += (P)(&e).Count()
+	}
+	return
+}
+
+func IndexRange[T any, S ~[]T, P CounterPointer[T]](slice S, index int) (ret Range) {
+	for _, e := range slice[:index] {
+		ret.Start += (P)(&e).Count()
+	}
+	ret.End = ret.Start + (P)(&slice[index]).Count()
+	return
+}
+
+func Slice[T any, S ~[]T, P CounterPointer[T]](slice S, ranges ...Range) (ret S, ok bool) {
+	ret = make(S, 0, len(slice))
+	last := -1
+	used := make([]bool, len(slice))
+outer:
+	for _, r := range ranges {
+		left := 0
+		for i, elem := range slice {
+			right := left + (P)(&slice[i]).Count()
+			if left >= r.End {
+				continue outer
+			}
+			if right <= r.Start {
+				left = right
+				continue
+			}
+			overlap := min(right, r.End) - max(left, r.Start)
+			if last == i {
+				(P)(&ret[len(ret)-1]).SetCount(
+					(P)(&ret[len(ret)-1]).Count() + overlap)
+			} else {
+				if last == math.MaxInt || used[i] {
+					return nil, false
+				}
+				ret = append(ret, elem)
+				(P)(&ret[len(ret)-1]).SetCount(overlap)
+				used[i] = true
+			}
+			last = i
+			left = right
+		}
+		if left >= r.End {
+			continue outer
+		}
+		last = math.MaxInt // the list is closed, adding more elements causes it to fail
+	}
+	return ret, true
 }

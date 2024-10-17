@@ -80,26 +80,27 @@ func (m *Model) AddInstrument() Action {
 			} else {
 				defer (*Model)(m).change("AddInstrumentAction", PatchChange, MajorChange)()
 			}
+			var a int
 			if len(m.d.Song.Patch) == 0 { // no instruments, add one
 				m.d.InstrIndex = 0
+			} else {
+				a = m.d.Song.Patch.FirstVoiceForInstrument(m.d.InstrIndex)
 			}
-			m.d.Song.Patch = append(m.d.Song.Patch, sointu.Instrument{})
-			copy(m.d.Song.Patch[m.d.InstrIndex+1:], m.d.Song.Patch[m.d.InstrIndex:])
+			var ok bool
+			order := [...]sointu.Range{{Start: 1, End: a + 1}, {Start: 0, End: 1}, {Start: a + 1, End: math.MaxInt}}
 			newInstr := defaultInstrument.Copy()
 			(*Model)(m).assignUnitIDs(newInstr.Units)
-			m.d.Song.Patch[m.d.InstrIndex] = newInstr
+			m.d.Song.Patch, ok = sointu.Slice(append(sointu.Patch{newInstr}, m.d.Song.Patch...), order[:]...)
+			if !ok {
+				(*Model)(m).Alerts().AddNamed("AddInstrument", "Cannot add instrument due to Instrument-Track linking; disable it to do this", Error)
+				m.changeCancel = true
+				return
+			}
 			m.d.InstrIndex2 = m.d.InstrIndex
 			m.d.UnitIndex = 0
 			m.d.ParamIndex = 0
 			if m.linkInstrTrack {
-				tracks := append([]sointu.Track{{NumVoices: 1}}, m.d.Song.Score.Tracks...)
-				perm := makeTrackPerm(tracks)
-				a := m.d.Song.Patch.FirstVoiceForInstrument(m.d.InstrIndex)
-				newPerm := perm.slice(1, a+1)
-				newPerm = newPerm.merge(perm.slice(0, 1))
-				newPerm = newPerm.merge(perm.slice(a+1, math.MaxInt))
-				var ok bool
-				m.d.Song.Score.Tracks, ok = newPerm.tracks(tracks)
+				m.d.Song.Score.Tracks, ok = sointu.Slice(append([]sointu.Track{{NumVoices: 1}}, m.d.Song.Score.Tracks...), order[:]...)
 				if !ok { // the permutation would cause a track to split in two, so we cancel the operation
 					(*Model)(m).Alerts().AddNamed("AddInstrument", "Cannot add instrument due to Instrument-Track linking; disable it to do this", Error)
 					m.changeCancel = true

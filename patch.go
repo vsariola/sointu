@@ -365,14 +365,19 @@ func (p Patch) Copy() Patch {
 	return instruments
 }
 
+// Implement the counter interface
+func (i *Instrument) Count() int {
+	return i.NumVoices
+}
+
+func (i *Instrument) SetCount(count int) {
+	i.NumVoices = count
+}
+
 // NumVoices returns the total number of voices used in the patch; summing the
 // voices of every instrument
 func (p Patch) NumVoices() int {
-	ret := 0
-	for _, i := range p {
-		ret += i.NumVoices
-	}
-	return ret
+	return TotalCount(p)
 }
 
 // NumDelayLines return the total number of delay lines used in the patch;
@@ -409,11 +414,7 @@ func (p Patch) NumSyncs() int {
 // FirstVoiceForInstrument(1) returns 1 and FirstVoiceForInstrument(2) returns
 // 4. Essentially computes just the cumulative sum.
 func (p Patch) FirstVoiceForInstrument(instrIndex int) int {
-	ret := 0
-	for _, t := range p[:instrIndex] {
-		ret += t.NumVoices
-	}
-	return ret
+	return TotalCount(p[:instrIndex])
 }
 
 // InstrumentForVoice returns the instrument number for the given voice index.
