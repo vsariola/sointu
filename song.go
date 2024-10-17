@@ -82,16 +82,16 @@ type (
 		Start, End int
 	}
 
-	// Counter is used for slice elements with count, in particular for tracks
+	// NumVoicer is used for slice elements with count, in particular for tracks
 	// and instruments with NumVoices as the count
-	Counter interface {
-		Count() int
-		SetCount(count int)
+	NumVoicer interface {
+		GetNumVoices() int
+		SetNumVoices(count int)
 	}
 
-	CounterPointer[M any] interface {
+	NumVoicerPointer[M any] interface {
 		*M
-		Counter
+		NumVoicer
 	}
 )
 
@@ -112,34 +112,6 @@ func (s *Score) Wrap(songPos SongPos) SongPos {
 	ret := s.SongPos(s.SongRow(songPos))
 	ret.OrderRow = (ret.OrderRow%s.Length + s.Length) % s.Length
 	return ret
-}
-
-// TrackVoiceRange finds the tracks that belong to the given voice range
-// [voiceInd:voiceInd+voiceLen]. Score.Tracks[trackInd:trackInd+trackLen] are
-// the tracks in the range. substart is the number of voices that should be
-// subtracted from Score.Tracks[trackInd] and subEnd is the number of voices
-// that should be subtracted from Score.Tracks[trackInd+trackLen-1].
-func (s *Score) TrackVoiceRange(voiceInd, voiceLen int) (trackInd, subStart, trackLen, subEnd int) {
-	left := 0
-	for _, t := range s.Tracks {
-		right := left + t.NumVoices
-		if voiceInd < right {
-			subStart = voiceInd - left
-			break
-		}
-		trackInd += 1
-		left = right
-	}
-	for _, t := range s.Tracks[trackInd:] {
-		right := left + t.NumVoices
-		if voiceEnd := voiceInd + voiceLen; right >= voiceEnd {
-			subEnd = right - voiceEnd
-			return
-		}
-		trackLen += 1
-		left = right
-	}
-	return
 }
 
 func (s *Score) Clamp(songPos SongPos) SongPos {
@@ -288,7 +260,7 @@ func (l Score) Copy() Score {
 // NumVoices returns the total number of voices used in the Score; summing the
 // voices of every track
 func (l Score) NumVoices() int {
-	return TotalCount(l.Tracks)
+	return TotalVoices(l.Tracks)
 }
 
 // FirstVoiceForTrack returns the index of the first voice of given track. For
@@ -297,7 +269,7 @@ func (l Score) NumVoices() int {
 // returns 1 and FirstVoiceForTrack(2) returns 4. Essentially computes just the
 // cumulative sum.
 func (l Score) FirstVoiceForTrack(track int) int {
-	return TotalCount(l.Tracks[:track])
+	return TotalVoices(l.Tracks[:track])
 }
 
 // LengthInRows returns just RowsPerPattern * Length, as the length is the
@@ -336,32 +308,32 @@ func (s *Song) Validate() error {
 	return nil
 }
 
-// Counter interface implementations
+// Counter manipulations
 
-func (t *Track) Count() int {
+func (t *Track) GetNumVoices() int {
 	return t.NumVoices
 }
 
-func (t *Track) SetCount(c int) {
+func (t *Track) SetNumVoices(c int) {
 	t.NumVoices = c
 }
 
-func TotalCount[T any, S ~[]T, P CounterPointer[T]](slice S) (ret int) {
+func TotalVoices[T any, S ~[]T, P NumVoicerPointer[T]](slice S) (ret int) {
 	for _, e := range slice {
-		ret += (P)(&e).Count()
+		ret += (P)(&e).GetNumVoices()
 	}
 	return
 }
 
-func IndexRange[T any, S ~[]T, P CounterPointer[T]](slice S, index int) (ret Range) {
+func VoiceRange[T any, S ~[]T, P NumVoicerPointer[T]](slice S, index int) (ret Range) {
 	for _, e := range slice[:index] {
-		ret.Start += (P)(&e).Count()
+		ret.Start += (P)(&e).GetNumVoices()
 	}
-	ret.End = ret.Start + (P)(&slice[index]).Count()
+	ret.End = ret.Start + (P)(&slice[index]).GetNumVoices()
 	return
 }
 
-func Slice[T any, S ~[]T, P CounterPointer[T]](slice S, ranges ...Range) (ret S, ok bool) {
+func VoiceSlice[T any, S ~[]T, P NumVoicerPointer[T]](slice S, ranges ...Range) (ret S, ok bool) {
 	ret = make(S, 0, len(slice))
 	last := -1
 	used := make([]bool, len(slice))
@@ -369,7 +341,7 @@ outer:
 	for _, r := range ranges {
 		left := 0
 		for i, elem := range slice {
-			right := left + (P)(&slice[i]).Count()
+			right := left + (P)(&slice[i]).GetNumVoices()
 			if left >= r.End {
 				continue outer
 			}
@@ -379,14 +351,14 @@ outer:
 			}
 			overlap := min(right, r.End) - max(left, r.Start)
 			if last == i {
-				(P)(&ret[len(ret)-1]).SetCount(
-					(P)(&ret[len(ret)-1]).Count() + overlap)
+				(P)(&ret[len(ret)-1]).SetNumVoices(
+					(P)(&ret[len(ret)-1]).GetNumVoices() + overlap)
 			} else {
 				if last == math.MaxInt || used[i] {
 					return nil, false
 				}
 				ret = append(ret, elem)
-				(P)(&ret[len(ret)-1]).SetCount(overlap)
+				(P)(&ret[len(ret)-1]).SetNumVoices(overlap)
 				used[i] = true
 			}
 			last = i
@@ -398,4 +370,23 @@ outer:
 		last = math.MaxInt // the list is closed, adding more elements causes it to fail
 	}
 	return ret, true
+}
+
+func VoiceAdd[T any, S ~[]T, P NumVoicerPointer[T]](orig S, index int, added S) (ret S, from, to int) {
+	ret = make(S, 0, len(orig)+len(added))
+	left := 0
+	for i, elem := range orig {
+		right := left + (P)(&orig[i]).GetNumVoices()
+		if left == index {
+			from, to = len(ret), len(ret)+len(added)-1
+			ret = append(ret, added...)
+		}
+		if left < index && index < right {
+			(P)(&elem).SetNumVoices((P)(&orig[i]).GetNumVoices() + TotalVoices[T, S, P](added))
+			from, to = len(ret), len(ret)
+		}
+		ret = append(ret, elem)
+		left = right
+	}
+	return
 }

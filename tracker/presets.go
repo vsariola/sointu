@@ -91,6 +91,10 @@ var defaultInstrument = sointu.Instrument{
 	},
 }
 
+var defaultTrack = sointu.Track{
+	NumVoices: 1,
+}
+
 var defaultSong = sointu.Song{
 	BPM:         100,
 	RowsPerBeat: 4,

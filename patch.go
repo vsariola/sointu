@@ -356,6 +356,15 @@ func (instr *Instrument) Copy() Instrument {
 	return Instrument{Name: instr.Name, Comment: instr.Comment, NumVoices: instr.NumVoices, Units: units, Mute: instr.Mute}
 }
 
+// Implement the counter interface
+func (i *Instrument) GetNumVoices() int {
+	return i.NumVoices
+}
+
+func (i *Instrument) SetNumVoices(count int) {
+	i.NumVoices = count
+}
+
 // Copy makes a deep copy of a Patch.
 func (p Patch) Copy() Patch {
 	instruments := make([]Instrument, len(p))
@@ -365,19 +374,10 @@ func (p Patch) Copy() Patch {
 	return instruments
 }
 
-// Implement the counter interface
-func (i *Instrument) Count() int {
-	return i.NumVoices
-}
-
-func (i *Instrument) SetCount(count int) {
-	i.NumVoices = count
-}
-
 // NumVoices returns the total number of voices used in the patch; summing the
 // voices of every instrument
 func (p Patch) NumVoices() int {
-	return TotalCount(p)
+	return TotalVoices(p)
 }
 
 // NumDelayLines return the total number of delay lines used in the patch;
@@ -414,7 +414,10 @@ func (p Patch) NumSyncs() int {
 // FirstVoiceForInstrument(1) returns 1 and FirstVoiceForInstrument(2) returns
 // 4. Essentially computes just the cumulative sum.
 func (p Patch) FirstVoiceForInstrument(instrIndex int) int {
-	return TotalCount(p[:instrIndex])
+	if instrIndex < 0 {
+		return 0
+	}
+	return TotalVoices(p[:instrIndex])
 }
 
 // InstrumentForVoice returns the instrument number for the given voice index.
@@ -451,4 +454,42 @@ func (p Patch) FindUnit(id int) (instrIndex int, unitIndex int, err error) {
 		}
 	}
 	return 0, 0, fmt.Errorf("could not find a unit with id %v", id)
+}
+
+func (p Patch) AvoidUnitIDs(other Patch) {
+	maxId := 0
+	usedIds := make(map[int]bool)
+	for _, instr := range other {
+		for _, unit := range instr.Units {
+			usedIds[unit.ID] = true
+			if maxId < unit.ID {
+				maxId = unit.ID
+			}
+		}
+	}
+	rewrites := map[int]int{}
+	for _, instr := range p {
+		for i := range instr.Units {
+			if id := instr.Units[i].ID; id == 0 || usedIds[id] {
+				maxId++
+				if id > 0 {
+					rewrites[id] = maxId
+				}
+				instr.Units[i].ID = maxId
+			}
+			usedIds[instr.Units[i].ID] = true
+			if maxId < instr.Units[i].ID {
+				maxId = instr.Units[i].ID
+			}
+		}
+	}
+	for _, instr := range p {
+		for i, u := range instr.Units {
+			if target, ok := u.Parameters["target"]; u.Type == "send" && ok {
+				if newId, ok := rewrites[target]; ok {
+					instr.Units[i].Parameters["target"] = newId
+				}
+			}
+		}
+	}
 }

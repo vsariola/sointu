@@ -45,21 +45,17 @@ func (m *Model) AddTrack() Action {
 	return Action{
 		allowed: func() bool { return m.d.Song.Score.NumVoices() < vm.MAX_VOICES },
 		do: func() {
-			defer (*Model)(m).change("AddTrackAction", ScoreChange, MajorChange)()
-			if len(m.d.Song.Score.Tracks) == 0 { // no instruments, add one
-				m.d.Cursor.Track = 0
-			} else {
-				m.d.Cursor.Track++
+			defer (*Model)(m).change("AddTrackAction", SongChange, MajorChange)()
+			voiceIndex := m.d.Song.Score.FirstVoiceForTrack(m.d.Cursor.Track)
+			if m.linkInstrTrack {
+				_, _, err := (*Model)(m).addPatchAtVoice(sointu.Patch{defaultInstrument.Copy()}, voiceIndex)
+				if err != nil {
+					(*Model)(m).Alerts().AddNamed("AddTrack", err.Error(), Error)
+					m.changeCancel = true
+					return
+				}
 			}
-			m.d.Cursor.Track = intMax(intMin(m.d.Cursor.Track, len(m.d.Song.Score.Tracks)), 0)
-			newTracks := make([]sointu.Track, len(m.d.Song.Score.Tracks)+1)
-			copy(newTracks, m.d.Song.Score.Tracks[:m.d.Cursor.Track])
-			copy(newTracks[m.d.Cursor.Track+1:], m.d.Song.Score.Tracks[m.d.Cursor.Track:])
-			newTracks[m.d.Cursor.Track] = sointu.Track{
-				NumVoices: 1,
-				Patterns:  []sointu.Pattern{},
-			}
-			m.d.Song.Score.Tracks = newTracks
+			m.d.Cursor.Track, _, _ = (*Model)(m).addTracksAtVoice([]sointu.Track{{NumVoices: 1, Patterns: []sointu.Pattern{}}}, voiceIndex)
 		},
 	}
 }
@@ -90,7 +86,7 @@ func (m *Model) AddInstrument() Action {
 			order := [...]sointu.Range{{Start: 1, End: a + 1}, {Start: 0, End: 1}, {Start: a + 1, End: math.MaxInt}}
 			newInstr := defaultInstrument.Copy()
 			(*Model)(m).assignUnitIDs(newInstr.Units)
-			m.d.Song.Patch, ok = sointu.Slice(append(sointu.Patch{newInstr}, m.d.Song.Patch...), order[:]...)
+			m.d.Song.Patch, ok = sointu.VoiceSlice(append(sointu.Patch{newInstr}, m.d.Song.Patch...), order[:]...)
 			if !ok {
 				(*Model)(m).Alerts().AddNamed("AddInstrument", "Cannot add instrument due to Instrument-Track linking; disable it to do this", Error)
 				m.changeCancel = true
@@ -100,7 +96,7 @@ func (m *Model) AddInstrument() Action {
 			m.d.UnitIndex = 0
 			m.d.ParamIndex = 0
 			if m.linkInstrTrack {
-				m.d.Song.Score.Tracks, ok = sointu.Slice(append([]sointu.Track{{NumVoices: 1}}, m.d.Song.Score.Tracks...), order[:]...)
+				m.d.Song.Score.Tracks, ok = sointu.VoiceSlice(append([]sointu.Track{{NumVoices: 1}}, m.d.Song.Score.Tracks...), order[:]...)
 				if !ok { // the permutation would cause a track to split in two, so we cancel the operation
 					(*Model)(m).Alerts().AddNamed("AddInstrument", "Cannot add instrument due to Instrument-Track linking; disable it to do this", Error)
 					m.changeCancel = true
