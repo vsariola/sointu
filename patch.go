@@ -417,6 +417,9 @@ func (p Patch) FirstVoiceForInstrument(instrIndex int) int {
 	if instrIndex < 0 {
 		return 0
 	}
+	if instrIndex > len(p) {
+		instrIndex = len(p)
+	}
 	return TotalVoices(p[:instrIndex])
 }
 

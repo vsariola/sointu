@@ -269,6 +269,12 @@ func (l Score) NumVoices() int {
 // returns 1 and FirstVoiceForTrack(2) returns 4. Essentially computes just the
 // cumulative sum.
 func (l Score) FirstVoiceForTrack(track int) int {
+	if track < 0 {
+		return 0
+	}
+	if track > len(l.Tracks) {
+		track = len(l.Tracks)
+	}
 	return TotalVoices(l.Tracks[:track])
 }
 
