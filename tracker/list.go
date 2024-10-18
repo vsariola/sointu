@@ -157,8 +157,8 @@ func (v List) PasteElements(data []byte) (ok bool) {
 }
 
 func (v *List) listRange() (lower, higher int) {
-	lower = intMin(v.Selected(), v.Selected2())
-	higher = intMax(v.Selected(), v.Selected2())
+	lower = min(v.Selected(), v.Selected2())
+	higher = max(v.Selected(), v.Selected2())
 	return
 }
 
@@ -200,15 +200,15 @@ func (v *Instruments) FirstID(i int) (id int, ok bool) {
 }
 
 func (v *Instruments) Selected() int {
-	return intMax(intMin(v.d.InstrIndex, v.Count()-1), 0)
+	return max(min(v.d.InstrIndex, v.Count()-1), 0)
 }
 
 func (v *Instruments) Selected2() int {
-	return intMax(intMin(v.d.InstrIndex2, v.Count()-1), 0)
+	return max(min(v.d.InstrIndex2, v.Count()-1), 0)
 }
 
 func (v *Instruments) SetSelected(value int) {
-	v.d.InstrIndex = intMax(intMin(value, v.Count()-1), 0)
+	v.d.InstrIndex = max(min(value, v.Count()-1), 0)
 	v.d.UnitIndex = 0
 	v.d.UnitIndex2 = 0
 	v.d.UnitSearching = false
@@ -216,7 +216,7 @@ func (v *Instruments) SetSelected(value int) {
 }
 
 func (v *Instruments) SetSelected2(value int) {
-	v.d.InstrIndex2 = intMax(intMin(value, v.Count()-1), 0)
+	v.d.InstrIndex2 = max(min(value, v.Count()-1), 0)
 }
 
 func (v *Instruments) swap(i, j int) (ok bool) {
@@ -346,23 +346,23 @@ func (v *Units) Iterate(yield UnitYieldFunc) {
 }
 
 func (v *Units) Selected() int {
-	return intMax(intMin(v.d.UnitIndex, v.Count()-1), 0)
+	return max(min(v.d.UnitIndex, v.Count()-1), 0)
 }
 
 func (v *Units) Selected2() int {
-	return intMax(intMin(v.d.UnitIndex2, v.Count()-1), 0)
+	return max(min(v.d.UnitIndex2, v.Count()-1), 0)
 }
 
 func (v *Units) SetSelected(value int) {
 	m := (*Model)(v)
-	m.d.UnitIndex = intMax(intMin(value, v.Count()-1), 0)
+	m.d.UnitIndex = max(min(value, v.Count()-1), 0)
 	m.d.ParamIndex = 0
 	m.d.UnitSearching = false
 	m.d.UnitSearchString = ""
 }
 
 func (v *Units) SetSelected2(value int) {
-	(*Model)(v).d.UnitIndex2 = intMax(intMin(value, v.Count()-1), 0)
+	(*Model)(v).d.UnitIndex2 = max(min(value, v.Count()-1), 0)
 }
 
 func (v *Units) Count() int {
@@ -453,19 +453,19 @@ func (v *Tracks) List() List {
 }
 
 func (v *Tracks) Selected() int {
-	return intMax(intMin(v.d.Cursor.Track, v.Count()-1), 0)
+	return max(min(v.d.Cursor.Track, v.Count()-1), 0)
 }
 
 func (v *Tracks) Selected2() int {
-	return intMax(intMin(v.d.Cursor2.Track, v.Count()-1), 0)
+	return max(min(v.d.Cursor2.Track, v.Count()-1), 0)
 }
 
 func (v *Tracks) SetSelected(value int) {
-	v.d.Cursor.Track = intMax(intMin(value, v.Count()-1), 0)
+	v.d.Cursor.Track = max(min(value, v.Count()-1), 0)
 }
 
 func (v *Tracks) SetSelected2(value int) {
-	v.d.Cursor2.Track = intMax(intMin(value, v.Count()-1), 0)
+	v.d.Cursor2.Track = max(min(value, v.Count()-1), 0)
 }
 
 func (v *Tracks) swap(i, j int) (ok bool) {
@@ -540,18 +540,18 @@ func (v *OrderRows) List() List {
 
 func (v *OrderRows) Selected() int {
 	p := v.d.Cursor.OrderRow
-	p = intMax(intMin(p, v.Count()-1), 0)
+	p = max(min(p, v.Count()-1), 0)
 	return p
 }
 
 func (v *OrderRows) Selected2() int {
 	p := v.d.Cursor2.OrderRow
-	p = intMax(intMin(p, v.Count()-1), 0)
+	p = max(min(p, v.Count()-1), 0)
 	return p
 }
 
 func (v *OrderRows) SetSelected(value int) {
-	y := intMax(intMin(value, v.Count()-1), 0)
+	y := max(min(value, v.Count()-1), 0)
 	if y != v.d.Cursor.OrderRow {
 		v.follow = false
 	}
@@ -559,7 +559,7 @@ func (v *OrderRows) SetSelected(value int) {
 }
 
 func (v *OrderRows) SetSelected2(value int) {
-	v.d.Cursor2.OrderRow = intMax(intMin(value, v.Count()-1), 0)
+	v.d.Cursor2.OrderRow = max(min(value, v.Count()-1), 0)
 }
 
 func (v *OrderRows) swap(x, y int) (ok bool) {
@@ -758,15 +758,15 @@ func (l *SearchResults) Iterate(yield UnitSearchYieldFunc) {
 }
 
 func (l *SearchResults) Selected() int {
-	return intMax(intMin(l.d.UnitSearchIndex, l.Count()-1), 0)
+	return max(min(l.d.UnitSearchIndex, l.Count()-1), 0)
 }
 
 func (l *SearchResults) Selected2() int {
-	return intMax(intMin(l.d.UnitSearchIndex, l.Count()-1), 0)
+	return max(min(l.d.UnitSearchIndex, l.Count()-1), 0)
 }
 
 func (l *SearchResults) SetSelected(value int) {
-	l.d.UnitSearchIndex = intMax(intMin(value, l.Count()-1), 0)
+	l.d.UnitSearchIndex = max(min(value, l.Count()-1), 0)
 }
 
 func (l *SearchResults) SetSelected2(value int) {

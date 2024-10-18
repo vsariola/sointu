@@ -50,7 +50,7 @@ func (m *Model) AddTrack() Action {
 			} else {
 				m.d.Cursor.Track++
 			}
-			m.d.Cursor.Track = intMax(intMin(m.d.Cursor.Track, len(m.d.Song.Score.Tracks)), 0)
+			m.d.Cursor.Track = max(min(m.d.Cursor.Track, len(m.d.Song.Score.Tracks)), 0)
 			newTracks := make([]sointu.Track, len(m.d.Song.Score.Tracks)+1)
 			copy(newTracks, m.d.Song.Score.Tracks[:m.d.Cursor.Track])
 			copy(newTracks[m.d.Cursor.Track+1:], m.d.Song.Score.Tracks[m.d.Cursor.Track:])
@@ -112,7 +112,7 @@ func (m *Model) AddUnit(before bool) Action {
 				m.d.UnitIndex++
 			}
 		}
-		m.d.InstrIndex = intMax(intMin(m.d.InstrIndex, len(m.d.Song.Patch)-1), 0)
+		m.d.InstrIndex = max(min(m.d.InstrIndex, len(m.d.Song.Patch)-1), 0)
 		instr := m.d.Song.Patch[m.d.InstrIndex]
 		newUnits := make([]sointu.Unit, len(instr.Units)+1)
 		m.d.UnitIndex = clamp(m.d.UnitIndex, 0, len(newUnits)-1)
@@ -141,7 +141,7 @@ func (m *Model) ClearUnit() Action {
 	return Action{
 		do: func() {
 			defer (*Model)(m).change("DeleteUnitAction", PatchChange, MajorChange)()
-			m.d.UnitIndex = intMax(intMin(m.d.UnitIndex, len(m.d.Song.Patch[m.d.InstrIndex].Units)-1), 0)
+			m.d.UnitIndex = max(min(m.d.UnitIndex, len(m.d.Song.Patch[m.d.InstrIndex].Units)-1), 0)
 			m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex] = sointu.Unit{}
 			m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].ID = m.maxID() + 1
 		},

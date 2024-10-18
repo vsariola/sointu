@@ -56,7 +56,7 @@ func (v Int) Set(value int) (ok bool) {
 }
 
 func (r intRange) Clamp(value int) int {
-	return intMax(intMin(value, r.Max), r.Min)
+	return max(min(value, r.Max), r.Min)
 }
 
 // Model methods
@@ -138,7 +138,7 @@ func (v *InstrumentVoices) Value() int {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
 		return 1
 	}
-	return intMax(v.d.Song.Patch[v.d.InstrIndex].NumVoices, 1)
+	return max(v.d.Song.Patch[v.d.InstrIndex].NumVoices, 1)
 }
 
 func (v *InstrumentVoices) setValue(value int) {
@@ -167,7 +167,7 @@ func (v *TrackVoices) Value() int {
 	if t < 0 || t >= len(v.d.Song.Score.Tracks) {
 		return 1
 	}
-	return intMax(v.d.Song.Score.Tracks[t].NumVoices, 1)
+	return max(v.d.Song.Score.Tracks[t].NumVoices, 1)
 }
 
 func (v *TrackVoices) setValue(value int) {

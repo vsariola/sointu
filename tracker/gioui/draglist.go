@@ -358,14 +358,14 @@ func between(a, b, c int) bool {
 	return (a <= b && b <= c) || (c <= b && b <= a)
 }
 
-func intMax(a, b int) int {
+func max(a, b int) int {
 	if a > b {
 		return a
 	}
 	return b
 }
 
-func intMin(a, b int) int {
+func min(a, b int) int {
 	if a < b {
 		return a
 	}

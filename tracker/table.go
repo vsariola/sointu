@@ -82,10 +82,10 @@ func (r *Rect) Limit(width, height int) {
 // Table methods
 
 func (v Table) Range() (rect Rect) {
-	rect.TopLeft.X = intMin(v.Cursor().X, v.Cursor2().X)
-	rect.TopLeft.Y = intMin(v.Cursor().Y, v.Cursor2().Y)
-	rect.BottomRight.X = intMax(v.Cursor().X, v.Cursor2().X)
-	rect.BottomRight.Y = intMax(v.Cursor().Y, v.Cursor2().Y)
+	rect.TopLeft.X = min(v.Cursor().X, v.Cursor2().X)
+	rect.TopLeft.Y = min(v.Cursor().Y, v.Cursor2().Y)
+	rect.BottomRight.X = max(v.Cursor().X, v.Cursor2().X)
+	rect.BottomRight.Y = max(v.Cursor().Y, v.Cursor2().Y)
 	return
 }
 
@@ -154,20 +154,20 @@ func (v *Order) Table() Table {
 }
 
 func (m *Order) Cursor() Point {
-	t := intMax(intMin(m.d.Cursor.Track, len(m.d.Song.Score.Tracks)-1), 0)
-	p := intMax(intMin(m.d.Cursor.OrderRow, m.d.Song.Score.Length-1), 0)
+	t := max(min(m.d.Cursor.Track, len(m.d.Song.Score.Tracks)-1), 0)
+	p := max(min(m.d.Cursor.OrderRow, m.d.Song.Score.Length-1), 0)
 	return Point{t, p}
 }
 
 func (m *Order) Cursor2() Point {
-	t := intMax(intMin(m.d.Cursor2.Track, len(m.d.Song.Score.Tracks)-1), 0)
-	p := intMax(intMin(m.d.Cursor2.OrderRow, m.d.Song.Score.Length-1), 0)
+	t := max(min(m.d.Cursor2.Track, len(m.d.Song.Score.Tracks)-1), 0)
+	p := max(min(m.d.Cursor2.OrderRow, m.d.Song.Score.Length-1), 0)
 	return Point{t, p}
 }
 
 func (m *Order) SetCursor(p Point) {
-	m.d.Cursor.Track = intMax(intMin(p.X, len(m.d.Song.Score.Tracks)-1), 0)
-	y := intMax(intMin(p.Y, m.d.Song.Score.Length-1), 0)
+	m.d.Cursor.Track = max(min(p.X, len(m.d.Song.Score.Tracks)-1), 0)
+	y := max(min(p.Y, m.d.Song.Score.Length-1), 0)
 	if y != m.d.Cursor.OrderRow {
 		m.follow = false
 	}
@@ -176,8 +176,8 @@ func (m *Order) SetCursor(p Point) {
 }
 
 func (m *Order) SetCursor2(p Point) {
-	m.d.Cursor2.Track = intMax(intMin(p.X, len(m.d.Song.Score.Tracks)-1), 0)
-	m.d.Cursor2.OrderRow = intMax(intMin(p.Y, m.d.Song.Score.Length-1), 0)
+	m.d.Cursor2.Track = max(min(p.X, len(m.d.Song.Score.Tracks)-1), 0)
+	m.d.Cursor2.OrderRow = max(min(p.Y, m.d.Song.Score.Length-1), 0)
 	m.updateCursorRows()
 }
 
@@ -404,19 +404,19 @@ func (v *Notes) Table() Table {
 }
 
 func (m *Notes) Cursor() Point {
-	t := intMax(intMin(m.d.Cursor.Track, len(m.d.Song.Score.Tracks)-1), 0)
-	p := intMax(intMin(m.d.Song.Score.SongRow(m.d.Cursor.SongPos), m.d.Song.Score.LengthInRows()-1), 0)
+	t := max(min(m.d.Cursor.Track, len(m.d.Song.Score.Tracks)-1), 0)
+	p := max(min(m.d.Song.Score.SongRow(m.d.Cursor.SongPos), m.d.Song.Score.LengthInRows()-1), 0)
 	return Point{t, p}
 }
 
 func (m *Notes) Cursor2() Point {
-	t := intMax(intMin(m.d.Cursor2.Track, len(m.d.Song.Score.Tracks)-1), 0)
-	p := intMax(intMin(m.d.Song.Score.SongRow(m.d.Cursor2.SongPos), m.d.Song.Score.LengthInRows()-1), 0)
+	t := max(min(m.d.Cursor2.Track, len(m.d.Song.Score.Tracks)-1), 0)
+	p := max(min(m.d.Song.Score.SongRow(m.d.Cursor2.SongPos), m.d.Song.Score.LengthInRows()-1), 0)
 	return Point{t, p}
 }
 
 func (v *Notes) SetCursor(p Point) {
-	v.d.Cursor.Track = intMax(intMin(p.X, len(v.d.Song.Score.Tracks)-1), 0)
+	v.d.Cursor.Track = max(min(p.X, len(v.d.Song.Score.Tracks)-1), 0)
 	newPos := v.d.Song.Score.Clamp(sointu.SongPos{PatternRow: p.Y})
 	if newPos != v.d.Cursor.SongPos {
 		v.follow = false
@@ -425,7 +425,7 @@ func (v *Notes) SetCursor(p Point) {
 }
 
 func (v *Notes) SetCursor2(p Point) {
-	v.d.Cursor2.Track = intMax(intMin(p.X, len(v.d.Song.Score.Tracks)-1), 0)
+	v.d.Cursor2.Track = max(min(p.X, len(v.d.Song.Score.Tracks)-1), 0)
 	v.d.Cursor2.SongPos = v.d.Song.Score.Clamp(sointu.SongPos{PatternRow: p.Y})
 }
 

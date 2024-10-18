@@ -213,7 +213,7 @@ func (m *Mute) setValue(val bool) {
 		return
 	}
 	defer (*Model)(m).change("Mute", PatchChange, MinorChange)()
-	a, b := intMin(m.d.InstrIndex, m.d.InstrIndex2), intMax(m.d.InstrIndex, m.d.InstrIndex2)
+	a, b := min(m.d.InstrIndex, m.d.InstrIndex2), max(m.d.InstrIndex, m.d.InstrIndex2)
 	for i := a; i <= b; i++ {
 		if i < 0 || i >= len(m.d.Song.Patch) {
 			continue
@@ -227,7 +227,7 @@ func (m *Mute) Enabled() bool { return m.d.InstrIndex >= 0 && m.d.InstrIndex < l
 
 func (m *Solo) Bool() Bool { return Bool{m} }
 func (m *Solo) Value() bool {
-	a, b := intMin(m.d.InstrIndex, m.d.InstrIndex2), intMax(m.d.InstrIndex, m.d.InstrIndex2)
+	a, b := min(m.d.InstrIndex, m.d.InstrIndex2), max(m.d.InstrIndex, m.d.InstrIndex2)
 	for i := range m.d.Song.Patch {
 		if i < 0 || i >= len(m.d.Song.Patch) {
 			continue
@@ -240,7 +240,7 @@ func (m *Solo) Value() bool {
 }
 func (m *Solo) setValue(val bool) {
 	defer (*Model)(m).change("Solo", PatchChange, MinorChange)()
-	a, b := intMin(m.d.InstrIndex, m.d.InstrIndex2), intMax(m.d.InstrIndex, m.d.InstrIndex2)
+	a, b := min(m.d.InstrIndex, m.d.InstrIndex2), max(m.d.InstrIndex, m.d.InstrIndex2)
 	for i := range m.d.Song.Patch {
 		if i < 0 || i >= len(m.d.Song.Patch) {
 			continue

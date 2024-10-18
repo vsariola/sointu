@@ -254,8 +254,8 @@ func (s *ScrollTable) command(gtx C, e key.Event) {
 	stepX := 1
 	stepY := 1
 	if e.Modifiers.Contain(key.ModAlt) {
-		stepX = intMax(s.ColTitleList.List.Position.Count-3, 8)
-		stepY = intMax(s.RowTitleList.List.Position.Count-3, 8)
+		stepX = max(s.ColTitleList.List.Position.Count-3, 8)
+		stepY = max(s.RowTitleList.List.Position.Count-3, 8)
 	} else if e.Modifiers.Contain(key.ModCtrl) {
 		stepX = 1e6
 		stepY = 1e6
@@ -277,9 +277,9 @@ func (s *ScrollTable) command(gtx C, e key.Event) {
 	case key.NameRightArrow:
 		s.Table.MoveCursor(stepX, 0)
 	case key.NamePageUp:
-		s.Table.MoveCursor(0, -intMax(s.RowTitleList.List.Position.Count-3, 8))
+		s.Table.MoveCursor(0, -max(s.RowTitleList.List.Position.Count-3, 8))
 	case key.NamePageDown:
-		s.Table.MoveCursor(0, intMax(s.RowTitleList.List.Position.Count-3, 8))
+		s.Table.MoveCursor(0, max(s.RowTitleList.List.Position.Count-3, 8))
 	case key.NameHome:
 		s.Table.SetCursorX(0)
 	case key.NameEnd:

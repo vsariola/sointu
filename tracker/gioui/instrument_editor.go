@@ -365,7 +365,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		}
 		units[i] = item
 	}
-	count := intMin(ie.unitDragList.TrackerList.Count(), 256)
+	count := min(ie.unitDragList.TrackerList.Count(), 256)
 
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Max.Y = gtx.Dp(20)
