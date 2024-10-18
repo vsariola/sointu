@@ -126,6 +126,7 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 			key.Filter{Focus: te.scrollTable, Name: "9"},
 			key.Filter{Focus: te.scrollTable, Name: ","},
 			key.Filter{Focus: te.scrollTable, Name: "."},
+			key.Filter{Focus: te.scrollTable, Name: key.NameEnd},
 		)
 		if !ok {
 			break
@@ -379,10 +380,10 @@ func (te *NoteEditor) command(gtx C, t *Tracker, e key.Event) {
 		if nibbleValue, err := strconv.ParseInt(string(e.Name), 16, 8); err == nil {
 			n = t.Model.Notes().Value(te.scrollTable.Table.Cursor())
 			t.Model.Notes().FillNibble(byte(nibbleValue), t.Model.Notes().LowNibble())
-			goto validNote
+			te.finishNoteInsert(t, n, e.Name)
 		}
 	} else {
-		if e.Name == "A" || e.Name == "1" {
+		if e.Name == "A" || e.Name == "1" || e.Name == key.NameEnd {
 			t.Model.Notes().Table().Fill(0)
 			if step := t.Model.Step().Value(); step > 0 {
 				te.scrollTable.Table.MoveCursor(0, step)
@@ -394,20 +395,35 @@ func (te *NoteEditor) command(gtx C, t *Tracker, e key.Event) {
 		if val, ok := noteMap[e.Name]; ok {
 			n = noteAsValue(t.OctaveNumberInput.Int.Value(), val)
 			t.Model.Notes().Table().Fill(int(n))
-			goto validNote
+			te.finishNoteInsert(t, n, e.Name)
 		}
 	}
-	return
-validNote:
+}
+
+func (te *NoteEditor) finishNoteInsert(t *Tracker, note byte, keyName key.Name) {
 	if step := t.Model.Step().Value(); step > 0 {
 		te.scrollTable.Table.MoveCursor(0, step)
 		te.scrollTable.Table.SetCursor2(te.scrollTable.Table.Cursor())
 	}
 	te.scrollTable.EnsureCursorVisible()
-	if _, ok := t.KeyPlaying[e.Name]; !ok {
-		trk := te.scrollTable.Table.Cursor().X
-		t.KeyPlaying[e.Name] = t.TrackNoteOn(trk, n)
+
+	if keyName == "" {
+		return
 	}
+	if _, ok := t.KeyPlaying[keyName]; !ok {
+		trk := te.scrollTable.Table.Cursor().X
+		t.KeyPlaying[keyName] = t.TrackNoteOn(trk, note)
+	}
+}
+
+func (te *NoteEditor) HandleMidiInput(t *Tracker, e tracker.MIDINoteEvent) {
+	inputDeactivated := !t.Model.TrackMidiIn().Value()
+	if inputDeactivated {
+		return
+	}
+	t.Model.Notes().Table().Fill(int(e.Note))
+	te.finishNoteInsert(t, e.Note, "")
+	fmt.Printf("Tracker received NoteID: %d\n", e)
 }
 
 /*
