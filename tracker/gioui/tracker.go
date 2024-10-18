@@ -311,19 +311,16 @@ func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
 /// Event Handling (for UI updates when playing etc.)
 
 func (t *Tracker) ProcessMessage(msg interface{}) {
-	switch m := msg.(type) {
+	switch msg.(type) {
 	case tracker.StartPlayMsg:
 		fmt.Println("Tracker received StartPlayMsg")
 	case tracker.RecordingMsg:
 		fmt.Println("Tracker received RecordingMsg")
-	case tracker.NoteOnMsg:
-		fmt.Printf("Tracker received NoteOn: %d\n", m.Note)
 	default:
 		break
 	}
 }
 
 func (t *Tracker) ProcessEvent(event tracker.MIDINoteEvent) {
-	// TODO @qm210 or @LestahL: Implement
-	fmt.Printf("Tracker received MIDI Event: %s\n", event.String())
+	t.TrackEditor.HandleMidiInput(t, event)
 }
