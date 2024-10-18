@@ -40,6 +40,9 @@ type SongPanel struct {
 
 	// Edit menu items
 	editMenuItems []MenuItem
+
+	// Midi menu items
+	midiMenuItems []MenuItem
 }
 
 func NewSongPanel(model *tracker.Model) *SongPanel {
@@ -90,7 +93,6 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 	ret.followOffHint = makeHint("Follow off", " (%s)", "FollowToggle")
 	ret.loopOffHint = makeHint("Loop off", " (%s)", "LoopToggle")
 	ret.loopOnHint = makeHint("Loop on", " (%s)", "LoopToggle")
-
 	return ret
 }
 

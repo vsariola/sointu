@@ -45,8 +45,8 @@ func main() {
 		recoveryFile = filepath.Join(configDir, "Sointu", "sointu-track-recovery")
 	}
 	midiContext := gomidi.NewContext()
+	defer midiContext.DestroyContext()
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, midiContext, recoveryFile)
-	defer model.MIDI.DestroyContext()
 	model.MIDI.TryOpenDefaultInputDevice(*defaultMidiInput, *firstMidiInput)
 	fmt.Printf("Context created.\n")
 
@@ -58,7 +58,7 @@ func main() {
 		f.Close()
 	}
 	trackerUi := gioui.NewTracker(model)
-	processor := tracker.CreateProcessor(player, model.MIDI, trackerUi)
+	processor := tracker.CreateProcessor(player, midiContext, trackerUi)
 	audioCloser := audioContext.Play(processor)
 	go func() {
 		trackerUi.Main()
