@@ -297,3 +297,30 @@ func (s *Song) Validate() error {
 	}
 	return nil
 }
+
+func (s *Song) InstrumentForTrack(trackIndex int) (int, bool) {
+	voiceIndex := s.Score.FirstVoiceForTrack(trackIndex)
+	instrument, err := s.Patch.InstrumentForVoice(voiceIndex)
+	return instrument, err == nil
+}
+
+func (s *Song) AllTracksWithSameInstrument(trackIndex int) []int {
+	nTracks := len(s.Score.Tracks)
+	result := make([]int, 0, nTracks)
+	currentInstrument, currentExists := s.InstrumentForTrack(trackIndex)
+	if !currentExists {
+		return result
+	}
+	// collect all tracks with the same instrument, but not the current track itself
+	for i := 0; i <= nTracks; i++ {
+		instrument, exists := s.InstrumentForTrack(i)
+		if !exists {
+			break
+		}
+		if instrument != currentInstrument {
+			continue
+		}
+		result = append(result, i)
+	}
+	return result
+}
