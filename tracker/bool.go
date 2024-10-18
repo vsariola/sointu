@@ -69,7 +69,6 @@ func (m *IsRecording) Bool() Bool  { return Bool{m} }
 func (m *IsRecording) Value() bool { return (*Model)(m).recording }
 func (m *IsRecording) setValue(val bool) {
 	m.recording = val
-	m.instrEnlarged = val
 	(*Model)(m).send(RecordingMsg{val})
 }
 func (m *IsRecording) Enabled() bool { return true }

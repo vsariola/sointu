@@ -315,7 +315,7 @@ func (t *Tracker) ProcessMessage(msg interface{}) {
 	case tracker.StartPlayMsg:
 		fmt.Println("Tracker received StartPlayMsg")
 	case tracker.RecordingMsg:
-		fmt.Println("Tracker received RecoringMsg")
+		fmt.Println("Tracker received RecordingMsg")
 	case tracker.NoteOnMsg:
 		fmt.Printf("Tracker received NoteOn: %d\n", m.Note)
 	default:
