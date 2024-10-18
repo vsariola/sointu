@@ -27,7 +27,7 @@ units:
     - type: filter
       parameters: {bandpass: 0, frequency: 16, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
     - type: delay
-      parameters: {count: 8, damp: 64, delay: 1, dry: 0, feedback: 96, notetracking: 0, pregain: 32, stereo: 0}
+      parameters: {damp: 64, dry: 0, feedback: 96, notetracking: 0, pregain: 32, stereo: 0}
       varargs: [1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618]
     - type: addp
       parameters: {stereo: 0}
@@ -48,4 +48,4 @@ units:
     - type: distort
       parameters: {drive: 64, stereo: 0}
     - type: send
-      parameters: {amount: 32, port: 5, sendpop: 1, stereo: 0, target: 1, unit: 0, voice: 0}
+      parameters: {amount: 32, port: 5, sendpop: 1, stereo: 0, target: 1, voice: 0}
