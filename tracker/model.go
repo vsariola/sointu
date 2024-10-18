@@ -36,6 +36,7 @@ type (
 		ChangedSinceSave        bool
 		RecoveryFilePath        string
 		ChangedSinceRecovery    bool
+		Loop                    Loop
 	}
 
 	Model struct {
@@ -74,9 +75,10 @@ type (
 		synther sointu.Synther // the synther used to create new synths
 
 		PlayerMessages chan PlayerMsg
-		modelMessages  chan<- interface{}
+		ModelMessages  chan<- interface{}
 
-		MIDI MIDIContext
+		MIDI        MIDIContexter
+		trackMidiIn bool
 	}
 
 	// Cursor identifies a row and a track in a song score.
@@ -123,14 +125,17 @@ type (
 
 	Dialog int
 
-	MIDIContext interface {
-		InputDevices(yield func(MIDIDevice) bool)
-		Close()
+	MIDIContexter interface {
+		ListInputDevices() <-chan MIDIDevicer
+		OpenInputDevice(item MIDIDevicer) bool
+		TryOpenDefaultInputDevice(prefix string, takeFirst bool)
+		DestroyContext()
+		BPM() (bpm float64, ok bool)
+		NextEvent() (event MIDINoteEvent, ok bool)
 	}
 
-	MIDIDevice interface {
+	MIDIDevicer interface {
 		String() string
-		Open() error
 	}
 )
 
@@ -145,6 +150,7 @@ const (
 	ScoreChange
 	BPMChange
 	RowsPerBeatChange
+	LoopChange
 	SongChange ChangeType = PatchChange | ScoreChange | BPMChange | RowsPerBeatChange
 )
 
@@ -168,20 +174,20 @@ const maxUndo = 64
 func (m *Model) AverageVolume() Volume        { return m.avgVolume }
 func (m *Model) PeakVolume() Volume           { return m.peakVolume }
 func (m *Model) PlayPosition() sointu.SongPos { return m.playPosition }
-func (m *Model) Loop() Loop                   { return m.loop }
+func (m *Model) Loop() Loop                   { return m.d.Loop }
 func (m *Model) PlaySongRow() int             { return m.d.Song.Score.SongRow(m.playPosition) }
 func (m *Model) ChangedSinceSave() bool       { return m.d.ChangedSinceSave }
 func (m *Model) Dialog() Dialog               { return m.dialog }
 func (m *Model) Quitted() bool                { return m.quitted }
 
 // NewModelPlayer creates a new model and a player that communicates with it
-func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFilePath string) (*Model, *Player) {
+func NewModelPlayer(synther sointu.Synther, midiContext MIDIContexter, recoveryFilePath string) (*Model, *Player) {
 	m := new(Model)
 	m.synther = synther
 	m.MIDI = midiContext
 	modelMessages := make(chan interface{}, 1024)
 	playerMessages := make(chan PlayerMsg, 1024)
-	m.modelMessages = modelMessages
+	m.ModelMessages = modelMessages
 	m.PlayerMessages = playerMessages
 	m.d.Octave = 4
 	m.d.RecoveryFilePath = recoveryFilePath
@@ -196,7 +202,7 @@ func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFil
 		modelMsgs:       modelMessages,
 		synther:         synther,
 		song:            m.d.Song.Copy(),
-		loop:            m.loop,
+		loop:            m.d.Loop,
 		avgVolumeMeter:  VolumeAnalyzer{Attack: 0.3, Release: 0.3, Min: -100, Max: 20},
 		peakVolumeMeter: VolumeAnalyzer{Attack: 1e-4, Release: 1, Min: -100, Max: 20},
 	}
@@ -239,7 +245,6 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			}
 			if m.changeType&PatchChange != 0 {
 				m.fixIDCollisions()
-				m.fixUnitParams()
 				m.d.InstrIndex = clamp(m.d.InstrIndex, 0, len(m.d.Song.Patch)-1)
 				m.d.InstrIndex2 = clamp(m.d.InstrIndex2, 0, len(m.d.Song.Patch)-1)
 				unitCount := 0
@@ -257,6 +262,9 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			}
 			if m.changeType&RowsPerBeatChange != 0 {
 				m.send(RowsPerBeatMsg{m.d.Song.RowsPerBeat})
+			}
+			if m.changeType&LoopChange != 0 {
+				m.send(m.d.Loop)
 			}
 			m.undoSkipCounter++
 			var limit int
@@ -333,6 +341,7 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 	}
 	m.d.ChangedSinceRecovery = false
 	m.send(m.d.Song.Copy())
+	m.send(m.d.Loop)
 	m.updatePatternUseCount()
 }
 
@@ -412,11 +421,12 @@ func (m *Model) resetSong() {
 	}
 	m.d.FilePath = ""
 	m.d.ChangedSinceSave = false
+	m.d.Loop = Loop{}
 }
 
 // send sends a message to the player
 func (m *Model) send(message interface{}) {
-	m.modelMessages <- message
+	m.ModelMessages <- message
 }
 
 func (m *Model) maxID() int {
@@ -493,36 +503,6 @@ func (m *Model) fixIDCollisions() {
 				}
 			}
 		}
-	}
-}
-
-var validParameters = map[string](map[string]bool){}
-
-func init() {
-	for name, unitType := range sointu.UnitTypes {
-		validParameters[name] = map[string]bool{}
-		for _, param := range unitType {
-			validParameters[name][param.Name] = true
-		}
-	}
-}
-
-func (m *Model) fixUnitParams() {
-	// loop over all instruments and units and check that unit parameter table
-	// only has the parameters that are defined in the unit type
-	fixed := false
-	for i, instr := range m.d.Song.Patch {
-		for j, unit := range instr.Units {
-			for paramName := range unit.Parameters {
-				if !validParameters[unit.Type][paramName] {
-					delete(m.d.Song.Patch[i].Units[j].Parameters, paramName)
-					fixed = true
-				}
-			}
-		}
-	}
-	if fixed {
-		m.Alerts().AddNamed("InvalidUnitParameters", "Some units had invalid parameters, they were removed", Error)
 	}
 }
 

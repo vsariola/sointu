@@ -95,6 +95,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 	t.Theme.Palette.ContrastFg = black
 	t.TrackEditor.scrollTable.Focus()
 	t.quitWG.Add(1)
+
 	return t
 }
 
@@ -305,4 +306,21 @@ func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
 			return t.InstrumentEditor.Layout(gtx, t)
 		},
 	)
+}
+
+/// Event Handling (for UI updates when playing etc.)
+
+func (t *Tracker) ProcessMessage(msg interface{}) {
+	switch msg.(type) {
+	case tracker.StartPlayMsg:
+		fmt.Println("Tracker received StartPlayMsg")
+	case tracker.RecordingMsg:
+		fmt.Println("Tracker received RecordingMsg")
+	default:
+		break
+	}
+}
+
+func (t *Tracker) ProcessEvent(event tracker.MIDINoteEvent) {
+	t.TrackEditor.HandleMidiInput(t, event)
 }
