@@ -55,12 +55,14 @@ type (
 		changeSeverity ChangeSeverity
 		changeType     ChangeType
 
-		panic        bool
-		recording    bool
-		playing      bool
-		playPosition sointu.SongPos
-		noteTracking bool
-		quitted      bool
+		panic          bool
+		recording      bool
+		playing        bool
+		playPosition   sointu.SongPos
+		loop           Loop
+		follow         bool
+		quitted        bool
+		uniquePatterns bool
 
 		cachePatternUseCount [][]int
 
@@ -76,7 +78,7 @@ type (
 		ModelMessages  chan<- interface{}
 
 		MIDI        MIDIContexter
-		trackMidiIn bool // TODO @qm210 should that go into a separate struct?
+		trackMidiIn bool
 	}
 
 	// Cursor identifies a row and a track in a song score.
@@ -179,7 +181,7 @@ func (m *Model) Dialog() Dialog               { return m.dialog }
 func (m *Model) Quitted() bool                { return m.quitted }
 
 // NewModelPlayer creates a new model and a player that communicates with it
-func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFilePath string) (*Model, *Player) {
+func NewModelPlayer(synther sointu.Synther, midiContext MIDIContexter, recoveryFilePath string) (*Model, *Player) {
 	m := new(Model)
 	m.synther = synther
 	m.MIDI = midiContext
@@ -348,7 +350,7 @@ func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
 	m.voiceLevels = msg.VoiceLevels
 	m.avgVolume = msg.AverageVolume
 	m.peakVolume = msg.PeakVolume
-	if m.playing && m.noteTracking {
+	if m.playing && m.follow {
 		m.d.Cursor.SongPos = msg.SongPosition
 		m.d.Cursor2.SongPos = msg.SongPosition
 	}

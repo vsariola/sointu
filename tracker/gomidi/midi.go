@@ -1,7 +1,6 @@
 package gomidi
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -44,7 +43,7 @@ func (m *MIDIContext) ListInputDevices() <-chan tracker.MIDIDevicer {
 	return channel
 }
 
-func CreateContext() *MIDIContext {
+func NewContext() *MIDIContext {
 	// Open the driver.
 	m := MIDIContext{}
 	var err error

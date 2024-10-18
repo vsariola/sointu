@@ -41,6 +41,14 @@ type SongPanel struct {
 	// Edit menu items
 	editMenuItems []MenuItem
 
+	// Hints
+	rewindHint                  string
+	playHint, stopHint          string
+	recordHint, stopRecordHint  string
+	followOnHint, followOffHint string
+	panicHint                   string
+	loopOffHint, loopOnHint     string
+
 	// Midi menu items
 	midiMenuItems []MenuItem
 }

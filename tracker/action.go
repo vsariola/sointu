@@ -445,14 +445,14 @@ func (m *Model) Cancel() Action      { return Allow(func() { m.dialog = NoDialog
 func (m *Model) Export() Action      { return Allow(func() { m.dialog = Export }) }
 func (m *Model) ExportFloat() Action { return Allow(func() { m.dialog = ExportFloatExplorer }) }
 func (m *Model) ExportInt16() Action { return Allow(func() { m.dialog = ExportInt16Explorer }) }
-func (m *Model) SelectMidiInput(item MIDIDevice) Action {
+func (m *Model) SelectMidiInput(item MIDIDevicer) Action {
 	return Allow(func() {
-		if err := item.Open(); err != nil {
-			message := fmt.Sprintf("Could not open MIDI device: %s", item)
-			m.Alerts().Add(message, Error)
-		} else {
+		if m.MIDI.OpenInputDevice(item) {
 			message := fmt.Sprintf("Opened MIDI device: %s", item)
 			m.Alerts().Add(message, Info)
+		} else {
+			message := fmt.Sprintf("Could not open MIDI device: %s", item)
+			m.Alerts().Add(message, Error)
 		}
 	})
 }
@@ -475,5 +475,19 @@ func (m *Model) completeAction(checkSave bool) {
 		m.dialog = NoDialog
 	default:
 		m.dialog = NoDialog
+	}
+}
+
+func (m *Model) setPanic(val bool) {
+	if m.panic != val {
+		m.panic = val
+		m.send(PanicMsg{val})
+	}
+}
+
+func (m *Model) setLoop(newLoop Loop) {
+	if m.loop != newLoop {
+		m.loop = newLoop
+		m.send(newLoop)
 	}
 }

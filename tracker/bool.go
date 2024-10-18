@@ -118,17 +118,6 @@ func (m *TrackMidiIn) Value() bool       { return m.trackMidiIn }
 func (m *TrackMidiIn) setValue(val bool) { m.trackMidiIn = val }
 func (m *TrackMidiIn) Enabled() bool     { return true }
 
-// qm just wondering; who on earth is the switch between "Notes" and "Note Hex Number" called "Effect"??
-
-// TrackMidiIn (Midi Input for notes in the tracks)
-
-func (m *TrackMidiIn) Bool() Bool        { return Bool{m} }
-func (m *TrackMidiIn) Value() bool       { return m.trackMidiIn }
-func (m *TrackMidiIn) setValue(val bool) { m.trackMidiIn = val }
-func (m *TrackMidiIn) Enabled() bool     { return true }
-
-// qm just wondering; who on earth is the switch between "Notes" and "Note Hex Number" called "Effect"??
-
 // Effect methods
 
 func (m *Effect) Bool() Bool { return Bool{m} }
