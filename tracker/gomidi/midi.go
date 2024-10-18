@@ -13,10 +13,12 @@ import (
 
 type (
 	MIDIContext struct {
-		driver          *rtmididrv.Driver
-		inputAvailable  bool
-		driverAvailable bool
-		currentIn       MIDIDevicer
+		driver            *rtmididrv.Driver
+		inputAvailable    bool
+		driverAvailable   bool
+		currentIn         MIDIDevicer
+		disconnectCurrent func()
+		lastError         error
 
 		events chan midi.Message
 	}
@@ -41,8 +43,8 @@ func (m *MIDIContext) ListInputDevices() <-chan tracker.MIDIDevicer {
 	return channel
 }
 
-// Open the driver.
 func CreateContext() *MIDIContext {
+	// Open the driver.
 	m := MIDIContext{}
 	var err error
 	m.driver, err = rtmididrv.New()
@@ -54,43 +56,44 @@ func CreateContext() *MIDIContext {
 }
 
 func (m *MIDIContext) isCurrentInputOpen(in tracker.MIDIDevicer) bool {
-	return (m.currentIn != nil &&
+	return m.currentIn != nil &&
 		m.currentIn.String() == in.String() &&
-		m.currentIn.IsOpen())
+		m.currentIn.IsOpen()
 }
 
-// Open an input device while closing the currently open if necessary.
 func (m *MIDIContext) OpenInputDevice(in tracker.MIDIDevicer) bool {
-	if m.driverAvailable {
-		if m.isCurrentInputOpen(in) {
-			// "true" because the required input device is successfully open
-			return true
-		}
-
-		if m.inputAvailable && m.currentIn.IsOpen() {
-			m.currentIn.Close()
-		}
-
-		fmt.Printf("Opening midi device \"%s\".\n", in)
-
-		m.currentIn = in.(MIDIDevicer)
-		m.currentIn.Open()
-		_, err := midi.ListenTo(m.currentIn, m.HandleMessage)
-
-		if err != nil {
-			m.inputAvailable = false
-			return false
-		}
-	} else {
-		fmt.Printf("Cannot Open Input Device %s: No MIDI driver available.\n", in)
+	// Open an input device while closing the currently open if necessary.
+	if !m.driverAvailable {
+		fmt.Printf("Cannot Open Input Device %s: MIDI driver not available.\n", in)
+		return false
 	}
-	return true
+	if m.isCurrentInputOpen(in) {
+		// "true" because the required input device is successfully open
+		return true
+	}
+	if m.inputAvailable && m.currentIn.IsOpen() {
+		m.lastError = m.currentIn.Close()
+	}
+
+	fmt.Printf("Opening midi device \"%s\".\n", in)
+
+	m.currentIn = in.(MIDIDevicer)
+	m.inputAvailable = false
+	m.lastError = m.currentIn.Open()
+	if m.lastError != nil {
+		fmt.Printf("Cannot Open Input Device %s: Probably already in use.\n", in)
+	} else {
+		m.disconnectCurrent, m.lastError = midi.ListenTo(m.currentIn, m.HandleMessage)
+	}
+	m.inputAvailable = m.lastError != nil
+	return m.inputAvailable
 }
 
-func (m *MIDIContext) OpenDefaultInputDevice(namePrefix string, takeFirst bool) bool {
+func (m *MIDIContext) TryOpenDefaultInputDevice(namePrefix string, takeFirst bool) {
 	for input := range m.ListInputDevices() {
 		if takeFirst || strings.HasPrefix(input.String(), namePrefix) {
-			return m.OpenInputDevice(input)
+			m.OpenInputDevice(input)
+			return
 		}
 	}
 	if takeFirst {
@@ -98,7 +101,6 @@ func (m *MIDIContext) OpenDefaultInputDevice(namePrefix string, takeFirst bool) 
 	} else {
 		fmt.Printf("Could not find any default MIDI Input starting with \"%s\".\n", namePrefix)
 	}
-	return false
 }
 
 func (m *MIDIContext) HandleMessage(msg midi.Message, timestampms int32) {
@@ -108,9 +110,9 @@ func (m *MIDIContext) HandleMessage(msg midi.Message, timestampms int32) {
 	}()
 }
 
-func (c *MIDIContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
+func (m *MIDIContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
 	select {
-	case msg := <-c.events:
+	case msg := <-m.events:
 		{
 			var channel uint8
 			var velocity uint8
@@ -133,12 +135,12 @@ func (c *MIDIContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
 	return tracker.MIDINoteEvent{}, false
 }
 
-func (c *MIDIContext) BPM() (bpm float64, ok bool) {
+func (m *MIDIContext) BPM() (bpm float64, ok bool) {
 	return 0, false
 }
 
-func (c *MIDIContext) DestroyContext() {
-	close(c.events)
-	c.currentIn.Close()
-	c.driver.Close()
+func (m *MIDIContext) DestroyContext() {
+	close(m.events)
+	m.currentIn.Close()
+	m.driver.Close()
 }

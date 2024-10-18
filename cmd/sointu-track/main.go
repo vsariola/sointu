@@ -47,7 +47,7 @@ func main() {
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, recoveryFile)
 	model.MIDI = gomidi.CreateContext()
 	defer model.MIDI.DestroyContext()
-	model.MIDI.OpenDefaultInputDevice(*defaultMidiInput, *firstMidiInput)
+	model.MIDI.TryOpenDefaultInputDevice(*defaultMidiInput, *firstMidiInput)
 	fmt.Printf("Context created.\n")
 
 	if a := flag.Args(); len(a) > 0 {

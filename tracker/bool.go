@@ -16,6 +16,7 @@ type (
 	Playing         Model
 	InstrEnlarged   Model
 	Effect          Model
+	TrackMidiIn     Model
 	CommentExpanded Model
 	NoteTracking    Model
 	UnitSearching   Model
@@ -40,6 +41,7 @@ func (m *Model) IsRecording() *IsRecording         { return (*IsRecording)(m) }
 func (m *Model) Playing() *Playing                 { return (*Playing)(m) }
 func (m *Model) InstrEnlarged() *InstrEnlarged     { return (*InstrEnlarged)(m) }
 func (m *Model) Effect() *Effect                   { return (*Effect)(m) }
+func (m *Model) TrackMidiIn() *TrackMidiIn         { return (*TrackMidiIn)(m) }
 func (m *Model) CommentExpanded() *CommentExpanded { return (*CommentExpanded)(m) }
 func (m *Model) NoteTracking() *NoteTracking       { return (*NoteTracking)(m) }
 func (m *Model) UnitSearching() *UnitSearching     { return (*UnitSearching)(m) }
@@ -101,6 +103,15 @@ func (m *NoteTracking) Bool() Bool        { return Bool{m} }
 func (m *NoteTracking) Value() bool       { return m.playing && m.noteTracking }
 func (m *NoteTracking) setValue(val bool) { m.noteTracking = val }
 func (m *NoteTracking) Enabled() bool     { return m.playing }
+
+// TrackMidiIn (Midi Input for notes in the tracks)
+
+func (m *TrackMidiIn) Bool() Bool        { return Bool{m} }
+func (m *TrackMidiIn) Value() bool       { return m.trackMidiIn }
+func (m *TrackMidiIn) setValue(val bool) { m.trackMidiIn = val }
+func (m *TrackMidiIn) Enabled() bool     { return true }
+
+// qm just wondering; who on earth is the switch between "Notes" and "Note Hex Number" called "Effect"??
 
 // Effect methods
 

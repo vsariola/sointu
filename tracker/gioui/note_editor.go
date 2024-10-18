@@ -3,6 +3,7 @@ package gioui
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"strconv"
 	"strings"
 
@@ -58,6 +59,7 @@ type NoteEditor struct {
 	SubtractOctaveBtn   *ActionClickable
 	NoteOffBtn          *ActionClickable
 	EffectBtn           *BoolClickable
+	TrackMidiInBtn      *BoolClickable
 
 	scrollTable *ScrollTable
 	tag         struct{}
@@ -74,6 +76,7 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 		SubtractOctaveBtn:   NewActionClickable(model.SubtractOctave()),
 		NoteOffBtn:          NewActionClickable(model.EditNoteOff()),
 		EffectBtn:           NewBoolClickable(model.Effect().Bool()),
+		TrackMidiInBtn:      NewBoolClickable(model.TrackMidiIn().Bool()),
 		scrollTable: NewScrollTable(
 			model.Notes().Table(),
 			model.Tracks().List(),
@@ -170,6 +173,7 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			return in.Layout(gtx, numStyle.Layout)
 		}
 		effectBtnStyle := ToggleButton(gtx, t.Theme, te.EffectBtn, "Hex")
+		midiInBtnStyle := ToggleButton(gtx, t.Theme, te.TrackMidiInBtn, "MIDI")
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Dp(unit.Dp(12)), 0)} }),
 			layout.Rigid(addSemitoneBtnStyle.Layout),
@@ -180,6 +184,8 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			layout.Rigid(effectBtnStyle.Layout),
 			layout.Rigid(Label("  Voices:", white, t.Theme.Shaper)),
 			layout.Rigid(voiceUpDown),
+			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+			layout.Rigid(midiInBtnStyle.Layout),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(deleteTrackBtnStyle.Layout),
 			layout.Rigid(newTrackBtnStyle.Layout))
@@ -223,7 +229,13 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		h := gtx.Dp(unit.Dp(trackColTitleHeight))
 		title := ((*tracker.Order)(t.Model)).Title(i)
 		gtx.Constraints = layout.Exact(image.Pt(pxWidth, h))
-		LabelStyle{Alignment: layout.N, Text: title, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor, Shaper: t.Theme.Shaper}.Layout(gtx)
+		LabelStyle{
+			Alignment: layout.N,
+			Text:      title,
+			FontSize:  unit.Sp(12),
+			Color:     mediumEmphasisTextColor,
+			Shaper:    t.Theme.Shaper,
+		}.Layout(gtx)
 		return D{Size: image.Pt(pxWidth, h)}
 	}
 
@@ -262,6 +274,12 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	drawSelection := te.scrollTable.Table.Cursor() != te.scrollTable.Table.Cursor2()
 	selection := te.scrollTable.Table.Range()
 
+	// TODO: maybe not best style to get the model value from the button, but it is bound to be the same...
+	hasTrackMidiIn := te.TrackMidiInBtn.Bool.Value()
+
+	// TODO @qm210: see table.go -> why defined for *Order, not *Model, when we need that cast anyway?
+	otherTracksForPolyphony := ((*tracker.Order)(t.Model)).OtherTracksRelativeIndicesForCurrentInstrument()
+
 	cell := func(gtx C, x, y int) D {
 		// draw the background, to indicate selection
 		color := transparent
@@ -275,20 +293,25 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		paint.FillShape(gtx.Ops, color, clip.Rect{Min: image.Pt(0, 0), Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
 		// draw the cursor
 		if point == te.scrollTable.Table.Cursor() {
-			cw := gtx.Constraints.Min.X
-			cx := 0
-			if t.Model.Notes().Effect(x) {
-				cw /= 2
-				if t.Model.Notes().LowNibble() {
-					cx += cw
-				}
-			}
 			c := inactiveSelectionColor
 			if te.scrollTable.Focused() {
-				c = cursorColor
+				if hasTrackMidiIn {
+					c = cursorForTrackMidiInColor
+				} else {
+					c = cursorColor
+				}
 			}
-			paint.FillShape(gtx.Ops, c, clip.Rect{Min: image.Pt(cx, 0), Max: image.Pt(cx+cw, gtx.Constraints.Min.Y)}.Op())
+			te.paintColumnCell(gtx, x, t, c)
 		}
+		// draw the corresponding "fake cursors" for instrument-track-groups (for polyphony)
+		if hasTrackMidiIn {
+			for _, relativeIndex := range otherTracksForPolyphony {
+				if point == te.scrollTable.Table.Cursor().ShiftedX(relativeIndex) {
+					te.paintColumnCell(gtx, x, t, cursorNeighborForTrackMidiInColor)
+				}
+			}
+		}
+
 		// draw the pattern marker
 		rpp := intMax(t.RowsPerPattern().Value(), 1)
 		pat := y / rpp
@@ -321,6 +344,18 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	table.CellWidth = trackColWidth
 	table.CellHeight = trackRowHeight
 	return table.Layout(gtx)
+}
+
+func (te *NoteEditor) paintColumnCell(gtx C, x int, t *Tracker, c color.NRGBA) {
+	cw := gtx.Constraints.Min.X
+	cx := 0
+	if t.Model.Notes().Effect(x) {
+		cw /= 2
+		if t.Model.Notes().LowNibble() {
+			cx += cw
+		}
+	}
+	paint.FillShape(gtx.Ops, c, clip.Rect{Min: image.Pt(cx, 0), Max: image.Pt(cx+cw, gtx.Constraints.Min.Y)}.Op())
 }
 
 func mod(x, d int) int {

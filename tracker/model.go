@@ -75,7 +75,8 @@ type (
 		PlayerMessages chan PlayerMsg
 		ModelMessages  chan<- interface{}
 
-		MIDI MIDIContexter
+		MIDI        MIDIContexter
+		trackMidiIn bool // TODO @qm210 should that go into a separate struct?
 	}
 
 	// Cursor identifies a row and a track in a song score.
@@ -125,7 +126,7 @@ type (
 	MIDIContexter interface {
 		ListInputDevices() <-chan MIDIDevicer
 		OpenInputDevice(item MIDIDevicer) bool
-		OpenDefaultInputDevice(prefix string, takeFirst bool) bool
+		TryOpenDefaultInputDevice(prefix string, takeFirst bool)
 		DestroyContext()
 		BPM() (bpm float64, ok bool)
 		NextEvent() (event MIDINoteEvent, ok bool)
