@@ -186,11 +186,7 @@ func (oe *OrderEditor) command(t *Tracker, e key.Event) {
 			t.Model.DeleteOrderRow(false).Do()
 		}
 	case key.NameReturn:
-		if e.Modifiers.Contain(key.ModShortcut) {
-			oe.scrollTable.Table.MoveCursor(0, -1)
-			oe.scrollTable.Table.SetCursor2(oe.scrollTable.Table.Cursor())
-		}
-		t.Model.AddOrderRow(!e.Modifiers.Contain(key.ModShortcut)).Do()
+		t.Model.AddOrderRow(e.Modifiers.Contain(key.ModShortcut)).Do()
 	}
 	if iv, err := strconv.Atoi(string(e.Name)); err == nil {
 		t.Model.Order().SetValue(oe.scrollTable.Table.Cursor(), iv)

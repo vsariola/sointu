@@ -336,7 +336,7 @@ func (m *Model) StopPlaying() Action {
 func (m *Model) AddOrderRow(before bool) Action {
 	return Allow(func() {
 		defer m.change("AddOrderRowAction", ScoreChange, MinorChange)()
-		if before {
+		if !before {
 			m.d.Cursor.OrderRow++
 		}
 		m.d.Cursor2.OrderRow = m.d.Cursor.OrderRow
