@@ -278,9 +278,6 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	// TODO: maybe not best style to get the model value from the button, but it is bound to be the same...
 	hasTrackMidiIn := te.TrackMidiInBtn.Bool.Value()
 
-	// TODO @qm210: see table.go -> why defined for *Order, not *Model, when we need that cast anyway?
-	otherTracksForPolyphony := ((*tracker.Order)(t.Model)).OtherTracksRelativeIndicesForCurrentInstrument()
-
 	cell := func(gtx C, x, y int) D {
 		// draw the background, to indicate selection
 		color := transparent
@@ -303,14 +300,6 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 				}
 			}
 			te.paintColumnCell(gtx, x, t, c)
-		}
-		// draw the corresponding "fake cursors" for instrument-track-groups (for polyphony)
-		if hasTrackMidiIn {
-			for _, relativeIndex := range otherTracksForPolyphony {
-				if point == te.scrollTable.Table.Cursor().ShiftedX(relativeIndex) {
-					te.paintColumnCell(gtx, x, t, cursorNeighborForTrackMidiInColor)
-				}
-			}
 		}
 
 		// draw the pattern marker
