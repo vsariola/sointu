@@ -162,9 +162,9 @@ func (m *UnitDisabled) setValue(val bool) {
 		return
 	}
 	l := ((*Model)(m)).Units().List()
-	a, b := l.listRange()
+	r := l.listRange()
 	defer (*Model)(m).change("UnitDisabledSet", PatchChange, MajorChange)()
-	for i := a; i <= b; i++ {
+	for i := r.Start; i < r.End; i++ {
 		m.d.Song.Patch[m.d.InstrIndex].Units[i].Disabled = val
 	}
 }
@@ -187,8 +187,8 @@ func (t *LoopToggle) setValue(val bool) {
 	newLoop := Loop{}
 	if val {
 		l := m.OrderRows().List()
-		a, b := l.listRange()
-		newLoop = Loop{a, b - a + 1}
+		r := l.listRange()
+		newLoop = Loop{r.Start, r.End - r.Start}
 	}
 	m.setLoop(newLoop)
 }

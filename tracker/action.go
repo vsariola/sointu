@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/vm"
 )
 
 type (
@@ -39,65 +38,6 @@ func Check(do func(), allowed func() bool) Action {
 }
 
 // Model methods
-
-func (m *Model) AddTrack() Action {
-	return Action{
-		allowed: func() bool { return m.d.Song.Score.NumVoices() < vm.MAX_VOICES },
-		do: func() {
-			defer (*Model)(m).change("AddTrackAction", SongChange, MajorChange)()
-			voiceIndex := m.d.Song.Score.FirstVoiceForTrack(m.d.Cursor.Track)
-			m.addTrackInstrument(true, m.linkInstrTrack, voiceIndex)
-		},
-	}
-}
-
-func (m *Model) DeleteTrack() Action {
-	return Action{
-		allowed: func() bool { return len(m.d.Song.Score.Tracks) > 0 },
-		do:      func() { m.Tracks().List().DeleteElements(false) },
-	}
-}
-
-func (m *Model) AddInstrument() Action {
-	return Action{
-		allowed: func() bool { return (*Model)(m).d.Song.Patch.NumVoices() < vm.MAX_VOICES },
-		do: func() {
-			defer (*Model)(m).change("AddTrackAction", SongChange, MajorChange)()
-			voiceIndex := m.d.Song.Patch.FirstVoiceForInstrument(m.d.InstrIndex)
-			m.addTrackInstrument(m.linkInstrTrack, true, voiceIndex)
-		},
-	}
-}
-
-func (m *Model) DeleteInstrument() Action {
-	return Action{
-		allowed: func() bool { return len((*Model)(m).d.Song.Patch) > 0 },
-		do:      func() { m.Instruments().List().DeleteElements(false) },
-	}
-}
-
-func (m *Model) addTrackInstrument(addTrack, addInstrument bool, voiceIndex int) {
-	var err error
-	if addInstrument {
-		m.d.InstrIndex, m.d.InstrIndex2, err = (*Model)(m).addPatchAtVoice(voiceIndex, defaultInstrument.Copy())
-		if err != nil {
-			(*Model)(m).Alerts().AddNamed("AddTrack", err.Error(), Error)
-			m.changeCancel = true
-			return
-		}
-		m.d.UnitIndex = 0
-		m.d.UnitIndex2 = 0
-		m.d.ParamIndex = 0
-	}
-	if addTrack {
-		m.d.Cursor.Track, m.d.Cursor2.Track, err = (*Model)(m).addTracksAtVoice(voiceIndex, sointu.Track{NumVoices: 1, Patterns: []sointu.Pattern{}})
-		if err != nil {
-			(*Model)(m).Alerts().AddNamed("AddTrack", err.Error(), Error)
-			m.changeCancel = true
-			return
-		}
-	}
-}
 
 func (m *Model) AddUnit(before bool) Action {
 	return Allow(func() {
@@ -295,10 +235,10 @@ func (m *Model) PlaySelected() Action {
 			m.setPanic(false)
 			m.playing = true
 			l := m.OrderRows().List()
-			a, b := l.listRange()
-			newLoop := Loop{a, b - a + 1}
+			r := l.listRange()
+			newLoop := Loop{r.Start, r.End - r.Start}
 			m.setLoop(newLoop)
-			m.send(StartPlayMsg{sointu.SongPos{OrderRow: a, PatternRow: 0}})
+			m.send(StartPlayMsg{sointu.SongPos{OrderRow: r.Start, PatternRow: 0}})
 		},
 	}
 }

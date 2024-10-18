@@ -50,9 +50,11 @@ func init() {
 }
 
 type NoteEditor struct {
-	TrackVoices         *NumberInput
-	NewTrackBtn         *ActionClickable
-	DeleteTrackBtn      *ActionClickable
+	TrackVoices    *NumberInput
+	NewTrackBtn    *ActionClickable
+	DeleteTrackBtn *ActionClickable
+	SplitTrackBtn  *ActionClickable
+
 	AddSemitoneBtn      *ActionClickable
 	SubtractSemitoneBtn *ActionClickable
 	AddOctaveBtn        *ActionClickable
@@ -74,6 +76,7 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 		TrackVoices:         NewNumberInput(model.TrackVoices().Int()),
 		NewTrackBtn:         NewActionClickable(model.AddTrack()),
 		DeleteTrackBtn:      NewActionClickable(model.DeleteTrack()),
+		SplitTrackBtn:       NewActionClickable(model.SplitTrack()),
 		AddSemitoneBtn:      NewActionClickable(model.AddSemitone()),
 		SubtractSemitoneBtn: NewActionClickable(model.SubtractSemitone()),
 		AddOctaveBtn:        NewActionClickable(model.AddOctave()),
@@ -148,6 +151,7 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 		subtractOctaveBtnStyle := ActionButton(gtx, t.Theme, te.SubtractOctaveBtn, "-12")
 		noteOffBtnStyle := ActionButton(gtx, t.Theme, te.NoteOffBtn, "Note Off")
 		deleteTrackBtnStyle := ActionIcon(gtx, t.Theme, te.DeleteTrackBtn, icons.ActionDelete, te.deleteTrackHint)
+		splitTrackBtnStyle := ActionIcon(gtx, t.Theme, te.SplitTrackBtn, icons.CommunicationCallSplit, "Split track")
 		newTrackBtnStyle := ActionIcon(gtx, t.Theme, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
 		in := layout.UniformInset(unit.Dp(1))
 		voiceUpDown := func(gtx C) D {
@@ -167,6 +171,7 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			layout.Rigid(uniqueBtnStyle.Layout),
 			layout.Rigid(Label("  Voices:", white, t.Theme.Shaper)),
 			layout.Rigid(voiceUpDown),
+			layout.Rigid(splitTrackBtnStyle.Layout),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(deleteTrackBtnStyle.Layout),
 			layout.Rigid(newTrackBtnStyle.Layout))

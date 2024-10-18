@@ -3,11 +3,9 @@ package tracker
 import (
 	"errors"
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/vm"
 	"gopkg.in/yaml.v2"
 )
 
@@ -27,10 +25,10 @@ type (
 	MutableListData interface {
 		change(kind string, severity ChangeSeverity) func()
 		cancel()
-		swap(i, j int) (ok bool)
-		delete(i int) (ok bool)
-		marshal(from, to int) ([]byte, error)
-		unmarshal([]byte) (from, to int, err error)
+		move(r Range, delta int) (ok bool)
+		delete(r Range) (ok bool)
+		marshal(r Range) ([]byte, error)
+		unmarshal([]byte) (r Range, err error)
 	}
 
 	UnitListItem struct {
@@ -42,9 +40,7 @@ type (
 	UnitYieldFunc       func(index int, item UnitListItem) (ok bool)
 	UnitSearchYieldFunc func(index int, item string) (ok bool)
 
-	Instruments   Model // Instruments is a list of instruments, implementing ListData & MutableListData interfaces
 	Units         Model // Units is a list of all the units in the selected instrument, implementing ListData & MutableListData interfaces
-	Tracks        Model // Tracks is a list of all the tracks, implementing ListData & MutableListData interfaces
 	OrderRows     Model // OrderRows is a list of all the order rows, implementing ListData & MutableListData interfaces
 	NoteRows      Model // NoteRows is a list of all the note rows, implementing ListData & MutableListData interfaces
 	SearchResults Model // SearchResults is a unmutable list of all the search results, implementing ListData interface
@@ -53,9 +49,7 @@ type (
 
 // Model methods
 
-func (m *Model) Instruments() *Instruments     { return (*Instruments)(m) }
 func (m *Model) Units() *Units                 { return (*Units)(m) }
-func (m *Model) Tracks() *Tracks               { return (*Tracks)(m) }
 func (m *Model) OrderRows() *OrderRows         { return (*OrderRows)(m) }
 func (m *Model) NoteRows() *NoteRows           { return (*NoteRows)(m) }
 func (m *Model) SearchResults() *SearchResults { return (*SearchResults)(m) }
@@ -72,27 +66,10 @@ func (v List) MoveElements(delta int) (ok bool) {
 		return
 	}
 	defer s.change("MoveElements", MajorChange)()
-	a, b := v.listRange()
-	if a+delta < 0 {
-		delta = -a
-	}
-	if b+delta >= v.Count() {
-		delta = v.Count() - 1 - b
-	}
-	if delta < 0 {
-		for i := a; i <= b; i++ {
-			if !s.swap(i, i+delta) {
-				s.cancel()
-				return false
-			}
-		}
-	} else {
-		for i := b; i >= a; i-- {
-			if !s.swap(i, i+delta) {
-				s.cancel()
-				return false
-			}
-		}
+	r := v.listRange()
+	if !s.move(r, delta) {
+		s.cancel()
+		return false
 	}
 	v.SetSelected(v.Selected() + delta)
 	v.SetSelected2(v.Selected2() + delta)
@@ -107,18 +84,16 @@ func (v List) DeleteElements(backwards bool) (ok bool) {
 		return
 	}
 	defer d.change("DeleteElements", MajorChange)()
-	a, b := v.listRange()
-	for i := b; i >= a; i-- {
-		if !d.delete(i) {
-			d.cancel()
-			return false
-		}
+	r := v.listRange()
+	if !d.delete(r) {
+		d.cancel()
+		return false
 	}
-	if backwards && a > 0 {
-		a--
+	if backwards && r.Start > 0 {
+		r.Start--
 	}
-	v.SetSelected(a)
-	v.SetSelected2(a)
+	v.SetSelected(r.Start)
+	v.SetSelected2(r.Start)
 	return true
 }
 
@@ -126,12 +101,11 @@ func (v List) DeleteElements(backwards bool) (ok bool) {
 // the MutableListData interface. Returns the copied data, marshaled into byte
 // slice, and true if successful.
 func (v List) CopyElements() ([]byte, bool) {
-	a, b := v.listRange()
 	m, ok := v.ListData.(MutableListData)
 	if !ok {
 		return nil, false
 	}
-	ret, err := m.marshal(a, b)
+	ret, err := m.marshal(v.listRange())
 	if err != nil {
 		return nil, false
 	}
@@ -147,142 +121,18 @@ func (v List) PasteElements(data []byte) (ok bool) {
 		return false
 	}
 	defer m.change("PasteElements", MajorChange)()
-	from, to, err := m.unmarshal(data)
+	r, err := m.unmarshal(data)
 	if err != nil {
 		m.cancel()
 		return false
 	}
-	v.SetSelected(from)
-	v.SetSelected2(to)
+	v.SetSelected(r.Start)
+	v.SetSelected2(r.End + 1)
 	return true
 }
 
-func (v *List) listRange() (lower, higher int) {
-	lower = min(v.Selected(), v.Selected2())
-	higher = max(v.Selected(), v.Selected2())
-	return
-}
-
-// Instruments methods
-
-func (v *Instruments) List() List {
-	return List{v}
-}
-
-func (v *Instruments) Item(i int) (name string, maxLevel float32, mute bool, ok bool) {
-	if i < 0 || i >= len(v.d.Song.Patch) {
-		return "", 0, false, false
-	}
-	name = v.d.Song.Patch[i].Name
-	mute = v.d.Song.Patch[i].Mute
-	start := v.d.Song.Patch.FirstVoiceForInstrument(i)
-	end := start + v.d.Song.Patch[i].NumVoices
-	if end >= vm.MAX_VOICES {
-		end = vm.MAX_VOICES
-	}
-	if start < end {
-		for _, level := range v.voiceLevels[start:end] {
-			if maxLevel < level {
-				maxLevel = level
-			}
-		}
-	}
-	ok = true
-	return
-}
-func (v *Instruments) FirstID(i int) (id int, ok bool) {
-	if i < 0 || i >= len(v.d.Song.Patch) {
-		return 0, false
-	}
-	if len(v.d.Song.Patch[i].Units) == 0 {
-		return 0, false
-	}
-	return v.d.Song.Patch[i].Units[0].ID, true
-}
-
-func (v *Instruments) Selected() int {
-	return max(min(v.d.InstrIndex, v.Count()-1), 0)
-}
-
-func (v *Instruments) Selected2() int {
-	return max(min(v.d.InstrIndex2, v.Count()-1), 0)
-}
-
-func (v *Instruments) SetSelected(value int) {
-	v.d.InstrIndex = max(min(value, v.Count()-1), 0)
-	v.d.UnitIndex = 0
-	v.d.UnitIndex2 = 0
-	v.d.UnitSearching = false
-	v.d.UnitSearchString = ""
-}
-
-func (v *Instruments) SetSelected2(value int) {
-	v.d.InstrIndex2 = max(min(value, v.Count()-1), 0)
-}
-
-func (v *Instruments) swap(i, j int) (ok bool) {
-	if i < 0 || j < 0 || i >= len(v.d.Song.Patch) || j >= len(v.d.Song.Patch) || i == j {
-		return false
-	}
-	if v.linkInstrTrack {
-		order := swapRanges(v.d.Song.Patch, i, j)
-		v.d.Song.Score.Tracks, ok = sointu.VoiceSlice(v.d.Song.Score.Tracks, order[:]...)
-		if !ok { // the permutation would cause a track to split in two, so we cancel the operation
-			(*Model)(v).Alerts().AddNamed("SwapInstrument", "Swapping prevented by Instrument-Track linking", Warning)
-			return false
-		}
-	}
-	v.d.Song.Patch[i], v.d.Song.Patch[j] = v.d.Song.Patch[j], v.d.Song.Patch[i]
-	return true
-}
-
-func (v *Instruments) delete(i int) (ok bool) {
-	if i < 0 || i >= len(v.d.Song.Patch) {
-		return false
-	}
-	if v.linkInstrTrack {
-		order := deleteRanges(v.d.Song.Patch, i)
-		v.d.Song.Score.Tracks, ok = sointu.VoiceSlice(v.d.Song.Score.Tracks, order[:]...)
-		if !ok {
-			(*Model)(v).Alerts().AddNamed("DeleteInstrument", "Deleting prevented by Instrument-Track linking", Warning)
-			return false
-		}
-	}
-	v.d.Song.Patch = append(v.d.Song.Patch[:i], v.d.Song.Patch[i+1:]...)
-	return true
-}
-
-func (v *Instruments) change(n string, severity ChangeSeverity) func() {
-	return (*Model)(v).change("InstrumentListView."+n, SongChange, severity)
-}
-
-func (v *Instruments) cancel() {
-	v.changeCancel = true
-}
-
-func (v *Instruments) Count() int {
-	return len(v.d.Song.Patch)
-}
-
-func (v *Instruments) marshal(from, to int) ([]byte, error) {
-	if from < 0 || to >= len(v.d.Song.Patch) || from > to {
-		return nil, fmt.Errorf("InstrumentListView.marshal: index out of range: %d, %d", from, to)
-	}
-	rFrom := sointu.VoiceRange(v.d.Song.Patch, from)
-	rTo := sointu.VoiceRange(v.d.Song.Patch, to)
-	r := sointu.Range{Start: rFrom.Start, End: rTo.End}
-	return (*Model)(v).marshalVoiceRange(r)
-}
-
-func (m *Instruments) unmarshal(data []byte) (from, to int, err error) {
-	voiceIndex := m.d.Song.Patch.FirstVoiceForInstrument(m.d.InstrIndex)
-	if m.linkInstrTrack {
-		m.d.Cursor.Track, m.d.Cursor2.Track, err = (*Model)(m).unmarshalTracksAtVoice(voiceIndex, data)
-		if err != nil {
-			return 0, 0, err
-		}
-	}
-	return (*Model)(m).unmarshalPatchAtVoice(voiceIndex, data)
+func (v *List) listRange() (r Range) {
+	return Inclusive(v.Selected(), v.Selected2())
 }
 
 // Units methods
@@ -376,31 +226,24 @@ func (v *Units) Count() int {
 	return len(m.d.Song.Patch[(*Model)(v).d.InstrIndex].Units)
 }
 
-func (v *Units) swap(i, j int) (ok bool) {
+func (v *Units) move(from, to, delta int) (ok bool) {
 	m := (*Model)(v)
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return false
 	}
-	units := m.d.Song.Patch[m.d.InstrIndex].Units
-	if i < 0 || j < 0 || i >= len(units) || j >= len(units) || i == j {
-		return false
-	}
-	units[i], units[j] = units[j], units[i]
-	return true
+	r := MakeMoveRanges(Range{from, to + 1}, delta)
+	m.d.Song.Patch[m.d.InstrIndex].Units, ok = Slice(m.d.Song.Patch[m.d.InstrIndex].Units, r[:]...)
+	return ok
 }
 
-func (v *Units) delete(i int) (ok bool) {
+func (v *Units) delete(from, to int) (ok bool) {
 	m := (*Model)(v)
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return false
 	}
-	units := m.d.Song.Patch[m.d.InstrIndex].Units
-	if i < 0 || i >= len(units) {
-		return false
-	}
-	units = append(units[:i], units[i+1:]...)
-	m.d.Song.Patch[m.d.InstrIndex].Units = units
-	return true
+	r := MakeComplementaryRanges(Range{from, to + 1})
+	m.d.Song.Patch[m.d.InstrIndex].Units, ok = Slice(m.d.Song.Patch[m.d.InstrIndex].Units, r[:]...)
+	return ok
 }
 
 func (v *Units) change(n string, severity ChangeSeverity) func() {
@@ -449,95 +292,6 @@ func (v *Units) unmarshal(data []byte) (from, to int, err error) {
 	return
 }
 
-// Tracks methods
-
-func (v *Tracks) List() List {
-	return List{v}
-}
-
-func (v *Tracks) Selected() int {
-	return max(min(v.d.Cursor.Track, v.Count()-1), 0)
-}
-
-func (v *Tracks) Selected2() int {
-	return max(min(v.d.Cursor2.Track, v.Count()-1), 0)
-}
-
-func (v *Tracks) SetSelected(value int) {
-	v.d.Cursor.Track = max(min(value, v.Count()-1), 0)
-}
-
-func (v *Tracks) SetSelected2(value int) {
-	v.d.Cursor2.Track = max(min(value, v.Count()-1), 0)
-}
-
-func (m *Tracks) swap(i, j int) (ok bool) {
-	if i < 0 || j < 0 || i >= len(m.d.Song.Score.Tracks) || j >= len(m.d.Song.Score.Tracks) || i == j {
-		return false
-	}
-	if m.linkInstrTrack {
-		order := swapRanges(m.d.Song.Score.Tracks, i, j)
-		m.d.Song.Patch, ok = sointu.VoiceSlice(m.d.Song.Patch, order[:]...)
-		if !ok { // the permutation would cause a track to split in two, so we cancel the operation
-			(*Model)(m).Alerts().AddNamed("SwapTracks", "Cannot swap tracks due to Instrument-Track linking; disable it to do this", Error)
-			return false
-		}
-	}
-	m.d.Song.Score.Tracks[i], m.d.Song.Score.Tracks[j] = m.d.Song.Score.Tracks[j], m.d.Song.Score.Tracks[i]
-	return true
-}
-
-func (v *Tracks) delete(i int) (ok bool) {
-	m := (*Model)(v)
-	if i < 0 || i >= len(m.d.Song.Score.Tracks) {
-		return false
-	}
-	if v.linkInstrTrack {
-		order := deleteRanges(m.d.Song.Score.Tracks, i)
-		v.d.Song.Patch, ok = sointu.VoiceSlice(v.d.Song.Patch, order[:]...)
-		if !ok {
-			(*Model)(v).Alerts().AddNamed("DeleteTrack", "Deleting prevented by Instrument-Track linking", Warning)
-			return false
-		}
-	}
-	m.d.Song.Score.Tracks = append(m.d.Song.Score.Tracks[:i], m.d.Song.Score.Tracks[i+1:]...)
-	return true
-}
-
-func (v *Tracks) change(n string, severity ChangeSeverity) func() {
-	return (*Model)(v).change("TrackList."+n, SongChange, severity)
-}
-
-func (v *Tracks) cancel() {
-	v.changeCancel = true
-}
-
-func (v *Tracks) Count() int {
-	return len((*Model)(v).d.Song.Score.Tracks)
-}
-
-func (v *Tracks) marshal(from, to int) ([]byte, error) {
-	m := (*Model)(v)
-	if from < 0 || to >= len(m.d.Song.Score.Tracks) || from > to {
-		return nil, fmt.Errorf("TrackListView.marshal: index out of range: %d, %d", from, to)
-	}
-	rFrom := sointu.VoiceRange(v.d.Song.Score.Tracks, from)
-	rTo := sointu.VoiceRange(v.d.Song.Score.Tracks, to)
-	r := sointu.Range{Start: rFrom.Start, End: rTo.End}
-	return (*Model)(v).marshalVoiceRange(r)
-}
-
-func (m *Tracks) unmarshal(data []byte) (from, to int, err error) {
-	voiceIndex := m.d.Song.Score.FirstVoiceForTrack(m.d.Cursor.Track)
-	if m.linkInstrTrack {
-		m.d.InstrIndex, m.d.InstrIndex2, err = (*Model)(m).unmarshalPatchAtVoice(voiceIndex, data)
-		if err != nil {
-			return 0, 0, err
-		}
-	}
-	return (*Model)(m).unmarshalTracksAtVoice(voiceIndex, data)
-}
-
 // OrderRows methods
 
 func (v *OrderRows) List() List {
@@ -578,10 +332,12 @@ func (v *OrderRows) swap(x, y int) (ok bool) {
 	return true
 }
 
-func (v *OrderRows) delete(i int) (ok bool) {
+func (v *OrderRows) delete(from, to int) (ok bool) {
+	r := MakeComplementaryRanges(Range{from, to + 1})
 	for _, track := range v.d.Song.Score.Tracks {
-		if i < len(track.Order) {
-			track.Order = append(track.Order[:i], track.Order[i+1:]...)
+		track.Order, ok = Slice(track.Order, r[:]...)
+		if !ok {
+			return false
 		}
 	}
 	return true
@@ -784,77 +540,5 @@ func (l *SearchResults) Count() (count int) {
 			count++
 		}
 	}
-	return
-}
-
-// helpers
-
-func swapRanges[T any, S ~[]T, P sointu.NumVoicerPointer[T]](slice S, i int, j int) [5]sointu.Range {
-	i, j = min(i, j), max(i, j)
-	ri := sointu.VoiceRange[T, S, P](slice, i)
-	rj := sointu.VoiceRange[T, S, P](slice, j)
-	return [...]sointu.Range{
-		{Start: 0, End: ri.Start},
-		{Start: rj.Start, End: rj.End},
-		{Start: ri.End, End: rj.Start},
-		{Start: ri.Start, End: ri.End},
-		{Start: rj.End, End: math.MaxInt},
-	}
-}
-
-func deleteRanges[T any, S ~[]T, P sointu.NumVoicerPointer[T]](slice S, i int) [2]sointu.Range {
-	r := sointu.VoiceRange[T, S, P](slice, i)
-	return [...]sointu.Range{
-		{Start: 0, End: r.Start},
-		{Start: r.End, End: math.MaxInt},
-	}
-}
-
-func (m *Model) marshalVoiceRange(r sointu.Range) (data []byte, err error) {
-	patch, ok := sointu.VoiceSlice(m.d.Song.Patch, r)
-	if !ok {
-		return nil, fmt.Errorf("marshalVoiceRange: slicing patch failed")
-	}
-	tracks, ok := sointu.VoiceSlice(m.d.Song.Score.Tracks, r)
-	if !ok {
-		return nil, fmt.Errorf("marshalVoiceRange: slicing tracks failed")
-	}
-	return yaml.Marshal(struct {
-		Patch  sointu.Patch
-		Tracks []sointu.Track
-	}{patch, tracks})
-}
-
-func (m *Model) unmarshalPatchAtVoice(voiceIndex int, data []byte) (from, to int, err error) {
-	var d struct{ Patch sointu.Patch }
-	if err := yaml.Unmarshal(data, &d); err != nil {
-		return 0, 0, fmt.Errorf("unmarshalPatchAtVoice: %v", err)
-	}
-	return m.addPatchAtVoice(voiceIndex, d.Patch...)
-}
-
-func (m *Model) addPatchAtVoice(voiceIndex int, p ...sointu.Instrument) (from, to int, err error) {
-	patch := (sointu.Patch)(p)
-	patch.AvoidUnitIDs(m.d.Song.Patch)
-	if total := m.d.Song.Patch.NumVoices() + patch.NumVoices(); total > vm.MAX_VOICES {
-		return 0, 0, fmt.Errorf("InstrumentListView.unmarshal: too many voices: %d", total)
-	}
-	m.d.Song.Patch, from, to = sointu.VoiceAdd(m.d.Song.Patch, voiceIndex, patch...)
-	return
-}
-
-func (m *Model) unmarshalTracksAtVoice(voiceIndex int, data []byte) (from, to int, err error) {
-	var d struct{ Tracks []sointu.Track }
-	if err := yaml.Unmarshal(data, &d); err != nil {
-		return 0, 0, fmt.Errorf("unmarshalPatchAtVoice: %v", err)
-	}
-	return m.addTracksAtVoice(voiceIndex, d.Tracks...)
-}
-
-func (m *Model) addTracksAtVoice(voiceIndex int, tracks ...sointu.Track) (from, to int, err error) {
-	if total := m.d.Song.Score.NumVoices() + sointu.TotalVoices(tracks); total > vm.MAX_VOICES {
-		return 0, 0, fmt.Errorf("InstrumentListView.unmarshal: too many voices: %d", total)
-	}
-	m.d.Song.Score.Tracks, from, to = sointu.VoiceAdd(m.d.Song.Score.Tracks, voiceIndex, tracks...)
 	return
 }

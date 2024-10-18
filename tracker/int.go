@@ -2,8 +2,6 @@ package tracker
 
 import (
 	"math"
-
-	"github.com/vsariola/sointu/vm"
 )
 
 type (
@@ -23,14 +21,12 @@ type (
 		Min, Max int
 	}
 
-	InstrumentVoices Model
-	TrackVoices      Model
-	SongLength       Model
-	BPM              Model
-	RowsPerPattern   Model
-	RowsPerBeat      Model
-	Step             Model
-	Octave           Model
+	SongLength     Model
+	BPM            Model
+	RowsPerPattern Model
+	RowsPerBeat    Model
+	Step           Model
+	Octave         Model
 )
 
 func (v Int) Add(delta int) (ok bool) {
@@ -61,14 +57,12 @@ func (r intRange) Clamp(value int) int {
 
 // Model methods
 
-func (m *Model) InstrumentVoices() *InstrumentVoices { return (*InstrumentVoices)(m) }
-func (m *Model) TrackVoices() *TrackVoices           { return (*TrackVoices)(m) }
-func (m *Model) SongLength() *SongLength             { return (*SongLength)(m) }
-func (m *Model) BPM() *BPM                           { return (*BPM)(m) }
-func (m *Model) RowsPerPattern() *RowsPerPattern     { return (*RowsPerPattern)(m) }
-func (m *Model) RowsPerBeat() *RowsPerBeat           { return (*RowsPerBeat)(m) }
-func (m *Model) Step() *Step                         { return (*Step)(m) }
-func (m *Model) Octave() *Octave                     { return (*Octave)(m) }
+func (m *Model) SongLength() *SongLength         { return (*SongLength)(m) }
+func (m *Model) BPM() *BPM                       { return (*BPM)(m) }
+func (m *Model) RowsPerPattern() *RowsPerPattern { return (*RowsPerPattern)(m) }
+func (m *Model) RowsPerBeat() *RowsPerBeat       { return (*RowsPerBeat)(m) }
+func (m *Model) Step() *Step                     { return (*Step)(m) }
+func (m *Model) Octave() *Octave                 { return (*Octave)(m) }
 
 // BeatsPerMinuteInt
 
@@ -126,70 +120,4 @@ func (v *RowsPerBeat) setValue(value int) { v.d.Song.RowsPerBeat = value }
 func (v *RowsPerBeat) Range() intRange    { return intRange{1, 32} }
 func (v *RowsPerBeat) change(kind string) func() {
 	return (*Model)(v).change("RowsPerBeatInt."+kind, SongChange, MinorChange)
-}
-
-// InstrumentVoicesInt
-
-func (v *InstrumentVoices) Int() Int {
-	return Int{v}
-}
-
-func (v *InstrumentVoices) Value() int {
-	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
-		return 1
-	}
-	return max(v.d.Song.Patch[v.d.InstrIndex].NumVoices, 1)
-}
-
-func (v *InstrumentVoices) setValue(value int) {
-	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
-		return
-	}
-	// TODO: this should change also the track voices if the instrument is linked to track
-	v.d.Song.Patch[v.d.InstrIndex].NumVoices = value
-}
-
-func (v *InstrumentVoices) Range() intRange {
-	return intRange{1, vm.MAX_VOICES - v.d.Song.Patch.NumVoices() + v.Value()}
-}
-
-func (v *InstrumentVoices) change(kind string) func() {
-	if v.linkInstrTrack {
-		return (*Model)(v).change("InstrumentVoicesInt."+kind, SongChange, MinorChange)
-	}
-	return (*Model)(v).change("InstrumentVoicesInt."+kind, PatchChange, MinorChange)
-}
-
-// TrackVoicesInt
-
-func (v *TrackVoices) Int() Int {
-	return Int{v}
-}
-
-func (v *TrackVoices) Value() int {
-	t := v.d.Cursor.Track
-	if t < 0 || t >= len(v.d.Song.Score.Tracks) {
-		return 1
-	}
-	return max(v.d.Song.Score.Tracks[t].NumVoices, 1)
-}
-
-func (v *TrackVoices) setValue(value int) {
-	t := v.d.Cursor.Track
-	if t < 0 || t >= len(v.d.Song.Score.Tracks) {
-		return
-	}
-	v.d.Song.Score.Tracks[t].NumVoices = value
-}
-
-func (v *TrackVoices) Range() intRange {
-	t := v.d.Cursor.Track
-	if t < 0 || t >= len(v.d.Song.Score.Tracks) {
-		return intRange{1, 1}
-	}
-	return intRange{1, vm.MAX_VOICES - v.d.Song.Score.NumVoices() + v.d.Song.Score.Tracks[t].NumVoices}
-}
-
-func (v *TrackVoices) change(kind string) func() {
-	return (*Model)(v).change("TrackVoicesInt."+kind, ScoreChange, MinorChange)
 }
