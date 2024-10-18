@@ -413,11 +413,11 @@ func (te *NoteEditor) finishNoteInsert(t *Tracker, note byte, keyName key.Name) 
 func (te *NoteEditor) HandleMidiInput(t *Tracker, e tracker.MIDINoteEvent) {
 	inputDeactivated := !t.Model.TrackMidiIn().Value()
 	if inputDeactivated {
+		fmt.Printf("INFO: Tracker received NoteID: %d\n", e)
 		return
 	}
 	t.Model.Notes().Table().Fill(int(e.Note))
 	te.finishNoteInsert(t, e.Note, "")
-	fmt.Printf("Tracker received NoteID: %d\n", e)
 }
 
 /*
