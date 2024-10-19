@@ -377,6 +377,7 @@ func (t *Tracker) ExportToFixedWavOrAsk() {
 	if t.fixedExportWavFilePath != "" {
 		t.exportToFixedWavPath(false)
 	} else {
+		// this shows the dialog (old behaviour)
 		t.Export().Do()
 	}
 }
