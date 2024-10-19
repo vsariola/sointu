@@ -79,8 +79,6 @@ func (m *Model) WriteWav(w io.WriteCloser, pcm16 bool, execChan chan<- func(), f
 	m.dialog = NoDialog
 	song := m.d.Song.Copy()
 	go func() {
-		defer close(finishedChan)
-
 		b := make([]byte, 32+2)
 		rand.Read(b)
 		name := fmt.Sprintf("%x", b)[2 : 32+2]
@@ -104,6 +102,10 @@ func (m *Model) WriteWav(w io.WriteCloser, pcm16 bool, execChan chan<- func(), f
 		}
 		w.Write(buffer)
 		w.Close()
+
+		if finishedChan != nil {
+			close(finishedChan)
+		}
 	}()
 }
 
