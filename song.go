@@ -321,7 +321,7 @@ func (s *Song) AllTracksWithSameInstrument(trackIndex int) iter.Seq[int] {
 			if instrument != currentInstrument {
 				continue
 			}
-			if !yield(instrument) {
+			if !yield(i) {
 				return
 			}
 		}

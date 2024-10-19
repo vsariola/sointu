@@ -258,14 +258,10 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		return D{Size: image.Pt(w, pxHeight)}
 	}
 
-	drawSelection := te.scrollTable.Table.Cursor() != te.scrollTable.Table.Cursor2()
+	cursor := te.scrollTable.Table.Cursor()
+	drawSelection := cursor != te.scrollTable.Table.Cursor2()
 	selection := te.scrollTable.Table.Range()
-
-	// TODO: maybe not best style to get the model value from the button, but it is bound to be the same...
 	hasTrackMidiIn := te.TrackMidiInBtn.Bool.Value()
-
-	// TODO @qm210: see table.go -> why defined for *Order, not *Model, when we need that cast anyway?
-	otherTracksForPolyphony := ((*tracker.Order)(t.Model)).TrackIndicesForCurrentInstrument()
 
 	cell := func(gtx C, x, y int) D {
 		// draw the background, to indicate selection
@@ -279,7 +275,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		}
 		paint.FillShape(gtx.Ops, color, clip.Rect{Min: image.Pt(0, 0), Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
 		// draw the cursor
-		if point == te.scrollTable.Table.Cursor() {
+		if point == cursor {
 			c := inactiveSelectionColor
 			if te.scrollTable.Focused() {
 				c = cursorColor
@@ -291,8 +287,8 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		}
 		// draw the corresponding "fake cursors" for instrument-track-groups (for polyphony)
 		if hasTrackMidiIn {
-			for _, trackIndex := range otherTracksForPolyphony {
-				if x == trackIndex && y == te.scrollTable.Table.Cursor().Y {
+			for trackIndex := range ((*tracker.Order)(t.Model)).TrackIndicesForCurrentInstrument() {
+				if x == trackIndex && y == cursor.Y {
 					te.paintColumnCell(gtx, x, t, cursorNeighborForTrackMidiInColor)
 				}
 			}
