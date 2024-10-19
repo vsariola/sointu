@@ -36,6 +36,7 @@ type (
 		ChangedSinceSave        bool
 		RecoveryFilePath        string
 		ChangedSinceRecovery    bool
+		Loop                    Loop
 	}
 
 	Model struct {
@@ -74,9 +75,10 @@ type (
 		synther sointu.Synther // the synther used to create new synths
 
 		PlayerMessages chan PlayerMsg
-		modelMessages  chan<- interface{}
+		ModelMessages  chan<- interface{}
 
-		MIDI MIDIContext
+		MIDI        MIDIContext
+		trackMidiIn bool
 	}
 
 	// Cursor identifies a row and a track in a song score.
@@ -126,6 +128,7 @@ type (
 	MIDIContext interface {
 		InputDevices(yield func(MIDIDevice) bool)
 		Close()
+		HasDeviceOpen() bool
 	}
 
 	MIDIDevice interface {
@@ -179,9 +182,10 @@ func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFil
 	m := new(Model)
 	m.synther = synther
 	m.MIDI = midiContext
+	m.trackMidiIn = midiContext.HasDeviceOpen()
 	modelMessages := make(chan interface{}, 1024)
 	playerMessages := make(chan PlayerMsg, 1024)
-	m.modelMessages = modelMessages
+	m.ModelMessages = modelMessages
 	m.PlayerMessages = playerMessages
 	m.d.Octave = 4
 	m.d.RecoveryFilePath = recoveryFilePath
@@ -416,7 +420,7 @@ func (m *Model) resetSong() {
 
 // send sends a message to the player
 func (m *Model) send(message interface{}) {
-	m.modelMessages <- message
+	m.ModelMessages <- message
 }
 
 func (m *Model) maxID() int {

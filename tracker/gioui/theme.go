@@ -60,6 +60,8 @@ var activeLightSurfaceColor = color.NRGBA{R: 45, G: 45, B: 45, A: 255}
 var cursorColor = color.NRGBA{R: 100, G: 140, B: 255, A: 48}
 var selectionColor = color.NRGBA{R: 100, G: 140, B: 255, A: 12}
 var inactiveSelectionColor = color.NRGBA{R: 140, G: 140, B: 140, A: 16}
+var cursorForTrackMidiInColor = color.NRGBA{R: 255, G: 100, B: 140, A: 48}
+var cursorNeighborForTrackMidiInColor = color.NRGBA{R: 255, G: 100, B: 140, A: 24}
 
 var errorColor = color.NRGBA{R: 207, G: 102, B: 121, A: 255}
 

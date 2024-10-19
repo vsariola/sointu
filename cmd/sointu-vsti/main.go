@@ -31,6 +31,8 @@ func (m NullMIDIContext) InputDevices(yield func(tracker.MIDIDevice) bool) {}
 
 func (m NullMIDIContext) Close() {}
 
+func (m NullMIDIContext) HasDeviceOpen() { return false }
+
 func (c *VSTIProcessContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
 	for c.eventIndex < len(c.events) {
 		ev := c.events[c.eventIndex]
