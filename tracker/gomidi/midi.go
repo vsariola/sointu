@@ -3,7 +3,6 @@ package gomidi
 import (
 	"errors"
 	"fmt"
-
 	"github.com/vsariola/sointu/tracker"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/drivers"
@@ -137,8 +136,8 @@ func (c *RTMIDIContext) TryToOpenBy(namePrefix string, takeFirst bool) {
 		}
 	}
 	if takeFirst {
-		fmt.Printf("Could not find any MIDI Input.\n")
+		fmt.Errorf("Could not find any MIDI Input.\n")
 	} else {
-		fmt.Printf("Could not find any default MIDI Input starting with \"%s\".\n", namePrefix)
+		fmt.Errorf("Could not find any default MIDI Input starting with \"%s\".\n", namePrefix)
 	}
 }
