@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -49,7 +50,8 @@ type (
 		Exploring        bool
 		SongPanel        *SongPanel
 
-		filePathString tracker.String
+		filePathString         tracker.String
+		fixedExportWavFilePath string
 
 		quitWG   sync.WaitGroup
 		execChan chan func()
@@ -67,7 +69,7 @@ const (
 	ConfirmNew
 )
 
-func NewTracker(model *tracker.Model) *Tracker {
+func NewTracker(model *tracker.Model, fixedExportWavFilePath string) *Tracker {
 	t := &Tracker{
 		Theme:             material.NewTheme(),
 		OctaveNumberInput: NewNumberInput(model.Octave().Int()),
@@ -88,8 +90,9 @@ func NewTracker(model *tracker.Model) *Tracker {
 
 		Model: model,
 
-		filePathString: model.FilePath().String(),
-		execChan:       make(chan func(), 1024),
+		filePathString:         model.FilePath().String(),
+		fixedExportWavFilePath: fixedExportWavFilePath,
+		execChan:               make(chan func(), 1024),
 	}
 	t.Theme.Shaper = text.NewShaper(text.WithCollection(fontCollection))
 	t.PopupAlert = NewPopupAlert(model.Alerts(), t.Theme.Shaper)
@@ -101,7 +104,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 	return t
 }
 
-func (t *Tracker) Main() {
+func (t *Tracker) Main(onlyExport bool) {
 	titleFooter := ""
 	w := new(app.Window)
 	w.Option(app.Title("Sointu Tracker"))
@@ -114,6 +117,9 @@ func (t *Tracker) Main() {
 	// Make a channel to signal the end of processing a window event.
 	acks := make(chan struct{})
 	go eventLoop(w, events, acks)
+	if t.fixedExportWavFilePath != "" {
+		t.exportToFixedWavPath(onlyExport)
+	}
 	var ops op.Ops
 	for {
 		select {
@@ -253,7 +259,7 @@ func (t *Tracker) showDialog(gtx C) {
 			filename = p[:len(p)-len(filepath.Ext(p))] + ".wav"
 		}
 		t.explorerCreateFile(func(wc io.WriteCloser) {
-			t.WriteWav(wc, t.Dialog() == tracker.ExportInt16Explorer, t.execChan)
+			t.WriteWav(wc, t.Dialog() == tracker.ExportInt16Explorer, t.execChan, nil)
 		}, filename)
 	}
 }
@@ -350,5 +356,27 @@ func (t *Tracker) removeFromMidiNotePlaying(note byte) {
 				t.MidiNotePlaying[i+1:]...,
 			)
 		}
+	}
+}
+
+func (t *Tracker) exportToFixedWavPath(thenQuit bool) {
+	file, err := os.Create(t.fixedExportWavFilePath)
+	if err != nil {
+		t.Alerts().Add(fmt.Sprintf("Error creating WAV file: %v", err), tracker.Error)
+		return
+	}
+	waitForFinish := make(chan struct{})
+	t.WriteWav(file, false, t.Exec(), waitForFinish)
+	<-waitForFinish
+	if thenQuit {
+		t.ForceQuit().Do()
+	}
+}
+
+func (t *Tracker) ExportToFixedWavOrAsk() {
+	if t.fixedExportWavFilePath != "" {
+		t.exportToFixedWavPath(false)
+	} else {
+		t.Export().Do()
 	}
 }

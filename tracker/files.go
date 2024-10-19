@@ -75,10 +75,12 @@ func (m *Model) WriteSong(w io.WriteCloser) {
 	m.completeAction(false)
 }
 
-func (m *Model) WriteWav(w io.WriteCloser, pcm16 bool, execChan chan<- func()) {
+func (m *Model) WriteWav(w io.WriteCloser, pcm16 bool, execChan chan<- func(), finishedChan chan<- struct{}) {
 	m.dialog = NoDialog
 	song := m.d.Song.Copy()
 	go func() {
+		defer close(finishedChan)
+
 		b := make([]byte, 32+2)
 		rand.Read(b)
 		name := fmt.Sprintf("%x", b)[2 : 32+2]

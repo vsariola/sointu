@@ -21,6 +21,8 @@ var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 var defaultMidiInput = flag.String("midi-input", "", "connect MIDI input to matching device name")
 var firstMidiInput = flag.Bool("first-midi-input", false, "connect MIDI input to first device found")
+var fixedExportWav = flag.String("export", "", "fixed export .WAV `file` (will use float32)")
+var onlyExportWav = flag.Bool("export-only", false, "only write wav, needs --export")
 
 func main() {
 	flag.Parse()
@@ -58,12 +60,12 @@ func main() {
 		f.Close()
 	}
 
-	trackerUi := gioui.NewTracker(model)
+	trackerUi := gioui.NewTracker(model, *fixedExportWav)
 	processor := tracker.NewProcessor(player, midiContext, trackerUi)
 	audioCloser := audioContext.Play(processor)
 
 	go func() {
-		trackerUi.Main()
+		trackerUi.Main(*onlyExportWav)
 		audioCloser.Close()
 		if *cpuprofile != "" {
 			pprof.StopCPUProfile()
