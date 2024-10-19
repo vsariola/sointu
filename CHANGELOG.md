@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Dragging mouse to select rectangles in the tables
 - The standalone tracker can open a MIDI port for receiving MIDI notes
   ([#166][i166])
+  - the note editor has a button to allow entering notes by MIDI.
+    Polyphony is supported if there are tracks available. ([#170][i170])  
 - Units can have comments, to make it easier to distinguish between units of
   same type within an instrument. These comments are also shown when choosing
   the send target. ([#114][i114])
@@ -25,6 +27,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Include version info in the binaries, as given be `git describe`. This version
   info is shown as a label in the tracker and can be checked with `-v` flag in
   the command line tools.
+- The standalone tracker now has command line flags `--export <file.wav>` to avoid
+  being asked about the WAV export file name and `--export-only` to avoid opening
+  the tracker window (allows for batch rendering via CLI, uses float32 wav for now)
+  
+  
 
 ### Fixed
 - When changing a nibble of a hexadecimal note, the note played was the note

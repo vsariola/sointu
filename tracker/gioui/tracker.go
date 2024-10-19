@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -35,6 +36,7 @@ type (
 		BottomHorizontalSplit *Split
 		VerticalSplit         *Split
 		KeyPlaying            map[key.Name]tracker.NoteID
+		MidiNotePlaying       []byte
 		PopupAlert            *PopupAlert
 
 		SaveChangesDialog *Dialog
@@ -48,7 +50,8 @@ type (
 		Exploring        bool
 		SongPanel        *SongPanel
 
-		filePathString tracker.String
+		filePathString         tracker.String
+		fixedExportWavFilePath string
 
 		quitWG   sync.WaitGroup
 		execChan chan func()
@@ -66,7 +69,7 @@ const (
 	ConfirmNew
 )
 
-func NewTracker(model *tracker.Model) *Tracker {
+func NewTracker(model *tracker.Model, fixedExportWavFilePath string) *Tracker {
 	t := &Tracker{
 		Theme:             material.NewTheme(),
 		OctaveNumberInput: NewNumberInput(model.Octave().Int()),
@@ -77,6 +80,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 		VerticalSplit:         &Split{Axis: layout.Vertical},
 
 		KeyPlaying:        make(map[key.Name]tracker.NoteID),
+		MidiNotePlaying:   make([]byte, 0, 32),
 		SaveChangesDialog: NewDialog(model.SaveSong(), model.DiscardSong(), model.Cancel()),
 		WaveTypeDialog:    NewDialog(model.ExportInt16(), model.ExportFloat(), model.Cancel()),
 		InstrumentEditor:  NewInstrumentEditor(model),
@@ -86,8 +90,9 @@ func NewTracker(model *tracker.Model) *Tracker {
 
 		Model: model,
 
-		filePathString: model.FilePath().String(),
-		execChan:       make(chan func(), 1024),
+		filePathString:         model.FilePath().String(),
+		fixedExportWavFilePath: fixedExportWavFilePath,
+		execChan:               make(chan func(), 1024),
 	}
 	t.Theme.Shaper = text.NewShaper(text.WithCollection(fontCollection))
 	t.PopupAlert = NewPopupAlert(model.Alerts(), t.Theme.Shaper)
@@ -95,10 +100,11 @@ func NewTracker(model *tracker.Model) *Tracker {
 	t.Theme.Palette.ContrastFg = black
 	t.TrackEditor.scrollTable.Focus()
 	t.quitWG.Add(1)
+
 	return t
 }
 
-func (t *Tracker) Main() {
+func (t *Tracker) Main(onlyExport bool) {
 	titleFooter := ""
 	w := new(app.Window)
 	w.Option(app.Title("Sointu Tracker"))
@@ -111,6 +117,9 @@ func (t *Tracker) Main() {
 	// Make a channel to signal the end of processing a window event.
 	acks := make(chan struct{})
 	go eventLoop(w, events, acks)
+	if t.fixedExportWavFilePath != "" {
+		t.exportToFixedWavPath(onlyExport)
+	}
 	var ops op.Ops
 	for {
 		select {
@@ -250,7 +259,7 @@ func (t *Tracker) showDialog(gtx C) {
 			filename = p[:len(p)-len(filepath.Ext(p))] + ".wav"
 		}
 		t.explorerCreateFile(func(wc io.WriteCloser) {
-			t.WriteWav(wc, t.Dialog() == tracker.ExportInt16Explorer, t.execChan)
+			t.WriteWav(wc, t.Dialog() == tracker.ExportInt16Explorer, t.execChan, nil)
 		}, filename)
 	}
 }
@@ -305,4 +314,70 @@ func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
 			return t.InstrumentEditor.Layout(gtx, t)
 		},
 	)
+}
+
+/// Event Handling (for UI updates when playing etc.)
+
+func (t *Tracker) ProcessMessage(msg interface{}) {
+	switch msg.(type) {
+	case tracker.StartPlayMsg:
+		fmt.Println("Tracker received StartPlayMsg")
+	case tracker.RecordingMsg:
+		fmt.Println("Tracker received RecordingMsg")
+	default:
+		break
+	}
+}
+
+func (t *Tracker) ProcessEvent(event tracker.MIDINoteEvent) {
+	// MIDINoteEvent can be only NoteOn / NoteOff, i.e. its On field
+	if event.On {
+		t.addToMidiNotePlaying(event.Note)
+	} else {
+		t.removeFromMidiNotePlaying(event.Note)
+	}
+	t.TrackEditor.HandleMidiInput(t)
+}
+
+func (t *Tracker) addToMidiNotePlaying(note byte) {
+	for _, n := range t.MidiNotePlaying {
+		if n == note {
+			return
+		}
+	}
+	t.MidiNotePlaying = append(t.MidiNotePlaying, note)
+}
+
+func (t *Tracker) removeFromMidiNotePlaying(note byte) {
+	for i, n := range t.MidiNotePlaying {
+		if n == note {
+			t.MidiNotePlaying = append(
+				t.MidiNotePlaying[:i],
+				t.MidiNotePlaying[i+1:]...,
+			)
+		}
+	}
+}
+
+func (t *Tracker) exportToFixedWavPath(thenQuit bool) {
+	file, err := os.Create(t.fixedExportWavFilePath)
+	if err != nil {
+		t.Alerts().Add(fmt.Sprintf("Error creating WAV file: %v", err), tracker.Error)
+		return
+	}
+	waitForFinish := make(chan struct{})
+	t.WriteWav(file, false, t.Exec(), waitForFinish)
+	<-waitForFinish
+	if thenQuit {
+		t.ForceQuit().Do()
+	}
+}
+
+func (t *Tracker) ExportToFixedWavOrAsk() {
+	if t.fixedExportWavFilePath != "" {
+		t.exportToFixedWavPath(false)
+	} else {
+		// this shows the dialog (old behaviour)
+		t.Export().Do()
+	}
 }

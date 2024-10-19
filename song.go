@@ -2,6 +2,7 @@ package sointu
 
 import (
 	"errors"
+	"iter"
 )
 
 type (
@@ -296,4 +297,33 @@ func (s *Song) Validate() error {
 		return errors.New("Tracks use too many voices")
 	}
 	return nil
+}
+
+func (s *Song) InstrumentForTrack(trackIndex int) (int, bool) {
+	voiceIndex := s.Score.FirstVoiceForTrack(trackIndex)
+	instrument, err := s.Patch.InstrumentForVoice(voiceIndex)
+	return instrument, err == nil
+}
+
+func (s *Song) AllTracksWithSameInstrument(trackIndex int) iter.Seq[int] {
+	return func(yield func(int) bool) {
+
+		currentInstrument, currentExists := s.InstrumentForTrack(trackIndex)
+		if !currentExists {
+			return
+		}
+
+		for i := 0; i < len(s.Score.Tracks); i++ {
+			instrument, exists := s.InstrumentForTrack(i)
+			if !exists {
+				return
+			}
+			if instrument != currentInstrument {
+				continue
+			}
+			if !yield(i) {
+				return
+			}
+		}
+	}
 }

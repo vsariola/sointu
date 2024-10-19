@@ -194,7 +194,7 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 	case "SaveSongAs":
 		t.SaveSongAs().Do()
 	case "ExportWav":
-		t.Export().Do()
+		t.ExportToFixedWavOrAsk()
 	case "ExportFloat":
 		t.ExportFloat().Do()
 	case "ExportInt16":

@@ -10,7 +10,6 @@ import (
 	"runtime/pprof"
 
 	"gioui.org/app"
-	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/cmd"
 	"github.com/vsariola/sointu/oto"
 	"github.com/vsariola/sointu/tracker"
@@ -18,18 +17,12 @@ import (
 	"github.com/vsariola/sointu/tracker/gomidi"
 )
 
-type PlayerAudioSource struct {
-	*tracker.Player
-	playerProcessContext tracker.PlayerProcessContext
-}
-
-func (p *PlayerAudioSource) ReadAudio(buf sointu.AudioBuffer) error {
-	p.Player.Process(buf, p.playerProcessContext)
-	return nil
-}
-
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
+var defaultMidiInput = flag.String("midi-input", "", "connect MIDI input to matching device name")
+var firstMidiInput = flag.Bool("first-midi-input", false, "connect MIDI input to first device found")
+var fixedExportWav = flag.String("export", "", "fixed export .WAV `file` (will use float32)")
+var onlyExportWav = flag.Bool("export-only", false, "only write wav, needs --export")
 
 func main() {
 	flag.Parse()
@@ -53,9 +46,12 @@ func main() {
 	if configDir, err := os.UserConfigDir(); err == nil {
 		recoveryFile = filepath.Join(configDir, "Sointu", "sointu-track-recovery")
 	}
+
 	midiContext := gomidi.NewContext()
+	defer midiContext.Close()
+	midiContext.TryToOpenBy(*defaultMidiInput, *firstMidiInput)
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, midiContext, recoveryFile)
-	defer model.MIDI.Close()
+
 	if a := flag.Args(); len(a) > 0 {
 		f, err := os.Open(a[0])
 		if err == nil {
@@ -63,10 +59,13 @@ func main() {
 		}
 		f.Close()
 	}
-	tracker := gioui.NewTracker(model)
-	audioCloser := audioContext.Play(&PlayerAudioSource{player, midiContext})
+
+	trackerUi := gioui.NewTracker(model, *fixedExportWav)
+	processor := tracker.NewProcessor(player, midiContext, trackerUi)
+	audioCloser := audioContext.Play(processor)
+
 	go func() {
-		tracker.Main()
+		trackerUi.Main(*onlyExportWav)
 		audioCloser.Close()
 		if *cpuprofile != "" {
 			pprof.StopCPUProfile()

@@ -75,7 +75,7 @@ func (m *Model) WriteSong(w io.WriteCloser) {
 	m.completeAction(false)
 }
 
-func (m *Model) WriteWav(w io.WriteCloser, pcm16 bool, execChan chan<- func()) {
+func (m *Model) WriteWav(w io.WriteCloser, pcm16 bool, execChan chan<- func(), finishedChan chan<- struct{}) {
 	m.dialog = NoDialog
 	song := m.d.Song.Copy()
 	go func() {
@@ -102,6 +102,10 @@ func (m *Model) WriteWav(w io.WriteCloser, pcm16 bool, execChan chan<- func()) {
 		}
 		w.Write(buffer)
 		w.Close()
+
+		if finishedChan != nil {
+			close(finishedChan)
+		}
 	}()
 }
 
