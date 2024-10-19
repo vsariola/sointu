@@ -49,7 +49,6 @@ func main() {
 	defer midiContext.Close()
 	midiContext.TryToOpenBy(*defaultMidiInput, *firstMidiInput)
 	model, player := tracker.NewModelPlayer(cmd.MainSynther, midiContext, recoveryFile)
-	fmt.Printf("Context created.\n")
 
 	if a := flag.Args(); len(a) > 0 {
 		f, err := os.Open(a[0])
