@@ -2,6 +2,7 @@ package sointu
 
 import (
 	"errors"
+	"iter"
 )
 
 type (
@@ -304,23 +305,25 @@ func (s *Song) InstrumentForTrack(trackIndex int) (int, bool) {
 	return instrument, err == nil
 }
 
-func (s *Song) AllTracksWithSameInstrument(trackIndex int) []int {
-	nTracks := len(s.Score.Tracks)
-	result := make([]int, 0, nTracks)
-	currentInstrument, currentExists := s.InstrumentForTrack(trackIndex)
-	if !currentExists {
-		return result
-	}
-	// collect all tracks with the same instrument, but not the current track itself
-	for i := 0; i <= nTracks; i++ {
-		instrument, exists := s.InstrumentForTrack(i)
-		if !exists {
-			break
+func (s *Song) AllTracksWithSameInstrument(trackIndex int) iter.Seq[int] {
+	return func(yield func(int) bool) {
+
+		currentInstrument, currentExists := s.InstrumentForTrack(trackIndex)
+		if !currentExists {
+			return
 		}
-		if instrument != currentInstrument {
-			continue
+
+		for i := 0; i < len(s.Score.Tracks); i++ {
+			instrument, exists := s.InstrumentForTrack(i)
+			if !exists {
+				return
+			}
+			if instrument != currentInstrument {
+				continue
+			}
+			if !yield(instrument) {
+				return
+			}
 		}
-		result = append(result, i)
 	}
-	return result
 }

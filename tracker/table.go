@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"iter"
 	"math"
 
 	"github.com/vsariola/sointu"
@@ -117,6 +118,13 @@ func (v Table) Clear() {
 	}
 }
 
+func (v Table) Set(value byte) {
+	defer v.change("Set", MajorChange)()
+	cursor := v.Cursor()
+	// TODO: might check for visibility
+	v.set(cursor, int(value))
+}
+
 func (v Table) Fill(value int) {
 	defer v.change("Fill", MajorChange)()
 	rect := v.Range()
@@ -149,8 +157,8 @@ func (v Table) SetCursorY(y int) {
 
 // Order methods
 
-func (v *Order) Table() Table {
-	return Table{v}
+func (m *Order) Table() Table {
+	return Table{m}
 }
 
 func (m *Order) Cursor() Point {
@@ -185,35 +193,35 @@ func (m *Order) SetCursorFloat(x, y float32) {
 	m.SetCursor(Point{int(x), int(y)})
 }
 
-func (v *Order) updateCursorRows() {
-	if v.Cursor() == v.Cursor2() {
-		v.d.Cursor.PatternRow = 0
-		v.d.Cursor2.PatternRow = 0
+func (m *Order) updateCursorRows() {
+	if m.Cursor() == m.Cursor2() {
+		m.d.Cursor.PatternRow = 0
+		m.d.Cursor2.PatternRow = 0
 		return
 	}
-	if v.d.Cursor.OrderRow > v.d.Cursor2.OrderRow {
-		v.d.Cursor.PatternRow = v.d.Song.Score.RowsPerPattern - 1
-		v.d.Cursor2.PatternRow = 0
+	if m.d.Cursor.OrderRow > m.d.Cursor2.OrderRow {
+		m.d.Cursor.PatternRow = m.d.Song.Score.RowsPerPattern - 1
+		m.d.Cursor2.PatternRow = 0
 	} else {
-		v.d.Cursor.PatternRow = 0
-		v.d.Cursor2.PatternRow = v.d.Song.Score.RowsPerPattern - 1
+		m.d.Cursor.PatternRow = 0
+		m.d.Cursor2.PatternRow = m.d.Song.Score.RowsPerPattern - 1
 	}
 }
 
-func (v *Order) Width() int {
-	return len((*Model)(v).d.Song.Score.Tracks)
+func (m *Order) Width() int {
+	return len((*Model)(m).d.Song.Score.Tracks)
 }
 
-func (v *Order) Height() int {
-	return (*Model)(v).d.Song.Score.Length
+func (m *Order) Height() int {
+	return (*Model)(m).d.Song.Score.Length
 }
 
-func (v *Order) MoveCursor(dx, dy int) (ok bool) {
-	p := v.Cursor()
+func (m *Order) MoveCursor(dx, dy int) (ok bool) {
+	p := m.Cursor()
 	p.X += dx
 	p.Y += dy
-	v.SetCursor(p)
-	return p == v.Cursor()
+	m.SetCursor(p)
+	return p == m.Cursor()
 }
 
 func (m *Order) clear(p Point) {
@@ -224,10 +232,10 @@ func (m *Order) set(p Point, value int) {
 	m.d.Song.Score.Tracks[p.X].Order.Set(p.Y, value)
 }
 
-func (v *Order) add(rect Rect, delta int) (ok bool) {
+func (m *Order) add(rect Rect, delta int) (ok bool) {
 	for x := rect.TopLeft.X; x <= rect.BottomRight.X; x++ {
 		for y := rect.TopLeft.Y; y <= rect.BottomRight.Y; y++ {
-			if !v.add1(Point{x, y}, delta) {
+			if !m.add1(Point{x, y}, delta) {
 				return false
 			}
 		}
@@ -235,11 +243,11 @@ func (v *Order) add(rect Rect, delta int) (ok bool) {
 	return true
 }
 
-func (v *Order) add1(p Point, delta int) (ok bool) {
-	if p.X < 0 || p.X >= len(v.d.Song.Score.Tracks) {
+func (m *Order) add1(p Point, delta int) (ok bool) {
+	if p.X < 0 || p.X >= len(m.d.Song.Score.Tracks) {
 		return true
 	}
-	val := v.d.Song.Score.Tracks[p.X].Order.Get(p.Y)
+	val := m.d.Song.Score.Tracks[p.X].Order.Get(p.Y)
 	if val < 0 {
 		return true
 	}
@@ -247,7 +255,7 @@ func (v *Order) add1(p Point, delta int) (ok bool) {
 	if val < 0 || val > 36 {
 		return false
 	}
-	v.d.Song.Score.Tracks[p.X].Order.Set(p.Y, val)
+	m.d.Song.Score.Tracks[p.X].Order.Set(p.Y, val)
 	return true
 }
 
@@ -294,8 +302,8 @@ func (m *Order) unmarshal(data []byte) (marshalTracks, bool) {
 	return marshalTracks{}, false
 }
 
-func (v *Order) unmarshalAtCursor(data []byte) bool {
-	table, ok := v.unmarshal(data)
+func (m *Order) unmarshalAtCursor(data []byte) bool {
+	table, ok := m.unmarshal(data)
 	if !ok {
 		return false
 	}
@@ -304,19 +312,19 @@ func (v *Order) unmarshalAtCursor(data []byte) bool {
 			if table.Tracks[i].Order[j] < -1 || table.Tracks[i].Order[j] > 36 {
 				continue
 			}
-			x := i + v.Cursor().X
-			y := j + v.Cursor().Y
-			if x < 0 || x >= len(v.d.Song.Score.Tracks) || y < 0 || y >= v.d.Song.Score.Length {
+			x := i + m.Cursor().X
+			y := j + m.Cursor().Y
+			if x < 0 || x >= len(m.d.Song.Score.Tracks) || y < 0 || y >= m.d.Song.Score.Length {
 				continue
 			}
-			v.d.Song.Score.Tracks[x].Order.Set(y, q)
+			m.d.Song.Score.Tracks[x].Order.Set(y, q)
 		}
 	}
 	return true
 }
 
-func (v *Order) unmarshalRange(rect Rect, data []byte) bool {
-	table, ok := v.unmarshal(data)
+func (m *Order) unmarshalRange(rect Rect, data []byte) bool {
+	table, ok := m.unmarshal(data)
 	if !ok {
 		return false
 	}
@@ -330,21 +338,21 @@ func (v *Order) unmarshalRange(rect Rect, data []byte) bool {
 			}
 			x := i + rect.TopLeft.X
 			y := j + rect.TopLeft.Y
-			if x < 0 || x >= len(v.d.Song.Score.Tracks) || y < 0 || y >= v.d.Song.Score.Length {
+			if x < 0 || x >= len(m.d.Song.Score.Tracks) || y < 0 || y >= m.d.Song.Score.Length {
 				continue
 			}
-			v.d.Song.Score.Tracks[x].Order.Set(y, a)
+			m.d.Song.Score.Tracks[x].Order.Set(y, a)
 		}
 	}
 	return true
 }
 
-func (v *Order) change(kind string, severity ChangeSeverity) func() {
-	return (*Model)(v).change("OrderTableView."+kind, ScoreChange, severity)
+func (m *Order) change(kind string, severity ChangeSeverity) func() {
+	return (*Model)(m).change("OrderTableView."+kind, ScoreChange, severity)
 }
 
-func (v *Order) cancel() {
-	v.changeCancel = true
+func (m *Order) cancel() {
+	m.changeCancel = true
 }
 
 func (m *Order) Value(p Point) int {
@@ -364,12 +372,8 @@ func (e *Order) Title(x int) (title string) {
 	if x < 0 || x >= len(e.d.Song.Score.Tracks) {
 		return
 	}
-	t := e.d.Song.Score.Tracks[x]
-	firstVoice := e.d.Song.Score.FirstVoiceForTrack(x)
-	lastVoice := firstVoice + t.NumVoices - 1
-	firstIndex, err := e.d.Song.Patch.InstrumentForVoice(firstVoice)
-	lastIndex, err2 := e.d.Song.Patch.InstrumentForVoice(lastVoice)
-	if err != nil || err2 != nil {
+	firstIndex, lastIndex, err := e.instrumentListFor(x)
+	if err != nil {
 		return
 	}
 	switch diff := lastIndex - firstIndex; diff {
@@ -395,6 +399,37 @@ func (e *Order) Title(x int) (title string) {
 		}
 	}
 	return
+}
+
+func (e *Order) instrumentListFor(trackIndex int) (int, int, error) {
+	track := e.d.Song.Score.Tracks[trackIndex]
+	firstVoice := e.d.Song.Score.FirstVoiceForTrack(trackIndex)
+	lastVoice := firstVoice + track.NumVoices - 1
+	firstIndex, err1 := e.d.Song.Patch.InstrumentForVoice(firstVoice)
+	if err1 != nil {
+		return trackIndex, trackIndex, err1
+	}
+	lastIndex, err2 := e.d.Song.Patch.InstrumentForVoice(lastVoice)
+	if err2 != nil {
+		return trackIndex, trackIndex, err2
+	}
+	return firstIndex, lastIndex, nil
+}
+
+func (e *Order) TrackIndicesForCurrentInstrument() iter.Seq[int] {
+	currentTrack := e.d.Cursor.Track
+	return e.d.Song.AllTracksWithSameInstrument(currentTrack)
+}
+
+func (e *Order) CountNextTracksForCurrentInstrument() int {
+	currentTrack := e.d.Cursor.Track
+	count := 0
+	for t := range e.TrackIndicesForCurrentInstrument() {
+		if t > currentTrack {
+			count++
+		}
+	}
+	return count
 }
 
 // NoteTable
