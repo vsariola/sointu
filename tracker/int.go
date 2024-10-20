@@ -2,8 +2,6 @@ package tracker
 
 import (
 	"math"
-
-	"github.com/vsariola/sointu/vm"
 )
 
 type (
@@ -141,19 +139,25 @@ func (v *InstrumentVoices) Value() int {
 	return max(v.d.Song.Patch[v.d.InstrIndex].NumVoices, 1)
 }
 
-func (v *InstrumentVoices) setValue(value int) {
-	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
+func (m *InstrumentVoices) setValue(value int) {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return
 	}
-	v.d.Song.Patch[v.d.InstrIndex].NumVoices = value
+	voiceIndex := m.d.Song.Patch.FirstVoiceForInstrument(m.d.InstrIndex)
+	voiceRange := Range{voiceIndex, voiceIndex + m.d.Song.Patch[m.d.InstrIndex].NumVoices}
+	ranges := MakeSetLength(voiceRange, value)
+	ok := (*Model)(m).sliceInstrumentsTracks(true, m.linkInstrTrack, ranges...)
+	if !ok {
+		m.changeCancel = true
+	}
 }
 
 func (v *InstrumentVoices) Range() intRange {
-	return intRange{1, vm.MAX_VOICES - v.d.Song.Patch.NumVoices() + v.Value()}
+	return intRange{1, (*Model)(v).remainingVoices(true, v.linkInstrTrack) + v.Value()}
 }
 
 func (v *InstrumentVoices) change(kind string) func() {
-	return (*Model)(v).change("InstrumentVoicesInt."+kind, PatchChange, MinorChange)
+	return (*Model)(v).change("InstrumentVoices."+kind, SongChange, MinorChange)
 }
 
 // TrackVoicesInt
@@ -170,12 +174,14 @@ func (v *TrackVoices) Value() int {
 	return max(v.d.Song.Score.Tracks[t].NumVoices, 1)
 }
 
-func (v *TrackVoices) setValue(value int) {
-	t := v.d.Cursor.Track
-	if t < 0 || t >= len(v.d.Song.Score.Tracks) {
-		return
+func (m *TrackVoices) setValue(value int) {
+	voiceIndex := m.d.Song.Score.FirstVoiceForTrack(m.d.Cursor.Track)
+	voiceRange := Range{voiceIndex, voiceIndex + m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices}
+	ranges := MakeSetLength(voiceRange, value)
+	ok := (*Model)(m).sliceInstrumentsTracks(m.linkInstrTrack, true, ranges...)
+	if !ok {
+		m.changeCancel = true
 	}
-	v.d.Song.Score.Tracks[t].NumVoices = value
 }
 
 func (v *TrackVoices) Range() intRange {
@@ -183,9 +189,9 @@ func (v *TrackVoices) Range() intRange {
 	if t < 0 || t >= len(v.d.Song.Score.Tracks) {
 		return intRange{1, 1}
 	}
-	return intRange{1, vm.MAX_VOICES - v.d.Song.Score.NumVoices() + v.d.Song.Score.Tracks[t].NumVoices}
+	return intRange{1, (*Model)(v).remainingVoices(v.linkInstrTrack, true) + v.d.Song.Score.Tracks[t].NumVoices}
 }
 
 func (v *TrackVoices) change(kind string) func() {
-	return (*Model)(v).change("TrackVoicesInt."+kind, ScoreChange, MinorChange)
+	return (*Model)(v).change("TrackVoices."+kind, SongChange, MinorChange)
 }

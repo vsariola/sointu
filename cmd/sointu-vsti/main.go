@@ -73,7 +73,12 @@ func init() {
 		model, player := tracker.NewModelPlayer(cmd.MainSynther, NullMIDIContext{}, recoveryFile)
 
 		t := gioui.NewTracker(model)
-		tracker.Bool{BoolData: (*tracker.InstrEnlarged)(model)}.Set(true)
+		model.InstrEnlarged().Bool().Set(true)
+		// since the VST is usually working without any regard for the tracks
+		// until recording, disable the Instrument-Track linking by default
+		// because it might just confuse the user why instrument cannot be
+		// swapped/added etc.
+		model.LinkInstrTrack().Bool().Set(false)
 		go t.Main()
 		context := VSTIProcessContext{host: h}
 		buf := make(sointu.AudioBuffer, 1024)

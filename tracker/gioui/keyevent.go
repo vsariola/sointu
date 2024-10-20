@@ -199,6 +199,10 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		t.ExportFloat().Do()
 	case "ExportInt16":
 		t.ExportInt16().Do()
+	case "SplitTrack":
+		t.SplitTrack().Do()
+	case "SplitInstrument":
+		t.SplitInstrument().Do()
 	// Booleans
 	case "PanicToggle":
 		t.Panic().Bool().Toggle()
@@ -212,6 +216,8 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		t.Playing().Bool().Toggle()
 	case "InstrEnlargedToggle":
 		t.InstrEnlarged().Bool().Toggle()
+	case "LinkInstrTrackToggle":
+		t.LinkInstrTrack().Bool().Toggle()
 	case "CommentExpandedToggle":
 		t.CommentExpanded().Bool().Toggle()
 	case "FollowToggle":

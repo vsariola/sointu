@@ -24,6 +24,7 @@ type (
 	UniquePatterns  Model
 	Mute            Model
 	Solo            Model
+	LinkInstrTrack  Model
 )
 
 func (v Bool) Toggle() {
@@ -51,6 +52,7 @@ func (m *Model) LoopToggle() *LoopToggle           { return (*LoopToggle)(m) }
 func (m *Model) UniquePatterns() *UniquePatterns   { return (*UniquePatterns)(m) }
 func (m *Model) Mute() *Mute                       { return (*Mute)(m) }
 func (m *Model) Solo() *Solo                       { return (*Solo)(m) }
+func (m *Model) LinkInstrTrack() *LinkInstrTrack   { return (*LinkInstrTrack)(m) }
 
 // Panic methods
 
@@ -160,9 +162,9 @@ func (m *UnitDisabled) setValue(val bool) {
 		return
 	}
 	l := ((*Model)(m)).Units().List()
-	a, b := l.listRange()
+	r := l.listRange()
 	defer (*Model)(m).change("UnitDisabledSet", PatchChange, MajorChange)()
-	for i := a; i <= b; i++ {
+	for i := r.Start; i < r.End; i++ {
 		m.d.Song.Patch[m.d.InstrIndex].Units[i].Disabled = val
 	}
 }
@@ -185,8 +187,8 @@ func (t *LoopToggle) setValue(val bool) {
 	newLoop := Loop{}
 	if val {
 		l := m.OrderRows().List()
-		a, b := l.listRange()
-		newLoop = Loop{a, b - a + 1}
+		r := l.listRange()
+		newLoop = Loop{r.Start, r.End - r.Start}
 	}
 	m.setLoop(newLoop)
 }
@@ -249,3 +251,10 @@ func (m *Solo) setValue(val bool) {
 	}
 }
 func (m *Solo) Enabled() bool { return m.d.InstrIndex >= 0 && m.d.InstrIndex < len(m.d.Song.Patch) }
+
+// LinkInstrTrack methods
+
+func (m *LinkInstrTrack) Bool() Bool        { return Bool{m} }
+func (m *LinkInstrTrack) Value() bool       { return m.linkInstrTrack }
+func (m *LinkInstrTrack) setValue(val bool) { m.linkInstrTrack = val }
+func (m *LinkInstrTrack) Enabled() bool     { return true }

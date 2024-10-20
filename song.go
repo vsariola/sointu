@@ -75,6 +75,21 @@ type (
 		OrderRow   int
 		PatternRow int
 	}
+
+	// NumVoicer is used for slices where elements have NumVoices, of which
+	// there are two: Tracks and Instruments.
+	NumVoicer interface {
+		GetNumVoices() int
+		SetNumVoices(count int)
+	}
+
+	// NumVoicerPointer is a helper interface for type constraints, as
+	// SetNumVoices needs to be defined with a pointer receiver to be able to
+	// actually modify the value.
+	NumVoicerPointer[M any] interface {
+		*M
+		NumVoicer
+	}
 )
 
 func (s *Score) SongPos(songRow int) SongPos {
@@ -255,11 +270,11 @@ func (l Score) NumVoices() int {
 // returns 1 and FirstVoiceForTrack(2) returns 4. Essentially computes just the
 // cumulative sum.
 func (l Score) FirstVoiceForTrack(track int) int {
-	ret := 0
-	for _, t := range l.Tracks[:track] {
-		ret += t.NumVoices
+	if track < 0 {
+		return 0
 	}
-	return ret
+	track = min(track, len(l.Tracks))
+	return TotalVoices(l.Tracks[:track])
 }
 
 // LengthInRows returns just RowsPerPattern * Length, as the length is the
@@ -296,4 +311,23 @@ func (s *Song) Validate() error {
 		return errors.New("Tracks use too many voices")
 	}
 	return nil
+}
+
+// *Track implements NumVoicer interface
+
+func (t *Track) GetNumVoices() int {
+	return t.NumVoices
+}
+
+func (t *Track) SetNumVoices(c int) {
+	t.NumVoices = c
+}
+
+// TotalVoices returns the total number of voices used in the slice; summing the
+// GetNumVoices of every element
+func TotalVoices[T any, S ~[]T, P NumVoicerPointer[T]](slice S) (ret int) {
+	for _, e := range slice {
+		ret += (P)(&e).GetNumVoices()
+	}
+	return
 }

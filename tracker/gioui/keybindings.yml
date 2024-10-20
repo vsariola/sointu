@@ -13,9 +13,12 @@
 - {key: "O", shortcut: true, action: "OpenSong"}
 - {key: "I", shortcut: true, shift: true, action: "DeleteInstrument"}
 - {key: "I", shortcut: true, action: "AddInstrument"}
+- {key: "I", shortcut: true, alt: true, action: "SplitInstrument"}
 - {key: "T", shortcut: true, shift: true, action: "DeleteTrack"}
+- {key: "T", shortcut: true, alt: true, action: "SplitTrack"}
 - {key: "T", shortcut: true, action: "AddTrack"}
 - {key: "E", shortcut: true, action: "InstrEnlargedToggle"}
+- {key: "K", shortcut: true, action: "LinkInstrTrackToggle"}
 - {key: "W", shortcut: true, action: "Quit"}
 - {key: "Space", action: "PlayingToggleUnfollow"}
 - {key: "Space", shift: true, action: "PlayingToggleFollow"}

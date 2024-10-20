@@ -65,6 +65,7 @@ func (s *modelFuzzState) Iterate(yield func(string, func(p string, t *testing.T)
 	s.IterateBool("CommentExpanded", s.model.CommentExpanded().Bool(), yield, seed)
 	s.IterateBool("Follow", s.model.Follow().Bool(), yield, seed)
 	s.IterateBool("UniquePatterns", s.model.UniquePatterns().Bool(), yield, seed)
+	s.IterateBool("LinkInstrTrack", s.model.LinkInstrTrack().Bool(), yield, seed)
 	// Strings
 	s.IterateString("FilePath", s.model.FilePath().String(), yield, seed)
 	s.IterateString("InstrumentName", s.model.InstrumentName().String(), yield, seed)
@@ -92,6 +93,8 @@ func (s *modelFuzzState) Iterate(yield func(string, func(p string, t *testing.T)
 	s.IterateAction("AddOrderRowBefore", s.model.AddOrderRow(true), yield, seed)
 	s.IterateAction("DeleteOrderRowForward", s.model.DeleteOrderRow(false), yield, seed)
 	s.IterateAction("DeleteOrderRowBackward", s.model.DeleteOrderRow(true), yield, seed)
+	s.IterateAction("SplitInstrument", s.model.SplitInstrument(), yield, seed)
+	s.IterateAction("SplitTrack", s.model.SplitTrack(), yield, seed)
 	// just test loading one of the presets
 	s.IterateAction("LoadPreset", s.model.LoadPreset(seed%tracker.NumPresets()), yield, seed)
 	// Tables

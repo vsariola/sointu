@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"fmt"
+	"math"
 	"os"
 
 	"github.com/vsariola/sointu"
@@ -44,21 +45,12 @@ func (m *Model) AddTrack() Action {
 	return Action{
 		allowed: func() bool { return m.d.Song.Score.NumVoices() < vm.MAX_VOICES },
 		do: func() {
-			defer (*Model)(m).change("AddTrackAction", ScoreChange, MajorChange)()
-			if len(m.d.Song.Score.Tracks) == 0 { // no instruments, add one
-				m.d.Cursor.Track = 0
-			} else {
-				m.d.Cursor.Track++
-			}
-			m.d.Cursor.Track = max(min(m.d.Cursor.Track, len(m.d.Song.Score.Tracks)), 0)
-			newTracks := make([]sointu.Track, len(m.d.Song.Score.Tracks)+1)
-			copy(newTracks, m.d.Song.Score.Tracks[:m.d.Cursor.Track])
-			copy(newTracks[m.d.Cursor.Track+1:], m.d.Song.Score.Tracks[m.d.Cursor.Track:])
-			newTracks[m.d.Cursor.Track] = sointu.Track{
-				NumVoices: 1,
-				Patterns:  []sointu.Pattern{},
-			}
-			m.d.Song.Score.Tracks = newTracks
+			defer (*Model)(m).change("AddTrack", SongChange, MajorChange)()
+			voiceIndex := m.d.Song.Score.FirstVoiceForTrack(m.d.Cursor.Track)
+			p := sointu.Patch{defaultInstrument.Copy()}
+			t := []sointu.Track{sointu.Track{NumVoices: 1}}
+			_, _, ok := m.addVoices(voiceIndex, p, t, (*Model)(m).linkInstrTrack, true)
+			m.changeCancel = !ok
 		},
 	}
 }
@@ -74,20 +66,12 @@ func (m *Model) AddInstrument() Action {
 	return Action{
 		allowed: func() bool { return (*Model)(m).d.Song.Patch.NumVoices() < vm.MAX_VOICES },
 		do: func() {
-			defer (*Model)(m).change("AddInstrumentAction", PatchChange, MajorChange)()
-			if len(m.d.Song.Patch) == 0 { // no instruments, add one
-				m.d.InstrIndex = 0
-			} else {
-				m.d.InstrIndex++
-			}
-			m.d.Song.Patch = append(m.d.Song.Patch, sointu.Instrument{})
-			copy(m.d.Song.Patch[m.d.InstrIndex+1:], m.d.Song.Patch[m.d.InstrIndex:])
-			newInstr := defaultInstrument.Copy()
-			(*Model)(m).assignUnitIDs(newInstr.Units)
-			m.d.Song.Patch[m.d.InstrIndex] = newInstr
-			m.d.InstrIndex2 = m.d.InstrIndex
-			m.d.UnitIndex = 0
-			m.d.ParamIndex = 0
+			defer (*Model)(m).change("AddInstrument", SongChange, MajorChange)()
+			voiceIndex := m.d.Song.Patch.FirstVoiceForInstrument(m.d.InstrIndex)
+			p := sointu.Patch{defaultInstrument.Copy()}
+			t := []sointu.Track{sointu.Track{NumVoices: 1}}
+			_, _, ok := m.addVoices(voiceIndex, p, t, true, (*Model)(m).linkInstrTrack)
+			m.changeCancel = !ok
 		},
 	}
 }
@@ -96,6 +80,62 @@ func (m *Model) DeleteInstrument() Action {
 	return Action{
 		allowed: func() bool { return len((*Model)(m).d.Song.Patch) > 0 },
 		do:      func() { m.Instruments().List().DeleteElements(false) },
+	}
+}
+
+func (m *Model) SplitTrack() Action {
+	return Action{
+		allowed: func() bool {
+			return m.d.Cursor.Track >= 0 && m.d.Cursor.Track < len(m.d.Song.Score.Tracks) && m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices > 1
+		},
+		do: func() {
+			defer (*Model)(m).change("SplitTrack", SongChange, MajorChange)()
+			voiceIndex := m.d.Song.Score.FirstVoiceForTrack(m.d.Cursor.Track)
+			middle := voiceIndex + (m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices+1)/2
+			end := voiceIndex + m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices
+			left, ok := VoiceSlice(m.d.Song.Score.Tracks, Range{math.MinInt, middle})
+			if !ok {
+				m.changeCancel = true
+				return
+			}
+			right, ok := VoiceSlice(m.d.Song.Score.Tracks, Range{end, math.MaxInt})
+			if !ok {
+				m.changeCancel = true
+				return
+			}
+			newTrack := sointu.Track{NumVoices: end - middle}
+			m.d.Song.Score.Tracks = append(left, newTrack)
+			m.d.Song.Score.Tracks = append(m.d.Song.Score.Tracks, right...)
+		},
+	}
+}
+
+func (m *Model) SplitInstrument() Action {
+	return Action{
+		allowed: func() bool {
+			return m.d.InstrIndex >= 0 && m.d.InstrIndex < len(m.d.Song.Patch) && m.d.Song.Patch[m.d.InstrIndex].NumVoices > 1
+		},
+		do: func() {
+			defer (*Model)(m).change("SplitInstrument", SongChange, MajorChange)()
+			voiceIndex := m.d.Song.Patch.Copy().FirstVoiceForInstrument(m.d.InstrIndex)
+			middle := voiceIndex + (m.d.Song.Patch[m.d.InstrIndex].NumVoices+1)/2
+			end := voiceIndex + m.d.Song.Patch[m.d.InstrIndex].NumVoices
+			left, ok := VoiceSlice(m.d.Song.Patch, Range{math.MinInt, middle})
+			if !ok {
+				m.changeCancel = true
+				return
+			}
+			right, ok := VoiceSlice(m.d.Song.Patch, Range{end, math.MaxInt})
+			if !ok {
+				m.changeCancel = true
+				return
+			}
+			newInstrument := defaultInstrument.Copy()
+			m.assignUnitIDs(newInstrument.Units)
+			newInstrument.NumVoices = end - middle
+			m.d.Song.Patch = append(left, newInstrument)
+			m.d.Song.Patch = append(m.d.Song.Patch, right...)
+		},
 	}
 }
 
@@ -295,10 +335,10 @@ func (m *Model) PlaySelected() Action {
 			m.setPanic(false)
 			m.playing = true
 			l := m.OrderRows().List()
-			a, b := l.listRange()
-			newLoop := Loop{a, b - a + 1}
+			r := l.listRange()
+			newLoop := Loop{r.Start, r.End - r.Start}
 			m.setLoop(newLoop)
-			m.send(StartPlayMsg{sointu.SongPos{OrderRow: a, PatternRow: 0}})
+			m.send(StartPlayMsg{sointu.SongPos{OrderRow: r.Start, PatternRow: 0}})
 		},
 	}
 }

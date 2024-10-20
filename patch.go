@@ -356,6 +356,15 @@ func (instr *Instrument) Copy() Instrument {
 	return Instrument{Name: instr.Name, Comment: instr.Comment, NumVoices: instr.NumVoices, Units: units, Mute: instr.Mute}
 }
 
+// Implement the counter interface
+func (i *Instrument) GetNumVoices() int {
+	return i.NumVoices
+}
+
+func (i *Instrument) SetNumVoices(count int) {
+	i.NumVoices = count
+}
+
 // Copy makes a deep copy of a Patch.
 func (p Patch) Copy() Patch {
 	instruments := make([]Instrument, len(p))
@@ -409,11 +418,11 @@ func (p Patch) NumSyncs() int {
 // FirstVoiceForInstrument(1) returns 1 and FirstVoiceForInstrument(2) returns
 // 4. Essentially computes just the cumulative sum.
 func (p Patch) FirstVoiceForInstrument(instrIndex int) int {
-	ret := 0
-	for _, t := range p[:instrIndex] {
-		ret += t.NumVoices
+	if instrIndex < 0 {
+		return 0
 	}
-	return ret
+	instrIndex = min(instrIndex, len(p))
+	return TotalVoices(p[:instrIndex])
 }
 
 // InstrumentForVoice returns the instrument number for the given voice index.

@@ -27,6 +27,8 @@ type InstrumentEditor struct {
 	newInstrumentBtn    *ActionClickable
 	enlargeBtn          *BoolClickable
 	deleteInstrumentBtn *ActionClickable
+	linkInstrTrackBtn   *BoolClickable
+	splitInstrumentBtn  *ActionClickable
 	copyInstrumentBtn   *TipClickable
 	saveInstrumentBtn   *TipClickable
 	loadInstrumentBtn   *TipClickable
@@ -55,6 +57,9 @@ type InstrumentEditor struct {
 	deleteInstrumentHint    string
 	muteHint, unmuteHint    string
 	soloHint, unsoloHint    string
+	linkDisabledHint        string
+	linkEnabledHint         string
+	splitInstrumentHint     string
 }
 
 func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
@@ -62,6 +67,8 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		newInstrumentBtn:    NewActionClickable(model.AddInstrument()),
 		enlargeBtn:          NewBoolClickable(model.InstrEnlarged().Bool()),
 		deleteInstrumentBtn: NewActionClickable(model.DeleteInstrument()),
+		linkInstrTrackBtn:   NewBoolClickable(model.LinkInstrTrack().Bool()),
+		splitInstrumentBtn:  NewActionClickable(model.SplitInstrument()),
 		copyInstrumentBtn:   new(TipClickable),
 		saveInstrumentBtn:   new(TipClickable),
 		loadInstrumentBtn:   new(TipClickable),
@@ -95,6 +102,9 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 	ret.unmuteHint = makeHint("Unmute", " (%s)", "MuteToggle")
 	ret.soloHint = makeHint("Solo", " (%s)", "SoloToggle")
 	ret.unsoloHint = makeHint("Unsolo", " (%s)", "SoloToggle")
+	ret.linkDisabledHint = makeHint("Instrument-Track\nlinking disabled", "\n(%s)", "LinkInstrTrackToggle")
+	ret.linkEnabledHint = makeHint("Instrument-Track\nlinking enabled", "\n(%s)", "LinkInstrTrackToggle")
+	ret.splitInstrumentHint = makeHint("Split instrument", " (%s)", "SplitInstrument")
 	return ret
 }
 
@@ -116,6 +126,7 @@ func (ie *InstrumentEditor) childFocused(gtx C) bool {
 func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 	ie.wasFocused = ie.Focused() || ie.childFocused(gtx)
 	fullscreenBtnStyle := ToggleIcon(gtx, t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, ie.enlargeHint, ie.shrinkHint)
+	linkBtnStyle := ToggleIcon(gtx, t.Theme, ie.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, ie.linkDisabledHint, ie.linkEnabledHint)
 
 	octave := func(gtx C) D {
 		in := layout.UniformInset(unit.Dp(1))
@@ -140,6 +151,9 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 							layout.Rigid(octave),
 						)
 					})
+				}),
+				layout.Rigid(func(gtx C) D {
+					return layout.E.Layout(gtx, linkBtnStyle.Layout)
 				}),
 				layout.Rigid(func(gtx C) D {
 					return layout.E.Layout(gtx, fullscreenBtnStyle.Layout)
@@ -173,6 +187,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		saveInstrumentBtnStyle := TipIcon(t.Theme, ie.saveInstrumentBtn, icons.ContentSave, "Save instrument")
 		loadInstrumentBtnStyle := TipIcon(t.Theme, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
 		deleteInstrumentBtnStyle := ActionIcon(gtx, t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, ie.deleteInstrumentHint)
+		splitInstrumentBtnStyle := ActionIcon(gtx, t.Theme, ie.splitInstrumentBtn, icons.CommunicationCallSplit, ie.splitInstrumentHint)
 		soloBtnStyle := ToggleIcon(gtx, t.Theme, ie.soloBtn, icons.SocialGroup, icons.SocialPerson, ie.soloHint, ie.unsoloHint)
 		muteBtnStyle := ToggleIcon(gtx, t.Theme, ie.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, ie.muteHint, ie.unmuteHint)
 
@@ -209,6 +224,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 					dims := numStyle.Layout(gtx)
 					return dims
 				}),
+				layout.Rigid(splitInstrumentBtnStyle.Layout),
 				layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 				layout.Rigid(commentExpandBtnStyle.Layout),
 				layout.Rigid(soloBtnStyle.Layout),

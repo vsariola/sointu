@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Toggle button to keep instruments and tracks linked, and buttons to to split
+  instruments and tracks with more than 1 voice into parallel ones
+  ([#163][i163], [#157][i157])
 - Mute and solo toggles for instruments ([#168][i168])
 - Compressor displays threshold and invgain in dB
 - Dragging mouse to select rectangles in the tables
@@ -263,8 +266,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i150]: https://github.com/vsariola/sointu/issues/150
 [i151]: https://github.com/vsariola/sointu/issues/151
 [i154]: https://github.com/vsariola/sointu/issues/154
+[i157]: https://github.com/vsariola/sointu/issues/157
 [i158]: https://github.com/vsariola/sointu/issues/158
 [i160]: https://github.com/vsariola/sointu/issues/160
 [i162]: https://github.com/vsariola/sointu/issues/162
+[i163]: https://github.com/vsariola/sointu/issues/163
 [i166]: https://github.com/vsariola/sointu/issues/166
 [i168]: https://github.com/vsariola/sointu/issues/168

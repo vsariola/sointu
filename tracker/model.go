@@ -62,6 +62,10 @@ type (
 		follow         bool
 		quitted        bool
 		uniquePatterns bool
+		// when linkInstrTrack is false, editing an instrument does not change
+		// the track. when true, editing an instrument changes the tracks (e.g.
+		// reordering or deleting instrument can delete track)
+		linkInstrTrack bool
 
 		cachePatternUseCount [][]int
 
@@ -184,6 +188,7 @@ func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFil
 	m.modelMessages = modelMessages
 	m.PlayerMessages = playerMessages
 	m.d.Octave = 4
+	m.linkInstrTrack = true
 	m.d.RecoveryFilePath = recoveryFilePath
 	m.resetSong()
 	if recoveryFilePath != "" {
@@ -431,33 +436,56 @@ func (m *Model) maxID() int {
 	return maxID
 }
 
-func (m *Model) assignUnitIDs(units []sointu.Unit) {
-	maxId := 0
-	usedIds := make(map[int]bool)
+func (m *Model) maxIDandUsed() (maxID int, usedIDs map[int]bool) {
+	usedIDs = make(map[int]bool)
 	for _, instr := range m.d.Song.Patch {
 		for _, unit := range instr.Units {
-			usedIds[unit.ID] = true
-			if maxId < unit.ID {
-				maxId = unit.ID
+			usedIDs[unit.ID] = true
+			if maxID < unit.ID {
+				maxID = unit.ID
 			}
 		}
 	}
+	return
+}
+
+func (m *Model) assignUnitIDsForPatch(patch sointu.Patch) {
+	maxId, usedIds := m.maxIDandUsed()
 	rewrites := map[int]int{}
+	for _, instr := range patch {
+		rewriteUnitIds(instr.Units, &maxId, usedIds, rewrites)
+	}
+	for _, instr := range patch {
+		rewriteSendTargets(instr.Units, rewrites)
+	}
+}
+
+func (m *Model) assignUnitIDs(units []sointu.Unit) {
+	maxID, usedIds := m.maxIDandUsed()
+	rewrites := map[int]int{}
+	rewriteUnitIds(units, &maxID, usedIds, rewrites)
+	rewriteSendTargets(units, rewrites)
+}
+
+func rewriteUnitIds(units []sointu.Unit, maxId *int, usedIds map[int]bool, rewrites map[int]int) {
 	for i := range units {
 		if id := units[i].ID; id == 0 || usedIds[id] {
-			maxId++
+			*maxId++
 			if id > 0 {
-				rewrites[id] = maxId
+				rewrites[id] = *maxId
 			}
-			units[i].ID = maxId
+			units[i].ID = *maxId
 		}
 		usedIds[units[i].ID] = true
-		if maxId < units[i].ID {
-			maxId = units[i].ID
+		if *maxId < units[i].ID {
+			*maxId = units[i].ID
 		}
 	}
-	for i, u := range units {
-		if target, ok := u.Parameters["target"]; u.Type == "send" && ok {
+}
+
+func rewriteSendTargets(units []sointu.Unit, rewrites map[int]int) {
+	for i := range units {
+		if target, ok := units[i].Parameters["target"]; units[i].Type == "send" && ok {
 			if newId, ok := rewrites[target]; ok {
 				units[i].Parameters["target"] = newId
 			}
