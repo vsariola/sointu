@@ -98,6 +98,20 @@ jobs:
             asmnasm: /Users/runner/nasm/nasm
             output: sointu-track-native
             params: -tags=native cmd/sointu-track/main.go
+          - os: macos-12 # this is intel still
+            asmnasm: /Users/runner/nasm/nasm
+            output: sointu-vsti.a
+            bundleoutput: sointu-vsti
+            MACOSX_DEPLOYMENT_TARGET: 11
+            params: -buildmode=c-archive -tags=plugin ./cmd/sointu-vsti/
+            bundle: true
+          - os: macos-12 # this is intel still
+            asmnasm: /Users/runner/nasm/nasm
+            output: sointu-vsti-native.a
+            bundleoutput: sointu-vsti-native
+            MACOSX_DEPLOYMENT_TARGET: 11
+            params: -buildmode=c-archive -tags="plugin,native" ./cmd/sointu-vsti/
+            bundle: true
     steps:
     - uses: benjlevesque/short-sha@v3.0
       id: short-sha
@@ -119,19 +133,77 @@ jobs:
     - name: Build library
       env:
         ASM_NASM: ${{ matrix.config.asmnasm }}
+        MACOSX_DEPLOYMENT_TARGET: ${{ matrix.config.MACOSX_DEPLOYMENT_TARGET }}
       run: |
         mkdir build
         cd build
         cmake -GNinja ..
         ninja sointu
     - name: Build binary
+      env:
+        MACOSX_DEPLOYMENT_TARGET: ${{ matrix.config.MACOSX_DEPLOYMENT_TARGET }}
       run: |
         go build -ldflags "-X github.com/vsariola/sointu/version.Version=$(git describe) ${{ matrix.config.ldflags}}" -o ${{ matrix.config.output }} ${{ matrix.config.params }}
     - name: Upload binary
+      if: matrix.config.bundle != true
       uses: actions/upload-artifact@v4
       with:
         name: ${{ runner.os }}-${{ steps.short-sha.outputs.sha }}-${{ matrix.config.output }}
         path: ${{ matrix.config.output }}
+    - name: Bundle VST
+      if: matrix.config.bundle
+      env:
+        MACOSX_DEPLOYMENT_TARGET: ${{ matrix.config.MACOSX_DEPLOYMENT_TARGET }}
+      run: | # following https://github.com/RustAudio/vst-rs/blob/master/osx_vst_bundler.sh
+        mkdir -p "bundle/${{ matrix.config.bundleoutput }}.vst/Contents/MacOS"
+        clang -L./build/ -lsointu -bundle -o bundle/${{ matrix.config.bundleoutput }} -all_load ${{ matrix.config.output }}
+        echo "BNDL????" > "bundle/${{ matrix.config.bundleoutput }}.vst/Contents/PkgInfo"
+        echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+        <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+        <plist version=\"1.0\">
+        <dict>
+        <key>CFBundleDevelopmentRegion</key>
+        <string>English</string>
+
+        <key>CFBundleExecutable</key>
+        <string>${{ matrix.config.bundleoutput }}</string>
+
+        <key>CFBundleGetInfoString</key>
+        <string>vst</string>
+
+        <key>CFBundleIconFile</key>
+        <string></string>
+
+        <key>CFBundleIdentifier</key>
+        <string>com.vsariola.${{ matrix.config.bundleoutput }}</string>
+
+        <key>CFBundleInfoDictionaryVersion</key>
+        <string>6.0</string>
+
+        <key>CFBundleName</key>
+        <string>${{ matrix.config.bundleoutput }}</string>
+
+        <key>CFBundlePackageType</key>
+        <string>BNDL</string>
+
+        <key>CFBundleVersion</key>
+        <string>1.0</string>
+
+        <key>CFBundleSignature</key>
+        <string>$((RANDOM % 9999))</string>
+
+        <key>CSResourcesFileMapped</key>
+        <string></string>
+
+        </dict>
+        </plist>" > "bundle/${{ matrix.config.bundleoutput }}.vst/Contents/Info.plist"
+        mv "bundle/${{ matrix.config.bundleoutput }}" "bundle/${{ matrix.config.bundleoutput }}.vst/Contents/MacOS/${{ matrix.config.bundleoutput }}"
+    - name: Upload bundle
+      if: matrix.config.bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ runner.os }}-${{ steps.short-sha.outputs.sha }}-${{ matrix.config.bundleoutput }}
+        path: bundle
   upload_release_asset:
     needs: [create_release, binaries]
     runs-on: ubuntu-latest
