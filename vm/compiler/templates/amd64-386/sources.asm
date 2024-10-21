@@ -145,41 +145,41 @@ su_op_envelopexp_statechange:
 su_op_envelopexp_applyexp:
     fstp    st1                                 ; x', where x' is the new value
     ; qm120: store the linear envelope in [level] because this is read again for the next value (cf. "envelope")
-    fst     dword [{{.WRK}} + 4]       ; [level]=x'
+    fst     dword [{{.WRK}} + 4]                ; [level]=x'
     ; qm210: NOW THE ACTUAL EXPONENTIAL SCALING
     ; - scale the exponent in [0; 1] to [0.125; 8], call that kappa = 2^(6*(expo-0.5))
-    fld     dword [r10]                          ; stack: [ expo, x' ]
+    fld     dword [r10]                         ; stack: [ expo, x' ]
     {{.Prepare (.Float 0.5)}}
-    fld     dword [{{.Use (.Float 0.5)}}]        ; stack: [ 0.5, expo, x' ]
-    fsubp   st1, st0                            ; stack: [ expo-0.5, x' ]
+    fld     dword [{{.Use (.Float 0.5)}}]       ; stack: [ 0.5, expo, x' ]
+    fsubrp  st1, st0                            ; stack: [ expo-0.5, x' ]
     {{.Prepare (.Int 6)}}
-    fimul    dword [{{.Use (.Int 6)}}]           ; stack: [ 6*(expo-0.5), x' ]
-    {{.Call "su_power"}}                         ; stack: [ kappa, x' ]
-    fxch     st1                                 ; stack: [ x', kappa ]
+    fimul   dword [{{.Use (.Int 6)}}]           ; stack: [ 6*(expo-0.5), x' ]
+    {{.Call "su_power"}}                        ; stack: [ kappa, x' ]
+    fxch    st1                                 ; stack: [ x', kappa ]
     ; - now we need (x')^(kappa), but care for x' == 0 first
-    fldz                                         ; stack: [ 0, x', kappa ]
-    fucomip   st1                                 ; stack  [ x', kappa ] and ZF = (x' == 0)
-    jz       su_op_envelopexp_avoid_zero_glitch
+    fldz                                        ; stack: [ 0, x', kappa ]
+    fucomip st1                                 ; stack  [ x', kappa ] and ZF = (x' == 0)
+    jz      su_op_envelopexp_avoid_zero_glitch
     ; - still around? calculate the actual x'' = x^kappa then
-    fyl2x                                        ; stack: [ kappa * log2 x' ]
-    {{.Call "su_power"}}                         ; stack: [ x ^ kappa ]
-    jmp short su_op_envelopexp_applybaseline
+    fyl2x                                       ; stack: [ kappa * log2 x' ]
+    {{.Call "su_power"}}                        ; stack: [ x ^ kappa ]
+    jmp     short su_op_envelopexp_applybaseline
 su_op_envelopexp_avoid_zero_glitch:
-    fstp st1
+    fstp    st1
 su_op_envelopexp_applybaseline:
     ; - and scale the result to a different baseline: x''' = (B + (1 - B) * x'') for B != 0 (check not required)
-    fld     dword [{{.WRK}} + 12]                ; stack: [ B, x'' ]
-    fld1                                         ; stack: [ 1, B, x'' ]
-    fsub st0, st1                                ; stack: [ 1-B, B, x'' ]
-    fmulp st2, st0                               ; stack: [ (1-B) * x'', B ]
-    faddp st1, st0                               ; stack: [ (1-B) * x'' + B ]
-    jmp short su_op_envelopexp_leave
+    fld     dword [{{.WRK}} + 12]               ; stack: [ B, x'' ]
+    fld1                                        ; stack: [ 1, B, x'' ]
+    fsub    st0, st1                            ; stack: [ 1-B, B, x'' ]
+    fmulp   st2, st0                            ; stack: [ (1-B) * x'', B ]
+    faddp   st1, st0                            ; stack: [ (1-B) * x'' + B ]
+    jmp     short su_op_envelopexp_leave
 su_op_envelopexp_sustain:
     ; qm210: overwrite level, because else the release cannot work
-    fld dword [{{.Input "envelopexp" "sustain"}}]
+    fld     dword [{{.Input "envelopexp" "sustain"}}]
 su_op_envelopexp_skipexp:
-    fst dword [{{.WRK}} + 4]
-    fstp st1
+    fst     dword [{{.WRK}} + 4]
+    fstp    st1
 su_op_envelopexp_leave:
     ; qm210: scaling because I use my wave editor as a function plotter ;)
     fmul    dword [{{.Input "envelopexp" "gain"}}]       ; [gain]*x''

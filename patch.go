@@ -257,6 +257,10 @@ func engineeringTime(sec float64) (string, string) {
 	return fmt.Sprintf("%.2f", sec), "s"
 }
 
+func envelopExpDisplayFunc(v int) (string, string) {
+	return fmt.Sprintf("= %.3f", math.Pow(2, 2*float64(64-v)/32)), ""
+}
+
 func formatFloat(f float64) string {
 	return strconv.FormatFloat(f, 'f', -1, 64)
 }
@@ -468,8 +472,4 @@ func (p Patch) FindUnit(id int) (instrIndex int, unitIndex int, err error) {
 		}
 	}
 	return 0, 0, fmt.Errorf("could not find a unit with id %v", id)
-}
-
-func envelopExpDisplayFunc(v int) (string, string) {
-	return fmt.Sprintf("= %.3f", math.Pow(2, float64(v-64)/32)), ""
 }
