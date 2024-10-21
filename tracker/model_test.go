@@ -271,7 +271,7 @@ func FuzzModel(f *testing.F) {
 					break loop
 				default:
 					ctx := NullContext{}
-					player.Process(buf, ctx)
+					player.Process(buf, ctx, nil)
 				}
 			}
 		}()

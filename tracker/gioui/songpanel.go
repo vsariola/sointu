@@ -120,11 +120,17 @@ func (t *SongPanel) layoutMenuBar(gtx C, tr *Tracker) D {
 	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(36))
 	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 
-	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}.Layout(gtx,
+	menuLayouts := []layout.FlexChild{
 		layout.Rigid(tr.layoutMenu(gtx, "File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
 		layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...)),
-		layout.Rigid(tr.layoutMenu(gtx, "MIDI", &t.MenuBar[2], &t.Menus[2], unit.Dp(200), t.midiMenuItems...)),
-	)
+	}
+	if len(t.midiMenuItems) > 0 {
+		menuLayouts = append(
+			menuLayouts,
+			layout.Rigid(tr.layoutMenu(gtx, "MIDI", &t.MenuBar[2], &t.Menus[2], unit.Dp(200), t.midiMenuItems...)),
+		)
+	}
+	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}.Layout(gtx, menuLayouts...)
 }
 
 func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
