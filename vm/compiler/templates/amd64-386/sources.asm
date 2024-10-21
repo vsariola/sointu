@@ -149,8 +149,9 @@ su_op_envelopexp_applyexp:
     ; qm210: NOW THE ACTUAL EXPONENTIAL SCALING
     ; - scale the exponent in [0; 1] to [0.125; 8], call that kappa = 2^(6*(expo-0.5))
     fld     dword [r10]                          ; stack: [ expo, x' ]
-    fld     qword [{{.Use (.Float 0.5)}}]        ; stack: [ 0.5, expo, x' ]
-    fsubp    st1, st0                            ; stack: [ expo-0.5, x' ]
+    {{.Prepare (.Float 0.5)}}
+    fld     dword [{{.Use (.Float 0.5)}}]        ; stack: [ 0.5, expo, x' ]
+    fsubp   st1, st0                            ; stack: [ expo-0.5, x' ]
     {{.Prepare (.Int 6)}}
     fimul    dword [{{.Use (.Int 6)}}]           ; stack: [ 6*(expo-0.5), x' ]
     {{.Call "su_power"}}                         ; stack: [ kappa, x' ]
