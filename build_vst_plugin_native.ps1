@@ -1,1 +1,0 @@
-go build -buildmode=c-shared -tags="plugin","native" -o sointu-vsti.dll .\cmd\sointu-vsti\
