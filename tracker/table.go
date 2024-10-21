@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"iter"
 	"math"
 
 	"github.com/vsariola/sointu"
@@ -115,6 +116,13 @@ func (v Table) Clear() {
 			v.clear(Point{x, y})
 		}
 	}
+}
+
+func (v Table) Set(value byte) {
+	defer v.change("Set", MajorChange)()
+	cursor := v.Cursor()
+	// TODO: might check for visibility
+	v.set(cursor, int(value))
 }
 
 func (v Table) Fill(value int) {
@@ -364,12 +372,8 @@ func (e *Order) Title(x int) (title string) {
 	if x < 0 || x >= len(e.d.Song.Score.Tracks) {
 		return
 	}
-	t := e.d.Song.Score.Tracks[x]
-	firstVoice := e.d.Song.Score.FirstVoiceForTrack(x)
-	lastVoice := firstVoice + t.NumVoices - 1
-	firstIndex, err := e.d.Song.Patch.InstrumentForVoice(firstVoice)
-	lastIndex, err2 := e.d.Song.Patch.InstrumentForVoice(lastVoice)
-	if err != nil || err2 != nil {
+	firstIndex, lastIndex, err := e.instrumentListFor(x)
+	if err != nil {
 		return
 	}
 	switch diff := lastIndex - firstIndex; diff {
@@ -395,6 +399,37 @@ func (e *Order) Title(x int) (title string) {
 		}
 	}
 	return
+}
+
+func (e *Order) instrumentListFor(trackIndex int) (int, int, error) {
+	track := e.d.Song.Score.Tracks[trackIndex]
+	firstVoice := e.d.Song.Score.FirstVoiceForTrack(trackIndex)
+	lastVoice := firstVoice + track.NumVoices - 1
+	firstIndex, err1 := e.d.Song.Patch.InstrumentForVoice(firstVoice)
+	if err1 != nil {
+		return trackIndex, trackIndex, err1
+	}
+	lastIndex, err2 := e.d.Song.Patch.InstrumentForVoice(lastVoice)
+	if err2 != nil {
+		return trackIndex, trackIndex, err2
+	}
+	return firstIndex, lastIndex, nil
+}
+
+func (e *Order) TrackIndicesForCurrentInstrument() iter.Seq[int] {
+	currentTrack := e.d.Cursor.Track
+	return e.d.Song.AllTracksWithSameInstrument(currentTrack)
+}
+
+func (e *Order) CountNextTracksForCurrentInstrument() int {
+	currentTrack := e.d.Cursor.Track
+	count := 0
+	for t := range e.TrackIndicesForCurrentInstrument() {
+		if t > currentTrack {
+			count++
+		}
+	}
+	return count
 }
 
 // NoteTable

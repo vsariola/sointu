@@ -16,6 +16,7 @@ type (
 	Playing         Model
 	InstrEnlarged   Model
 	Effect          Model
+	TrackMidiIn     Model
 	CommentExpanded Model
 	Follow          Model
 	UnitSearching   Model
@@ -44,6 +45,7 @@ func (m *Model) IsRecording() *IsRecording         { return (*IsRecording)(m) }
 func (m *Model) Playing() *Playing                 { return (*Playing)(m) }
 func (m *Model) InstrEnlarged() *InstrEnlarged     { return (*InstrEnlarged)(m) }
 func (m *Model) Effect() *Effect                   { return (*Effect)(m) }
+func (m *Model) TrackMidiIn() *TrackMidiIn         { return (*TrackMidiIn)(m) }
 func (m *Model) CommentExpanded() *CommentExpanded { return (*CommentExpanded)(m) }
 func (m *Model) Follow() *Follow                   { return (*Follow)(m) }
 func (m *Model) UnitSearching() *UnitSearching     { return (*UnitSearching)(m) }
@@ -109,6 +111,13 @@ func (m *Follow) Bool() Bool        { return Bool{m} }
 func (m *Follow) Value() bool       { return m.follow }
 func (m *Follow) setValue(val bool) { m.follow = val }
 func (m *Follow) Enabled() bool     { return true }
+
+// TrackMidiIn (Midi Input for notes in the tracks)
+
+func (m *TrackMidiIn) Bool() Bool        { return Bool{m} }
+func (m *TrackMidiIn) Value() bool       { return m.trackMidiIn }
+func (m *TrackMidiIn) setValue(val bool) { m.trackMidiIn = val }
+func (m *TrackMidiIn) Enabled() bool     { return m.MIDI.HasDeviceOpen() }
 
 // Effect methods
 

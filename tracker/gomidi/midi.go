@@ -8,6 +8,7 @@ import (
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/drivers"
 	"gitlab.com/gomidi/midi/v2/drivers/rtmididrv"
+	"strings"
 )
 
 type (
@@ -56,7 +57,7 @@ func (m RTMIDIDevice) Open() error {
 	if m.context.driver == nil {
 		return errors.New("no driver available")
 	}
-	if m.context.currentIn != nil && m.context.currentIn.IsOpen() {
+	if m.context.HasDeviceOpen() {
 		m.context.currentIn.Close()
 	}
 	m.context.currentIn = m.in
@@ -119,4 +120,25 @@ func (c *RTMIDIContext) Close() {
 		c.currentIn.Close()
 	}
 	c.driver.Close()
+}
+
+func (c *RTMIDIContext) HasDeviceOpen() bool {
+	return c.currentIn != nil && c.currentIn.IsOpen()
+}
+
+func (c *RTMIDIContext) TryToOpenBy(namePrefix string, takeFirst bool) {
+	if namePrefix == "" && !takeFirst {
+		return
+	}
+	for input := range c.InputDevices {
+		if takeFirst || strings.HasPrefix(input.String(), namePrefix) {
+			input.Open()
+			return
+		}
+	}
+	if takeFirst {
+		fmt.Errorf("Could not find any MIDI Input.\n")
+	} else {
+		fmt.Errorf("Could not find any default MIDI Input starting with \"%s\".\n", namePrefix)
+	}
 }

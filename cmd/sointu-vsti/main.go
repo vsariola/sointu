@@ -31,6 +31,8 @@ func (m NullMIDIContext) InputDevices(yield func(tracker.MIDIDevice) bool) {}
 
 func (m NullMIDIContext) Close() {}
 
+func (m NullMIDIContext) HasDeviceOpen() bool { return false }
+
 func (c *VSTIProcessContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
 	for c.eventIndex < len(c.events) {
 		ev := c.events[c.eventIndex]
@@ -101,7 +103,7 @@ func init() {
 						buf = append(buf, make(sointu.AudioBuffer, out.Frames-len(buf))...)
 					}
 					buf = buf[:out.Frames]
-					player.Process(buf, &context)
+					player.Process(buf, &context, nil)
 					for i := 0; i < out.Frames; i++ {
 						left[i], right[i] = buf[i][0], buf[i][1]
 					}
