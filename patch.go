@@ -157,6 +157,15 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "sustain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return engineeringTime(math.Pow(2, 24*float64(v)/128) / 44100) }},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+	"envelopexp": []UnitParameter{
+		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return engineeringTime(math.Pow(2, 24*float64(v)/128) / 44100) }},
+		{Name: "exp_attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: envelopExpDisplayFunc},
+		{Name: "decay", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return engineeringTime(math.Pow(2, 24*float64(v)/128) / 44100) }},
+		{Name: "exp_decay", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: envelopExpDisplayFunc},
+		{Name: "sustain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return engineeringTime(math.Pow(2, 24*float64(v)/128) / 44100) }},
+		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"noise": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "shape", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
@@ -317,7 +326,7 @@ func (u *Unit) StackChange() int {
 	switch u.Type {
 	case "addp", "mulp", "pop", "out", "outaux", "aux":
 		return -1 - u.Parameters["stereo"]
-	case "envelope", "oscillator", "push", "noise", "receive", "loadnote", "loadval", "in", "compressor":
+	case "envelope", "envelopexp", "oscillator", "push", "noise", "receive", "loadnote", "loadval", "in", "compressor":
 		return 1 + u.Parameters["stereo"]
 	case "pan":
 		return 1 - u.Parameters["stereo"]
@@ -337,7 +346,7 @@ func (u *Unit) StackNeed() int {
 		return 0
 	}
 	switch u.Type {
-	case "", "envelope", "oscillator", "noise", "receive", "loadnote", "loadval", "in":
+	case "", "envelope", "envelopexp", "oscillator", "noise", "receive", "loadnote", "loadval", "in":
 		return 0
 	case "mulp", "mul", "add", "addp", "xch":
 		return 2 * (1 + u.Parameters["stereo"])
@@ -459,4 +468,8 @@ func (p Patch) FindUnit(id int) (instrIndex int, unitIndex int, err error) {
 		}
 	}
 	return 0, 0, fmt.Errorf("could not find a unit with id %v", id)
+}
+
+func envelopExpDisplayFunc(v int) (string, string) {
+	return fmt.Sprintf("= %.3f", math.Pow(2, float64(v-64)/32)), ""
 }

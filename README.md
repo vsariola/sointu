@@ -511,6 +511,27 @@ Prods using Sointu
   - [21](https://demozoo.org/music/338597/) by NR4 / Team210
   - [Tausendeins](https://www.pouet.net/prod.php?which=96192) by epoqe & Team210
 
+Notes on Adding New OpCodes
+---------------------------
+Think of a great new, not already taken name, and extend
+* ./patch.go
+  * `UnitTypes` 
+  * `StackChange()`
+  * `StackNeed()`
+* ./tracker/presets.go
+  * `defaultUnits`
+  
+Call `./vm/generate/generate.go` (e.g. `generate go` inside the ./vm folder)
+
+Now, you need a case distinction inside
+* ./vm/go_synth.go -> `Render()`
+  * for the Go Bytecode VM
+  * this should work with the next `go build` / `go run`
+* ./vm/compiler/templates/<architecture>/sources.asm
+  * with your given architecture for `-tags=native`, e.g "amd64-386" or "wasm"
+  * this needs a `ninja sointu` inside your build directory, then `go build` / `go run`
+    * it seems not to be necessary to call `go clean -cache`, but in doubt, give it a try. 
+
 Contributing
 ------------
 

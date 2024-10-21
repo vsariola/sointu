@@ -329,6 +329,42 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 				if stereo {
 					stack = append(stack, output)
 				}
+			case opEnvelopexp:
+				// TODO @qm210 - for now, this just clones the envelope so everything is wired up, but IT IS NOT IMPLEMENTED YET
+				// is ignoring for now
+				// - params[1] - attack shape parameter (center value should mean "linear")
+				// - params[3] - decay shape parameter (center value should mean "linear")
+				if !voices[0].sustain {
+					unit.state[0] = envStateRelease // set state to release
+				}
+				state := unit.state[0]
+				level := unit.state[1]
+				switch state {
+				case envStateAttack:
+					level += nonLinearMap(params[0])
+					if level >= 1 {
+						level = 1
+						state = envStateDecay
+					}
+				case envStateDecay:
+					level -= nonLinearMap(params[2])
+					if sustain := params[4]; level <= sustain {
+						level = sustain
+					}
+				case envStateRelease:
+					level -= nonLinearMap(params[5])
+					if level <= 0 {
+						level = 0
+					}
+				}
+				unit.state[0] = state
+				unit.state[1] = level
+				output := level * params[6]
+				stack = append(stack, output)
+				if stereo {
+					stack = append(stack, output)
+				}
+				// <-- END TODO @qm210 -- ACTUALLY IMPLEMENT, BUT FIRST DO THE NATIVE ASM PART
 			case opNoise:
 				if stereo {
 					value := waveshape(synth.rand(), params[0]) * params[1]
