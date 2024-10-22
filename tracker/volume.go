@@ -5,6 +5,7 @@ import (
 	"math"
 	"sync"
 
+	"github.com/viterin/vek/vek32"
 	"github.com/vsariola/sointu"
 )
 
@@ -45,12 +46,9 @@ type (
 
 	WeightingType int
 
-	weighting struct {
-		coeffs []BiquadCoeff
-		offset float32
-	}
-
 	Volume [2]float64
+
+	Decibel float32
 
 	SignalProcessMsg struct {
 		trigger bool
@@ -72,6 +70,18 @@ type (
 		Release float64 // release time constant in seconds
 		Min     float64 // minimum volume in decibels
 		Max     float64 // maximum volume in decibels
+	}
+
+	weighting struct {
+		coeffs []BiquadCoeff
+		offset float32
+	}
+
+	loudnessDetector struct {
+		weighting weighting
+		states    [2][3]BiquadState
+		windows   [2]RingBuffer[float32]
+		tmp, tmp2 []float32
 	}
 )
 
@@ -121,7 +131,31 @@ var weightings = map[WeightingType]weighting{
 	NoWeighting: {coeffs: []BiquadCoeff{}, offset: 0},
 }
 
-func (state *BiquadState) FilterInplace(coeff BiquadCoeff, buffer []float32) {
+func (d *loudnessDetector) update(buffer sointu.AudioBuffer) Decibel {
+	if len(d.tmp) < len(buffer) {
+		d.tmp = append(d.tmp, make([]float32, len(buffer)-len(d.tmp))...)
+	}
+	d.tmp = d.tmp[:len(buffer)]
+	if len(d.tmp2) < len(buffer) {
+		d.tmp2 = append(d.tmp2, make([]float32, len(buffer)-len(d.tmp2))...)
+	}
+	d.tmp2 = d.tmp2[:len(buffer)]
+	var total float32
+	for chn := 0; chn < 2; chn++ {
+		for i := 0; i < len(buffer); i++ {
+			d.tmp[i] = buffer[i][chn]
+		}
+		for k := 0; k < len(d.weighting.coeffs); k++ {
+			d.states[chn][k].Filter(d.tmp, d.weighting.coeffs[k])
+		}
+		vek32.MulNumber_Into(d.tmp2, d.tmp, d.tmp)
+		d.windows[chn].WriteWrap(d.tmp2)
+		total += vek32.Mean(d.windows[chn].buffer)
+	}
+	return Decibel(float32(20*math.Log10(float64(total))) + d.weighting.offset)
+}
+
+func (state *BiquadState) Filter(buffer []float32, coeff BiquadCoeff) {
 	s := *state
 	for i := 0; i < len(buffer); i++ {
 		x := buffer[i]
