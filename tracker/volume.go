@@ -219,6 +219,35 @@ func (s *oversamplerState) Oversample(x []float32, y []float32) {
 	copy(s.history[11-z:], x[len(x)-z:])
 }
 
+func (d *peakDetector) update(buf sointu.AudioBuffer) (ret [2]Decibel) {
+	if len(d.tmp) < len(buf) {
+		d.tmp = append(d.tmp, make([]float32, len(buf)-len(d.tmp))...)
+	}
+	d.tmp = d.tmp[:len(buf)]
+	len4 := 4 * len(buf)
+	if len(d.tmp2) < len4 {
+		d.tmp2 = append(d.tmp2, make([]float32, len4-len(buf))...)
+	}
+	d.tmp2 = d.tmp2[:len4]
+	absLen := min(len(d.windows[0].buffer), len(d.tmp2))
+	for chn := 0; chn < 2; chn++ {
+		// deinterleave the channels
+		for i := 0; i < len(buf); i++ {
+			d.tmp[i] = buf[i][chn]
+		}
+		// oversample
+		d.states[chn].Oversample(d.tmp, d.tmp2)
+		// absolute value
+		a := d.tmp2[len(d.tmp2)-absLen : len(d.tmp2)]
+		vek32.Abs_Inplace(a)
+		d.windows[chn].WriteWrap(a)
+		// find the maximum value in the window
+		max := vek32.Max(d.windows[chn].buffer)
+		ret[chn] = Decibel(float32(20 * math.Log10(float64(max))))
+	}
+	return
+}
+
 func NewSignalAnalyzer() *SignalAnalyzer {
 	s := &SignalAnalyzer{pool: sync.Pool{
 		New: func() any {
