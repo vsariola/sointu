@@ -131,25 +131,28 @@ var weightings = map[WeightingType]weighting{
 	NoWeighting: {coeffs: []BiquadCoeff{}, offset: 0},
 }
 
-func (d *loudnessDetector) update(buffer sointu.AudioBuffer) Decibel {
-	if len(d.tmp) < len(buffer) {
-		d.tmp = append(d.tmp, make([]float32, len(buffer)-len(d.tmp))...)
+func (d *loudnessDetector) update(buf sointu.AudioBuffer) Decibel {
+	if len(d.tmp) < len(buf) {
+		d.tmp = append(d.tmp, make([]float32, len(buf)-len(d.tmp))...)
 	}
-	d.tmp = d.tmp[:len(buffer)]
-	if len(d.tmp2) < len(buffer) {
-		d.tmp2 = append(d.tmp2, make([]float32, len(buffer)-len(d.tmp2))...)
+	sqLen := min(len(d.windows[0].buffer), len(buf)) // there's no need to square more samples than the window size
+	if len(d.tmp2) < sqLen {
+		d.tmp2 = append(d.tmp2, make([]float32, sqLen-len(buf))...)
 	}
-	d.tmp2 = d.tmp2[:len(buffer)]
 	var total float32
 	for chn := 0; chn < 2; chn++ {
-		for i := 0; i < len(buffer); i++ {
-			d.tmp[i] = buffer[i][chn]
+		// deinterleave the channels
+		for i := 0; i < len(buf); i++ {
+			d.tmp[i] = buf[i][chn]
 		}
+		// filter the signal with the weighting filter
 		for k := 0; k < len(d.weighting.coeffs); k++ {
-			d.states[chn][k].Filter(d.tmp, d.weighting.coeffs[k])
+			d.states[chn][k].Filter(d.tmp[:len(buf)], d.weighting.coeffs[k])
 		}
-		vek32.MulNumber_Into(d.tmp2, d.tmp, d.tmp)
-		d.windows[chn].WriteWrap(d.tmp2)
+		// square the last sqLen samples of the signal
+		vek32.MulNumber_Into(d.tmp2[:sqLen], d.tmp[len(buf)-sqLen:len(buf)], d.tmp[len(buf)-sqLen:len(buf)])
+		// write the squared signal to the window
+		d.windows[chn].WriteWrap(d.tmp2[:sqLen])
 		total += vek32.Mean(d.windows[chn].buffer)
 	}
 	return Decibel(float32(20*math.Log10(float64(total))) + d.weighting.offset)
