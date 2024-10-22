@@ -35,6 +35,21 @@ type (
 		cursor int
 	}
 
+	BiquadState struct {
+		x1, x2, y1, y2 float32
+	}
+
+	BiquadCoeff struct {
+		b0, b1, b2, a1, a2 float32
+	}
+
+	WeightingType int
+
+	weighting struct {
+		coeffs []BiquadCoeff
+		offset float32
+	}
+
 	Volume [2]float64
 
 	SignalProcessMsg struct {
@@ -60,6 +75,18 @@ type (
 	}
 )
 
+const (
+	KWeighting WeightingType = iota
+	AWeighting
+	CWeighting
+	NoWeighting
+)
+
+/*
+f = getFilter(weightingFilter('A-weighting','SampleRate',44100)); f.Numerator, f.Denominator
+for i = 1:size(f.Numerator,1); fprintf("a0: %.16f, a1: %.16f, a2: %.16f, b1: %.16f, b2: %.16f\n",f.Numerator(i,:),f.Denominator(i,2:end)); end
+*/
+
 func (r *RingBuffer[T]) WriteWrap(values []T) {
 	r.cursor = (r.cursor + len(values)) % len(r.buffer)
 	a := min(len(values), r.cursor)                 // how many values to copy before the cursor
@@ -69,49 +96,42 @@ func (r *RingBuffer[T]) WriteWrap(values []T) {
 }
 
 /*
-a = getFilter(weightingFilter('A-weighting','SampleRate',44100)); a.Numerator, a.Denominator
-c = getFilter(weightingFilter('C-weighting','SampleRate',44100)); c.Numerator, c.Denominator
-k = getFilter(weightingFilter('K-weighting','SampleRate',44100)); k.Numerator, k.Denominator
-
-ans =
-
-     1     2     1
-     1    -2     1
-     1    -2     1
-
-
-ans =
-
-    1.0000   -0.1405    0.0049
-    1.0000   -1.8849    0.8864
-    1.0000   -1.9941    0.9941
-
-
-ans =
-
-     1     2     1
-     1    -2     1
-
-
-ans =
-
-    1.0000   -0.1405    0.0049
-    1.0000   -1.9941    0.9941
-
-
-ans =
-
-    1.5308   -2.6510    1.1691
-    0.9996   -1.9991    0.9996
-
-
-ans =
-
-    1.0000   -1.6637    0.7126
-    1.0000   -1.9892    0.9892
-
-
+From matlab:
+f = getFilter(weightingFilter('A-weighting','SampleRate',44100)); f.Numerator, f.Denominator
+for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:),f.Denominator(i,2:end)); end
+f = getFilter(weightingFilter('C-weighting','SampleRate',44100)); f.Numerator, f.Denominator
+for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:),f.Denominator(i,2:end)); end
+f = getFilter(weightingFilter('k-weighting','SampleRate',44100)); f.Numerator, f.Denominator
+for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:),f.Denominator(i,2:end)); end
 */
+var weightings = map[WeightingType]weighting{
+	AWeighting: {coeffs: []BiquadCoeff{
+		{b0: 1, b1: 2, b2: 1, a1: -0.1405360824207108, a2: 0.0049375976155402},
+		{b0: 1, b1: -2, b2: 1, a1: -1.8849012174287920, a2: 0.8864214718161675},
+		{b0: 1, b1: -2, b2: 1, a1: -1.9941388812663283, a2: 0.9941474694445309},
+	}, offset: 0},
+	CWeighting: {coeffs: []BiquadCoeff{
+		{b0: 1, b1: 2, b2: 1, a1: -0.1405360824207108, a2: 0.0049375976155402},
+		{b0: 1, b1: -2, b2: 1, a1: -1.9941388812663283, a2: 0.9941474694445309},
+	}, offset: 0},
+	KWeighting: {coeffs: []BiquadCoeff{
+		{b0: 1.5308412300503476, b1: -2.6509799951547293, b2: 1.1690790799215869, a1: -1.6636551132560204, a2: 0.7125954280732254},
+		{b0: 0.9995600645425144, b1: -1.9991201290850289, b2: 0.9995600645425144, a1: -1.9891696736297957, a2: 0.9891990357870394},
+	}, offset: -0.691}, // offset is to make up for the fact that K-weighting has slightly above unity gain at 1 kHz
+	NoWeighting: {coeffs: []BiquadCoeff{}, offset: 0},
+}
+
+func (state *BiquadState) FilterInplace(coeff BiquadCoeff, buffer []float32) {
+	s := *state
+	for i := 0; i < len(buffer); i++ {
+		x := buffer[i]
+		y := coeff.b0*x + coeff.b1*s.x1 + coeff.b2*s.x2 - coeff.a1*s.y1 - coeff.a2*s.y2
+		s.x2, s.x1 = s.x1, x
+		s.y2, s.y1 = s.y1, y
+		buffer[i] = y
+	}
+	*state = s
+}
 
 func NewSignalAnalyzer() *SignalAnalyzer {
 	s := &SignalAnalyzer{pool: sync.Pool{
