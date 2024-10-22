@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"sync"
+	"time"
 
 	"github.com/viterin/vek/vek32"
 	"github.com/vsariola/sointu"
@@ -28,20 +29,9 @@ type (
 		skipIndex                 int
 	}
 
-	Scope struct {
-	}
-
 	RingBuffer[T any] struct {
 		buffer []T
 		cursor int
-	}
-
-	BiquadState struct {
-		x1, x2, y1, y2 float32
-	}
-
-	BiquadCoeff struct {
-		b0, b1, b2, a1, a2 float32
 	}
 
 	WeightingType int
@@ -72,15 +62,37 @@ type (
 		Max     float64 // maximum volume in decibels
 	}
 
+	loudnessDetector struct {
+		weighting  weighting
+		windowTime time.Duration
+		states     [2][3]biquadState
+		windows    [2]RingBuffer[float32]
+		tmp, tmp2  []float32
+	}
+
+	biquadState struct {
+		x1, x2, y1, y2 float32
+	}
+
+	biquadCoeff struct {
+		b0, b1, b2, a1, a2 float32
+	}
+
 	weighting struct {
-		coeffs []BiquadCoeff
+		coeffs []biquadCoeff
 		offset float32
 	}
 
-	loudnessDetector struct {
-		weighting weighting
-		states    [2][3]BiquadState
-		windows   [2]RingBuffer[float32]
+	peakDetector struct {
+		oversampling bool
+		windowTime   time.Duration
+		states       [2]oversamplerState
+		windows      [2]RingBuffer[float32]
+		tmp, tmp2    []float32
+	}
+
+	oversamplerState struct {
+		history   [11]float32
 		tmp, tmp2 []float32
 	}
 )
@@ -91,11 +103,6 @@ const (
 	CWeighting
 	NoWeighting
 )
-
-/*
-f = getFilter(weightingFilter('A-weighting','SampleRate',44100)); f.Numerator, f.Denominator
-for i = 1:size(f.Numerator,1); fprintf("a0: %.16f, a1: %.16f, a2: %.16f, b1: %.16f, b2: %.16f\n",f.Numerator(i,:),f.Denominator(i,2:end)); end
-*/
 
 func (r *RingBuffer[T]) WriteWrap(values []T) {
 	r.cursor = (r.cursor + len(values)) % len(r.buffer)
@@ -115,20 +122,20 @@ f = getFilter(weightingFilter('k-weighting','SampleRate',44100)); f.Numerator, f
 for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:),f.Denominator(i,2:end)); end
 */
 var weightings = map[WeightingType]weighting{
-	AWeighting: {coeffs: []BiquadCoeff{
+	AWeighting: {coeffs: []biquadCoeff{
 		{b0: 1, b1: 2, b2: 1, a1: -0.1405360824207108, a2: 0.0049375976155402},
 		{b0: 1, b1: -2, b2: 1, a1: -1.8849012174287920, a2: 0.8864214718161675},
 		{b0: 1, b1: -2, b2: 1, a1: -1.9941388812663283, a2: 0.9941474694445309},
 	}, offset: 0},
-	CWeighting: {coeffs: []BiquadCoeff{
+	CWeighting: {coeffs: []biquadCoeff{
 		{b0: 1, b1: 2, b2: 1, a1: -0.1405360824207108, a2: 0.0049375976155402},
 		{b0: 1, b1: -2, b2: 1, a1: -1.9941388812663283, a2: 0.9941474694445309},
 	}, offset: 0},
-	KWeighting: {coeffs: []BiquadCoeff{
+	KWeighting: {coeffs: []biquadCoeff{
 		{b0: 1.5308412300503476, b1: -2.6509799951547293, b2: 1.1690790799215869, a1: -1.6636551132560204, a2: 0.7125954280732254},
 		{b0: 0.9995600645425144, b1: -1.9991201290850289, b2: 0.9995600645425144, a1: -1.9891696736297957, a2: 0.9891990357870394},
 	}, offset: -0.691}, // offset is to make up for the fact that K-weighting has slightly above unity gain at 1 kHz
-	NoWeighting: {coeffs: []BiquadCoeff{}, offset: 0},
+	NoWeighting: {coeffs: []biquadCoeff{}, offset: 0},
 }
 
 func (d *loudnessDetector) update(buf sointu.AudioBuffer) Decibel {
@@ -150,15 +157,15 @@ func (d *loudnessDetector) update(buf sointu.AudioBuffer) Decibel {
 			d.states[chn][k].Filter(d.tmp[:len(buf)], d.weighting.coeffs[k])
 		}
 		// square the last sqLen samples of the signal
-		vek32.MulNumber_Into(d.tmp2[:sqLen], d.tmp[len(buf)-sqLen:len(buf)], d.tmp[len(buf)-sqLen:len(buf)])
+		vek32.Mul_Into(d.tmp2[:sqLen], d.tmp[len(buf)-sqLen:len(buf)], d.tmp[len(buf)-sqLen:len(buf)])
 		// write the squared signal to the window
 		d.windows[chn].WriteWrap(d.tmp2[:sqLen])
 		total += vek32.Mean(d.windows[chn].buffer)
 	}
-	return Decibel(float32(20*math.Log10(float64(total))) + d.weighting.offset)
+	return Decibel(float32(10*math.Log10(float64(total))) + d.weighting.offset)
 }
 
-func (state *BiquadState) Filter(buffer []float32, coeff BiquadCoeff) {
+func (state *biquadState) Filter(buffer []float32, coeff biquadCoeff) {
 	s := *state
 	for i := 0; i < len(buffer); i++ {
 		x := buffer[i]
@@ -168,6 +175,48 @@ func (state *BiquadState) Filter(buffer []float32, coeff BiquadCoeff) {
 		buffer[i] = y
 	}
 	*state = s
+}
+
+// ref: https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-5-202311-I!!PDF-E.pdf
+var oversamplingCoeffs = [4][12]float32{
+	{0.0017089843750, 0.0109863281250, -0.0196533203125, 0.0332031250000, -0.0594482421875, 0.1373291015625, 0.9721679687500, -0.1022949218750, 0.0476074218750, -0.0266113281250, 0.0148925781250, -0.0083007812500},
+	{-0.0291748046875, 0.0292968750000, -0.0517578125000, 0.0891113281250, -0.1665039062500, 0.4650878906250, 0.7797851562500, -0.2003173828125, 0.1015625000000, -0.0582275390625, 0.0330810546875, -0.0189208984375},
+	{-0.0189208984375, 0.0330810546875, -0.058227539062, 0.1015625000000, -0.200317382812, 0.7797851562500, 0.4650878906250, -0.166503906250, 0.0891113281250, -0.051757812500, 0.0292968750000, -0.0291748046875},
+	{-0.0083007812500, 0.0148925781250, -0.0266113281250, 0.0476074218750, -0.1022949218750, 0.9721679687500, 0.1373291015625, -0.0594482421875, 0.0332031250000, -0.0196533203125, 0.0109863281250, 0.0017089843750},
+}
+
+// u[k] = x[k/4] if k%4 == 0, 0 otherwise
+// y[k] = sum_{i=0}^{47} h[i] * u[k-i]
+// h[i] = o[i%4][i/4]
+// k = p*4+q, q=0..3, i = 0..3
+// y[p*4+q] = sum_{j=0}^{11} sum_{i=0}^{3} h[j*4+i] * u[p*4+q-j*4-i] = ...
+// (q-i)%4 == 0 ==> i = q
+// ... = sum_{j=0}^{11} o[q][j] * x[p-j]
+// y should be 4 times the length of x
+func (s *oversamplerState) Oversample(x []float32, y []float32) {
+	vek32.Zeros_Into(y, len(y))
+	if len(s.tmp) < len(x) {
+		s.tmp = append(s.tmp, make([]float32, len(x)-len(s.tmp))...)
+	}
+	s.tmp = s.tmp[:len(x)]
+	if len(s.tmp2) < len(x) {
+		s.tmp2 = append(s.tmp2, make([]float32, len(x)-len(s.tmp2))...)
+	}
+	s.tmp2 = s.tmp2[:len(x)]
+	for q, coeffs := range oversamplingCoeffs {
+		vek32.Zeros_Into(s.tmp2, len(s.tmp2))
+		for j, c := range coeffs {
+			vek32.MulNumber_Into(s.tmp[:j], s.history[11-j:11], c)
+			vek32.MulNumber_Into(s.tmp[j:], x[:len(x)-j], c)
+			vek32.Add_Inplace(s.tmp2, s.tmp)
+		}
+		for p := range s.tmp2 {
+			y[p*4+q] = s.tmp2[p]
+		}
+	}
+	z := max(len(x), 11)
+	copy(s.history[:11-z], s.history[z:11])
+	copy(s.history[11-z:], x[len(x)-z:])
 }
 
 func NewSignalAnalyzer() *SignalAnalyzer {
