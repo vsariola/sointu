@@ -27,6 +27,14 @@ type (
 		skipIndex                 int
 	}
 
+	Scope struct {
+	}
+
+	RingBuffer[T any] struct {
+		buffer []T
+		cursor int
+	}
+
 	Volume [2]float64
 
 	SignalProcessMsg struct {
@@ -51,6 +59,59 @@ type (
 		Max     float64 // maximum volume in decibels
 	}
 )
+
+func (r *RingBuffer[T]) WriteWrap(values []T) {
+	r.cursor = (r.cursor + len(values)) % len(r.buffer)
+	a := min(len(values), r.cursor)                 // how many values to copy before the cursor
+	b := min(len(values)-a, len(r.buffer)-r.cursor) // how many values to copy to the end of the buffer
+	copy(r.buffer[r.cursor-a:r.cursor], values[len(values)-a:])
+	copy(r.buffer[len(r.buffer)-b:], values[len(values)-a-b:])
+}
+
+/*
+a = getFilter(weightingFilter('A-weighting','SampleRate',44100)); a.Numerator, a.Denominator
+c = getFilter(weightingFilter('C-weighting','SampleRate',44100)); c.Numerator, c.Denominator
+k = getFilter(weightingFilter('K-weighting','SampleRate',44100)); k.Numerator, k.Denominator
+
+ans =
+
+     1     2     1
+     1    -2     1
+     1    -2     1
+
+
+ans =
+
+    1.0000   -0.1405    0.0049
+    1.0000   -1.8849    0.8864
+    1.0000   -1.9941    0.9941
+
+
+ans =
+
+     1     2     1
+     1    -2     1
+
+
+ans =
+
+    1.0000   -0.1405    0.0049
+    1.0000   -1.9941    0.9941
+
+
+ans =
+
+    1.5308   -2.6510    1.1691
+    0.9996   -1.9991    0.9996
+
+
+ans =
+
+    1.0000   -1.6637    0.7126
+    1.0000   -1.9892    0.9892
+
+
+*/
 
 func NewSignalAnalyzer() *SignalAnalyzer {
 	s := &SignalAnalyzer{pool: sync.Pool{
