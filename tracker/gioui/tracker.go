@@ -119,6 +119,9 @@ func (t *Tracker) Main() {
 		case e := <-t.PlayerMessages:
 			t.ProcessPlayerMessage(e)
 			w.Invalidate()
+		case s := <-t.SignalResultChan():
+			t.ProcessSignalResultMsg(s)
+			w.Invalidate()
 		case e := <-events:
 			switch e := e.(type) {
 			case app.DestroyEvent:
@@ -166,6 +169,7 @@ func (t *Tracker) Main() {
 	w.Perform(system.ActionClose)
 	t.SaveRecovery()
 	t.quitWG.Done()
+	t.Model.Close()
 }
 
 func eventLoop(w *app.Window, events chan<- event.Event, acks <-chan struct{}) {

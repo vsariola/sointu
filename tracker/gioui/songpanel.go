@@ -145,6 +145,8 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 	noteTrackBtnStyle := ToggleIcon(gtx, tr.Theme, t.FollowBtn, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, t.followOffHint, t.followOnHint)
 	loopBtnStyle := ToggleIcon(gtx, tr.Theme, t.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, t.loopOffHint, t.loopOnHint)
 
+	scopeStyle := FilledScope(tr.Waveform())
+
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
@@ -216,7 +218,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 			)
 		}),
 		layout.Rigid(panicBtnStyle.Layout),
-		layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+		layout.Flexed(1, scopeStyle.Layout),
 		layout.Rigid(func(gtx C) D {
 			labelStyle := LabelStyle{Text: version.VersionOrHash, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor, Shaper: tr.Theme.Shaper}
 			return labelStyle.Layout(gtx)

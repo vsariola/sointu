@@ -69,9 +69,8 @@ type (
 
 		cachePatternUseCount [][]int
 
-		voiceLevels [vm.MAX_VOICES]float32
-		avgVolume   Volume
-		peakVolume  Volume
+		voiceLevels    [vm.MAX_VOICES]float32
+		signalAnalyzer *SignalAnalyzer
 
 		alerts  []Alert
 		dialog  Dialog
@@ -171,8 +170,8 @@ const (
 
 const maxUndo = 64
 
-func (m *Model) AverageVolume() Volume        { return m.avgVolume }
-func (m *Model) PeakVolume() Volume           { return m.peakVolume }
+func (m *Model) AverageVolume() Volume        { return m.signalAnalyzer.avgVolume }
+func (m *Model) PeakVolume() Volume           { return m.signalAnalyzer.peakVolume }
 func (m *Model) PlayPosition() sointu.SongPos { return m.playPosition }
 func (m *Model) Loop() Loop                   { return m.loop }
 func (m *Model) PlaySongRow() int             { return m.d.Song.Score.SongRow(m.playPosition) }
@@ -189,6 +188,7 @@ func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFil
 	modelMessages := make(chan interface{}, 1024)
 	playerMessages := make(chan PlayerMsg, 1024)
 	m.ModelMessages = modelMessages
+	m.signalAnalyzer = NewSignalAnalyzer()
 	m.PlayerMessages = playerMessages
 	m.d.Octave = 4
 	m.linkInstrTrack = true
@@ -200,16 +200,19 @@ func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFil
 		}
 	}
 	p := &Player{
-		playerMsgs:      playerMessages,
-		modelMsgs:       modelMessages,
-		synther:         synther,
-		song:            m.d.Song.Copy(),
-		loop:            m.loop,
-		avgVolumeMeter:  VolumeAnalyzer{Attack: 0.3, Release: 0.3, Min: -100, Max: 20},
-		peakVolumeMeter: VolumeAnalyzer{Attack: 1e-4, Release: 1, Min: -100, Max: 20},
+		playerMsgs:     playerMessages,
+		modelMsgs:      modelMessages,
+		synther:        synther,
+		song:           m.d.Song.Copy(),
+		loop:           m.loop,
+		signalAnalyzer: m.signalAnalyzer,
 	}
 	p.compileOrUpdateSynth()
 	return m, p
+}
+
+func (m *Model) Close() {
+	m.signalAnalyzer.Close()
 }
 
 func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func() {
@@ -347,8 +350,6 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
 	m.playPosition = msg.SongPosition
 	m.voiceLevels = msg.VoiceLevels
-	m.avgVolume = msg.AverageVolume
-	m.peakVolume = msg.PeakVolume
 	if m.playing && m.follow {
 		m.d.Cursor.SongPos = msg.SongPosition
 		m.d.Cursor2.SongPos = msg.SongPosition
@@ -375,6 +376,18 @@ func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
 		m.playing = e.bool
 	default:
 	}
+}
+
+func (m *Model) SignalResultChan() <-chan SignalResultMsg {
+	return m.signalAnalyzer.resultChan
+}
+
+func (m *Model) ProcessSignalResultMsg(msg SignalResultMsg) {
+	m.signalAnalyzer.Update(msg)
+}
+
+func (m *Model) Waveform() sointu.AudioBuffer {
+	return *m.signalAnalyzer.waveForm
 }
 
 func (m *Model) TrackNoteOn(track int, note byte) (id NoteID) {

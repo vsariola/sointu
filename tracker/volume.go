@@ -3,12 +3,43 @@ package tracker
 import (
 	"errors"
 	"math"
+	"sync"
 
 	"github.com/vsariola/sointu"
 )
 
 type (
+	SignalAnalyzer struct {
+		pool sync.Pool
+		// these should be only used in the GUI thread
+		avgVolume  Volume
+		peakVolume Volume
+		waveForm   *sointu.AudioBuffer
+
+		resultChan  chan SignalResultMsg
+		processChan chan SignalProcessMsg
+
+		// these should be only used in the signal analyzer goroutine
+		avgAnalyzer, peakAnalyzer VolumeAnalyzer
+		triggering                bool
+		length                    int
+		skipping                  int
+		skipIndex                 int
+	}
+
 	Volume [2]float64
+
+	SignalProcessMsg struct {
+		trigger bool
+		data    *sointu.AudioBuffer
+		action  func()
+	}
+
+	SignalResultMsg struct {
+		avgVolume  Volume
+		peakVolume Volume
+		waveForm   *sointu.AudioBuffer
+	}
 
 	// VolumeAnalyzer measures the volume in an AudioBuffer, in decibels relative to
 	// full scale (0 dB = signal level of +-1)
@@ -20,6 +51,152 @@ type (
 		Max     float64 // maximum volume in decibels
 	}
 )
+
+func NewSignalAnalyzer() *SignalAnalyzer {
+	s := &SignalAnalyzer{pool: sync.Pool{
+		New: func() any {
+			s := make(sointu.AudioBuffer, 0)
+			return &s
+		},
+	},
+		resultChan:   make(chan SignalResultMsg, 16),
+		processChan:  make(chan SignalProcessMsg, 16),
+		avgAnalyzer:  VolumeAnalyzer{Attack: 0.3, Release: 0.3, Min: -100, Max: 20},
+		peakAnalyzer: VolumeAnalyzer{Attack: 1e-4, Release: 1, Min: -100, Max: 20},
+		length:       4096,
+		skipping:     20,
+	}
+	go func() {
+		waveform := make(sointu.AudioBuffer, 0, 44100)
+		for msg := range s.processChan {
+			if msg.trigger && s.triggering {
+				waveform = waveform[:0]
+			}
+			if msg.action != nil {
+				msg.action()
+			}
+			var result *sointu.AudioBuffer = nil
+			if msg.data != nil {
+				s.avgAnalyzer.Update(*msg.data)
+				s.peakAnalyzer.Update(*msg.data)
+				j := 0
+				for i := 0; i < len(*msg.data); i++ {
+					if s.skipIndex > 0 {
+						s.skipIndex--
+						continue
+					}
+					s.skipIndex = s.skipping
+					(*msg.data)[j] = (*msg.data)[i]
+					j++
+				}
+				*msg.data = (*msg.data)[:j]
+				space := s.length - len(waveform)
+				if s.triggering {
+					if space <= 0 {
+						goto skip
+					}
+				} else {
+					missingSpace := len(*msg.data) - space
+					if missingSpace > 0 {
+						move := min(len(waveform), missingSpace)
+						copy(waveform, waveform[move:])
+						waveform = waveform[:len(waveform)-move]
+						space += move
+					}
+				}
+				if len(*msg.data) > space {
+					*msg.data = (*msg.data)[:space]
+				}
+				waveform = append(waveform, *msg.data...)
+				result = msg.data
+				*result = (*result)[:0]
+				*result = append(*result, waveform...)
+			}
+		skip:
+			select {
+			case s.resultChan <- SignalResultMsg{
+				avgVolume:  s.avgAnalyzer.Level,
+				peakVolume: s.peakAnalyzer.Level,
+				waveForm:   result,
+			}:
+			default:
+				if result != nil {
+					s.pool.Put(result)
+				}
+			}
+		}
+	}()
+	return s
+}
+
+// SetTriggering is thread safe
+func (s *SignalAnalyzer) SetTriggering(value bool) {
+	select {
+	case s.processChan <- SignalProcessMsg{action: func() {
+		s.triggering = value
+	}}:
+	default:
+	}
+}
+
+// SetTriggering is thread safe
+func (s *SignalAnalyzer) SetLength(length int) {
+	select {
+	case s.processChan <- SignalProcessMsg{action: func() {
+		s.length = length
+	}}:
+	default:
+	}
+}
+
+// SetTriggering is thread safe
+func (s *SignalAnalyzer) SetSkipping(skipping int) {
+	select {
+	case s.processChan <- SignalProcessMsg{action: func() {
+		if skipping >= 0 {
+			s.skipping = skipping
+		}
+	}}:
+	default:
+	}
+}
+
+// Trigger is thread safe
+func (s *SignalAnalyzer) Trigger() {
+	select {
+	case s.processChan <- SignalProcessMsg{trigger: true}:
+	default:
+	}
+}
+
+// Process is thread safe
+func (s *SignalAnalyzer) Process(buffer sointu.AudioBuffer) {
+	buf := s.pool.Get().(*sointu.AudioBuffer)
+	*buf = (*buf)[:0]
+	*buf = append(*buf, buffer...)
+	select {
+	case s.processChan <- SignalProcessMsg{data: buf}:
+	default:
+		s.pool.Put(buf)
+	}
+}
+
+// Close must be called to stop the signal analyzer goroutine
+func (s *SignalAnalyzer) Close() {
+	close(s.processChan)
+}
+
+// This should be called only in the GUI thread
+func (s *SignalAnalyzer) Update(msg SignalResultMsg) {
+	s.avgVolume = msg.avgVolume
+	s.peakVolume = msg.peakVolume
+	if msg.waveForm != nil {
+		if s.waveForm != nil {
+			s.pool.Put(s.waveForm)
+		}
+		s.waveForm = msg.waveForm
+	}
+}
 
 var nanError = errors.New("NaN detected in master output")
 

@@ -15,16 +15,15 @@ type (
 	// model via the playerMessages channel. The model sends messages to the
 	// player via the modelMessages channel.
 	Player struct {
-		synth           sointu.Synth           // the synth used to render audio
-		song            sointu.Song            // the song being played
-		playing         bool                   // is the player playing the score or not
-		rowtime         int                    // how many samples have been played in the current row
-		songPos         sointu.SongPos         // the current position in the score
-		avgVolumeMeter  VolumeAnalyzer         // the volume analyzer used to calculate the average volume
-		peakVolumeMeter VolumeAnalyzer         // the volume analyzer used to calculate the peak volume
-		voiceLevels     [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
-		voices          [vm.MAX_VOICES]voice
-		loop            Loop
+		synth          sointu.Synth   // the synth used to render audio
+		song           sointu.Song    // the song being played
+		playing        bool           // is the player playing the score or not
+		rowtime        int            // how many samples have been played in the current row
+		songPos        sointu.SongPos // the current position in the score
+		signalAnalyzer *SignalAnalyzer
+		voiceLevels    [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
+		voices         [vm.MAX_VOICES]voice
+		loop           Loop
 
 		recState  recState  // is the recording off; are we waiting for a note; or are we recording
 		recording Recording // the recorded MIDI events and BPM
@@ -62,12 +61,10 @@ type (
 	// treated specially, to avoid boxing. All the rest messages can be boxed to
 	// Inner interface{}
 	PlayerMsg struct {
-		Panic         bool
-		AverageVolume Volume
-		PeakVolume    Volume
-		SongPosition  sointu.SongPos
-		VoiceLevels   [vm.MAX_VOICES]float32
-		Inner         interface{}
+		Panic        bool
+		SongPosition sointu.SongPos
+		VoiceLevels  [vm.MAX_VOICES]float32
+		Inner        interface{}
 	}
 )
 
@@ -178,18 +175,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		}
 		// when the buffer is full, return
 		if len(buffer) == 0 {
-			err := p.avgVolumeMeter.Update(oldBuffer)
-			err2 := p.peakVolumeMeter.Update(oldBuffer)
-			if err != nil {
-				p.synth = nil
-				p.SendAlert("PlayerVolume", err.Error(), Warning)
-				return
-			}
-			if err2 != nil {
-				p.synth = nil
-				p.SendAlert("PlayerVolume", err2.Error(), Warning)
-				return
-			}
+			p.signalAnalyzer.Process(oldBuffer) // TODO: checking for NaNs?
 			p.send(nil)
 			return
 		}
@@ -359,7 +345,7 @@ func (p *Player) compileOrUpdateSynth() {
 // all sends from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
 func (p *Player) send(message interface{}) {
 	select {
-	case p.playerMsgs <- PlayerMsg{Panic: p.synth == nil, AverageVolume: p.avgVolumeMeter.Level, PeakVolume: p.peakVolumeMeter.Level, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, Inner: message}:
+	case p.playerMsgs <- PlayerMsg{Panic: p.synth == nil, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, Inner: message}:
 	default:
 	}
 }
