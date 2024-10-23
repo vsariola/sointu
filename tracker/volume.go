@@ -188,13 +188,12 @@ var oversamplingCoeffs = [4][12]float32{
 // u[k] = x[k/4] if k%4 == 0, 0 otherwise
 // y[k] = sum_{i=0}^{47} h[i] * u[k-i]
 // h[i] = o[i%4][i/4]
-// k = p*4+q, q=0..3, i = 0..3
+// k = p*4+q, q=0..3
 // y[p*4+q] = sum_{j=0}^{11} sum_{i=0}^{3} h[j*4+i] * u[p*4+q-j*4-i] = ...
 // (q-i)%4 == 0 ==> i = q
 // ... = sum_{j=0}^{11} o[q][j] * x[p-j]
 // y should be 4 times the length of x
 func (s *oversamplerState) Oversample(x []float32, y []float32) {
-	vek32.Zeros_Into(y, len(y))
 	if len(s.tmp) < len(x) {
 		s.tmp = append(s.tmp, make([]float32, len(x)-len(s.tmp))...)
 	}
@@ -204,17 +203,19 @@ func (s *oversamplerState) Oversample(x []float32, y []float32) {
 	}
 	s.tmp2 = s.tmp2[:len(x)]
 	for q, coeffs := range oversamplingCoeffs {
+		// tmp2 will be conv(o[q],x)
 		vek32.Zeros_Into(s.tmp2, len(s.tmp2))
 		for j, c := range coeffs {
-			vek32.MulNumber_Into(s.tmp[:j], s.history[11-j:11], c)
+			vek32.MulNumber_Into(s.tmp[:j], s.history[11-j:11], c) // convolution might pull values before x[0], so we need to use history for that
 			vek32.MulNumber_Into(s.tmp[j:], x[:len(x)-j], c)
 			vek32.Add_Inplace(s.tmp2, s.tmp)
 		}
+		// interleave the phases
 		for p := range s.tmp2 {
 			y[p*4+q] = s.tmp2[p]
 		}
 	}
-	z := max(len(x), 11)
+	z := min(len(x), 11)
 	copy(s.history[:11-z], s.history[z:11])
 	copy(s.history[11-z:], x[len(x)-z:])
 }
@@ -235,9 +236,9 @@ func (d *peakDetector) update(buf sointu.AudioBuffer) (ret [2]Decibel) {
 		for i := 0; i < len(buf); i++ {
 			d.tmp[i] = buf[i][chn]
 		}
-		// oversample
+		// 4x oversample the signal
 		d.states[chn].Oversample(d.tmp, d.tmp2)
-		// absolute value
+		// take absolute value of the oversampled signal
 		a := d.tmp2[len(d.tmp2)-absLen : len(d.tmp2)]
 		vek32.Abs_Inplace(a)
 		d.windows[chn].WriteWrap(a)
