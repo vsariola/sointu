@@ -11,9 +11,9 @@ import (
 )
 
 type VuMeter struct {
-	AverageVolume tracker.Volume
-	PeakVolume    tracker.Volume
-	Range         float32
+	Loudness tracker.Decibel
+	Peak     [2]tracker.Decibel
+	Range    float32
 }
 
 func (v VuMeter) Layout(gtx C) D {
@@ -21,7 +21,7 @@ func (v VuMeter) Layout(gtx C) D {
 	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(12))
 	height := gtx.Dp(unit.Dp(6))
 	for j := 0; j < 2; j++ {
-		value := float32(v.AverageVolume[j]) + v.Range
+		value := float32(v.Loudness) + v.Range
 		if value > 0 {
 			x := int(value/v.Range*float32(gtx.Constraints.Max.X) + 0.5)
 			if x > gtx.Constraints.Max.X {
@@ -29,7 +29,7 @@ func (v VuMeter) Layout(gtx C) D {
 			}
 			paint.FillShape(gtx.Ops, mediumEmphasisTextColor, clip.Rect(image.Rect(0, 0, x, height)).Op())
 		}
-		valueMax := float32(v.PeakVolume[j]) + v.Range
+		valueMax := float32(v.Peak[j]) + v.Range
 		if valueMax > 0 {
 			color := white
 			if valueMax >= v.Range {

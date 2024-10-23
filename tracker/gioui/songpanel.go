@@ -207,7 +207,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 				}),
 			)
 		}),
-		layout.Rigid(VuMeter{AverageVolume: tr.Model.AverageVolume(), PeakVolume: tr.Model.PeakVolume(), Range: 100}.Layout),
+		layout.Rigid(VuMeter{Loudness: tr.Model.AverageVolume(), Peak: tr.Model.PeakVolume(), Range: 100}.Layout),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(rewindBtnStyle.Layout),

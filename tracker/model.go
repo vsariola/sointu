@@ -170,8 +170,6 @@ const (
 
 const maxUndo = 64
 
-func (m *Model) AverageVolume() Volume        { return m.signalAnalyzer.avgVolume }
-func (m *Model) PeakVolume() Volume           { return m.signalAnalyzer.peakVolume }
 func (m *Model) PlayPosition() sointu.SongPos { return m.playPosition }
 func (m *Model) Loop() Loop                   { return m.loop }
 func (m *Model) PlaySongRow() int             { return m.d.Song.Score.SongRow(m.playPosition) }
@@ -209,10 +207,6 @@ func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFil
 	}
 	p.compileOrUpdateSynth()
 	return m, p
-}
-
-func (m *Model) Close() {
-	m.signalAnalyzer.Close()
 }
 
 func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func() {
@@ -376,14 +370,6 @@ func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
 		m.playing = e.bool
 	default:
 	}
-}
-
-func (m *Model) SignalResultChan() <-chan SignalResultMsg {
-	return m.signalAnalyzer.resultChan
-}
-
-func (m *Model) ProcessSignalResultMsg(msg SignalResultMsg) {
-	m.signalAnalyzer.Update(msg)
 }
 
 func (m *Model) Waveform() sointu.AudioBuffer {

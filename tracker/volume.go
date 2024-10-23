@@ -1,7 +1,6 @@
 package tracker
 
 import (
-	"errors"
 	"math"
 	"sync"
 	"time"
@@ -12,21 +11,12 @@ import (
 
 type (
 	SignalAnalyzer struct {
-		pool sync.Pool
-		// these should be only used in the GUI thread
-		avgVolume  Volume
-		peakVolume Volume
-		waveForm   *sointu.AudioBuffer
+		loudness Decibel
+		peak     [2]Decibel
+		waveForm RingBuffer[[2]float32]
 
-		resultChan  chan SignalResultMsg
-		processChan chan SignalProcessMsg
-
-		// these should be only used in the signal analyzer goroutine
-		avgAnalyzer, peakAnalyzer VolumeAnalyzer
-		triggering                bool
-		length                    int
-		skipping                  int
-		skipIndex                 int
+		pool            sync.Pool
+		audioBufferChan chan *sointu.AudioBuffer
 	}
 
 	RingBuffer[T any] struct {
@@ -35,8 +25,6 @@ type (
 	}
 
 	WeightingType int
-
-	Volume [2]float64
 
 	Decibel float32
 
@@ -110,6 +98,17 @@ func (r *RingBuffer[T]) WriteWrap(values []T) {
 	b := min(len(values)-a, len(r.buffer)-r.cursor) // how many values to copy to the end of the buffer
 	copy(r.buffer[r.cursor-a:r.cursor], values[len(values)-a:])
 	copy(r.buffer[len(r.buffer)-b:], values[len(values)-a-b:])
+}
+
+func (a *SignalAnalyzer) Process(buffer sointu.AudioBuffer) {
+	s := a.pool.Get().(*sointu.AudioBuffer)
+	*s = (*s)[:0]
+	*s = append(*s, buffer...)
+	select {
+	case a.audioBufferChan <- s:
+	default:
+		a.pool.Put(s)
+	}
 }
 
 /*
@@ -326,46 +325,6 @@ func NewSignalAnalyzer() *SignalAnalyzer {
 	return s
 }
 
-// SetTriggering is thread safe
-func (s *SignalAnalyzer) SetTriggering(value bool) {
-	select {
-	case s.processChan <- SignalProcessMsg{action: func() {
-		s.triggering = value
-	}}:
-	default:
-	}
-}
-
-// SetTriggering is thread safe
-func (s *SignalAnalyzer) SetLength(length int) {
-	select {
-	case s.processChan <- SignalProcessMsg{action: func() {
-		s.length = length
-	}}:
-	default:
-	}
-}
-
-// SetTriggering is thread safe
-func (s *SignalAnalyzer) SetSkipping(skipping int) {
-	select {
-	case s.processChan <- SignalProcessMsg{action: func() {
-		if skipping >= 0 {
-			s.skipping = skipping
-		}
-	}}:
-	default:
-	}
-}
-
-// Trigger is thread safe
-func (s *SignalAnalyzer) Trigger() {
-	select {
-	case s.processChan <- SignalProcessMsg{trigger: true}:
-	default:
-	}
-}
-
 // Process is thread safe
 func (s *SignalAnalyzer) Process(buffer sointu.AudioBuffer) {
 	buf := s.pool.Get().(*sointu.AudioBuffer)
@@ -376,67 +335,4 @@ func (s *SignalAnalyzer) Process(buffer sointu.AudioBuffer) {
 	default:
 		s.pool.Put(buf)
 	}
-}
-
-// Close must be called to stop the signal analyzer goroutine
-func (s *SignalAnalyzer) Close() {
-	close(s.processChan)
-}
-
-// This should be called only in the GUI thread
-func (s *SignalAnalyzer) Update(msg SignalResultMsg) {
-	s.avgVolume = msg.avgVolume
-	s.peakVolume = msg.peakVolume
-	if msg.waveForm != nil {
-		if s.waveForm != nil {
-			s.pool.Put(s.waveForm)
-		}
-		s.waveForm = msg.waveForm
-	}
-}
-
-var nanError = errors.New("NaN detected in master output")
-
-// Update updates the Level field, by analyzing the given buffer.
-//
-// Internally, it first converts the signal to decibels (0 dB = +-1). Then, the
-// average volume level is computed by smoothing the decibel values with a
-// exponentially decaying average, with a time constant Attack (in seconds) if
-// the decibel value is greater than current level and time constant Decay (in
-// seconds) if the decibel value is less than current level.
-//
-// Typical time constants for average level detection would be 0.3 seconds for
-// both attack and release. For peak level detection, attack could be 1.5e-3 and
-// release 1.5 (seconds)
-//
-// MinVolume and MaxVolume are hard limits in decibels to prevent negative
-// infinities for volumes
-func (v *VolumeAnalyzer) Update(buffer sointu.AudioBuffer) (err error) {
-	// from https://en.wikipedia.org/wiki/Exponential_smoothing
-	alphaAttack := 1 - math.Exp(-1.0/(v.Attack*44100))
-	alphaRelease := 1 - math.Exp(-1.0/(v.Release*44100))
-	for j := 0; j < 2; j++ {
-		for i := 0; i < len(buffer); i++ {
-			sample2 := float64(buffer[i][j] * buffer[i][j])
-			if math.IsNaN(sample2) {
-				if err == nil {
-					err = nanError
-				}
-				continue
-			}
-			dB := 10 * math.Log10(sample2)
-			if dB < v.Min || math.IsNaN(dB) {
-				dB = v.Min
-			}
-			if dB > v.Max {
-				dB = v.Max
-			}
-			a := alphaAttack
-			if dB < v.Level[j] {
-				a = alphaRelease
-			}
-			v.Level[j] += (dB - v.Level[j]) * a
-		}
-	}
-	return err
 }
