@@ -34,15 +34,11 @@ type (
 	Decibel float32
 
 	SignalAnalyzerGUIMessage struct {
-		loudness Decibel
-		peaks    [2]Decibel
-		trigger  bool
-		data     any // all pointer types can be cast to any (interface{}) without boxing so this is ok
-	}
-
-	SignalAnalyzerDetectorMessage struct {
-		buffer *sointu.AudioBuffer
-		exec   func()
+		hasLoudnessPeaks bool
+		loudness         Decibel
+		peaks            [2]Decibel
+		trigger          bool
+		data             any // all pointer types can be cast to any (interface{}) without boxing so this is ok
 	}
 
 	loudnessDetector struct {
@@ -116,10 +112,10 @@ func NewSignalAnalyzer() *SignalAnalyzer {
 				{Buffer: make([]float32, 44100)},
 			},
 		},
-		waveForm: RingBuffer[[2]float32]{Buffer: make([][2]float32, 44100)},
+		waveForm:     RingBuffer[[2]float32]{Buffer: make([][2]float32, 44100)},
+		guiChan:      make(chan SignalAnalyzerGUIMessage, 16),
+		detectorChan: make(chan any, 16),
 	}
-	s.guiChan = make(chan SignalAnalyzerGUIMessage, 16)
-	s.detectorChan = make(chan any, 16)
 	go s.detector()
 	return s
 }
@@ -134,9 +130,9 @@ func (s *SignalAnalyzer) Waveform() RingBuffer[[2]float32] { return s.waveForm }
 
 func (s *SignalAnalyzer) SetWeighting(w WeightingType) {
 	select {
-	case s.detectorChan <- SignalAnalyzerDetectorMessage{exec: func() {
+	case s.detectorChan <- func() {
 		s.loudnessDetector.weighting = weightings[w]
-	}}:
+	}:
 	default:
 	}
 }
@@ -161,13 +157,9 @@ func (s *SignalAnalyzer) Events() <-chan SignalAnalyzerGUIMessage {
 }
 
 func (s *SignalAnalyzer) ProcessEvent(msg SignalAnalyzerGUIMessage) {
-	if msg.loudness > 0 {
+	if msg.hasLoudnessPeaks {
+		s.peaks = msg.peaks
 		s.loudness = msg.loudness
-	}
-	for i := 0; i < 2; i++ {
-		if msg.peaks[0] > 0 {
-			s.peaks[0] = msg.peaks[0]
-		}
 	}
 	if msg.trigger {
 		s.waveForm.Cursor = 0
@@ -191,9 +183,11 @@ func (s *SignalAnalyzer) detector() {
 	for data := range s.detectorChan {
 		switch data := data.(type) {
 		case *sointu.AudioBuffer:
-			guiMsg := SignalAnalyzerGUIMessage{}
-			guiMsg.peaks = s.peakDetector.update(*data)
-			guiMsg.loudness = s.loudnessDetector.update(*data)
+			guiMsg := SignalAnalyzerGUIMessage{
+				hasLoudnessPeaks: true,
+				peaks:            s.peakDetector.update(*data),
+				loudness:         s.loudnessDetector.update(*data),
+			}
 			s.pool.Put(data)
 			select {
 			case s.guiChan <- guiMsg:
@@ -231,6 +225,7 @@ var weightings = map[WeightingType]weighting{
 	NoWeighting: {coeffs: []biquadCoeff{}, offset: 0},
 }
 
+// we should have three windows: momentary = last 400 ms, with 100 ms overlap with previous windows
 func (d *loudnessDetector) update(buf sointu.AudioBuffer) Decibel {
 	if len(d.tmp) < len(buf) {
 		d.tmp = append(d.tmp, make([]float32, len(buf)-len(d.tmp))...)
