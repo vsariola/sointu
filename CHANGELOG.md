@@ -50,6 +50,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Numeric updown widget calculated dp-to-px conversion incorrectly, resulting in
   wrong scaling ([#150][i150])
 - Empty patch should not crash the native synth ([#148][i148])
+- sointu-play does not default to the native synth yet, choose via `-tags=native`
 
 ### Changed
 - The keyboard shortcuts are now again closer to what they were old trackers
