@@ -372,8 +372,8 @@ func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
 	}
 }
 
-func (m *Model) Waveform() sointu.AudioBuffer {
-	return *m.signalAnalyzer.waveForm
+func (m *Model) SignalAnalyzer() *SignalAnalyzer {
+	return m.signalAnalyzer
 }
 
 func (m *Model) TrackNoteOn(track int, note byte) (id NoteID) {

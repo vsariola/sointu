@@ -175,7 +175,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		}
 		// when the buffer is full, return
 		if len(buffer) == 0 {
-			p.signalAnalyzer.Process(oldBuffer) // TODO: checking for NaNs?
+			p.signalAnalyzer.ProcessAudio(oldBuffer) // TODO: checking for NaNs?
 			p.send(nil)
 			return
 		}

@@ -23,7 +23,8 @@ func (s *ScopeStyle) Layout(gtx C) D {
 	for chn := 0; chn < 2; chn++ {
 		paint.ColorOp{Color: s.Colors[chn]}.Add(gtx.Ops)
 		yprev := int((s.Wave[0][chn] + 1) / 2 * float32(gtx.Constraints.Max.Y))
-		for x := 0; x < gtx.Constraints.Max.X; x++ {
+		for px := 0; px < gtx.Constraints.Max.X; px++ {
+			x := int(float32(px) / float32(gtx.Constraints.Max.X) * float32(len(s.Wave)))
 			if x < 0 || x >= len(s.Wave) {
 				continue
 			}
@@ -34,7 +35,7 @@ func (s *ScopeStyle) Layout(gtx C) D {
 			} else if y > yprev {
 				y1++
 			}
-			stack := clip.Rect{Min: image.Pt(x, y1), Max: image.Pt(x+1, y2+1)}.Push(gtx.Ops)
+			stack := clip.Rect{Min: image.Pt(px, y1), Max: image.Pt(px+1, y2+1)}.Push(gtx.Ops)
 			paint.PaintOp{}.Add(gtx.Ops)
 			stack.Pop()
 			yprev = y

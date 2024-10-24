@@ -12,42 +12,37 @@ import (
 type (
 	SignalAnalyzer struct {
 		loudness Decibel
-		peak     [2]Decibel
+		peaks    [2]Decibel
 		waveForm RingBuffer[[2]float32]
+		once     bool
 
-		pool            sync.Pool
-		audioBufferChan chan *sointu.AudioBuffer
+		pool         sync.Pool
+		guiChan      chan SignalAnalyzerGUIMessage
+		detectorChan chan any
+
+		loudnessDetector loudnessDetector
+		peakDetector     peakDetector
 	}
 
 	RingBuffer[T any] struct {
-		buffer []T
-		cursor int
+		Buffer []T
+		Cursor int
 	}
 
 	WeightingType int
 
 	Decibel float32
 
-	SignalProcessMsg struct {
-		trigger bool
-		data    *sointu.AudioBuffer
-		action  func()
+	SignalAnalyzerGUIMessage struct {
+		loudness Decibel
+		peaks    [2]Decibel
+		trigger  bool
+		data     any // all pointer types can be cast to any (interface{}) without boxing so this is ok
 	}
 
-	SignalResultMsg struct {
-		avgVolume  Volume
-		peakVolume Volume
-		waveForm   *sointu.AudioBuffer
-	}
-
-	// VolumeAnalyzer measures the volume in an AudioBuffer, in decibels relative to
-	// full scale (0 dB = signal level of +-1)
-	VolumeAnalyzer struct {
-		Level   Volume  // current volume level of left and right channels
-		Attack  float64 // attack time constant in seconds
-		Release float64 // release time constant in seconds
-		Min     float64 // minimum volume in decibels
-		Max     float64 // maximum volume in decibels
+	SignalAnalyzerDetectorMessage struct {
+		buffer *sointu.AudioBuffer
+		exec   func()
 	}
 
 	loudnessDetector struct {
@@ -93,21 +88,120 @@ const (
 )
 
 func (r *RingBuffer[T]) WriteWrap(values []T) {
-	r.cursor = (r.cursor + len(values)) % len(r.buffer)
-	a := min(len(values), r.cursor)                 // how many values to copy before the cursor
-	b := min(len(values)-a, len(r.buffer)-r.cursor) // how many values to copy to the end of the buffer
-	copy(r.buffer[r.cursor-a:r.cursor], values[len(values)-a:])
-	copy(r.buffer[len(r.buffer)-b:], values[len(values)-a-b:])
+	r.Cursor = (r.Cursor + len(values)) % len(r.Buffer)
+	a := min(len(values), r.Cursor)                 // how many values to copy before the cursor
+	b := min(len(values)-a, len(r.Buffer)-r.Cursor) // how many values to copy to the end of the buffer
+	copy(r.Buffer[r.Cursor-a:r.Cursor], values[len(values)-a:])
+	copy(r.Buffer[len(r.Buffer)-b:], values[len(values)-a-b:])
 }
 
-func (s *SignalAnalyzer) Process(buffer sointu.AudioBuffer) {
+func (r *RingBuffer[T]) WriteOnce(values []T) {
+	r.Cursor += copy(r.Buffer[r.Cursor:], values)
+}
+
+func NewSignalAnalyzer() *SignalAnalyzer {
+	s := &SignalAnalyzer{
+		pool: sync.Pool{New: func() interface{} { return &sointu.AudioBuffer{} }},
+		loudnessDetector: loudnessDetector{
+			weighting: weightings[KWeighting],
+			windows: [2]RingBuffer[float32]{
+				{Buffer: make([]float32, 44100*3/10)},
+				{Buffer: make([]float32, 44100*3/10)},
+			},
+		},
+		peakDetector: peakDetector{
+			oversampling: true,
+			windows: [2]RingBuffer[float32]{
+				{Buffer: make([]float32, 44100)},
+				{Buffer: make([]float32, 44100)},
+			},
+		},
+		waveForm: RingBuffer[[2]float32]{Buffer: make([][2]float32, 44100)},
+	}
+	s.guiChan = make(chan SignalAnalyzerGUIMessage, 16)
+	s.detectorChan = make(chan any, 16)
+	go s.detector()
+	return s
+}
+
+func (s *SignalAnalyzer) Close() {
+	close(s.detectorChan)
+}
+
+func (s *SignalAnalyzer) Loudness() Decibel                { return s.loudness }
+func (s *SignalAnalyzer) Peaks() [2]Decibel                { return s.peaks }
+func (s *SignalAnalyzer) Waveform() RingBuffer[[2]float32] { return s.waveForm }
+
+func (s *SignalAnalyzer) SetWeighting(w WeightingType) {
+	select {
+	case s.detectorChan <- SignalAnalyzerDetectorMessage{exec: func() {
+		s.loudnessDetector.weighting = weightings[w]
+	}}:
+	default:
+	}
+}
+
+func (s *SignalAnalyzer) SetWaveformLength(len int) {
+	s.waveForm.Buffer = make([][2]float32, len)
+}
+
+func (s *SignalAnalyzer) ProcessAudio(buffer sointu.AudioBuffer) {
 	a := s.pool.Get().(*sointu.AudioBuffer)
 	*a = (*a)[:0]
 	*a = append(*a, buffer...)
 	select {
-	case s.audioBufferChan <- a:
+	case s.guiChan <- SignalAnalyzerGUIMessage{data: a}:
 	default:
 		s.pool.Put(a)
+	}
+}
+
+func (s *SignalAnalyzer) Events() <-chan SignalAnalyzerGUIMessage {
+	return s.guiChan
+}
+
+func (s *SignalAnalyzer) ProcessEvent(msg SignalAnalyzerGUIMessage) {
+	if msg.loudness > 0 {
+		s.loudness = msg.loudness
+	}
+	for i := 0; i < 2; i++ {
+		if msg.peaks[0] > 0 {
+			s.peaks[0] = msg.peaks[0]
+		}
+	}
+	if msg.trigger {
+		s.waveForm.Cursor = 0
+	}
+	switch data := msg.data.(type) {
+	case *sointu.AudioBuffer:
+		if s.once {
+			s.waveForm.WriteOnce(*data)
+		} else {
+			s.waveForm.WriteWrap(*data)
+		}
+		select {
+		case s.detectorChan <- data:
+		default:
+			s.pool.Put(data)
+		}
+	}
+}
+
+func (s *SignalAnalyzer) detector() {
+	for data := range s.detectorChan {
+		switch data := data.(type) {
+		case *sointu.AudioBuffer:
+			guiMsg := SignalAnalyzerGUIMessage{}
+			guiMsg.peaks = s.peakDetector.update(*data)
+			guiMsg.loudness = s.loudnessDetector.update(*data)
+			s.pool.Put(data)
+			select {
+			case s.guiChan <- guiMsg:
+			default:
+			}
+		case func():
+			data()
+		}
 	}
 }
 
@@ -141,9 +235,9 @@ func (d *loudnessDetector) update(buf sointu.AudioBuffer) Decibel {
 	if len(d.tmp) < len(buf) {
 		d.tmp = append(d.tmp, make([]float32, len(buf)-len(d.tmp))...)
 	}
-	sqLen := min(len(d.windows[0].buffer), len(buf)) // there's no need to square more samples than the window size
+	sqLen := min(len(d.windows[0].Buffer), len(buf)) // there's no need to square more samples than the window size
 	if len(d.tmp2) < sqLen {
-		d.tmp2 = append(d.tmp2, make([]float32, sqLen-len(buf))...)
+		d.tmp2 = append(d.tmp2, make([]float32, sqLen-len(d.tmp2))...)
 	}
 	var total float32
 	for chn := 0; chn < 2; chn++ {
@@ -159,7 +253,7 @@ func (d *loudnessDetector) update(buf sointu.AudioBuffer) Decibel {
 		vek32.Mul_Into(d.tmp2[:sqLen], d.tmp[len(buf)-sqLen:len(buf)], d.tmp[len(buf)-sqLen:len(buf)])
 		// write the squared signal to the window
 		d.windows[chn].WriteWrap(d.tmp2[:sqLen])
-		total += vek32.Mean(d.windows[chn].buffer)
+		total += vek32.Mean(d.windows[chn].Buffer)
 	}
 	return Decibel(float32(10*math.Log10(float64(total))) + d.weighting.offset)
 }
@@ -226,10 +320,10 @@ func (d *peakDetector) update(buf sointu.AudioBuffer) (ret [2]Decibel) {
 	d.tmp = d.tmp[:len(buf)]
 	len4 := 4 * len(buf)
 	if len(d.tmp2) < len4 {
-		d.tmp2 = append(d.tmp2, make([]float32, len4-len(buf))...)
+		d.tmp2 = append(d.tmp2, make([]float32, len4-len(d.tmp2))...)
 	}
 	d.tmp2 = d.tmp2[:len4]
-	absLen := min(len(d.windows[0].buffer), len(d.tmp2))
+	absLen := min(len(d.windows[0].Buffer), len(d.tmp2))
 	for chn := 0; chn < 2; chn++ {
 		// deinterleave the channels
 		for i := 0; i < len(buf); i++ {
@@ -242,97 +336,8 @@ func (d *peakDetector) update(buf sointu.AudioBuffer) (ret [2]Decibel) {
 		vek32.Abs_Inplace(a)
 		d.windows[chn].WriteWrap(a)
 		// find the maximum value in the window
-		max := vek32.Max(d.windows[chn].buffer)
+		max := vek32.Max(d.windows[chn].Buffer)
 		ret[chn] = Decibel(float32(20 * math.Log10(float64(max))))
 	}
 	return
-}
-
-func NewSignalAnalyzer() *SignalAnalyzer {
-	s := &SignalAnalyzer{pool: sync.Pool{
-		New: func() any {
-			s := make(sointu.AudioBuffer, 0)
-			return &s
-		},
-	},
-		resultChan:   make(chan SignalResultMsg, 16),
-		processChan:  make(chan SignalProcessMsg, 16),
-		avgAnalyzer:  VolumeAnalyzer{Attack: 0.3, Release: 0.3, Min: -100, Max: 20},
-		peakAnalyzer: VolumeAnalyzer{Attack: 1e-4, Release: 1, Min: -100, Max: 20},
-		length:       4096,
-		skipping:     20,
-	}
-	go func() {
-		waveform := make(sointu.AudioBuffer, 0, 44100)
-		for msg := range s.processChan {
-			if msg.trigger && s.triggering {
-				waveform = waveform[:0]
-			}
-			if msg.action != nil {
-				msg.action()
-			}
-			var result *sointu.AudioBuffer = nil
-			if msg.data != nil {
-				s.avgAnalyzer.Update(*msg.data)
-				s.peakAnalyzer.Update(*msg.data)
-				j := 0
-				for i := 0; i < len(*msg.data); i++ {
-					if s.skipIndex > 0 {
-						s.skipIndex--
-						continue
-					}
-					s.skipIndex = s.skipping
-					(*msg.data)[j] = (*msg.data)[i]
-					j++
-				}
-				*msg.data = (*msg.data)[:j]
-				space := s.length - len(waveform)
-				if s.triggering {
-					if space <= 0 {
-						goto skip
-					}
-				} else {
-					missingSpace := len(*msg.data) - space
-					if missingSpace > 0 {
-						move := min(len(waveform), missingSpace)
-						copy(waveform, waveform[move:])
-						waveform = waveform[:len(waveform)-move]
-						space += move
-					}
-				}
-				if len(*msg.data) > space {
-					*msg.data = (*msg.data)[:space]
-				}
-				waveform = append(waveform, *msg.data...)
-				result = msg.data
-				*result = (*result)[:0]
-				*result = append(*result, waveform...)
-			}
-		skip:
-			select {
-			case s.resultChan <- SignalResultMsg{
-				avgVolume:  s.avgAnalyzer.Level,
-				peakVolume: s.peakAnalyzer.Level,
-				waveForm:   result,
-			}:
-			default:
-				if result != nil {
-					s.pool.Put(result)
-				}
-			}
-		}
-	}()
-	return s
-}
-
-// Process is thread safe
-func (s *SignalAnalyzer) Process(buffer sointu.AudioBuffer) {
-	buf := s.pool.Get().(*sointu.AudioBuffer)
-	*buf = (*buf)[:0]
-	*buf = append(*buf, buffer...)
-	select {
-	case s.processChan <- SignalProcessMsg{data: buf}:
-	default:
-		s.pool.Put(buf)
-	}
 }

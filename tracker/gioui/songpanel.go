@@ -145,7 +145,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 	noteTrackBtnStyle := ToggleIcon(gtx, tr.Theme, t.FollowBtn, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, t.followOffHint, t.followOnHint)
 	loopBtnStyle := ToggleIcon(gtx, tr.Theme, t.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, t.loopOffHint, t.loopOnHint)
 
-	scopeStyle := FilledScope(tr.Waveform())
+	scopeStyle := FilledScope(tr.SignalAnalyzer().Waveform().Buffer)
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
@@ -207,7 +207,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 				}),
 			)
 		}),
-		layout.Rigid(VuMeter{Loudness: tr.Model.AverageVolume(), Peak: tr.Model.PeakVolume(), Range: 100}.Layout),
+		layout.Rigid(VuMeter{Loudness: tr.Model.SignalAnalyzer().Loudness(), Peak: tr.Model.SignalAnalyzer().Peaks(), Range: 100}.Layout),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(rewindBtnStyle.Layout),
