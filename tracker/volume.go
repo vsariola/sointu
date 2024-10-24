@@ -100,14 +100,14 @@ func (r *RingBuffer[T]) WriteWrap(values []T) {
 	copy(r.buffer[len(r.buffer)-b:], values[len(values)-a-b:])
 }
 
-func (a *SignalAnalyzer) Process(buffer sointu.AudioBuffer) {
-	s := a.pool.Get().(*sointu.AudioBuffer)
-	*s = (*s)[:0]
-	*s = append(*s, buffer...)
+func (s *SignalAnalyzer) Process(buffer sointu.AudioBuffer) {
+	a := s.pool.Get().(*sointu.AudioBuffer)
+	*a = (*a)[:0]
+	*a = append(*a, buffer...)
 	select {
-	case a.audioBufferChan <- s:
+	case s.audioBufferChan <- a:
 	default:
-		a.pool.Put(s)
+		s.pool.Put(a)
 	}
 }
 
