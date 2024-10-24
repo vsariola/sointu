@@ -225,7 +225,19 @@ var weightings = map[WeightingType]weighting{
 	NoWeighting: {coeffs: []biquadCoeff{}, offset: 0},
 }
 
-// we should have three windows: momentary = last 400 ms, with 100 ms overlap with previous windows
+// according to https://tech.ebu.ch/docs/tech/tech3341.pdf
+// we have two sliding windows: momentary loudness = last 400 ms, short-term loudness = last 3 s
+// display:
+//
+//	momentary loudness = last analyzed 400 ms blcok
+//	short-term loudness = last analyzed 3 s block
+//
+// every 100 ms, we collect one data point of the momentary loudness (starting to play song again resets the data blocks)
+// then:
+//
+//	integrated loudness = the blocks are gated, and the average loudness of the gated blocks is calculated
+//	maximum momentary loudness = maximum of all the momentary blocks
+//	maximum short-term loudness = maximum of all the short-term blocks
 func (d *loudnessDetector) update(buf sointu.AudioBuffer) Decibel {
 	if len(d.tmp) < len(buf) {
 		d.tmp = append(d.tmp, make([]float32, len(buf)-len(d.tmp))...)
@@ -308,6 +320,17 @@ func (s *oversamplerState) Oversample(x []float32, y []float32) {
 	copy(s.history[11-z:], x[len(x)-z:])
 }
 
+// we should perform the peak detection also momentary (last 400 ms), short term
+// (last 3 s), and integrated (whole song) for display purposes, we can use
+// always last arrived data for the integrated peak, we can use the maximum of
+// all the peaks so far (there is no need show "maximum short term true peak" or
+// "maximum momentary true peak" because they are same as the maximum for entire song)
+//
+// display:
+//
+//	momentary true peak
+//	short-term true peak
+//	integrated true peak
 func (d *peakDetector) update(buf sointu.AudioBuffer) (ret [2]Decibel) {
 	if len(d.tmp) < len(buf) {
 		d.tmp = append(d.tmp, make([]float32, len(buf)-len(d.tmp))...)
