@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/vsariola/sointu/cmd"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -14,7 +15,6 @@ import (
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/oto"
 	"github.com/vsariola/sointu/version"
-	"github.com/vsariola/sointu/vm/compiler/bridge"
 )
 
 func main() {
@@ -93,7 +93,7 @@ func main() {
 				return fmt.Errorf("the song could not be parsed as .json (%v) or .yml (%v)", errJSON, errYaml)
 			}
 		}
-		buffer, err := sointu.Play(bridge.NativeSynther{}, song, nil) // render the song to calculate its length
+		buffer, err := sointu.Play(cmd.MainSynther, song, nil) // render the song to calculate its length
 		if err != nil {
 			return fmt.Errorf("sointu.Play failed: %v", err)
 		}
