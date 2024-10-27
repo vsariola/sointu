@@ -3,15 +3,16 @@ package gioui
 import (
 	"gioui.org/layout"
 	"gioui.org/unit"
-	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/vsariola/sointu/tracker"
+	"github.com/vsariola/sointu/tracker/gioui/patch"
+	patched "github.com/vsariola/sointu/tracker/gioui/patch/material"
 )
 
 type (
 	TipClickable struct {
-		Clickable widget.Clickable
+		Clickable patch.Clickable
 		TipArea   component.TipArea
 	}
 
@@ -22,12 +23,12 @@ type (
 
 	TipIconButtonStyle struct {
 		TipArea         *component.TipArea
-		IconButtonStyle material.IconButtonStyle
+		IconButtonStyle patched.IconButtonStyle
 		Tooltip         component.Tooltip
 	}
 
 	BoolClickable struct {
-		Clickable widget.Clickable
+		Clickable patch.Clickable
 		TipArea   component.TipArea
 		Bool      tracker.Bool
 	}
@@ -63,7 +64,7 @@ func ActionIcon(gtx C, th *material.Theme, w *ActionClickable, icon []byte, tip 
 }
 
 func TipIcon(th *material.Theme, w *TipClickable, icon []byte, tip string) TipIconButtonStyle {
-	iconButtonStyle := material.IconButton(th, &w.Clickable, widgetForIcon(icon), "")
+	iconButtonStyle := patched.IconButton(th, &w.Clickable, widgetForIcon(icon), "")
 	iconButtonStyle.Color = primaryColor
 	iconButtonStyle.Background = transparent
 	iconButtonStyle.Inset = layout.UniformInset(unit.Dp(6))
@@ -84,7 +85,7 @@ func ToggleIcon(gtx C, th *material.Theme, w *BoolClickable, offIcon, onIcon []b
 	for w.Clickable.Clicked(gtx) {
 		w.Bool.Toggle()
 	}
-	ibStyle := material.IconButton(th, &w.Clickable, widgetForIcon(icon), "")
+	ibStyle := patched.IconButton(th, &w.Clickable, widgetForIcon(icon), "")
 	ibStyle.Background = transparent
 	ibStyle.Inset = layout.UniformInset(unit.Dp(6))
 	ibStyle.Color = primaryColor
@@ -102,11 +103,11 @@ func (t *TipIconButtonStyle) Layout(gtx C) D {
 	return t.TipArea.Layout(gtx, t.Tooltip, t.IconButtonStyle.Layout)
 }
 
-func ActionButton(gtx C, th *material.Theme, w *ActionClickable, text string) material.ButtonStyle {
+func ActionButton(gtx C, th *material.Theme, w *ActionClickable, text string) patched.ButtonStyle {
 	for w.Clickable.Clicked(gtx) {
 		w.Action.Do()
 	}
-	ret := material.Button(th, &w.Clickable, text)
+	ret := patched.Button(th, &w.Clickable, text)
 	ret.Color = th.Palette.Fg
 	if !w.Action.Allowed() {
 		ret.Color = disabledTextColor
@@ -116,11 +117,11 @@ func ActionButton(gtx C, th *material.Theme, w *ActionClickable, text string) ma
 	return ret
 }
 
-func ToggleButton(gtx C, th *material.Theme, b *BoolClickable, text string) material.ButtonStyle {
+func ToggleButton(gtx C, th *material.Theme, b *BoolClickable, text string) patched.ButtonStyle {
 	for b.Clickable.Clicked(gtx) {
 		b.Bool.Toggle()
 	}
-	ret := material.Button(th, &b.Clickable, text)
+	ret := patched.Button(th, &b.Clickable, text)
 	ret.Background = transparent
 	ret.Inset = layout.UniformInset(unit.Dp(6))
 	if b.Bool.Value() {
@@ -133,16 +134,16 @@ func ToggleButton(gtx C, th *material.Theme, b *BoolClickable, text string) mate
 	return ret
 }
 
-func LowEmphasisButton(th *material.Theme, w *widget.Clickable, text string) material.ButtonStyle {
-	ret := material.Button(th, w, text)
+func LowEmphasisButton(th *material.Theme, w *patch.Clickable, text string) patched.ButtonStyle {
+	ret := patched.Button(th, w, text)
 	ret.Color = th.Palette.Fg
 	ret.Background = transparent
 	ret.Inset = layout.UniformInset(unit.Dp(6))
 	return ret
 }
 
-func HighEmphasisButton(th *material.Theme, w *widget.Clickable, text string) material.ButtonStyle {
-	ret := material.Button(th, w, text)
+func HighEmphasisButton(th *material.Theme, w *patch.Clickable, text string) patched.ButtonStyle {
+	ret := patched.Button(th, w, text)
 	ret.Color = th.Palette.ContrastFg
 	ret.Background = th.Palette.Fg
 	ret.Inset = layout.UniformInset(unit.Dp(6))
