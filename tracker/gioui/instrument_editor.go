@@ -72,7 +72,6 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		copyInstrumentBtn:   new(TipClickable),
 		saveInstrumentBtn:   new(TipClickable),
 		loadInstrumentBtn:   new(TipClickable),
-		addUnitBtn:          NewActionClickable(model.AddUnit(false)),
 		commentExpandBtn:    NewBoolClickable(model.CommentExpanded().Bool()),
 		presetMenuBtn:       new(TipClickable),
 		soloBtn:             NewBoolClickable(model.Solo().Bool()),
@@ -91,6 +90,7 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		ret.presetMenuItems = append(ret.presetMenuItems, MenuItem{Text: name, IconBytes: icons.ImageAudiotrack, Doer: model.LoadPreset(index)})
 		return true
 	})
+	ret.addUnitBtn = NewActionClickable(model.AddUnitAndThen(func() { ret.searchEditor.Focus() }))
 	ret.enlargeHint = makeHint("Enlarge", " (%s)", "InstrEnlargedToggle")
 	ret.shrinkHint = makeHint("Shrink", " (%s)", "InstrEnlargedToggle")
 	ret.addInstrumentHint = makeHint("Add\ninstrument", "\n(%s)", "AddInstrument")
@@ -382,6 +382,12 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		units[i] = item
 	}
 	count := min(ie.unitDragList.TrackerList.Count(), 256)
+
+	if ie.searchEditor.requestFocus {
+		// for now, only the searchEditor has its requestFocus flag
+		ie.searchEditor.requestFocus = false
+		gtx.Execute(key.FocusCmd{Tag: &ie.searchEditor.Editor})
+	}
 
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Max.Y = gtx.Dp(20)
