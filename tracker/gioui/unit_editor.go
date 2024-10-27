@@ -340,7 +340,11 @@ func (p ParameterStyle) Layout(gtx C) D {
 					unitItems = make([]MenuItem, len(units))
 					for j, unit := range units {
 						id := unit.ID
-						unitItems[j].Text = fmt.Sprintf("%d: %s %s", j, unit.Type, unit.Comment)
+						text := unit.Type
+						if unit.Comment != "" {
+							text = fmt.Sprintf("%s \"%s\"", text, unit.Comment)
+						}
+						unitItems[j].Text = fmt.Sprintf("%d: %s", j, text)
 						unitItems[j].IconBytes = icons.NavigationChevronRight
 						unitItems[j].Doer = tracker.Allow(func() {
 							tracker.Int{IntData: p.w.Parameter}.Set(id)
