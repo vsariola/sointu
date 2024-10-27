@@ -72,3 +72,5 @@ var scrollBarColor = color.NRGBA{R: 255, G: 255, B: 255, A: 32}
 var warningColor = color.NRGBA{R: 251, G: 192, B: 45, A: 255}
 
 var dialogBgColor = color.NRGBA{R: 0, G: 0, B: 0, A: 224}
+
+var paramIsSendTargetColor = color.NRGBA{R: 120, G: 120, B: 210, A: 255}

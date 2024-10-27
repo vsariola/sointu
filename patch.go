@@ -464,3 +464,22 @@ func (p Patch) FindUnit(id int) (instrIndex int, unitIndex int, err error) {
 	}
 	return 0, 0, fmt.Errorf("could not find a unit with id %v", id)
 }
+
+func FindParamForModulationPort(unitName string, index int) *UnitParameter {
+	// qm210: couldn't see a function yet that matches the parameter index to the modulateable param.
+	// Not sure whether *UnitParameters is good here, would this make them mutable?
+	unitType, ok := UnitTypes[unitName]
+	if !ok {
+		return nil
+	}
+	for _, param := range unitType {
+		if index == 0 {
+			return &param
+		}
+		if param.CanModulate {
+			index--
+		}
+	}
+	// index outside range
+	return nil
+}
