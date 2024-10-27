@@ -15,6 +15,8 @@ https://github.com/gioui/gio/blob/v0.7.1/widget/material/button.go
 https://github.com/gioui/gio/blob/v0.7.1/internal/f32color/rgba.go
 
 This is obviously dangerous, because it decouples this Button from future
-Gio releases, and our solution is a shady hack for now, but, 
+Gio releases, and our solution is a shady hack for now, but,
+that spacebar shenanigans needs to end.
 
-we need to give the spacebar its space.
+That is allowed, cf. comments in these files: 
+// SPDX-License-Identifier: Unlicense OR MIT
