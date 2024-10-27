@@ -204,6 +204,10 @@ func (p NamedParameter) LargeStep() int {
 	return 16
 }
 
+func (p NamedParameter) Unit() sointu.Unit {
+	return *p.parameter.unit
+}
+
 // GmDlsEntryParameter
 
 func (p GmDlsEntryParameter) Name() string        { return "sample" }

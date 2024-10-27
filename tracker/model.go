@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"iter"
 	"os"
 	"path/filepath"
 
@@ -596,4 +597,39 @@ func clamp(a, min, max int) int {
 		return min
 	}
 	return a
+}
+
+func (m *Model) CollectSendsTo(param Parameter) iter.Seq[sointu.Unit] {
+	return func(yield func(sointu.Unit) bool) {
+		p, ok := param.(NamedParameter)
+		if !ok {
+			return
+		}
+		for _, instr := range m.d.Song.Patch {
+			for _, unit := range instr.Units {
+				if unit.Type != "send" {
+					continue
+				}
+				targetId, ok := unit.Parameters["target"]
+				if !ok || targetId != p.Unit().ID {
+					continue
+				}
+				if !yield(unit) {
+					return
+				}
+			}
+		}
+	}
+}
+
+func (m *Model) InstrumentForUnit(id int) *sointu.Instrument {
+	for _, instr := range m.d.Song.Patch {
+		for _, unit := range instr.Units {
+			if unit.ID == id {
+				return &instr
+			}
+		}
+	}
+	// ID does not exist
+	return nil
 }
