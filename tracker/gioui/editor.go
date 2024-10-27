@@ -13,8 +13,9 @@ type (
 	// application while editing (particularly: to prevent triggering notes
 	// while editing).
 	Editor struct {
-		Editor  widget.Editor
-		filters []event.Filter
+		Editor       widget.Editor
+		filters      []event.Filter
+		requestFocus bool
 	}
 
 	EditorStyle material.EditorStyle
@@ -74,6 +75,10 @@ func (e *Editor) Cancelled(gtx C) bool {
 		}
 	}
 	return false
+}
+
+func (e *Editor) Focus() {
+	e.requestFocus = true
 }
 
 func (e *EditorStyle) Layout(gtx C) D {

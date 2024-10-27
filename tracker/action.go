@@ -141,7 +141,7 @@ func (m *Model) SplitInstrument() Action {
 
 func (m *Model) AddUnit(before bool) Action {
 	return Allow(func() {
-		defer (*Model)(m).change("AddUnitAction", PatchChange, MajorChange)()
+		defer m.change("AddUnitAction", PatchChange, MajorChange)()
 		if len(m.d.Song.Patch) == 0 { // no instruments, add one
 			instr := sointu.Instrument{NumVoices: 1}
 			instr.Units = make([]sointu.Unit, 0, 1)
@@ -159,9 +159,16 @@ func (m *Model) AddUnit(before bool) Action {
 		m.d.UnitIndex2 = m.d.UnitIndex
 		copy(newUnits, instr.Units[:m.d.UnitIndex])
 		copy(newUnits[m.d.UnitIndex+1:], instr.Units[m.d.UnitIndex:])
-		(*Model)(m).assignUnitIDs(newUnits[m.d.UnitIndex : m.d.UnitIndex+1])
+		m.assignUnitIDs(newUnits[m.d.UnitIndex : m.d.UnitIndex+1])
 		m.d.Song.Patch[m.d.InstrIndex].Units = newUnits
 		m.d.ParamIndex = 0
+	})
+}
+
+func (m *Model) AddUnitAndThen(callback func()) Action {
+	return Allow(func() {
+		m.AddUnit(false).Do()
+		callback()
 	})
 }
 
