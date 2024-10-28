@@ -60,10 +60,9 @@ func loadDefaultKeyBindings() []KeyBinding {
 }
 
 func init() {
-	keyBindings := loadCustomKeyBindings()
-	if keyBindings == nil {
-		keyBindings = loadDefaultKeyBindings()
-	}
+	keyBindings := loadDefaultKeyBindings()
+	keyBindings = append(keyBindings, loadCustomKeyBindings()...)
+
 	for _, kb := range keyBindings {
 		var mods key.Modifiers
 		if kb.Shortcut {
@@ -84,8 +83,17 @@ func init() {
 		if kb.Super {
 			mods |= key.ModSuper
 		}
-		keyBindingMap[key.Event{Name: key.Name(kb.Key), Modifiers: mods, State: key.Press}] = kb.Action
-		if _, ok := keyActionMap[KeyAction(kb.Action)]; !ok {
+
+		keyEvent := key.Event{Name: key.Name(kb.Key), Modifiers: mods, State: key.Press}
+		action, ok := keyBindingMap[keyEvent] // if this key has been previously bound, remove it from the hint map
+		if ok {
+			delete(keyActionMap, KeyAction(action))
+		}
+		if kb.Action == "" { // unbind
+			delete(keyBindingMap, keyEvent)
+		} else { // bind
+			keyBindingMap[keyEvent] = kb.Action
+			// last binding of the some action wins for displaying the hint
 			modString := strings.Replace(mods.String(), "-", "+", -1)
 			text := kb.Key
 			if modString != "" {

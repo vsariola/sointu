@@ -1,3 +1,11 @@
+# You can place your custom keybindings.yml in the Sointu config directory e.g.
+# AppData\Roaming\sointu\keybindings.yml on Windows. There, you can override the
+# default keybindings with your own. The format is the same as below. A
+# keybinding without any action means unbinding the key. For example, the line
+#
+# - {key: "A"}
+#
+# will stop the A key from sending NoteOff events.
 - {key: "C", shortcut: true, action: "Copy"}
 - {key: "V", shortcut: true, action: "Paste"}
 - {key: "A", shortcut: true, action: "SelectAll"}
