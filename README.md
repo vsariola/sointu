@@ -510,6 +510,9 @@ Prods using Sointu
   - [Phosphorescent Purple Pixel Peaks](https://www.pouet.net/prod.php?which=96198) by mrange & Virgill
   - [21](https://demozoo.org/music/338597/) by NR4 / Team210
   - [Tausendeins](https://www.pouet.net/prod.php?which=96192) by epoqe & Team210
+  - [Radiant](https://www.pouet.net/prod.php?which=97200) by Team210
+  - [Aurora Florae](https://www.pouet.net/prod.php?which=97516) by Team210 and
+    epoqe
 
 Contributing
 ------------
@@ -536,5 +539,7 @@ The original 4klang: Dominik Ries ([gopher/Alcatraz](https://github.com/hzdgophe
 & Paul Kraus (pOWL/Alcatraz) :heart:
 
 Sointu: Veikko Sariola (pestis/bC!), [Apollo/bC!](https://github.com/moitias),
-[NR4/Team210](https://github.com/LeStahL/), [PoroCYon](https://github.com/PoroCYon/4klang),
-[kendfss](https://github.com/kendfss), [anticore](https://github.com/anticore)
+[NR4/Team210](https://github.com/LeStahL/),
+[PoroCYon](https://github.com/PoroCYon/4klang),
+[kendfss](https://github.com/kendfss), [anticore](https://github.com/anticore),
+[qm210](https://github.com/qm210)
