@@ -49,6 +49,7 @@ type (
 	// which gets executed in the detector goroutine.
 	MsgToDetector struct {
 		Reset bool
+		Quit  bool
 		Data  any // TODO: consider using a sum type here, for a bit more type safety. See: https://www.jerf.org/iri/post/2917/
 	}
 )
@@ -60,12 +61,6 @@ func NewBroker() *Broker {
 		ToDetector: make(chan MsgToDetector, 1024),
 		bufferPool: sync.Pool{New: func() interface{} { return &sointu.AudioBuffer{} }},
 	}
-}
-
-func (b *Broker) Close() {
-	close(b.ToPlayer)
-	close(b.ToModel)
-	close(b.ToDetector)
 }
 
 // GetAudioBuffer returns an audio buffer from the buffer pool. The buffer is

@@ -106,6 +106,9 @@ func (s *Detector) Run() {
 			s.loudnessDetector.reset()
 			s.peakDetector.reset()
 		}
+		if msg.Quit {
+			return
+		}
 		switch data := msg.Data.(type) {
 		case *sointu.AudioBuffer:
 			buf := *data
@@ -142,6 +145,11 @@ func (s *Detector) Run() {
 			data()
 		}
 	}
+}
+
+// Close may theoretically block if the broker is full, but it should not happen in practice
+func (s *Detector) Close() {
+	s.broker.ToDetector <- MsgToDetector{Quit: true}
 }
 
 func makeLoudnessDetector(weighting WeightingType) loudnessDetector {

@@ -135,6 +135,7 @@ func init() {
 				CloseFunc: func() {
 					t.Exec() <- func() { t.ForceQuit().Do() }
 					t.WaitQuitted()
+					detector.Close()
 				},
 				GetChunkFunc: func(isPreset bool) []byte {
 					retChn := make(chan []byte)

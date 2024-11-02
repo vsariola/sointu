@@ -166,7 +166,6 @@ func (t *Tracker) Main() {
 	w.Perform(system.ActionClose)
 	t.SaveRecovery()
 	t.quitWG.Done()
-	t.Broker().Close()
 }
 
 func eventLoop(w *app.Window, events chan<- event.Event, acks <-chan struct{}) {

@@ -70,6 +70,7 @@ func main() {
 	go func() {
 		trackerUi.Main()
 		audioCloser.Close()
+		detector.Close()
 		if *cpuprofile != "" {
 			pprof.StopCPUProfile()
 			f.Close()
