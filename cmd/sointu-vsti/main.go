@@ -133,17 +133,17 @@ func init() {
 					}
 				},
 				CloseFunc: func() {
-					t.Exec() <- func() { t.ForceQuit().Do() }
+					broker.ToModel <- tracker.MsgToModel{Data: func() { t.ForceQuit().Do() }}
 					t.WaitQuitted()
 					detector.Close()
 				},
 				GetChunkFunc: func(isPreset bool) []byte {
 					retChn := make(chan []byte)
-					t.Exec() <- func() { retChn <- t.MarshalRecovery() }
+					broker.ToModel <- tracker.MsgToModel{Data: func() { retChn <- t.MarshalRecovery() }}
 					return <-retChn
 				},
 				SetChunkFunc: func(data []byte, isPreset bool) {
-					t.Exec() <- func() { t.UnmarshalRecovery(data) }
+					broker.ToModel <- tracker.MsgToModel{Data: func() { t.UnmarshalRecovery(data) }}
 				},
 			}
 

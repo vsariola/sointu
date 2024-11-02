@@ -89,7 +89,6 @@ func NewTracker(model *tracker.Model) *Tracker {
 		Model: model,
 
 		filePathString: model.FilePath().String(),
-		execChan:       make(chan func(), 1024),
 	}
 	t.Theme.Shaper = text.NewShaper(text.WithCollection(fontCollection))
 	t.PopupAlert = NewPopupAlert(model.Alerts(), t.Theme.Shaper)
@@ -155,8 +154,6 @@ func (t *Tracker) Main() {
 			}
 		case <-recoveryTicker.C:
 			t.SaveRecovery()
-		case f := <-t.execChan:
-			f()
 		}
 		if t.Quitted() {
 			break
@@ -179,10 +176,6 @@ func eventLoop(w *app.Window, events chan<- event.Event, acks <-chan struct{}) {
 			return
 		}
 	}
-}
-
-func (t *Tracker) Exec() chan<- func() {
-	return t.execChan
 }
 
 func (t *Tracker) WaitQuitted() {
@@ -261,14 +254,14 @@ func (t *Tracker) explorerChooseFile(success func(io.ReadCloser), extensions ...
 	t.Exploring = true
 	go func() {
 		file, err := t.Explorer.ChooseFile(extensions...)
-		t.Exec() <- func() {
+		t.Broker().ToModel <- tracker.MsgToModel{Data: func() {
 			t.Exploring = false
 			if err == nil {
 				success(file)
 			} else {
 				t.Cancel().Do()
 			}
-		}
+		}}
 	}()
 }
 
@@ -276,14 +269,14 @@ func (t *Tracker) explorerCreateFile(success func(io.WriteCloser), filename stri
 	t.Exploring = true
 	go func() {
 		file, err := t.Explorer.CreateFile(filename)
-		t.Exec() <- func() {
+		t.Broker().ToModel <- tracker.MsgToModel{Data: func() {
 			t.Exploring = false
 			if err == nil {
 				success(file)
 			} else {
 				t.Cancel().Do()
 			}
-		}
+		}}
 	}()
 }
 
