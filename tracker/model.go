@@ -181,7 +181,7 @@ func (m *Model) Quitted() bool                { return m.quitted }
 func (m *Model) DetectorResult() DetectorResult { return m.detectorResult }
 
 // NewModelPlayer creates a new model and a player that communicates with it
-func NewModelPlayer(broker *Broker, synther sointu.Synther, midiContext MIDIContext, recoveryFilePath string) (*Model, *Player) {
+func NewModel(broker *Broker, synther sointu.Synther, midiContext MIDIContext, recoveryFilePath string) *Model {
 	m := new(Model)
 	m.synther = synther
 	m.MIDI = midiContext
@@ -199,15 +199,9 @@ func NewModelPlayer(broker *Broker, synther sointu.Synther, midiContext MIDICont
 			}
 		}
 	}
+	trySend(broker.ToPlayer, any(m.d.Song.Copy())) // we should be non-blocking in the constructor
 	m.signalAnalyzer = NewScopeModel(broker, m.d.Song.BPM)
-	p := &Player{
-		broker:  broker,
-		synther: synther,
-		song:    m.d.Song.Copy(),
-		loop:    m.loop,
-	}
-	p.compileOrUpdateSynth()
-	return m, p
+	return m
 }
 
 func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func() {

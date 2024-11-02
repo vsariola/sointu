@@ -265,7 +265,8 @@ func FuzzModel(f *testing.F) {
 		reader := bytes.NewReader(slice)
 		synther := vm.GoSynther{}
 		broker := tracker.NewBroker()
-		model, player := tracker.NewModelPlayer(broker, synther, NullContext{}, "")
+		model := tracker.NewModel(broker, synther, NullContext{}, "")
+		player := tracker.NewPlayer(broker, synther)
 		buf := make([][2]float32, 2048)
 		closeChan := make(chan struct{})
 		go func() {

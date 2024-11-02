@@ -73,6 +73,13 @@ const (
 
 const numRenderTries = 10000
 
+func NewPlayer(broker *Broker, synther sointu.Synther) *Player {
+	return &Player{
+		broker:  broker,
+		synther: synther,
+	}
+}
+
 // Process renders audio to the given buffer, trying to fill it completely. If
 // the buffer is not filled, the synth is destroyed and an error is sent to the
 // model. context tells the player which MIDI events happen during the current

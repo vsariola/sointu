@@ -49,7 +49,8 @@ func main() {
 	defer midiContext.Close()
 	midiContext.TryToOpenBy(*defaultMidiInput, *firstMidiInput)
 	broker := tracker.NewBroker()
-	model, player := tracker.NewModelPlayer(broker, cmd.MainSynther, midiContext, recoveryFile)
+	model := tracker.NewModel(broker, cmd.MainSynther, midiContext, recoveryFile)
+	player := tracker.NewPlayer(broker, cmd.MainSynther)
 	detector := tracker.NewDetector(broker)
 	go detector.Run()
 
