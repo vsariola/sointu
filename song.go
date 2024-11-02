@@ -275,7 +275,11 @@ func (l Score) FirstVoiceForTrack(track int) int {
 		return 0
 	}
 	track = min(track, len(l.Tracks))
-	return TotalVoices(l.Tracks[:track])
+	ret := 0
+	for i := 0; i < track; i++ {
+		ret += l.Tracks[i].NumVoices
+	}
+	return ret
 }
 
 // LengthInRows returns just RowsPerPattern * Length, as the length is the

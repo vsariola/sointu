@@ -422,7 +422,11 @@ func (p Patch) FirstVoiceForInstrument(instrIndex int) int {
 		return 0
 	}
 	instrIndex = min(instrIndex, len(p))
-	return TotalVoices(p[:instrIndex])
+	ret := 0
+	for i := 0; i < instrIndex; i++ {
+		ret += p[i].NumVoices
+	}
+	return ret
 }
 
 // InstrumentForVoice returns the instrument number for the given voice index.
