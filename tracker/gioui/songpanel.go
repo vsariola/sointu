@@ -130,9 +130,6 @@ func (t *SongPanel) layoutMenuBar(gtx C, tr *Tracker) D {
 	menuLayouts := []layout.FlexChild{
 		layout.Rigid(tr.layoutMenu(gtx, "File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
 		layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...)),
-		layout.Flexed(1, func(gtx C) D {
-			return layout.E.Layout(gtx, panicBtnStyle.Layout)
-		}),
 	}
 	if len(t.midiMenuItems) > 0 {
 		menuLayouts = append(
@@ -140,6 +137,9 @@ func (t *SongPanel) layoutMenuBar(gtx C, tr *Tracker) D {
 			layout.Rigid(tr.layoutMenu(gtx, "MIDI", &t.MenuBar[2], &t.Menus[2], unit.Dp(200), t.midiMenuItems...)),
 		)
 	}
+	menuLayouts = append(menuLayouts, layout.Flexed(1, func(gtx C) D {
+		return layout.E.Layout(gtx, panicBtnStyle.Layout)
+	}))
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}.Layout(gtx, menuLayouts...)
 }
 
