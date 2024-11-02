@@ -193,7 +193,10 @@ func NewModelPlayer(broker *Broker, synther sointu.Synther, midiContext MIDICont
 	m.resetSong()
 	if recoveryFilePath != "" {
 		if bytes2, err := os.ReadFile(m.d.RecoveryFilePath); err == nil {
-			json.Unmarshal(bytes2, &m.d)
+			var data modelData
+			if json.Unmarshal(bytes2, &data) == nil {
+				m.d = data
+			}
 		}
 	}
 	m.signalAnalyzer = NewScopeModel(broker, m.d.Song.BPM)
@@ -326,13 +329,18 @@ func (m *Model) SaveRecovery() error {
 }
 
 func (m *Model) UnmarshalRecovery(bytes []byte) {
-	err := json.Unmarshal(bytes, &m.d)
+	var data modelData
+	err := json.Unmarshal(bytes, &data)
 	if err != nil {
 		return
 	}
+	m.d = data
 	if m.d.RecoveryFilePath != "" { // check if there's a recovery file on disk and load it instead
 		if bytes2, err := os.ReadFile(m.d.RecoveryFilePath); err == nil {
-			json.Unmarshal(bytes2, &m.d)
+			var data modelData
+			if json.Unmarshal(bytes2, &data) == nil {
+				m.d = data
+			}
 		}
 	}
 	m.d.ChangedSinceRecovery = false
