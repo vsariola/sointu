@@ -77,7 +77,7 @@ func (o *OtoReader) Read(b []byte) (n int, err error) {
 	} else if samples < len(o.tmpBuffer) {
 		o.tmpBuffer = o.tmpBuffer[:samples]
 	}
-	err = o.audioSource.ReadAudio(o.tmpBuffer)
+	err = o.audioSource(o.tmpBuffer)
 	if err != nil {
 		return o.closeWithError(err)
 	}

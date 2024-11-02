@@ -10,6 +10,7 @@ import (
 	"runtime/pprof"
 
 	"gioui.org/app"
+	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/cmd"
 	"github.com/vsariola/sointu/oto"
 	"github.com/vsariola/sointu/tracker"
@@ -61,8 +62,10 @@ func main() {
 	}
 
 	trackerUi := gioui.NewTracker(model)
-	processor := tracker.NewProcessor(player, midiContext, trackerUi)
-	audioCloser := audioContext.Play(processor)
+	audioCloser := audioContext.Play(func(buf sointu.AudioBuffer) error {
+		player.Process(buf, midiContext, trackerUi)
+		return nil
+	})
 
 	go func() {
 		trackerUi.Main()

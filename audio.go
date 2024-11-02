@@ -29,11 +29,9 @@ type (
 		Play(r AudioSource) CloserWaiter
 	}
 
-	// AudioSource is an interface for reading audio samples into an
-	// AudioBuffer. Returns error if the buffer is not filled.
-	AudioSource interface {
-		ReadAudio(buf AudioBuffer) error
-	}
+	// AudioSource is an function for reading audio samples into an AudioBuffer.
+	// Returns error if the buffer is not filled.
+	AudioSource func(buf AudioBuffer) error
 
 	BufferSource struct {
 		buffer AudioBuffer
@@ -154,8 +152,15 @@ func (buffer AudioBuffer) Fill(synth Synth) error {
 	return nil
 }
 
-func (b AudioBuffer) Source() *BufferSource {
-	return &BufferSource{buffer: b}
+func (b AudioBuffer) Source() AudioSource {
+	return func(buf AudioBuffer) error {
+		n := copy(buf, b)
+		b = b[n:]
+		if n < len(buf) {
+			return io.EOF
+		}
+		return nil
+	}
 }
 
 // ReadAudio reads audio samples from an AudioSource into an AudioBuffer.
