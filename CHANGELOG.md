@@ -35,6 +35,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   the command line tools.
 
 ### Fixed
+- We try to honor the MIDI event time stamps, so that the timing between MIDI
+  events (as reported to us by RTMIDI) will be correct.
+- When unmarshaling the recovery file, the unit parameter maps were "merged"
+  with the existing parameter maps, instead of overwriting. This created units
+  with unnecessary parameters, which was harmless, but would cause a warning to
+  the user.
 - When changing a nibble of a hexadecimal note, the note played was the note
   before changing the nibble
 - Clicking on low nibble or high nibble of a hex track selects that nibble
