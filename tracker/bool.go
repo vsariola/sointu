@@ -72,7 +72,7 @@ func (m *IsRecording) Value() bool { return (*Model)(m).recording }
 func (m *IsRecording) setValue(val bool) {
 	m.recording = val
 	m.instrEnlarged = val
-	(*Model)(m).send(RecordingMsg{val})
+	trySend(m.broker.ToPlayer, any(RecordingMsg{val}))
 }
 func (m *IsRecording) Enabled() bool { return true }
 
@@ -84,9 +84,9 @@ func (m *Playing) setValue(val bool) {
 	m.playing = val
 	if m.playing {
 		(*Model)(m).setPanic(false)
-		(*Model)(m).send(StartPlayMsg{m.d.Cursor.SongPos})
+		trySend(m.broker.ToPlayer, any(StartPlayMsg{m.d.Cursor.SongPos}))
 	} else {
-		(*Model)(m).send(IsPlayingMsg{val})
+		trySend(m.broker.ToPlayer, any(IsPlayingMsg{val}))
 	}
 }
 func (m *Playing) Enabled() bool { return m.playing || !m.instrEnlarged }

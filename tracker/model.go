@@ -235,7 +235,7 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 				m.updatePatternUseCount()
 				m.d.Cursor.SongPos = m.d.Song.Score.Clamp(m.d.Cursor.SongPos)
 				m.d.Cursor2.SongPos = m.d.Song.Score.Clamp(m.d.Cursor2.SongPos)
-				m.send(m.d.Song.Score.Copy())
+				trySend(m.broker.ToPlayer, any(m.d.Song.Score.Copy()))
 			}
 			if m.changeType&PatchChange != 0 {
 				m.fixIDCollisions()
@@ -250,14 +250,14 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 				m.d.UnitIndex2 = clamp(m.d.UnitIndex2, 0, unitCount-1)
 				m.d.UnitSearching = false // if we change anything in the patch, reset the unit searching
 				m.d.UnitSearchString = ""
-				m.send(m.d.Song.Patch.Copy())
+				trySend(m.broker.ToPlayer, any(m.d.Song.Patch.Copy()))
 			}
 			if m.changeType&BPMChange != 0 {
-				m.send(BPMMsg{m.d.Song.BPM})
+				trySend(m.broker.ToPlayer, any(BPMMsg{m.d.Song.BPM}))
 				m.signalAnalyzer.SetBpm(m.d.Song.BPM)
 			}
 			if m.changeType&RowsPerBeatChange != 0 {
-				m.send(RowsPerBeatMsg{m.d.Song.RowsPerBeat})
+				trySend(m.broker.ToPlayer, any(RowsPerBeatMsg{m.d.Song.RowsPerBeat}))
 			}
 			m.undoSkipCounter++
 			var limit int
@@ -338,7 +338,7 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 		}
 	}
 	m.d.ChangedSinceRecovery = false
-	m.send(m.d.Song.Copy())
+	trySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
 	m.updatePatternUseCount()
 }
 
@@ -391,18 +391,18 @@ func (m *Model) Broker() *Broker             { return m.broker }
 
 func (m *Model) TrackNoteOn(track int, note byte) (id NoteID) {
 	id = NoteID{IsInstr: false, Track: track, Note: note, model: m}
-	m.send(NoteOnMsg{id})
+	trySend(m.broker.ToPlayer, any(NoteOnMsg{id}))
 	return id
 }
 
 func (m *Model) InstrNoteOn(instr int, note byte) (id NoteID) {
 	id = NoteID{IsInstr: true, Instr: instr, Note: note, model: m}
-	m.send(NoteOnMsg{id})
+	trySend(m.broker.ToPlayer, any(NoteOnMsg{id}))
 	return id
 }
 
 func (n NoteID) NoteOff() {
-	n.model.send(NoteOffMsg{n})
+	trySend(n.model.broker.ToPlayer, any(NoteOffMsg{n}))
 }
 
 func (m *Model) FindUnit(id int) (instrIndex, unitIndex int, err error) {
@@ -432,11 +432,6 @@ func (m *Model) resetSong() {
 	}
 	m.d.FilePath = ""
 	m.d.ChangedSinceSave = false
-}
-
-// send sends a message to the player
-func (m *Model) send(message interface{}) {
-	m.broker.ToPlayer <- message
 }
 
 func (m *Model) maxID() int {
