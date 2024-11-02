@@ -425,19 +425,3 @@ func (te *NoteEditor) HandleMidiInput(t *Tracker) {
 	}
 	te.scrollTable.Table.SetCursor(te.scrollTable.Table.Cursor2())
 }
-
-/*
-
-case "+":
-	if e.Modifiers.Contain(key.ModShortcut) {
-		te.AddOctaveBtn.Action.Do()
-	} else {
-		te.AddSemitoneBtn.Action.Do()
-	}
-case "-":
-	if e.Modifiers.Contain(key.ModShortcut) {
-		te.SubtractSemitoneBtn.Action.Do()
-	} else {
-		te.SubtractOctaveBtn.Action.Do()
-	}
-}*/
