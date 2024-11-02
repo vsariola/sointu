@@ -8,6 +8,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
+	patched "github.com/vsariola/sointu/tracker/gioui/patch/material"
 )
 
 type Dialog struct {
@@ -22,9 +23,9 @@ type DialogStyle struct {
 	Text        string
 	Inset       layout.Inset
 	TextInset   layout.Inset
-	AltStyle    material.ButtonStyle
-	OkStyle     material.ButtonStyle
-	CancelStyle material.ButtonStyle
+	AltStyle    patched.ButtonStyle
+	OkStyle     patched.ButtonStyle
+	CancelStyle patched.ButtonStyle
 	Shaper      *text.Shaper
 }
 
