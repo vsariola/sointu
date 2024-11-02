@@ -47,7 +47,7 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 		DisableUnitBtn: NewBoolClickable(m.UnitDisabled().Bool()),
 		CopyUnitBtn:    new(TipClickable),
 		SelectTypeBtn:  new(widget.Clickable),
-		commentEditor:  NewEditor(widget.Editor{SingleLine: true, Submit: true, MaxLen: 16}),
+		commentEditor:  NewEditor(widget.Editor{SingleLine: true, Submit: true}),
 		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
 		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
 	}
