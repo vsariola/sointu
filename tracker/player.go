@@ -15,23 +15,20 @@ type (
 	// model via the playerMessages channel. The model sends messages to the
 	// player via the modelMessages channel.
 	Player struct {
-		synth           sointu.Synth           // the synth used to render audio
-		song            sointu.Song            // the song being played
-		playing         bool                   // is the player playing the score or not
-		rowtime         int                    // how many samples have been played in the current row
-		songPos         sointu.SongPos         // the current position in the score
-		avgVolumeMeter  VolumeAnalyzer         // the volume analyzer used to calculate the average volume
-		peakVolumeMeter VolumeAnalyzer         // the volume analyzer used to calculate the peak volume
-		voiceLevels     [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
-		voices          [vm.MAX_VOICES]voice
-		loop            Loop
+		synth       sointu.Synth           // the synth used to render audio
+		song        sointu.Song            // the song being played
+		playing     bool                   // is the player playing the score or not
+		rowtime     int                    // how many samples have been played in the current row
+		songPos     sointu.SongPos         // the current position in the score
+		voiceLevels [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
+		voices      [vm.MAX_VOICES]voice
+		loop        Loop
 
 		recState  recState  // is the recording off; are we waiting for a note; or are we recording
 		recording Recording // the recorded MIDI events and BPM
 
-		synther    sointu.Synther // the synther used to create new synths
-		playerMsgs chan<- PlayerMsg
-		modelMsgs  <-chan interface{}
+		synther sointu.Synther // the synther used to create new synths
+		broker  *Broker        // the broker used to communicate with different parts of the tracker
 	}
 
 	// PlayerProcessContext is the context given to the player when processing
@@ -54,20 +51,6 @@ type (
 		On      bool
 		Channel int
 		Note    byte
-	}
-
-	// PlayerMsg is a message sent from the player to the model. The Inner
-	// field can contain any message. Panic, AverageVolume, PeakVolume, SongRow
-	// and VoiceStates transmitted frequently, with every message, so they are
-	// treated specially, to avoid boxing. All the rest messages can be boxed to
-	// Inner interface{}
-	PlayerMsg struct {
-		Panic         bool
-		AverageVolume Volume
-		PeakVolume    Volume
-		SongPosition  sointu.SongPos
-		VoiceLevels   [vm.MAX_VOICES]float32
-		Inner         interface{}
 	}
 )
 
@@ -104,8 +87,6 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 	if p.recState == recStateRecording {
 		p.recording.TotalFrames += len(buffer)
 	}
-
-	oldBuffer := buffer
 
 	for i := 0; i < numRenderTries; i++ {
 		for midiOk && frame >= midi.Frame {
@@ -162,6 +143,14 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 			p.synth = nil
 			p.send(Alert{Message: fmt.Sprintf("synth.Render: %s", err.Error()), Priority: Error, Name: "PlayerCrash"})
 		}
+
+		bufPtr := p.broker.GetAudioBuffer() // borrow a buffer from the broker
+		*bufPtr = append(*bufPtr, buffer[:rendered]...)
+		if len(*bufPtr) == 0 || !trySend(p.broker.ToModel, MsgToModel{Data: bufPtr}) {
+			// if the buffer is empty or sending the rendered waveform to Model
+			// failed, return the buffer to the broker
+			p.broker.PutAudioBuffer(bufPtr)
+		}
 		buffer = buffer[rendered:]
 		frame += rendered
 		p.rowtime += timeAdvanced
@@ -178,18 +167,6 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		}
 		// when the buffer is full, return
 		if len(buffer) == 0 {
-			err := p.avgVolumeMeter.Update(oldBuffer)
-			err2 := p.peakVolumeMeter.Update(oldBuffer)
-			if err != nil {
-				p.synth = nil
-				p.SendAlert("PlayerVolume", err.Error(), Warning)
-				return
-			}
-			if err2 != nil {
-				p.synth = nil
-				p.SendAlert("PlayerVolume", err2.Error(), Warning)
-				return
-			}
 			p.send(nil)
 			return
 		}
@@ -239,7 +216,7 @@ func (p *Player) processMessages(context PlayerProcessContext, uiProcessor Event
 loop:
 	for { // process new message
 		select {
-		case msg := <-p.modelMsgs:
+		case msg := <-p.broker.ToPlayer:
 			switch m := msg.(type) {
 			case PanicMsg:
 				if m.bool {
@@ -263,6 +240,8 @@ loop:
 					for i := range p.song.Score.Tracks {
 						p.releaseTrack(i)
 					}
+				} else {
+					trySend(p.broker.ToModel, MsgToModel{Reset: true})
 				}
 			case BPMMsg:
 				p.song.BPM = m.int
@@ -281,6 +260,7 @@ loop:
 						p.releaseTrack(i)
 					}
 				}
+				trySend(p.broker.ToModel, MsgToModel{Reset: true})
 			case NoteOnMsg:
 				if m.IsInstr {
 					p.triggerInstrument(m.Instr, m.Note)
@@ -358,10 +338,7 @@ func (p *Player) compileOrUpdateSynth() {
 
 // all sends from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
 func (p *Player) send(message interface{}) {
-	select {
-	case p.playerMsgs <- PlayerMsg{Panic: p.synth == nil, AverageVolume: p.avgVolumeMeter.Level, PeakVolume: p.peakVolumeMeter.Level, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, Inner: message}:
-	default:
-	}
+	trySend(p.broker.ToModel, MsgToModel{HasPanicPosLevels: true, Panic: p.synth == nil, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, Data: message})
 }
 
 func (p *Player) triggerInstrument(instrument int, note byte) {
@@ -417,6 +394,7 @@ func (p *Player) trigger(voiceStart, voiceEnd int, note byte, ID int) {
 	p.voices[oldestVoice] = voice{noteID: ID, sustain: true, samplesSinceEvent: 0}
 	p.voiceLevels[oldestVoice] = 1.0
 	p.synth.Trigger(oldestVoice, note)
+	trySend(p.broker.ToModel, MsgToModel{TriggerChannel: instrIndex + 1})
 }
 
 func (p *Player) release(ID int) {

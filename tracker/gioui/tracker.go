@@ -116,8 +116,8 @@ func (t *Tracker) Main() {
 	var ops op.Ops
 	for {
 		select {
-		case e := <-t.PlayerMessages:
-			t.ProcessPlayerMessage(e)
+		case e := <-t.Broker().ToModel:
+			t.ProcessMsg(e)
 			w.Invalidate()
 		case e := <-events:
 			switch e := e.(type) {
@@ -166,6 +166,7 @@ func (t *Tracker) Main() {
 	w.Perform(system.ActionClose)
 	t.SaveRecovery()
 	t.quitWG.Done()
+	t.Broker().Close()
 }
 
 func eventLoop(w *app.Window, events chan<- event.Event, acks <-chan struct{}) {

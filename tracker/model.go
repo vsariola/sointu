@@ -70,15 +70,15 @@ type (
 		cachePatternUseCount [][]int
 
 		voiceLevels [vm.MAX_VOICES]float32
-		avgVolume   Volume
-		peakVolume  Volume
+
+		signalAnalyzer *ScopeModel
+		detectorResult DetectorResult
 
 		alerts  []Alert
 		dialog  Dialog
 		synther sointu.Synther // the synther used to create new synths
 
-		PlayerMessages chan PlayerMsg
-		ModelMessages  chan<- interface{}
+		broker *Broker
 
 		MIDI        MIDIContext
 		trackMidiIn bool
@@ -171,8 +171,6 @@ const (
 
 const maxUndo = 64
 
-func (m *Model) AverageVolume() Volume        { return m.avgVolume }
-func (m *Model) PeakVolume() Volume           { return m.peakVolume }
 func (m *Model) PlayPosition() sointu.SongPos { return m.playPosition }
 func (m *Model) Loop() Loop                   { return m.loop }
 func (m *Model) PlaySongRow() int             { return m.d.Song.Score.SongRow(m.playPosition) }
@@ -180,16 +178,15 @@ func (m *Model) ChangedSinceSave() bool       { return m.d.ChangedSinceSave }
 func (m *Model) Dialog() Dialog               { return m.dialog }
 func (m *Model) Quitted() bool                { return m.quitted }
 
+func (m *Model) DetectorResult() DetectorResult { return m.detectorResult }
+
 // NewModelPlayer creates a new model and a player that communicates with it
-func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFilePath string) (*Model, *Player) {
+func NewModelPlayer(broker *Broker, synther sointu.Synther, midiContext MIDIContext, recoveryFilePath string) (*Model, *Player) {
 	m := new(Model)
 	m.synther = synther
 	m.MIDI = midiContext
 	m.trackMidiIn = midiContext.HasDeviceOpen()
-	modelMessages := make(chan interface{}, 1024)
-	playerMessages := make(chan PlayerMsg, 1024)
-	m.ModelMessages = modelMessages
-	m.PlayerMessages = playerMessages
+	m.broker = broker
 	m.d.Octave = 4
 	m.linkInstrTrack = true
 	m.d.RecoveryFilePath = recoveryFilePath
@@ -199,14 +196,12 @@ func NewModelPlayer(synther sointu.Synther, midiContext MIDIContext, recoveryFil
 			json.Unmarshal(bytes2, &m.d)
 		}
 	}
+	m.signalAnalyzer = NewScopeModel(broker, m.d.Song.BPM)
 	p := &Player{
-		playerMsgs:      playerMessages,
-		modelMsgs:       modelMessages,
-		synther:         synther,
-		song:            m.d.Song.Copy(),
-		loop:            m.loop,
-		avgVolumeMeter:  VolumeAnalyzer{Attack: 0.3, Release: 0.3, Min: -100, Max: 20},
-		peakVolumeMeter: VolumeAnalyzer{Attack: 1e-4, Release: 1, Min: -100, Max: 20},
+		broker:  broker,
+		synther: synther,
+		song:    m.d.Song.Copy(),
+		loop:    m.loop,
 	}
 	p.compileOrUpdateSynth()
 	return m, p
@@ -262,6 +257,7 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			}
 			if m.changeType&BPMChange != 0 {
 				m.send(BPMMsg{m.d.Song.BPM})
+				m.signalAnalyzer.SetBpm(m.d.Song.BPM)
 			}
 			if m.changeType&RowsPerBeatChange != 0 {
 				m.send(RowsPerBeatMsg{m.d.Song.RowsPerBeat})
@@ -344,17 +340,26 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 	m.updatePatternUseCount()
 }
 
-func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
-	m.playPosition = msg.SongPosition
-	m.voiceLevels = msg.VoiceLevels
-	m.avgVolume = msg.AverageVolume
-	m.peakVolume = msg.PeakVolume
-	if m.playing && m.follow {
-		m.d.Cursor.SongPos = msg.SongPosition
-		m.d.Cursor2.SongPos = msg.SongPosition
+func (m *Model) ProcessMsg(msg MsgToModel) {
+	if msg.HasPanicPosLevels {
+		m.playPosition = msg.SongPosition
+		m.voiceLevels = msg.VoiceLevels
+		if m.playing && m.follow {
+			m.d.Cursor.SongPos = msg.SongPosition
+			m.d.Cursor2.SongPos = msg.SongPosition
+		}
+		m.panic = msg.Panic
 	}
-	m.panic = msg.Panic
-	switch e := msg.Inner.(type) {
+	if msg.HasDetectorResult {
+		m.detectorResult = msg.DetectorResult
+	}
+	if msg.TriggerChannel > 0 {
+		m.signalAnalyzer.Trigger(msg.TriggerChannel)
+	}
+	if msg.Reset {
+		m.signalAnalyzer.Reset()
+	}
+	switch e := msg.Data.(type) {
 	case func():
 		e()
 	case Recording:
@@ -373,9 +378,14 @@ func (m *Model) ProcessPlayerMessage(msg PlayerMsg) {
 		m.Alerts().AddAlert(e)
 	case IsPlayingMsg:
 		m.playing = e.bool
+	case *sointu.AudioBuffer:
+		m.signalAnalyzer.ProcessAudioBuffer(e)
 	default:
 	}
 }
+
+func (m *Model) SignalAnalyzer() *ScopeModel { return m.signalAnalyzer }
+func (m *Model) Broker() *Broker             { return m.broker }
 
 func (m *Model) TrackNoteOn(track int, note byte) (id NoteID) {
 	id = NoteID{IsInstr: false, Track: track, Note: note, model: m}
@@ -424,7 +434,7 @@ func (m *Model) resetSong() {
 
 // send sends a message to the player
 func (m *Model) send(message interface{}) {
-	m.ModelMessages <- message
+	m.broker.ToPlayer <- message
 }
 
 func (m *Model) maxID() int {

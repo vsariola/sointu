@@ -72,7 +72,10 @@ func init() {
 			rand.Read(randBytes)
 			recoveryFile = filepath.Join(configDir, "sointu", "sointu-vsti-recovery-"+hex.EncodeToString(randBytes))
 		}
-		model, player := tracker.NewModelPlayer(cmd.MainSynther, NullMIDIContext{}, recoveryFile)
+		broker := tracker.NewBroker()
+		model, player := tracker.NewModelPlayer(broker, cmd.MainSynther, NullMIDIContext{}, recoveryFile)
+		detector := tracker.NewDetector(broker)
+		go detector.Run()
 
 		t := gioui.NewTracker(model)
 		model.InstrEnlarged().Bool().Set(true)

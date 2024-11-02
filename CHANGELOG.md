@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- The loudness detection is now LUFS and peak detection is based on oversampled
+  true peak detection
+- Oscilloscope to visualize the outputted waveform ([#61][i61])
 - Toggle button to keep instruments and tracks linked, and buttons to to split
   instruments and tracks with more than 1 voice into parallel ones
   ([#163][i163], [#157][i157])
@@ -245,6 +248,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [0.3.0]: https://github.com/vsariola/sointu/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/vsariola/sointu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/vsariola/sointu/compare/4klang-3.11...v0.1.0
+[i61]: https://github.com/vsariola/sointu/issues/61
 [i65]: https://github.com/vsariola/sointu/issues/65
 [i68]: https://github.com/vsariola/sointu/issues/68
 [i77]: https://github.com/vsariola/sointu/issues/77

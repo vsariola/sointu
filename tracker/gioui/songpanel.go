@@ -29,6 +29,8 @@ type SongPanel struct {
 	PanicBtn   *BoolClickable
 	LoopBtn    *BoolClickable
 
+	Scope *Oscilloscope
+
 	// File menu items
 	fileMenuItems  []MenuItem
 	NewSong        tracker.Action
@@ -68,6 +70,7 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		FollowBtn:      NewBoolClickable(model.Follow().Bool()),
 		PlayingBtn:     NewBoolClickable(model.Playing().Bool()),
 		RewindBtn:      NewActionClickable(model.PlaySongStart()),
+		Scope:          NewOscilloscope(model),
 	}
 	ret.fileMenuItems = []MenuItem{
 		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: keyActionMap["NewSong"], Doer: model.NewSong()},
@@ -120,9 +123,16 @@ func (t *SongPanel) layoutMenuBar(gtx C, tr *Tracker) D {
 	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(36))
 	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 
+	panicBtnStyle := ToggleIcon(gtx, tr.Theme, t.PanicBtn, icons.AlertErrorOutline, icons.AlertError, t.panicHint, t.panicHint)
+	if t.PanicBtn.Bool.Value() {
+		panicBtnStyle.IconButtonStyle.Color = errorColor
+	}
 	menuLayouts := []layout.FlexChild{
 		layout.Rigid(tr.layoutMenu(gtx, "File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
 		layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...)),
+		layout.Flexed(1, func(gtx C) D {
+			return layout.E.Layout(gtx, panicBtnStyle.Layout)
+		}),
 	}
 	if len(t.midiMenuItems) > 0 {
 		menuLayouts = append(
@@ -138,12 +148,13 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 
 	in := layout.UniformInset(unit.Dp(1))
 
-	panicBtnStyle := ToggleButton(gtx, tr.Theme, t.PanicBtn, t.panicHint)
 	rewindBtnStyle := ActionIcon(gtx, tr.Theme, t.RewindBtn, icons.AVFastRewind, t.rewindHint)
 	playBtnStyle := ToggleIcon(gtx, tr.Theme, t.PlayingBtn, icons.AVPlayArrow, icons.AVStop, t.playHint, t.stopHint)
 	recordBtnStyle := ToggleIcon(gtx, tr.Theme, t.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, t.recordHint, t.stopRecordHint)
 	noteTrackBtnStyle := ToggleIcon(gtx, tr.Theme, t.FollowBtn, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, t.followOffHint, t.followOnHint)
 	loopBtnStyle := ToggleIcon(gtx, tr.Theme, t.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, t.loopOffHint, t.loopOnHint)
+
+	scopeStyle := LineOscilloscope(t.Scope, tr.SignalAnalyzer().Waveform(), tr.Theme)
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
@@ -205,7 +216,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 				}),
 			)
 		}),
-		layout.Rigid(VuMeter{AverageVolume: tr.Model.AverageVolume(), PeakVolume: tr.Model.PeakVolume(), Range: 100}.Layout),
+		layout.Rigid(VuMeter{Loudness: tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm], Peak: tr.Model.DetectorResult().Peaks[tracker.PeakMomentary], Range: 100}.Layout),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(rewindBtnStyle.Layout),
@@ -215,8 +226,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 				layout.Rigid(loopBtnStyle.Layout),
 			)
 		}),
-		layout.Rigid(panicBtnStyle.Layout),
-		layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
+		layout.Flexed(1, scopeStyle.Layout),
 		layout.Rigid(func(gtx C) D {
 			labelStyle := LabelStyle{Text: version.VersionOrHash, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor, Shaper: tr.Theme.Shaper}
 			return labelStyle.Layout(gtx)
