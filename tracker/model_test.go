@@ -13,9 +13,11 @@ import (
 
 type NullContext struct{}
 
-func (NullContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
+func (NullContext) NextEvent(frame int) (event tracker.MIDINoteEvent, ok bool) {
 	return tracker.MIDINoteEvent{}, false
 }
+
+func (NullContext) FinishBlock(frame int) {}
 
 func (NullContext) BPM() (bpm float64, ok bool) {
 	return 0, false

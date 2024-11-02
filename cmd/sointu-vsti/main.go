@@ -33,7 +33,7 @@ func (m NullMIDIContext) Close() {}
 
 func (m NullMIDIContext) HasDeviceOpen() bool { return false }
 
-func (c *VSTIProcessContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
+func (c *VSTIProcessContext) NextEvent(frame int) (event tracker.MIDINoteEvent, ok bool) {
 	for c.eventIndex < len(c.events) {
 		ev := c.events[c.eventIndex]
 		c.eventIndex++
@@ -52,6 +52,8 @@ func (c *VSTIProcessContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) 
 	}
 	return tracker.MIDINoteEvent{}, false
 }
+
+func (c *VSTIProcessContext) FinishBlock(frame int) {}
 
 func (c *VSTIProcessContext) BPM() (bpm float64, ok bool) {
 	timeInfo := c.host.GetTimeInfo(vst2.TempoValid)

@@ -3,24 +3,33 @@ package gomidi
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/vsariola/sointu/tracker"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/drivers"
 	"gitlab.com/gomidi/midi/v2/drivers/rtmididrv"
-	"strings"
 )
 
 type (
 	RTMIDIContext struct {
-		driver    *rtmididrv.Driver
-		currentIn drivers.In
-		events    chan midi.Message
+		driver        *rtmididrv.Driver
+		currentIn     drivers.In
+		events        chan timestampedMsg
+		eventsBuf     []timestampedMsg
+		eventIndex    int
+		startFrame    int
+		startFrameSet bool
 	}
 
 	RTMIDIDevice struct {
 		context *RTMIDIContext
 		in      drivers.In
+	}
+
+	timestampedMsg struct {
+		frame int
+		msg   midi.Message
 	}
 )
 
@@ -42,7 +51,7 @@ func (m *RTMIDIContext) InputDevices(yield func(tracker.MIDIDevice) bool) {
 
 // Open the driver.
 func NewContext() *RTMIDIContext {
-	m := RTMIDIContext{events: make(chan midi.Message, 1024)}
+	m := RTMIDIContext{events: make(chan timestampedMsg, 1024)}
 	// there's not much we can do if this fails, so just use m.driver = nil to
 	// indicate no driver available
 	m.driver, _ = rtmididrv.New()
@@ -80,32 +89,66 @@ func (d RTMIDIDevice) String() string {
 
 func (m *RTMIDIContext) HandleMessage(msg midi.Message, timestampms int32) {
 	select {
-	case m.events <- msg: // if the channel is full, just drop the message
+	case m.events <- timestampedMsg{frame: int(int64(timestampms) * 44100 / 1000), msg: msg}: // if the channel is full, just drop the message
 	default:
 	}
 }
 
-func (c *RTMIDIContext) NextEvent() (event tracker.MIDINoteEvent, ok bool) {
+func (c *RTMIDIContext) NextEvent(frame int) (event tracker.MIDINoteEvent, ok bool) {
+F:
 	for {
 		select {
 		case msg := <-c.events:
-			var channel uint8
-			var velocity uint8
-			var key uint8
-			if msg.GetNoteOn(&channel, &key, &velocity) {
-				return tracker.MIDINoteEvent{Frame: 0, On: true, Channel: int(channel), Note: key}, true
-			} else if msg.GetNoteOff(&channel, &key, &velocity) {
-				return tracker.MIDINoteEvent{Frame: 0, On: false, Channel: int(channel), Note: key}, true
+			c.eventsBuf = append(c.eventsBuf, msg)
+			if !c.startFrameSet {
+				c.startFrame = msg.frame
+				c.startFrameSet = true
 			}
-			// TODO: handle control messages with something like:
-			// if msg.GetControlChange(&channel, &controller, &value) {
-			//	....
-			// if the message is not any recognized type, ignore it and continue looping
 		default:
-			// Note (@LeStahL): This empty select case is needed to make the implementation non-blocking.
-			return tracker.MIDINoteEvent{}, false
+			break F
 		}
 	}
+	if c.eventIndex > 0 { // an event was consumed, check how badly we need to adjust the timing
+		delta := frame + c.startFrame - c.eventsBuf[c.eventIndex-1].frame
+		// delta should never be a negative number, because the renderer does
+		// not consume an event until current frame is past the frame of the
+		// event. However, if it's been a while since we consumed event, delta
+		// may by *positive* i.e. we consume the event too late. So adjust the
+		// internal clock in that case.
+		c.startFrame -= delta / 5 // adjust the start frame towards the consumed event
+	}
+	for c.eventIndex < len(c.eventsBuf) {
+		var channel uint8
+		var velocity uint8
+		var key uint8
+		m := c.eventsBuf[c.eventIndex]
+		f := m.frame - c.startFrame
+		c.eventIndex++
+		if m.msg.GetNoteOn(&channel, &key, &velocity) {
+			return tracker.MIDINoteEvent{Frame: f, On: true, Channel: int(channel), Note: key}, true
+		} else if m.msg.GetNoteOff(&channel, &key, &velocity) {
+			return tracker.MIDINoteEvent{Frame: f, On: false, Channel: int(channel), Note: key}, true
+		}
+	}
+	c.eventIndex = len(c.eventsBuf) + 1
+	return tracker.MIDINoteEvent{}, false
+}
+
+func (c *RTMIDIContext) FinishBlock(frame int) {
+	c.startFrame += frame
+	if c.eventIndex > 0 {
+		copy(c.eventsBuf, c.eventsBuf[c.eventIndex-1:])
+		c.eventsBuf = c.eventsBuf[:len(c.eventsBuf)-c.eventIndex+1]
+		if len(c.eventsBuf) > 0 {
+			// Events were not consumed this round; adjust the start frame
+			// towards the future events. What this does is that it tries to
+			// render the events at the same time as they were received here
+			// delta will be always a negative number
+			delta := c.startFrame - c.eventsBuf[0].frame
+			c.startFrame -= delta / 5
+		}
+	}
+	c.eventIndex = 0
 }
 
 func (c *RTMIDIContext) BPM() (bpm float64, ok bool) {

@@ -34,7 +34,8 @@ type (
 	// PlayerProcessContext is the context given to the player when processing
 	// audio. It is used to get MIDI events and the current BPM.
 	PlayerProcessContext interface {
-		NextEvent() (event MIDINoteEvent, ok bool)
+		NextEvent(frame int) (event MIDINoteEvent, ok bool)
+		FinishBlock(frame int)
 		BPM() (bpm float64, ok bool)
 	}
 
@@ -80,9 +81,8 @@ const numRenderTries = 10000
 func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext, ui EventProcessor) {
 	p.processMessages(context, ui)
 
-	midi, midiOk := context.NextEvent()
-
 	frame := 0
+	midi, midiOk := context.NextEvent(frame)
 
 	if p.recState == recStateRecording {
 		p.recording.TotalFrames += len(buffer)
@@ -108,7 +108,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 				ui.ProcessEvent(midi)
 			}
 
-			midi, midiOk = context.NextEvent()
+			midi, midiOk = context.NextEvent(frame)
 		}
 		framesUntilMidi := len(buffer)
 		if delta := midi.Frame - frame; midiOk && delta < framesUntilMidi {
@@ -168,6 +168,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		// when the buffer is full, return
 		if len(buffer) == 0 {
 			p.send(nil)
+			context.FinishBlock(frame)
 			return
 		}
 	}
