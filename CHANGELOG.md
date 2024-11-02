@@ -60,7 +60,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   wrong scaling ([#150][i150])
 - Empty patch should not crash the native synth ([#148][i148])
 - sointu-play does not default to the native synth yet, choose via `-tags=native`
-- Space Bar does not re-trigger the Button with current focus (Enter still does)  
+- Most buttons never gain focus, so that clicking a button does not stop
+  whatever the user was currently doing and so that the user does not
+  accidentally trigger the buttons by having them focused and e.g. hitting space
+  ([#156][i156])
 
 ### Changed
 - The keyboard shortcuts are now again closer to what they were old trackers
@@ -280,6 +283,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i150]: https://github.com/vsariola/sointu/issues/150
 [i151]: https://github.com/vsariola/sointu/issues/151
 [i154]: https://github.com/vsariola/sointu/issues/154
+[i156]: https://github.com/vsariola/sointu/issues/156
 [i157]: https://github.com/vsariola/sointu/issues/157
 [i158]: https://github.com/vsariola/sointu/issues/158
 [i160]: https://github.com/vsariola/sointu/issues/160

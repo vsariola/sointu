@@ -6,15 +6,17 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/unit"
+	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
-	patched "github.com/vsariola/sointu/tracker/gioui/patch/material"
 )
 
 type Dialog struct {
-	BtnAlt    *ActionClickable
-	BtnOk     *ActionClickable
-	BtnCancel *ActionClickable
+	BtnAlt    widget.Clickable
+	BtnOk     widget.Clickable
+	BtnCancel widget.Clickable
+
+	ok, alt, cancel tracker.Action
 }
 
 type DialogStyle struct {
@@ -23,18 +25,14 @@ type DialogStyle struct {
 	Text        string
 	Inset       layout.Inset
 	TextInset   layout.Inset
-	AltStyle    patched.ButtonStyle
-	OkStyle     patched.ButtonStyle
-	CancelStyle patched.ButtonStyle
+	AltStyle    material.ButtonStyle
+	OkStyle     material.ButtonStyle
+	CancelStyle material.ButtonStyle
 	Shaper      *text.Shaper
 }
 
 func NewDialog(ok, alt, cancel tracker.Action) *Dialog {
-	ret := &Dialog{
-		BtnOk:     NewActionClickable(ok),
-		BtnAlt:    NewActionClickable(alt),
-		BtnCancel: NewActionClickable(cancel),
-	}
+	ret := &Dialog{ok: ok, alt: alt, cancel: cancel}
 
 	return ret
 }
@@ -46,21 +44,26 @@ func ConfirmDialog(gtx C, th *material.Theme, dialog *Dialog, title, text string
 		Text:        text,
 		Inset:       layout.Inset{Top: unit.Dp(12), Bottom: unit.Dp(12), Left: unit.Dp(20), Right: unit.Dp(20)},
 		TextInset:   layout.Inset{Top: unit.Dp(12), Bottom: unit.Dp(12)},
-		AltStyle:    ActionButton(gtx, th, dialog.BtnAlt, "Alt"),
-		OkStyle:     ActionButton(gtx, th, dialog.BtnOk, "Ok"),
-		CancelStyle: ActionButton(gtx, th, dialog.BtnCancel, "Cancel"),
+		AltStyle:    material.Button(th, &dialog.BtnAlt, "Alt"),
+		OkStyle:     material.Button(th, &dialog.BtnOk, "Ok"),
+		CancelStyle: material.Button(th, &dialog.BtnCancel, "Cancel"),
 		Shaper:      th.Shaper,
+	}
+	for _, b := range [...]*material.ButtonStyle{&ret.AltStyle, &ret.OkStyle, &ret.CancelStyle} {
+		b.Background = transparent
+		b.Inset = layout.UniformInset(unit.Dp(6))
+		b.Color = th.Palette.Fg
 	}
 	return ret
 }
 
-func (d *Dialog) handleKeysForButton(gtx C, btn, next, prev *ActionClickable) {
+func (d *Dialog) handleKeysForButton(gtx C, btn, next, prev *widget.Clickable) {
 	for {
 		e, ok := gtx.Event(
-			key.Filter{Focus: &btn.Clickable, Name: key.NameLeftArrow},
-			key.Filter{Focus: &btn.Clickable, Name: key.NameRightArrow},
-			key.Filter{Focus: &btn.Clickable, Name: key.NameEscape},
-			key.Filter{Focus: &btn.Clickable, Name: key.NameTab, Optional: key.ModShift},
+			key.Filter{Focus: btn, Name: key.NameLeftArrow},
+			key.Filter{Focus: btn, Name: key.NameRightArrow},
+			key.Filter{Focus: btn, Name: key.NameEscape},
+			key.Filter{Focus: btn, Name: key.NameTab, Optional: key.ModShift},
 		)
 		if !ok {
 			break
@@ -68,30 +71,39 @@ func (d *Dialog) handleKeysForButton(gtx C, btn, next, prev *ActionClickable) {
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
 			switch {
 			case e.Name == key.NameLeftArrow || (e.Name == key.NameTab && e.Modifiers.Contain(key.ModShift)):
-				gtx.Execute(key.FocusCmd{Tag: &prev.Clickable})
+				gtx.Execute(key.FocusCmd{Tag: prev})
 			case e.Name == key.NameRightArrow || (e.Name == key.NameTab && !e.Modifiers.Contain(key.ModShift)):
-				gtx.Execute(key.FocusCmd{Tag: &next.Clickable})
+				gtx.Execute(key.FocusCmd{Tag: next})
 			case e.Name == key.NameEscape:
-				d.BtnCancel.Action.Do()
+				d.cancel.Do()
 			}
 		}
 	}
 }
 
 func (d *Dialog) handleKeys(gtx C) {
-	if d.BtnAlt.Action.Allowed() {
-		d.handleKeysForButton(gtx, d.BtnAlt, d.BtnCancel, d.BtnOk)
-		d.handleKeysForButton(gtx, d.BtnCancel, d.BtnOk, d.BtnAlt)
-		d.handleKeysForButton(gtx, d.BtnOk, d.BtnAlt, d.BtnCancel)
+	for d.BtnOk.Clicked(gtx) {
+		d.ok.Do()
+	}
+	for d.BtnAlt.Clicked(gtx) {
+		d.alt.Do()
+	}
+	for d.BtnCancel.Clicked(gtx) {
+		d.cancel.Do()
+	}
+	if d.alt.Allowed() {
+		d.handleKeysForButton(gtx, &d.BtnAlt, &d.BtnCancel, &d.BtnOk)
+		d.handleKeysForButton(gtx, &d.BtnCancel, &d.BtnOk, &d.BtnAlt)
+		d.handleKeysForButton(gtx, &d.BtnOk, &d.BtnAlt, &d.BtnCancel)
 	} else {
-		d.handleKeysForButton(gtx, d.BtnOk, d.BtnCancel, d.BtnCancel)
-		d.handleKeysForButton(gtx, d.BtnCancel, d.BtnOk, d.BtnOk)
+		d.handleKeysForButton(gtx, &d.BtnOk, &d.BtnCancel, &d.BtnCancel)
+		d.handleKeysForButton(gtx, &d.BtnCancel, &d.BtnOk, &d.BtnOk)
 	}
 }
 
 func (d *DialogStyle) Layout(gtx C) D {
-	if !gtx.Source.Focused(&d.dialog.BtnOk.Clickable) && !gtx.Source.Focused(&d.dialog.BtnCancel.Clickable) && !gtx.Source.Focused(&d.dialog.BtnAlt.Clickable) {
-		gtx.Execute(key.FocusCmd{Tag: &d.dialog.BtnCancel.Clickable})
+	if !gtx.Source.Focused(&d.dialog.BtnOk) && !gtx.Source.Focused(&d.dialog.BtnCancel) && !gtx.Source.Focused(&d.dialog.BtnAlt) {
+		gtx.Execute(key.FocusCmd{Tag: &d.dialog.BtnCancel})
 	}
 	d.dialog.handleKeys(gtx)
 	paint.Fill(gtx.Ops, dialogBgColor)
@@ -108,7 +120,7 @@ func (d *DialogStyle) Layout(gtx C) D {
 					layout.Rigid(func(gtx C) D {
 						return layout.E.Layout(gtx, func(gtx C) D {
 							gtx.Constraints.Min.X = gtx.Dp(unit.Dp(120))
-							if d.dialog.BtnAlt.Action.Allowed() {
+							if d.dialog.alt.Allowed() {
 								return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween}.Layout(gtx,
 									layout.Rigid(d.OkStyle.Layout),
 									layout.Rigid(d.AltStyle.Layout),
