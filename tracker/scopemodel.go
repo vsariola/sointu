@@ -12,7 +12,7 @@ type (
 		triggered      bool
 		wrap           bool
 		triggerChannel int
-		lengthInRows   int
+		lengthInBeats  int
 		bpm            int
 
 		broker *Broker
@@ -23,10 +23,10 @@ type (
 		Cursor int
 	}
 
-	SignalOnce         ScopeModel
-	SignalWrap         ScopeModel
-	SignalLengthInRows ScopeModel
-	TriggerChannel     ScopeModel
+	SignalOnce          ScopeModel
+	SignalWrap          ScopeModel
+	SignalLengthInBeats ScopeModel
+	TriggerChannel      ScopeModel
 )
 
 func (r *RingBuffer[T]) WriteWrap(values []T) {
@@ -57,9 +57,9 @@ func (r *RingBuffer[T]) WriteOnceSingle(value T) {
 
 func NewScopeModel(broker *Broker, bpm int) *ScopeModel {
 	s := &ScopeModel{
-		broker:       broker,
-		bpm:          bpm,
-		lengthInRows: 4,
+		broker:        broker,
+		bpm:           bpm,
+		lengthInBeats: 4,
 	}
 	s.updateBufferLength()
 	return s
@@ -67,10 +67,10 @@ func NewScopeModel(broker *Broker, bpm int) *ScopeModel {
 
 func (s *ScopeModel) Waveform() RingBuffer[[2]float32] { return s.waveForm }
 
-func (s *ScopeModel) Once() *SignalOnce                 { return (*SignalOnce)(s) }
-func (s *ScopeModel) Wrap() *SignalWrap                 { return (*SignalWrap)(s) }
-func (s *ScopeModel) LengthInRows() *SignalLengthInRows { return (*SignalLengthInRows)(s) }
-func (s *ScopeModel) TriggerChannel() *TriggerChannel   { return (*TriggerChannel)(s) }
+func (s *ScopeModel) Once() *SignalOnce                   { return (*SignalOnce)(s) }
+func (s *ScopeModel) Wrap() *SignalWrap                   { return (*SignalWrap)(s) }
+func (s *ScopeModel) LengthInBeats() *SignalLengthInBeats { return (*SignalLengthInBeats)(s) }
+func (s *ScopeModel) TriggerChannel() *TriggerChannel     { return (*TriggerChannel)(s) }
 
 func (m *SignalOnce) Bool() Bool        { return Bool{m} }
 func (m *SignalOnce) Value() bool       { return m.once }
@@ -82,15 +82,15 @@ func (m *SignalWrap) Value() bool       { return m.wrap }
 func (m *SignalWrap) setValue(val bool) { m.wrap = val }
 func (m *SignalWrap) Enabled() bool     { return true }
 
-func (m *SignalLengthInRows) Int() Int   { return Int{m} }
-func (m *SignalLengthInRows) Value() int { return m.lengthInRows }
-func (m *SignalLengthInRows) setValue(val int) {
-	m.lengthInRows = val
+func (m *SignalLengthInBeats) Int() Int   { return Int{m} }
+func (m *SignalLengthInBeats) Value() int { return m.lengthInBeats }
+func (m *SignalLengthInBeats) setValue(val int) {
+	m.lengthInBeats = val
 	(*ScopeModel)(m).updateBufferLength()
 }
-func (m *SignalLengthInRows) Enabled() bool        { return true }
-func (m *SignalLengthInRows) Range() intRange      { return intRange{1, 999} }
-func (m *SignalLengthInRows) change(string) func() { return func() {} }
+func (m *SignalLengthInBeats) Enabled() bool        { return true }
+func (m *SignalLengthInBeats) Range() intRange      { return intRange{1, 999} }
+func (m *SignalLengthInBeats) change(string) func() { return func() {} }
 
 func (m *TriggerChannel) Int() Int             { return Int{m} }
 func (m *TriggerChannel) Value() int           { return m.triggerChannel }
@@ -134,8 +134,8 @@ func (s *ScopeModel) SetBpm(bpm int) {
 }
 
 func (s *ScopeModel) updateBufferLength() {
-	if s.bpm == 0 || s.lengthInRows == 0 {
+	if s.bpm == 0 || s.lengthInBeats == 0 {
 		return
 	}
-	setSliceLength(&s.waveForm.Buffer, 44100*60*s.lengthInRows/s.bpm)
+	setSliceLength(&s.waveForm.Buffer, 44100*60*s.lengthInBeats/s.bpm)
 }

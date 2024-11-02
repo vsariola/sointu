@@ -18,7 +18,7 @@ type (
 	Oscilloscope struct {
 		onceBtn              *BoolClickable
 		wrapBtn              *BoolClickable
-		lengthInRowsNumber   *NumberInput
+		lengthInBeatsNumber  *NumberInput
 		triggerChannelNumber *NumberInput
 		xScale               int
 		xOffset              float32
@@ -40,7 +40,7 @@ func NewOscilloscope(model *tracker.Model) *Oscilloscope {
 	return &Oscilloscope{
 		onceBtn:              NewBoolClickable(model.SignalAnalyzer().Once().Bool()),
 		wrapBtn:              NewBoolClickable(model.SignalAnalyzer().Wrap().Bool()),
-		lengthInRowsNumber:   NewNumberInput(model.SignalAnalyzer().LengthInRows().Int()),
+		lengthInBeatsNumber:  NewNumberInput(model.SignalAnalyzer().LengthInBeats().Int()),
 		triggerChannelNumber: NewNumberInput(model.SignalAnalyzer().TriggerChannel().Int()),
 	}
 }
@@ -53,7 +53,7 @@ func (s *OscilloscopeStyle) Layout(gtx C) D {
 	wrapBtnStyle := ToggleButton(gtx, s.Theme, s.Oscilloscope.wrapBtn, "Wrap")
 	onceBtnStyle := ToggleButton(gtx, s.Theme, s.Oscilloscope.onceBtn, "Once")
 	triggerChannelStyle := NumericUpDown(s.Theme, s.Oscilloscope.triggerChannelNumber, "Trigger channel")
-	lengthNumberStyle := NumericUpDown(s.Theme, s.Oscilloscope.lengthInRowsNumber, "Buffer length in rows")
+	lengthNumberStyle := NumericUpDown(s.Theme, s.Oscilloscope.lengthInBeatsNumber, "Buffer length in beats")
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Flexed(1, func(gtx C) D { return s.layoutWave(gtx) }),
 		layout.Rigid(func(gtx C) D {
