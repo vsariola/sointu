@@ -253,7 +253,7 @@ func (t *Tracker) showDialog(gtx C) {
 			filename = p[:len(p)-len(filepath.Ext(p))] + ".wav"
 		}
 		t.explorerCreateFile(func(wc io.WriteCloser) {
-			t.WriteWav(wc, t.Dialog() == tracker.ExportInt16Explorer, t.execChan)
+			t.WriteWav(wc, t.Dialog() == tracker.ExportInt16Explorer)
 		}, filename)
 	}
 }

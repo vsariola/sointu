@@ -75,7 +75,7 @@ func (m *Model) WriteSong(w io.WriteCloser) {
 	m.completeAction(false)
 }
 
-func (m *Model) WriteWav(w io.WriteCloser, pcm16 bool, execChan chan<- func()) {
+func (m *Model) WriteWav(w io.WriteCloser, pcm16 bool) {
 	m.dialog = NoDialog
 	song := m.d.Song.Copy()
 	go func() {
@@ -83,21 +83,18 @@ func (m *Model) WriteWav(w io.WriteCloser, pcm16 bool, execChan chan<- func()) {
 		rand.Read(b)
 		name := fmt.Sprintf("%x", b)[2 : 32+2]
 		data, err := sointu.Play(m.synther, song, func(p float32) {
-			execChan <- func() {
-				m.Alerts().AddNamed(name, fmt.Sprintf("Exporting song: %.0f%%", p*100), Info)
-			}
+			txt := fmt.Sprintf("Exporting song: %.0f%%", p*100)
+			trySend(m.broker.ToModel, MsgToModel{Data: Alert{Message: txt, Priority: Info, Name: name, Duration: defaultAlertDuration}})
 		}) // render the song to calculate its length
 		if err != nil {
-			execChan <- func() {
-				m.Alerts().Add(fmt.Sprintf("Error rendering the song during export: %v", err), Error)
-			}
+			txt := fmt.Sprintf("Error rendering the song during export: %v", err)
+			trySend(m.broker.ToModel, MsgToModel{Data: Alert{Message: txt, Priority: Error, Name: name, Duration: defaultAlertDuration}})
 			return
 		}
 		buffer, err := data.Wav(pcm16)
 		if err != nil {
-			execChan <- func() {
-				m.Alerts().Add(fmt.Sprintf("Error converting to .wav: %v", err), Error)
-			}
+			txt := fmt.Sprintf("Error converting to .wav: %v", err)
+			trySend(m.broker.ToModel, MsgToModel{Data: Alert{Message: txt, Priority: Error, Name: name, Duration: defaultAlertDuration}})
 			return
 		}
 		w.Write(buffer)
