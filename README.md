@@ -513,6 +513,11 @@ Prods using Sointu
   - [Radiant](https://www.pouet.net/prod.php?which=97200) by Team210
   - [Aurora Florae](https://www.pouet.net/prod.php?which=97516) by Team210 and
     epoqe
+  - [Night Ride](https://www.pouet.net/prod.php?which=98212) by Ctrl-Alt-Test &
+    Alcatraz
+  - [Bicolor Challenge](https://demozoo.org/competitions/19410/) with [Sointu
+    song](https://files.scene.org/view/parties/2024/deadline24/bicolor_challenge/wayfinder_-_bicolor_soundtrack.zip)
+    provided by wayfinder
 
 Contributing
 ------------
