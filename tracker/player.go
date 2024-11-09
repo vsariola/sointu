@@ -11,8 +11,8 @@ import (
 type (
 	// Player is the audio player for the tracker, run in a separate thread. It
 	// is controlled by messages from the model and MIDI messages via the
-	// context, typically from the VSTI host. The player sends messages to the
-	// model via the playerMessages channel. The model sends messages to the
+	// context, typically from the VSTI host. The player sendTargets messages to the
+	// model via the playerMessages channel. The model sendTargets messages to the
 	// player via the modelMessages channel.
 	Player struct {
 		synth       sointu.Synth           // the synth used to render audio
@@ -344,7 +344,7 @@ func (p *Player) compileOrUpdateSynth() {
 	}
 }
 
-// all sends from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
+// all sendTargets from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
 func (p *Player) send(message interface{}) {
 	trySend(p.broker.ToModel, MsgToModel{HasPanicPosLevels: true, Panic: p.synth == nil, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, Data: message})
 }

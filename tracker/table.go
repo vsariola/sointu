@@ -576,13 +576,6 @@ func (m *Notes) LowNibble() bool {
 	return m.d.LowNibble
 }
 
-func (m *Notes) Unique(t, p int) bool {
-	if t < 0 || t >= len(m.cachePatternUseCount) || p < 0 || p >= len(m.cachePatternUseCount[t]) {
-		return false
-	}
-	return m.cachePatternUseCount[t][p] == 1
-}
-
 func (m *Notes) SetValue(p Point, val byte) {
 	defer m.change("SetValue", MinorChange)()
 	if p.Y < 0 || p.X < 0 || p.X >= len(m.d.Song.Score.Tracks) {

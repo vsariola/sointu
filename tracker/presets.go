@@ -21,7 +21,7 @@ type (
 		LoopStart          int    // loop start offset in words
 		LoopLength         int    // loop length in words
 		SuggestedTranspose int    // suggested transpose in semitones, so that all samples play at same pitch
-		Name               string // sample name
+		Name               string // sample Name
 	}
 
 	InstrumentPresetYieldFunc func(index int, item string) (ok bool)

@@ -68,8 +68,6 @@ type (
 		// reordering or deleting instrument can delete track)
 		linkInstrTrack bool
 
-		cachePatternUseCount [][]int
-
 		voiceLevels [vm.MAX_VOICES]float32
 
 		signalAnalyzer *ScopeModel
@@ -234,7 +232,6 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			m.d.ChangedSinceSave = true
 			m.d.ChangedSinceRecovery = true
 			if m.changeType&ScoreChange != 0 {
-				m.updatePatternUseCount()
 				m.d.Cursor.SongPos = m.d.Song.Score.Clamp(m.d.Cursor.SongPos)
 				m.d.Cursor2.SongPos = m.d.Song.Score.Clamp(m.d.Cursor2.SongPos)
 				m.updateDerivedScoreData()
@@ -343,7 +340,7 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 	}
 	m.d.ChangedSinceRecovery = false
 	trySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
-	m.updatePatternUseCount()
+	m.initDerivedData()
 }
 
 func (m *Model) ProcessMsg(msg MsgToModel) {
@@ -407,20 +404,6 @@ func (m *Model) InstrNoteOn(instr int, note byte) (id NoteID) {
 
 func (n NoteID) NoteOff() {
 	trySend(n.model.broker.ToPlayer, any(NoteOffMsg{n}))
-}
-
-func (m *Model) FindUnit(id int) (instrIndex, unitIndex int, err error) {
-	// TODO: this only used for choosing send target; find a better way for this
-	return m.d.Song.Patch.FindUnit(id)
-}
-
-func (m *Model) Instrument(index int) sointu.Instrument {
-	// TODO: this only used for choosing send target; find a better way for this
-	// we make a copy just so that the gui can't accidentally modify the song
-	if index < 0 || index >= len(m.d.Song.Patch) {
-		return sointu.Instrument{}
-	}
-	return m.d.Song.Patch[index].Copy()
 }
 
 func (d *modelData) Copy() modelData {
@@ -565,30 +548,6 @@ func (m *Model) fixUnitParams() {
 	}
 	if fixed {
 		m.Alerts().AddNamed("InvalidUnitParameters", "Some units had invalid parameters, they were removed", Error)
-	}
-}
-
-func (m *Model) updatePatternUseCount() {
-	for i, track := range m.d.Song.Score.Tracks {
-		for len(m.cachePatternUseCount) <= i {
-			m.cachePatternUseCount = append(m.cachePatternUseCount, nil)
-		}
-		for j := range m.cachePatternUseCount[i] {
-			m.cachePatternUseCount[i][j] = 0
-		}
-		for j := 0; j < m.d.Song.Score.Length; j++ {
-			if j >= len(track.Order) {
-				break
-			}
-			p := track.Order[j]
-			for len(m.cachePatternUseCount[i]) <= p {
-				m.cachePatternUseCount[i] = append(m.cachePatternUseCount[i], 0)
-			}
-			if p < 0 {
-				continue
-			}
-			m.cachePatternUseCount[i][p]++
-		}
 	}
 }
 

@@ -14,16 +14,14 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	sointu "github.com/vsariola/sointu"
+	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"image"
 	"io"
-	"iter"
 	"math"
-	"slices"
 )
 
 type UnitEditor struct {
@@ -252,7 +250,6 @@ type ParameterStyle struct {
 	Theme           *material.Theme
 	SendTargetTheme *material.Theme
 	Focus           bool
-	sends           []sointu.Unit
 }
 
 func (t *Tracker) ParamStyle(th *material.Theme, paramWidget *ParameterWidget) ParameterStyle {
@@ -271,7 +268,7 @@ func (t *Tracker) ParamStyle(th *material.Theme, paramWidget *ParameterWidget) P
 }
 
 func (p ParameterStyle) Layout(gtx C) D {
-	sends := slices.Collect(p.findSends())
+	isSendTarget, info := p.tryDerivedParameterInfo()
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			gtx.Constraints.Min.X = gtx.Dp(unit.Dp(110))
@@ -302,7 +299,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 				}
 				sliderStyle := material.Slider(p.Theme, &p.w.floatWidget)
 				sliderStyle.Color = p.Theme.Fg
-				if len(sends) > 0 {
+				if isSendTarget {
 					sliderStyle.Color = paramIsSendTargetColor
 				}
 				r := image.Rectangle{Max: gtx.Constraints.Min}
@@ -348,16 +345,14 @@ func (p ParameterStyle) Layout(gtx C) D {
 				var unitItems []MenuItem
 				instrName := "<instr>"
 				unitName := "<unit>"
-				targetI, targetU, err := p.tracker.FindUnit(p.w.Parameter.Value())
-				if err == nil {
-					targetInstrument := p.tracker.Instrument(targetI)
-					instrName = targetInstrument.Name
-					units := targetInstrument.Units
-					unitName = unitNameFor(targetU, units[targetU])
+				targetInstrName, units, targetUnitIndex, ok := p.tracker.UnitInfo(p.w.Parameter.Value())
+				if ok {
+					instrName = targetInstrName
+					unitName = buildUnitLabel(targetUnitIndex, units[targetUnitIndex])
 					unitItems = make([]MenuItem, len(units))
 					for j, unit := range units {
 						id := unit.ID
-						unitItems[j].Text = unitNameFor(j, unit)
+						unitItems[j].Text = buildUnitLabel(j, unit)
 						unitItems[j].IconBytes = icons.NavigationChevronRight
 						unitItems[j].Doer = tracker.Allow(func() {
 							tracker.Int{IntData: p.w.Parameter}.Set(id)
@@ -378,8 +373,12 @@ func (p ParameterStyle) Layout(gtx C) D {
 		}),
 		layout.Rigid(func(gtx C) D {
 			if p.w.Parameter.Type() != tracker.IDParameter {
-				label := Label(p.w.Parameter.Hint(), white, p.tracker.Theme.Shaper)
-				info := p.buildSendTargetTooltip(sends)
+				color := white
+				hint := p.w.Parameter.Hint()
+				if !hint.Valid {
+					color = paramValueInvalidColor
+				}
+				label := Label(hint.Label, color, p.tracker.Theme.Shaper)
 				if info == "" {
 					return label(gtx)
 				}
@@ -391,7 +390,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 	)
 }
 
-func unitNameFor(index int, u sointu.Unit) string {
+func buildUnitLabel(index int, u sointu.Unit) string {
 	text := u.Type
 	if u.Comment != "" {
 		text = fmt.Sprintf("%s \"%s\"", text, u.Comment)
@@ -399,47 +398,11 @@ func unitNameFor(index int, u sointu.Unit) string {
 	return fmt.Sprintf("%d: %s", index, text)
 }
 
-func (p ParameterStyle) findSends() iter.Seq[sointu.Unit] {
-	return func(yield func(sointu.Unit) bool) {
-		param, ok := (p.w.Parameter).(tracker.NamedParameter)
-		if !ok {
-			return
-		}
-		for _, send := range p.sends {
-			port := send.Parameters["port"]
-			unitParam := sointu.FindParamForModulationPort(param.Unit().Type, port)
-			if unitParam.Name != param.Name() {
-				continue
-			}
-			if !yield(send) {
-				return
-			}
-		}
+func (p ParameterStyle) tryDerivedParameterInfo() (isSendTarget bool, sendInfo string) {
+	param, ok := (p.w.Parameter).(tracker.NamedParameter)
+	if !ok {
+		return false, ""
 	}
-}
-
-func (p ParameterStyle) buildSendTargetTooltip(sends []sointu.Unit) string {
-	if len(sends) == 0 {
-		return ""
-	}
-	targetParam := (p.w.Parameter).(tracker.NamedParameter)
-	targetInstr := p.tracker.Model.InstrumentForUnit(targetParam.Unit().ID)
-	amounts := ""
-	for i := 0; i < len(sends); i++ {
-		sourceInstr := p.tracker.Model.InstrumentForUnit(sends[0].ID)
-		sourceInfo := ""
-		if sourceInstr != targetInstr {
-			sourceInfo = fmt.Sprintf(" from \"%s\"", sourceInstr.Name)
-		}
-		if amounts == "" {
-			amounts = fmt.Sprintf("x %d%s", sends[i].Parameters["amount"], sourceInfo)
-		} else {
-			amounts = fmt.Sprintf("%s, x %d%s", amounts, sends[i].Parameters["amount"], sourceInfo)
-		}
-	}
-	count := "1 send"
-	if len(sends) > 1 {
-		count = fmt.Sprintf("%d sends")
-	}
-	return fmt.Sprintf("%s [%s]", count, amounts)
+	isSendTarget, sendInfo, _ = p.tracker.ParameterInfo(param.Unit().ID, param.Name())
+	return isSendTarget, sendInfo
 }

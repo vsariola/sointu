@@ -293,7 +293,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		}
 		// draw the corresponding "fake cursors" for instrument-track-groups (for polyphony)
 		if hasTrackMidiIn {
-			for trackIndex := range t.Model.TracksWithSameInstrumentAsCurrent() {
+			for _, trackIndex := range t.Model.TracksWithSameInstrumentAsCurrent() {
 				if x == trackIndex && y == cursor.Y {
 					te.paintColumnCell(gtx, x, t, cursorNeighborForTrackMidiInColor)
 				}
@@ -310,7 +310,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 			paint.ColorOp{Color: trackerPatMarker}.Add(gtx.Ops)
 			widget.Label{}.Layout(gtx, t.Theme.Shaper, trackerFont, trackerFontSize, patternIndexToString(s), op.CallOp{})
 		}
-		if row == 1 && t.Model.Notes().Unique(x, s) { // draw a * if the pattern is unique
+		if row == 1 && t.Model.PatternUnique(x, s) { // draw a * if the pattern is unique
 			paint.ColorOp{Color: mediumEmphasisTextColor}.Add(gtx.Ops)
 			widget.Label{}.Layout(gtx, t.Theme.Shaper, trackerFont, trackerFontSize, "*", op.CallOp{})
 		}
