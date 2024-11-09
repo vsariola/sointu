@@ -220,12 +220,11 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	pxRowMarkWidth := gtx.Dp(trackRowMarkWidth)
 
 	colTitle := func(gtx C, i int) D {
-		h := gtx.Dp(unit.Dp(trackColTitleHeight))
-		title := ((*tracker.Order)(t.Model)).Title(i)
+		h := gtx.Dp(trackColTitleHeight)
 		gtx.Constraints = layout.Exact(image.Pt(pxWidth, h))
 		LabelStyle{
 			Alignment: layout.N,
-			Text:      title,
+			Text:      t.Model.TrackTitle(i),
 			FontSize:  unit.Sp(12),
 			Color:     mediumEmphasisTextColor,
 			Shaper:    t.Theme.Shaper,
@@ -294,7 +293,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		}
 		// draw the corresponding "fake cursors" for instrument-track-groups (for polyphony)
 		if hasTrackMidiIn {
-			for trackIndex := range ((*tracker.Order)(t.Model)).TrackIndicesForCurrentInstrument() {
+			for trackIndex := range t.Model.TracksWithSameInstrumentAsCurrent() {
 				if x == trackIndex && y == cursor.Y {
 					te.paintColumnCell(gtx, x, t, cursorNeighborForTrackMidiInColor)
 				}
@@ -414,7 +413,7 @@ func (te *NoteEditor) HandleMidiInput(t *Tracker) {
 		return
 	}
 	te.scrollTable.Table.SetCursor2(te.scrollTable.Table.Cursor())
-	remaining := (*tracker.Order)(t.Model).CountNextTracksForCurrentInstrument()
+	remaining := t.Model.CountNextTracksForCurrentInstrument()
 	for i, note := range t.MidiNotePlaying {
 		t.Model.Notes().Table().Set(note)
 		te.scrollTable.Table.MoveCursor(1, 0)

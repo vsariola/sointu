@@ -247,20 +247,26 @@ type ParameterWidget struct {
 }
 
 type ParameterStyle struct {
-	tracker *Tracker
-	w       *ParameterWidget
-	Theme   *material.Theme
-	Focus   bool
-	sends   []sointu.Unit
+	tracker         *Tracker
+	w               *ParameterWidget
+	Theme           *material.Theme
+	SendTargetTheme *material.Theme
+	Focus           bool
+	sends           []sointu.Unit
 }
 
 func (t *Tracker) ParamStyle(th *material.Theme, paramWidget *ParameterWidget) ParameterStyle {
-	sends := slices.Collect(t.Model.CollectSendsTo(paramWidget.Parameter))
+	sendTargetTheme := th.WithPalette(material.Palette{
+		Bg:         th.Bg,
+		Fg:         paramIsSendTargetColor,
+		ContrastBg: th.ContrastBg,
+		ContrastFg: th.ContrastFg,
+	})
 	return ParameterStyle{
-		tracker: t, // TODO: we need this to pull the instrument names for ID style parameters, find out another way
-		Theme:   th,
-		w:       paramWidget,
-		sends:   sends,
+		tracker:         t, // TODO: we need this to pull the instrument names for ID style parameters, find out another way
+		Theme:           th,
+		SendTargetTheme: &sendTargetTheme,
+		w:               paramWidget,
 	}
 }
 
@@ -296,7 +302,6 @@ func (p ParameterStyle) Layout(gtx C) D {
 				}
 				sliderStyle := material.Slider(p.Theme, &p.w.floatWidget)
 				sliderStyle.Color = p.Theme.Fg
-
 				if len(sends) > 0 {
 					sliderStyle.Color = paramIsSendTargetColor
 				}
@@ -374,11 +379,11 @@ func (p ParameterStyle) Layout(gtx C) D {
 		layout.Rigid(func(gtx C) D {
 			if p.w.Parameter.Type() != tracker.IDParameter {
 				label := Label(p.w.Parameter.Hint(), white, p.tracker.Theme.Shaper)
-				info := p.buildTooltip(sends)
+				info := p.buildSendTargetTooltip(sends)
 				if info == "" {
 					return label(gtx)
 				}
-				tooltip := component.PlatformTooltip(p.Theme, info)
+				tooltip := component.PlatformTooltip(p.SendTargetTheme, info)
 				return p.w.tipArea.Layout(gtx, tooltip, label)
 			}
 			return D{}
@@ -413,7 +418,7 @@ func (p ParameterStyle) findSends() iter.Seq[sointu.Unit] {
 	}
 }
 
-func (p ParameterStyle) buildTooltip(sends []sointu.Unit) string {
+func (p ParameterStyle) buildSendTargetTooltip(sends []sointu.Unit) string {
 	if len(sends) == 0 {
 		return ""
 	}
@@ -424,7 +429,7 @@ func (p ParameterStyle) buildTooltip(sends []sointu.Unit) string {
 		sourceInstr := p.tracker.Model.InstrumentForUnit(sends[0].ID)
 		sourceInfo := ""
 		if sourceInstr != targetInstr {
-			sourceInfo = fmt.Sprintf(" (%s)", sourceInstr.Name)
+			sourceInfo = fmt.Sprintf(" from \"%s\"", sourceInstr.Name)
 		}
 		if amounts == "" {
 			amounts = fmt.Sprintf("x %d%s", sends[i].Parameters["amount"], sourceInfo)

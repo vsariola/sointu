@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"iter"
 	"os"
 	"path/filepath"
 
@@ -40,7 +39,8 @@ type (
 	}
 
 	Model struct {
-		d modelData
+		d       modelData
+		derived derivedModelData
 
 		instrEnlarged   bool
 		commentExpanded bool
@@ -202,6 +202,7 @@ func NewModel(broker *Broker, synther sointu.Synther, midiContext MIDIContext, r
 	}
 	trySend(broker.ToPlayer, any(m.d.Song.Copy())) // we should be non-blocking in the constructor
 	m.signalAnalyzer = NewScopeModel(broker, m.d.Song.BPM)
+	m.initDerivedData()
 	return m
 }
 
@@ -236,6 +237,7 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 				m.updatePatternUseCount()
 				m.d.Cursor.SongPos = m.d.Song.Score.Clamp(m.d.Cursor.SongPos)
 				m.d.Cursor2.SongPos = m.d.Song.Score.Clamp(m.d.Cursor2.SongPos)
+				m.updateDerivedScoreData()
 				trySend(m.broker.ToPlayer, any(m.d.Song.Score.Copy()))
 			}
 			if m.changeType&PatchChange != 0 {
@@ -251,6 +253,7 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 				m.d.UnitIndex2 = clamp(m.d.UnitIndex2, 0, unitCount-1)
 				m.d.UnitSearching = false // if we change anything in the patch, reset the unit searching
 				m.d.UnitSearchString = ""
+				m.updateDerivedPatchData()
 				trySend(m.broker.ToPlayer, any(m.d.Song.Patch.Copy()))
 			}
 			if m.changeType&BPMChange != 0 {
@@ -597,39 +600,4 @@ func clamp(a, min, max int) int {
 		return min
 	}
 	return a
-}
-
-func (m *Model) CollectSendsTo(param Parameter) iter.Seq[sointu.Unit] {
-	return func(yield func(sointu.Unit) bool) {
-		p, ok := param.(NamedParameter)
-		if !ok {
-			return
-		}
-		for _, instr := range m.d.Song.Patch {
-			for _, unit := range instr.Units {
-				if unit.Type != "send" {
-					continue
-				}
-				targetId, ok := unit.Parameters["target"]
-				if !ok || targetId != p.Unit().ID {
-					continue
-				}
-				if !yield(unit) {
-					return
-				}
-			}
-		}
-	}
-}
-
-func (m *Model) InstrumentForUnit(id int) *sointu.Instrument {
-	for _, instr := range m.d.Song.Patch {
-		for _, unit := range instr.Units {
-			if unit.ID == id {
-				return &instr
-			}
-		}
-	}
-	// ID does not exist
-	return nil
 }
