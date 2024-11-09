@@ -15,7 +15,7 @@ type (
 		IntData
 		Type() ParameterType
 		Name() string
-		Hint() string
+		Hint() ParameterHint
 		LargeStep() int
 		Reset()
 	}
@@ -44,6 +44,11 @@ type (
 	ParamYieldFunc func(param Parameter) bool
 
 	ParameterType int
+
+	ParameterHint struct {
+		Label string
+		Valid bool
+	}
 )
 
 const (
@@ -170,31 +175,34 @@ func (p NamedParameter) Type() ParameterType {
 	return IntegerParameter
 }
 
-func (p NamedParameter) Hint() string {
+func (p NamedParameter) Hint() ParameterHint {
 	val := p.Value()
+	label := strconv.Itoa(val)
 	if p.up.DisplayFunc != nil {
 		valueInUnits, units := p.up.DisplayFunc(val)
-		return fmt.Sprintf("%d / %s %s", val, valueInUnits, units)
+		label = fmt.Sprintf("%d / %s %s", val, valueInUnits, units)
 	}
-	if p.unit.Type == "send" && p.up.Name == "voice" && val == 0 {
-		targetIndex, _, err := p.m.FindUnit(p.unit.Parameters["target"])
-		if err == nil && targetIndex != p.m.d.InstrIndex {
-			return "all"
+	if p.unit.Type == "send" {
+		instrIndex, targetType, ok := p.m.UnitHintInfo(p.unit.Parameters["target"])
+		if p.up.Name == "voice" && val == 0 {
+			if ok && instrIndex != p.m.d.InstrIndex {
+				label = "all"
+			} else {
+				label = "self"
+			}
 		}
-		return "self"
+		if p.up.Name == "port" {
+			if !ok {
+				return ParameterHint{label, false}
+			}
+			portList := sointu.Ports[targetType]
+			if val < 0 || val >= len(portList) {
+				return ParameterHint{label, false}
+			}
+			label = fmt.Sprintf(portList[val])
+		}
 	}
-	if p.unit.Type == "send" && p.up.Name == "port" {
-		instrIndex, unitIndex, err := p.m.FindUnit(p.unit.Parameters["target"])
-		if err != nil {
-			return strconv.Itoa(val)
-		}
-		portList := sointu.Ports[p.m.d.Song.Patch[instrIndex].Units[unitIndex].Type]
-		if val < 0 || val >= len(portList) {
-			return strconv.Itoa(val)
-		}
-		return fmt.Sprintf(portList[val])
-	}
-	return strconv.Itoa(val)
+	return ParameterHint{label, true}
 }
 
 func (p NamedParameter) LargeStep() int {
@@ -235,11 +243,12 @@ func (p GmDlsEntryParameter) setValue(v int) {
 	p.unit.Parameters["transpose"] = 64 + e.SuggestedTranspose
 }
 
-func (p GmDlsEntryParameter) Hint() string {
+func (p GmDlsEntryParameter) Hint() ParameterHint {
+	label := "0 / custom"
 	if v := p.Value(); v > 0 {
-		return fmt.Sprintf("%v / %v", v, GmDlsEntries[v-1].Name)
+		label = fmt.Sprintf("%v / %v", v, GmDlsEntries[v-1].Name)
 	}
-	return "0 / custom"
+	return ParameterHint{label, true}
 }
 
 // DelayTimeParameter
@@ -267,7 +276,7 @@ func (p DelayTimeParameter) Range() intRange {
 	return intRange{Min: 1, Max: 65535}
 }
 
-func (p DelayTimeParameter) Hint() string {
+func (p DelayTimeParameter) Hint() ParameterHint {
 	val := p.Value()
 	var text string
 	switch p.unit.Parameters["notetracking"] {
@@ -309,7 +318,7 @@ func (p DelayTimeParameter) Hint() string {
 			text += " L"
 		}
 	}
-	return text
+	return ParameterHint{text, true}
 }
 
 // DelayLinesParameter
@@ -319,7 +328,10 @@ func (p DelayLinesParameter) Type() ParameterType { return IntegerParameter }
 func (p DelayLinesParameter) Range() intRange     { return intRange{Min: 1, Max: 32} }
 func (p DelayLinesParameter) LargeStep() int      { return 4 }
 func (p DelayLinesParameter) Reset()              { return }
-func (p DelayLinesParameter) Hint() string        { return strconv.Itoa(p.Value()) }
+
+func (p DelayLinesParameter) Hint() ParameterHint {
+	return ParameterHint{strconv.Itoa(p.Value()), true}
+}
 
 func (p DelayLinesParameter) Value() int {
 	val := len(p.unit.VarArgs)
@@ -366,10 +378,11 @@ func (p ReverbParameter) setValue(v int) {
 	copy(p.unit.VarArgs, entry.varArgs)
 }
 
-func (p ReverbParameter) Hint() string {
+func (p ReverbParameter) Hint() ParameterHint {
 	i := p.Value()
+	label := "0 / custom"
 	if i > 0 {
-		return fmt.Sprintf("%v / %v", i, reverbs[i-1].name)
+		label = fmt.Sprintf("%v / %v", i, reverbs[i-1].name)
 	}
-	return "0 / custom"
+	return ParameterHint{label, true}
 }
