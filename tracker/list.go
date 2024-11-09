@@ -783,6 +783,9 @@ func MakeMoveRanges(a Range, delta int) [4]Range {
 // duplicate elements so all elements are equally spaced, and tries to remove
 // elements from the middle of the range.
 func MakeSetLength(a Range, length int) []Range {
+	if length <= 0 || a.Len() <= 0 {
+		return []Range{{a.Start, a.Start}}
+	}
 	ret := make([]Range, a.Len(), max(a.Len(), length)+2)
 	for i := 0; i < a.Len(); i++ {
 		ret[i] = Range{a.Start + i, a.Start + i + 1}
