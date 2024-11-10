@@ -35,22 +35,12 @@ type (
 		unmarshal([]byte) (r Range, err error)
 	}
 
-	UnitListItem struct {
-		Type, Comment                      string
-		Disabled                           bool
-		StackNeed, StackBefore, StackAfter int
-	}
-
 	// Range is used to represent a range [Start,End) of integers
 	Range struct {
 		Start, End int
 	}
 
-	UnitYieldFunc       func(index int, item UnitListItem) (ok bool)
-	UnitSearchYieldFunc func(index int, item string) (ok bool)
-
 	Instruments   Model // Instruments is a list of instruments, implementing ListData & MutableListData interfaces
-	Units         Model // Units is a list of all the units in the selected instrument, implementing ListData & MutableListData interfaces
 	Tracks        Model // Tracks is a list of all the tracks, implementing ListData & MutableListData interfaces
 	OrderRows     Model // OrderRows is a list of all the order rows, implementing ListData & MutableListData interfaces
 	NoteRows      Model // NoteRows is a list of all the note rows, implementing ListData & MutableListData interfaces
@@ -61,7 +51,6 @@ type (
 // Model methods
 
 func (m *Model) Instruments() *Instruments     { return (*Instruments)(m) }
-func (m *Model) Units() *Units                 { return (*Units)(m) }
 func (m *Model) Tracks() *Tracks               { return (*Tracks)(m) }
 func (m *Model) OrderRows() *OrderRows         { return (*OrderRows)(m) }
 func (m *Model) NoteRows() *NoteRows           { return (*NoteRows)(m) }
@@ -255,162 +244,6 @@ func (m *Instruments) unmarshal(data []byte) (r Range, err error) {
 		return Range{}, fmt.Errorf("unmarshal: unmarshalVoices failed")
 	}
 	return r, nil
-}
-
-// Units methods
-
-func (v *Units) List() List {
-	return List{v}
-}
-
-func (m *Units) SelectedType() string {
-	if m.d.InstrIndex < 0 ||
-		m.d.InstrIndex >= len(m.d.Song.Patch) ||
-		m.d.UnitIndex < 0 ||
-		m.d.UnitIndex >= len(m.d.Song.Patch[m.d.InstrIndex].Units) {
-		return ""
-	}
-	return m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].Type
-}
-
-func (m *Units) SetSelectedType(t string) {
-	if m.d.InstrIndex < 0 ||
-		m.d.InstrIndex >= len(m.d.Song.Patch) {
-		return
-	}
-	if m.d.UnitIndex < 0 {
-		m.d.UnitIndex = 0
-	}
-	for len(m.d.Song.Patch[m.d.InstrIndex].Units) <= m.d.UnitIndex {
-		m.d.Song.Patch[m.d.InstrIndex].Units = append(m.d.Song.Patch[m.d.InstrIndex].Units, sointu.Unit{})
-	}
-	unit, ok := defaultUnits[t]
-	if !ok { // if the type is invalid, we just set it to empty unit
-		unit = sointu.Unit{Parameters: make(map[string]int)}
-	} else {
-		unit = unit.Copy()
-	}
-	oldUnit := m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex]
-	if oldUnit.Type == unit.Type {
-		return
-	}
-	defer m.change("SetSelectedType", MajorChange)()
-	m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex] = unit
-	m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].ID = oldUnit.ID // keep the ID of the replaced unit
-}
-
-func (v *Units) Iterate(yield UnitYieldFunc) {
-	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
-		return
-	}
-	stackBefore := 0
-	for i, unit := range v.d.Song.Patch[v.d.InstrIndex].Units {
-		stackAfter := stackBefore + unit.StackChange()
-		if !yield(i, UnitListItem{
-			Type:        unit.Type,
-			Comment:     unit.Comment,
-			Disabled:    unit.Disabled,
-			StackNeed:   unit.StackNeed(),
-			StackBefore: stackBefore,
-			StackAfter:  stackAfter,
-		}) {
-			break
-		}
-		stackBefore = stackAfter
-	}
-}
-
-func (v *Units) Selected() int {
-	return max(min(v.d.UnitIndex, v.Count()-1), 0)
-}
-
-func (v *Units) Selected2() int {
-	return max(min(v.d.UnitIndex2, v.Count()-1), 0)
-}
-
-func (v *Units) SetSelected(value int) {
-	m := (*Model)(v)
-	m.d.UnitIndex = max(min(value, v.Count()-1), 0)
-	m.d.ParamIndex = 0
-	m.d.UnitSearching = false
-	m.d.UnitSearchString = ""
-}
-
-func (v *Units) SetSelected2(value int) {
-	(*Model)(v).d.UnitIndex2 = max(min(value, v.Count()-1), 0)
-}
-
-func (v *Units) Count() int {
-	m := (*Model)(v)
-	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
-		return 0
-	}
-	return len(m.d.Song.Patch[(*Model)(v).d.InstrIndex].Units)
-}
-
-func (v *Units) move(r Range, delta int) (ok bool) {
-	m := (*Model)(v)
-	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
-		return false
-	}
-	units := m.d.Song.Patch[m.d.InstrIndex].Units
-	for i, j := range r.Swaps(delta) {
-		units[i], units[j] = units[j], units[i]
-	}
-	return true
-}
-
-func (v *Units) delete(r Range) (ok bool) {
-	m := (*Model)(v)
-	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
-		return false
-	}
-	u := m.d.Song.Patch[m.d.InstrIndex].Units
-	m.d.Song.Patch[m.d.InstrIndex].Units = append(u[:r.Start], u[r.End:]...)
-	return true
-}
-
-func (v *Units) change(n string, severity ChangeSeverity) func() {
-	return (*Model)(v).change("UnitListView."+n, PatchChange, severity)
-}
-
-func (v *Units) cancel() {
-	(*Model)(v).changeCancel = true
-}
-
-func (v *Units) marshal(r Range) ([]byte, error) {
-	m := (*Model)(v)
-	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
-		return nil, errors.New("UnitListView.marshal: no instruments")
-	}
-	units := m.d.Song.Patch[m.d.InstrIndex].Units[r.Start:r.End]
-	ret, err := yaml.Marshal(struct{ Units []sointu.Unit }{units})
-	if err != nil {
-		return nil, fmt.Errorf("UnitListView.marshal: %v", err)
-	}
-	return ret, nil
-}
-
-func (v *Units) unmarshal(data []byte) (r Range, err error) {
-	m := (*Model)(v)
-	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
-		return Range{}, errors.New("UnitListView.unmarshal: no instruments")
-	}
-	var pastedUnits struct{ Units []sointu.Unit }
-	if err := yaml.Unmarshal(data, &pastedUnits); err != nil {
-		return Range{}, fmt.Errorf("UnitListView.unmarshal: %v", err)
-	}
-	if len(pastedUnits.Units) == 0 {
-		return Range{}, errors.New("UnitListView.unmarshal: no units")
-	}
-	m.assignUnitIDs(pastedUnits.Units)
-	sel := v.Selected()
-	var ok bool
-	m.d.Song.Patch[m.d.InstrIndex].Units, ok = Insert(m.d.Song.Patch[m.d.InstrIndex].Units, sel, pastedUnits.Units...)
-	if !ok {
-		return Range{}, errors.New("UnitListView.unmarshal: insert failed")
-	}
-	return Range{sel, sel + len(pastedUnits.Units)}, nil
 }
 
 // Tracks methods

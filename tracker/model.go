@@ -66,7 +66,8 @@ type (
 		// when linkInstrTrack is false, editing an instrument does not change
 		// the track. when true, editing an instrument changes the tracks (e.g.
 		// reordering or deleting instrument can delete track)
-		linkInstrTrack bool
+		linkInstrTrack   bool
+		enableMultiUnits bool
 
 		voiceLevels [vm.MAX_VOICES]float32
 

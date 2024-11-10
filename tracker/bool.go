@@ -11,21 +11,22 @@ type (
 		setValue(bool)
 	}
 
-	Panic           Model
-	IsRecording     Model
-	Playing         Model
-	InstrEnlarged   Model
-	Effect          Model
-	TrackMidiIn     Model
-	CommentExpanded Model
-	Follow          Model
-	UnitSearching   Model
-	UnitDisabled    Model
-	LoopToggle      Model
-	UniquePatterns  Model
-	Mute            Model
-	Solo            Model
-	LinkInstrTrack  Model
+	Panic            Model
+	IsRecording      Model
+	Playing          Model
+	InstrEnlarged    Model
+	Effect           Model
+	TrackMidiIn      Model
+	CommentExpanded  Model
+	Follow           Model
+	UnitSearching    Model
+	UnitDisabled     Model
+	LoopToggle       Model
+	UniquePatterns   Model
+	Mute             Model
+	Solo             Model
+	LinkInstrTrack   Model
+	EnableMultiUnits Model
 )
 
 func (v Bool) Toggle() {
@@ -40,21 +41,22 @@ func (v Bool) Set(value bool) {
 
 // Model methods
 
-func (m *Model) Panic() *Panic                     { return (*Panic)(m) }
-func (m *Model) IsRecording() *IsRecording         { return (*IsRecording)(m) }
-func (m *Model) Playing() *Playing                 { return (*Playing)(m) }
-func (m *Model) InstrEnlarged() *InstrEnlarged     { return (*InstrEnlarged)(m) }
-func (m *Model) Effect() *Effect                   { return (*Effect)(m) }
-func (m *Model) TrackMidiIn() *TrackMidiIn         { return (*TrackMidiIn)(m) }
-func (m *Model) CommentExpanded() *CommentExpanded { return (*CommentExpanded)(m) }
-func (m *Model) Follow() *Follow                   { return (*Follow)(m) }
-func (m *Model) UnitSearching() *UnitSearching     { return (*UnitSearching)(m) }
-func (m *Model) UnitDisabled() *UnitDisabled       { return (*UnitDisabled)(m) }
-func (m *Model) LoopToggle() *LoopToggle           { return (*LoopToggle)(m) }
-func (m *Model) UniquePatterns() *UniquePatterns   { return (*UniquePatterns)(m) }
-func (m *Model) Mute() *Mute                       { return (*Mute)(m) }
-func (m *Model) Solo() *Solo                       { return (*Solo)(m) }
-func (m *Model) LinkInstrTrack() *LinkInstrTrack   { return (*LinkInstrTrack)(m) }
+func (m *Model) Panic() *Panic                       { return (*Panic)(m) }
+func (m *Model) IsRecording() *IsRecording           { return (*IsRecording)(m) }
+func (m *Model) Playing() *Playing                   { return (*Playing)(m) }
+func (m *Model) InstrEnlarged() *InstrEnlarged       { return (*InstrEnlarged)(m) }
+func (m *Model) Effect() *Effect                     { return (*Effect)(m) }
+func (m *Model) TrackMidiIn() *TrackMidiIn           { return (*TrackMidiIn)(m) }
+func (m *Model) CommentExpanded() *CommentExpanded   { return (*CommentExpanded)(m) }
+func (m *Model) Follow() *Follow                     { return (*Follow)(m) }
+func (m *Model) UnitSearching() *UnitSearching       { return (*UnitSearching)(m) }
+func (m *Model) UnitDisabled() *UnitDisabled         { return (*UnitDisabled)(m) }
+func (m *Model) LoopToggle() *LoopToggle             { return (*LoopToggle)(m) }
+func (m *Model) UniquePatterns() *UniquePatterns     { return (*UniquePatterns)(m) }
+func (m *Model) Mute() *Mute                         { return (*Mute)(m) }
+func (m *Model) Solo() *Solo                         { return (*Solo)(m) }
+func (m *Model) LinkInstrTrack() *LinkInstrTrack     { return (*LinkInstrTrack)(m) }
+func (m *Model) EnableMultiUnits() *EnableMultiUnits { return (*EnableMultiUnits)(m) }
 
 // Panic methods
 
@@ -267,3 +269,10 @@ func (m *LinkInstrTrack) Bool() Bool        { return Bool{m} }
 func (m *LinkInstrTrack) Value() bool       { return m.linkInstrTrack }
 func (m *LinkInstrTrack) setValue(val bool) { m.linkInstrTrack = val }
 func (m *LinkInstrTrack) Enabled() bool     { return true }
+
+// EnableMultiUnits methods
+
+func (m *EnableMultiUnits) Bool() Bool        { return Bool{m} }
+func (m *EnableMultiUnits) Value() bool       { return m.enableMultiUnits }
+func (m *EnableMultiUnits) setValue(val bool) { m.enableMultiUnits = val }
+func (m *EnableMultiUnits) Enabled() bool     { return true }

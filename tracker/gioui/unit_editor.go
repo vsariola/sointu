@@ -25,46 +25,61 @@ import (
 )
 
 type UnitEditor struct {
-	sliderList     *DragList
+	sliderRows     []*DragList
+	sliderColumns  *DragList
 	searchList     *DragList
-	Parameters     []*ParameterWidget
+	Parameters     [][]*ParameterWidget
 	DeleteUnitBtn  *ActionClickable
 	CopyUnitBtn    *TipClickable
 	ClearUnitBtn   *ActionClickable
 	DisableUnitBtn *BoolClickable
 	SelectTypeBtn  *widget.Clickable
+	MultiUnitsBtn  *BoolClickable
 	commentEditor  *Editor
 	caser          cases.Caser
 
 	copyHint        string
 	disableUnitHint string
 	enableUnitHint  string
+	multiUnitsHint  string
+
+	totalWidthForUnit map[int]int
+	paramWidthForUnit map[int]int
 }
 
 func NewUnitEditor(m *tracker.Model) *UnitEditor {
 	ret := &UnitEditor{
-		DeleteUnitBtn:  NewActionClickable(m.DeleteUnit()),
-		ClearUnitBtn:   NewActionClickable(m.ClearUnit()),
-		DisableUnitBtn: NewBoolClickable(m.UnitDisabled().Bool()),
-		CopyUnitBtn:    new(TipClickable),
-		SelectTypeBtn:  new(widget.Clickable),
-		commentEditor:  NewEditor(widget.Editor{SingleLine: true, Submit: true}),
-		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
-		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
+		DeleteUnitBtn:     NewActionClickable(m.DeleteUnit()),
+		ClearUnitBtn:      NewActionClickable(m.ClearUnit()),
+		DisableUnitBtn:    NewBoolClickable(m.UnitDisabled().Bool()),
+		MultiUnitsBtn:     NewBoolClickable(m.EnableMultiUnits().Bool()),
+		CopyUnitBtn:       new(TipClickable),
+		SelectTypeBtn:     new(widget.Clickable),
+		commentEditor:     NewEditor(widget.Editor{SingleLine: true, Submit: true}),
+		sliderColumns:     NewDragList(m.Units().List(), layout.Horizontal),
+		searchList:        NewDragList(m.SearchResults().List(), layout.Vertical),
+		totalWidthForUnit: make(map[int]int),
+		paramWidthForUnit: make(map[int]int),
 	}
 	ret.caser = cases.Title(language.English)
 	ret.copyHint = makeHint("Copy unit", " (%s)", "Copy")
 	ret.disableUnitHint = makeHint("Disable unit", " (%s)", "UnitDisabledToggle")
 	ret.enableUnitHint = makeHint("Enable unit", " (%s)", "UnitDisabledToggle")
+	ret.multiUnitsHint = "Toggle Multi-Unit View"
+
+	ret.MultiUnitsBtn.Clickable.OnClick = func() {
+		ret.ScrollToUnit(m.Units().Selected())
+	}
+
 	return ret
 }
 
 func (pe *UnitEditor) Layout(gtx C, t *Tracker) D {
 	for {
 		e, ok := gtx.Event(
-			key.Filter{Focus: pe.sliderList, Name: key.NameLeftArrow, Optional: key.ModShift},
-			key.Filter{Focus: pe.sliderList, Name: key.NameRightArrow, Optional: key.ModShift},
-			key.Filter{Focus: pe.sliderList, Name: key.NameEscape},
+			key.Filter{Focus: pe.sliderColumns, Name: key.NameLeftArrow, Optional: key.ModShift},
+			key.Filter{Focus: pe.sliderColumns, Name: key.NameRightArrow, Optional: key.ModShift},
+			key.Filter{Focus: pe.sliderColumns, Name: key.NameEscape},
 		)
 		if !ok {
 			break
@@ -78,9 +93,9 @@ func (pe *UnitEditor) Layout(gtx C, t *Tracker) D {
 	}
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-	editorFunc := pe.layoutSliders
+	editorFunc := pe.layoutColumns
 
-	if t.UnitSearching().Value() || pe.sliderList.TrackerList.Count() == 0 {
+	if t.UnitSearching().Value() || pe.sliderColumns.TrackerList.Count() == 0 {
 		editorFunc = pe.layoutUnitTypeChooser
 	}
 	return Surface{Gray: 24, Focus: t.InstrumentEditor.wasFocused}.Layout(gtx, func(gtx C) D {
@@ -95,33 +110,83 @@ func (pe *UnitEditor) Layout(gtx C, t *Tracker) D {
 	})
 }
 
-func (pe *UnitEditor) layoutSliders(gtx C, t *Tracker) D {
-	numItems := pe.sliderList.TrackerList.Count()
-
-	for len(pe.Parameters) < numItems {
-		pe.Parameters = append(pe.Parameters, new(ParameterWidget))
+func (pe *UnitEditor) layoutColumns(gtx C, t *Tracker) D {
+	numUnits := pe.sliderColumns.TrackerList.Count()
+	for len(pe.Parameters) < numUnits {
+		pe.Parameters = append(pe.Parameters, []*ParameterWidget{})
+	}
+	for u := len(pe.sliderRows); u < numUnits; u++ {
+		paramList := NewDragList(t.ParamsForUnit(u).List(), layout.Vertical)
+		pe.sliderRows = append(pe.sliderRows, paramList)
 	}
 
-	index := 0
-	for param := range t.Model.Params().Iterate {
-		pe.Parameters[index].Parameter = param
-		index++
+	if !t.Model.EnableMultiUnits().Value() {
+		return pe.layoutSliderColumn(gtx, t, t.Model.Units().Selected(), false)
 	}
-	element := func(gtx C, index int) D {
-		if index < 0 || index >= numItems {
+
+	column := func(gtx C, index int) D {
+		if index < 0 || index > numUnits {
 			return D{}
 		}
-		paramStyle := t.ParamStyle(t.Theme, pe.Parameters[index])
-		paramStyle.Focus = pe.sliderList.TrackerList.Selected() == index
-		dims := paramStyle.Layout(gtx)
-		return D{Size: image.Pt(gtx.Constraints.Max.X, dims.Size.Y)}
+		dims := pe.layoutSliderColumn(gtx, t, index, true)
+		return D{Size: image.Pt(dims.Size.X, gtx.Constraints.Max.Y)}
 	}
-
-	fdl := FilledDragList(t.Theme, pe.sliderList, element, nil)
+	fdl := FilledDragList(t.Theme, pe.sliderColumns, column, nil)
 	dims := fdl.Layout(gtx)
 	gtx.Constraints = layout.Exact(dims.Size)
 	fdl.LayoutScrollBar(gtx)
 	return dims
+}
+
+func (pe *UnitEditor) layoutSliderColumn(gtx C, t *Tracker, u int, multiUnits bool) D {
+	numParams := 0
+	for param := range t.Model.ParamsForUnit(u).Iterate {
+		for len(pe.Parameters[u]) < numParams+1 {
+			pe.Parameters[u] = append(pe.Parameters[u], new(ParameterWidget))
+		}
+
+		pe.Parameters[u][numParams].Parameter = param
+		numParams++
+	}
+
+	unitId := t.Model.Units().CurrentInstrumentUnitAt(u).ID
+	columnWidth := gtx.Constraints.Max.X
+	if multiUnits {
+		columnWidth = pe.totalWidthForUnit[unitId]
+	}
+
+	element := func(gtx C, index int) D {
+		if index < 0 || index >= numParams {
+			return D{}
+		}
+		paramStyle := t.ParamStyle(t.Theme, pe.Parameters[u][index])
+		paramStyle.Focus = pe.sliderRows[u].TrackerList.Selected() == index
+		dims := paramStyle.Layout(gtx, pe.paramWidthForUnit, unitId)
+		if multiUnits && pe.totalWidthForUnit[unitId] < dims.Size.X {
+			pe.totalWidthForUnit[unitId] = dims.Size.X
+		}
+		return D{Size: image.Pt(columnWidth, dims.Size.Y)}
+	}
+
+	fdl := FilledDragList(t.Theme, pe.sliderRows[u], element, nil)
+	var dims D
+	if multiUnits {
+		name := buildUnitName(t.Model.Units().CurrentInstrumentUnitAt(u))
+		dims = layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+			layout.Flexed(1, fdl.Layout),
+			layout.Rigid(func(gtx C) D {
+				gtx.Constraints.Min.X = columnWidth
+				gtx.Constraints.Min.Y = gtx.Sp(t.Theme.TextSize * 3)
+				return layout.Center.Layout(gtx, Label(name, primaryColor, t.Theme.Shaper))
+			}),
+		)
+		dims.Size.Y -= gtx.Dp(fdl.ScrollBarWidth)
+	} else {
+		dims = fdl.Layout(gtx)
+	}
+	gtx.Constraints = layout.Exact(dims.Size)
+	fdl.LayoutScrollBar(gtx)
+	return D{Size: image.Pt(columnWidth, dims.Size.Y)}
 }
 
 func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
@@ -134,6 +199,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 	copyUnitBtnStyle := TipIcon(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
 	deleteUnitBtnStyle := ActionIcon(gtx, t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
 	disableUnitBtnStyle := ToggleIcon(gtx, t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
+	multiUnitsBtnStyle := ToggleIcon(gtx, t.Theme, pe.MultiUnitsBtn, icons.ActionViewWeek, icons.ActionViewWeek, pe.multiUnitsHint, pe.multiUnitsHint)
 	text := t.Units().SelectedType()
 	if text == "" {
 		text = "Choose unit type"
@@ -172,6 +238,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 			s.Set(pe.commentEditor.Text())
 			return ret
 		}),
+		layout.Rigid(multiUnitsBtnStyle.Layout),
 	)
 }
 
@@ -210,7 +277,7 @@ func (pe *UnitEditor) command(e key.Event, t *Tracker) {
 			if sel == nil {
 				return
 			}
-			i := (&tracker.Int{IntData: sel})
+			i := &tracker.Int{IntData: sel}
 			if e.Modifiers.Contain(key.ModShift) {
 				i.Set(i.Value() - sel.LargeStep())
 			} else {
@@ -221,7 +288,7 @@ func (pe *UnitEditor) command(e key.Event, t *Tracker) {
 			if sel == nil {
 				return
 			}
-			i := (&tracker.Int{IntData: sel})
+			i := &tracker.Int{IntData: sel}
 			if e.Modifiers.Contain(key.ModShift) {
 				i.Set(i.Value() + sel.LargeStep())
 			} else {
@@ -267,13 +334,25 @@ func (t *Tracker) ParamStyle(th *material.Theme, paramWidget *ParameterWidget) P
 	}
 }
 
-func (p ParameterStyle) Layout(gtx C) D {
-	isSendTarget, info := p.tryDerivedParameterInfo()
+func spacer(px int) layout.FlexChild {
+	return layout.Rigid(func(gtx C) D {
+		return D{Size: image.Pt(px, px)}
+	})
+}
+
+func (p ParameterStyle) Layout(gtx C, paramWidthMap map[int]int, unitId int) D {
+	isSendTarget, info := p.tryDerivedParameterInfo(unitId)
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+		spacer(24),
 		layout.Rigid(func(gtx C) D {
-			gtx.Constraints.Min.X = gtx.Dp(unit.Dp(110))
-			return layout.E.Layout(gtx, Label(p.w.Parameter.Name(), white, p.tracker.Theme.Shaper))
+			dims := layout.E.Layout(gtx, Label(p.w.Parameter.Name(), white, p.tracker.Theme.Shaper))
+			if paramWidthMap[unitId] < dims.Size.X {
+				paramWidthMap[unitId] = dims.Size.X
+			}
+			dims.Size.X = paramWidthMap[unitId]
+			return dims
 		}),
+		spacer(8),
 		layout.Rigid(func(gtx C) D {
 			switch p.w.Parameter.Type() {
 			case tracker.IntegerParameter:
@@ -371,6 +450,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 			}
 			return D{}
 		}),
+		spacer(8),
 		layout.Rigid(func(gtx C) D {
 			if p.w.Parameter.Type() != tracker.IDParameter {
 				color := white
@@ -387,22 +467,31 @@ func (p ParameterStyle) Layout(gtx C) D {
 			}
 			return D{}
 		}),
+		spacer(24),
 	)
 }
 
 func buildUnitLabel(index int, u sointu.Unit) string {
-	text := u.Type
-	if u.Comment != "" {
-		text = fmt.Sprintf("%s \"%s\"", text, u.Comment)
-	}
-	return fmt.Sprintf("%d: %s", index, text)
+	return fmt.Sprintf("%d: %s", index, buildUnitName(u))
 }
 
-func (p ParameterStyle) tryDerivedParameterInfo() (isSendTarget bool, sendInfo string) {
+func buildUnitName(u sointu.Unit) string {
+	if u.Comment != "" {
+		return fmt.Sprintf("%s \"%s\"", u.Type, u.Comment)
+	}
+	return u.Type
+}
+
+func (p ParameterStyle) tryDerivedParameterInfo(unitId int) (isSendTarget bool, sendInfo string) {
 	param, ok := (p.w.Parameter).(tracker.NamedParameter)
 	if !ok {
 		return false, ""
 	}
-	isSendTarget, sendInfo, _ = p.tracker.ParameterInfo(param.Unit().ID, param.Name())
+	isSendTarget, sendInfo, _ = p.tracker.ParameterInfo(unitId, param.Name())
 	return isSendTarget, sendInfo
+}
+
+func (pe *UnitEditor) ScrollToUnit(index int) {
+	pe.sliderColumns.List.Position.First = index
+	pe.sliderColumns.List.Position.Offset = 0
 }

@@ -55,7 +55,7 @@ func (a *PopupAlert) Layout(gtx C) D {
 			}.Op())
 			return D{Size: gtx.Constraints.Min}
 		}
-		labelStyle := LabelStyle{Text: alert.Message, Color: textColor, ShadeColor: shadeColor, Font: labelDefaultFont, Alignment: layout.Center, FontSize: unit.Sp(16), Shaper: a.shaper}
+		labelStyle := LabelStyle{Text: alert.Message, Color: textColor, ShadeColor: shadeColor, Font: labelDefaultFont, Direction: layout.Center, FontSize: unit.Sp(16), Shaper: a.shaper}
 		alertMargin.Layout(gtx, func(gtx C) D {
 			return layout.S.Layout(gtx, func(gtx C) D {
 				defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()

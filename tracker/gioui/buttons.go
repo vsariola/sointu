@@ -168,6 +168,9 @@ type Clickable struct {
 	history []widget.Press
 
 	requestClicks int
+
+	// optional callback for custom interactions
+	OnClick func()
 }
 
 // Click executes a simple programmatic click.
@@ -177,7 +180,11 @@ func (b *Clickable) Click() {
 
 // Clicked calls Update and reports whether a click was registered.
 func (b *Clickable) Clicked(gtx layout.Context) bool {
-	return b.clicked(b, gtx)
+	clicked := b.clicked(b, gtx)
+	if clicked && b.OnClick != nil {
+		b.OnClick()
+	}
+	return clicked
 }
 
 func (b *Clickable) clicked(t event.Tag, gtx layout.Context) bool {

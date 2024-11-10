@@ -69,7 +69,7 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 		defer op.Affine(f32.Affine2D{}.Rotate(f32.Pt(0, 0), -90*math.Pi/180).Offset(f32.Point{X: 0, Y: float32(h)})).Push(gtx.Ops).Pop()
 		gtx.Constraints = layout.Exact(image.Pt(1e6, 1e6))
 		LabelStyle{
-			Alignment: layout.NW,
+			Direction: layout.NW,
 			Text:      t.Model.TrackTitle(i),
 			FontSize:  unit.Sp(12),
 			Color:     mediumEmphasisTextColor,

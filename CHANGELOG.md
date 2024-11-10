@@ -35,6 +35,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   the command line tools.
 - If a parameter is controlled by a `send`, the slider is now colored differently
   and there's a tooltip over the value to see where it comes from and its amount
+  ([#176][p176])
+- If a parameter has an invalid value (for now only `port` of a `send`),
+  value is printed grey ([#176][p176])
+- "Multi-Unit View" to see all units as column next to each other ([#173][i173])
 
 ### Fixed
 - We try to honor the MIDI event time stamps, so that the timing between MIDI
@@ -75,6 +79,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   matches the compiled output better, as usually compiled intros output sound in
   floating point. This might be important if OS sound drivers apply some audio
   enhancemenets e.g. compressors to the audio.
+- Performance improvement: derived model that is useful for the UI is cached
+  on each score/patch change instead of evaluated on each draw ([#176][p176])
 
 ## [0.4.1]
 ### Added
