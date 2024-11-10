@@ -105,6 +105,11 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 	ret.linkDisabledHint = makeHint("Instrument-Track\nlinking disabled", "\n(%s)", "LinkInstrTrackToggle")
 	ret.linkEnabledHint = makeHint("Instrument-Track\nlinking enabled", "\n(%s)", "LinkInstrTrackToggle")
 	ret.splitInstrumentHint = makeHint("Split instrument", " (%s)", "SplitInstrument")
+	ret.unitDragList.onSelect = func(index int) {
+		if model.EnableMultiUnits().Value() {
+			ret.unitEditor.ScrollToUnit(index)
+		}
+	}
 	return ret
 }
 
@@ -117,7 +122,7 @@ func (ie *InstrumentEditor) Focused() bool {
 }
 
 func (ie *InstrumentEditor) childFocused(gtx C) bool {
-	return ie.unitEditor.sliderList.Focused() ||
+	return ie.unitEditor.sliderColumns.Focused() ||
 		ie.instrumentDragList.Focused() || gtx.Source.Focused(ie.commentEditor) || gtx.Source.Focused(ie.nameEditor) || gtx.Source.Focused(ie.searchEditor) ||
 		gtx.Source.Focused(ie.addUnitBtn.Clickable) || gtx.Source.Focused(ie.commentExpandBtn.Clickable) || gtx.Source.Focused(ie.presetMenuBtn.Clickable) ||
 		gtx.Source.Focused(ie.deleteInstrumentBtn.Clickable) || gtx.Source.Focused(ie.copyInstrumentBtn.Clickable)
@@ -277,7 +282,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 		gtx.Constraints.Min.X = gtx.Dp(unit.Dp(30))
-		grabhandle := LabelStyle{Text: strconv.Itoa(i + 1), ShadeColor: black, Color: mediumEmphasisTextColor, FontSize: unit.Sp(10), Alignment: layout.Center, Shaper: t.Theme.Shaper}
+		grabhandle := LabelStyle{Text: strconv.Itoa(i + 1), ShadeColor: black, Color: mediumEmphasisTextColor, FontSize: unit.Sp(10), Direction: layout.Center, Shaper: t.Theme.Shaper}
 		label := func(gtx C) D {
 			name, level, mute, ok := (*tracker.Instruments)(t.Model).Item(i)
 			if !ok {
@@ -375,9 +380,10 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	addUnitBtnStyle.IconButtonStyle.Inset = layout.UniformInset(unit.Dp(4))
 
 	var units [256]tracker.UnitListItem
-	for i, item := range (*tracker.Units)(t.Model).Iterate {
+	for i, item := range t.Model.Units().Iterate {
 		if i >= 256 {
 			break
+
 		}
 		units[i] = item
 	}
@@ -386,7 +392,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	if ie.searchEditor.requestFocus {
 		// for now, only the searchEditor has its requestFocus flag
 		ie.searchEditor.requestFocus = false
-		gtx.Execute(key.FocusCmd{Tag: &ie.searchEditor.Editor})
+		gtx.Execute(key.FocusCmd{Tag: ie.searchEditor.Editor})
 	}
 
 	element := func(gtx C, i int) D {
@@ -486,7 +492,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 				case key.NameEscape:
 					ie.instrumentDragList.Focus()
 				case key.NameRightArrow:
-					ie.unitEditor.sliderList.Focus()
+					ie.unitEditor.sliderColumns.Focus()
 				case key.NameDeleteBackward:
 					t.Units().SetSelectedType("")
 					t.UnitSearching().Bool().Set(true)

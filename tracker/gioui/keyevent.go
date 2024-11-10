@@ -285,12 +285,12 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 	case "FocusPrev":
 		switch {
 		case t.OrderEditor.scrollTable.Focused():
-			t.InstrumentEditor.unitEditor.sliderList.Focus()
+			t.InstrumentEditor.unitEditor.sliderColumns.Focus()
 		case t.TrackEditor.scrollTable.Focused():
 			t.OrderEditor.scrollTable.Focus()
 		case t.InstrumentEditor.Focused():
 			if t.InstrumentEditor.enlargeBtn.Bool.Value() {
-				t.InstrumentEditor.unitEditor.sliderList.Focus()
+				t.InstrumentEditor.unitEditor.sliderColumns.Focus()
 			} else {
 				t.TrackEditor.scrollTable.Focus()
 			}
@@ -304,7 +304,7 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		case t.TrackEditor.scrollTable.Focused():
 			t.InstrumentEditor.Focus()
 		case t.InstrumentEditor.Focused():
-			t.InstrumentEditor.unitEditor.sliderList.Focus()
+			t.InstrumentEditor.unitEditor.sliderColumns.Focus()
 		default:
 			if t.InstrumentEditor.enlargeBtn.Bool.Value() {
 				t.InstrumentEditor.Focus()

@@ -223,7 +223,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		h := gtx.Dp(trackColTitleHeight)
 		gtx.Constraints = layout.Exact(image.Pt(pxWidth, h))
 		LabelStyle{
-			Alignment: layout.N,
+			Direction: layout.N,
 			Text:      t.Model.TrackTitle(i),
 			FontSize:  unit.Sp(12),
 			Color:     mediumEmphasisTextColor,

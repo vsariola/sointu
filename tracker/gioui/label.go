@@ -17,14 +17,14 @@ type LabelStyle struct {
 	Text       string
 	Color      color.NRGBA
 	ShadeColor color.NRGBA
-	Alignment  layout.Direction
+	Direction  layout.Direction
 	Font       font.Font
 	FontSize   unit.Sp
 	Shaper     *text.Shaper
 }
 
 func (l LabelStyle) Layout(gtx layout.Context) layout.Dimensions {
-	return l.Alignment.Layout(gtx, func(gtx C) D {
+	return l.Direction.Layout(gtx, func(gtx C) D {
 		gtx.Constraints.Min = image.Point{}
 		paint.ColorOp{Color: l.ShadeColor}.Add(gtx.Ops)
 		offs := op.Offset(image.Pt(2, 2)).Push(gtx.Ops)
@@ -46,5 +46,13 @@ func (l LabelStyle) Layout(gtx layout.Context) layout.Dimensions {
 }
 
 func Label(str string, color color.NRGBA, shaper *text.Shaper) layout.Widget {
-	return LabelStyle{Text: str, Color: color, ShadeColor: black, Font: labelDefaultFont, FontSize: labelDefaultFontSize, Alignment: layout.W, Shaper: shaper}.Layout
+	return LabelStyle{
+		Text:       str,
+		Color:      color,
+		ShadeColor: black,
+		Font:       labelDefaultFont,
+		FontSize:   labelDefaultFontSize,
+		Direction:  layout.W,
+		Shaper:     shaper,
+	}.Layout
 }

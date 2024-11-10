@@ -31,6 +31,7 @@ type DragList struct {
 	swapped      bool
 	focused      bool
 	requestFocus bool
+	onSelect     func(index int)
 }
 
 type FilledDragListStyle struct {
@@ -184,6 +185,9 @@ func (s FilledDragListStyle) Layout(gtx C) D {
 					s.dragList.TrackerList.SetSelected(index)
 					if !e.Modifiers.Contain(key.ModShift) {
 						s.dragList.TrackerList.SetSelected2(index)
+					}
+					if s.dragList.onSelect != nil {
+						s.dragList.onSelect(index)
 					}
 					gtx.Execute(key.FocusCmd{Tag: s.dragList})
 				}

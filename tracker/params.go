@@ -41,6 +41,11 @@ type (
 
 	Params Model
 
+	ParamsForUnit struct {
+		*Params
+		unitIndex int
+	}
+
 	ParamYieldFunc func(param Parameter) bool
 
 	ParameterType int
@@ -61,6 +66,13 @@ const (
 
 func (m *Model) Params() *Params { return (*Params)(m) }
 
+func (m *Model) ParamsForUnit(u int) *ParamsForUnit {
+	return &ParamsForUnit{
+		Params:    m.Params(),
+		unitIndex: u,
+	}
+}
+
 // parameter methods
 
 func (p parameter) change(kind string) func() {
@@ -80,12 +92,20 @@ func (pl *Params) change(n string, severity ChangeSeverity) func() {
 	return (*Model)(pl).change("ParamList."+n, PatchChange, severity)
 }
 
-func (pl *Params) Count() int {
+func count(iterator func(yield ParamYieldFunc)) int {
 	count := 0
-	for range pl.Iterate {
+	for _ = range iterator {
 		count++
 	}
 	return count
+}
+
+func (pl *Params) Count() int {
+	return count(pl.Iterate)
+}
+
+func (pl *Params) CountInUnit(unitIndex int) int {
+	return count(pl.IterateInUnit(unitIndex))
 }
 
 func (pl *Params) SelectedItem() (ret Parameter) {
@@ -100,53 +120,86 @@ func (pl *Params) SelectedItem() (ret Parameter) {
 }
 
 func (pl *Params) Iterate(yield ParamYieldFunc) {
-	if pl.d.InstrIndex < 0 || pl.d.InstrIndex >= len(pl.d.Song.Patch) {
-		return
-	}
 	if pl.d.UnitIndex < 0 || pl.d.UnitIndex >= len(pl.d.Song.Patch[pl.d.InstrIndex].Units) {
 		return
 	}
-	unit := &pl.d.Song.Patch[pl.d.InstrIndex].Units[pl.d.UnitIndex]
-	unitType, ok := sointu.UnitTypes[unit.Type]
-	if !ok {
-		return
-	}
-	for i := range unitType {
-		if !unitType[i].CanSet {
-			continue
-		}
-		if unit.Type == "oscillator" && unit.Parameters["type"] != sointu.Sample && i >= 11 {
-			break // don't show the sample related params unless necessary
-		}
-		if !yield(NamedParameter{
-			parameter: parameter{m: (*Model)(pl), unit: unit},
-			up:        &unitType[i],
-		}) {
+	pl.IterateInUnit(pl.d.UnitIndex)(yield)
+}
+
+func (pl *Params) IterateInUnit(unitIndex int) func(yield ParamYieldFunc) {
+	return func(yield ParamYieldFunc) {
+		if pl.d.InstrIndex < 0 || pl.d.InstrIndex >= len(pl.d.Song.Patch) {
 			return
 		}
-	}
-	if unit.Type == "oscillator" && unit.Parameters["type"] == sointu.Sample {
-		if !yield(GmDlsEntryParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
+		unit := &pl.d.Song.Patch[pl.d.InstrIndex].Units[unitIndex]
+		unitType, ok := sointu.UnitTypes[unit.Type]
+		if !ok {
 			return
 		}
-	}
-	switch {
-	case unit.Type == "delay":
-		if unit.Parameters["stereo"] == 1 && len(unit.VarArgs)%2 == 1 {
-			unit.VarArgs = append(unit.VarArgs, 1)
-		}
-		if !yield(ReverbParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
-			return
-		}
-		if !yield(DelayLinesParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
-			return
-		}
-		for i := range unit.VarArgs {
-			if !yield(DelayTimeParameter{parameter: parameter{m: (*Model)(pl), unit: unit}, index: i}) {
+		for i := range unitType {
+			if !unitType[i].CanSet {
+				continue
+			}
+			if unit.Type == "oscillator" && unit.Parameters["type"] != sointu.Sample && i >= 11 {
+				break // don't show the sample related params unless necessary
+			}
+			if !yield(NamedParameter{
+				parameter: parameter{m: (*Model)(pl), unit: unit},
+				up:        &unitType[i],
+			}) {
 				return
 			}
 		}
+		if unit.Type == "oscillator" && unit.Parameters["type"] == sointu.Sample {
+			if !yield(GmDlsEntryParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
+				return
+			}
+		}
+		switch {
+		case unit.Type == "delay":
+			if unit.Parameters["stereo"] == 1 && len(unit.VarArgs)%2 == 1 {
+				unit.VarArgs = append(unit.VarArgs, 1)
+			}
+			if !yield(ReverbParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
+				return
+			}
+			if !yield(DelayLinesParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
+				return
+			}
+			for i := range unit.VarArgs {
+				if !yield(DelayTimeParameter{parameter: parameter{m: (*Model)(pl), unit: unit}, index: i}) {
+					return
+				}
+			}
+		}
 	}
+}
+
+// ParamsForUnit
+
+func (pu *ParamsForUnit) List() List       { return List{pu} }
+func (pu *ParamsForUnit) Selected2() int   { return pu.Selected() }
+func (pu *ParamsForUnit) SetSelected2(int) {}
+
+func (pu *ParamsForUnit) Selected() int {
+	if pu.unitIndex != pu.d.UnitIndex {
+		return -1
+	}
+	return pu.d.ParamIndex
+}
+
+func (pu *ParamsForUnit) SetSelected(value int) {
+	pu.d.ParamIndex = max(min(value, pu.Count()-1), 0)
+	pu.d.UnitIndex = pu.unitIndex
+	pu.d.UnitIndex2 = pu.unitIndex
+}
+
+func (pu *ParamsForUnit) Count() int {
+	return count(pu.Iterate)
+}
+
+func (pu *ParamsForUnit) Iterate(yield ParamYieldFunc) {
+	pu.Params.IterateInUnit(pu.unitIndex)(yield)
 }
 
 // NamedParameter
