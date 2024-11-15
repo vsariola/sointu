@@ -33,8 +33,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Include version info in the binaries, as given be `git describe`. This version
   info is shown as a label in the tracker and can be checked with `-v` flag in
   the command line tools.
-- If a parameter is controlled by a `send`, the slider is now colored differently
-  and there's a tooltip over the value to see where it comes from and its amount
+- If a parameter is controlled by a `send`, the slider is now colored
+  differently and there's a tooltip over the value to see where it comes from
+  and its amount ([#176][i176])
+- If a parameter has an invalid value (for now only `port` of a `send`), value
+  is printed grey ([#176][i176])
+- Performance improvement: values needed by the UI that are derived from the
+  score or patch are cached when score or patch changes, so they don't have to
+  be computed every draw. ([#176][i176])
 
 ### Fixed
 - We try to honor the MIDI event time stamps, so that the timing between MIDI
@@ -294,3 +300,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i166]: https://github.com/vsariola/sointu/issues/166
 [i168]: https://github.com/vsariola/sointu/issues/168
 [i170]: https://github.com/vsariola/sointu/issues/170
+[i176]: https://github.com/vsariola/sointu/issues/176
