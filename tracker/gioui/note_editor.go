@@ -158,11 +158,7 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 		deleteTrackBtnStyle := ActionIcon(gtx, t.Theme, te.DeleteTrackBtn, icons.ActionDelete, te.deleteTrackHint)
 		splitTrackBtnStyle := ActionIcon(gtx, t.Theme, te.SplitTrackBtn, icons.CommunicationCallSplit, te.splitTrackHint)
 		newTrackBtnStyle := ActionIcon(gtx, t.Theme, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
-		in := layout.UniformInset(unit.Dp(1))
-		voiceUpDown := func(gtx C) D {
-			numStyle := NumericUpDown(t.Theme, te.TrackVoices, "Number of voices for this track")
-			return in.Layout(gtx, numStyle.Layout)
-		}
+		voiceUpDown := NumericUpDownPadded(t.Theme, te.TrackVoices, "Number of voices for this track", 1)
 		effectBtnStyle := ToggleButton(gtx, t.Theme, te.EffectBtn, "Hex")
 		uniqueBtnStyle := ToggleIcon(gtx, t.Theme, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
 		midiInBtnStyle := ToggleButton(gtx, t.Theme, te.TrackMidiInBtn, "MIDI")
@@ -176,7 +172,7 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			layout.Rigid(effectBtnStyle.Layout),
 			layout.Rigid(uniqueBtnStyle.Layout),
 			layout.Rigid(Label("  Voices:", white, t.Theme.Shaper)),
-			layout.Rigid(voiceUpDown),
+			layout.Rigid(voiceUpDown.Layout),
 			layout.Rigid(splitTrackBtnStyle.Layout),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(midiInBtnStyle.Layout),
@@ -287,15 +283,15 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 				c = cursorColor
 			}
 			if hasTrackMidiIn {
-				c = cursorForTrackMidiInColor
+				c = trackMidiInCurrentColor
 			}
-			te.paintColumnCell(gtx, x, t, c)
+			te.paintColumnCell(gtx, x, t, c, hasTrackMidiIn)
 		}
 		// draw the corresponding "fake cursors" for instrument-track-groups (for polyphony)
-		if hasTrackMidiIn {
+		if hasTrackMidiIn && y == cursor.Y {
 			for _, trackIndex := range t.Model.TracksWithSameInstrumentAsCurrent() {
-				if x == trackIndex && y == cursor.Y {
-					te.paintColumnCell(gtx, x, t, cursorNeighborForTrackMidiInColor)
+				if x == trackIndex {
+					te.paintColumnCell(gtx, x, t, trackMidiInAdditionalColor, hasTrackMidiIn)
 				}
 			}
 		}
@@ -334,10 +330,10 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	return table.Layout(gtx)
 }
 
-func (te *NoteEditor) paintColumnCell(gtx C, x int, t *Tracker, c color.NRGBA) {
+func (te *NoteEditor) paintColumnCell(gtx C, x int, t *Tracker, c color.NRGBA, ignoreEffect bool) {
 	cw := gtx.Constraints.Min.X
 	cx := 0
-	if t.Model.Notes().Effect(x) {
+	if t.Model.Notes().Effect(x) && !ignoreEffect {
 		cw /= 2
 		if t.Model.Notes().LowNibble() {
 			cx += cw
