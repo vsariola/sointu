@@ -44,6 +44,14 @@ type (
 		TipArea   component.TipArea
 		Bool      tracker.Bool
 	}
+
+	MenuClickable struct {
+		Clickable Clickable
+		menu      Menu
+		Selected  tracker.OptionalInt
+		TipArea   component.TipArea
+		Tooltip   component.Tooltip
+	}
 )
 
 func NewActionClickable(a tracker.Action) *ActionClickable {
@@ -136,7 +144,10 @@ func ToggleButton(gtx C, th *material.Theme, b *BoolClickable, text string) Butt
 	ret := Button(th, &b.Clickable, text)
 	ret.Background = transparent
 	ret.Inset = layout.UniformInset(unit.Dp(6))
-	if b.Bool.Value() {
+	if !b.Bool.Enabled() {
+		ret.Color = disabledTextColor
+		ret.Background = transparent
+	} else if b.Bool.Value() {
 		ret.Color = th.Palette.ContrastFg
 		ret.Background = th.Palette.Fg
 	} else {
@@ -287,6 +298,7 @@ type ButtonStyle struct {
 	Inset        layout.Inset
 	Button       *Clickable
 	shaper       *text.Shaper
+	Hidden       bool
 }
 
 type ButtonLayoutStyle struct {
@@ -351,6 +363,9 @@ func (b ButtonStyle) Layout(gtx layout.Context) layout.Dimensions {
 		CornerRadius: b.CornerRadius,
 		Button:       b.Button,
 	}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+		if b.Hidden {
+			return layout.Dimensions{}
+		}
 		return b.Inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 			colMacro := op.Record(gtx.Ops)
 			paint.ColorOp{Color: b.Color}.Add(gtx.Ops)

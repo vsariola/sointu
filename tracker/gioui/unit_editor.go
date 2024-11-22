@@ -32,7 +32,7 @@ type UnitEditor struct {
 	CopyUnitBtn    *TipClickable
 	ClearUnitBtn   *ActionClickable
 	DisableUnitBtn *BoolClickable
-	SelectTypeBtn  *widget.Clickable
+	SelectTypeBtn  *Clickable
 	commentEditor  *Editor
 	caser          cases.Caser
 
@@ -47,7 +47,7 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 		ClearUnitBtn:   NewActionClickable(m.ClearUnit()),
 		DisableUnitBtn: NewBoolClickable(m.UnitDisabled().Bool()),
 		CopyUnitBtn:    new(TipClickable),
-		SelectTypeBtn:  new(widget.Clickable),
+		SelectTypeBtn:  new(Clickable),
 		commentEditor:  NewEditor(widget.Editor{SingleLine: true, Submit: true}),
 		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
 		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
@@ -236,9 +236,9 @@ func (pe *UnitEditor) command(e key.Event, t *Tracker) {
 type ParameterWidget struct {
 	floatWidget widget.Float
 	boolWidget  widget.Bool
-	instrBtn    widget.Clickable
+	instrBtn    Clickable
 	instrMenu   Menu
-	unitBtn     widget.Clickable
+	unitBtn     Clickable
 	unitMenu    Menu
 	Parameter   tracker.Parameter
 	tipArea     component.TipArea
@@ -332,7 +332,6 @@ func (p ParameterStyle) Layout(gtx C) D {
 				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
 				instrItems := make([]MenuItem, p.tracker.Instruments().Count())
 				for i := range instrItems {
-					i := i
 					name, _, _, _ := p.tracker.Instruments().Item(i)
 					instrItems[i].Text = name
 					instrItems[i].IconBytes = icons.NavigationChevronRight

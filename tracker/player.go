@@ -3,6 +3,7 @@ package tracker
 import (
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
@@ -24,8 +25,9 @@ type (
 		voices      [vm.MAX_VOICES]voice
 		loop        Loop
 
-		recState  recState  // is the recording off; are we waiting for a note; or are we recording
-		recording Recording // the recorded MIDI events and BPM
+		recState   recState   // is the recording off; are we waiting for a note; or are we recording
+		recording  Recording  // the recorded MIDI events and BPM
+		trackInput TrackInput // for events that are played when not recording
 
 		synther sointu.Synther // the synther used to create new synths
 		broker  *Broker        // the broker used to communicate with different parts of the tracker
@@ -37,21 +39,32 @@ type (
 		NextEvent(frame int) (event MIDINoteEvent, ok bool)
 		FinishBlock(frame int)
 		BPM() (bpm float64, ok bool)
+
+		Constraints() PlayerProcessConstraints
 	}
 
-	EventProcessor interface {
-		ProcessMessage(msg interface{})
-		ProcessEvent(event MIDINoteEvent)
+	PlayerProcessConstraints struct {
+		IsConstrained   bool
+		MaxPolyphony    int
+		InstrumentIndex int
 	}
 
 	// MIDINoteEvent is a MIDI event triggering or releasing a note. In
 	// processing, the Frame is relative to the start of the current buffer. In
 	// a Recording, the Frame is relative to the start of the recording.
 	MIDINoteEvent struct {
-		Frame   int
-		On      bool
-		Channel int
-		Note    byte
+		Frame    int
+		On       bool
+		Channel  int
+		Note     byte
+		Velocity byte
+	}
+
+	// TrackInput is used for the midi-into-track-input, when not recording
+	// For now, there is only one Velocity for all Notes. This might evolve.
+	TrackInput struct {
+		Notes    []byte
+		Velocity byte
 	}
 )
 
@@ -85,8 +98,10 @@ func NewPlayer(broker *Broker, synther sointu.Synther) *Player {
 // model. context tells the player which MIDI events happen during the current
 // buffer. It is used to trigger and release notes during processing. The
 // context is also used to get the current BPM from the host.
-func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext, ui EventProcessor) {
-	p.processMessages(context, ui)
+func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext) {
+	p.processMessages(context)
+	constraints := context.Constraints()
+	_ = constraints
 
 	frame := 0
 	midi, midiOk := context.NextEvent(frame)
@@ -106,15 +121,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 				midiTotalFrame.Frame = p.recording.TotalFrames - len(buffer)
 				p.recording.Events = append(p.recording.Events, midiTotalFrame)
 			}
-			if midi.On {
-				p.triggerInstrument(midi.Channel, midi.Note)
-			} else {
-				p.releaseInstrument(midi.Channel, midi.Note)
-			}
-			if ui != nil {
-				ui.ProcessEvent(midi)
-			}
-
+			p.handleMidiInput(midi, constraints)
 			midi, midiOk = context.NextEvent(frame)
 		}
 		framesUntilMidi := len(buffer)
@@ -184,6 +191,50 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 	p.SendAlert("PlayerCrash", fmt.Sprintf("synth did not fill the audio buffer even with %d render calls", numRenderTries), Error)
 }
 
+func (p *Player) handleMidiInput(midi MIDINoteEvent, constraints PlayerProcessConstraints) {
+	instrIndex := midi.Channel
+	if constraints.IsConstrained {
+		instrIndex = constraints.InstrumentIndex
+	}
+	if midi.On {
+		p.triggerInstrument(instrIndex, midi.Note)
+		if p.addTrackInput(midi, constraints) {
+			trySend(p.broker.ToModel, MsgToModel{Data: p.trackInput})
+		}
+	} else {
+		p.releaseInstrument(instrIndex, midi.Note)
+		p.removeTrackInput(midi)
+	}
+}
+
+func (p *Player) addTrackInput(midi MIDINoteEvent, c PlayerProcessConstraints) (changed bool) {
+	if c.IsConstrained {
+		if len(p.trackInput.Notes) == c.MaxPolyphony {
+			return false
+		} else if len(p.trackInput.Notes) > c.MaxPolyphony {
+			p.trackInput.Notes = p.trackInput.Notes[:c.MaxPolyphony]
+			return true
+		}
+	}
+	if slices.Contains(p.trackInput.Notes, midi.Note) {
+		return false
+	}
+	p.trackInput.Notes = append(p.trackInput.Notes, midi.Note)
+	p.trackInput.Velocity = midi.Velocity
+	return true
+}
+
+func (p *Player) removeTrackInput(midi MIDINoteEvent) {
+	for i, n := range p.trackInput.Notes {
+		if n == midi.Note {
+			p.trackInput.Notes = append(
+				p.trackInput.Notes[:i],
+				p.trackInput.Notes[i+1:]...,
+			)
+		}
+	}
+}
+
 func (p *Player) advanceRow() {
 	if p.song.Score.Length == 0 || p.song.Score.RowsPerPattern == 0 {
 		return
@@ -220,7 +271,7 @@ func (p *Player) advanceRow() {
 	p.rowtime = 0
 }
 
-func (p *Player) processMessages(context PlayerProcessContext, uiProcessor EventProcessor) {
+func (p *Player) processMessages(context PlayerProcessContext) {
 loop:
 	for { // process new message
 		select {
@@ -295,9 +346,6 @@ loop:
 			default:
 				// ignore unknown messages
 			}
-			if uiProcessor != nil {
-				uiProcessor.ProcessMessage(msg)
-			}
 		default:
 			break loop
 		}
@@ -346,7 +394,13 @@ func (p *Player) compileOrUpdateSynth() {
 
 // all sendTargets from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
 func (p *Player) send(message interface{}) {
-	trySend(p.broker.ToModel, MsgToModel{HasPanicPosLevels: true, Panic: p.synth == nil, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, Data: message})
+	trySend(p.broker.ToModel, MsgToModel{
+		HasPanicPosLevels: true,
+		Panic:             p.synth == nil,
+		SongPosition:      p.songPos,
+		VoiceLevels:       p.voiceLevels,
+		Data:              message,
+	})
 }
 
 func (p *Player) triggerInstrument(instrument int, note byte) {

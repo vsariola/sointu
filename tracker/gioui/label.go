@@ -46,5 +46,17 @@ func (l LabelStyle) Layout(gtx layout.Context) layout.Dimensions {
 }
 
 func Label(str string, color color.NRGBA, shaper *text.Shaper) layout.Widget {
-	return LabelStyle{Text: str, Color: color, ShadeColor: black, Font: labelDefaultFont, FontSize: labelDefaultFontSize, Alignment: layout.W, Shaper: shaper}.Layout
+	return SizedLabel(str, color, shaper, labelDefaultFontSize)
+}
+
+func SizedLabel(str string, color color.NRGBA, shaper *text.Shaper, fontSize unit.Sp) layout.Widget {
+	return LabelStyle{
+		Text:       str,
+		Color:      color,
+		ShadeColor: black,
+		Font:       labelDefaultFont,
+		FontSize:   fontSize,
+		Alignment:  layout.W,
+		Shaper:     shaper,
+	}.Layout
 }
