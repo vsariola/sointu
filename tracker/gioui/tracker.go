@@ -35,7 +35,6 @@ type (
 		BottomHorizontalSplit *Split
 		VerticalSplit         *Split
 		KeyPlaying            map[key.Name]tracker.NoteID
-		MidiNotePlaying       []byte
 		PopupAlert            *PopupAlert
 
 		SaveChangesDialog *Dialog
@@ -78,7 +77,6 @@ func NewTracker(model *tracker.Model) *Tracker {
 		VerticalSplit:         &Split{Axis: layout.Vertical},
 
 		KeyPlaying:        make(map[key.Name]tracker.NoteID),
-		MidiNotePlaying:   make([]byte, 0, 32),
 		SaveChangesDialog: NewDialog(model.SaveSong(), model.DiscardSong(), model.Cancel()),
 		WaveTypeDialog:    NewDialog(model.ExportInt16(), model.ExportFloat(), model.Cancel()),
 		InstrumentEditor:  NewInstrumentEditor(model),
@@ -308,45 +306,9 @@ func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
 	)
 }
 
-/// Event Handling (for UI updates when playing etc.)
-
-func (t *Tracker) ProcessMessage(msg interface{}) {
-	switch msg.(type) {
-	case tracker.StartPlayMsg:
-		fmt.Println("Tracker received StartPlayMsg")
-	case tracker.RecordingMsg:
-		fmt.Println("Tracker received RecordingMsg")
-	default:
-		break
+func (t *Tracker) HasAnyMidiInput() bool {
+	for _ = range t.Model.MIDI.InputDevices {
+		return true
 	}
-}
-
-func (t *Tracker) ProcessEvent(event tracker.MIDINoteEvent) {
-	// MIDINoteEvent can be only NoteOn / NoteOff, i.e. its On field
-	if event.On {
-		t.addToMidiNotePlaying(event.Note)
-	} else {
-		t.removeFromMidiNotePlaying(event.Note)
-	}
-	t.TrackEditor.HandleMidiInput(t)
-}
-
-func (t *Tracker) addToMidiNotePlaying(note byte) {
-	for _, n := range t.MidiNotePlaying {
-		if n == note {
-			return
-		}
-	}
-	t.MidiNotePlaying = append(t.MidiNotePlaying, note)
-}
-
-func (t *Tracker) removeFromMidiNotePlaying(note byte) {
-	for i, n := range t.MidiNotePlaying {
-		if n == note {
-			t.MidiNotePlaying = append(
-				t.MidiNotePlaying[:i],
-				t.MidiNotePlaying[i+1:]...,
-			)
-		}
-	}
+	return false
 }

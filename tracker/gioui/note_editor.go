@@ -2,6 +2,7 @@ package gioui
 
 import (
 	"fmt"
+	"gioui.org/x/component"
 	"image"
 	"image/color"
 	"strconv"
@@ -64,6 +65,7 @@ type NoteEditor struct {
 	EffectBtn           *BoolClickable
 	UniqueBtn           *BoolClickable
 	TrackMidiInBtn      *BoolClickable
+	TrackForMidiVelIn   *MenuClickable
 
 	scrollTable  *ScrollTable
 	eventFilters []event.Filter
@@ -88,6 +90,7 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 		EffectBtn:           NewBoolClickable(model.Effect().Bool()),
 		UniqueBtn:           NewBoolClickable(model.UniquePatterns().Bool()),
 		TrackMidiInBtn:      NewBoolClickable(model.TrackMidiIn().Bool()),
+		TrackForMidiVelIn:   &MenuClickable{Selected: model.TrackForMidiVelIn().OptionalInt()},
 		scrollTable: NewScrollTable(
 			model.Notes().Table(),
 			model.Tracks().List(),
@@ -162,6 +165,8 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 		effectBtnStyle := ToggleButton(gtx, t.Theme, te.EffectBtn, "Hex")
 		uniqueBtnStyle := ToggleIcon(gtx, t.Theme, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
 		midiInBtnStyle := ToggleButton(gtx, t.Theme, te.TrackMidiInBtn, "MIDI")
+		midiInBtnStyle.Hidden = !t.HasAnyMidiInput()
+		trackForMidiVelInSelector := te.layoutMidiVelInTrackSelector(t, " vel:")
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Dp(unit.Dp(12)), 0)} }),
 			layout.Rigid(addSemitoneBtnStyle.Layout),
@@ -176,10 +181,56 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			layout.Rigid(splitTrackBtnStyle.Layout),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(midiInBtnStyle.Layout),
+			layout.Rigid(trackForMidiVelInSelector),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(deleteTrackBtnStyle.Layout),
 			layout.Rigid(newTrackBtnStyle.Layout))
 	})
+}
+
+func (te *NoteEditor) layoutMidiVelInTrackSelector(t *Tracker, label string) func(gtx C) D {
+	if !t.HasAnyMidiInput() {
+		return layout.Spacer{}.Layout
+	}
+	tracks := t.Model.Tracks().List()
+	trackItems := make([]MenuItem, tracks.Count()+1)
+	trackForMidiVelIn := t.Model.TrackForMidiVelIn()
+	offText := "\u2014off\u2014"
+	currentText := offText
+	for i := range trackItems {
+		trackItems[i] = MenuItem{
+			Text: offText,
+			Doer: tracker.Check(
+				func() { trackForMidiVelIn.OptionalInt().Set(i-1, i > 0) },
+				func() bool { return t.Model.CanUseTrackForMidiVelInput(i - 1) },
+			),
+		}
+		if i > 0 {
+			trackItems[i].Text = fmt.Sprintf("%d %s", i-1, t.Model.TrackTitle(i-1))
+		}
+
+		if trackForMidiVelIn.OptionalInt().Equals(i-1, i > 0) {
+			trackItems[i].IconBytes = icons.NavigationChevronRight
+			if trackForMidiVelIn.IsValid() {
+				currentText = trackItems[i].Text
+			}
+		}
+	}
+	return func(gtx C) D {
+		tooltip := component.PlatformTooltip(t.Theme, "Record MIDI VEL into chosen track. This can not be one of the selected tracks (where MIDI Notes go).")
+		return te.TrackForMidiVelIn.TipArea.Layout(gtx, tooltip, func(gtx C) D {
+			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(SizedLabel(label, white, t.Theme.Shaper, unit.Sp(12))),
+				layout.Rigid(t.layoutMenu(gtx,
+					currentText,
+					&te.TrackForMidiVelIn.Clickable,
+					&te.TrackForMidiVelIn.menu,
+					unit.Dp(200),
+					trackItems...,
+				)),
+			)
+		})
+	}
 }
 
 const baseNote = 24
@@ -294,6 +345,9 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 					te.paintColumnCell(gtx, x, t, trackMidiInAdditionalColor, hasTrackMidiIn)
 				}
 			}
+			if t.Model.TrackForMidiVelIn().Equals(x) {
+				te.paintColumnCell(gtx, x, t, trackMidiVelInColor, hasTrackMidiIn)
+			}
 		}
 
 		// draw the pattern marker
@@ -401,22 +455,4 @@ func (te *NoteEditor) finishNoteInsert(t *Tracker, note byte, keyName key.Name) 
 		trk := te.scrollTable.Table.Cursor().X
 		t.KeyPlaying[keyName] = t.TrackNoteOn(trk, note)
 	}
-}
-
-func (te *NoteEditor) HandleMidiInput(t *Tracker) {
-	inputDeactivated := !t.Model.TrackMidiIn().Value()
-	if inputDeactivated {
-		return
-	}
-	te.scrollTable.Table.SetCursor2(te.scrollTable.Table.Cursor())
-	remaining := t.Model.CountNextTracksForCurrentInstrument()
-	for i, note := range t.MidiNotePlaying {
-		t.Model.Notes().Table().Set(note)
-		te.scrollTable.Table.MoveCursor(1, 0)
-		te.scrollTable.EnsureCursorVisible()
-		if i >= remaining {
-			break
-		}
-	}
-	te.scrollTable.Table.SetCursor(te.scrollTable.Table.Cursor2())
 }

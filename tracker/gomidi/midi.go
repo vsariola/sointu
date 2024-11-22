@@ -13,13 +13,19 @@ import (
 
 type (
 	RTMIDIContext struct {
-		driver        *rtmididrv.Driver
-		currentIn     drivers.In
-		events        chan timestampedMsg
-		eventsBuf     []timestampedMsg
-		eventIndex    int
-		startFrame    int
-		startFrameSet bool
+		driver             *rtmididrv.Driver
+		currentIn          drivers.In
+		inputDevices       []RTMIDIDevice
+		devicesInitialized bool
+		events             chan timestampedMsg
+		eventsBuf          []timestampedMsg
+		eventIndex         int
+		startFrame         int
+		startFrameSet      bool
+
+		// qm210: this is my current solution for passing model information to the player
+		// I do not completely love this, but improve at your own peril.
+		currentConstraints tracker.PlayerProcessConstraints
 	}
 
 	RTMIDIDevice struct {
@@ -34,6 +40,22 @@ type (
 )
 
 func (m *RTMIDIContext) InputDevices(yield func(tracker.MIDIDevice) bool) {
+	if m.devicesInitialized {
+		m.yieldCachedInputDevices(yield)
+	} else {
+		m.initInputDevices(yield)
+	}
+}
+
+func (m *RTMIDIContext) yieldCachedInputDevices(yield func(tracker.MIDIDevice) bool) {
+	for _, device := range m.inputDevices {
+		if !yield(device) {
+			break
+		}
+	}
+}
+
+func (m *RTMIDIContext) initInputDevices(yield func(tracker.MIDIDevice) bool) {
 	if m.driver == nil {
 		return
 	}
@@ -43,10 +65,12 @@ func (m *RTMIDIContext) InputDevices(yield func(tracker.MIDIDevice) bool) {
 	}
 	for i := 0; i < len(ins); i++ {
 		device := RTMIDIDevice{context: m, in: ins[i]}
+		m.inputDevices = append(m.inputDevices, device)
 		if !yield(device) {
 			break
 		}
 	}
+	m.devicesInitialized = true
 }
 
 // Open the driver.
@@ -87,6 +111,37 @@ func (d RTMIDIDevice) String() string {
 	return d.in.String()
 }
 
+func (c *RTMIDIContext) Close() {
+	if c.driver == nil {
+		return
+	}
+	if c.currentIn != nil && c.currentIn.IsOpen() {
+		c.currentIn.Close()
+	}
+	c.driver.Close()
+}
+
+func (c *RTMIDIContext) HasDeviceOpen() bool {
+	return c.currentIn != nil && c.currentIn.IsOpen()
+}
+
+func (c *RTMIDIContext) TryToOpenBy(namePrefix string, takeFirst bool) {
+	if namePrefix == "" && !takeFirst {
+		return
+	}
+	for input := range c.InputDevices {
+		if takeFirst || strings.HasPrefix(input.String(), namePrefix) {
+			input.Open()
+			return
+		}
+	}
+	if takeFirst {
+		fmt.Errorf("Could not find any MIDI Input.\n")
+	} else {
+		fmt.Errorf("Could not find any default MIDI Input starting with \"%s\".\n", namePrefix)
+	}
+}
+
 func (m *RTMIDIContext) HandleMessage(msg midi.Message, timestampms int32) {
 	select {
 	case m.events <- timestampedMsg{frame: int(int64(timestampms) * 44100 / 1000), msg: msg}: // if the channel is full, just drop the message
@@ -124,10 +179,16 @@ F:
 		m := c.eventsBuf[c.eventIndex]
 		f := m.frame - c.startFrame
 		c.eventIndex++
-		if m.msg.GetNoteOn(&channel, &key, &velocity) {
-			return tracker.MIDINoteEvent{Frame: f, On: true, Channel: int(channel), Note: key}, true
-		} else if m.msg.GetNoteOff(&channel, &key, &velocity) {
-			return tracker.MIDINoteEvent{Frame: f, On: false, Channel: int(channel), Note: key}, true
+		isNoteOn := m.msg.GetNoteOn(&channel, &key, &velocity)
+		isNoteOff := !isNoteOn && m.msg.GetNoteOff(&channel, &key, &velocity)
+		if isNoteOn || isNoteOff {
+			return tracker.MIDINoteEvent{
+				Frame:    f,
+				On:       isNoteOn,
+				Channel:  int(channel),
+				Note:     key,
+				Velocity: velocity,
+			}, true
 		}
 	}
 	c.eventIndex = len(c.eventsBuf) + 1
@@ -155,33 +216,10 @@ func (c *RTMIDIContext) BPM() (bpm float64, ok bool) {
 	return 0, false
 }
 
-func (c *RTMIDIContext) Close() {
-	if c.driver == nil {
-		return
-	}
-	if c.currentIn != nil && c.currentIn.IsOpen() {
-		c.currentIn.Close()
-	}
-	c.driver.Close()
+func (c *RTMIDIContext) Constraints() tracker.PlayerProcessConstraints {
+	return c.currentConstraints
 }
 
-func (c *RTMIDIContext) HasDeviceOpen() bool {
-	return c.currentIn != nil && c.currentIn.IsOpen()
-}
-
-func (c *RTMIDIContext) TryToOpenBy(namePrefix string, takeFirst bool) {
-	if namePrefix == "" && !takeFirst {
-		return
-	}
-	for input := range c.InputDevices {
-		if takeFirst || strings.HasPrefix(input.String(), namePrefix) {
-			input.Open()
-			return
-		}
-	}
-	if takeFirst {
-		fmt.Errorf("Could not find any MIDI Input.\n")
-	} else {
-		fmt.Errorf("Could not find any default MIDI Input starting with \"%s\".\n", namePrefix)
-	}
+func (c *RTMIDIContext) SetPlayerConstraints(constraints tracker.PlayerProcessConstraints) {
+	c.currentConstraints = constraints
 }

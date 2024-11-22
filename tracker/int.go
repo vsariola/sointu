@@ -45,6 +45,7 @@ func (v Int) Add(delta int) (ok bool) {
 func (v Int) Set(value int) (ok bool) {
 	r := v.Range()
 	value = v.Range().Clamp(value)
+	// qm210: Question: how can the Min/Max checks even be true after the preceding Clamp() ?
 	if value == v.Value() || value < r.Min || value > r.Max {
 		return false
 	}

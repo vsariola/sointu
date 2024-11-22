@@ -64,7 +64,7 @@ func main() {
 
 	trackerUi := gioui.NewTracker(model)
 	audioCloser := audioContext.Play(func(buf sointu.AudioBuffer) error {
-		player.Process(buf, midiContext, trackerUi)
+		player.Process(buf, midiContext)
 		return nil
 	})
 
