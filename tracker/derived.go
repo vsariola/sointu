@@ -2,9 +2,10 @@ package tracker
 
 import (
 	"fmt"
-	"github.com/vsariola/sointu"
 	"iter"
 	"slices"
+
+	"github.com/vsariola/sointu"
 )
 
 /*
@@ -115,22 +116,48 @@ func (m *Model) PatternUnique(t, p int) bool {
 // public getters with further model information
 
 func (m *Model) TracksWithSameInstrumentAsCurrent() []int {
-	currentTrack := m.d.Cursor.Track
-	if currentTrack > len(m.derived.forTrack) {
+	d, ok := m.currentDerivedForTrack()
+	if !ok {
 		return nil
 	}
-	return m.derived.forTrack[currentTrack].tracksWithSameInstrument
+	return d.tracksWithSameInstrument
 }
 
 func (m *Model) CountNextTracksForCurrentInstrument() int {
 	currentTrack := m.d.Cursor.Track
 	count := 0
-	for t := range m.TracksWithSameInstrumentAsCurrent() {
+	for _, t := range m.TracksWithSameInstrumentAsCurrent() {
 		if t > currentTrack {
 			count++
 		}
 	}
 	return count
+}
+
+func (m *Model) CanUseTrackForMidiVelInput(trackIndex int) bool {
+	// makes no sense to record velocity into tracks where notes get recorded
+	tracksForMidiNoteInput := m.TracksWithSameInstrumentAsCurrent()
+	return !slices.Contains(tracksForMidiNoteInput, trackIndex)
+}
+
+func (m *Model) CurrentPlayerConstraints() PlayerProcessConstraints {
+	d, ok := m.currentDerivedForTrack()
+	if !ok {
+		return PlayerProcessConstraints{IsConstrained: false}
+	}
+	return PlayerProcessConstraints{
+		IsConstrained:   m.trackMidiIn,
+		MaxPolyphony:    len(d.tracksWithSameInstrument),
+		InstrumentIndex: d.instrumentRange[0],
+	}
+}
+
+func (m *Model) currentDerivedForTrack() (derivedForTrack, bool) {
+	currentTrack := m.d.Cursor.Track
+	if currentTrack > len(m.derived.forTrack) {
+		return derivedForTrack{}, false
+	}
+	return m.derived.forTrack[currentTrack], true
 }
 
 // init / update methods
@@ -165,6 +192,7 @@ func (m *Model) updateDerivedScoreData() {
 			},
 		)
 	}
+	m.updatePlayerConstraints()
 }
 
 func (m *Model) updateDerivedPatchData() {
@@ -192,6 +220,13 @@ func (m *Model) updateDerivedParameterData(unit sointu.Unit) {
 			sendTooltip: m.buildSendTargetTooltip(fu.instrumentIndex, sendSources),
 		}
 	}
+}
+
+// updatePlayerConstraints() is different from the other derived methods,
+// it needs to be called after any model change that could affect the player.
+// for this, it reads derivedForTrack, which is why it lives here for now.
+func (m *Model) updatePlayerConstraints() {
+	m.MIDI.SetPlayerConstraints(m.CurrentPlayerConstraints())
 }
 
 // internals...

@@ -16,8 +16,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Dragging mouse to select rectangles in the tables
 - The standalone tracker can open a MIDI port for receiving MIDI notes
   ([#166][i166])
-- The note editor has a button to allow entering notes by MIDI. Polyphony is
-  supported if there are tracks available. ([#170][i170])
+- Direct Midi Input: The note editor has a button to allow entering notes
+by MIDI (i.e. while not recording). ([#170][i170])
+  - Polyphony is supported if there are tracks available. 
+  - The velocity of the last MIDI input note can be sent to another track
+  (selector next to the MIDI button in the note editor), optionally. 
 - Units can have comments, to make it easier to distinguish between units of
   same type within an instrument. These comments are also shown when choosing
   the send target. ([#114][i114])

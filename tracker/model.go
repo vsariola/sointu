@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/vsariola/sointu"
+	"github.com/vsariola/sointu/tracker/types"
 	"github.com/vsariola/sointu/vm"
 )
 
@@ -79,8 +80,9 @@ type (
 
 		broker *Broker
 
-		MIDI        MIDIContext
-		trackMidiIn bool
+		MIDI              MIDIContext
+		trackMidiIn       bool
+		trackForMidiVelIn types.OptionalInteger
 	}
 
 	// Cursor identifies a row and a track in a song score.
@@ -131,6 +133,8 @@ type (
 		InputDevices(yield func(MIDIDevice) bool)
 		Close()
 		HasDeviceOpen() bool
+
+		SetPlayerConstraints(PlayerProcessConstraints)
 	}
 
 	MIDIDevice interface {
@@ -383,12 +387,19 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 		m.playing = e.bool
 	case *sointu.AudioBuffer:
 		m.signalAnalyzer.ProcessAudioBuffer(e)
+	case TrackInput:
+		m.applyTrackInput(e)
 	default:
 	}
 }
 
 func (m *Model) SignalAnalyzer() *ScopeModel { return m.signalAnalyzer }
 func (m *Model) Broker() *Broker             { return m.broker }
+
+func (m *Model) ChangeTrack(track int) {
+	m.d.Cursor.Track = max(min(track, len(m.d.Song.Score.Tracks)-1), 0)
+	m.updatePlayerConstraints()
+}
 
 func (m *Model) TrackNoteOn(track int, note byte) (id NoteID) {
 	id = NoteID{IsInstr: false, Track: track, Note: note, model: m}
@@ -559,4 +570,21 @@ func clamp(a, min, max int) int {
 		return min
 	}
 	return a
+}
+
+func (m *Model) applyTrackInput(trackInput TrackInput) {
+	c := Point{m.d.Cursor.Track, m.d.Cursor.SongPos.PatternRow}
+	availableIndices := m.CountNextTracksForCurrentInstrument()
+	for i, note := range trackInput.Notes {
+		m.Notes().SetValue(c, note)
+		if i >= availableIndices {
+			// only use same-instruments-tracks to the right of the c
+			break
+		}
+		c.X++
+	}
+	if velTrackIndex, useVel := m.trackForMidiVelIn.Unpack(); useVel {
+		c.X = velTrackIndex
+		m.Notes().SetValue(c, trackInput.Velocity)
+	}
 }

@@ -60,8 +60,10 @@ var activeLightSurfaceColor = color.NRGBA{R: 45, G: 45, B: 45, A: 255}
 var cursorColor = color.NRGBA{R: 100, G: 140, B: 255, A: 48}
 var selectionColor = color.NRGBA{R: 100, G: 140, B: 255, A: 12}
 var inactiveSelectionColor = color.NRGBA{R: 140, G: 140, B: 140, A: 16}
-var cursorForTrackMidiInColor = color.NRGBA{R: 255, G: 100, B: 140, A: 48}
-var cursorNeighborForTrackMidiInColor = color.NRGBA{R: 255, G: 100, B: 140, A: 24}
+
+var trackMidiInCurrentColor = color.NRGBA{R: 255, G: 100, B: 140, A: 48}
+var trackMidiInAdditionalColor = withScaledAlpha(trackMidiInCurrentColor, 0.7)
+var trackMidiVelInColor = withScaledAlpha(trackMidiInCurrentColor, 0.3)
 
 var errorColor = color.NRGBA{R: 207, G: 102, B: 121, A: 255}
 
@@ -75,3 +77,13 @@ var dialogBgColor = color.NRGBA{R: 0, G: 0, B: 0, A: 224}
 
 var paramIsSendTargetColor = color.NRGBA{R: 120, G: 120, B: 210, A: 255}
 var paramValueInvalidColor = color.NRGBA{R: 120, G: 120, B: 120, A: 190}
+
+func withScaledAlpha(c color.NRGBA, factor float32) color.NRGBA {
+	A := factor * float32(c.A)
+	return color.NRGBA{
+		R: c.R,
+		G: c.G,
+		B: c.B,
+		A: uint8(A),
+	}
+}

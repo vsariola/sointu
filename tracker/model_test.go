@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/vsariola/sointu/tracker"
+	"github.com/vsariola/sointu/tracker/types"
 	"github.com/vsariola/sointu/vm"
 )
 
@@ -22,6 +23,12 @@ func (NullContext) FinishBlock(frame int) {}
 func (NullContext) BPM() (bpm float64, ok bool) {
 	return 0, false
 }
+
+func (NullContext) MaxPolyphony() types.OptionalInteger {
+	return types.NewEmptyOptionalInteger()
+}
+
+func (NullContext) SetMaxPolyphony(v types.OptionalInteger) {}
 
 func (NullContext) InputDevices(yield func(tracker.MIDIDevice) bool) {}
 
@@ -277,7 +284,7 @@ func FuzzModel(f *testing.F) {
 					break loop
 				default:
 					ctx := NullContext{}
-					player.Process(buf, ctx, nil)
+					player.Process(buf, ctx)
 				}
 			}
 		}()

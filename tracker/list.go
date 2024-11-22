@@ -428,7 +428,7 @@ func (v *Tracks) Selected2() int {
 }
 
 func (v *Tracks) SetSelected(value int) {
-	v.d.Cursor.Track = max(min(value, v.Count()-1), 0)
+	(*Model)(v).ChangeTrack(value)
 }
 
 func (v *Tracks) SetSelected2(value int) {

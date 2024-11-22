@@ -173,7 +173,7 @@ func (m *Order) Cursor2() Point {
 }
 
 func (m *Order) SetCursor(p Point) {
-	m.d.Cursor.Track = max(min(p.X, len(m.d.Song.Score.Tracks)-1), 0)
+	(*Model)(m).ChangeTrack(p.X)
 	y := max(min(p.Y, m.d.Song.Score.Length-1), 0)
 	if y != m.d.Cursor.OrderRow {
 		m.follow = false
@@ -385,7 +385,7 @@ func (m *Notes) Cursor2() Point {
 }
 
 func (v *Notes) SetCursor(p Point) {
-	v.d.Cursor.Track = max(min(p.X, len(v.d.Song.Score.Tracks)-1), 0)
+	(*Model)(v).ChangeTrack(p.X)
 	newPos := v.d.Song.Score.Clamp(sointu.SongPos{PatternRow: p.Y})
 	if newPos != v.d.Cursor.SongPos {
 		v.follow = false
