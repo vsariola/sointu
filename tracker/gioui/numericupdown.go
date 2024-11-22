@@ -48,6 +48,7 @@ type NumericUpDownStyle struct {
 	Tooltip         component.Tooltip
 	Width           unit.Dp
 	Height          unit.Dp
+	Padding         unit.Dp
 	shaper          text.Shaper
 }
 
@@ -74,11 +75,19 @@ func NumericUpDown(th *material.Theme, number *NumberInput, tooltip string) Nume
 		Tooltip:         Tooltip(th, tooltip),
 		Width:           unit.Dp(70),
 		Height:          unit.Dp(20),
+		Padding:         unit.Dp(0),
 		shaper:          *th.Shaper,
 	}
 }
 
 func (s *NumericUpDownStyle) Layout(gtx C) D {
+	if s.Padding <= 0 {
+		return s.layoutWithTooltip(gtx)
+	}
+	return layout.UniformInset(s.Padding).Layout(gtx, s.layoutWithTooltip)
+}
+
+func (s *NumericUpDownStyle) layoutWithTooltip(gtx C) D {
 	if s.Tooltip.Text.Text != "" {
 		return s.NumberInput.tipArea.Layout(gtx, s.Tooltip, s.actualLayout)
 	}

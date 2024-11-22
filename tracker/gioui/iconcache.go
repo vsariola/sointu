@@ -10,6 +10,9 @@ var iconCache = map[*byte]*widget.Icon{}
 
 // widgetForIcon returns a widget for IconVG data, but caching the results
 func widgetForIcon(icon []byte) *widget.Icon {
+	if icon == nil {
+		return nil
+	}
 	if widget, ok := iconCache[&icon[0]]; ok {
 		return widget
 	}

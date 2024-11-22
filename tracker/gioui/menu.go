@@ -12,8 +12,6 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/unit"
-	"gioui.org/widget"
-	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
 )
 
@@ -103,12 +101,12 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 					}
 					icon := widgetForIcon(item.IconBytes)
 					iconColor := m.IconColor
-					if !item.Doer.Allowed() {
-						iconColor = mediumEmphasisTextColor
-					}
 					iconInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(6)}
 					textLabel := LabelStyle{Text: item.Text, FontSize: m.FontSize, Color: m.TextColor, Shaper: m.Shaper}
 					if !item.Doer.Allowed() {
+						// note: might be a bug in gioui, but for iconColor = mediumEmphasisTextColor
+						// this does not render the icon at all. other colors seem to work fine.
+						iconColor = disabledTextColor
 						textLabel.Color = mediumEmphasisTextColor
 					}
 					shortcutLabel := LabelStyle{Text: item.ShortcutText, FontSize: m.FontSize, Color: m.ShortCutColor, Shaper: m.Shaper}
@@ -116,13 +114,18 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 					dims := layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
 							return iconInset.Layout(gtx, func(gtx C) D {
-								p := gtx.Dp(unit.Dp(m.IconSize))
+								p := gtx.Dp(m.IconSize)
 								gtx.Constraints.Min = image.Pt(p, p)
+								if icon == nil {
+									return D{Size: gtx.Constraints.Min}
+								}
 								return icon.Layout(gtx, iconColor)
 							})
 						}),
 						layout.Rigid(textLabel.Layout),
-						layout.Flexed(1, func(gtx C) D { return D{Size: image.Pt(gtx.Constraints.Max.X, 1)} }),
+						layout.Flexed(1, func(gtx C) D {
+							return D{Size: image.Pt(gtx.Constraints.Max.X, 1)}
+						}),
 						layout.Rigid(func(gtx C) D {
 							return shortcutInset.Layout(gtx, shortcutLabel.Layout)
 						}),
@@ -168,14 +171,14 @@ func PopupMenu(menu *Menu, shaper *text.Shaper) MenuStyle {
 	}
 }
 
-func (tr *Tracker) layoutMenu(gtx C, title string, clickable *widget.Clickable, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
+func (tr *Tracker) layoutMenu(gtx C, title string, clickable *Clickable, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
 	for clickable.Clicked(gtx) {
 		menu.Visible = true
 	}
 	m := PopupMenu(menu, tr.Theme.Shaper)
 	return func(gtx C) D {
 		defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-		titleBtn := material.Button(tr.Theme, clickable, title)
+		titleBtn := Button(tr.Theme, clickable, title)
 		titleBtn.Color = white
 		titleBtn.Background = transparent
 		titleBtn.CornerRadius = unit.Dp(0)

@@ -7,14 +7,13 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
-	"gioui.org/widget"
 	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/version"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
 type SongPanel struct {
-	MenuBar        []widget.Clickable
+	MenuBar        []Clickable
 	Menus          []Menu
 	BPM            *NumberInput
 	RowsPerPattern *NumberInput
@@ -57,7 +56,7 @@ type SongPanel struct {
 
 func NewSongPanel(model *tracker.Model) *SongPanel {
 	ret := &SongPanel{
-		MenuBar:        make([]widget.Clickable, 3),
+		MenuBar:        make([]Clickable, 3),
 		Menus:          make([]Menu, 3),
 		BPM:            NewNumberInput(model.BPM().Int()),
 		RowsPerPattern: NewNumberInput(model.RowsPerPattern().Int()),
