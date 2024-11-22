@@ -162,10 +162,7 @@ func (t *Tracker) Main() {
 func NewWindow() *app.Window {
 	w := new(app.Window)
 	w.Option(app.Title("Sointu Tracker"))
-	w.Option(
-		app.Size(unit.Dp(800), unit.Dp(600)),
-		app.Fullscreen.Option(),
-	)
+	w.Option(app.Size(unit.Dp(800), unit.Dp(600)))
 	return w
 }
 
