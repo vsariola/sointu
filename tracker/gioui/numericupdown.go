@@ -50,7 +50,6 @@ type NumericUpDownStyle struct {
 	Height          unit.Dp
 	Padding         unit.Dp
 	shaper          text.Shaper
-	Hidden          bool
 }
 
 func NewNumberInput(v tracker.Int) *NumberInput {
@@ -58,10 +57,6 @@ func NewNumberInput(v tracker.Int) *NumberInput {
 }
 
 func NumericUpDown(th *material.Theme, number *NumberInput, tooltip string) NumericUpDownStyle {
-	return NumericUpDownPadded(th, number, tooltip, 0)
-}
-
-func NumericUpDownPadded(th *material.Theme, number *NumberInput, tooltip string, padding int) NumericUpDownStyle {
 	bgColor := th.Palette.Fg
 	bgColor.R /= 4
 	bgColor.G /= 4
@@ -80,15 +75,12 @@ func NumericUpDownPadded(th *material.Theme, number *NumberInput, tooltip string
 		Tooltip:         Tooltip(th, tooltip),
 		Width:           unit.Dp(70),
 		Height:          unit.Dp(20),
-		Padding:         unit.Dp(padding),
+		Padding:         unit.Dp(0),
 		shaper:          *th.Shaper,
 	}
 }
 
 func (s *NumericUpDownStyle) Layout(gtx C) D {
-	if s.Hidden {
-		return D{}
-	}
 	if s.Padding <= 0 {
 		return s.layoutWithTooltip(gtx)
 	}

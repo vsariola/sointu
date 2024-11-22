@@ -158,7 +158,8 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 		deleteTrackBtnStyle := ActionIcon(gtx, t.Theme, te.DeleteTrackBtn, icons.ActionDelete, te.deleteTrackHint)
 		splitTrackBtnStyle := ActionIcon(gtx, t.Theme, te.SplitTrackBtn, icons.CommunicationCallSplit, te.splitTrackHint)
 		newTrackBtnStyle := ActionIcon(gtx, t.Theme, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
-		voiceUpDown := NumericUpDownPadded(t.Theme, te.TrackVoices, "Number of voices for this track", 1)
+		voiceUpDown := NumericUpDown(t.Theme, te.TrackVoices, "Number of voices for this track")
+		voiceUpDown.Padding = unit.Dp(1)
 		effectBtnStyle := ToggleButton(gtx, t.Theme, te.EffectBtn, "Hex")
 		uniqueBtnStyle := ToggleIcon(gtx, t.Theme, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
 		midiInBtnStyle := ToggleButton(gtx, t.Theme, te.TrackMidiInBtn, "MIDI")
@@ -175,7 +176,7 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			layout.Rigid(voiceUpDown.Layout),
 			layout.Rigid(splitTrackBtnStyle.Layout),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
-			layout.Rigid(midiInBtnStyle.Layout),
+			layout.Rigid(OnlyIf(t.HasAnyMidiInput(), midiInBtnStyle.Layout)),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(deleteTrackBtnStyle.Layout),
 			layout.Rigid(newTrackBtnStyle.Layout))

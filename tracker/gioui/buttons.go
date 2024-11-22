@@ -19,6 +19,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+
 	"github.com/vsariola/sointu/tracker"
 )
 
@@ -298,7 +299,6 @@ type ButtonStyle struct {
 	Inset        layout.Inset
 	Button       *Clickable
 	shaper       *text.Shaper
-	Hidden       bool
 }
 
 type ButtonLayoutStyle struct {
@@ -363,9 +363,6 @@ func (b ButtonStyle) Layout(gtx layout.Context) layout.Dimensions {
 		CornerRadius: b.CornerRadius,
 		Button:       b.Button,
 	}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-		if b.Hidden {
-			return layout.Dimensions{}
-		}
 		return b.Inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 			colMacro := op.Record(gtx.Ops)
 			paint.ColorOp{Color: b.Color}.Add(gtx.Ops)
