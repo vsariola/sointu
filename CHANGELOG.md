@@ -26,6 +26,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   ([#77][i77])
 - User can define own keybindings in `os.UserConfigDir()/sointu/keybindings.yml`
   ([#94][i94], [#151][i151])
+- User can define preferred window size in
+  `os.UserConfigDir()/sointu/preferences.yml` ([#184][i184])
 - A small number above the instrument name identifies the MIDI channel /
   instrument number, with numbering starting from 1 ([#154][i154])
 - The filter unit frequency parameter is displayed in Hz, corresponding roughly
