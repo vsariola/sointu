@@ -3,8 +3,6 @@ package gioui
 import (
 	_ "embed"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -28,16 +26,7 @@ var keyActionMap = map[KeyAction]string{} // holds an informative string of the 
 
 func loadCustomKeyBindings() []KeyBinding {
 	var keyBindings []KeyBinding
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return nil
-	}
-	path := filepath.Join(configDir, "sointu", "keybindings.yml")
-	bytes, err := os.ReadFile(path)
-	if err != nil {
-		return nil
-	}
-	err = yaml.Unmarshal(bytes, &keyBindings)
+	_, err := ReadCustomConfigYml("keybindings.yml", &keyBindings)
 	if err != nil {
 		return nil
 	}

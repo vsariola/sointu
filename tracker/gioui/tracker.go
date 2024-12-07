@@ -18,7 +18,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
-	"gioui.org/unit"
 	"gioui.org/widget/material"
 	"gioui.org/x/explorer"
 	"github.com/vsariola/sointu/tracker"
@@ -51,8 +50,9 @@ type (
 
 		filePathString tracker.String
 
-		quitWG   sync.WaitGroup
-		execChan chan func()
+		quitWG      sync.WaitGroup
+		execChan    chan func()
+		preferences Preferences
 
 		*tracker.Model
 	}
@@ -89,9 +89,16 @@ func NewTracker(model *tracker.Model) *Tracker {
 		Model: model,
 
 		filePathString: model.FilePath().String(),
+		preferences:    MakePreferences(),
 	}
 	t.Theme.Shaper = text.NewShaper(text.WithCollection(fontCollection))
 	t.PopupAlert = NewPopupAlert(model.Alerts(), t.Theme.Shaper)
+	if t.preferences.YmlError != nil {
+		model.Alerts().Add(
+			fmt.Sprintf("Preferences YML Error: %s", t.preferences.YmlError),
+			tracker.Warning,
+		)
+	}
 	t.Theme.Palette.Fg = primaryColor
 	t.Theme.Palette.ContrastFg = black
 	t.TrackEditor.scrollTable.Focus()
@@ -101,9 +108,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 
 func (t *Tracker) Main() {
 	titleFooter := ""
-	w := new(app.Window)
-	w.Option(app.Title("Sointu Tracker"))
-	w.Option(app.Size(unit.Dp(800), unit.Dp(600)))
+	w := t.newWindow()
 	t.InstrumentEditor.Focus()
 	recoveryTicker := time.NewTicker(time.Second * 30)
 	t.Explorer = explorer.NewExplorer(w)
@@ -127,9 +132,7 @@ func (t *Tracker) Main() {
 				}
 				if !t.Quitted() {
 					// TODO: uh oh, there's no way of canceling the destroyevent in gioui? so we create a new window just to show the dialog
-					w = new(app.Window)
-					w.Option(app.Title("Sointu Tracker"))
-					w.Option(app.Size(unit.Dp(800), unit.Dp(600)))
+					w = t.newWindow()
 					t.Explorer = explorer.NewExplorer(w)
 					go eventLoop(w, events, acks)
 				}
@@ -163,6 +166,16 @@ func (t *Tracker) Main() {
 	w.Perform(system.ActionClose)
 	t.SaveRecovery()
 	t.quitWG.Done()
+}
+
+func (t *Tracker) newWindow() *app.Window {
+	w := new(app.Window)
+	w.Option(app.Title("Sointu Tracker"))
+	w.Option(app.Size(t.preferences.WindowSize()))
+	if t.preferences.Window.Maximized {
+		w.Option(app.Maximized.Option())
+	}
+	return w
 }
 
 func eventLoop(w *app.Window, events chan<- event.Event, acks <-chan struct{}) {
