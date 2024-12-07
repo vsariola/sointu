@@ -94,18 +94,18 @@ jobs:
             asmnasm: /Users/runner/nasm/nasm
             output: sointu-compile
             params: cmd/sointu-compile/main.go
-          - os: macos-12 # this is intel still
+          - os: macos-13
             asmnasm: /Users/runner/nasm/nasm
             output: sointu-track-native
             params: -tags=native cmd/sointu-track/main.go
-          - os: macos-12 # this is intel still
+          - os: macos-13
             asmnasm: /Users/runner/nasm/nasm
             output: sointu-vsti.a
             bundleoutput: sointu-vsti
             MACOSX_DEPLOYMENT_TARGET: 11
             params: -buildmode=c-archive -tags=plugin ./cmd/sointu-vsti/
             bundle: true
-          - os: macos-12 # this is intel still
+          - os: macos-13
             asmnasm: /Users/runner/nasm/nasm
             output: sointu-vsti-native.a
             bundleoutput: sointu-vsti-native

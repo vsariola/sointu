@@ -25,7 +25,7 @@ jobs:
             asmnasm: C:\Users\runneradmin\nasm\nasm
             gotests: yes
             cgo_ldflags:
-          - os: macos-12 # this is intel still
+          - os: macos-13
             asmnasm: /Users/runner/nasm/nasm
             gotests: yes
             cgo_ldflags: # -Wl,-no_pie
