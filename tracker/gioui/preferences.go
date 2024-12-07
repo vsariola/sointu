@@ -51,7 +51,7 @@ func ReadCustomConfigYml(filename string, target interface{}) (exists bool, err 
 	return true, err
 }
 
-func NewPreferences() Preferences {
+func MakePreferences() Preferences {
 	preferences := loadDefaultPreferences()
 	exists, err := ReadCustomConfigYml("preferences.yml", &preferences)
 	if exists {

@@ -89,7 +89,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 		Model: model,
 
 		filePathString: model.FilePath().String(),
-		preferences:    NewPreferences(),
+		preferences:    MakePreferences(),
 	}
 	t.Theme.Shaper = text.NewShaper(text.WithCollection(fontCollection))
 	t.PopupAlert = NewPopupAlert(model.Alerts(), t.Theme.Shaper)
@@ -173,7 +173,7 @@ func (t *Tracker) newWindow() *app.Window {
 	w.Option(app.Title("Sointu Tracker"))
 	w.Option(app.Size(t.preferences.WindowSize()))
 	if t.preferences.Window.Maximized {
-		w.Option(app.Fullscreen.Option())
+		w.Option(app.Maximized.Option())
 	}
 	return w
 }
