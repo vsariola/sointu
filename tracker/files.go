@@ -136,6 +136,7 @@ func (m *Model) LoadInstrument(r io.ReadCloser) bool {
 	if err != nil {
 		return false
 	}
+	r.Close() // if we can't close the file, it's not a big deal, so ignore the error
 	var instrument sointu.Instrument
 	var errJSON, errYaml, err4ki, err4kp error
 	var patch sointu.Patch

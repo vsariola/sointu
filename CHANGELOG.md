@@ -45,6 +45,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   be computed every draw. ([#176][i176])
 
 ### Fixed
+- Loading instrument forgot to close the file (in model.ReadInstrument)
 - We try to honor the MIDI event time stamps, so that the timing between MIDI
   events (as reported to us by RTMIDI) will be correct.
 - When unmarshaling the recovery file, the unit parameter maps were "merged"
