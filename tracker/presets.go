@@ -5,7 +5,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
+	"strings"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
@@ -179,6 +181,10 @@ func init() {
 		}
 		var instr sointu.Instrument
 		if yaml.Unmarshal(data, &instr) == nil {
+			noExt := path[:len(path)-len(filepath.Ext(path))]
+			splitted := splitPath(noExt)
+			splitted = splitted[1:] // remove "presets" from the path
+			instr.Name = strings.Join(splitted, " ")
 			instrumentPresets = append(instrumentPresets, instr)
 		}
 		return nil
@@ -198,12 +204,44 @@ func init() {
 			}
 			var instr sointu.Instrument
 			if yaml.Unmarshal(data, &instr) == nil {
+				if len(userPresets)+1 > len(path) {
+					return nil
+				}
+				subPath := path[len(userPresets)+1:]
+				noExt := subPath[:len(subPath)-len(filepath.Ext(subPath))]
+				splitted := splitPath(noExt)
+				instr.Name = strings.Join(splitted, " ")
 				instrumentPresets = append(instrumentPresets, instr)
 			}
 			return nil
 		})
 	}
 	sort.Sort(instrumentPresets)
+}
+
+func splitPath(path string) []string {
+	subPath := path
+	var result []string
+	for {
+		subPath = filepath.Clean(subPath) // Amongst others, removes trailing slashes (except for the root directory).
+
+		dir, last := filepath.Split(subPath)
+		if last == "" {
+			if dir != "" { // Root directory.
+				result = append(result, dir)
+			}
+			break
+		}
+		result = append(result, last)
+
+		if dir == "" { // Nothing to split anymore.
+			break
+		}
+		subPath = dir
+	}
+
+	slices.Reverse(result)
+	return result
 }
 
 func (p instrumentPresetsSlice) Len() int           { return len(p) }

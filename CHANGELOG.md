@@ -77,6 +77,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   ([#156][i156])
 
 ### Changed
+- Presets get their name by concatenating their subdirectory path (with path
+  separators replaced with spaces) to their filename
 - The keyboard shortcuts are now again closer to what they were old trackers
   ([#151][i151])
 - The stand-alone apps now output floating point sound, as made possible by
