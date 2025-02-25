@@ -1,0 +1,34 @@
+name: Guitar
+numvoices: 2
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 27, decay: 80, gain: 112, release: 82, stereo: 0, sustain: 95}
+    - type: envelope
+      id: 2
+      parameters: {attack: 0, decay: 58, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: noise
+      id: 3
+      parameters: {gain: 128, shape: 63, stereo: 0}
+    - type: mulp
+      id: 4
+      parameters: {stereo: 0}
+    - type: filter
+      id: 5
+      parameters: {bandpass: 1, frequency: 57, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: delay
+      id: 6
+      parameters: {damp: 48, dry: 128, feedback: 126, notetracking: 1, pregain: 128, stereo: 0}
+      varargs: [10787]
+    - type: mulp
+      id: 87
+      parameters: {stereo: 0}
+    - type: filter
+      id: 88
+      parameters: {bandpass: 0, frequency: 72, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: pan
+      id: 89
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 10
+      parameters: {auxgain: 16, outgain: 64, stereo: 1}

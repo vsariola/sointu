@@ -1,0 +1,32 @@
+name: Rimshot
+numvoices: 1
+units:
+    - type: envelope
+      id: 3000
+      parameters: {attack: 0, decay: 76, gain: 51, release: 74, stereo: 0, sustain: 0}
+    - type: send
+      parameters: {amount: 128, port: 4, sendpop: 0, target: 3000}
+    - type: envelope      parameters: {attack: 0, decay: 48, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: send      parameters: {amount: 107, port: 0, sendpop: 0, target: 3001}
+    - type: send
+       parameters: {amount: 80, port: 0, sendpop: 1, target: 3002}
+    - type: oscillator
+      id: 3001
+      parameters: {color: 128, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 32, stereo: 0, transpose: 64, type: 0}
+    - type: oscillator
+      id: 3002
+      parameters: {color: 128, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 80, stereo: 0, transpose: 64, type: 0}
+    - type: noise      parameters: {gain: 48, shape: 47, stereo: 0}
+    - type: filter      parameters: {bandpass: 1, frequency: 86, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 59, stereo: 0}
+    - type: filter      parameters: {bandpass: 1, frequency: 56, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 4, stereo: 0}
+    - type: addp      parameters: {stereo: 0}
+    - type: addp      parameters: {stereo: 0}
+    - type: distort      parameters: {drive: 76, stereo: 0}
+    - type: mulp      parameters: {stereo: 0}
+    - type: dbgain      parameters: {decibels: 37, stereo: 0}
+    - type: compressor      parameters: {attack: 46, invgain: 114, ratio: 110, release: 49, stereo: 0, threshold: 62}
+    - type: mulp      parameters: {stereo: 0}
+    - type: filter      parameters: {bandpass: 0, frequency: 39, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 17, stereo: 0}
+    - type: filter      parameters: {bandpass: 0, frequency: 48, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: pan      parameters: {panning: 64, stereo: 0}
+    - type: outaux      parameters: {auxgain: 0, outgain: 48, stereo: 1}

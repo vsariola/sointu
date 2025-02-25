@@ -1,0 +1,73 @@
+name: snare edm
+comment: 'Suggested range: E-4'
+numvoices: 2
+units:
+    - type: envelope
+      id: 217
+      parameters: {attack: 22, decay: 64, gain: 38, release: 0, stereo: 0, sustain: 0}
+    - type: oscillator
+      id: 218
+      parameters: {color: 128, detune: 64, gain: 70, lfo: 0, phase: 19, shape: 84, stereo: 0, transpose: 56, type: 0}
+    - type: distort
+      id: 219
+      parameters: {drive: 78, stereo: 0}
+    - type: mulp
+      id: 221
+      parameters: {panning: 64, stereo: 0}
+    - type: envelope
+      id: 222
+      parameters: {attack: 0, auxgain: 64, decay: 68, gain: 70, outgain: 64, release: 0, stereo: 0, sustain: 0}
+    - type: noise
+      id: 223
+      parameters: {gain: 31, shape: 12, stereo: 0}
+    - type: mulp
+      id: 224
+      parameters: {stereo: 0}
+    - type: filter
+      id: 201
+      parameters: {bandpass: 0, frequency: 97, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 128, stereo: 0}
+    - type: filter
+      id: 225
+      parameters: {bandpass: 0, frequency: 108, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 128, stereo: 0}
+    - type: addp
+      id: 226
+      parameters: {stereo: 0}
+    - type: filter
+      id: 202
+      parameters: {bandpass: 0, frequency: 100, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 128, stereo: 0}
+    - type: filter
+      id: 227
+      parameters: {bandpass: 0, frequency: 19, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 98, stereo: 0}
+    - type: filter
+      id: 228
+      parameters: {bandpass: 0, frequency: 15, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: filter
+      id: 229
+      parameters: {bandpass: 0, frequency: 40, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 74, stereo: 0}
+    - type: filter
+      id: 230
+      parameters: {bandpass: 0, frequency: 23, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 42, stereo: 0}
+    - type: pan
+      id: 231
+      parameters: {panning: 59, stereo: 0}
+    - type: outaux
+      id: 232
+      parameters: {auxgain: 8, outgain: 128, stereo: 1}
+    - type: envelope
+      id: 233
+      parameters: {attack: 38, decay: 49, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: send
+      id: 234
+      parameters: {amount: 70, port: 0, sendpop: 1, target: 218}
+    - type: envelope
+      id: 235
+      parameters: {attack: 47, decay: 54, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: send
+      id: 236
+      parameters: {amount: 19, port: 0, sendpop: 1, target: 201}
+    - type: envelope
+      id: 237
+      parameters: {attack: 54, decay: 68, gain: 128, release: 0, stereo: 0, sustain: 70}
+    - type: send
+      id: 238
+      parameters: {amount: 26, port: 0, sendpop: 1, target: 202}

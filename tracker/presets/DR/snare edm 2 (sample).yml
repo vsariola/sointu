@@ -1,0 +1,34 @@
+name: snare edm 2 (sample)
+comment: 'Suggested range: E-2 to C-3'
+numvoices: 1
+units:
+    - type: envelope
+      id: 301
+      parameters: {attack: 0, decay: 66, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: oscillator
+      id: 200
+      parameters: {color: 64, detune: 80, gain: 64, lfo: 0, looplength: 1, loopstart: 4276, phase: 0, samplestart: 560606, shape: 95, stereo: 0, transpose: 86, type: 4, unison: 2}
+    - type: distort
+      id: 302
+      parameters: {drive: 100, stereo: 0}
+    - type: mulp
+      id: 303
+      parameters: {panning: 64, stereo: 0}
+    - type: envelope
+      id: 304
+      parameters: {attack: 0, auxgain: 64, decay: 67, gain: 100, outgain: 64, release: 0, stereo: 0, sustain: 0}
+    - type: noise
+      id: 305
+      parameters: {gain: 128, shape: 8, stereo: 0}
+    - type: mulp
+      id: 306
+      parameters: {stereo: 0}
+    - type: addp
+      id: 308
+      parameters: {stereo: 0}
+    - type: pan
+      id: 309
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 310
+      parameters: {auxgain: 5, outgain: 62, stereo: 1}

@@ -1,0 +1,22 @@
+name: KEYS Lullaby2
+numvoices: 4
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 31, decay: 77, gain: 64, release: 68, stereo: 0, sustain: 38}
+    - type: oscillator
+      id: 2
+      parameters: {color: 128, detune: 64, gain: 56, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 0, unison: 0}
+    - type: mulp
+      id: 3
+      parameters: {stereo: 0}
+    - type: pan
+      id: 4
+      parameters: {panning: 64, stereo: 0}
+    - type: delay
+      id: 5
+      parameters: {damp: 84, dry: 74, feedback: 50, notetracking: 2, pregain: 64, stereo: 1}
+      varargs: [48, 24]
+    - type: outaux
+      id: 174
+      parameters: {auxgain: 64, outgain: 64, stereo: 1}

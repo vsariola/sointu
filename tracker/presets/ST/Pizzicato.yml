@@ -1,0 +1,45 @@
+name: Pizzicato
+numvoices: 4
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 0, decay: 67, gain: 64, release: 62, stereo: 0, sustain: 0}
+    - type: oscillator
+      id: 2
+      parameters: {color: 60, detune: 64, gain: 74, looplength: 137, loopstart: 549, phase: 0, samplestart: 1034191, shape: 89, stereo: 0, transpose: 40, type: 4, unison: 0}
+    - type: distort
+      id: 17
+      parameters: {drive: 93, stereo: 0}
+      disabled: true
+    - type: oscillator
+      id: 10
+      parameters: {color: 59, detune: 63, gain: 67, looplength: 100, loopstart: 942, phase: 0, samplestart: 1633072, shape: 56, stereo: 0, transpose: 55, type: 4, unison: 2}
+      disabled: true
+    - type: addp
+      id: 11
+      parameters: {stereo: 0}
+      disabled: true
+    - type: oscillator
+      id: 221
+      parameters: {color: 64, detune: 63, gain: 128, looplength: 398, loopstart: 2073, phase: 0, samplestart: 1034961, shape: 42, stereo: 0, transpose: 65, type: 4, unison: 0}
+    - type: addp
+      id: 16
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 14
+      parameters: {stereo: 0}
+    - id: 222
+      parameters: {}
+    - type: filter
+      id: 15
+      parameters: {bandpass: 1, frequency: 55, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: pan
+      id: 5
+      parameters: {panning: 64, stereo: 0}
+    - type: delay
+      id: 49
+      parameters: {damp: 98, dry: 128, feedback: 53, notetracking: 0, pregain: 69, stereo: 1}
+      varargs: [3835, 4533]
+    - type: outaux
+      id: 6
+      parameters: {auxgain: 39, outgain: 58, stereo: 1}

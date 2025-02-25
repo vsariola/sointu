@@ -1,0 +1,22 @@
+name: lullaby
+numvoices: 4
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 42, decay: 80, gain: 64, release: 78, stereo: 0, sustain: 56}
+    - type: oscillator
+      id: 2
+      parameters: {color: 128, detune: 64, gain: 65, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 0}
+    - type: mulp
+      id: 3
+      parameters: {stereo: 0}
+    - type: pan
+      id: 4
+      parameters: {panning: 52, stereo: 0}
+    - type: delay
+      id: 5
+      parameters: {damp: 0, dry: 20, feedback: 63, notetracking: 0, pregain: 79, stereo: 1}
+      varargs: [1, 212]
+    - type: outaux
+      id: 170
+      parameters: {auxgain: 33, outgain: 49, stereo: 1}

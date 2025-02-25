@@ -1,0 +1,82 @@
+name: LEAD SuperSaw 2
+numvoices: 4
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 11, decay: 67, gain: 64, release: 64, stereo: 0, sustain: 36}
+    - type: oscillator
+      id: 2
+      parameters: {color: 128, detune: 32, gain: 64, phase: 128, shape: 66, stereo: 0, transpose: 76, type: 1, unison: 3}
+    - type: oscillator
+      id: 228
+      parameters: {color: 128, detune: 88, gain: 64, lfo: 0, phase: 58, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+    - type: addp
+      id: 229
+      parameters: {stereo: 0}
+    - type: noise
+      id: 23
+      parameters: {gain: 67, shape: 114, stereo: 0}
+    - type: addp
+      id: 24
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 17
+      parameters: {stereo: 0}
+    - id: 18
+      parameters: {}
+    - type: envelope
+      id: 12
+      parameters: {attack: 18, decay: 67, gain: 64, release: 64, stereo: 0, sustain: 35}
+    - type: oscillator
+      id: 13
+      parameters: {color: 128, detune: 32, gain: 64, phase: 44, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+    - type: oscillator
+      id: 14
+      parameters: {color: 128, detune: 96, gain: 64, lfo: 0, phase: 95, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+    - type: addp
+      id: 28
+      parameters: {stereo: 0}
+    - type: noise
+      id: 27
+      parameters: {gain: 80, shape: 128, stereo: 0}
+    - type: addp
+      id: 15
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 26
+      parameters: {stereo: 0}
+    - type: delay
+      id: 29
+      parameters: {damp: 0, dry: 0, feedback: 0, notetracking: 0, pregain: 128, stereo: 0}
+      varargs: [69]
+    - type: pan
+      id: 30
+      parameters: {panning: 60, stereo: 1}
+    - type: filter
+      id: 19
+      parameters: {bandpass: 0, frequency: 113, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 120, stereo: 1}
+    - id: 31
+      parameters: {}
+    - type: outaux
+      id: 6
+      parameters: {auxgain: 7, outgain: 15, stereo: 1}
+    - type: envelope
+      id: 20
+      parameters: {attack: 66, decay: 0, gain: 128, release: 74, stereo: 0, sustain: 128}
+    - type: invgain
+      id: 32
+      parameters: {invgain: 128, stereo: 0}
+    - type: send
+      id: 21
+      parameters: {amount: 48, port: 0, sendpop: 1, stereo: 0, target: 19, unit: 0, voice: 0}
+    - id: 33
+      parameters: {}
+    - type: oscillator
+      id: 34
+      parameters: {color: 128, detune: 64, gain: 65, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 45, type: 0}
+    - type: send
+      id: 35
+      parameters: {amount: 106, port: 2, sendpop: 0, stereo: 0, target: 228, unit: 0, voice: 0}
+    - type: send
+      id: 36
+      parameters: {amount: 128, port: 2, sendpop: 1, stereo: 0, target: 14, unit: 0, voice: 0}

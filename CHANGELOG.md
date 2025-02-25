@@ -77,6 +77,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   ([#156][i156])
 
 ### Changed
+- New & better presets, organized by their type to subfolders (thanks Reaby!)
+  ([#136][i136])
 - Presets get their name by concatenating their subdirectory path (with path
   separators replaced with spaces) to their filename
 - The keyboard shortcuts are now again closer to what they were old trackers
@@ -286,6 +288,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i128]: https://github.com/vsariola/sointu/issues/128
 [i129]: https://github.com/vsariola/sointu/issues/129
 [i130]: https://github.com/vsariola/sointu/issues/130
+[i136]: https://github.com/vsariola/sointu/issues/136
 [i139]: https://github.com/vsariola/sointu/issues/139
 [i142]: https://github.com/vsariola/sointu/issues/142
 [i144]: https://github.com/vsariola/sointu/issues/144

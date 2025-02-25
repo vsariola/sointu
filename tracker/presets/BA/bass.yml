@@ -1,0 +1,49 @@
+name: bass
+numvoices: 1
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 32, decay: 64, gain: 64, release: 64, stereo: 0, sustain: 64}
+    - type: send
+      id: 2
+      parameters: {amount: 120, port: 4, sendpop: 0, target: 1}
+    - type: oscillator
+      id: 3
+      parameters: {color: 80, detune: 64, gain: 128, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 64, type: 2}
+    - type: oscillator
+      id: 4
+      parameters: {color: 96, detune: 72, gain: 128, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 64, type: 1}
+    - type: oscillator
+      id: 5
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 90, stereo: 0, transpose: 32, type: 0}
+    - type: send
+      id: 6
+      parameters: {amount: 68, port: 1, sendpop: 0, target: 3}
+    - type: send
+      id: 38
+      parameters: {amount: 60, port: 1, sendpop: 1, target: 4}
+    - type: addp
+      id: 40
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 217
+      parameters: {stereo: 0}
+    - type: filter
+      id: 11
+      parameters: {bandpass: 0, frequency: 18, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 64, stereo: 0}
+    - type: filter
+      id: 12
+      parameters: {bandpass: 0, frequency: 32, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 48, stereo: 0}
+    - type: distort
+      id: 13
+      parameters: {drive: 88, stereo: 0}
+    - type: pan
+      id: 15
+      parameters: {panning: 64, stereo: 0}
+    - type: delay
+      id: 16
+      parameters: {damp: 102, dry: 74, feedback: 63, notetracking: 2, pregain: 43, stereo: 1}
+      varargs: [24, 48]
+    - type: outaux
+      id: 20
+      parameters: {auxgain: 0, outgain: 39, stereo: 1}

@@ -1,0 +1,64 @@
+name: Kick 3
+comment: 'Suggested note: C-3'
+numvoices: 2
+units:
+    - type: envelope
+      id: 261
+      parameters: {attack: 0, decay: 48, gain: 65, release: 0, stereo: 0, sustain: 0}
+    - type: noise
+      id: 269
+      parameters: {color: 64, detune: 64, gain: 128, phase: 0, shape: 73, stereo: 0, transpose: 64, type: 0}
+    - type: filter
+      id: 333
+      parameters: {bandpass: 1, frequency: 59, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: mulp
+      id: 263
+      parameters: {auxgain: 64, outgain: 64, stereo: 0}
+    - id: 285
+      parameters: {}
+    - type: noise
+      id: 275
+      parameters: {gain: 103, shape: 31, stereo: 0}
+    - type: send
+      id: 276
+      parameters: {amount: 79, port: 0, sendpop: 1, stereo: 0, target: 277, unit: 0, voice: 0}
+    - type: envelope
+      id: 280
+      parameters: {attack: 0, decay: 67, gain: 90, release: 0, stereo: 0, sustain: 0}
+    - type: envelope
+      id: 334
+      parameters: {attack: 0, decay: 68, gain: 113, release: 0, stereo: 0, sustain: 0}
+    - type: addp
+      id: 335
+      parameters: {stereo: 0}
+    - type: send
+      id: 284
+      parameters: {amount: 73, port: 0, sendpop: 1, stereo: 0, target: 277, unit: 0, voice: 0}
+    - id: 286
+      parameters: {}
+    - type: envelope
+      id: 274
+      parameters: {attack: 0, decay: 73, gain: 117, release: 0, stereo: 0, sustain: 0}
+    - type: oscillator
+      id: 277
+      parameters: {color: 128, detune: 64, gain: 128, phase: 0, shape: 74, stereo: 0, transpose: 41, type: 0}
+    - type: filter
+      id: 283
+      parameters: {bandpass: 0, frequency: 10, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 54, stereo: 0}
+    - type: mulp
+      id: 279
+      parameters: {stereo: 0}
+    - type: addp
+      id: 271
+      parameters: {stereo: 0}
+    - type: pan
+      id: 294
+      parameters: {panning: 64, stereo: 0}
+    - type: delay
+      id: 272
+      parameters: {damp: 23, dry: 128, feedback: 0, notetracking: 0, pregain: 35, stereo: 1}
+      varargs: [1, 1395]
+      disabled: true
+    - type: outaux
+      id: 266
+      parameters: {auxgain: 0, outgain: 65, stereo: 1}

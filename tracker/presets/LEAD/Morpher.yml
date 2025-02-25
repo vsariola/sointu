@@ -1,0 +1,61 @@
+name: LEAD Morpher
+numvoices: 3
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 25, decay: 82, gain: 128, release: 64, stereo: 0, sustain: 103}
+    - type: oscillator
+      id: 2
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 96, shape: 64, stereo: 0, transpose: 40, type: 0}
+    - type: send
+      id: 3
+      parameters: {amount: 46, port: 0, sendpop: 1, target: 15}
+    - type: oscillator
+      id: 5
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 86, shape: 64, stereo: 0, transpose: 33, type: 0}
+    - type: send
+      id: 6
+      parameters: {amount: 80, port: 0, sendpop: 0, target: 17}
+    - type: send
+      id: 229
+      parameters: {amount: 80, port: 3, sendpop: 1, target: 231}
+    - type: oscillator
+      id: 231
+      parameters: {color: 69, detune: 74, gain: 57, lfo: 0, phase: 0, shape: 128, stereo: 0, transpose: 64, type: 2, unison: 3}
+    - type: oscillator
+      id: 232
+      parameters: {color: 128, detune: 64, gain: 47, lfo: 0, phase: 0, shape: 75, stereo: 0, transpose: 64, type: 1, unison: 1}
+    - type: addp
+      id: 13
+      parameters: {stereo: 0}
+    - type: push
+      id: 14
+      parameters: {stereo: 0}
+    - type: filter
+      id: 15
+      parameters: {bandpass: 1, frequency: 90, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: xch
+      id: 16
+      parameters: {stereo: 0}
+    - type: filter
+      id: 17
+      parameters: {bandpass: 1, frequency: 78, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - type: addp
+      id: 18
+      parameters: {stereo: 0}
+    - type: filter
+      id: 20
+      parameters: {bandpass: 0, frequency: 93, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 128, stereo: 0}
+    - type: mulp
+      id: 21
+      parameters: {stereo: 0}
+    - type: pan
+      id: 23
+      parameters: {panning: 61, stereo: 0}
+    - type: delay
+      id: 22
+      parameters: {damp: 64, dry: 35, feedback: 64, notetracking: 2, pregain: 23, stereo: 1}
+      varargs: [32, 29]
+    - type: outaux
+      id: 24
+      parameters: {auxgain: 11, outgain: 35, stereo: 1}
