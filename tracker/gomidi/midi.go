@@ -1,5 +1,11 @@
 package gomidi
 
+// These cgo linker flags tell mingw to link gcc_s_seh-1, stdc++-6 and
+// winpthread-1 statically; otherwise they are needed as DLLs
+
+// #cgo windows LDFLAGS: -static -static-libgcc -static-libstdc++
+import "C"
+
 import (
 	"errors"
 	"fmt"
