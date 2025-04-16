@@ -309,6 +309,12 @@ su_op_delay_mono:               ; flow into mono delay
 su_op_delay_loop:
         {{- if or (.SupportsModulation "delay" "delaytime") (.SupportsParamValue "delay" "notetracking" 1)}} ; delaytime modulation or note syncing require computing the delay time in floats
         fild    word [{{.BX}}]         ; k dr*y p*p*x, where k = delay time
+        {{- if .SupportsModulation "delay" "delaytime"}}
+        fld     dword [{{.Modulation "delay" "delaytime"}}]
+        {{- .Float 32767.0 | .Prepare | indent 8}}
+        fmul    dword [{{.Float 32767.0 | .Use}}] ; scale it up, as the modulations would be too small otherwise
+        faddp   st1, st0
+        {{- end}}
         {{- if .SupportsParamValue "delay" "notetracking" 1}}
         test    ah, 1 ; note syncing is the least significant bit of ah, 0 = ON, 1 = OFF
         jne     su_op_delay_skipnotesync
@@ -318,12 +324,6 @@ su_op_delay_loop:
         {{.Call "su_power"}}
         fdivp   st1, st0                 ; use 10787 for delaytime to have neutral transpose
         su_op_delay_skipnotesync:
-        {{- end}}
-        {{- if .SupportsModulation "delay" "delaytime"}}
-        fld     dword [{{.Modulation "delay" "delaytime"}}]
-        {{- .Float 32767.0 | .Prepare | indent 8}}
-        fmul    dword [{{.Float 32767.0 | .Use}}] ; scale it up, as the modulations would be too small otherwise
-        faddp   st1, st0
         {{- end}}
         fistp   dword [{{.SP}}-4]                       ; dr*y p*p*x, dword [{{.SP}}-4] = integer amount of delay (samples)
         mov     edi, esi                            ; edi = esi = current time

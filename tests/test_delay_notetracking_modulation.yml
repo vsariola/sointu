@@ -1,0 +1,43 @@
+bpm: 100
+rowsperbeat: 4
+score:
+    tracks:
+        - numvoices: 1
+          order: [0]
+          patterns: [[73, 1, 1, 1, 0, 1, 1, 1, 77, 1, 1, 1, 0]]
+    rowsperpattern: 16
+    length: 1
+patch:
+    - name: Instr
+      numvoices: 1
+      units:
+        - type: envelope
+          id: 1
+          parameters: {attack: 64, decay: 64, gain: 64, release: 64, stereo: 0, sustain: 64}
+        - type: noise
+          id: 10
+          parameters: {gain: 64, shape: 64, stereo: 0}
+        - type: filter
+          id: 12
+          parameters: {bandpass: 0, frequency: 39, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+        - type: delay
+          id: 11
+          parameters: {damp: 0, dry: 71, feedback: 114, notetracking: 1, pregain: 128, stereo: 0}
+          varargs: [21574]
+        - type: mulp
+          id: 3
+          parameters: {stereo: 0}
+        - type: pan
+          id: 5
+          parameters: {panning: 64, stereo: 0}
+        - type: out
+          id: 16
+          parameters: {gain: 128, stereo: 1}
+        - id: 13
+          parameters: {}
+        - type: oscillator
+          id: 14
+          parameters: {color: 128, detune: 64, gain: 5, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 0}
+        - type: send
+          id: 15
+          parameters: {amount: 96, port: 4, sendpop: 1, stereo: 0, target: 11, voice: 0}

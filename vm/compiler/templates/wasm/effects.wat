@@ -295,10 +295,23 @@
                         (i32.sub ;; globalTick-delaytimes[delayIndex]
                             (global.get $globaltick)
 {{- if or (.SupportsModulation "delay" "delaytime") (.SupportsParamValue "delay" "notetracking" 1)}} ;; delaytime modulation or note syncing require computing the delay time in floats
+{{- if .SupportsModulation "delay" "delaytime"}}
+                            (local.set $delayTime (f32.add
+                                (f32.convert_i32_u (i32.load16_u
+                                    offset={{index .Labels "su_delay_times"}}
+                                    (local.get $delayIndex)
+                                ))
+                                (f32.mul
+                                    (f32.load offset={{.InputNumber "delay" "delaytime" | mul 4 | add 32}} (global.get $WRK))
+                                    (f32.const 32767)
+                                )
+                            ))
+{{- else}}
                             (local.set $delayTime (f32.convert_i32_u (i32.load16_u
                                     offset={{index .Labels "su_delay_times"}}
                                     (local.get $delayIndex)
                             )))
+{{- end}}
 {{- if .SupportsParamValue "delay" "notetracking" 1}}
                             (if (i32.eqz (i32.and (local.get $delayCount) (i32.const 1)))(then
                                 (local.set $delayTime (f32.div
@@ -312,20 +325,7 @@
                                 ))
                             ))
 {{- end}}
-{{- if .SupportsModulation "delay" "delaytime"}}
-                            (i32.trunc_f32_s (f32.add
-                                (f32.add
-                                    (local.get $delayTime)
-                                    (f32.mul
-                                        (f32.load offset={{.InputNumber "delay" "delaytime" | mul 4 | add 32}} (global.get $WRK))
-                                        (f32.const 32767)
-                                    )
-                                )
-                                (f32.const 0.5)
-                            ))
-{{- else}}
                             (i32.trunc_f32_s (f32.add (local.get $delayTime) (f32.const 0.5)))
-{{- end}}
 {{- else}}
                             (i32.load16_u
                                 offset={{index .Labels "su_delay_times"}}

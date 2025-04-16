@@ -45,6 +45,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   be computed every draw. ([#176][i176])
 
 ### Fixed
+- BREAKING CHANGE: always first modulate delay time, then apply notetracking. In
+  a delay unit, modulation adds to the delay time, while note tracking
+  multiplies it with a multiplier dependent on the note. The order of these
+  operations was different in the Go VM vs. x86 VM & WebAssembly VM. In the Go
+  VM, it first modulated, and then applied the note tracking multiplication. In
+  the two assembly VMs, it first applied the note tracking and then modulated.
+  Of these two behaviours, the Go VM behaviour made more sense: if you make a
+  vibrato of +-50 cents for C4, you probably want a vibrato of +-50 cents for C6
+  also. Thus, first modulating and then applying the note tracking
+  multiplication is now the behaviour accross all VMs.
 - Loading instrument forgot to close the file (in model.ReadInstrument)
 - We try to honor the MIDI event time stamps, so that the timing between MIDI
   events (as reported to us by RTMIDI) will be correct.
