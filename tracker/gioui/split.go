@@ -20,6 +20,8 @@ type Split struct {
 	// Axis is the split direction: layout.Horizontal splits the view in left
 	// and right, layout.Vertical splits the view in top and bottom
 	Axis layout.Axis
+	// Minimum sizes of the first and second widget in the split, in dp
+	MinSize1, MinSize2 unit.Dp
 
 	drag      bool
 	dragID    pointer.ID
@@ -28,107 +30,73 @@ type Split struct {
 
 var defaultBarWidth = unit.Dp(10)
 
-func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.Dimensions {
-	bar := gtx.Dp(s.Bar)
-	if bar <= 1 {
-		bar = gtx.Dp(defaultBarWidth)
-	}
+func (s *Split) Update(gtx layout.Context) {
+	for {
+		ev, ok := gtx.Event(pointer.Filter{
+			Target: s,
+			Kinds:  pointer.Press | pointer.Drag | pointer.Release,
+			// TODO: there should be a grab; there was Grab:  s.drag,
+		})
+		if !ok {
+			break
+		}
+		e, ok := ev.(pointer.Event)
+		if !ok {
+			continue
+		}
 
-	var coord int
-	if s.Axis == layout.Horizontal {
-		coord = gtx.Constraints.Max.X
-	} else {
-		coord = gtx.Constraints.Max.Y
-	}
-
-	proportion := (s.Ratio + 1) / 2
-	firstSize := int(proportion*float32(coord) - float32(bar))
-
-	secondOffset := firstSize + bar
-	secondSize := coord - secondOffset
-
-	{ // handle input
-		// Avoid affecting the input tree with pointer events.
-		for {
-			ev, ok := gtx.Event(pointer.Filter{
-				Target: s,
-				Kinds:  pointer.Press | pointer.Drag | pointer.Release,
-				// TODO: there should be a grab; there was Grab:  s.drag,
-			})
-			if !ok {
+		switch e.Kind {
+		case pointer.Press:
+			if s.drag {
 				break
 			}
-			e, ok := ev.(pointer.Event)
-			if !ok {
-				continue
+
+			s.dragID = e.PointerID
+			if s.Axis == layout.Horizontal {
+				s.dragCoord = e.Position.X
+			} else {
+				s.dragCoord = e.Position.Y
+			}
+			s.drag = true
+			// when the user start dragging, the new display ratio becomes the underlying ratio
+			s.Ratio = s.calculateRatio(gtx)
+
+		case pointer.Drag:
+			if s.dragID != e.PointerID {
+				break
 			}
 
-			switch e.Kind {
-			case pointer.Press:
-				if s.drag {
-					break
-				}
-
-				s.dragID = e.PointerID
-				if s.Axis == layout.Horizontal {
-					s.dragCoord = e.Position.X
-				} else {
-					s.dragCoord = e.Position.Y
-				}
-				s.drag = true
-
-			case pointer.Drag:
-				if s.dragID != e.PointerID {
-					break
-				}
-
-				var deltaCoord, deltaRatio float32
-				if s.Axis == layout.Horizontal {
-					deltaCoord = e.Position.X - s.dragCoord
-					s.dragCoord = e.Position.X
-					deltaRatio = deltaCoord * 2 / float32(gtx.Constraints.Max.X)
-				} else {
-					deltaCoord = e.Position.Y - s.dragCoord
-					s.dragCoord = e.Position.Y
-					deltaRatio = deltaCoord * 2 / float32(gtx.Constraints.Max.Y)
-				}
-
-				s.Ratio += deltaRatio
-
-			case pointer.Release:
-				fallthrough
-			case pointer.Cancel:
-				s.drag = false
+			if s.Axis == layout.Horizontal {
+				s.Ratio += (e.Position.X - s.dragCoord) / float32(gtx.Constraints.Max.X) * 2
+				s.dragCoord = e.Position.X
+			} else {
+				s.Ratio += (e.Position.Y - s.dragCoord) / float32(gtx.Constraints.Max.Y) * 2
+				s.dragCoord = e.Position.Y
 			}
+
+		case pointer.Release, pointer.Cancel:
+			if s.dragID == e.PointerID {
+				// when the user release the grab, the new display ratio becomes the underlying ratio
+				s.Ratio = s.calculateRatio(gtx)
+			}
+			s.drag = false
 		}
+	}
+}
 
-		low := -1 + float32(bar)/float32(coord)*2
-		const snapMargin = 0.1
+func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.Dimensions {
+	s.Update(gtx)
 
-		if s.Ratio < low {
-			s.Ratio = low
-		}
+	size1, size2, bar := s.calculateSplitSizes(gtx)
+	secondOffset := size1 + bar
 
-		if s.Ratio > 1 {
-			s.Ratio = 1
-		}
-
-		if s.Ratio < low+snapMargin {
-			firstSize = 0
-			secondOffset = bar
-			secondSize = coord - bar
-		} else if s.Ratio > 1-snapMargin {
-			firstSize = coord - bar
-			secondOffset = coord
-			secondSize = 0
-		}
-
+	{
 		// register for input
 		var barRect image.Rectangle
 		if s.Axis == layout.Horizontal {
-			barRect = image.Rect(firstSize, 0, secondOffset, gtx.Constraints.Max.Y)
+			barRect = image.Rect(size1, 0, secondOffset, gtx.Constraints.Max.Y)
 		} else {
-			barRect = image.Rect(0, firstSize, gtx.Constraints.Max.X, secondOffset)
+			barRect = image.Rect(0, size1, gtx.Constraints.Max.X, secondOffset)
 		}
 		area := clip.Rect(barRect).Push(gtx.Ops)
 		event.Op(gtx.Ops, s)
@@ -144,9 +112,9 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 		gtx := gtx
 
 		if s.Axis == layout.Horizontal {
-			gtx.Constraints = layout.Exact(image.Pt(firstSize, gtx.Constraints.Max.Y))
+			gtx.Constraints = layout.Exact(image.Pt(size1, gtx.Constraints.Max.Y))
 		} else {
-			gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, firstSize))
+			gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, size1))
 		}
 		area := clip.Rect(image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)).Push(gtx.Ops)
 		first(gtx)
@@ -159,10 +127,10 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 		var transform op.TransformStack
 		if s.Axis == layout.Horizontal {
 			transform = op.Offset(image.Pt(secondOffset, 0)).Push(gtx.Ops)
-			gtx.Constraints = layout.Exact(image.Pt(secondSize, gtx.Constraints.Max.Y))
+			gtx.Constraints = layout.Exact(image.Pt(size2, gtx.Constraints.Max.Y))
 		} else {
 			transform = op.Offset(image.Pt(0, secondOffset)).Push(gtx.Ops)
-			gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, secondSize))
+			gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, size2))
 		}
 
 		area := clip.Rect(image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)).Push(gtx.Ops)
@@ -172,4 +140,54 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 	}
 
 	return layout.Dimensions{Size: gtx.Constraints.Max}
+}
+
+func (s *Split) calculateRatio(gtx layout.Context) float32 {
+	size1, size2, bar := s.calculateSplitSizes(gtx)
+	total := size1 + size2 + bar
+	if total <= 0 {
+		return 0
+	}
+	return 2*float32(size1+bar/2)/float32(total) - 1
+}
+
+func (s *Split) calculateSplitSizes(gtx layout.Context) (size1, size2, bar int) {
+	bar = gtx.Dp(s.Bar)
+	if bar <= 1 {
+		bar = gtx.Dp(defaultBarWidth)
+	}
+
+	total := gtx.Constraints.Max.Y
+	if s.Axis == layout.Horizontal {
+		total = gtx.Constraints.Max.X
+	}
+	if total < 0 {
+		total = 0
+	}
+	if total < bar {
+		return 0, 0, total
+	}
+	totalSize := total - bar
+	size1 = int((s.Ratio+1)/2*float32(total) - float32(bar)/2)
+	minSize1 := gtx.Dp(s.MinSize1)
+	minSize2 := gtx.Dp(s.MinSize2)
+
+	// we always hide the smaller split first
+	if s.Ratio < 0 {
+		size1 = limitSplitSize(size1, totalSize, minSize1, minSize2)
+	} else {
+		size1 = totalSize - limitSplitSize(totalSize-size1, totalSize, minSize2, minSize1)
+	}
+	size2 = totalSize - size1
+	return size1, size2, bar
+}
+
+// limitSplitSize hides the first split if it is smaller than minSize1/2 or if
+// the total size is smaller than minSize1+minSize2. Otherwise, it clamps the
+// size so that both split get at least minSize1 and minSize2 respectively.
+func limitSplitSize(size, totalPx, minSize1, minSize2 int) int {
+	if size < minSize1/2 || totalPx < minSize1+minSize2 {
+		return 0 // the first split is completely hidden
+	}
+	return min(max(size, minSize1), totalPx-minSize2)
 }

@@ -73,9 +73,9 @@ func NewTracker(model *tracker.Model) *Tracker {
 		OctaveNumberInput: NewNumberInput(model.Octave().Int()),
 		InstrumentVoices:  NewNumberInput(model.InstrumentVoices().Int()),
 
-		TopHorizontalSplit:    &Split{Ratio: -.5},
-		BottomHorizontalSplit: &Split{Ratio: -.6},
-		VerticalSplit:         &Split{Axis: layout.Vertical},
+		TopHorizontalSplit:    &Split{Ratio: -.5, MinSize1: 180, MinSize2: 180},
+		BottomHorizontalSplit: &Split{Ratio: -.6, MinSize1: 180, MinSize2: 180},
+		VerticalSplit:         &Split{Axis: layout.Vertical, MinSize1: 180, MinSize2: 180},
 
 		KeyPlaying:        make(map[key.Name]tracker.NoteID),
 		MidiNotePlaying:   make([]byte, 0, 32),

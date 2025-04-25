@@ -87,6 +87,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   ([#156][i156])
 
 ### Changed
+- The draggable UI splitters snap more controllably to the window edges.
 - New & better presets, organized by their type to subfolders (thanks Reaby!)
   ([#136][i136])
 - Presets get their name by concatenating their subdirectory path (with path
