@@ -19,9 +19,6 @@ import (
 )
 
 type SongPanel struct {
-	MenuBar []widget.Clickable
-	Menus   []Menu
-
 	SongSettingsExpander *Expander
 	ScopeExpander        *Expander
 	LoudnessExpander     *Expander
@@ -33,38 +30,21 @@ type SongPanel struct {
 	Step           *NumberInput
 	SongLength     *NumberInput
 
-	PanicBtn *BoolClickable
-	Scope    *Oscilloscope
-	PlayBar  *PlayBar
+	Scope *Oscilloscope
 
-	// File menu items
-	fileMenuItems  []MenuItem
-	NewSong        tracker.Action
-	OpenSongFile   tracker.Action
-	SaveSongFile   tracker.Action
-	SaveSongAsFile tracker.Action
-	ExportWav      tracker.Action
-	Quit           tracker.Action
-
-	// Edit menu items
-	editMenuItems []MenuItem
-
-	panicHint string
-	// Midi menu items
-	midiMenuItems []MenuItem
+	MenuBar *MenuBar
+	PlayBar *PlayBar
 }
 
 func NewSongPanel(model *tracker.Model) *SongPanel {
 	ret := &SongPanel{
-		MenuBar:        make([]widget.Clickable, 3),
-		Menus:          make([]Menu, 3),
 		BPM:            NewNumberInput(model.BPM().Int()),
 		RowsPerPattern: NewNumberInput(model.RowsPerPattern().Int()),
 		RowsPerBeat:    NewNumberInput(model.RowsPerBeat().Int()),
 		Step:           NewNumberInput(model.Step().Int()),
 		SongLength:     NewNumberInput(model.SongLength().Int()),
-		PanicBtn:       NewBoolClickable(model.Panic().Bool()),
 		Scope:          NewOscilloscope(model),
+		MenuBar:        NewMenuBar(model),
 		PlayBar:        NewPlayBar(model),
 
 		SongSettingsExpander: &Expander{Expanded: true},
@@ -72,73 +52,14 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		LoudnessExpander:     &Expander{},
 		PeakExpander:         &Expander{},
 	}
-	ret.fileMenuItems = []MenuItem{
-		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: keyActionMap["NewSong"], Doer: model.NewSong()},
-		{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: keyActionMap["OpenSong"], Doer: model.OpenSong()},
-		{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: keyActionMap["SaveSong"], Doer: model.SaveSong()},
-		{IconBytes: icons.ContentSave, Text: "Save Song As...", ShortcutText: keyActionMap["SaveSongAs"], Doer: model.SaveSongAs()},
-		{IconBytes: icons.ImageAudiotrack, Text: "Export Wav...", ShortcutText: keyActionMap["ExportWav"], Doer: model.Export()},
-	}
-	if canQuit {
-		ret.fileMenuItems = append(ret.fileMenuItems, MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit", ShortcutText: keyActionMap["Quit"], Doer: model.Quit()})
-	}
-	ret.editMenuItems = []MenuItem{
-		{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: keyActionMap["Undo"], Doer: model.Undo()},
-		{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: keyActionMap["Redo"], Doer: model.Redo()},
-		{IconBytes: icons.ImageCrop, Text: "Remove unused data", ShortcutText: keyActionMap["RemoveUnused"], Doer: model.RemoveUnused()},
-	}
-	for input := range model.MIDI.InputDevices {
-		ret.midiMenuItems = append(ret.midiMenuItems, MenuItem{
-			IconBytes: icons.ImageControlPoint,
-			Text:      input.String(),
-			Doer:      model.SelectMidiInput(input),
-		})
-	}
-	ret.panicHint = makeHint("Panic", " (%s)", "PanicToggle")
 	return ret
 }
 
 func (s *SongPanel) Layout(gtx C, t *Tracker) D {
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
-			return s.layoutMenuBar(gtx, t)
+			return s.MenuBar.Layout(gtx, t)
 		}),
-		layout.Rigid(func(gtx C) D {
-			return s.layoutSongOptions(gtx, t)
-		}),
-	)
-}
-
-func (t *SongPanel) layoutMenuBar(gtx C, tr *Tracker) D {
-	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(36))
-	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
-
-	panicBtnStyle := ToggleIcon(gtx, tr.Theme, t.PanicBtn, icons.AlertErrorOutline, icons.AlertError, t.panicHint, t.panicHint)
-	if t.PanicBtn.Bool.Value() {
-		panicBtnStyle.IconButtonStyle.Color = errorColor
-	}
-	menuLayouts := []layout.FlexChild{
-		layout.Rigid(tr.layoutMenu(gtx, "File", &t.MenuBar[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
-		layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.MenuBar[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...)),
-	}
-	if len(t.midiMenuItems) > 0 {
-		menuLayouts = append(
-			menuLayouts,
-			layout.Rigid(tr.layoutMenu(gtx, "MIDI", &t.MenuBar[2], &t.Menus[2], unit.Dp(200), t.midiMenuItems...)),
-		)
-	}
-	menuLayouts = append(menuLayouts, layout.Flexed(1, func(gtx C) D {
-		return layout.E.Layout(gtx, panicBtnStyle.Layout)
-	}))
-	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}.Layout(gtx, menuLayouts...)
-}
-
-func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
-	paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
-
-	scopeStyle := LineOscilloscope(t.Scope, tr.SignalAnalyzer().Waveform(), tr.Theme)
-
-	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Background{}.Layout(gtx,
 				func(gtx C) D {
@@ -148,10 +69,22 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 					return D{Size: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}
 				},
 				func(gtx C) D {
-					return t.PlayBar.Layout(gtx, tr.Theme)
+					return s.PlayBar.Layout(gtx, t.Theme)
 				},
 			)
 		}),
+		layout.Rigid(func(gtx C) D {
+			return s.layoutSongOptions(gtx, t)
+		}),
+	)
+}
+
+func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
+	paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
+
+	scopeStyle := LineOscilloscope(t.Scope, tr.SignalAnalyzer().Waveform(), tr.Theme)
+
+	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return t.SongSettingsExpander.Layout(gtx, tr.Theme, "Song",
 				func(gtx C) D {
@@ -329,6 +262,74 @@ func (e *Expander) layoutHeader(gtx C, th *material.Theme, title string, smallWi
 			)
 		},
 	)
+}
+
+type MenuBar struct {
+	Clickables []widget.Clickable
+	Menus      []Menu
+
+	fileMenuItems []MenuItem
+	editMenuItems []MenuItem
+	midiMenuItems []MenuItem
+
+	panicHint string
+	PanicBtn  *BoolClickable
+}
+
+func NewMenuBar(model *tracker.Model) *MenuBar {
+	ret := &MenuBar{
+		Clickables: make([]widget.Clickable, 3),
+		Menus:      make([]Menu, 3),
+		PanicBtn:   NewBoolClickable(model.Panic().Bool()),
+		panicHint:  makeHint("Panic", " (%s)", "PanicToggle"),
+	}
+	ret.fileMenuItems = []MenuItem{
+		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: keyActionMap["NewSong"], Doer: model.NewSong()},
+		{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: keyActionMap["OpenSong"], Doer: model.OpenSong()},
+		{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: keyActionMap["SaveSong"], Doer: model.SaveSong()},
+		{IconBytes: icons.ContentSave, Text: "Save Song As...", ShortcutText: keyActionMap["SaveSongAs"], Doer: model.SaveSongAs()},
+		{IconBytes: icons.ImageAudiotrack, Text: "Export Wav...", ShortcutText: keyActionMap["ExportWav"], Doer: model.Export()},
+	}
+	if canQuit {
+		ret.fileMenuItems = append(ret.fileMenuItems, MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit", ShortcutText: keyActionMap["Quit"], Doer: model.Quit()})
+	}
+	ret.editMenuItems = []MenuItem{
+		{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: keyActionMap["Undo"], Doer: model.Undo()},
+		{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: keyActionMap["Redo"], Doer: model.Redo()},
+		{IconBytes: icons.ImageCrop, Text: "Remove unused data", ShortcutText: keyActionMap["RemoveUnused"], Doer: model.RemoveUnused()},
+	}
+	for input := range model.MIDI.InputDevices {
+		ret.midiMenuItems = append(ret.midiMenuItems, MenuItem{
+			IconBytes: icons.ImageControlPoint,
+			Text:      input.String(),
+			Doer:      model.SelectMidiInput(input),
+		})
+	}
+	return ret
+}
+
+func (t *MenuBar) Layout(gtx C, tr *Tracker) D {
+	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(36))
+	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
+
+	panicBtnStyle := ToggleIcon(gtx, tr.Theme, t.PanicBtn, icons.AlertErrorOutline, icons.AlertError, t.panicHint, t.panicHint)
+	if t.PanicBtn.Bool.Value() {
+		panicBtnStyle.IconButtonStyle.Color = errorColor
+	}
+	menuLayouts := []layout.FlexChild{
+		layout.Rigid(tr.layoutMenu(gtx, "File", &t.Clickables[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
+		layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.Clickables[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...)),
+	}
+	if len(t.midiMenuItems) > 0 {
+		menuLayouts = append(
+			menuLayouts,
+			layout.Rigid(tr.layoutMenu(gtx, "MIDI", &t.Clickables[2], &t.Menus[2], unit.Dp(200), t.midiMenuItems...)),
+		)
+	}
+	menuLayouts = append(menuLayouts, layout.Flexed(1, func(gtx C) D {
+		return layout.E.Layout(gtx, panicBtnStyle.Layout)
+	}))
+	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}.Layout(gtx, menuLayouts...)
 }
 
 type PlayBar struct {
