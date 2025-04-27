@@ -29,6 +29,8 @@ type (
 	RowsPerBeat      Model
 	Step             Model
 	Octave           Model
+
+	DetectorWeighting Model
 )
 
 func (v Int) Add(delta int) (ok bool) {
@@ -59,14 +61,15 @@ func (r intRange) Clamp(value int) int {
 
 // Model methods
 
-func (m *Model) InstrumentVoices() *InstrumentVoices { return (*InstrumentVoices)(m) }
-func (m *Model) TrackVoices() *TrackVoices           { return (*TrackVoices)(m) }
-func (m *Model) SongLength() *SongLength             { return (*SongLength)(m) }
-func (m *Model) BPM() *BPM                           { return (*BPM)(m) }
-func (m *Model) RowsPerPattern() *RowsPerPattern     { return (*RowsPerPattern)(m) }
-func (m *Model) RowsPerBeat() *RowsPerBeat           { return (*RowsPerBeat)(m) }
-func (m *Model) Step() *Step                         { return (*Step)(m) }
-func (m *Model) Octave() *Octave                     { return (*Octave)(m) }
+func (m *Model) InstrumentVoices() *InstrumentVoices   { return (*InstrumentVoices)(m) }
+func (m *Model) TrackVoices() *TrackVoices             { return (*TrackVoices)(m) }
+func (m *Model) SongLength() *SongLength               { return (*SongLength)(m) }
+func (m *Model) BPM() *BPM                             { return (*BPM)(m) }
+func (m *Model) RowsPerPattern() *RowsPerPattern       { return (*RowsPerPattern)(m) }
+func (m *Model) RowsPerBeat() *RowsPerBeat             { return (*RowsPerBeat)(m) }
+func (m *Model) Step() *Step                           { return (*Step)(m) }
+func (m *Model) Octave() *Octave                       { return (*Octave)(m) }
+func (m *Model) DetectorWeighting() *DetectorWeighting { return (*DetectorWeighting)(m) }
 
 // BeatsPerMinuteInt
 
@@ -125,6 +128,17 @@ func (v *RowsPerBeat) Range() intRange    { return intRange{1, 32} }
 func (v *RowsPerBeat) change(kind string) func() {
 	return (*Model)(v).change("RowsPerBeatInt."+kind, SongChange, MinorChange)
 }
+
+// ModelLoudnessType
+
+func (v *DetectorWeighting) Int() Int   { return Int{v} }
+func (v *DetectorWeighting) Value() int { return int(v.weightingType) }
+func (v *DetectorWeighting) setValue(value int) {
+	v.weightingType = WeightingType(value)
+	trySend(v.broker.ToDetector, MsgToDetector{HasWeightingType: true, WeightingType: WeightingType(value)})
+}
+func (v *DetectorWeighting) Range() intRange           { return intRange{0, int(NumLoudnessTypes) - 1} }
+func (v *DetectorWeighting) change(kind string) func() { return func() {} }
 
 // InstrumentVoicesInt
 

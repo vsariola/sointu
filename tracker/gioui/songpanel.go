@@ -23,6 +23,9 @@ type SongPanel struct {
 	LoudnessExpander     *Expander
 	PeakExpander         *Expander
 
+	WeightingTypeBtn *Clickable
+	OversamplingBtn  *Clickable
+
 	BPM            *NumberInput
 	RowsPerPattern *NumberInput
 	RowsPerBeat    *NumberInput
@@ -46,6 +49,9 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		MenuBar:        NewMenuBar(model),
 		PlayBar:        NewPlayBar(model),
 
+		WeightingTypeBtn: &Clickable{},
+		OversamplingBtn:  &Clickable{},
+
 		SongSettingsExpander: &Expander{Expanded: true},
 		ScopeExpander:        &Expander{},
 		LoudnessExpander:     &Expander{},
@@ -54,7 +60,17 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 	return ret
 }
 
+func (s *SongPanel) Update(gtx C, t *Tracker) {
+	for s.WeightingTypeBtn.Clicked(gtx) {
+		t.Model.DetectorWeighting().Int().Set((t.DetectorWeighting().Value() + 1) % int(tracker.NumWeightingTypes))
+	}
+	for s.OversamplingBtn.Clicked(gtx) {
+		t.Model.Oversampling().Bool().Set(!t.Oversampling().Value())
+	}
+}
+
 func (s *SongPanel) Layout(gtx C, t *Tracker) D {
+	s.Update(gtx, t)
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return s.MenuBar.Layout(gtx, t)
@@ -82,6 +98,28 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 	paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 
 	scopeStyle := LineOscilloscope(t.Scope, tr.SignalAnalyzer().Waveform(), tr.Theme)
+
+	var weightingTxt string
+	switch tracker.WeightingType(tr.Model.DetectorWeighting().Value()) {
+	case tracker.KWeighting:
+		weightingTxt = "K-weight (LUFS)"
+	case tracker.AWeighting:
+		weightingTxt = "A-weight"
+	case tracker.CWeighting:
+		weightingTxt = "C-weight"
+	case tracker.NoWeighting:
+		weightingTxt = "No weight (RMS)"
+	}
+
+	weightingBtn := LowEmphasisButton(tr.Theme, t.WeightingTypeBtn, weightingTxt)
+	weightingBtn.Color = mediumEmphasisTextColor
+
+	oversamplingTxt := "Sample peak"
+	if tr.Model.Oversampling().Value() {
+		oversamplingTxt = "True peak"
+	}
+	oversamplingBtn := LowEmphasisButton(tr.Theme, t.OversamplingBtn, oversamplingTxt)
+	oversamplingBtn.Color = mediumEmphasisTextColor
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
@@ -115,7 +153,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 					return LabelStyle{Text: fmt.Sprintf("%.1f dB", tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm]), Color: mediumEmphasisTextColor, Alignment: layout.W, FontSize: tr.Theme.TextSize * 14.0 / 16.0, Shaper: tr.Theme.Shaper}.Layout(gtx)
 				},
 				func(gtx C) D {
-					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+					return layout.Flex{Axis: layout.Vertical, Alignment: layout.End}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
 							return layoutSongOptionRow(gtx, tr.Theme, "Momentary", dbLabel(tr.Theme, tr.Model.DetectorResult().Loudness[tracker.LoudnessMomentary]).Layout)
 						}),
@@ -131,6 +169,10 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 						layout.Rigid(func(gtx C) D {
 							return layoutSongOptionRow(gtx, tr.Theme, "Max. short term", dbLabel(tr.Theme, tr.Model.DetectorResult().Loudness[tracker.LoudnessMaxShortTerm]).Layout)
 						}),
+						layout.Rigid(func(gtx C) D {
+							gtx.Constraints.Min.X = 0
+							return weightingBtn.Layout(gtx)
+						}),
 					)
 				},
 			)
@@ -142,7 +184,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 					return dbLabel(tr.Theme, maxPeak).Layout(gtx)
 				},
 				func(gtx C) D {
-					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+					return layout.Flex{Axis: layout.Vertical, Alignment: layout.End}.Layout(gtx,
 						// no need to show momentary peak, it does not have too much meaning
 						layout.Rigid(func(gtx C) D {
 							return layoutSongOptionRow(gtx, tr.Theme, "Short term L", dbLabel(tr.Theme, tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][0]).Layout)
@@ -155,6 +197,10 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 						}),
 						layout.Rigid(func(gtx C) D {
 							return layoutSongOptionRow(gtx, tr.Theme, "Integrated R", dbLabel(tr.Theme, tr.Model.DetectorResult().Peaks[tracker.PeakIntegrated][1]).Layout)
+						}),
+						layout.Rigid(func(gtx C) D {
+							gtx.Constraints.Min.X = 0
+							return oversamplingBtn.Layout(gtx)
 						}),
 					)
 				},

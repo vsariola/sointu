@@ -73,6 +73,9 @@ type (
 		signalAnalyzer *ScopeModel
 		detectorResult DetectorResult
 
+		weightingType WeightingType
+		oversampling  bool
+
 		alerts  []Alert
 		dialog  Dialog
 		synther sointu.Synther // the synther used to create new synths

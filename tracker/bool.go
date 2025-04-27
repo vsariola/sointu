@@ -26,6 +26,7 @@ type (
 	Mute            Model
 	Solo            Model
 	LinkInstrTrack  Model
+	Oversampling    Model
 )
 
 func (v Bool) Toggle() {
@@ -55,6 +56,7 @@ func (m *Model) UniquePatterns() *UniquePatterns   { return (*UniquePatterns)(m)
 func (m *Model) Mute() *Mute                       { return (*Mute)(m) }
 func (m *Model) Solo() *Solo                       { return (*Solo)(m) }
 func (m *Model) LinkInstrTrack() *LinkInstrTrack   { return (*LinkInstrTrack)(m) }
+func (m *Model) Oversampling() *Oversampling       { return (*Oversampling)(m) }
 
 // Panic methods
 
@@ -135,6 +137,16 @@ func (m *Effect) setValue(val bool) {
 	m.d.Song.Score.Tracks[m.d.Cursor.Track].Effect = val
 }
 func (m *Effect) Enabled() bool { return true }
+
+// Oversampling methods
+
+func (m *Oversampling) Bool() Bool  { return Bool{m} }
+func (m *Oversampling) Value() bool { return m.oversampling }
+func (m *Oversampling) setValue(val bool) {
+	m.oversampling = val
+	trySend(m.broker.ToDetector, MsgToDetector{HasOversampling: true, Oversampling: val})
+}
+func (m *Oversampling) Enabled() bool { return true }
 
 // UnitSearching methods
 

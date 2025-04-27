@@ -89,6 +89,7 @@ const (
 	AWeighting
 	CWeighting
 	NoWeighting
+	NumWeightingTypes
 )
 
 func NewDetector(b *Broker) *Detector {
@@ -109,6 +110,15 @@ func (s *Detector) Run() {
 		if msg.Quit {
 			return
 		}
+		if msg.HasWeightingType {
+			s.loudnessDetector.weighting = weightings[WeightingType(msg.WeightingType)]
+			s.loudnessDetector.reset()
+		}
+		if msg.HasOversampling {
+			s.peakDetector.oversampling = msg.Oversampling
+			s.peakDetector.reset()
+		}
+
 		switch data := msg.Data.(type) {
 		case *sointu.AudioBuffer:
 			buf := *data
@@ -367,7 +377,12 @@ func (d *peakDetector) update(buf sointu.AudioBuffer) (ret PeakResult) {
 			d.tmp[i] = buf[i][chn]
 		}
 		// 4x oversample the signal
-		o := d.states[chn].Oversample(d.tmp[:len(buf)], d.tmp2)
+		var o []float32
+		if d.oversampling {
+			o = d.states[chn].Oversample(d.tmp[:len(buf)], d.tmp2)
+		} else {
+			o = d.tmp[:len(buf)]
+		}
 		// take absolute value of the oversampled signal
 		vek32.Abs_Inplace(o)
 		p := vek32.Max(o)

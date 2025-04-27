@@ -5,8 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
-- The loudness detection is now LUFS and peak detection is based on oversampled
-  true peak detection
+- The loudness detection supports LUFS, A-weighting, C-weighting or
+  RMS-weighting, and peak detection supports true peak or sample peak detection.
+  The loudness and peak values are displayed in the song panel ([#186][i186])
 - Oscilloscope to visualize the outputted waveform ([#61][i61])
 - Toggle button to keep instruments and tracks linked, and buttons to to split
   instruments and tracks with more than 1 voice into parallel ones
@@ -321,3 +322,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i168]: https://github.com/vsariola/sointu/issues/168
 [i170]: https://github.com/vsariola/sointu/issues/170
 [i176]: https://github.com/vsariola/sointu/issues/176
+[i186]: https://github.com/vsariola/sointu/issues/186

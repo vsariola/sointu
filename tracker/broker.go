@@ -51,6 +51,11 @@ type (
 		Reset bool
 		Quit  bool
 		Data  any // TODO: consider using a sum type here, for a bit more type safety. See: https://www.jerf.org/iri/post/2917/
+
+		WeightingType    WeightingType
+		HasWeightingType bool
+		Oversampling     bool
+		HasOversampling  bool
 	}
 )
 
