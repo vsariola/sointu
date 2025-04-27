@@ -166,8 +166,8 @@ func makePeakDetector(oversampling bool) peakDetector {
 	return peakDetector{
 		oversampling: oversampling,
 		windows: [2][2]RingBuffer[float32]{
-			{{Buffer: make([]float32, 4)}, {Buffer: make([]float32, 30)}}, // momentary and short-term peaks for left channel
-			{{Buffer: make([]float32, 4)}, {Buffer: make([]float32, 30)}}, // momentary and short-term peaks for right channel
+			{{Buffer: make([]float32, 4)}, {Buffer: make([]float32, 4)}},   // momentary peaks
+			{{Buffer: make([]float32, 30)}, {Buffer: make([]float32, 30)}}, // short-term peaks
 		},
 	}
 }
@@ -361,9 +361,9 @@ func (d *peakDetector) update(buf sointu.AudioBuffer) (ret PeakResult) {
 	if len(d.tmp2) < len4 {
 		d.tmp2 = append(d.tmp2, make([]float32, len4-len(d.tmp2))...)
 	}
-	for chn := 0; chn < 2; chn++ {
+	for chn := range 2 {
 		// deinterleave the channels
-		for i := 0; i < len(buf); i++ {
+		for i := range buf {
 			d.tmp[i] = buf[i][chn]
 		}
 		// 4x oversample the signal
@@ -386,13 +386,13 @@ func (d *peakDetector) update(buf sointu.AudioBuffer) (ret PeakResult) {
 }
 
 func (d *peakDetector) reset() {
-	for chn := 0; chn < 2; chn++ {
+	for chn := range 2 {
 		d.states[chn].history = [11]float32{}
 		for i := range d.windows[chn] {
-			d.windows[chn][i].Cursor = 0
-			l := len(d.windows[chn][i].Buffer)
-			d.windows[chn][i].Buffer = d.windows[chn][i].Buffer[:0]
-			d.windows[chn][i].Buffer = append(d.windows[chn][i].Buffer, make([]float32, l)...)
+			d.windows[i][chn].Cursor = 0
+			l := len(d.windows[i][chn].Buffer)
+			d.windows[i][chn].Buffer = d.windows[i][chn].Buffer[:0]
+			d.windows[i][chn].Buffer = append(d.windows[i][chn].Buffer, make([]float32, l)...)
 		}
 		d.maxPower[chn] = 0
 	}
