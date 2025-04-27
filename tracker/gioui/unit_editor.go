@@ -3,6 +3,10 @@ package gioui
 import (
 	"bytes"
 	"fmt"
+	"image"
+	"io"
+	"math"
+
 	"gioui.org/io/clipboard"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
@@ -19,9 +23,6 @@ import (
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"image"
-	"io"
-	"math"
 )
 
 type UnitEditor struct {
@@ -32,7 +33,7 @@ type UnitEditor struct {
 	CopyUnitBtn    *TipClickable
 	ClearUnitBtn   *ActionClickable
 	DisableUnitBtn *BoolClickable
-	SelectTypeBtn  *widget.Clickable
+	SelectTypeBtn  *Clickable
 	commentEditor  *Editor
 	caser          cases.Caser
 
@@ -47,7 +48,7 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 		ClearUnitBtn:   NewActionClickable(m.ClearUnit()),
 		DisableUnitBtn: NewBoolClickable(m.UnitDisabled().Bool()),
 		CopyUnitBtn:    new(TipClickable),
-		SelectTypeBtn:  new(widget.Clickable),
+		SelectTypeBtn:  new(Clickable),
 		commentEditor:  NewEditor(widget.Editor{SingleLine: true, Submit: true}),
 		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
 		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
@@ -236,9 +237,9 @@ func (pe *UnitEditor) command(e key.Event, t *Tracker) {
 type ParameterWidget struct {
 	floatWidget widget.Float
 	boolWidget  widget.Bool
-	instrBtn    widget.Clickable
+	instrBtn    Clickable
 	instrMenu   Menu
-	unitBtn     widget.Clickable
+	unitBtn     Clickable
 	unitMenu    Menu
 	Parameter   tracker.Parameter
 	tipArea     component.TipArea

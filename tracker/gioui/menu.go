@@ -12,8 +12,6 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/unit"
-	"gioui.org/widget"
-	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
 )
 
@@ -168,14 +166,14 @@ func PopupMenu(menu *Menu, shaper *text.Shaper) MenuStyle {
 	}
 }
 
-func (tr *Tracker) layoutMenu(gtx C, title string, clickable *widget.Clickable, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
+func (tr *Tracker) layoutMenu(gtx C, title string, clickable *Clickable, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
 	for clickable.Clicked(gtx) {
 		menu.Visible = true
 	}
 	m := PopupMenu(menu, tr.Theme.Shaper)
 	return func(gtx C) D {
 		defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-		titleBtn := material.Button(tr.Theme, clickable, title)
+		titleBtn := Button(tr.Theme, clickable, title)
 		titleBtn.Color = white
 		titleBtn.Background = transparent
 		titleBtn.CornerRadius = unit.Dp(0)

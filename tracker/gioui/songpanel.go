@@ -11,7 +11,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
-	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/version"
@@ -265,7 +264,7 @@ func (e *Expander) layoutHeader(gtx C, th *material.Theme, title string, smallWi
 }
 
 type MenuBar struct {
-	Clickables []widget.Clickable
+	Clickables []Clickable
 	Menus      []Menu
 
 	fileMenuItems []MenuItem
@@ -278,7 +277,7 @@ type MenuBar struct {
 
 func NewMenuBar(model *tracker.Model) *MenuBar {
 	ret := &MenuBar{
-		Clickables: make([]widget.Clickable, 3),
+		Clickables: make([]Clickable, 3),
 		Menus:      make([]Menu, 3),
 		PanicBtn:   NewBoolClickable(model.Panic().Bool()),
 		panicHint:  makeHint("Panic", " (%s)", "PanicToggle"),
