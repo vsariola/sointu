@@ -149,7 +149,7 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 }
 
 func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
-	return Surface{Gray: 37, Focus: te.scrollTable.Focused() || te.scrollTable.ChildFocused(), FitSize: true}.Layout(gtx, func(gtx C) D {
+	return Surface{Gray: 37, Focus: te.scrollTable.Focused() || te.scrollTable.ChildFocused()}.Layout(gtx, func(gtx C) D {
 		addSemitoneBtnStyle := ActionButton(gtx, t.Theme, te.AddSemitoneBtn, "+1")
 		subtractSemitoneBtnStyle := ActionButton(gtx, t.Theme, te.SubtractSemitoneBtn, "-1")
 		addOctaveBtnStyle := ActionButton(gtx, t.Theme, te.AddOctaveBtn, "+12")
@@ -240,7 +240,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		} else if mod(j, beatMarkerDensity) == 0 {
 			paint.FillShape(gtx.Ops, oneBeatHighlight, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, pxHeight)}.Op())
 		}
-		if t.SongPanel.PlayingBtn.Bool.Value() && j == playSongRow {
+		if t.Model.Playing().Value() && j == playSongRow {
 			paint.FillShape(gtx.Ops, trackerPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, pxHeight)}.Op())
 		}
 		return D{}

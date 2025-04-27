@@ -46,7 +46,7 @@ var loopMarkerColor = color.NRGBA{R: 252, G: 186, B: 3, A: 255}
 var instrumentHoverColor = color.NRGBA{R: 30, G: 31, B: 38, A: 255}
 var instrumentNameHintColor = color.NRGBA{R: 200, G: 200, B: 200, A: 255}
 
-var songSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
+var songSurfaceColor = color.NRGBA{R: 24, G: 24, B: 24, A: 255}
 
 var popupSurfaceColor = color.NRGBA{R: 50, G: 50, B: 51, A: 255}
 var popupShadowColor = color.NRGBA{R: 0, G: 0, B: 0, A: 192}

@@ -23,14 +23,9 @@ type SongPanel struct {
 	Step           *NumberInput
 	SongLength     *NumberInput
 
-	RewindBtn  *ActionClickable
-	PlayingBtn *BoolClickable
-	RecordBtn  *BoolClickable
-	FollowBtn  *BoolClickable
-	PanicBtn   *BoolClickable
-	LoopBtn    *BoolClickable
-
-	Scope *Oscilloscope
+	PanicBtn *BoolClickable
+	Scope    *Oscilloscope
+	PlayBar  *PlayBar
 
 	// File menu items
 	fileMenuItems  []MenuItem
@@ -44,14 +39,7 @@ type SongPanel struct {
 	// Edit menu items
 	editMenuItems []MenuItem
 
-	// Hints
-	rewindHint                  string
-	playHint, stopHint          string
-	recordHint, stopRecordHint  string
-	followOnHint, followOffHint string
-	panicHint                   string
-	loopOffHint, loopOnHint     string
-
+	panicHint string
 	// Midi menu items
 	midiMenuItems []MenuItem
 }
@@ -66,12 +54,8 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		Step:           NewNumberInput(model.Step().Int()),
 		SongLength:     NewNumberInput(model.SongLength().Int()),
 		PanicBtn:       NewBoolClickable(model.Panic().Bool()),
-		LoopBtn:        NewBoolClickable(model.LoopToggle().Bool()),
-		RecordBtn:      NewBoolClickable(model.IsRecording().Bool()),
-		FollowBtn:      NewBoolClickable(model.Follow().Bool()),
-		PlayingBtn:     NewBoolClickable(model.Playing().Bool()),
-		RewindBtn:      NewActionClickable(model.PlaySongStart()),
 		Scope:          NewOscilloscope(model),
+		PlayBar:        NewPlayBar(model),
 	}
 	ret.fileMenuItems = []MenuItem{
 		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: keyActionMap["NewSong"], Doer: model.NewSong()},
@@ -95,17 +79,7 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 			Doer:      model.SelectMidiInput(input),
 		})
 	}
-	ret.rewindHint = makeHint("Rewind", "\n(%s)", "PlaySongStartUnfollow")
-	ret.playHint = makeHint("Play", " (%s)", "PlayCurrentPosUnfollow")
-	ret.stopHint = makeHint("Stop", " (%s)", "StopPlaying")
 	ret.panicHint = makeHint("Panic", " (%s)", "PanicToggle")
-	ret.recordHint = makeHint("Record", " (%s)", "RecordingToggle")
-	ret.stopRecordHint = makeHint("Stop", " (%s)", "RecordingToggle")
-	ret.followOnHint = makeHint("Follow on", " (%s)", "FollowToggle")
-	ret.followOffHint = makeHint("Follow off", " (%s)", "FollowToggle")
-	ret.loopOffHint = makeHint("Loop off", " (%s)", "LoopToggle")
-	ret.loopOnHint = makeHint("Loop on", " (%s)", "LoopToggle")
-
 	return ret
 }
 
@@ -147,16 +121,22 @@ func (t *SongPanel) layoutMenuBar(gtx C, tr *Tracker) D {
 func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 	paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 
-	rewindBtnStyle := ActionIcon(gtx, tr.Theme, t.RewindBtn, icons.AVFastRewind, t.rewindHint)
-	playBtnStyle := ToggleIcon(gtx, tr.Theme, t.PlayingBtn, icons.AVPlayArrow, icons.AVStop, t.playHint, t.stopHint)
-	recordBtnStyle := ToggleIcon(gtx, tr.Theme, t.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, t.recordHint, t.stopRecordHint)
-	noteTrackBtnStyle := ToggleIcon(gtx, tr.Theme, t.FollowBtn, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, t.followOffHint, t.followOnHint)
-	loopBtnStyle := ToggleIcon(gtx, tr.Theme, t.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, t.loopOffHint, t.loopOnHint)
-
 	scopeStyle := LineOscilloscope(t.Scope, tr.SignalAnalyzer().Waveform(), tr.Theme)
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(layout.Spacer{Height: unit.Dp(6)}.Layout),
+		layout.Rigid(func(gtx C) D {
+			return layout.Background{}.Layout(gtx,
+				func(gtx C) D {
+					// push defer clip op
+					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)).Push(gtx.Ops).Pop()
+					paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
+					return D{Size: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}
+				},
+				func(gtx C) D {
+					return t.PlayBar.Layout(gtx, tr.Theme)
+				},
+			)
+		}),
 		layout.Rigid(func(gtx C) D {
 			return layoutSongOptionRow(gtx, tr.Theme, "Song length", NumericUpDown(tr.Theme, t.SongLength, "Song Length").Layout)
 		}),
@@ -173,15 +153,6 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 			return layoutSongOptionRow(gtx, tr.Theme, "Cursor step", NumericUpDown(tr.Theme, t.Step, "Cursor step").Layout)
 		}),
 		layout.Rigid(VuMeter{Loudness: tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm], Peak: tr.Model.DetectorResult().Peaks[tracker.PeakMomentary], Range: 100}.Layout),
-		layout.Rigid(func(gtx C) D {
-			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(rewindBtnStyle.Layout),
-				layout.Rigid(playBtnStyle.Layout),
-				layout.Rigid(recordBtnStyle.Layout),
-				layout.Rigid(noteTrackBtnStyle.Layout),
-				layout.Rigid(loopBtnStyle.Layout),
-			)
-		}),
 		layout.Flexed(1, scopeStyle.Layout),
 		layout.Rigid(func(gtx C) D {
 			labelStyle := LabelStyle{Text: version.VersionOrHash, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor, Shaper: tr.Theme.Shaper}
@@ -201,4 +172,56 @@ func layoutSongOptionRow(gtx C, th *material.Theme, label string, widget layout.
 		layout.Rigid(widget),
 		layout.Rigid(rightSpacer),
 	)
+}
+
+type PlayBar struct {
+	RewindBtn  *ActionClickable
+	PlayingBtn *BoolClickable
+	RecordBtn  *BoolClickable
+	FollowBtn  *BoolClickable
+	LoopBtn    *BoolClickable
+	// Hints
+	rewindHint                  string
+	playHint, stopHint          string
+	recordHint, stopRecordHint  string
+	followOnHint, followOffHint string
+	loopOffHint, loopOnHint     string
+}
+
+func NewPlayBar(model *tracker.Model) *PlayBar {
+	ret := &PlayBar{
+		LoopBtn:    NewBoolClickable(model.LoopToggle().Bool()),
+		RecordBtn:  NewBoolClickable(model.IsRecording().Bool()),
+		FollowBtn:  NewBoolClickable(model.Follow().Bool()),
+		PlayingBtn: NewBoolClickable(model.Playing().Bool()),
+		RewindBtn:  NewActionClickable(model.PlaySongStart()),
+	}
+	ret.rewindHint = makeHint("Rewind", "\n(%s)", "PlaySongStartUnfollow")
+	ret.playHint = makeHint("Play", " (%s)", "PlayCurrentPosUnfollow")
+	ret.stopHint = makeHint("Stop", " (%s)", "StopPlaying")
+	ret.recordHint = makeHint("Record", " (%s)", "RecordingToggle")
+	ret.stopRecordHint = makeHint("Stop", " (%s)", "RecordingToggle")
+	ret.followOnHint = makeHint("Follow on", " (%s)", "FollowToggle")
+	ret.followOffHint = makeHint("Follow off", " (%s)", "FollowToggle")
+	ret.loopOffHint = makeHint("Loop off", " (%s)", "LoopToggle")
+	ret.loopOnHint = makeHint("Loop on", " (%s)", "LoopToggle")
+	return ret
+}
+
+func (pb *PlayBar) Layout(gtx C, th *material.Theme) D {
+	rewindBtnStyle := ActionIcon(gtx, th, pb.RewindBtn, icons.AVFastRewind, pb.rewindHint)
+	playBtnStyle := ToggleIcon(gtx, th, pb.PlayingBtn, icons.AVPlayArrow, icons.AVStop, pb.playHint, pb.stopHint)
+	recordBtnStyle := ToggleIcon(gtx, th, pb.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, pb.recordHint, pb.stopRecordHint)
+	noteTrackBtnStyle := ToggleIcon(gtx, th, pb.FollowBtn, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, pb.followOffHint, pb.followOnHint)
+	loopBtnStyle := ToggleIcon(gtx, th, pb.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, pb.loopOffHint, pb.loopOnHint)
+
+	return Surface{Gray: 37}.Layout(gtx, func(gtx C) D {
+		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+			layout.Flexed(1, playBtnStyle.Layout),
+			layout.Rigid(rewindBtnStyle.Layout),
+			layout.Rigid(recordBtnStyle.Layout),
+			layout.Rigid(noteTrackBtnStyle.Layout),
+			layout.Rigid(loopBtnStyle.Layout),
+		)
+	})
 }

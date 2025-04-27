@@ -79,7 +79,7 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 	}
 
 	rowTitleBg := func(gtx C, j int) D {
-		if t.SongPanel.PlayingBtn.Bool.Value() && j == t.PlayPosition().OrderRow {
+		if t.Model.Playing().Value() && j == t.PlayPosition().OrderRow {
 			paint.FillShape(gtx.Ops, patternPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Dp(patternCellHeight))}.Op())
 		}
 		return D{}
