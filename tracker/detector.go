@@ -375,12 +375,12 @@ func (d *peakDetector) update(buf sointu.AudioBuffer) (ret PeakResult) {
 		for i := range d.windows {
 			d.windows[i][chn].WriteWrapSingle(p)
 			windowPeak := vek32.Max(d.windows[i][chn].Buffer)
-			ret[i+int(PeakMomentary)][chn] = Decibel(10 * math.Log10(float64(windowPeak)))
+			ret[i+int(PeakMomentary)][chn] = Decibel(20 * math.Log10(float64(windowPeak)))
 		}
 		if d.maxPower[chn] < p {
 			d.maxPower[chn] = p
 		}
-		ret[int(PeakIntegrated)][chn] = Decibel(10 * math.Log10(float64(d.maxPower[chn])))
+		ret[int(PeakIntegrated)][chn] = Decibel(20 * math.Log10(float64(d.maxPower[chn])))
 	}
 	return
 }
