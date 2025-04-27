@@ -8,6 +8,7 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget"
+	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/version"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -146,8 +147,6 @@ func (t *SongPanel) layoutMenuBar(gtx C, tr *Tracker) D {
 func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 	paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 
-	in := layout.UniformInset(unit.Dp(1))
-
 	rewindBtnStyle := ActionIcon(gtx, tr.Theme, t.RewindBtn, icons.AVFastRewind, t.rewindHint)
 	playBtnStyle := ToggleIcon(gtx, tr.Theme, t.PlayingBtn, icons.AVPlayArrow, icons.AVStop, t.playHint, t.stopHint)
 	recordBtnStyle := ToggleIcon(gtx, tr.Theme, t.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, t.recordHint, t.stopRecordHint)
@@ -157,64 +156,21 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 	scopeStyle := LineOscilloscope(t.Scope, tr.SignalAnalyzer().Waveform(), tr.Theme)
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+		layout.Rigid(layout.Spacer{Height: unit.Dp(6)}.Layout),
 		layout.Rigid(func(gtx C) D {
-			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("LEN:", white, tr.Theme.Shaper)),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					numStyle := NumericUpDown(tr.Theme, t.SongLength, "Song length")
-					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
-					dims := in.Layout(gtx, numStyle.Layout)
-					return dims
-				}),
-			)
+			return layoutSongOptionRow(gtx, tr.Theme, "Song length", NumericUpDown(tr.Theme, t.SongLength, "Song Length").Layout)
 		}),
 		layout.Rigid(func(gtx C) D {
-			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("BPM:", white, tr.Theme.Shaper)),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					numStyle := NumericUpDown(tr.Theme, t.BPM, "Beats per minute")
-					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
-					dims := in.Layout(gtx, numStyle.Layout)
-					return dims
-				}),
-			)
+			return layoutSongOptionRow(gtx, tr.Theme, "BPM", NumericUpDown(tr.Theme, t.BPM, "Song Length").Layout)
 		}),
 		layout.Rigid(func(gtx C) D {
-			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("RPP:", white, tr.Theme.Shaper)),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					numStyle := NumericUpDown(tr.Theme, t.RowsPerPattern, "Rows per pattern")
-					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
-					dims := in.Layout(gtx, numStyle.Layout)
-					return dims
-				}),
-			)
+			return layoutSongOptionRow(gtx, tr.Theme, "Rows per pat", NumericUpDown(tr.Theme, t.RowsPerPattern, "Rows per pattern").Layout)
 		}),
 		layout.Rigid(func(gtx C) D {
-			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("RPB:", white, tr.Theme.Shaper)),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					numStyle := NumericUpDown(tr.Theme, t.RowsPerBeat, "Rows per beat")
-					gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(20))
-					gtx.Constraints.Min.X = gtx.Dp(unit.Dp(70))
-					dims := in.Layout(gtx, numStyle.Layout)
-					return dims
-				}),
-			)
+			return layoutSongOptionRow(gtx, tr.Theme, "Rows per beat", NumericUpDown(tr.Theme, t.RowsPerBeat, "Rows per beat").Layout)
 		}),
 		layout.Rigid(func(gtx C) D {
-			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(Label("STP:", white, tr.Theme.Shaper)),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					numStyle := NumericUpDown(tr.Theme, t.Step, "Cursor step")
-					numStyle.UnitsPerStep = unit.Dp(20)
-					dims := in.Layout(gtx, numStyle.Layout)
-					return dims
-				}),
-			)
+			return layoutSongOptionRow(gtx, tr.Theme, "Cursor step", NumericUpDown(tr.Theme, t.Step, "Cursor step").Layout)
 		}),
 		layout.Rigid(VuMeter{Loudness: tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm], Peak: tr.Model.DetectorResult().Peaks[tracker.PeakMomentary], Range: 100}.Layout),
 		layout.Rigid(func(gtx C) D {
@@ -231,5 +187,18 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 			labelStyle := LabelStyle{Text: version.VersionOrHash, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor, Shaper: tr.Theme.Shaper}
 			return labelStyle.Layout(gtx)
 		}),
+	)
+}
+
+func layoutSongOptionRow(gtx C, th *material.Theme, label string, widget layout.Widget) D {
+	leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
+	rightSpacer := layout.Spacer{Width: unit.Dp(6)}.Layout
+
+	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+		layout.Rigid(leftSpacer),
+		layout.Rigid(LabelStyle{Text: label, Color: disabledTextColor, Alignment: layout.W, FontSize: th.TextSize * 14.0 / 16.0, Shaper: th.Shaper}.Layout),
+		layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
+		layout.Rigid(widget),
+		layout.Rigid(rightSpacer),
 	)
 }

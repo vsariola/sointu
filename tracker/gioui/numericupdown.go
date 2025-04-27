@@ -110,14 +110,14 @@ func (s *NumericUpDownStyle) Update(gtx layout.Context) {
 	}
 }
 
-func (s *NumericUpDownStyle) Layout(gtx C) D {
+func (s NumericUpDownStyle) Layout(gtx C) D {
 	if s.Tooltip.Text.Text != "" {
 		return s.NumberInput.tipArea.Layout(gtx, s.Tooltip, s.actualLayout)
 	}
 	return s.actualLayout(gtx)
 }
 
-func (s NumericUpDownStyle) actualLayout(gtx C) D {
+func (s *NumericUpDownStyle) actualLayout(gtx C) D {
 	s.Update(gtx)
 	gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(s.Width), gtx.Dp(s.Height)))
 	width := gtx.Dp(s.ButtonWidth)

@@ -160,7 +160,7 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 		newTrackBtnStyle := ActionIcon(gtx, t.Theme, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
 		in := layout.UniformInset(unit.Dp(1))
 		voiceUpDown := func(gtx C) D {
-			numStyle := NumericUpDown(t.Theme, te.TrackVoices, "Number of voices for this track")
+			numStyle := NumericUpDown(t.Theme, te.TrackVoices, "Track voices")
 			return in.Layout(gtx, numStyle.Layout)
 		}
 		effectBtnStyle := ToggleButton(gtx, t.Theme, te.EffectBtn, "Hex")
@@ -175,7 +175,9 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			layout.Rigid(noteOffBtnStyle.Layout),
 			layout.Rigid(effectBtnStyle.Layout),
 			layout.Rigid(uniqueBtnStyle.Layout),
-			layout.Rigid(Label("  Voices:", white, t.Theme.Shaper)),
+			layout.Rigid(layout.Spacer{Width: 10}.Layout),
+			layout.Rigid(LabelStyle{Text: "Voices", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.TextSize * 14.0 / 16.0, Shaper: t.Theme.Shaper}.Layout),
+			layout.Rigid(layout.Spacer{Width: 4}.Layout),
 			layout.Rigid(voiceUpDown),
 			layout.Rigid(splitTrackBtnStyle.Layout),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),

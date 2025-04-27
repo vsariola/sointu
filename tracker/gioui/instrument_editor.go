@@ -138,20 +138,15 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 	newBtnStyle := ActionIcon(gtx, t.Theme, ie.newInstrumentBtn, icons.ContentAdd, ie.addInstrumentHint)
 	ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
-			return layout.Flex{}.Layout(
+			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(
 				gtx,
 				layout.Flexed(1, func(gtx C) D {
 					return ie.layoutInstrumentList(gtx, t)
 				}),
-				layout.Rigid(func(gtx C) D {
-					inset := layout.UniformInset(unit.Dp(6))
-					return inset.Layout(gtx, func(gtx C) D {
-						return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-							layout.Rigid(Label("OCT:", white, t.Theme.Shaper)),
-							layout.Rigid(octave),
-						)
-					})
-				}),
+				layout.Rigid(layout.Spacer{Width: 10}.Layout),
+				layout.Rigid(LabelStyle{Text: "Octave", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.TextSize * 14.0 / 16.0, Shaper: t.Theme.Shaper}.Layout),
+				layout.Rigid(layout.Spacer{Width: 4}.Layout),
+				layout.Rigid(octave),
 				layout.Rigid(func(gtx C) D {
 					return layout.E.Layout(gtx, linkBtnStyle.Layout)
 				}),
@@ -218,7 +213,9 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 
 		header := func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(Label("Voices: ", white, t.Theme.Shaper)),
+				layout.Rigid(layout.Spacer{Width: 6}.Layout),
+				layout.Rigid(LabelStyle{Text: "Voices", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.TextSize * 14.0 / 16.0, Shaper: t.Theme.Shaper}.Layout),
+				layout.Rigid(layout.Spacer{Width: 4}.Layout),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					numStyle := NumericUpDown(t.Theme, t.InstrumentVoices, "Number of voices for this instrument")
 					dims := numStyle.Layout(gtx)

@@ -10,6 +10,7 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
+	"gioui.org/unit"
 	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
 )
@@ -54,20 +55,30 @@ func (s *OscilloscopeStyle) Layout(gtx C) D {
 	onceBtnStyle := ToggleButton(gtx, s.Theme, s.Oscilloscope.onceBtn, "Once")
 	triggerChannelStyle := NumericUpDown(s.Theme, s.Oscilloscope.triggerChannelNumber, "Trigger channel")
 	lengthNumberStyle := NumericUpDown(s.Theme, s.Oscilloscope.lengthInBeatsNumber, "Buffer length in beats")
+
+	leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
+	rightSpacer := layout.Spacer{Width: unit.Dp(6)}.Layout
+
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Flexed(1, func(gtx C) D { return s.layoutWave(gtx) }),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(Label("TRG:", white, s.Theme.Shaper)),
-				layout.Rigid(triggerChannelStyle.Layout),
+				layout.Rigid(leftSpacer),
+				layout.Rigid(LabelStyle{Text: "Trigger", Color: disabledTextColor, Alignment: layout.W, FontSize: s.Theme.TextSize * 14.0 / 16.0, Shaper: s.Theme.Shaper}.Layout),
+				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 				layout.Rigid(onceBtnStyle.Layout),
+				layout.Rigid(triggerChannelStyle.Layout),
+				layout.Rigid(rightSpacer),
 			)
 		}),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(Label("BUF:", white, s.Theme.Shaper)),
-				layout.Rigid(lengthNumberStyle.Layout),
+				layout.Rigid(leftSpacer),
+				layout.Rigid(LabelStyle{Text: "Buffer", Color: disabledTextColor, Alignment: layout.W, FontSize: s.Theme.TextSize * 14.0 / 16.0, Shaper: s.Theme.Shaper}.Layout),
+				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 				layout.Rigid(wrapBtnStyle.Layout),
+				layout.Rigid(lengthNumberStyle.Layout),
+				layout.Rigid(rightSpacer),
 			)
 		}),
 	)
