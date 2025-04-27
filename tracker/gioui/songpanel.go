@@ -1,8 +1,12 @@
 package gioui
 
 import (
+	"fmt"
 	"image"
+	"image/color"
+	"strconv"
 
+	"gioui.org/gesture"
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
@@ -15,8 +19,13 @@ import (
 )
 
 type SongPanel struct {
-	MenuBar        []widget.Clickable
-	Menus          []Menu
+	MenuBar []widget.Clickable
+	Menus   []Menu
+
+	SongSettingsExpander *Expander
+	ScopeExpander        *Expander
+	LoudnessExpander     *Expander
+
 	BPM            *NumberInput
 	RowsPerPattern *NumberInput
 	RowsPerBeat    *NumberInput
@@ -56,6 +65,10 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		PanicBtn:       NewBoolClickable(model.Panic().Bool()),
 		Scope:          NewOscilloscope(model),
 		PlayBar:        NewPlayBar(model),
+
+		SongSettingsExpander: &Expander{Expanded: true},
+		ScopeExpander:        &Expander{},
+		LoudnessExpander:     &Expander{},
 	}
 	ret.fileMenuItems = []MenuItem{
 		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: keyActionMap["NewSong"], Doer: model.NewSong()},
@@ -138,22 +151,41 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 			)
 		}),
 		layout.Rigid(func(gtx C) D {
-			return layoutSongOptionRow(gtx, tr.Theme, "Song length", NumericUpDown(tr.Theme, t.SongLength, "Song Length").Layout)
+			return t.SongSettingsExpander.Layout(gtx, tr.Theme, "Song",
+				func(gtx C) D {
+					return LabelStyle{Text: strconv.Itoa(tr.BPM().Value()) + " BPM", Color: mediumEmphasisTextColor, Alignment: layout.W, FontSize: tr.Theme.TextSize * 14.0 / 16.0, Shaper: tr.Theme.Shaper}.Layout(gtx)
+				},
+				func(gtx C) D {
+					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "BPM", NumericUpDown(tr.Theme, t.BPM, "Song Length").Layout)
+						}),
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Song length", NumericUpDown(tr.Theme, t.SongLength, "Song Length").Layout)
+						}),
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Rows per pat", NumericUpDown(tr.Theme, t.RowsPerPattern, "Rows per pattern").Layout)
+						}),
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Rows per beat", NumericUpDown(tr.Theme, t.RowsPerBeat, "Rows per beat").Layout)
+						}),
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Cursor step", NumericUpDown(tr.Theme, t.Step, "Cursor step").Layout)
+						}),
+					)
+				})
 		}),
 		layout.Rigid(func(gtx C) D {
-			return layoutSongOptionRow(gtx, tr.Theme, "BPM", NumericUpDown(tr.Theme, t.BPM, "Song Length").Layout)
+			return t.LoudnessExpander.Layout(gtx, tr.Theme, "Loudness",
+				func(gtx C) D {
+					return LabelStyle{Text: fmt.Sprintf("%.1f dB", tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm]), Color: mediumEmphasisTextColor, Alignment: layout.W, FontSize: tr.Theme.TextSize * 14.0 / 16.0, Shaper: tr.Theme.Shaper}.Layout(gtx)
+				},
+				VuMeter{Loudness: tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm], Peak: tr.Model.DetectorResult().Peaks[tracker.PeakMomentary], Range: 100}.Layout,
+			)
 		}),
-		layout.Rigid(func(gtx C) D {
-			return layoutSongOptionRow(gtx, tr.Theme, "Rows per pat", NumericUpDown(tr.Theme, t.RowsPerPattern, "Rows per pattern").Layout)
+		layout.Flexed(1, func(gtx C) D {
+			return t.ScopeExpander.Layout(gtx, tr.Theme, "Oscilloscope", func(gtx C) D { return D{} }, scopeStyle.Layout)
 		}),
-		layout.Rigid(func(gtx C) D {
-			return layoutSongOptionRow(gtx, tr.Theme, "Rows per beat", NumericUpDown(tr.Theme, t.RowsPerBeat, "Rows per beat").Layout)
-		}),
-		layout.Rigid(func(gtx C) D {
-			return layoutSongOptionRow(gtx, tr.Theme, "Cursor step", NumericUpDown(tr.Theme, t.Step, "Cursor step").Layout)
-		}),
-		layout.Rigid(VuMeter{Loudness: tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm], Peak: tr.Model.DetectorResult().Peaks[tracker.PeakMomentary], Range: 100}.Layout),
-		layout.Flexed(1, scopeStyle.Layout),
 		layout.Rigid(func(gtx C) D {
 			labelStyle := LabelStyle{Text: version.VersionOrHash, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor, Shaper: tr.Theme.Shaper}
 			return labelStyle.Layout(gtx)
@@ -171,6 +203,72 @@ func layoutSongOptionRow(gtx C, th *material.Theme, label string, widget layout.
 		layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 		layout.Rigid(widget),
 		layout.Rigid(rightSpacer),
+	)
+}
+
+type Expander struct {
+	Expanded bool
+	click    gesture.Click
+}
+
+func (e *Expander) Update(gtx C) {
+	for ev, ok := e.click.Update(gtx.Source); ok; ev, ok = e.click.Update(gtx.Source) {
+		switch ev.Kind {
+		case gesture.KindClick:
+			e.Expanded = !e.Expanded
+		}
+	}
+}
+
+func (e *Expander) Layout(gtx C, th *material.Theme, title string, smallWidget, largeWidget layout.Widget) D {
+	e.Update(gtx)
+	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+		layout.Rigid(func(gtx C) D { return e.layoutHeader(gtx, th, title, smallWidget) }),
+		layout.Rigid(func(gtx C) D {
+			if e.Expanded {
+				return largeWidget(gtx)
+			}
+			return D{}
+		}),
+		layout.Rigid(func(gtx C) D {
+			px := max(gtx.Dp(unit.Dp(1)), 1)
+			paint.FillShape(gtx.Ops, color.NRGBA{255, 255, 255, 3}, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, px)).Op())
+			return D{Size: image.Pt(gtx.Constraints.Max.X, px)}
+		}),
+	)
+}
+
+func (e *Expander) layoutHeader(gtx C, th *material.Theme, title string, smallWidget layout.Widget) D {
+	return layout.Background{}.Layout(gtx,
+		func(gtx C) D {
+			defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)).Push(gtx.Ops).Pop()
+			// add click op
+			e.click.Add(gtx.Ops)
+			return D{Size: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}
+		},
+		func(gtx C) D {
+			leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
+			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(leftSpacer),
+				layout.Rigid(LabelStyle{Text: title, Color: disabledTextColor, Alignment: layout.W, FontSize: th.TextSize * 14.0 / 16.0, Shaper: th.Shaper}.Layout),
+				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
+				layout.Rigid(func(gtx C) D {
+					if !e.Expanded {
+						return smallWidget(gtx)
+					}
+					return D{}
+				}),
+				layout.Rigid(func(gtx C) D {
+					// draw icon
+					icon := icons.NavigationExpandMore
+					if e.Expanded {
+						icon = icons.NavigationExpandLess
+					}
+					gtx.Constraints.Min = image.Pt(gtx.Dp(unit.Dp(24)), gtx.Dp(unit.Dp(24)))
+					return widgetForIcon(icon).Layout(gtx, th.Palette.Fg)
+				}),
+			)
+		},
 	)
 }
 
