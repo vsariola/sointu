@@ -2,7 +2,7 @@
 
 struc su_synth
     .synth_wrk  resb    su_synthworkspace.size
-    .delay_wrks resb    su_delayline_wrk.size * 64
+    .delay_wrks resb    su_delayline_wrk.size * 128
     .delaytimes resw    768
     .sampleoffs resb    su_sample_offset.size * 256
     .randseed   resd    1

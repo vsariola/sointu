@@ -88,6 +88,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   ([#156][i156])
 
 ### Changed
+- The maximum number of delaylines in the native synth was increased to 128,
+  with slight increase in memory usage ([#155][i155])
 - The numeric updown widget has a new appearance.
 - The draggable UI splitters snap more controllably to the window edges.
 - New & better presets, organized by their type to subfolders (thanks Reaby!)
@@ -312,6 +314,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i150]: https://github.com/vsariola/sointu/issues/150
 [i151]: https://github.com/vsariola/sointu/issues/151
 [i154]: https://github.com/vsariola/sointu/issues/154
+[i155]: https://github.com/vsariola/sointu/issues/155
 [i156]: https://github.com/vsariola/sointu/issues/156
 [i157]: https://github.com/vsariola/sointu/issues/157
 [i158]: https://github.com/vsariola/sointu/issues/158

@@ -38,7 +38,7 @@ typedef struct SampleOffset {
 
 typedef struct Synth {
     struct SynthWorkspace SynthWrk;
-    struct DelayWorkspace DelayWrks[64]; // let's keep this as 64 for now, so the delays take 16 meg. If that's too little or too much, we can change this in future.
+    struct DelayWorkspace DelayWrks[128]; // let's keep this as 64 for now, so the delays take 16 meg. If that's too little or too much, we can change this in future.
     unsigned short DelayTimes[768];
     struct SampleOffset SampleOffsets[256];
     unsigned int RandSeed;
