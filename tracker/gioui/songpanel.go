@@ -25,6 +25,7 @@ type SongPanel struct {
 	SongSettingsExpander *Expander
 	ScopeExpander        *Expander
 	LoudnessExpander     *Expander
+	PeakExpander         *Expander
 
 	BPM            *NumberInput
 	RowsPerPattern *NumberInput
@@ -69,6 +70,7 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		SongSettingsExpander: &Expander{Expanded: true},
 		ScopeExpander:        &Expander{},
 		LoudnessExpander:     &Expander{},
+		PeakExpander:         &Expander{},
 	}
 	ret.fileMenuItems = []MenuItem{
 		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: keyActionMap["NewSong"], Doer: model.NewSong()},
@@ -180,7 +182,50 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 				func(gtx C) D {
 					return LabelStyle{Text: fmt.Sprintf("%.1f dB", tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm]), Color: mediumEmphasisTextColor, Alignment: layout.W, FontSize: tr.Theme.TextSize * 14.0 / 16.0, Shaper: tr.Theme.Shaper}.Layout(gtx)
 				},
-				VuMeter{Loudness: tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm], Peak: tr.Model.DetectorResult().Peaks[tracker.PeakMomentary], Range: 100}.Layout,
+				func(gtx C) D {
+					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Momentary", dbLabel(tr.Theme, tr.Model.DetectorResult().Loudness[tracker.LoudnessMomentary]).Layout)
+						}),
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Short term", dbLabel(tr.Theme, tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm]).Layout)
+						}),
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Integrated", dbLabel(tr.Theme, tr.Model.DetectorResult().Loudness[tracker.LoudnessIntegrated]).Layout)
+						}),
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Max. momentary", dbLabel(tr.Theme, tr.Model.DetectorResult().Loudness[tracker.LoudnessMaxMomentary]).Layout)
+						}),
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Max. short term", dbLabel(tr.Theme, tr.Model.DetectorResult().Loudness[tracker.LoudnessMaxShortTerm]).Layout)
+						}),
+					)
+				},
+			)
+		}),
+		layout.Rigid(func(gtx C) D {
+			return t.PeakExpander.Layout(gtx, tr.Theme, "Peaks",
+				func(gtx C) D {
+					maxPeak := max(tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][0], tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][1])
+					return dbLabel(tr.Theme, maxPeak).Layout(gtx)
+				},
+				func(gtx C) D {
+					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+						// no need to show momentary peak, it does not have too much meaning
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Short term L", dbLabel(tr.Theme, tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][0]).Layout)
+						}),
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Short term R", dbLabel(tr.Theme, tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][1]).Layout)
+						}),
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Integrated L", dbLabel(tr.Theme, tr.Model.DetectorResult().Peaks[tracker.PeakIntegrated][0]).Layout)
+						}),
+						layout.Rigid(func(gtx C) D {
+							return layoutSongOptionRow(gtx, tr.Theme, "Integrated R", dbLabel(tr.Theme, tr.Model.DetectorResult().Peaks[tracker.PeakIntegrated][1]).Layout)
+						}),
+					)
+				},
 			)
 		}),
 		layout.Flexed(1, func(gtx C) D {
@@ -193,13 +238,27 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 	)
 }
 
+func dbLabel(th *material.Theme, value tracker.Decibel) LabelStyle {
+	color := mediumEmphasisTextColor
+	if value >= 0 {
+		color = errorColor
+	}
+	return LabelStyle{
+		Text:      fmt.Sprintf("%.1f dB", value),
+		Color:     color,
+		Alignment: layout.W,
+		FontSize:  th.TextSize * 14.0 / 16.0,
+		Shaper:    th.Shaper,
+	}
+}
+
 func layoutSongOptionRow(gtx C, th *material.Theme, label string, widget layout.Widget) D {
 	leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
 	rightSpacer := layout.Spacer{Width: unit.Dp(6)}.Layout
 
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(leftSpacer),
-		layout.Rigid(LabelStyle{Text: label, Color: disabledTextColor, Alignment: layout.W, FontSize: th.TextSize * 14.0 / 16.0, Shaper: th.Shaper}.Layout),
+		layout.Rigid(LabelStyle{Text: label, Color: mediumEmphasisTextColor, Alignment: layout.W, FontSize: th.TextSize * 14.0 / 16.0, Shaper: th.Shaper}.Layout),
 		layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 		layout.Rigid(widget),
 		layout.Rigid(rightSpacer),

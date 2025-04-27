@@ -357,17 +357,3 @@ func (l *DragList) CenterOn(item int) {
 func between(a, b, c int) bool {
 	return (a <= b && b <= c) || (c <= b && b <= a)
 }
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
