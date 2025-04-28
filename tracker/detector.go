@@ -280,6 +280,8 @@ func (d *loudnessDetector) reset() {
 		d.averagedPowers[i] = d.averagedPowers[i][:0]
 		d.maxPowers[i] = 0
 	}
+	// reset the biquad states
+	d.states = [2][3]biquadState{}
 	d.integratedPower = 0
 }
 
