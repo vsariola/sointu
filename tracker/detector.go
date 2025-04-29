@@ -183,22 +183,22 @@ func makePeakDetector(oversampling bool) peakDetector {
 }
 
 /*
-From matlab:
-f = getFilter(weightingFilter('A-weighting','SampleRate',44100)); f.Numerator, f.Denominator
-for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:),f.Denominator(i,2:end)); end
-f = getFilter(weightingFilter('C-weighting','SampleRate',44100)); f.Numerator, f.Denominator
-for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:),f.Denominator(i,2:end)); end
-f = getFilter(weightingFilter('k-weighting','SampleRate',44100)); f.Numerator, f.Denominator
-for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:),f.Denominator(i,2:end)); end
+From matlab: (we bake in the scale values to the numerator coefficients)
+f = getFilter(weightingFilter('A-weighting','SampleRate',44100)); f.Numerator, f.Denominator, f.ScaleValues
+for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:)*f.ScaleValues(i),f.Denominator(i,2:end)); end
+f = getFilter(weightingFilter('C-weighting','SampleRate',44100)); f.Numerator, f.Denominator, f.ScaleValues
+for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:)*f.ScaleValues(i),f.Denominator(i,2:end)); end
+f = getFilter(weightingFilter('k-weighting','SampleRate',44100)); f.Numerator, f.Denominator, f.ScaleValues
+for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:)*f.ScaleValues(i),f.Denominator(i,2:end)); end
 */
 var weightings = map[WeightingType]weighting{
 	AWeighting: {coeffs: []biquadCoeff{
-		{b0: 1, b1: 2, b2: 1, a1: -0.1405360824207108, a2: 0.0049375976155402},
+		{b0: 0.2556115104436430, b1: 0.5112230208872860, b2: 0.2556115104436430, a1: -0.1405360824207108, a2: 0.0049375976155402},
 		{b0: 1, b1: -2, b2: 1, a1: -1.8849012174287920, a2: 0.8864214718161675},
 		{b0: 1, b1: -2, b2: 1, a1: -1.9941388812663283, a2: 0.9941474694445309},
 	}, offset: 0},
 	CWeighting: {coeffs: []biquadCoeff{
-		{b0: 1, b1: 2, b2: 1, a1: -0.1405360824207108, a2: 0.0049375976155402},
+		{b0: 0.2170124955461332, b1: 0.4340249910922664, b2: 0.2170124955461332, a1: -0.1405360824207108, a2: 0.0049375976155402},
 		{b0: 1, b1: -2, b2: 1, a1: -1.9941388812663283, a2: 0.9941474694445309},
 	}, offset: 0},
 	KWeighting: {coeffs: []biquadCoeff{
