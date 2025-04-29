@@ -47,10 +47,7 @@ type (
 		b0, b1, b2, a1, a2 float32
 	}
 
-	weighting struct {
-		coeffs []biquadCoeff
-		offset float32
-	}
+	weighting []biquadCoeff
 
 	peakDetector struct {
 		oversampling bool
@@ -184,28 +181,34 @@ func makePeakDetector(oversampling bool) peakDetector {
 
 /*
 From matlab: (we bake in the scale values to the numerator coefficients)
-f = getFilter(weightingFilter('A-weighting','SampleRate',44100)); f.Numerator, f.Denominator, f.ScaleValues
+weightings = {'A-weighting','C-weighting','k-weighting'}
+for j = 1:3
+disp(weightings{j})
+f = getFilter(weightingFilter(weightings{j},'SampleRate',44100)); f.Numerator, f.Denominator, f.ScaleValues
+if j == 3 % k-weighting has non-zero gain at 1 kHz, so normalize it to 0 dB by scaling the first filter
+[h,w] = freqz(f,[1000,1000],44100);
+g = abs(h(1));
+fprintf("Gain %f dB\n", 20*log10(abs(h(1))));
+f.Numerator(1,:) = f.Numerator(1,:)/g;
+end
 for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:)*f.ScaleValues(i),f.Denominator(i,2:end)); end
-f = getFilter(weightingFilter('C-weighting','SampleRate',44100)); f.Numerator, f.Denominator, f.ScaleValues
-for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:)*f.ScaleValues(i),f.Denominator(i,2:end)); end
-f = getFilter(weightingFilter('k-weighting','SampleRate',44100)); f.Numerator, f.Denominator, f.ScaleValues
-for i = 1:size(f.Numerator,1); fprintf("b0: %.16f, b1: %.16f, b2: %.16f, a1: %.16f, a2: %.16f\n",f.Numerator(i,:)*f.ScaleValues(i),f.Denominator(i,2:end)); end
+end
 */
 var weightings = map[WeightingType]weighting{
-	AWeighting: {coeffs: []biquadCoeff{
+	AWeighting: {
 		{b0: 0.2556115104436430, b1: 0.5112230208872860, b2: 0.2556115104436430, a1: -0.1405360824207108, a2: 0.0049375976155402},
 		{b0: 1, b1: -2, b2: 1, a1: -1.8849012174287920, a2: 0.8864214718161675},
 		{b0: 1, b1: -2, b2: 1, a1: -1.9941388812663283, a2: 0.9941474694445309},
-	}, offset: 0},
-	CWeighting: {coeffs: []biquadCoeff{
+	},
+	CWeighting: {
 		{b0: 0.2170124955461332, b1: 0.4340249910922664, b2: 0.2170124955461332, a1: -0.1405360824207108, a2: 0.0049375976155402},
 		{b0: 1, b1: -2, b2: 1, a1: -1.9941388812663283, a2: 0.9941474694445309},
-	}, offset: 0},
-	KWeighting: {coeffs: []biquadCoeff{
-		{b0: 1.5308412300503476, b1: -2.6509799951547293, b2: 1.1690790799215869, a1: -1.6636551132560204, a2: 0.7125954280732254},
+	},
+	KWeighting: {
+		{b0: 1.4128568659906546, b1: -2.4466647580657646, b2: 1.0789762991286349, a1: -1.6636551132560204, a2: 0.7125954280732254},
 		{b0: 0.9995600645425144, b1: -1.9991201290850289, b2: 0.9995600645425144, a1: -1.9891696736297957, a2: 0.9891990357870394},
-	}, offset: -0.691}, // offset is to make up for the fact that K-weighting has slightly above unity gain at 1 kHz
-	NoWeighting: {coeffs: []biquadCoeff{}, offset: 0},
+	},
+	NoWeighting: {},
 }
 
 // according to https://tech.ebu.ch/docs/tech/tech3341.pdf
@@ -233,8 +236,8 @@ func (d *loudnessDetector) update(chunk sointu.AudioBuffer) LoudnessResult {
 			d.tmp[i] = chunk[i][chn]
 		}
 		// filter the signal with the weighting filter
-		for k := 0; k < len(d.weighting.coeffs); k++ {
-			d.states[chn][k].Filter(d.tmp[:len(chunk)], d.weighting.coeffs[k])
+		for k := 0; k < len(d.weighting); k++ {
+			d.states[chn][k].Filter(d.tmp[:len(chunk)], d.weighting[k])
 		}
 		// square the samples
 		res := vek32.Mul_Into(d.tmp2, d.tmp[:len(chunk)], d.tmp[:len(chunk)])
@@ -251,11 +254,11 @@ func (d *loudnessDetector) update(chunk sointu.AudioBuffer) LoudnessResult {
 		if d.maxPowers[i] < mean {
 			d.maxPowers[i] = mean
 		}
-		ret[i+int(LoudnessMomentary)] = power2loudness(mean, d.weighting.offset) // we assume the LoudnessMomentary is followed by LoudnessShortTerm
-		ret[i+int(LoudnessMaxMomentary)] = power2loudness(d.maxPowers[i], d.weighting.offset)
+		ret[i+int(LoudnessMomentary)] = powerToDecibel(mean) // we assume the LoudnessMomentary is followed by LoudnessShortTerm
+		ret[i+int(LoudnessMaxMomentary)] = powerToDecibel(d.maxPowers[i])
 	}
 	if len(d.averagedPowers[0])%10 == 0 { // every 10 samples of 100 ms i.e. every 1 s, we recalculate the integrated power
-		absThreshold := loudness2power(-70, d.weighting.offset) // -70 dB is the first threshold
+		absThreshold := decibelToPower(-70) // -70 dB is the first threshold
 		b := vek32.GtNumber_Into(d.tmpbool, d.averagedPowers[0], absThreshold)
 		m2 := vek32.Select_Into(d.tmp, d.averagedPowers[0], b)
 		if len(m2) > 0 {
@@ -267,7 +270,7 @@ func (d *loudnessDetector) update(chunk sointu.AudioBuffer) LoudnessResult {
 			}
 		}
 	}
-	ret[LoudnessIntegrated] = power2loudness(d.integratedPower, d.weighting.offset)
+	ret[LoudnessIntegrated] = powerToDecibel(d.integratedPower)
 	return ret
 }
 
@@ -285,12 +288,16 @@ func (d *loudnessDetector) reset() {
 	d.integratedPower = 0
 }
 
-func power2loudness(power, offset float32) Decibel {
-	return Decibel(float32(10*math.Log10(float64(power))) + offset)
+func powerToDecibel(power float32) Decibel {
+	return Decibel(float32(10 * math.Log10(float64(power))))
 }
 
-func loudness2power(loudness Decibel, offset float32) float32 {
-	return (float32)(math.Pow(10, (float64(loudness)-float64(offset))/10))
+func amplitudeToDecibel(amplitude float32) Decibel {
+	return Decibel(float32(20 * math.Log10(float64(amplitude))))
+}
+
+func decibelToPower(loudness Decibel) float32 {
+	return (float32)(math.Pow(10, (float64(loudness))/10))
 }
 
 func (state *biquadState) Filter(buffer []float32, coeff biquadCoeff) {
@@ -392,12 +399,12 @@ func (d *peakDetector) update(buf sointu.AudioBuffer) (ret PeakResult) {
 		for i := range d.windows {
 			d.windows[i][chn].WriteWrapSingle(p)
 			windowPeak := vek32.Max(d.windows[i][chn].Buffer)
-			ret[i+int(PeakMomentary)][chn] = Decibel(20 * math.Log10(float64(windowPeak)))
+			ret[i+int(PeakMomentary)][chn] = amplitudeToDecibel(windowPeak)
 		}
 		if d.maxPower[chn] < p {
 			d.maxPower[chn] = p
 		}
-		ret[int(PeakIntegrated)][chn] = Decibel(20 * math.Log10(float64(d.maxPower[chn])))
+		ret[int(PeakIntegrated)][chn] = amplitudeToDecibel(d.maxPower[chn])
 	}
 	return
 }
