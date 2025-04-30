@@ -230,13 +230,13 @@ func (d *loudnessDetector) update(chunk sointu.AudioBuffer) LoudnessResult {
 	setSliceLength(&d.tmp2, l)
 	setSliceLength(&d.tmpbool, l)
 	var total float32
-	for chn := 0; chn < 2; chn++ {
+	for chn := range 2 {
 		// deinterleave the channels
-		for i := 0; i < len(chunk); i++ {
+		for i := range chunk {
 			d.tmp[i] = chunk[i][chn]
 		}
 		// filter the signal with the weighting filter
-		for k := 0; k < len(d.weighting); k++ {
+		for k := range d.weighting {
 			d.states[chn][k].Filter(d.tmp[:len(chunk)], d.weighting[k])
 		}
 		// square the samples
@@ -302,7 +302,7 @@ func decibelToPower(loudness Decibel) float32 {
 
 func (state *biquadState) Filter(buffer []float32, coeff biquadCoeff) {
 	s := *state
-	for i := 0; i < len(buffer); i++ {
+	for i := range buffer {
 		x := buffer[i]
 		y := coeff.b0*x + coeff.b1*s.x1 + coeff.b2*s.x2 - coeff.a1*s.y1 - coeff.a2*s.y2
 		s.x2, s.x1 = s.x1, x
