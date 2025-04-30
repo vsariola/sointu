@@ -3,7 +3,7 @@ module github.com/vsariola/sointu
 go 1.23.0
 
 require (
-	gioui.org v0.7.1
+	gioui.org v0.8.0
 	gioui.org/x v0.7.1
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/ebitengine/oto/v3 v3.3.0
@@ -17,14 +17,13 @@ require (
 )
 
 require (
-	gioui.org/cpu v0.0.0-20210817075930-8d6a761490d2 // indirect
 	gioui.org/shader v1.0.8 // indirect
 	git.wow.st/gmp/jni v0.0.0-20210610011705-34026c7e22d0 // indirect
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/chewxy/math32 v1.11.1 // indirect
 	github.com/ebitengine/purego v0.8.0 // indirect
-	github.com/go-text/typesetting v0.1.1 // indirect
+	github.com/go-text/typesetting v0.2.1 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
