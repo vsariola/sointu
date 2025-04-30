@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/cmd"
@@ -134,17 +135,22 @@ func init() {
 					}
 				},
 				CloseFunc: func() {
-					broker.ToModel <- tracker.MsgToModel{Data: func() { t.ForceQuit().Do() }}
-					t.WaitQuitted()
-					detector.Close()
+					tracker.TrySend(broker.CloseDetector, struct{}{})
+					tracker.TrySend(broker.CloseGUI, struct{}{})
+					tracker.TimeoutReceive(broker.FinishedDetector, 3*time.Second)
+					tracker.TimeoutReceive(broker.FinishedGUI, 3*time.Second)
 				},
 				GetChunkFunc: func(isPreset bool) []byte {
 					retChn := make(chan []byte)
-					broker.ToModel <- tracker.MsgToModel{Data: func() { retChn <- t.MarshalRecovery() }}
-					return <-retChn
+
+					if !tracker.TrySend(broker.ToModel, tracker.MsgToModel{Data: func() { retChn <- t.MarshalRecovery() }}) {
+						return nil
+					}
+					ret, _ := tracker.TimeoutReceive(retChn, 5*time.Second) // ret will be nil if timeout or channel closed
+					return ret
 				},
 				SetChunkFunc: func(data []byte, isPreset bool) {
-					broker.ToModel <- tracker.MsgToModel{Data: func() { t.UnmarshalRecovery(data) }}
+					tracker.TrySend(broker.ToModel, tracker.MsgToModel{Data: func() { t.UnmarshalRecovery(data) }})
 				},
 			}
 

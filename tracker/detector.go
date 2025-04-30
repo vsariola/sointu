@@ -12,6 +12,7 @@ type (
 		broker           *Broker
 		loudnessDetector loudnessDetector
 		peakDetector     peakDetector
+		chunkHistory     sointu.AudioBuffer
 	}
 
 	WeightingType int
@@ -98,65 +99,63 @@ func NewDetector(b *Broker) *Detector {
 }
 
 func (s *Detector) Run() {
-	var chunkHistory sointu.AudioBuffer
-	for msg := range s.broker.ToDetector {
-		if msg.Reset {
-			s.loudnessDetector.reset()
-			s.peakDetector.reset()
-		}
-		if msg.Quit {
+	for {
+		select {
+		case <-s.broker.CloseDetector:
+			close(s.broker.FinishedDetector)
 			return
-		}
-		if msg.HasWeightingType {
-			s.loudnessDetector.weighting = weightings[WeightingType(msg.WeightingType)]
-			s.loudnessDetector.reset()
-		}
-		if msg.HasOversampling {
-			s.peakDetector.oversampling = msg.Oversampling
-			s.peakDetector.reset()
-		}
-
-		switch data := msg.Data.(type) {
-		case *sointu.AudioBuffer:
-			buf := *data
-			for {
-				var chunk sointu.AudioBuffer
-				if len(chunkHistory) > 0 && len(chunkHistory) < 4410 {
-					l := min(len(buf), 4410-len(chunkHistory))
-					chunkHistory = append(chunkHistory, buf[:l]...)
-					if len(chunkHistory) < 4410 {
-						break
-					}
-					chunk = chunkHistory
-					buf = buf[l:]
-				} else {
-					if len(buf) >= 4410 {
-						chunk = buf[:4410]
-						buf = buf[4410:]
-					} else {
-						chunkHistory = chunkHistory[:0]
-						chunkHistory = append(chunkHistory, buf...)
-						break
-					}
-				}
-				TrySend(s.broker.ToModel, MsgToModel{
-					HasDetectorResult: true,
-					DetectorResult: DetectorResult{
-						Loudness: s.loudnessDetector.update(chunk),
-						Peaks:    s.peakDetector.update(chunk),
-					},
-				})
-			}
-			s.broker.PutAudioBuffer(data)
-		case func():
-			data()
+		case msg := <-s.broker.ToDetector:
+			s.handleMsg(msg)
 		}
 	}
 }
 
-// Close may theoretically block if the broker is full, but it should not happen in practice
-func (s *Detector) Close() {
-	s.broker.ToDetector <- MsgToDetector{Quit: true}
+func (s *Detector) handleMsg(msg MsgToDetector) {
+	if msg.Reset {
+		s.loudnessDetector.reset()
+		s.peakDetector.reset()
+	}
+	if msg.HasWeightingType {
+		s.loudnessDetector.weighting = weightings[WeightingType(msg.WeightingType)]
+		s.loudnessDetector.reset()
+	}
+	if msg.HasOversampling {
+		s.peakDetector.oversampling = msg.Oversampling
+		s.peakDetector.reset()
+	}
+
+	switch data := msg.Data.(type) {
+	case *sointu.AudioBuffer:
+		buf := *data
+		for {
+			var chunk sointu.AudioBuffer
+			if len(s.chunkHistory) > 0 && len(s.chunkHistory) < 4410 {
+				l := min(len(buf), 4410-len(s.chunkHistory))
+				s.chunkHistory = append(s.chunkHistory, buf[:l]...)
+				if len(s.chunkHistory) < 4410 {
+					break
+				}
+				chunk = s.chunkHistory
+				buf = buf[l:]
+			} else {
+				if len(buf) >= 4410 {
+					chunk = buf[:4410]
+					buf = buf[4410:]
+				} else {
+					s.chunkHistory = s.chunkHistory[:0]
+					s.chunkHistory = append(s.chunkHistory, buf...)
+					break
+				}
+			}
+			TrySend(s.broker.ToModel, MsgToModel{
+				HasDetectorResult: true,
+				DetectorResult: DetectorResult{
+					Loudness: s.loudnessDetector.update(chunk),
+					Peaks:    s.peakDetector.update(chunk),
+				},
+			})
+		}
+	}
 }
 
 func makeLoudnessDetector(weighting WeightingType) loudnessDetector {

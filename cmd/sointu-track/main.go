@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
+	"time"
 
 	"gioui.org/app"
 	"github.com/vsariola/sointu"
@@ -71,7 +72,8 @@ func main() {
 	go func() {
 		trackerUi.Main()
 		audioCloser.Close()
-		detector.Close()
+		tracker.TrySend(broker.CloseDetector, struct{}{})
+		tracker.TimeoutReceive(broker.FinishedDetector, 3*time.Second)
 		if *cpuprofile != "" {
 			pprof.StopCPUProfile()
 			f.Close()

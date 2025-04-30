@@ -436,10 +436,12 @@ func (m *Model) OpenSong() Action {
 	})
 }
 
-func (m *Model) Quit() Action {
+func (m *Model) RequestQuit() Action {
 	return Allow(func() {
-		m.dialog = QuitChanges
-		m.completeAction(true)
+		if !m.quitted {
+			m.dialog = QuitChanges
+			m.completeAction(true)
+		}
 	})
 }
 

@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"sync"
+	"time"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
@@ -16,10 +17,32 @@ type (
 	// return buffers to pass buffers around without allocating new memory every
 	// time. We can later consider making many-to-many types of communication
 	// and more complex routing logic to the Broker if needed.
+	//
+	// For closing goroutines, the broker has two channels for each goroutine:
+	// CloseXXX and FinishedXXX. The CloseXXX channel has a capacity of 1, so
+	// you can always send a empty message (struct{}{}) to it without blocking.
+	// If the channel is already full, that means someone else has already
+	// requested its closure and the goroutine is already closing, so dropping
+	// the message is fine. Then, FinishedXXX is used to signal that a goroutine
+	// has succesfully closed and cleaned up. Nothing is ever sent to the
+	// channel, it is only closed. You can wait until the goroutines is done
+	// closing with "<- FinishedXXX", which for avoiding deadlocks can be
+	// combined with a timeout:
+	//    select {
+	//      case <-FinishedXXX:
+	//      case <-time.After(3 * time.Second):
+	//    }
+
 	Broker struct {
 		ToModel    chan MsgToModel
 		ToPlayer   chan any // TODO: consider using a sum type here, for a bit more type safety. See: https://www.jerf.org/iri/post/2917/
 		ToDetector chan MsgToDetector
+
+		CloseDetector chan struct{}
+		CloseGUI      chan struct{}
+
+		FinishedGUI      chan struct{}
+		FinishedDetector chan struct{}
 
 		bufferPool sync.Pool
 	}
@@ -49,7 +72,6 @@ type (
 	// which gets executed in the detector goroutine.
 	MsgToDetector struct {
 		Reset bool
-		Quit  bool
 		Data  any // TODO: consider using a sum type here, for a bit more type safety. See: https://www.jerf.org/iri/post/2917/
 
 		WeightingType    WeightingType
@@ -61,10 +83,14 @@ type (
 
 func NewBroker() *Broker {
 	return &Broker{
-		ToPlayer:   make(chan interface{}, 1024),
-		ToModel:    make(chan MsgToModel, 1024),
-		ToDetector: make(chan MsgToDetector, 1024),
-		bufferPool: sync.Pool{New: func() interface{} { return &sointu.AudioBuffer{} }},
+		ToPlayer:         make(chan interface{}, 1024),
+		ToModel:          make(chan MsgToModel, 1024),
+		ToDetector:       make(chan MsgToDetector, 1024),
+		CloseDetector:    make(chan struct{}, 1),
+		CloseGUI:         make(chan struct{}, 1),
+		FinishedGUI:      make(chan struct{}),
+		FinishedDetector: make(chan struct{}),
+		bufferPool:       sync.Pool{New: func() interface{} { return &sointu.AudioBuffer{} }},
 	}
 }
 
@@ -95,4 +121,16 @@ func TrySend[T any](c chan<- T, v T) bool {
 		return false
 	}
 	return true
+}
+
+// TimeoutReceive is a helper function to block until a value is received from a
+// channel, or timing out after t. ok will be false if the timeout occurred or
+// if the channel is closed.
+func TimeoutReceive[T any](c <-chan T, t time.Duration) (v T, ok bool) {
+	select {
+	case v, ok = <-c:
+		return v, ok
+	case <-time.After(t):
+		return v, false
+	}
 }

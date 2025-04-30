@@ -184,7 +184,7 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		t.OpenSong().Do()
 	case "Quit":
 		if canQuit {
-			t.Quit().Do()
+			t.RequestQuit().Do()
 		}
 	case "SaveSong":
 		t.SaveSong().Do()

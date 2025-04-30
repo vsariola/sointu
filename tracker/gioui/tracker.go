@@ -5,7 +5,6 @@ import (
 	"image"
 	"io"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"gioui.org/app"
@@ -50,7 +49,6 @@ type (
 
 		filePathString tracker.String
 
-		quitWG      sync.WaitGroup
 		execChan    chan func()
 		preferences Preferences
 
@@ -102,75 +100,75 @@ func NewTracker(model *tracker.Model) *Tracker {
 	t.Theme.Palette.Fg = primaryColor
 	t.Theme.Palette.ContrastFg = black
 	t.TrackEditor.scrollTable.Focus()
-	t.quitWG.Add(1)
 	return t
 }
 
 func (t *Tracker) Main() {
-	titleFooter := ""
-	w := t.newWindow()
 	t.InstrumentEditor.Focus()
 	recoveryTicker := time.NewTicker(time.Second * 30)
-	t.Explorer = explorer.NewExplorer(w)
-	// Make a channel to read window events from.
-	events := make(chan event.Event)
-	// Make a channel to signal the end of processing a window event.
-	acks := make(chan struct{})
-	go eventLoop(w, events, acks)
 	var ops op.Ops
-	for {
-		select {
-		case e := <-t.Broker().ToModel:
-			t.ProcessMsg(e)
-			w.Invalidate()
-		case e := <-events:
-			switch e := e.(type) {
-			case app.DestroyEvent:
-				acks <- struct{}{}
-				if canQuit {
-					t.Quit().Do()
+	titlePath := ""
+	for !t.Quitted() {
+		w := t.newWindow()
+		w.Option(app.Title(titleFromPath(titlePath)))
+		t.Explorer = explorer.NewExplorer(w)
+		acks := make(chan struct{})
+		events := make(chan event.Event)
+		go func() {
+			for {
+				ev := w.Event()
+				events <- ev
+				<-acks
+				if _, ok := ev.(app.DestroyEvent); ok {
+					return
 				}
-				if !t.Quitted() {
-					// TODO: uh oh, there's no way of canceling the destroyevent in gioui? so we create a new window just to show the dialog
-					w = t.newWindow()
-					t.Explorer = explorer.NewExplorer(w)
-					go eventLoop(w, events, acks)
-				}
-			case app.FrameEvent:
-				if titleFooter != t.filePathString.Value() {
-					titleFooter = t.filePathString.Value()
-					if titleFooter != "" {
-						w.Option(app.Title(fmt.Sprintf("Sointu Tracker - %v", titleFooter)))
-					} else {
-						w.Option(app.Title("Sointu Tracker"))
+			}
+		}()
+	F:
+		for {
+			select {
+			case e := <-t.Broker().ToModel:
+				t.ProcessMsg(e)
+				w.Invalidate()
+			case <-t.Broker().CloseGUI:
+				t.ForceQuit().Do()
+				w.Perform(system.ActionClose)
+			case e := <-events:
+				switch e := e.(type) {
+				case app.DestroyEvent:
+					if canQuit {
+						t.RequestQuit().Do()
+					}
+					acks <- struct{}{}
+					break F // this window is done, we need to create a new one
+				case app.FrameEvent:
+					if titlePath != t.filePathString.Value() {
+						titlePath = t.filePathString.Value()
+						w.Option(app.Title(titleFromPath(titlePath)))
+					}
+					gtx := app.NewContext(&ops, e)
+					if t.Playing().Value() && t.Follow().Value() {
+						t.TrackEditor.scrollTable.RowTitleList.CenterOn(t.PlaySongRow())
+					}
+					t.Layout(gtx, w)
+					e.Frame(gtx.Ops)
+					if t.Quitted() {
+						w.Perform(system.ActionClose)
 					}
 				}
-				gtx := app.NewContext(&ops, e)
-				if t.Playing().Value() && t.Follow().Value() {
-					t.TrackEditor.scrollTable.RowTitleList.CenterOn(t.PlaySongRow())
-				}
-				t.Layout(gtx, w)
-				e.Frame(gtx.Ops)
 				acks <- struct{}{}
-			default:
-				acks <- struct{}{}
+			case <-recoveryTicker.C:
+				t.SaveRecovery()
 			}
-		case <-recoveryTicker.C:
-			t.SaveRecovery()
-		}
-		if t.Quitted() {
-			break
 		}
 	}
 	recoveryTicker.Stop()
-	w.Perform(system.ActionClose)
 	t.SaveRecovery()
-	t.quitWG.Done()
+	close(t.Broker().FinishedGUI)
 }
 
 func (t *Tracker) newWindow() *app.Window {
 	w := new(app.Window)
-	w.Option(app.Title("Sointu Tracker"))
 	w.Option(app.Size(t.preferences.WindowSize()))
 	if t.preferences.Window.Maximized {
 		w.Option(app.Maximized.Option())
@@ -178,21 +176,11 @@ func (t *Tracker) newWindow() *app.Window {
 	return w
 }
 
-func eventLoop(w *app.Window, events chan<- event.Event, acks <-chan struct{}) {
-	// Iterate window events, sending each to the old event loop and waiting for
-	// a signal that processing is complete before iterating again.
-	for {
-		ev := w.Event()
-		events <- ev
-		<-acks
-		if _, ok := ev.(app.DestroyEvent); ok {
-			return
-		}
+func titleFromPath(path string) string {
+	if path == "" {
+		return "Sointu Tracker"
 	}
-}
-
-func (t *Tracker) WaitQuitted() {
-	t.quitWG.Wait()
+	return fmt.Sprintf("Sointu Tracker - %s", path)
 }
 
 func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {

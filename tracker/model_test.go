@@ -309,6 +309,6 @@ func FuzzModel(f *testing.F) {
 			}
 		}
 		closeChan <- struct{}{}
-		broker.ToDetector <- tracker.MsgToDetector{Quit: true}
+		broker.CloseDetector <- struct{}{}
 	})
 }
