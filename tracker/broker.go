@@ -85,10 +85,10 @@ func (b *Broker) PutAudioBuffer(buf *sointu.AudioBuffer) {
 	b.bufferPool.Put(buf)
 }
 
-// trySend is a helper function to send a value to a channel if it is not full.
+// TrySend is a helper function to send a value to a channel if it is not full.
 // It is guaranteed to be non-blocking. Return true if the value was sent, false
 // otherwise.
-func trySend[T any](c chan<- T, v T) bool {
+func TrySend[T any](c chan<- T, v T) bool {
 	select {
 	case c <- v:
 	default:

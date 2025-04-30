@@ -201,7 +201,7 @@ func NewModel(broker *Broker, synther sointu.Synther, midiContext MIDIContext, r
 			}
 		}
 	}
-	trySend(broker.ToPlayer, any(m.d.Song.Copy())) // we should be non-blocking in the constructor
+	TrySend(broker.ToPlayer, any(m.d.Song.Copy())) // we should be non-blocking in the constructor
 	m.signalAnalyzer = NewScopeModel(broker, m.d.Song.BPM)
 	m.initDerivedData()
 	return m
@@ -238,7 +238,7 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 				m.d.Cursor.SongPos = m.d.Song.Score.Clamp(m.d.Cursor.SongPos)
 				m.d.Cursor2.SongPos = m.d.Song.Score.Clamp(m.d.Cursor2.SongPos)
 				m.updateDerivedScoreData()
-				trySend(m.broker.ToPlayer, any(m.d.Song.Score.Copy()))
+				TrySend(m.broker.ToPlayer, any(m.d.Song.Score.Copy()))
 			}
 			if m.changeType&PatchChange != 0 {
 				m.fixIDCollisions()
@@ -254,14 +254,14 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 				m.d.UnitSearching = false // if we change anything in the patch, reset the unit searching
 				m.d.UnitSearchString = ""
 				m.updateDerivedPatchData()
-				trySend(m.broker.ToPlayer, any(m.d.Song.Patch.Copy()))
+				TrySend(m.broker.ToPlayer, any(m.d.Song.Patch.Copy()))
 			}
 			if m.changeType&BPMChange != 0 {
-				trySend(m.broker.ToPlayer, any(BPMMsg{m.d.Song.BPM}))
+				TrySend(m.broker.ToPlayer, any(BPMMsg{m.d.Song.BPM}))
 				m.signalAnalyzer.SetBpm(m.d.Song.BPM)
 			}
 			if m.changeType&RowsPerBeatChange != 0 {
-				trySend(m.broker.ToPlayer, any(RowsPerBeatMsg{m.d.Song.RowsPerBeat}))
+				TrySend(m.broker.ToPlayer, any(RowsPerBeatMsg{m.d.Song.RowsPerBeat}))
 			}
 			m.undoSkipCounter++
 			var limit int
@@ -342,7 +342,7 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 		}
 	}
 	m.d.ChangedSinceRecovery = false
-	trySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
+	TrySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
 	m.initDerivedData()
 }
 
@@ -395,18 +395,18 @@ func (m *Model) Broker() *Broker             { return m.broker }
 
 func (m *Model) TrackNoteOn(track int, note byte) (id NoteID) {
 	id = NoteID{IsInstr: false, Track: track, Note: note, model: m}
-	trySend(m.broker.ToPlayer, any(NoteOnMsg{id}))
+	TrySend(m.broker.ToPlayer, any(NoteOnMsg{id}))
 	return id
 }
 
 func (m *Model) InstrNoteOn(instr int, note byte) (id NoteID) {
 	id = NoteID{IsInstr: true, Instr: instr, Note: note, model: m}
-	trySend(m.broker.ToPlayer, any(NoteOnMsg{id}))
+	TrySend(m.broker.ToPlayer, any(NoteOnMsg{id}))
 	return id
 }
 
 func (n NoteID) NoteOff() {
-	trySend(n.model.broker.ToPlayer, any(NoteOffMsg{n}))
+	TrySend(n.model.broker.ToPlayer, any(NoteOffMsg{n}))
 }
 
 func (d *modelData) Copy() modelData {

@@ -84,17 +84,17 @@ func (m *Model) WriteWav(w io.WriteCloser, pcm16 bool) {
 		name := fmt.Sprintf("%x", b)[2 : 32+2]
 		data, err := sointu.Play(m.synther, song, func(p float32) {
 			txt := fmt.Sprintf("Exporting song: %.0f%%", p*100)
-			trySend(m.broker.ToModel, MsgToModel{Data: Alert{Message: txt, Priority: Info, Name: name, Duration: defaultAlertDuration}})
+			TrySend(m.broker.ToModel, MsgToModel{Data: Alert{Message: txt, Priority: Info, Name: name, Duration: defaultAlertDuration}})
 		}) // render the song to calculate its length
 		if err != nil {
 			txt := fmt.Sprintf("Error rendering the song during export: %v", err)
-			trySend(m.broker.ToModel, MsgToModel{Data: Alert{Message: txt, Priority: Error, Name: name, Duration: defaultAlertDuration}})
+			TrySend(m.broker.ToModel, MsgToModel{Data: Alert{Message: txt, Priority: Error, Name: name, Duration: defaultAlertDuration}})
 			return
 		}
 		buffer, err := data.Wav(pcm16)
 		if err != nil {
 			txt := fmt.Sprintf("Error converting to .wav: %v", err)
-			trySend(m.broker.ToModel, MsgToModel{Data: Alert{Message: txt, Priority: Error, Name: name, Duration: defaultAlertDuration}})
+			TrySend(m.broker.ToModel, MsgToModel{Data: Alert{Message: txt, Priority: Error, Name: name, Duration: defaultAlertDuration}})
 			return
 		}
 		w.Write(buffer)

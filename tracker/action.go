@@ -211,7 +211,7 @@ func (m *Model) Undo() Action {
 			m.d = m.undoStack[len(m.undoStack)-1]
 			m.undoStack = m.undoStack[:len(m.undoStack)-1]
 			m.prevUndoKind = ""
-			trySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
+			TrySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
 		},
 	}
 }
@@ -228,7 +228,7 @@ func (m *Model) Redo() Action {
 			m.d = m.redoStack[len(m.redoStack)-1]
 			m.redoStack = m.redoStack[:len(m.redoStack)-1]
 			m.prevUndoKind = ""
-			trySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
+			TrySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
 		},
 	}
 }
@@ -318,7 +318,7 @@ func (m *Model) PlayCurrentPos() Action {
 			m.setPanic(false)
 			m.setLoop(Loop{})
 			m.playing = true
-			trySend(m.broker.ToPlayer, any(StartPlayMsg{m.d.Cursor.SongPos}))
+			TrySend(m.broker.ToPlayer, any(StartPlayMsg{m.d.Cursor.SongPos}))
 		},
 	}
 }
@@ -330,7 +330,7 @@ func (m *Model) PlaySongStart() Action {
 			m.setPanic(false)
 			m.setLoop(Loop{})
 			m.playing = true
-			trySend(m.broker.ToPlayer, any(StartPlayMsg{}))
+			TrySend(m.broker.ToPlayer, any(StartPlayMsg{}))
 		},
 	}
 }
@@ -345,7 +345,7 @@ func (m *Model) PlaySelected() Action {
 			r := l.listRange()
 			newLoop := Loop{r.Start, r.End - r.Start}
 			m.setLoop(newLoop)
-			trySend(m.broker.ToPlayer, any(StartPlayMsg{sointu.SongPos{OrderRow: r.Start, PatternRow: 0}}))
+			TrySend(m.broker.ToPlayer, any(StartPlayMsg{sointu.SongPos{OrderRow: r.Start, PatternRow: 0}}))
 		},
 	}
 }
@@ -360,7 +360,7 @@ func (m *Model) PlayFromLoopStart() Action {
 				return
 			}
 			m.playing = true
-			trySend(m.broker.ToPlayer, any(StartPlayMsg{sointu.SongPos{OrderRow: m.loop.Start, PatternRow: 0}}))
+			TrySend(m.broker.ToPlayer, any(StartPlayMsg{sointu.SongPos{OrderRow: m.loop.Start, PatternRow: 0}}))
 		},
 	}
 }
@@ -375,7 +375,7 @@ func (m *Model) StopPlaying() Action {
 				return
 			}
 			m.playing = false
-			trySend(m.broker.ToPlayer, any(IsPlayingMsg{false}))
+			TrySend(m.broker.ToPlayer, any(IsPlayingMsg{false}))
 		},
 	}
 }
@@ -517,13 +517,13 @@ func (m *Model) completeAction(checkSave bool) {
 func (m *Model) setPanic(val bool) {
 	if m.panic != val {
 		m.panic = val
-		trySend(m.broker.ToPlayer, any(PanicMsg{val}))
+		TrySend(m.broker.ToPlayer, any(PanicMsg{val}))
 	}
 }
 
 func (m *Model) setLoop(newLoop Loop) {
 	if m.loop != newLoop {
 		m.loop = newLoop
-		trySend(m.broker.ToPlayer, any(newLoop))
+		TrySend(m.broker.ToPlayer, any(newLoop))
 	}
 }

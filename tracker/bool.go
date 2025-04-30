@@ -74,7 +74,7 @@ func (m *IsRecording) Value() bool { return (*Model)(m).recording }
 func (m *IsRecording) setValue(val bool) {
 	m.recording = val
 	m.instrEnlarged = val
-	trySend(m.broker.ToPlayer, any(RecordingMsg{val}))
+	TrySend(m.broker.ToPlayer, any(RecordingMsg{val}))
 }
 func (m *IsRecording) Enabled() bool { return true }
 
@@ -86,9 +86,9 @@ func (m *Playing) setValue(val bool) {
 	m.playing = val
 	if m.playing {
 		(*Model)(m).setPanic(false)
-		trySend(m.broker.ToPlayer, any(StartPlayMsg{m.d.Cursor.SongPos}))
+		TrySend(m.broker.ToPlayer, any(StartPlayMsg{m.d.Cursor.SongPos}))
 	} else {
-		trySend(m.broker.ToPlayer, any(IsPlayingMsg{val}))
+		TrySend(m.broker.ToPlayer, any(IsPlayingMsg{val}))
 	}
 }
 func (m *Playing) Enabled() bool { return m.playing || !m.instrEnlarged }
@@ -144,7 +144,7 @@ func (m *Oversampling) Bool() Bool  { return Bool{m} }
 func (m *Oversampling) Value() bool { return m.oversampling }
 func (m *Oversampling) setValue(val bool) {
 	m.oversampling = val
-	trySend(m.broker.ToDetector, MsgToDetector{HasOversampling: true, Oversampling: val})
+	TrySend(m.broker.ToDetector, MsgToDetector{HasOversampling: true, Oversampling: val})
 }
 func (m *Oversampling) Enabled() bool { return true }
 

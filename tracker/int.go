@@ -135,7 +135,7 @@ func (v *DetectorWeighting) Int() Int   { return Int{v} }
 func (v *DetectorWeighting) Value() int { return int(v.weightingType) }
 func (v *DetectorWeighting) setValue(value int) {
 	v.weightingType = WeightingType(value)
-	trySend(v.broker.ToDetector, MsgToDetector{HasWeightingType: true, WeightingType: WeightingType(value)})
+	TrySend(v.broker.ToDetector, MsgToDetector{HasWeightingType: true, WeightingType: WeightingType(value)})
 }
 func (v *DetectorWeighting) Range() intRange           { return intRange{0, int(NumLoudnessTypes) - 1} }
 func (v *DetectorWeighting) change(kind string) func() { return func() {} }

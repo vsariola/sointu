@@ -139,7 +139,7 @@ func (s *Detector) Run() {
 						break
 					}
 				}
-				trySend(s.broker.ToModel, MsgToModel{
+				TrySend(s.broker.ToModel, MsgToModel{
 					HasDetectorResult: true,
 					DetectorResult: DetectorResult{
 						Loudness: s.loudnessDetector.update(chunk),

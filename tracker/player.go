@@ -153,7 +153,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 
 		bufPtr := p.broker.GetAudioBuffer() // borrow a buffer from the broker
 		*bufPtr = append(*bufPtr, buffer[:rendered]...)
-		if len(*bufPtr) == 0 || !trySend(p.broker.ToModel, MsgToModel{Data: bufPtr}) {
+		if len(*bufPtr) == 0 || !TrySend(p.broker.ToModel, MsgToModel{Data: bufPtr}) {
 			// if the buffer is empty or sending the rendered waveform to Model
 			// failed, return the buffer to the broker
 			p.broker.PutAudioBuffer(bufPtr)
@@ -249,7 +249,7 @@ loop:
 						p.releaseTrack(i)
 					}
 				} else {
-					trySend(p.broker.ToModel, MsgToModel{Reset: true})
+					TrySend(p.broker.ToModel, MsgToModel{Reset: true})
 				}
 			case BPMMsg:
 				p.song.BPM = m.int
@@ -268,7 +268,7 @@ loop:
 						p.releaseTrack(i)
 					}
 				}
-				trySend(p.broker.ToModel, MsgToModel{Reset: true})
+				TrySend(p.broker.ToModel, MsgToModel{Reset: true})
 			case NoteOnMsg:
 				if m.IsInstr {
 					p.triggerInstrument(m.Instr, m.Note)
@@ -346,7 +346,7 @@ func (p *Player) compileOrUpdateSynth() {
 
 // all sendTargets from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
 func (p *Player) send(message interface{}) {
-	trySend(p.broker.ToModel, MsgToModel{HasPanicPosLevels: true, Panic: p.synth == nil, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, Data: message})
+	TrySend(p.broker.ToModel, MsgToModel{HasPanicPosLevels: true, Panic: p.synth == nil, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, Data: message})
 }
 
 func (p *Player) triggerInstrument(instrument int, note byte) {
@@ -402,7 +402,7 @@ func (p *Player) trigger(voiceStart, voiceEnd int, note byte, ID int) {
 	p.voices[oldestVoice] = voice{noteID: ID, sustain: true, samplesSinceEvent: 0}
 	p.voiceLevels[oldestVoice] = 1.0
 	p.synth.Trigger(oldestVoice, note)
-	trySend(p.broker.ToModel, MsgToModel{TriggerChannel: instrIndex + 1})
+	TrySend(p.broker.ToModel, MsgToModel{TriggerChannel: instrIndex + 1})
 }
 
 func (p *Player) release(ID int) {

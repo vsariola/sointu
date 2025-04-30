@@ -106,7 +106,7 @@ func (s *ScopeModel) ProcessAudioBuffer(bufPtr *sointu.AudioBuffer) {
 		s.waveForm.WriteOnce(*bufPtr)
 	}
 	// chain the messages: when we have a new audio buffer, try passing it on to the detector
-	if !trySend(s.broker.ToDetector, MsgToDetector{Data: bufPtr}) {
+	if !TrySend(s.broker.ToDetector, MsgToDetector{Data: bufPtr}) {
 		s.broker.PutAudioBuffer(bufPtr)
 	}
 }
@@ -125,7 +125,7 @@ func (s *ScopeModel) Reset() {
 	l := len(s.waveForm.Buffer)
 	s.waveForm.Buffer = s.waveForm.Buffer[:0]
 	s.waveForm.Buffer = append(s.waveForm.Buffer, make([][2]float32, l)...)
-	trySend(s.broker.ToDetector, MsgToDetector{Reset: true}) // chain the messages: when the signal analyzer is reset, also reset the detector
+	TrySend(s.broker.ToDetector, MsgToDetector{Reset: true}) // chain the messages: when the signal analyzer is reset, also reset the detector
 }
 
 func (s *ScopeModel) SetBpm(bpm int) {
