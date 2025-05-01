@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Ctrl + scroll wheel adjusts the global scaling of the GUI ([#153][i153])
 - The loudness detection supports LUFS, A-weighting, C-weighting or
   RMS-weighting, and peak detection supports true peak or sample peak detection.
   The loudness and peak values are displayed in the song panel ([#186][i186])
@@ -313,6 +314,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i149]: https://github.com/vsariola/sointu/issues/149
 [i150]: https://github.com/vsariola/sointu/issues/150
 [i151]: https://github.com/vsariola/sointu/issues/151
+[i153]: https://github.com/vsariola/sointu/issues/153
 [i154]: https://github.com/vsariola/sointu/issues/154
 [i155]: https://github.com/vsariola/sointu/issues/155
 [i156]: https://github.com/vsariola/sointu/issues/156

@@ -10,6 +10,7 @@ import (
 	"gioui.org/app"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
+	"gioui.org/io/pointer"
 	"gioui.org/io/system"
 	"gioui.org/io/transfer"
 	"gioui.org/layout"
@@ -35,6 +36,7 @@ type (
 		KeyPlaying            map[key.Name]tracker.NoteID
 		MidiNotePlaying       []byte
 		PopupAlert            *PopupAlert
+		Zoom                  int
 
 		SaveChangesDialog *Dialog
 		WaveTypeDialog    *Dialog
@@ -65,6 +67,8 @@ const (
 	ConfirmNew
 )
 
+var ZoomFactors = []float32{.25, 1. / 3, .5, 2. / 3, .75, .8, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5}
+
 func NewTracker(model *tracker.Model) *Tracker {
 	t := &Tracker{
 		Theme:             material.NewTheme(),
@@ -83,6 +87,8 @@ func NewTracker(model *tracker.Model) *Tracker {
 		OrderEditor:       NewOrderEditor(model),
 		TrackEditor:       NewNoteEditor(model),
 		SongPanel:         NewSongPanel(model),
+
+		Zoom: 6,
 
 		Model: model,
 
@@ -184,7 +190,13 @@ func titleFromPath(path string) string {
 }
 
 func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
-	paint.FillShape(gtx.Ops, backgroundColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
+	zoomFactor := ZoomFactors[t.Zoom]
+	gtx.Metric.PxPerDp *= zoomFactor
+	gtx.Metric.PxPerSp *= zoomFactor
+	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
+	paint.Fill(gtx.Ops, backgroundColor)
+	event.Op(gtx.Ops, t) // area for capturing scroll events
+
 	if t.InstrumentEditor.enlargeBtn.Bool.Value() {
 		t.layoutTop(gtx)
 	} else {
@@ -203,11 +215,20 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 			key.Filter{Name: "", Optional: key.ModAlt | key.ModCommand | key.ModShift | key.ModShortcut | key.ModSuper},
 			key.Filter{Name: key.NameTab, Optional: key.ModShift},
 			transfer.TargetFilter{Target: t, Type: "application/text"},
+			pointer.Filter{Target: t, Kinds: pointer.Scroll, ScrollY: pointer.ScrollRange{Min: -1, Max: 1}},
 		)
 		if !ok {
 			break
 		}
 		switch e := ev.(type) {
+		case pointer.Event:
+			switch e.Kind {
+			case pointer.Scroll:
+				if e.Modifiers.Contain(key.ModShortcut) {
+					t.Zoom = min(max(t.Zoom-int(e.Scroll.Y), 0), len(ZoomFactors)-1)
+					t.Alerts().AddNamed("ZoomFactor", fmt.Sprintf("%.0f%%", ZoomFactors[t.Zoom]*100), tracker.Info)
+				}
+			}
 		case key.Event:
 			t.KeyEvent(e, gtx)
 		case transfer.DataEvent:
