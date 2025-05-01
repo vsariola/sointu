@@ -1,12 +1,62 @@
 package gioui
 
 import (
+	_ "embed"
+	"fmt"
 	"image/color"
 
 	"gioui.org/font/gofont"
 	"gioui.org/text"
 	"gioui.org/unit"
+	"gioui.org/widget"
+	"gioui.org/widget/material"
+	"golang.org/x/exp/shiny/materialdesign/icons"
+	"gopkg.in/yaml.v2"
 )
+
+type Theme struct {
+	Material     material.Theme
+	Oscilloscope struct {
+		CurveColors [2]color.NRGBA `yaml:",flow"`
+		LimitColor  color.NRGBA    `yaml:",flow"`
+		CursorColor color.NRGBA    `yaml:",flow"`
+	}
+	NumericUpDown struct {
+		TextColor    color.NRGBA `yaml:",flow"`
+		IconColor    color.NRGBA `yaml:",flow"`
+		BgColor      color.NRGBA `yaml:",flow"`
+		CornerRadius unit.Dp
+		ButtonWidth  unit.Dp
+		Width        unit.Dp
+		Height       unit.Dp
+		TextSize     unit.Sp
+		DpPerStep    unit.Dp
+	}
+}
+
+//go:embed theme.yml
+var defaultTheme []byte
+
+func NewTheme() *Theme {
+	var theme Theme
+	yaml.Unmarshal(defaultTheme, &theme)
+	str, _ := yaml.Marshal(theme)
+	fmt.Printf(string(str))
+	ReadCustomConfigYml("theme.yml", &theme)
+	theme.Material.Shaper = &text.Shaper{}
+	theme.Material.Icon.CheckBoxChecked = mustIcon(widget.NewIcon(icons.ToggleCheckBox))
+	theme.Material.Icon.CheckBoxUnchecked = mustIcon(widget.NewIcon(icons.ToggleCheckBoxOutlineBlank))
+	theme.Material.Icon.RadioChecked = mustIcon(widget.NewIcon(icons.ToggleRadioButtonChecked))
+	theme.Material.Icon.RadioUnchecked = mustIcon(widget.NewIcon(icons.ToggleRadioButtonUnchecked))
+	return &theme
+}
+
+func mustIcon(ic *widget.Icon, err error) *widget.Icon {
+	if err != nil {
+		panic(err)
+	}
+	return ic
+}
 
 var fontCollection []text.FontFace = gofont.Collection()
 
@@ -77,6 +127,3 @@ var dialogBgColor = color.NRGBA{R: 0, G: 0, B: 0, A: 224}
 
 var paramIsSendTargetColor = color.NRGBA{R: 120, G: 120, B: 210, A: 255}
 var paramValueInvalidColor = color.NRGBA{R: 120, G: 120, B: 120, A: 190}
-
-var oscilloscopeLimitColor = color.NRGBA{R: 255, G: 255, B: 255, A: 8}
-var oscilloscopeCursorColor = color.NRGBA{R: 252, G: 186, B: 3, A: 255}

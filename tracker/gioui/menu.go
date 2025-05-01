@@ -170,10 +170,10 @@ func (tr *Tracker) layoutMenu(gtx C, title string, clickable *Clickable, menu *M
 	for clickable.Clicked(gtx) {
 		menu.Visible = true
 	}
-	m := PopupMenu(menu, tr.Theme.Shaper)
+	m := PopupMenu(menu, tr.Theme.Material.Shaper)
 	return func(gtx C) D {
 		defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-		titleBtn := Button(tr.Theme, clickable, title)
+		titleBtn := Button(&tr.Theme.Material, clickable, title)
 		titleBtn.Color = white
 		titleBtn.Background = transparent
 		titleBtn.CornerRadius = unit.Dp(0)

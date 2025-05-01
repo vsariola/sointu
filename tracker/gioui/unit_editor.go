@@ -112,13 +112,13 @@ func (pe *UnitEditor) layoutSliders(gtx C, t *Tracker) D {
 		if index < 0 || index >= numItems {
 			return D{}
 		}
-		paramStyle := t.ParamStyle(t.Theme, pe.Parameters[index])
+		paramStyle := t.ParamStyle(&t.Theme.Material, pe.Parameters[index])
 		paramStyle.Focus = pe.sliderList.TrackerList.Selected() == index
 		dims := paramStyle.Layout(gtx)
 		return D{Size: image.Pt(gtx.Constraints.Max.X, dims.Size.Y)}
 	}
 
-	fdl := FilledDragList(t.Theme, pe.sliderList, element, nil)
+	fdl := FilledDragList(&t.Theme.Material, pe.sliderList, element, nil)
 	dims := fdl.Layout(gtx)
 	gtx.Constraints = layout.Exact(dims.Size)
 	fdl.LayoutScrollBar(gtx)
@@ -132,16 +132,16 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 			t.Alerts().Add("Unit copied to clipboard", tracker.Info)
 		}
 	}
-	copyUnitBtnStyle := TipIcon(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
-	deleteUnitBtnStyle := ActionIcon(gtx, t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
-	disableUnitBtnStyle := ToggleIcon(gtx, t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
+	copyUnitBtnStyle := TipIcon(&t.Theme.Material, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
+	deleteUnitBtnStyle := ActionIcon(gtx, &t.Theme.Material, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
+	disableUnitBtnStyle := ToggleIcon(gtx, &t.Theme.Material, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
 	text := t.Units().SelectedType()
 	if text == "" {
 		text = "Choose unit type"
 	} else {
 		text = pe.caser.String(text)
 	}
-	hintText := Label(text, white, t.Theme.Shaper)
+	hintText := Label(text, white, t.Theme.Material.Shaper)
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(deleteUnitBtnStyle.Layout),
 		layout.Rigid(copyUnitBtnStyle.Layout),
@@ -149,7 +149,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		layout.Rigid(func(gtx C) D {
 			var dims D
 			if t.Units().SelectedType() != "" {
-				clearUnitBtnStyle := ActionIcon(gtx, t.Theme, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
+				clearUnitBtnStyle := ActionIcon(gtx, &t.Theme.Material, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
 				dims = clearUnitBtnStyle.Layout(gtx)
 			}
 			return D{Size: image.Pt(gtx.Dp(unit.Dp(48)), dims.Size.Y)}
@@ -164,7 +164,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 			for pe.commentEditor.Submitted(gtx) || pe.commentEditor.Cancelled(gtx) {
 				t.InstrumentEditor.Focus()
 			}
-			commentStyle := MaterialEditor(t.Theme, pe.commentEditor, "---")
+			commentStyle := MaterialEditor(&t.Theme.Material, pe.commentEditor, "---")
 			commentStyle.Font = labelDefaultFont
 			commentStyle.TextSize = labelDefaultFontSize
 			commentStyle.Color = mediumEmphasisTextColor
@@ -185,7 +185,7 @@ func (pe *UnitEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 		names[i] = item
 	}
 	element := func(gtx C, i int) D {
-		w := LabelStyle{Text: names[i], ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+		w := LabelStyle{Text: names[i], ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Material.Shaper}
 		if i == pe.searchList.TrackerList.Selected() {
 			for pe.SelectTypeBtn.Clicked(gtx) {
 				t.Units().SetSelectedType(names[i])
@@ -194,7 +194,7 @@ func (pe *UnitEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 		}
 		return w.Layout(gtx)
 	}
-	fdl := FilledDragList(t.Theme, pe.searchList, element, nil)
+	fdl := FilledDragList(&t.Theme.Material, pe.searchList, element, nil)
 	dims := fdl.Layout(gtx)
 	gtx.Constraints = layout.Exact(dims.Size)
 	fdl.LayoutScrollBar(gtx)
@@ -273,7 +273,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			gtx.Constraints.Min.X = gtx.Dp(unit.Dp(110))
-			return layout.E.Layout(gtx, Label(p.w.Parameter.Name(), white, p.tracker.Theme.Shaper))
+			return layout.E.Layout(gtx, Label(p.w.Parameter.Name(), white, p.tracker.Theme.Material.Shaper))
 		}),
 		layout.Rigid(func(gtx C) D {
 			switch p.w.Parameter.Type() {
@@ -319,7 +319,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 				p.w.boolWidget.Value = p.w.Parameter.Value() > ra.Min
 				boolStyle := material.Switch(p.Theme, &p.w.boolWidget, "Toggle boolean parameter")
 				boolStyle.Color.Disabled = p.Theme.Fg
-				boolStyle.Color.Enabled = white
+				boolStyle.Color.Enabled = p.Theme.ContrastBg
 				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
 				dims := layout.Center.Layout(gtx, boolStyle.Layout)
 				if p.w.boolWidget.Value {
@@ -379,7 +379,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 				if !hint.Valid {
 					color = paramValueInvalidColor
 				}
-				label := Label(hint.Label, color, p.tracker.Theme.Shaper)
+				label := Label(hint.Label, color, p.tracker.Theme.Material.Shaper)
 				if info == "" {
 					return label(gtx)
 				}

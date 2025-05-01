@@ -73,7 +73,7 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 			Text:      t.Model.TrackTitle(i),
 			FontSize:  unit.Sp(12),
 			Color:     mediumEmphasisTextColor,
-			Shaper:    t.Theme.Shaper,
+			Shaper:    t.Theme.Material.Shaper,
 		}.Layout(gtx)
 		return D{Size: image.Pt(gtx.Dp(patternCellWidth), h)}
 	}
@@ -93,7 +93,7 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 		}
 		paint.ColorOp{Color: color}.Add(gtx.Ops)
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
-		widget.Label{}.Layout(gtx, t.Theme.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)), op.CallOp{})
+		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)), op.CallOp{})
 		return D{Size: image.Pt(w, gtx.Dp(patternCellHeight))}
 	}
 
@@ -115,11 +115,11 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 		paint.FillShape(gtx.Ops, color, clip.Rect{Min: image.Pt(1, 1), Max: image.Pt(gtx.Constraints.Min.X-1, gtx.Constraints.Min.X-1)}.Op())
 		paint.ColorOp{Color: patternTextColor}.Add(gtx.Ops)
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
-		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Shaper, trackerFont, trackerFontSize, val, op.CallOp{})
+		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, val, op.CallOp{})
 		return D{Size: image.Pt(gtx.Dp(patternCellWidth), gtx.Dp(patternCellHeight))}
 	}
 
-	table := FilledScrollTable(t.Theme, oe.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)
+	table := FilledScrollTable(&t.Theme.Material, oe.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)
 	table.ColumnTitleHeight = orderTitleHeight
 
 	return table.Layout(gtx)

@@ -125,17 +125,17 @@ func (ie *InstrumentEditor) childFocused(gtx C) bool {
 
 func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 	ie.wasFocused = ie.Focused() || ie.childFocused(gtx)
-	fullscreenBtnStyle := ToggleIcon(gtx, t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, ie.enlargeHint, ie.shrinkHint)
-	linkBtnStyle := ToggleIcon(gtx, t.Theme, ie.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, ie.linkDisabledHint, ie.linkEnabledHint)
+	fullscreenBtnStyle := ToggleIcon(gtx, &t.Theme.Material, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, ie.enlargeHint, ie.shrinkHint)
+	linkBtnStyle := ToggleIcon(gtx, &t.Theme.Material, ie.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, ie.linkDisabledHint, ie.linkEnabledHint)
 
 	octave := func(gtx C) D {
 		in := layout.UniformInset(unit.Dp(1))
-		numStyle := NumericUpDown(t.Theme, t.OctaveNumberInput, ie.octaveHint)
+		numStyle := NumericUpDown(&t.Theme.Material, t.OctaveNumberInput, ie.octaveHint)
 		dims := in.Layout(gtx, numStyle.Layout)
 		return dims
 	}
 
-	newBtnStyle := ActionIcon(gtx, t.Theme, ie.newInstrumentBtn, icons.ContentAdd, ie.addInstrumentHint)
+	newBtnStyle := ActionIcon(gtx, &t.Theme.Material, ie.newInstrumentBtn, icons.ContentAdd, ie.addInstrumentHint)
 	ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(
@@ -144,7 +144,7 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 					return ie.layoutInstrumentList(gtx, t)
 				}),
 				layout.Rigid(layout.Spacer{Width: 10}.Layout),
-				layout.Rigid(LabelStyle{Text: "Octave", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.TextSize * 14.0 / 16.0, Shaper: t.Theme.Shaper}.Layout),
+				layout.Rigid(LabelStyle{Text: "Octave", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.Material.TextSize * 14.0 / 16.0, Shaper: t.Theme.Material.Shaper}.Layout),
 				layout.Rigid(layout.Spacer{Width: 4}.Layout),
 				layout.Rigid(octave),
 				layout.Rigid(func(gtx C) D {
@@ -176,17 +176,17 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 
 func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 	header := func(gtx C) D {
-		commentExpandBtnStyle := ToggleIcon(gtx, t.Theme, ie.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, ie.expandCommentHint, ie.collapseCommentHint)
-		presetMenuBtnStyle := TipIcon(t.Theme, ie.presetMenuBtn, icons.NavigationMenu, "Load preset")
-		copyInstrumentBtnStyle := TipIcon(t.Theme, ie.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
-		saveInstrumentBtnStyle := TipIcon(t.Theme, ie.saveInstrumentBtn, icons.ContentSave, "Save instrument")
-		loadInstrumentBtnStyle := TipIcon(t.Theme, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
-		deleteInstrumentBtnStyle := ActionIcon(gtx, t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, ie.deleteInstrumentHint)
-		splitInstrumentBtnStyle := ActionIcon(gtx, t.Theme, ie.splitInstrumentBtn, icons.CommunicationCallSplit, ie.splitInstrumentHint)
-		soloBtnStyle := ToggleIcon(gtx, t.Theme, ie.soloBtn, icons.SocialGroup, icons.SocialPerson, ie.soloHint, ie.unsoloHint)
-		muteBtnStyle := ToggleIcon(gtx, t.Theme, ie.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, ie.muteHint, ie.unmuteHint)
+		commentExpandBtnStyle := ToggleIcon(gtx, &t.Theme.Material, ie.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, ie.expandCommentHint, ie.collapseCommentHint)
+		presetMenuBtnStyle := TipIcon(&t.Theme.Material, ie.presetMenuBtn, icons.NavigationMenu, "Load preset")
+		copyInstrumentBtnStyle := TipIcon(&t.Theme.Material, ie.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
+		saveInstrumentBtnStyle := TipIcon(&t.Theme.Material, ie.saveInstrumentBtn, icons.ContentSave, "Save instrument")
+		loadInstrumentBtnStyle := TipIcon(&t.Theme.Material, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
+		deleteInstrumentBtnStyle := ActionIcon(gtx, &t.Theme.Material, ie.deleteInstrumentBtn, icons.ActionDelete, ie.deleteInstrumentHint)
+		splitInstrumentBtnStyle := ActionIcon(gtx, &t.Theme.Material, ie.splitInstrumentBtn, icons.CommunicationCallSplit, ie.splitInstrumentHint)
+		soloBtnStyle := ToggleIcon(gtx, &t.Theme.Material, ie.soloBtn, icons.SocialGroup, icons.SocialPerson, ie.soloHint, ie.unsoloHint)
+		muteBtnStyle := ToggleIcon(gtx, &t.Theme.Material, ie.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, ie.muteHint, ie.unmuteHint)
 
-		m := PopupMenu(&ie.presetMenu, t.Theme.Shaper)
+		m := PopupMenu(&ie.presetMenu, t.Theme.Material.Shaper)
 
 		for ie.copyInstrumentBtn.Clickable.Clicked(gtx) {
 			if contents, ok := t.Instruments().List().CopyElements(); ok {
@@ -214,10 +214,10 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		header := func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(layout.Spacer{Width: 6}.Layout),
-				layout.Rigid(LabelStyle{Text: "Voices", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.TextSize * 14.0 / 16.0, Shaper: t.Theme.Shaper}.Layout),
+				layout.Rigid(LabelStyle{Text: "Voices", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.Material.TextSize * 14.0 / 16.0, Shaper: t.Theme.Material.Shaper}.Layout),
 				layout.Rigid(layout.Spacer{Width: 4}.Layout),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					numStyle := NumericUpDown(t.Theme, t.InstrumentVoices, "Number of voices for this instrument")
+					numStyle := NumericUpDown(&t.Theme.Material, t.InstrumentVoices, "Number of voices for this instrument")
 					dims := numStyle.Layout(gtx)
 					return dims
 				}),
@@ -254,7 +254,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 					for ie.commentEditor.Submitted(gtx) || ie.commentEditor.Cancelled(gtx) {
 						ie.instrumentDragList.Focus()
 					}
-					style := MaterialEditor(t.Theme, ie.commentEditor, "Comment")
+					style := MaterialEditor(&t.Theme.Material, ie.commentEditor, "Comment")
 					style.Color = highEmphasisTextColor
 					ret := layout.UniformInset(unit.Dp(6)).Layout(gtx, style.Layout)
 					ie.commentString.Set(ie.commentEditor.Text())
@@ -274,11 +274,11 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 		gtx.Constraints.Min.X = gtx.Dp(unit.Dp(30))
-		grabhandle := LabelStyle{Text: strconv.Itoa(i + 1), ShadeColor: black, Color: mediumEmphasisTextColor, FontSize: unit.Sp(10), Alignment: layout.Center, Shaper: t.Theme.Shaper}
+		grabhandle := LabelStyle{Text: strconv.Itoa(i + 1), ShadeColor: black, Color: mediumEmphasisTextColor, FontSize: unit.Sp(10), Alignment: layout.Center, Shaper: t.Theme.Material.Shaper}
 		label := func(gtx C) D {
 			name, level, mute, ok := (*tracker.Instruments)(t.Model).Item(i)
 			if !ok {
-				labelStyle := LabelStyle{Text: "", ShadeColor: black, Color: white, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+				labelStyle := LabelStyle{Text: "", ShadeColor: black, Color: white, FontSize: unit.Sp(12), Shaper: t.Theme.Material.Shaper}
 				return layout.Center.Layout(gtx, labelStyle.Layout)
 			}
 			k := byte(255 - level*127)
@@ -288,7 +288,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				for ie.nameEditor.Submitted(gtx) || ie.nameEditor.Cancelled(gtx) {
 					ie.instrumentDragList.Focus()
 				}
-				style := MaterialEditor(t.Theme, ie.nameEditor, "Instr")
+				style := MaterialEditor(&t.Theme.Material, ie.nameEditor, "Instr")
 				style.Color = color
 				style.HintColor = instrumentNameHintColor
 				style.TextSize = unit.Sp(12)
@@ -307,7 +307,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 			if name == "" {
 				name = "Instr"
 			}
-			labelStyle := LabelStyle{Text: name, ShadeColor: black, Color: color, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+			labelStyle := LabelStyle{Text: name, ShadeColor: black, Color: color, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Material.Shaper}
 			if mute {
 				labelStyle.Color = disabledTextColor
 				labelStyle.Font.Style = font.Italic
@@ -326,7 +326,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 	if ie.wasFocused {
 		color = activeLightSurfaceColor
 	}
-	instrumentList := FilledDragList(t.Theme, ie.instrumentDragList, element, nil)
+	instrumentList := FilledDragList(&t.Theme.Material, ie.instrumentDragList, element, nil)
 	instrumentList.SelectedColor = color
 	instrumentList.HoverColor = instrumentHoverColor
 	instrumentList.ScrollBarWidth = unit.Dp(6)
@@ -366,9 +366,9 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 
 func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	// TODO: how to ie.unitDragList.Focus()
-	addUnitBtnStyle := ActionIcon(gtx, t.Theme, ie.addUnitBtn, icons.ContentAdd, "Add unit (Enter)")
-	addUnitBtnStyle.IconButtonStyle.Color = t.Theme.ContrastFg
-	addUnitBtnStyle.IconButtonStyle.Background = t.Theme.Fg
+	addUnitBtnStyle := ActionIcon(gtx, &t.Theme.Material, ie.addUnitBtn, icons.ContentAdd, "Add unit (Enter)")
+	addUnitBtnStyle.IconButtonStyle.Color = t.Theme.Material.ContrastFg
+	addUnitBtnStyle.IconButtonStyle.Background = t.Theme.Material.Fg
 	addUnitBtnStyle.IconButtonStyle.Inset = layout.UniformInset(unit.Dp(4))
 
 	var units [256]tracker.UnitListItem
@@ -409,7 +409,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 			f.Style = font.Italic
 		}
 
-		stackLabel := LabelStyle{Text: stackText, ShadeColor: black, Color: mediumEmphasisTextColor, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+		stackLabel := LabelStyle{Text: stackText, ShadeColor: black, Color: mediumEmphasisTextColor, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Material.Shaper}
 		rightMargin := layout.Inset{Right: unit.Dp(10)}
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
@@ -435,7 +435,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 						ie.searchEditor.SetText(str.Value())
 						ie.unitDragList.Focus()
 					}
-					style := MaterialEditor(t.Theme, ie.searchEditor, "---")
+					style := MaterialEditor(&t.Theme.Material, ie.searchEditor, "---")
 					style.Color = color
 					style.HintColor = instrumentNameHintColor
 					style.TextSize = unit.Sp(12)
@@ -444,7 +444,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 					str.Set(ie.searchEditor.Text())
 					return ret
 				} else {
-					unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: color, Font: f, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+					unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: color, Font: f, FontSize: unit.Sp(12), Shaper: t.Theme.Material.Shaper}
 					if unitNameLabel.Text == "" {
 						unitNameLabel.Text = "---"
 					}
@@ -452,7 +452,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 				}
 			}),
 			layout.Flexed(1, func(gtx C) D {
-				unitNameLabel := LabelStyle{Text: u.Comment, ShadeColor: black, Color: mediumEmphasisTextColor, Font: f, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+				unitNameLabel := LabelStyle{Text: u.Comment, ShadeColor: black, Color: mediumEmphasisTextColor, Font: f, FontSize: unit.Sp(12), Shaper: t.Theme.Material.Shaper}
 				inset := layout.Inset{Left: unit.Dp(5)}
 				return inset.Layout(gtx, unitNameLabel.Layout)
 			}),
@@ -463,7 +463,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	}
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-	unitList := FilledDragList(t.Theme, ie.unitDragList, element, nil)
+	unitList := FilledDragList(&t.Theme.Material, ie.unitDragList, element, nil)
 	for {
 		event, ok := gtx.Event(
 			key.Filter{Focus: ie.unitDragList, Name: key.NameRightArrow},

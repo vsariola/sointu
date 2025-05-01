@@ -18,7 +18,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
-	"gioui.org/widget/material"
 	"gioui.org/x/explorer"
 	"github.com/vsariola/sointu/tracker"
 )
@@ -27,7 +26,7 @@ var canQuit = true // set to false in init() if plugin tag is enabled
 
 type (
 	Tracker struct {
-		Theme                 *material.Theme
+		Theme                 *Theme
 		OctaveNumberInput     *NumberInput
 		InstrumentVoices      *NumberInput
 		TopHorizontalSplit    *Split
@@ -71,7 +70,7 @@ var ZoomFactors = []float32{.25, 1. / 3, .5, 2. / 3, .75, .8, 1, 1.1, 1.25, 1.5,
 
 func NewTracker(model *tracker.Model) *Tracker {
 	t := &Tracker{
-		Theme:             material.NewTheme(),
+		Theme:             NewTheme(),
 		OctaveNumberInput: NewNumberInput(model.Octave().Int()),
 		InstrumentVoices:  NewNumberInput(model.InstrumentVoices().Int()),
 
@@ -95,16 +94,14 @@ func NewTracker(model *tracker.Model) *Tracker {
 		filePathString: model.FilePath().String(),
 		preferences:    MakePreferences(),
 	}
-	t.Theme.Shaper = text.NewShaper(text.WithCollection(fontCollection))
-	t.PopupAlert = NewPopupAlert(model.Alerts(), t.Theme.Shaper)
+	t.Theme.Material.Shaper = text.NewShaper(text.WithCollection(fontCollection))
+	t.PopupAlert = NewPopupAlert(model.Alerts(), t.Theme.Material.Shaper)
 	if t.preferences.YmlError != nil {
 		model.Alerts().Add(
 			fmt.Sprintf("Preferences YML Error: %s", t.preferences.YmlError),
 			tracker.Warning,
 		)
 	}
-	t.Theme.Palette.Fg = primaryColor
-	t.Theme.Palette.ContrastFg = black
 	t.TrackEditor.scrollTable.Focus()
 	return t
 }
@@ -244,12 +241,12 @@ func (t *Tracker) showDialog(gtx C) {
 	}
 	switch t.Dialog() {
 	case tracker.NewSongChanges, tracker.OpenSongChanges, tracker.QuitChanges:
-		dstyle := ConfirmDialog(gtx, t.Theme, t.SaveChangesDialog, "Save changes to song?", "Your changes will be lost if you don't save them.")
+		dstyle := ConfirmDialog(gtx, &t.Theme.Material, t.SaveChangesDialog, "Save changes to song?", "Your changes will be lost if you don't save them.")
 		dstyle.OkStyle.Text = "Save"
 		dstyle.AltStyle.Text = "Don't save"
 		dstyle.Layout(gtx)
 	case tracker.Export:
-		dstyle := ConfirmDialog(gtx, t.Theme, t.WaveTypeDialog, "", "Export .wav in int16 or float32 sample format?")
+		dstyle := ConfirmDialog(gtx, &t.Theme.Material, t.WaveTypeDialog, "", "Export .wav in int16 or float32 sample format?")
 		dstyle.OkStyle.Text = "Int16"
 		dstyle.AltStyle.Text = "Float32"
 		dstyle.Layout(gtx)

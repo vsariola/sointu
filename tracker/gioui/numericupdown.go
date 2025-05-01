@@ -2,13 +2,11 @@ package gioui
 
 import (
 	"image"
-	"image/color"
 	"strconv"
 
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 
-	"gioui.org/font"
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
@@ -20,8 +18,6 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/text"
-	"gioui.org/unit"
-	"gioui.org/widget/material"
 )
 
 type NumberInput struct {
@@ -34,48 +30,26 @@ type NumberInput struct {
 }
 
 type NumericUpDownStyle struct {
-	NumberInput     *NumberInput
-	Color           color.NRGBA
-	Font            font.Font
-	TextSize        unit.Sp
-	BorderColor     color.NRGBA
-	IconColor       color.NRGBA
-	BackgroundColor color.NRGBA
-	CornerRadius    unit.Dp
-	Border          unit.Dp
-	ButtonWidth     unit.Dp
-	UnitsPerStep    unit.Dp
-	Tooltip         component.Tooltip
-	Width           unit.Dp
-	Height          unit.Dp
-	shaper          text.Shaper
+	Theme       *Theme
+	NumberInput *NumberInput
+	Tooltip     component.Tooltip
 }
 
 func NewNumberInput(v tracker.Int) *NumberInput {
 	return &NumberInput{Int: v}
 }
 
-func NumericUpDown(th *material.Theme, number *NumberInput, tooltip string) NumericUpDownStyle {
+func NumericUpDown(th *Theme, number *NumberInput, tooltip string) NumericUpDownStyle {
 	return NumericUpDownStyle{
-		NumberInput:     number,
-		Color:           white,
-		IconColor:       th.Palette.Fg,
-		BackgroundColor: numberInputBgColor,
-		CornerRadius:    unit.Dp(4),
-		ButtonWidth:     unit.Dp(16),
-		Border:          unit.Dp(1),
-		UnitsPerStep:    unit.Dp(8),
-		TextSize:        th.TextSize * 14 / 16,
-		Tooltip:         Tooltip(th, tooltip),
-		Width:           unit.Dp(70),
-		Height:          unit.Dp(20),
-		shaper:          *th.Shaper,
+		NumberInput: number,
+		Theme:       th,
+		Tooltip:     Tooltip(&th.Material, tooltip),
 	}
 }
 
 func (s *NumericUpDownStyle) Update(gtx layout.Context) {
 	// handle dragging
-	pxPerStep := float32(gtx.Dp(s.UnitsPerStep))
+	pxPerStep := float32(gtx.Dp(s.Theme.NumericUpDown.DpPerStep))
 	for {
 		ev, ok := gtx.Event(pointer.Filter{
 			Target: s.NumberInput,
@@ -119,13 +93,13 @@ func (s NumericUpDownStyle) Layout(gtx C) D {
 
 func (s *NumericUpDownStyle) actualLayout(gtx C) D {
 	s.Update(gtx)
-	gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(s.Width), gtx.Dp(s.Height)))
-	width := gtx.Dp(s.ButtonWidth)
-	height := gtx.Dp(s.Height)
+	gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(s.Theme.NumericUpDown.Width), gtx.Dp(s.Theme.NumericUpDown.Height)))
+	width := gtx.Dp(s.Theme.NumericUpDown.ButtonWidth)
+	height := gtx.Dp(s.Theme.NumericUpDown.Height)
 	return layout.Background{}.Layout(gtx,
 		func(gtx C) D {
-			defer clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, gtx.Dp(s.CornerRadius)).Push(gtx.Ops).Pop()
-			paint.Fill(gtx.Ops, s.BackgroundColor)
+			defer clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, gtx.Dp(s.Theme.NumericUpDown.CornerRadius)).Push(gtx.Ops).Pop()
+			paint.Fill(gtx.Ops, s.Theme.NumericUpDown.BgColor)
 			event.Op(gtx.Ops, s.NumberInput) // register drag inputs, if not hitting the clicks
 			return D{Size: gtx.Constraints.Min}
 		},
@@ -139,12 +113,12 @@ func (s *NumericUpDownStyle) actualLayout(gtx C) D {
 							s.NumberInput.clickDecrease.Add(gtx.Ops)
 							return D{Size: gtx.Constraints.Min}
 						},
-						func(gtx C) D { return widgetForIcon(icons.ContentRemove).Layout(gtx, s.IconColor) },
+						func(gtx C) D { return widgetForIcon(icons.ContentRemove).Layout(gtx, s.Theme.NumericUpDown.IconColor) },
 					)
 				}),
 				layout.Flexed(1, func(gtx C) D {
-					paint.ColorOp{Color: s.Color}.Add(gtx.Ops)
-					return widget.Label{Alignment: text.Middle}.Layout(gtx, &s.shaper, s.Font, s.TextSize, strconv.Itoa(s.NumberInput.Int.Value()), op.CallOp{})
+					paint.ColorOp{Color: s.Theme.NumericUpDown.TextColor}.Add(gtx.Ops)
+					return widget.Label{Alignment: text.Middle}.Layout(gtx, s.Theme.Material.Shaper, s.Font, s.Theme.NumericUpDown.TextSize, strconv.Itoa(s.NumberInput.Int.Value()), op.CallOp{})
 				}),
 				layout.Rigid(func(gtx C) D {
 					gtx.Constraints = layout.Exact(image.Pt(width, height))

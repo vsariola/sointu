@@ -150,22 +150,22 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 
 func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 	return Surface{Gray: 37, Focus: te.scrollTable.Focused() || te.scrollTable.ChildFocused()}.Layout(gtx, func(gtx C) D {
-		addSemitoneBtnStyle := ActionButton(gtx, t.Theme, te.AddSemitoneBtn, "+1")
-		subtractSemitoneBtnStyle := ActionButton(gtx, t.Theme, te.SubtractSemitoneBtn, "-1")
-		addOctaveBtnStyle := ActionButton(gtx, t.Theme, te.AddOctaveBtn, "+12")
-		subtractOctaveBtnStyle := ActionButton(gtx, t.Theme, te.SubtractOctaveBtn, "-12")
-		noteOffBtnStyle := ActionButton(gtx, t.Theme, te.NoteOffBtn, "Note Off")
-		deleteTrackBtnStyle := ActionIcon(gtx, t.Theme, te.DeleteTrackBtn, icons.ActionDelete, te.deleteTrackHint)
-		splitTrackBtnStyle := ActionIcon(gtx, t.Theme, te.SplitTrackBtn, icons.CommunicationCallSplit, te.splitTrackHint)
-		newTrackBtnStyle := ActionIcon(gtx, t.Theme, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
+		addSemitoneBtnStyle := ActionButton(gtx, &t.Theme.Material, te.AddSemitoneBtn, "+1")
+		subtractSemitoneBtnStyle := ActionButton(gtx, &t.Theme.Material, te.SubtractSemitoneBtn, "-1")
+		addOctaveBtnStyle := ActionButton(gtx, &t.Theme.Material, te.AddOctaveBtn, "+12")
+		subtractOctaveBtnStyle := ActionButton(gtx, &t.Theme.Material, te.SubtractOctaveBtn, "-12")
+		noteOffBtnStyle := ActionButton(gtx, &t.Theme.Material, te.NoteOffBtn, "Note Off")
+		deleteTrackBtnStyle := ActionIcon(gtx, &t.Theme.Material, te.DeleteTrackBtn, icons.ActionDelete, te.deleteTrackHint)
+		splitTrackBtnStyle := ActionIcon(gtx, &t.Theme.Material, te.SplitTrackBtn, icons.CommunicationCallSplit, te.splitTrackHint)
+		newTrackBtnStyle := ActionIcon(gtx, &t.Theme.Material, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
 		in := layout.UniformInset(unit.Dp(1))
 		voiceUpDown := func(gtx C) D {
-			numStyle := NumericUpDown(t.Theme, te.TrackVoices, "Track voices")
+			numStyle := NumericUpDown(&t.Theme.Material, te.TrackVoices, "Track voices")
 			return in.Layout(gtx, numStyle.Layout)
 		}
-		effectBtnStyle := ToggleButton(gtx, t.Theme, te.EffectBtn, "Hex")
-		uniqueBtnStyle := ToggleIcon(gtx, t.Theme, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
-		midiInBtnStyle := ToggleButton(gtx, t.Theme, te.TrackMidiInBtn, "MIDI")
+		effectBtnStyle := ToggleButton(gtx, &t.Theme.Material, te.EffectBtn, "Hex")
+		uniqueBtnStyle := ToggleIcon(gtx, &t.Theme.Material, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
+		midiInBtnStyle := ToggleButton(gtx, &t.Theme.Material, te.TrackMidiInBtn, "MIDI")
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Dp(unit.Dp(12)), 0)} }),
 			layout.Rigid(addSemitoneBtnStyle.Layout),
@@ -176,7 +176,7 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			layout.Rigid(effectBtnStyle.Layout),
 			layout.Rigid(uniqueBtnStyle.Layout),
 			layout.Rigid(layout.Spacer{Width: 10}.Layout),
-			layout.Rigid(LabelStyle{Text: "Voices", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.TextSize * 14.0 / 16.0, Shaper: t.Theme.Shaper}.Layout),
+			layout.Rigid(LabelStyle{Text: "Voices", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.Material.TextSize * 14.0 / 16.0, Shaper: t.Theme.Material.Shaper}.Layout),
 			layout.Rigid(layout.Spacer{Width: 4}.Layout),
 			layout.Rigid(voiceUpDown),
 			layout.Rigid(splitTrackBtnStyle.Layout),
@@ -229,7 +229,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 			Text:      t.Model.TrackTitle(i),
 			FontSize:  unit.Sp(12),
 			Color:     mediumEmphasisTextColor,
-			Shaper:    t.Theme.Shaper,
+			Shaper:    t.Theme.Material.Shaper,
 		}.Layout(gtx)
 		return D{Size: image.Pt(pxWidth, h)}
 	}
@@ -258,11 +258,11 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 				color = loopMarkerColor
 			}
 			paint.ColorOp{Color: color}.Add(gtx.Ops)
-			widget.Label{}.Layout(gtx, t.Theme.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", pat)), op.CallOp{})
+			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", pat)), op.CallOp{})
 		}
 		defer op.Offset(image.Pt(pxPatMarkWidth, 0)).Push(gtx.Ops).Pop()
 		paint.ColorOp{Color: rowMarkerRowTextColor}.Add(gtx.Ops)
-		widget.Label{}.Layout(gtx, t.Theme.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", row)), op.CallOp{})
+		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", row)), op.CallOp{})
 		return D{Size: image.Pt(w, pxHeight)}
 	}
 
@@ -310,11 +310,11 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		s := t.Model.Order().Value(tracker.Point{X: x, Y: pat})
 		if row == 0 { // draw the pattern marker
 			paint.ColorOp{Color: trackerPatMarker}.Add(gtx.Ops)
-			widget.Label{}.Layout(gtx, t.Theme.Shaper, trackerFont, trackerFontSize, patternIndexToString(s), op.CallOp{})
+			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, patternIndexToString(s), op.CallOp{})
 		}
 		if row == 1 && t.Model.PatternUnique(x, s) { // draw a * if the pattern is unique
 			paint.ColorOp{Color: mediumEmphasisTextColor}.Add(gtx.Ops)
-			widget.Label{}.Layout(gtx, t.Theme.Shaper, trackerFont, trackerFontSize, "*", op.CallOp{})
+			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, "*", op.CallOp{})
 		}
 		if te.scrollTable.Table.Cursor() == point && te.scrollTable.Focused() {
 			paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
@@ -325,10 +325,10 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		if t.Model.Notes().Effect(x) {
 			val = hexStr[byte(t.Model.Notes().Value(tracker.Point{X: x, Y: y}))]
 		}
-		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Shaper, trackerFont, trackerFontSize, val, op.CallOp{})
+		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, val, op.CallOp{})
 		return D{Size: image.Pt(pxWidth, pxHeight)}
 	}
-	table := FilledScrollTable(t.Theme, te.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)
+	table := FilledScrollTable(&t.Theme.Material, te.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)
 	table.RowTitleWidth = trackPatMarkWidth + trackRowMarkWidth
 	table.ColumnTitleHeight = trackColTitleHeight
 	table.CellWidth = trackColWidth

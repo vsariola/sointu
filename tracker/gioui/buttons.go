@@ -77,7 +77,7 @@ func ActionIcon(gtx C, th *material.Theme, w *ActionClickable, icon []byte, tip 
 
 func TipIcon(th *material.Theme, w *TipClickable, icon []byte, tip string) TipIconButtonStyle {
 	iconButtonStyle := IconButton(th, &w.Clickable, widgetForIcon(icon), "")
-	iconButtonStyle.Color = primaryColor
+	iconButtonStyle.Color = th.Palette.ContrastBg
 	iconButtonStyle.Background = transparent
 	iconButtonStyle.Inset = layout.UniformInset(unit.Dp(6))
 	return TipIconButtonStyle{
@@ -100,7 +100,7 @@ func ToggleIcon(gtx C, th *material.Theme, w *BoolClickable, offIcon, onIcon []b
 	ibStyle := IconButton(th, &w.Clickable, widgetForIcon(icon), "")
 	ibStyle.Background = transparent
 	ibStyle.Inset = layout.UniformInset(unit.Dp(6))
-	ibStyle.Color = primaryColor
+	ibStyle.Color = th.Palette.ContrastBg
 	if !w.Bool.Enabled() {
 		ibStyle.Color = disabledTextColor
 	}
@@ -138,9 +138,9 @@ func ToggleButton(gtx C, th *material.Theme, b *BoolClickable, text string) Butt
 	ret.Inset = layout.UniformInset(unit.Dp(6))
 	if b.Bool.Value() {
 		ret.Color = th.Palette.ContrastFg
-		ret.Background = th.Palette.Fg
+		ret.Background = th.Palette.ContrastBg
 	} else {
-		ret.Color = th.Palette.Fg
+		ret.Color = th.Palette.ContrastBg
 		ret.Background = transparent
 	}
 	return ret

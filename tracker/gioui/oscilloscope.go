@@ -2,7 +2,6 @@ package gioui
 
 import (
 	"image"
-	"image/color"
 	"math"
 
 	"gioui.org/f32"
@@ -12,7 +11,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
-	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
 )
 
@@ -33,9 +31,7 @@ type (
 	OscilloscopeStyle struct {
 		Oscilloscope *Oscilloscope
 		Wave         tracker.RingBuffer[[2]float32]
-		Colors       [2]color.NRGBA
-		ClippedColor color.NRGBA
-		Theme        *material.Theme
+		Theme        *Theme
 	}
 )
 
@@ -48,15 +44,15 @@ func NewOscilloscope(model *tracker.Model) *Oscilloscope {
 	}
 }
 
-func LineOscilloscope(s *Oscilloscope, wave tracker.RingBuffer[[2]float32], th *material.Theme) *OscilloscopeStyle {
-	return &OscilloscopeStyle{Oscilloscope: s, Wave: wave, Colors: [2]color.NRGBA{primaryColor, secondaryColor}, Theme: th, ClippedColor: errorColor}
+func LineOscilloscope(s *Oscilloscope, wave tracker.RingBuffer[[2]float32], th *Theme) *OscilloscopeStyle {
+	return &OscilloscopeStyle{Oscilloscope: s, Wave: wave, Theme: th}
 }
 
 func (s *OscilloscopeStyle) Layout(gtx C) D {
-	wrapBtnStyle := ToggleButton(gtx, s.Theme, s.Oscilloscope.wrapBtn, "Wrap")
-	onceBtnStyle := ToggleButton(gtx, s.Theme, s.Oscilloscope.onceBtn, "Once")
-	triggerChannelStyle := NumericUpDown(s.Theme, s.Oscilloscope.triggerChannelNumber, "Trigger channel")
-	lengthNumberStyle := NumericUpDown(s.Theme, s.Oscilloscope.lengthInBeatsNumber, "Buffer length in beats")
+	wrapBtnStyle := ToggleButton(gtx, &s.Theme.Material, s.Oscilloscope.wrapBtn, "Wrap")
+	onceBtnStyle := ToggleButton(gtx, &s.Theme.Material, s.Oscilloscope.onceBtn, "Once")
+	triggerChannelStyle := NumericUpDown(&s.Theme.Material, s.Oscilloscope.triggerChannelNumber, "Trigger channel")
+	lengthNumberStyle := NumericUpDown(&s.Theme.Material, s.Oscilloscope.lengthInBeatsNumber, "Buffer length in beats")
 
 	leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
 	rightSpacer := layout.Spacer{Width: unit.Dp(6)}.Layout
@@ -66,7 +62,7 @@ func (s *OscilloscopeStyle) Layout(gtx C) D {
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(leftSpacer),
-				layout.Rigid(LabelStyle{Text: "Trigger", Color: disabledTextColor, Alignment: layout.W, FontSize: s.Theme.TextSize * 14.0 / 16.0, Shaper: s.Theme.Shaper}.Layout),
+				layout.Rigid(LabelStyle{Text: "Trigger", Color: disabledTextColor, Alignment: layout.W, FontSize: s.Theme.Material.TextSize * 14.0 / 16.0, Shaper: s.Theme.Material.Shaper}.Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 				layout.Rigid(onceBtnStyle.Layout),
 				layout.Rigid(triggerChannelStyle.Layout),
@@ -76,7 +72,7 @@ func (s *OscilloscopeStyle) Layout(gtx C) D {
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(leftSpacer),
-				layout.Rigid(LabelStyle{Text: "Buffer", Color: disabledTextColor, Alignment: layout.W, FontSize: s.Theme.TextSize * 14.0 / 16.0, Shaper: s.Theme.Shaper}.Layout),
+				layout.Rigid(LabelStyle{Text: "Buffer", Color: disabledTextColor, Alignment: layout.W, FontSize: s.Theme.Material.TextSize * 14.0 / 16.0, Shaper: s.Theme.Material.Shaper}.Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 				layout.Rigid(wrapBtnStyle.Layout),
 				layout.Rigid(lengthNumberStyle.Layout),
@@ -93,10 +89,10 @@ func (s *OscilloscopeStyle) layoutWave(gtx C) D {
 	}
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
 	event.Op(gtx.Ops, s.Oscilloscope)
-	paint.ColorOp{Color: oscilloscopeCursorColor}.Add(gtx.Ops)
+	paint.ColorOp{Color: s.Theme.Oscilloscope.CursorColor}.Add(gtx.Ops)
 	cursorX := int(s.sampleToPx(gtx, float32(s.Wave.Cursor)))
 	fillRect(gtx, clip.Rect{Min: image.Pt(cursorX, 0), Max: image.Pt(cursorX+1, gtx.Constraints.Max.Y)})
-	paint.ColorOp{Color: oscilloscopeLimitColor}.Add(gtx.Ops)
+	paint.ColorOp{Color: s.Theme.Oscilloscope.LimitColor}.Add(gtx.Ops)
 	minusOneY := int(s.ampToY(gtx, -1))
 	fillRect(gtx, clip.Rect{Min: image.Pt(0, minusOneY), Max: image.Pt(gtx.Constraints.Max.X, minusOneY+1)})
 	plusOneY := int(s.ampToY(gtx, 1))
@@ -106,7 +102,7 @@ func (s *OscilloscopeStyle) layoutWave(gtx C) D {
 	rightX := int(s.sampleToPx(gtx, float32(len(s.Wave.Buffer)-1)))
 	fillRect(gtx, clip.Rect{Min: image.Pt(rightX, 0), Max: image.Pt(rightX+1, gtx.Constraints.Max.Y)})
 	for chn := range 2 {
-		paint.ColorOp{Color: s.Colors[chn]}.Add(gtx.Ops)
+		paint.ColorOp{Color: s.Theme.Oscilloscope.CurveColors[chn]}.Add(gtx.Ops)
 		for px := range gtx.Constraints.Max.X {
 			// left and right is the sample range covered by the pixel
 			left := int(s.pxToSample(gtx, float32(px)-0.5))
