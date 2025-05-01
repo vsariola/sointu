@@ -12,6 +12,7 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/x/component"
 
@@ -20,8 +21,6 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/text"
-	"gioui.org/unit"
-	"gioui.org/widget/material"
 )
 
 type NumberInput struct {
@@ -34,48 +33,41 @@ type NumberInput struct {
 }
 
 type NumericUpDownStyle struct {
-	NumberInput     *NumberInput
-	Color           color.NRGBA
-	Font            font.Font
-	TextSize        unit.Sp
-	BorderColor     color.NRGBA
-	IconColor       color.NRGBA
-	BackgroundColor color.NRGBA
-	CornerRadius    unit.Dp
-	Border          unit.Dp
-	ButtonWidth     unit.Dp
-	UnitsPerStep    unit.Dp
-	Tooltip         component.Tooltip
-	Width           unit.Dp
-	Height          unit.Dp
-	shaper          text.Shaper
+	TextColor    color.NRGBA `yaml:",flow"`
+	IconColor    color.NRGBA `yaml:",flow"`
+	BgColor      color.NRGBA `yaml:",flow"`
+	CornerRadius unit.Dp
+	ButtonWidth  unit.Dp
+	Width        unit.Dp
+	Height       unit.Dp
+	TextSize     unit.Sp
+	DpPerStep    unit.Dp
+}
+
+type NumericUpDown struct {
+	NumberInput *NumberInput
+	Tooltip     component.Tooltip
+	Shaper      *text.Shaper
+	Font        font.Font
+	NumericUpDownStyle
 }
 
 func NewNumberInput(v tracker.Int) *NumberInput {
 	return &NumberInput{Int: v}
 }
 
-func NumericUpDown(th *material.Theme, number *NumberInput, tooltip string) NumericUpDownStyle {
-	return NumericUpDownStyle{
-		NumberInput:     number,
-		Color:           white,
-		IconColor:       th.Palette.Fg,
-		BackgroundColor: numberInputBgColor,
-		CornerRadius:    unit.Dp(4),
-		ButtonWidth:     unit.Dp(16),
-		Border:          unit.Dp(1),
-		UnitsPerStep:    unit.Dp(8),
-		TextSize:        th.TextSize * 14 / 16,
-		Tooltip:         Tooltip(th, tooltip),
-		Width:           unit.Dp(70),
-		Height:          unit.Dp(20),
-		shaper:          *th.Shaper,
+func NumUpDown(th *Theme, number *NumberInput, tooltip string) NumericUpDown {
+	return NumericUpDown{
+		NumberInput:        number,
+		Shaper:             th.Material.Shaper,
+		Tooltip:            Tooltip(th, tooltip),
+		NumericUpDownStyle: th.NumericUpDown,
 	}
 }
 
-func (s *NumericUpDownStyle) Update(gtx layout.Context) {
+func (s *NumericUpDown) Update(gtx layout.Context) {
 	// handle dragging
-	pxPerStep := float32(gtx.Dp(s.UnitsPerStep))
+	pxPerStep := float32(gtx.Dp(s.DpPerStep))
 	for {
 		ev, ok := gtx.Event(pointer.Filter{
 			Target: s.NumberInput,
@@ -110,14 +102,14 @@ func (s *NumericUpDownStyle) Update(gtx layout.Context) {
 	}
 }
 
-func (s NumericUpDownStyle) Layout(gtx C) D {
+func (s NumericUpDown) Layout(gtx C) D {
 	if s.Tooltip.Text.Text != "" {
 		return s.NumberInput.tipArea.Layout(gtx, s.Tooltip, s.actualLayout)
 	}
 	return s.actualLayout(gtx)
 }
 
-func (s *NumericUpDownStyle) actualLayout(gtx C) D {
+func (s *NumericUpDown) actualLayout(gtx C) D {
 	s.Update(gtx)
 	gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(s.Width), gtx.Dp(s.Height)))
 	width := gtx.Dp(s.ButtonWidth)
@@ -125,7 +117,7 @@ func (s *NumericUpDownStyle) actualLayout(gtx C) D {
 	return layout.Background{}.Layout(gtx,
 		func(gtx C) D {
 			defer clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, gtx.Dp(s.CornerRadius)).Push(gtx.Ops).Pop()
-			paint.Fill(gtx.Ops, s.BackgroundColor)
+			paint.Fill(gtx.Ops, s.BgColor)
 			event.Op(gtx.Ops, s.NumberInput) // register drag inputs, if not hitting the clicks
 			return D{Size: gtx.Constraints.Min}
 		},
@@ -143,8 +135,8 @@ func (s *NumericUpDownStyle) actualLayout(gtx C) D {
 					)
 				}),
 				layout.Flexed(1, func(gtx C) D {
-					paint.ColorOp{Color: s.Color}.Add(gtx.Ops)
-					return widget.Label{Alignment: text.Middle}.Layout(gtx, &s.shaper, s.Font, s.TextSize, strconv.Itoa(s.NumberInput.Int.Value()), op.CallOp{})
+					paint.ColorOp{Color: s.TextColor}.Add(gtx.Ops)
+					return widget.Label{Alignment: text.Middle}.Layout(gtx, s.Shaper, s.Font, s.TextSize, strconv.Itoa(s.NumberInput.Int.Value()), op.CallOp{})
 				}),
 				layout.Rigid(func(gtx C) D {
 					gtx.Constraints = layout.Exact(image.Pt(width, height))

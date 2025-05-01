@@ -11,7 +11,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
-	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/version"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -32,7 +31,7 @@ type SongPanel struct {
 	Step           *NumberInput
 	SongLength     *NumberInput
 
-	Scope *Oscilloscope
+	Scope *OscilloscopeState
 
 	MenuBar *MenuBar
 	PlayBar *PlayBar
@@ -76,17 +75,7 @@ func (s *SongPanel) Layout(gtx C, t *Tracker) D {
 			return s.MenuBar.Layout(gtx, t)
 		}),
 		layout.Rigid(func(gtx C) D {
-			return layout.Background{}.Layout(gtx,
-				func(gtx C) D {
-					// push defer clip op
-					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)).Push(gtx.Ops).Pop()
-					paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
-					return D{Size: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}
-				},
-				func(gtx C) D {
-					return s.PlayBar.Layout(gtx, t.Theme)
-				},
-			)
+			return s.PlayBar.Layout(gtx, t.Theme)
 		}),
 		layout.Rigid(func(gtx C) D {
 			return s.layoutSongOptions(gtx, t)
@@ -95,9 +84,7 @@ func (s *SongPanel) Layout(gtx C, t *Tracker) D {
 }
 
 func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
-	paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
-
-	scopeStyle := LineOscilloscope(t.Scope, tr.SignalAnalyzer().Waveform(), tr.Theme)
+	paint.FillShape(gtx.Ops, tr.Theme.SongPanel.Bg, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 
 	var weightingTxt string
 	switch tracker.WeightingType(tr.Model.DetectorWeighting().Value()) {
@@ -111,38 +98,36 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 		weightingTxt = "No weight (RMS)"
 	}
 
-	weightingBtn := LowEmphasisButton(tr.Theme, t.WeightingTypeBtn, weightingTxt)
-	weightingBtn.Color = mediumEmphasisTextColor
+	weightingBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.WeightingTypeBtn, weightingTxt)
 
 	oversamplingTxt := "Sample peak"
 	if tr.Model.Oversampling().Value() {
 		oversamplingTxt = "True peak"
 	}
-	oversamplingBtn := LowEmphasisButton(tr.Theme, t.OversamplingBtn, oversamplingTxt)
-	oversamplingBtn.Color = mediumEmphasisTextColor
+	oversamplingBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.OversamplingBtn, oversamplingTxt)
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return t.SongSettingsExpander.Layout(gtx, tr.Theme, "Song",
 				func(gtx C) D {
-					return LabelStyle{Text: strconv.Itoa(tr.BPM().Value()) + " BPM", Color: mediumEmphasisTextColor, Alignment: layout.W, FontSize: tr.Theme.TextSize * 14.0 / 16.0, Shaper: tr.Theme.Shaper}.Layout(gtx)
+					return Label(tr.Theme, &tr.Theme.SongPanel.RowHeader, strconv.Itoa(tr.BPM().Value())+" BPM").Layout(gtx)
 				},
 				func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, tr.Theme, "BPM", NumericUpDown(tr.Theme, t.BPM, "Song Length").Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "BPM", NumUpDown(tr.Theme, t.BPM, "Song Length").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, tr.Theme, "Song length", NumericUpDown(tr.Theme, t.SongLength, "Song Length").Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Song length", NumUpDown(tr.Theme, t.SongLength, "Song Length").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, tr.Theme, "Rows per pat", NumericUpDown(tr.Theme, t.RowsPerPattern, "Rows per pattern").Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Rows per pat", NumUpDown(tr.Theme, t.RowsPerPattern, "Rows per pattern").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, tr.Theme, "Rows per beat", NumericUpDown(tr.Theme, t.RowsPerBeat, "Rows per beat").Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Rows per beat", NumUpDown(tr.Theme, t.RowsPerBeat, "Rows per beat").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, tr.Theme, "Cursor step", NumericUpDown(tr.Theme, t.Step, "Cursor step").Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Cursor step", NumUpDown(tr.Theme, t.Step, "Cursor step").Layout)
 						}),
 					)
 				})
@@ -150,7 +135,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 		layout.Rigid(func(gtx C) D {
 			return t.LoudnessExpander.Layout(gtx, tr.Theme, "Loudness",
 				func(gtx C) D {
-					return LabelStyle{Text: fmt.Sprintf("%.1f dB", tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm]), Color: mediumEmphasisTextColor, Alignment: layout.W, FontSize: tr.Theme.TextSize * 14.0 / 16.0, Shaper: tr.Theme.Shaper}.Layout(gtx)
+					return Label(tr.Theme, &tr.Theme.SongPanel.RowHeader, fmt.Sprintf("%.1f dB", tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm])).Layout(gtx)
 				},
 				func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical, Alignment: layout.End}.Layout(gtx,
@@ -207,36 +192,27 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 			)
 		}),
 		layout.Flexed(1, func(gtx C) D {
-			return t.ScopeExpander.Layout(gtx, tr.Theme, "Oscilloscope", func(gtx C) D { return D{} }, scopeStyle.Layout)
+			return t.ScopeExpander.Layout(gtx, tr.Theme, "Oscilloscope", func(gtx C) D { return D{} }, Scope(t.Scope, tr.SignalAnalyzer().Waveform(), tr.Theme).Layout)
 		}),
-		layout.Rigid(func(gtx C) D {
-			labelStyle := LabelStyle{Text: version.VersionOrHash, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor, Shaper: tr.Theme.Shaper}
-			return labelStyle.Layout(gtx)
-		}),
+		layout.Rigid(Label(tr.Theme, &tr.Theme.SongPanel.Version, version.VersionOrHash).Layout),
 	)
 }
 
-func dbLabel(th *material.Theme, value tracker.Decibel) LabelStyle {
-	color := mediumEmphasisTextColor
+func dbLabel(th *Theme, value tracker.Decibel) LabelWidget {
+	ret := Label(th, &th.SongPanel.RowValue, fmt.Sprintf("%.1f dB", value))
 	if value >= 0 {
-		color = errorColor
+		ret.Color = th.SongPanel.ErrorColor
 	}
-	return LabelStyle{
-		Text:      fmt.Sprintf("%.1f dB", value),
-		Color:     color,
-		Alignment: layout.W,
-		FontSize:  th.TextSize * 14.0 / 16.0,
-		Shaper:    th.Shaper,
-	}
+	return ret
 }
 
-func layoutSongOptionRow(gtx C, th *material.Theme, label string, widget layout.Widget) D {
+func layoutSongOptionRow(gtx C, th *Theme, label string, widget layout.Widget) D {
 	leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
 	rightSpacer := layout.Spacer{Width: unit.Dp(6)}.Layout
 
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(leftSpacer),
-		layout.Rigid(LabelStyle{Text: label, Color: mediumEmphasisTextColor, Alignment: layout.W, FontSize: th.TextSize * 14.0 / 16.0, Shaper: th.Shaper}.Layout),
+		layout.Rigid(Label(th, &th.SongPanel.RowHeader, label).Layout),
 		layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 		layout.Rigid(widget),
 		layout.Rigid(rightSpacer),
@@ -257,7 +233,7 @@ func (e *Expander) Update(gtx C) {
 	}
 }
 
-func (e *Expander) Layout(gtx C, th *material.Theme, title string, smallWidget, largeWidget layout.Widget) D {
+func (e *Expander) Layout(gtx C, th *Theme, title string, smallWidget, largeWidget layout.Widget) D {
 	e.Update(gtx)
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D { return e.layoutHeader(gtx, th, title, smallWidget) }),
@@ -275,7 +251,7 @@ func (e *Expander) Layout(gtx C, th *material.Theme, title string, smallWidget, 
 	)
 }
 
-func (e *Expander) layoutHeader(gtx C, th *material.Theme, title string, smallWidget layout.Widget) D {
+func (e *Expander) layoutHeader(gtx C, th *Theme, title string, smallWidget layout.Widget) D {
 	return layout.Background{}.Layout(gtx,
 		func(gtx C) D {
 			defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)).Push(gtx.Ops).Pop()
@@ -287,7 +263,7 @@ func (e *Expander) layoutHeader(gtx C, th *material.Theme, title string, smallWi
 			leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(leftSpacer),
-				layout.Rigid(LabelStyle{Text: title, Color: disabledTextColor, Alignment: layout.W, FontSize: th.TextSize * 14.0 / 16.0, Shaper: th.Shaper}.Layout),
+				layout.Rigid(Label(th, &th.SongPanel.Expander, title).Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 				layout.Rigid(func(gtx C) D {
 					if !e.Expanded {
@@ -302,7 +278,7 @@ func (e *Expander) layoutHeader(gtx C, th *material.Theme, title string, smallWi
 						icon = icons.NavigationExpandLess
 					}
 					gtx.Constraints.Min = image.Pt(gtx.Dp(unit.Dp(24)), gtx.Dp(unit.Dp(24)))
-					return widgetForIcon(icon).Layout(gtx, th.Palette.Fg)
+					return widgetForIcon(icon).Layout(gtx, th.SongPanel.Expander.Color)
 				}),
 			)
 		},
@@ -359,7 +335,7 @@ func (t *MenuBar) Layout(gtx C, tr *Tracker) D {
 
 	panicBtnStyle := ToggleIcon(gtx, tr.Theme, t.PanicBtn, icons.AlertErrorOutline, icons.AlertError, t.panicHint, t.panicHint)
 	if t.PanicBtn.Bool.Value() {
-		panicBtnStyle.IconButtonStyle.Color = errorColor
+		panicBtnStyle.IconButtonStyle.Color = tr.Theme.SongPanel.ErrorColor
 	}
 	menuLayouts := []layout.FlexChild{
 		layout.Rigid(tr.layoutMenu(gtx, "File", &t.Clickables[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
@@ -411,7 +387,7 @@ func NewPlayBar(model *tracker.Model) *PlayBar {
 	return ret
 }
 
-func (pb *PlayBar) Layout(gtx C, th *material.Theme) D {
+func (pb *PlayBar) Layout(gtx C, th *Theme) D {
 	rewindBtnStyle := ActionIcon(gtx, th, pb.RewindBtn, icons.AVFastRewind, pb.rewindHint)
 	playBtnStyle := ToggleIcon(gtx, th, pb.PlayingBtn, icons.AVPlayArrow, icons.AVStop, pb.playHint, pb.stopHint)
 	recordBtnStyle := ToggleIcon(gtx, th, pb.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, pb.recordHint, pb.stopRecordHint)

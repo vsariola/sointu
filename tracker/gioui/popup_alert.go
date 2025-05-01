@@ -9,7 +9,6 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"gioui.org/text"
 	"gioui.org/unit"
 	"github.com/vsariola/sointu/tracker"
 )
@@ -17,17 +16,21 @@ import (
 type PopupAlert struct {
 	alerts     *tracker.Alerts
 	prevUpdate time.Time
-	shaper     *text.Shaper
+}
+
+type PopupAlertStyle struct {
+	Bg   color.NRGBA
+	Text LabelStyle
 }
 
 var alertMargin = layout.UniformInset(unit.Dp(6))
 var alertInset = layout.UniformInset(unit.Dp(6))
 
-func NewPopupAlert(alerts *tracker.Alerts, shaper *text.Shaper) *PopupAlert {
-	return &PopupAlert{alerts: alerts, shaper: shaper, prevUpdate: time.Now()}
+func NewPopupAlert(alerts *tracker.Alerts) *PopupAlert {
+	return &PopupAlert{alerts: alerts, prevUpdate: time.Now()}
 }
 
-func (a *PopupAlert) Layout(gtx C) D {
+func (a *PopupAlert) Layout(gtx C, th *Theme) D {
 	now := time.Now()
 	if a.alerts.Update(now.Sub(a.prevUpdate)) {
 		gtx.Execute(op.InvalidateCmd{At: now.Add(50 * time.Millisecond)})
@@ -36,26 +39,22 @@ func (a *PopupAlert) Layout(gtx C) D {
 
 	var totalY float64 = float64(gtx.Dp(38))
 	for _, alert := range a.alerts.Iterate {
-		var color, textColor, shadeColor color.NRGBA
+		var alertStyle *PopupAlertStyle
 		switch alert.Priority {
 		case tracker.Warning:
-			color = warningColor
-			textColor = black
+			alertStyle = &th.Alert.Warning
 		case tracker.Error:
-			color = errorColor
-			textColor = black
+			alertStyle = &th.Alert.Error
 		default:
-			color = popupSurfaceColor
-			textColor = white
-			shadeColor = black
+			alertStyle = &th.Alert.Info
 		}
 		bgWidget := func(gtx C) D {
-			paint.FillShape(gtx.Ops, color, clip.Rect{
+			paint.FillShape(gtx.Ops, alertStyle.Bg, clip.Rect{
 				Max: gtx.Constraints.Min,
 			}.Op())
 			return D{Size: gtx.Constraints.Min}
 		}
-		labelStyle := LabelStyle{Text: alert.Message, Color: textColor, ShadeColor: shadeColor, Font: labelDefaultFont, Alignment: layout.Center, FontSize: unit.Sp(16), Shaper: a.shaper}
+		labelStyle := Label(th, &alertStyle.Text, alert.Message)
 		alertMargin.Layout(gtx, func(gtx C) D {
 			return layout.S.Layout(gtx, func(gtx C) D {
 				defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()

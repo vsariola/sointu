@@ -15,8 +15,6 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"gioui.org/unit"
-	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
 )
 
@@ -34,27 +32,27 @@ type DragList struct {
 }
 
 type FilledDragListStyle struct {
-	dragList       *DragList
-	HoverColor     color.NRGBA
-	SelectedColor  color.NRGBA
-	CursorColor    color.NRGBA
-	ScrollBarWidth unit.Dp
-	element, bg    func(gtx C, i int) D
+	dragList    *DragList
+	HoverColor  color.NRGBA
+	Cursor      CursorStyle
+	Selection   CursorStyle
+	ScrollBar   ScrollBarStyle
+	element, bg func(gtx C, i int) D
 }
 
 func NewDragList(model tracker.List, axis layout.Axis) *DragList {
 	return &DragList{TrackerList: model, List: &layout.List{Axis: axis}, HoverItem: -1, ScrollBar: &ScrollBar{Axis: axis}}
 }
 
-func FilledDragList(th *material.Theme, dragList *DragList, element, bg func(gtx C, i int) D) FilledDragListStyle {
+func FilledDragList(th *Theme, dragList *DragList, element, bg func(gtx C, i int) D) FilledDragListStyle {
 	return FilledDragListStyle{
-		dragList:       dragList,
-		element:        element,
-		bg:             bg,
-		HoverColor:     dragListHoverColor,
-		SelectedColor:  dragListSelectedColor,
-		CursorColor:    cursorColor,
-		ScrollBarWidth: unit.Dp(10),
+		dragList:   dragList,
+		element:    element,
+		bg:         bg,
+		HoverColor: hoveredColor(th.Selection.Active),
+		Cursor:     th.Cursor,
+		Selection:  th.Selection,
+		ScrollBar:  th.ScrollBar,
 	}
 }
 
@@ -67,7 +65,7 @@ func (d *DragList) Focused() bool {
 }
 
 func (s FilledDragListStyle) LayoutScrollBar(gtx C) D {
-	return s.dragList.ScrollBar.Layout(gtx, s.ScrollBarWidth, s.dragList.TrackerList.Count(), &s.dragList.List.Position)
+	return s.dragList.ScrollBar.Layout(gtx, &s.ScrollBar, s.dragList.TrackerList.Count(), &s.dragList.List.Position)
 }
 
 func (s FilledDragListStyle) Layout(gtx C) D {
@@ -147,12 +145,16 @@ func (s FilledDragListStyle) Layout(gtx C) D {
 			var color color.NRGBA
 			if s.dragList.TrackerList.Selected() == index {
 				if s.dragList.focused {
-					color = s.CursorColor
+					color = s.Cursor.Active
 				} else {
-					color = s.SelectedColor
+					color = s.Cursor.Inactive
 				}
 			} else if between(s.dragList.TrackerList.Selected(), index, s.dragList.TrackerList.Selected2()) {
-				color = s.SelectedColor
+				if s.dragList.focused {
+					color = s.Selection.Active
+				} else {
+					color = s.Selection.Inactive
+				}
 			} else if s.dragList.HoverItem == index {
 				color = s.HoverColor
 			}

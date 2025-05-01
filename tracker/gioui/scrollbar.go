@@ -2,6 +2,7 @@ package gioui
 
 import (
 	"image"
+	"image/color"
 
 	"gioui.org/f32"
 	"gioui.org/io/event"
@@ -21,19 +22,27 @@ type ScrollBar struct {
 	tag       bool
 }
 
-func (s *ScrollBar) Layout(gtx C, width unit.Dp, numItems int, pos *layout.Position) D {
+type ScrollBarStyle struct {
+	Color    color.NRGBA
+	Width    unit.Dp
+	Gradient color.NRGBA
+}
+
+func (s *ScrollBar) Layout(gtx C, style *ScrollBarStyle, numItems int, pos *layout.Position) D {
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	defer clip.Rect{Max: gtx.Constraints.Min}.Push(gtx.Ops).Pop()
 	gradientSize := gtx.Dp(unit.Dp(4))
 	var totalPixelsEstimate, scrollBarRelLength float32
+	transparent := style.Gradient
+	transparent.A = 0
 	switch s.Axis {
 	case layout.Vertical:
 		if pos.First > 0 || pos.Offset > 0 {
-			paint.LinearGradientOp{Color1: black, Color2: transparent, Stop2: f32.Pt(0, float32(gradientSize))}.Add(gtx.Ops)
+			paint.LinearGradientOp{Color1: style.Gradient, Color2: transparent, Stop2: f32.Pt(0, float32(gradientSize))}.Add(gtx.Ops)
 			paint.PaintOp{}.Add(gtx.Ops)
 		}
 		if pos.BeforeEnd {
-			paint.LinearGradientOp{Color1: black, Color2: transparent, Stop1: f32.Pt(0, float32(gtx.Constraints.Min.Y)), Stop2: f32.Pt(0, float32(gtx.Constraints.Min.Y-gradientSize))}.Add(gtx.Ops)
+			paint.LinearGradientOp{Color1: style.Gradient, Color2: transparent, Stop1: f32.Pt(0, float32(gtx.Constraints.Min.Y)), Stop2: f32.Pt(0, float32(gtx.Constraints.Min.Y-gradientSize))}.Add(gtx.Ops)
 			paint.PaintOp{}.Add(gtx.Ops)
 		}
 		totalPixelsEstimate = float32(gtx.Constraints.Min.Y+pos.Offset-pos.OffsetLast) * float32(numItems) / float32(pos.Count)
@@ -41,11 +50,11 @@ func (s *ScrollBar) Layout(gtx C, width unit.Dp, numItems int, pos *layout.Posit
 
 	case layout.Horizontal:
 		if pos.First > 0 || pos.Offset > 0 {
-			paint.LinearGradientOp{Color1: black, Color2: transparent, Stop2: f32.Pt(float32(gradientSize), 0)}.Add(gtx.Ops)
+			paint.LinearGradientOp{Color1: style.Gradient, Color2: transparent, Stop2: f32.Pt(float32(gradientSize), 0)}.Add(gtx.Ops)
 			paint.PaintOp{}.Add(gtx.Ops)
 		}
 		if pos.BeforeEnd {
-			paint.LinearGradientOp{Color1: black, Color2: transparent, Stop1: f32.Pt(float32(gtx.Constraints.Min.X), 0), Stop2: f32.Pt(float32(gtx.Constraints.Min.X-gradientSize), 0)}.Add(gtx.Ops)
+			paint.LinearGradientOp{Color1: style.Gradient, Color2: transparent, Stop1: f32.Pt(float32(gtx.Constraints.Min.X), 0), Stop2: f32.Pt(float32(gtx.Constraints.Min.X-gradientSize), 0)}.Add(gtx.Ops)
 			paint.PaintOp{}.Add(gtx.Ops)
 		}
 		totalPixelsEstimate = float32(gtx.Constraints.Min.X+pos.Offset-pos.OffsetLast) * float32(numItems) / float32(pos.Count)
@@ -56,7 +65,7 @@ func (s *ScrollBar) Layout(gtx C, width unit.Dp, numItems int, pos *layout.Posit
 	}
 
 	scrollBarRelStart := (float32(pos.First)*totalPixelsEstimate/float32(numItems) + float32(pos.Offset)) / totalPixelsEstimate
-	scrWidth := gtx.Dp(width)
+	scrWidth := gtx.Dp(style.Width)
 
 	stack := op.Offset(image.Point{}).Push(gtx.Ops)
 	var area clip.Stack
@@ -65,7 +74,7 @@ func (s *ScrollBar) Layout(gtx C, width unit.Dp, numItems int, pos *layout.Posit
 		if scrollBarRelLength < 1 && (s.dragging || s.hovering) {
 			y1 := int(scrollBarRelStart * float32(gtx.Constraints.Min.Y))
 			y2 := int((scrollBarRelStart + scrollBarRelLength) * float32(gtx.Constraints.Min.Y))
-			paint.FillShape(gtx.Ops, scrollBarColor, clip.Rect{Min: image.Pt(gtx.Constraints.Min.X-scrWidth, y1), Max: image.Pt(gtx.Constraints.Min.X, y2)}.Op())
+			paint.FillShape(gtx.Ops, style.Color, clip.Rect{Min: image.Pt(gtx.Constraints.Min.X-scrWidth, y1), Max: image.Pt(gtx.Constraints.Min.X, y2)}.Op())
 		}
 		rect := image.Rect(gtx.Constraints.Min.X-scrWidth, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
 		area = clip.Rect(rect).Push(gtx.Ops)
@@ -73,7 +82,7 @@ func (s *ScrollBar) Layout(gtx C, width unit.Dp, numItems int, pos *layout.Posit
 		if scrollBarRelLength < 1 && (s.dragging || s.hovering) {
 			x1 := int(scrollBarRelStart * float32(gtx.Constraints.Min.X))
 			x2 := int((scrollBarRelStart + scrollBarRelLength) * float32(gtx.Constraints.Min.X))
-			paint.FillShape(gtx.Ops, scrollBarColor, clip.Rect{Min: image.Pt(x1, gtx.Constraints.Min.Y-scrWidth), Max: image.Pt(x2, gtx.Constraints.Min.Y)}.Op())
+			paint.FillShape(gtx.Ops, style.Color, clip.Rect{Min: image.Pt(x1, gtx.Constraints.Min.Y-scrWidth), Max: image.Pt(x2, gtx.Constraints.Min.Y)}.Op())
 		}
 		rect := image.Rect(0, gtx.Constraints.Min.Y-scrWidth, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)
 		area = clip.Rect(rect).Push(gtx.Ops)

@@ -17,7 +17,6 @@ import (
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/vsariola/sointu/tracker"
 )
@@ -58,27 +57,28 @@ func NewBoolClickable(b tracker.Bool) *BoolClickable {
 	}
 }
 
-func Tooltip(th *material.Theme, tip string) component.Tooltip {
-	tooltip := component.PlatformTooltip(th, tip)
-	tooltip.Bg = black
+func Tooltip(th *Theme, tip string) component.Tooltip {
+	tooltip := component.PlatformTooltip(&th.Material, tip)
+	tooltip.Bg = th.Tooltip.Bg
+	tooltip.Text.Color = th.Tooltip.Color
 	return tooltip
 }
 
-func ActionIcon(gtx C, th *material.Theme, w *ActionClickable, icon []byte, tip string) TipIconButtonStyle {
+func ActionIcon(gtx C, th *Theme, w *ActionClickable, icon []byte, tip string) TipIconButtonStyle {
 	ret := TipIcon(th, &w.TipClickable, icon, tip)
 	for w.Clickable.Clicked(gtx) {
 		w.Action.Do()
 	}
 	if !w.Action.Allowed() {
-		ret.IconButtonStyle.Color = disabledTextColor
+		ret.IconButtonStyle.Color = th.Button.Disabled.Color
 	}
 	return ret
 }
 
-func TipIcon(th *material.Theme, w *TipClickable, icon []byte, tip string) TipIconButtonStyle {
+func TipIcon(th *Theme, w *TipClickable, icon []byte, tip string) TipIconButtonStyle {
 	iconButtonStyle := IconButton(th, &w.Clickable, widgetForIcon(icon), "")
-	iconButtonStyle.Color = primaryColor
-	iconButtonStyle.Background = transparent
+	iconButtonStyle.Color = th.Material.Palette.ContrastBg
+	iconButtonStyle.Background = color.NRGBA{}
 	iconButtonStyle.Inset = layout.UniformInset(unit.Dp(6))
 	return TipIconButtonStyle{
 		TipArea:         &w.TipArea,
@@ -87,7 +87,7 @@ func TipIcon(th *material.Theme, w *TipClickable, icon []byte, tip string) TipIc
 	}
 }
 
-func ToggleIcon(gtx C, th *material.Theme, w *BoolClickable, offIcon, onIcon []byte, offTip, onTip string) TipIconButtonStyle {
+func ToggleIcon(gtx C, th *Theme, w *BoolClickable, offIcon, onIcon []byte, offTip, onTip string) TipIconButtonStyle {
 	icon := offIcon
 	tip := offTip
 	if w.Bool.Value() {
@@ -98,11 +98,11 @@ func ToggleIcon(gtx C, th *material.Theme, w *BoolClickable, offIcon, onIcon []b
 		w.Bool.Toggle()
 	}
 	ibStyle := IconButton(th, &w.Clickable, widgetForIcon(icon), "")
-	ibStyle.Background = transparent
+	ibStyle.Background = color.NRGBA{}
 	ibStyle.Inset = layout.UniformInset(unit.Dp(6))
-	ibStyle.Color = primaryColor
+	ibStyle.Color = th.Material.Palette.ContrastBg
 	if !w.Bool.Enabled() {
-		ibStyle.Color = disabledTextColor
+		ibStyle.Color = th.Button.Disabled.Color
 	}
 	return TipIconButtonStyle{
 		TipArea:         &w.TipArea,
@@ -115,51 +115,27 @@ func (t *TipIconButtonStyle) Layout(gtx C) D {
 	return t.TipArea.Layout(gtx, t.Tooltip, t.IconButtonStyle.Layout)
 }
 
-func ActionButton(gtx C, th *material.Theme, w *ActionClickable, text string) ButtonStyle {
+func ActionButton(gtx C, th *Theme, style *ButtonStyle, w *ActionClickable, text string) Button {
 	for w.Clickable.Clicked(gtx) {
 		w.Action.Do()
 	}
-	ret := Button(th, &w.Clickable, text)
-	ret.Color = th.Palette.Fg
 	if !w.Action.Allowed() {
-		ret.Color = disabledTextColor
+		return Btn(th, &th.Button.Disabled, &w.Clickable, text)
 	}
-	ret.Background = transparent
-	ret.Inset = layout.UniformInset(unit.Dp(6))
-	return ret
+	return Btn(th, style, &w.Clickable, text)
 }
 
-func ToggleButton(gtx C, th *material.Theme, b *BoolClickable, text string) ButtonStyle {
+func ToggleButton(gtx C, th *Theme, b *BoolClickable, text string) Button {
 	for b.Clickable.Clicked(gtx) {
 		b.Bool.Toggle()
 	}
-	ret := Button(th, &b.Clickable, text)
-	ret.Background = transparent
-	ret.Inset = layout.UniformInset(unit.Dp(6))
-	if b.Bool.Value() {
-		ret.Color = th.Palette.ContrastFg
-		ret.Background = th.Palette.Fg
-	} else {
-		ret.Color = th.Palette.Fg
-		ret.Background = transparent
+	if !b.Bool.Enabled() {
+		return Btn(th, &th.Button.Disabled, &b.Clickable, text)
 	}
-	return ret
-}
-
-func LowEmphasisButton(th *material.Theme, w *Clickable, text string) ButtonStyle {
-	ret := Button(th, w, text)
-	ret.Color = th.Palette.Fg
-	ret.Background = transparent
-	ret.Inset = layout.UniformInset(unit.Dp(6))
-	return ret
-}
-
-func HighEmphasisButton(th *material.Theme, w *Clickable, text string) ButtonStyle {
-	ret := Button(th, w, text)
-	ret.Color = th.Palette.ContrastFg
-	ret.Background = th.Palette.Fg
-	ret.Inset = layout.UniformInset(unit.Dp(6))
-	return ret
+	if b.Bool.Value() {
+		return Btn(th, &th.Button.Filled, &b.Clickable, text)
+	}
+	return Btn(th, &th.Button.Text, &b.Clickable, text)
 }
 
 // Clickable represents a clickable area.
@@ -277,22 +253,21 @@ func (b *Clickable) update(t event.Tag, gtx layout.Context) (widget.Click, bool)
 }
 
 type ButtonStyle struct {
-	Text string
 	// Color is the text color.
 	Color        color.NRGBA
 	Font         font.Font
 	TextSize     unit.Sp
 	Background   color.NRGBA
 	CornerRadius unit.Dp
+	Height       unit.Dp
 	Inset        layout.Inset
-	Button       *Clickable
-	shaper       *text.Shaper
 }
 
-type ButtonLayoutStyle struct {
-	Background   color.NRGBA
-	CornerRadius unit.Dp
-	Button       *Clickable
+type Button struct {
+	Text   string
+	Button *Clickable
+	shaper *text.Shaper
+	ButtonStyle
 }
 
 type IconButtonStyle struct {
@@ -307,36 +282,20 @@ type IconButtonStyle struct {
 	Description string
 }
 
-func Button(th *material.Theme, button *Clickable, txt string) ButtonStyle {
-	b := ButtonStyle{
-		Text:         txt,
-		Color:        th.Palette.ContrastFg,
-		CornerRadius: 4,
-		Background:   th.Palette.ContrastBg,
-		TextSize:     th.TextSize * 14.0 / 16.0,
-		Inset: layout.Inset{
-			Top: 10, Bottom: 10,
-			Left: 12, Right: 12,
-		},
-		Button: button,
-		shaper: th.Shaper,
+func Btn(th *Theme, style *ButtonStyle, button *Clickable, txt string) Button {
+	b := Button{
+		Text:        txt,
+		ButtonStyle: *style,
+		Button:      button,
+		shaper:      th.Material.Shaper,
 	}
-	b.Font.Typeface = th.Face
 	return b
 }
 
-func ButtonLayout(th *material.Theme, button *Clickable) ButtonLayoutStyle {
-	return ButtonLayoutStyle{
-		Button:       button,
-		Background:   th.Palette.ContrastBg,
-		CornerRadius: 4,
-	}
-}
-
-func IconButton(th *material.Theme, button *Clickable, icon *widget.Icon, description string) IconButtonStyle {
+func IconButton(th *Theme, button *Clickable, icon *widget.Icon, description string) IconButtonStyle {
 	return IconButtonStyle{
-		Background:  th.Palette.ContrastBg,
-		Color:       th.Palette.ContrastFg,
+		Background:  th.Material.Palette.ContrastBg,
+		Color:       th.Material.Palette.ContrastFg,
 		Icon:        icon,
 		Size:        24,
 		Inset:       layout.UniformInset(12),
@@ -345,22 +304,9 @@ func IconButton(th *material.Theme, button *Clickable, icon *widget.Icon, descri
 	}
 }
 
-func (b ButtonStyle) Layout(gtx layout.Context) layout.Dimensions {
-	return ButtonLayoutStyle{
-		Background:   b.Background,
-		CornerRadius: b.CornerRadius,
-		Button:       b.Button,
-	}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-		return b.Inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-			colMacro := op.Record(gtx.Ops)
-			paint.ColorOp{Color: b.Color}.Add(gtx.Ops)
-			return widget.Label{Alignment: text.Middle}.Layout(gtx, b.shaper, b.Font, b.TextSize, b.Text, colMacro.Stop())
-		})
-	})
-}
-
-func (b ButtonLayoutStyle) Layout(gtx layout.Context, w layout.Widget) layout.Dimensions {
+func (b *Button) Layout(gtx layout.Context) layout.Dimensions {
 	min := gtx.Constraints.Min
+	min.Y = gtx.Dp(b.Height)
 	return b.Button.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 		semantic.Button.Add(gtx.Ops)
 		return layout.Background{}.Layout(gtx,
@@ -380,7 +326,13 @@ func (b ButtonLayoutStyle) Layout(gtx layout.Context, w layout.Widget) layout.Di
 			},
 			func(gtx layout.Context) layout.Dimensions {
 				gtx.Constraints.Min = min
-				return layout.Center.Layout(gtx, w)
+				return layout.Center.Layout(gtx, func(gtx C) D {
+					return b.Inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						colMacro := op.Record(gtx.Ops)
+						paint.ColorOp{Color: b.Color}.Add(gtx.Ops)
+						return widget.Label{Alignment: text.Middle}.Layout(gtx, b.shaper, b.Font, b.TextSize, b.Text, colMacro.Stop())
+					})
+				})
 			},
 		)
 	})

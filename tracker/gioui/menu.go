@@ -10,7 +10,6 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"gioui.org/text"
 	"gioui.org/unit"
 	"github.com/vsariola/sointu/tracker"
 )
@@ -27,13 +26,11 @@ type Menu struct {
 type MenuStyle struct {
 	Menu          *Menu
 	Title         string
-	IconColor     color.NRGBA
-	TextColor     color.NRGBA
 	ShortCutColor color.NRGBA
-	FontSize      unit.Sp
-	IconSize      unit.Dp
 	HoverColor    color.NRGBA
-	Shaper        *text.Shaper
+	Theme         *Theme
+	LabelStyle    LabelStyle
+	Disabled      color.NRGBA
 }
 
 type MenuItem struct {
@@ -100,21 +97,21 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 						macro = op.Record(gtx.Ops)
 					}
 					icon := widgetForIcon(item.IconBytes)
-					iconColor := m.IconColor
-					if !item.Doer.Allowed() {
-						iconColor = mediumEmphasisTextColor
-					}
+					iconColor := m.LabelStyle.Color
 					iconInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(6)}
-					textLabel := LabelStyle{Text: item.Text, FontSize: m.FontSize, Color: m.TextColor, Shaper: m.Shaper}
+					textLabel := Label(m.Theme, &m.Theme.Menu.Text, item.Text)
+					shortcutLabel := Label(m.Theme, &m.Theme.Menu.Text, item.ShortcutText)
+					shortcutLabel.Color = m.ShortCutColor
 					if !item.Doer.Allowed() {
-						textLabel.Color = mediumEmphasisTextColor
+						iconColor = m.Disabled
+						textLabel.Color = m.Disabled
+						shortcutLabel.Color = m.Disabled
 					}
-					shortcutLabel := LabelStyle{Text: item.ShortcutText, FontSize: m.FontSize, Color: m.ShortCutColor, Shaper: m.Shaper}
 					shortcutInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(12), Bottom: unit.Dp(2), Top: unit.Dp(2)}
 					dims := layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
 							return iconInset.Layout(gtx, func(gtx C) D {
-								p := gtx.Dp(unit.Dp(m.IconSize))
+								p := gtx.Dp(unit.Dp(m.LabelStyle.TextSize))
 								gtx.Constraints.Min = image.Pt(p, p)
 								return icon.Layout(gtx, iconColor)
 							})
@@ -142,27 +139,25 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 				})
 			}),
 			layout.Expanded(func(gtx C) D {
-				return m.Menu.scrollBar.Layout(gtx, unit.Dp(10), len(items), &m.Menu.list.Position)
+				return m.Menu.scrollBar.Layout(gtx, &m.Theme.ScrollBar, len(items), &m.Menu.list.Position)
 			}),
 		)
 	}
-	popup := Popup(&m.Menu.Visible)
+	popup := Popup(m.Theme, &m.Menu.Visible)
 	popup.NE = unit.Dp(0)
 	popup.ShadowN = unit.Dp(0)
 	popup.NW = unit.Dp(0)
 	return popup.Layout(gtx, contents)
 }
 
-func PopupMenu(menu *Menu, shaper *text.Shaper) MenuStyle {
+func PopupMenu(th *Theme, s *LabelStyle, menu *Menu) MenuStyle {
 	return MenuStyle{
 		Menu:          menu,
-		IconColor:     white,
-		TextColor:     white,
-		ShortCutColor: mediumEmphasisTextColor,
-		FontSize:      unit.Sp(16),
-		IconSize:      unit.Dp(16),
-		HoverColor:    menuHoverColor,
-		Shaper:        shaper,
+		ShortCutColor: th.Menu.ShortCut,
+		LabelStyle:    *s,
+		HoverColor:    th.Menu.Hover,
+		Disabled:      th.Menu.Disabled,
+		Theme:         th,
 	}
 }
 
@@ -170,12 +165,10 @@ func (tr *Tracker) layoutMenu(gtx C, title string, clickable *Clickable, menu *M
 	for clickable.Clicked(gtx) {
 		menu.Visible = true
 	}
-	m := PopupMenu(menu, tr.Theme.Shaper)
+	m := PopupMenu(tr.Theme, &tr.Theme.Menu.Text, menu)
 	return func(gtx C) D {
 		defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-		titleBtn := Button(tr.Theme, clickable, title)
-		titleBtn.Color = white
-		titleBtn.Background = transparent
+		titleBtn := Btn(tr.Theme, &tr.Theme.Button.Menu, clickable, title)
 		titleBtn.CornerRadius = unit.Dp(0)
 		dims := titleBtn.Layout(gtx)
 		op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)

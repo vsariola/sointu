@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"gioui.org/app"
+	"gioui.org/font/gofont"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
@@ -18,7 +19,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
-	"gioui.org/widget/material"
 	"gioui.org/x/explorer"
 	"github.com/vsariola/sointu/tracker"
 )
@@ -27,7 +27,7 @@ var canQuit = true // set to false in init() if plugin tag is enabled
 
 type (
 	Tracker struct {
-		Theme                 *material.Theme
+		Theme                 *Theme
 		OctaveNumberInput     *NumberInput
 		InstrumentVoices      *NumberInput
 		TopHorizontalSplit    *Split
@@ -71,7 +71,7 @@ var ZoomFactors = []float32{.25, 1. / 3, .5, 2. / 3, .75, .8, 1, 1.1, 1.25, 1.5,
 
 func NewTracker(model *tracker.Model) *Tracker {
 	t := &Tracker{
-		Theme:             material.NewTheme(),
+		Theme:             NewTheme(),
 		OctaveNumberInput: NewNumberInput(model.Octave().Int()),
 		InstrumentVoices:  NewNumberInput(model.InstrumentVoices().Int()),
 
@@ -95,16 +95,14 @@ func NewTracker(model *tracker.Model) *Tracker {
 		filePathString: model.FilePath().String(),
 		preferences:    MakePreferences(),
 	}
-	t.Theme.Shaper = text.NewShaper(text.WithCollection(fontCollection))
-	t.PopupAlert = NewPopupAlert(model.Alerts(), t.Theme.Shaper)
+	t.Theme.Material.Shaper = text.NewShaper(text.WithCollection(gofont.Collection()))
+	t.PopupAlert = NewPopupAlert(model.Alerts())
 	if t.preferences.YmlError != nil {
 		model.Alerts().Add(
 			fmt.Sprintf("Preferences YML Error: %s", t.preferences.YmlError),
 			tracker.Warning,
 		)
 	}
-	t.Theme.Palette.Fg = primaryColor
-	t.Theme.Palette.ContrastFg = black
 	t.TrackEditor.scrollTable.Focus()
 	return t
 }
@@ -194,7 +192,7 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 	gtx.Metric.PxPerDp *= zoomFactor
 	gtx.Metric.PxPerSp *= zoomFactor
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
-	paint.Fill(gtx.Ops, backgroundColor)
+	paint.Fill(gtx.Ops, t.Theme.Material.Bg)
 	event.Op(gtx.Ops, t) // area for capturing scroll events
 
 	if t.InstrumentEditor.enlargeBtn.Bool.Value() {
@@ -204,7 +202,7 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 			t.layoutTop,
 			t.layoutBottom)
 	}
-	t.PopupAlert.Layout(gtx)
+	t.PopupAlert.Layout(gtx, t.Theme)
 	t.showDialog(gtx)
 	// this is the top level input handler for the whole app
 	// it handles all the global key events and clipboard events

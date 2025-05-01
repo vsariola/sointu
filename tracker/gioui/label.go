@@ -5,7 +5,6 @@ import (
 	"image/color"
 
 	"gioui.org/font"
-	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/paint"
 	"gioui.org/text"
@@ -14,37 +13,38 @@ import (
 )
 
 type LabelStyle struct {
-	Text       string
-	Color      color.NRGBA
-	ShadeColor color.NRGBA
-	Alignment  layout.Direction
-	Font       font.Font
-	FontSize   unit.Sp
-	Shaper     *text.Shaper
+	Color       color.NRGBA
+	ShadowColor color.NRGBA
+	Alignment   text.Alignment
+	Font        font.Font
+	TextSize    unit.Sp
 }
 
-func (l LabelStyle) Layout(gtx layout.Context) layout.Dimensions {
-	return l.Alignment.Layout(gtx, func(gtx C) D {
-		gtx.Constraints.Min = image.Point{}
-		paint.ColorOp{Color: l.ShadeColor}.Add(gtx.Ops)
+type LabelWidget struct {
+	Text   string
+	Shaper *text.Shaper
+	LabelStyle
+}
+
+func (l LabelWidget) Layout(gtx C) D {
+	textColorMacro := op.Record(gtx.Ops)
+	paint.ColorOp{Color: l.Color}.Add(gtx.Ops)
+	textColor := textColorMacro.Stop()
+	t := widget.Label{
+		Alignment: l.Alignment,
+		MaxLines:  1,
+	}
+	if l.ShadowColor.A > 0 {
+		shadowColorMacro := op.Record(gtx.Ops)
+		paint.ColorOp{Color: l.ShadowColor}.Add(gtx.Ops)
+		shadowColor := shadowColorMacro.Stop()
 		offs := op.Offset(image.Pt(2, 2)).Push(gtx.Ops)
-		widget.Label{
-			Alignment: text.Start,
-			MaxLines:  1,
-		}.Layout(gtx, l.Shaper, l.Font, l.FontSize, l.Text, op.CallOp{})
+		t.Layout(gtx, l.Shaper, l.Font, l.TextSize, l.Text, shadowColor)
 		offs.Pop()
-		paint.ColorOp{Color: l.Color}.Add(gtx.Ops)
-		dims := widget.Label{
-			Alignment: text.Start,
-			MaxLines:  1,
-		}.Layout(gtx, l.Shaper, l.Font, l.FontSize, l.Text, op.CallOp{})
-		return layout.Dimensions{
-			Size:     dims.Size,
-			Baseline: dims.Baseline,
-		}
-	})
+	}
+	return t.Layout(gtx, l.Shaper, l.Font, l.TextSize, l.Text, textColor)
 }
 
-func Label(str string, color color.NRGBA, shaper *text.Shaper) layout.Widget {
-	return LabelStyle{Text: str, Color: color, ShadeColor: black, Font: labelDefaultFont, FontSize: labelDefaultFontSize, Alignment: layout.W, Shaper: shaper}.Layout
+func Label(th *Theme, style *LabelStyle, txt string) LabelWidget {
+	return LabelWidget{Text: txt, Shaper: th.Material.Shaper, LabelStyle: *style}
 }

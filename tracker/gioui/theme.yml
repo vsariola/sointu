@@ -1,0 +1,170 @@
+# Because we use yaml.UnmarshalStrict, we needed to have "Define any" field for
+# all the defines; UnmarshalStrict thrwows an error if a field is not defined
+define:
+  [
+    &primarycolor { r: 206, g: 147, b: 216, a: 255 },
+    &secondarycolor { r: 128, g: 222, b: 234, a: 255 },
+    &transparentcolor { r: 0, g: 0, b: 0, a: 0 },
+    &mediumemphasis { r: 153, g: 153, b: 153, a: 255 },
+    &highemphasis { r: 222, g: 222, b: 222, a: 255 },
+    &disabled { r: 255, g: 255, b: 255, a: 97 },
+    &errorcolor { r: 207, g: 102, b: 121, a: 255 },
+    &warningcolor { r: 251, g: 192, b: 45, a: 255 },
+    &white { r: 255, g: 255, b: 255, a: 255 },
+    &black { r: 0, g: 0, b: 0, a: 255 },
+    &loopcolor { r: 252, g: 186, b: 3, a: 255 },
+    &scrollbarcolor { r: 255, g: 255, b: 255, a: 32 },
+  ]
+
+# from here on starts the structs defined in the theme.go
+material:
+  textsize: 16
+  fingersize: 38
+  palette:
+    bg: &bg { r: 18, g: 18, b: 18, a: 255 }
+    fg: &fg { r: 255, g: 255, b: 255, a: 255 }
+    contrastbg: *primarycolor
+    contrastfg: &contrastfg { r: 0, g: 0, b: 0, a: 255 }
+button:
+  filled:
+    background: *primarycolor
+    color: *contrastfg
+    textsize: &buttontextsize 14
+    cornerradius: &buttoncornerradius 18
+    height: &buttonheight 36
+    inset: &buttoninset { top: 0, bottom: 0, left: 6, right: 6 }
+  text:
+    background: *transparentcolor
+    color: *primarycolor
+    textsize: *buttontextsize
+    cornerradius: *buttoncornerradius
+    height: *buttonheight
+    inset: *buttoninset
+  disabled:
+    background: { r: 53, g: 51, b: 55, a: 255 }
+    color: { r: 120, g: 116, b: 121, a: 255 }
+    textsize: *buttontextsize
+    cornerradius: *buttoncornerradius
+    height: *buttonheight
+    inset: *buttoninset
+  menu:
+    background: *transparentcolor
+    color: { r: 255, g: 255, b: 255, a: 255 }
+    textsize: *buttontextsize
+    cornerradius: 0
+    height: *buttonheight
+    inset: *buttoninset
+oscilloscope:
+  curvecolors: [*primarycolor, *secondarycolor]
+  limitcolor: { r: 255, g: 255, b: 255, a: 8 }
+  cursorcolor: { r: 252, g: 186, b: 3, a: 255 }
+numericupdown:
+  bgcolor: { r: 255, g: 255, b: 255, a: 3 }
+  textcolor: *fg
+  iconcolor: *primarycolor
+  cornerradius: 4
+  buttonwidth: 16
+  dpperstep: 8
+  textsize: 14
+  width: 70
+  height: 20
+songpanel:
+  bg: { r: 24, g: 24, b: 24, a: 255 }
+  rowheader:
+    textsize: 14
+    color: *mediumemphasis
+  rowvalue:
+    textsize: 14
+    color: *mediumemphasis
+  expander:
+    textsize: 14
+    color: *highemphasis
+  errorcolor: *errorcolor
+  version:
+    textsize: 12
+    color: *mediumemphasis
+alert:
+  error:
+    bg: *errorcolor
+    text: { textsize: 16, color: *black }
+  warning:
+    bg: *warningcolor
+    text: { textsize: 16, color: *black }
+  info:
+    bg: { r: 50, g: 50, b: 51, a: 255 }
+    text: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+dialog:
+  bg: { r: 0, g: 0, b: 0, a: 224 }
+  title: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+  text: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+ordereditor:
+  tracktitle: { textsize: 12, color: *mediumemphasis }
+  rowtitle:
+    { textsize: 16, color: *secondarycolor, font: { typeface: "Go Mono" } }
+  cell: { textsize: 16, color: *primarycolor, font: { typeface: "Go Mono" } }
+  loop: *loopcolor
+  cellbg: { r: 255, g: 255, b: 255, a: 3 }
+  play: { r: 55, g: 55, b: 61, a: 255 }
+noteeditor:
+  tracktitle: { textsize: 12, color: *mediumemphasis, alignment: 2 }
+  orderrow:
+    { textsize: 16, color: *secondarycolor, font: { typeface: "Go Mono" } }
+  patternrow:
+    { textsize: 16, color: *mediumemphasis, font: { typeface: "Go Mono" } }
+  note: { textsize: 16, color: *highemphasis, font: { typeface: "Go Mono" } }
+  patternno:
+    { textsize: 16, color: *primarycolor, font: { typeface: "Go Mono" } }
+  unique:
+    { textsize: 16, color: *secondarycolor, font: { typeface: "Go Mono" } }
+  loop: *loopcolor
+  header: { textsize: 14, color: *disabled }
+  play: { r: 55, g: 55, b: 61, a: 255 }
+  onebeat: { r: 31, g: 37, b: 38, a: 255 }
+  twobeat: { r: 31, g: 51, b: 53, a: 255 }
+menu:
+  text: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+  shortcut: *mediumemphasis
+  hover: { r: 100, g: 140, b: 255, a: 48 }
+  disabled: *disabled
+instrumenteditor:
+  octave: { textsize: 14, color: *disabled }
+  voices: { textsize: 14, color: *disabled }
+  instrumentcomment:
+    { textsize: 14, color: *highemphasis, hintcolor: *disabled }
+  unitcomment: { textsize: 14, color: *highemphasis, hintcolor: *disabled }
+  instrumentlist:
+    number: { textsize: 10, color: *mediumemphasis }
+    name: { textsize: 12, color: *white, hintcolor: *disabled }
+    namemuted: { textsize: 12, color: *disabled, hintcolor: *disabled }
+    scrollbar: { width: 6, color: *scrollbarcolor }
+  unitlist:
+    name: { textsize: 12, color: *white, hintcolor: *disabled }
+    namedisabled:
+      textsize: 12
+      color: *disabled
+      hintcolor: *disabled
+      font: { style: 1 }
+    comment: { textsize: 12, color: *disabled }
+    stack: { textsize: 12, color: *mediumemphasis, shadowcolor: *black }
+    disabled: { textsize: 12, color: *disabled }
+    warning: *warningcolor
+    error: *errorcolor
+uniteditor:
+  hint: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+  chooser: { textsize: 12, color: *white, shadowcolor: *black }
+  parametername: { textsize: 16, color: *white, shadowcolor: *black }
+  invalidparam: { r: 120, g: 120, b: 120, a: 190 }
+  sendtarget: { r: 120, g: 120, b: 210, a: 255 }
+cursor:
+  active: { r: 100, g: 140, b: 255, a: 48 }
+  activealt: { r: 255, g: 100, b: 140, a: 48 }
+  inactive: { r: 140, g: 140, b: 140, a: 48 }
+selection:
+  active: { r: 100, g: 140, b: 255, a: 16 }
+  activealt: { r: 255, g: 100, b: 140, a: 24 }
+  inactive: { r: 140, g: 140, b: 140, a: 16 }
+scrollbar: { width: 10, color: *scrollbarcolor, gradient: *black }
+tooltip: { color: *white, bg: *black }
+popup:
+  bg: { r: 50, g: 50, b: 51, a: 255 }
+  shadow: { r: 0, g: 0, b: 0, a: 192 }

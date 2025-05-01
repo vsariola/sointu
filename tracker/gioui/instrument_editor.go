@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"gioui.org/font"
 	"gioui.org/io/clipboard"
 	"gioui.org/io/key"
 	"gioui.org/layout"
@@ -130,7 +129,7 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 
 	octave := func(gtx C) D {
 		in := layout.UniformInset(unit.Dp(1))
-		numStyle := NumericUpDown(t.Theme, t.OctaveNumberInput, ie.octaveHint)
+		numStyle := NumUpDown(t.Theme, t.OctaveNumberInput, ie.octaveHint)
 		dims := in.Layout(gtx, numStyle.Layout)
 		return dims
 	}
@@ -144,7 +143,7 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 					return ie.layoutInstrumentList(gtx, t)
 				}),
 				layout.Rigid(layout.Spacer{Width: 10}.Layout),
-				layout.Rigid(LabelStyle{Text: "Octave", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.TextSize * 14.0 / 16.0, Shaper: t.Theme.Shaper}.Layout),
+				layout.Rigid(Label(t.Theme, &t.Theme.InstrumentEditor.Octave, "Octave").Layout),
 				layout.Rigid(layout.Spacer{Width: 4}.Layout),
 				layout.Rigid(octave),
 				layout.Rigid(func(gtx C) D {
@@ -186,7 +185,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		soloBtnStyle := ToggleIcon(gtx, t.Theme, ie.soloBtn, icons.SocialGroup, icons.SocialPerson, ie.soloHint, ie.unsoloHint)
 		muteBtnStyle := ToggleIcon(gtx, t.Theme, ie.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, ie.muteHint, ie.unmuteHint)
 
-		m := PopupMenu(&ie.presetMenu, t.Theme.Shaper)
+		m := PopupMenu(t.Theme, &t.Theme.Menu.Text, &ie.presetMenu)
 
 		for ie.copyInstrumentBtn.Clickable.Clicked(gtx) {
 			if contents, ok := t.Instruments().List().CopyElements(); ok {
@@ -214,10 +213,10 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		header := func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(layout.Spacer{Width: 6}.Layout),
-				layout.Rigid(LabelStyle{Text: "Voices", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.TextSize * 14.0 / 16.0, Shaper: t.Theme.Shaper}.Layout),
+				layout.Rigid(Label(t.Theme, &t.Theme.InstrumentEditor.Voices, "Voices").Layout),
 				layout.Rigid(layout.Spacer{Width: 4}.Layout),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					numStyle := NumericUpDown(t.Theme, t.InstrumentVoices, "Number of voices for this instrument")
+					numStyle := NumUpDown(t.Theme, t.InstrumentVoices, "Number of voices for this instrument")
 					dims := numStyle.Layout(gtx)
 					return dims
 				}),
@@ -254,8 +253,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 					for ie.commentEditor.Submitted(gtx) || ie.commentEditor.Cancelled(gtx) {
 						ie.instrumentDragList.Focus()
 					}
-					style := MaterialEditor(t.Theme, ie.commentEditor, "Comment")
-					style.Color = highEmphasisTextColor
+					style := MaterialEditor(t.Theme, &t.Theme.InstrumentEditor.InstrumentComment, ie.commentEditor, "Comment")
 					ret := layout.UniformInset(unit.Dp(6)).Layout(gtx, style.Layout)
 					ie.commentString.Set(ie.commentEditor.Text())
 					return ret
@@ -270,33 +268,29 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 }
 
 func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
-	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(36))
+	gtx.Constraints.Max.Y = gtx.Dp(36)
+	gtx.Constraints.Min.Y = gtx.Dp(36)
 	element := func(gtx C, i int) D {
-		gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
-		gtx.Constraints.Min.X = gtx.Dp(unit.Dp(30))
-		grabhandle := LabelStyle{Text: strconv.Itoa(i + 1), ShadeColor: black, Color: mediumEmphasisTextColor, FontSize: unit.Sp(10), Alignment: layout.Center, Shaper: t.Theme.Shaper}
+		grabhandle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentList.Number, strconv.Itoa(i+1))
 		label := func(gtx C) D {
 			name, level, mute, ok := (*tracker.Instruments)(t.Model).Item(i)
 			if !ok {
-				labelStyle := LabelStyle{Text: "", ShadeColor: black, Color: white, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+				labelStyle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentList.Number, "")
 				return layout.Center.Layout(gtx, labelStyle.Layout)
 			}
 			k := byte(255 - level*127)
 			color := color.NRGBA{R: 255, G: k, B: 255, A: 255}
+			s := t.Theme.InstrumentEditor.InstrumentList.Name
+			if mute {
+				s = t.Theme.InstrumentEditor.InstrumentList.NameMuted
+			}
+			s.Color = color
 			if i == ie.instrumentDragList.TrackerList.Selected() {
 				ie.nameEditor.SetText(name)
 				for ie.nameEditor.Submitted(gtx) || ie.nameEditor.Cancelled(gtx) {
 					ie.instrumentDragList.Focus()
 				}
-				style := MaterialEditor(t.Theme, ie.nameEditor, "Instr")
-				style.Color = color
-				style.HintColor = instrumentNameHintColor
-				style.TextSize = unit.Sp(12)
-				style.Font = labelDefaultFont
-				if mute {
-					style.Color = disabledTextColor
-					style.Font.Style = font.Italic
-				}
+				style := MaterialEditor(t.Theme, &s, ie.nameEditor, "Instr")
 				dims := layout.Center.Layout(gtx, func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 					return style.Layout(gtx)
@@ -307,29 +301,21 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 			if name == "" {
 				name = "Instr"
 			}
-			labelStyle := LabelStyle{Text: name, ShadeColor: black, Color: color, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
-			if mute {
-				labelStyle.Color = disabledTextColor
-				labelStyle.Font.Style = font.Italic
-			}
-			return layout.Center.Layout(gtx, labelStyle.Layout)
+			l := s.AsLabelStyle()
+			return layout.Center.Layout(gtx, Label(t.Theme, &l, name).Layout)
 		}
-		return layout.Inset{Left: unit.Dp(6), Right: unit.Dp(6), Top: unit.Dp(4)}.Layout(gtx, func(gtx C) D {
-			return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(grabhandle.Layout),
-				layout.Rigid(label),
-			)
+		return layout.Center.Layout(gtx, func(gtx C) D {
+			return layout.Inset{Left: unit.Dp(6), Right: unit.Dp(6)}.Layout(gtx, func(gtx C) D {
+				return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
+					layout.Rigid(grabhandle.Layout),
+					layout.Rigid(label),
+				)
+			})
 		})
 	}
 
-	color := inactiveLightSurfaceColor
-	if ie.wasFocused {
-		color = activeLightSurfaceColor
-	}
 	instrumentList := FilledDragList(t.Theme, ie.instrumentDragList, element, nil)
-	instrumentList.SelectedColor = color
-	instrumentList.HoverColor = instrumentHoverColor
-	instrumentList.ScrollBarWidth = unit.Dp(6)
+	instrumentList.ScrollBar = t.Theme.InstrumentEditor.InstrumentList.ScrollBar
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
@@ -367,8 +353,8 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	// TODO: how to ie.unitDragList.Focus()
 	addUnitBtnStyle := ActionIcon(gtx, t.Theme, ie.addUnitBtn, icons.ContentAdd, "Add unit (Enter)")
-	addUnitBtnStyle.IconButtonStyle.Color = t.Theme.ContrastFg
-	addUnitBtnStyle.IconButtonStyle.Background = t.Theme.Fg
+	addUnitBtnStyle.IconButtonStyle.Color = t.Theme.Material.ContrastFg
+	addUnitBtnStyle.IconButtonStyle.Background = t.Theme.Material.ContrastBg
 	addUnitBtnStyle.IconButtonStyle.Inset = layout.UniformInset(unit.Dp(4))
 
 	var units [256]tracker.UnitListItem
@@ -393,23 +379,23 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 			return layout.Dimensions{Size: gtx.Constraints.Min}
 		}
 		u := units[i]
-		var color color.NRGBA = white
-		f := labelDefaultFont
+
+		editorStyle := t.Theme.InstrumentEditor.UnitList.Name
+		if u.Disabled {
+			editorStyle = t.Theme.InstrumentEditor.UnitList.NameDisabled
+		}
 
 		stackText := strconv.FormatInt(int64(u.StackAfter), 10)
 		if u.StackNeed > u.StackBefore {
-			color = errorColor
+			editorStyle.Color = t.Theme.InstrumentEditor.UnitList.Error
 			(*tracker.Alerts)(t.Model).AddNamed("UnitNeedsInputs", fmt.Sprintf("%v needs at least %v input signals, got %v", u.Type, u.StackNeed, u.StackBefore), tracker.Error)
 		} else if i == count-1 && u.StackAfter != 0 {
-			color = warningColor
+			editorStyle.Color = t.Theme.InstrumentEditor.UnitList.Warning
 			(*tracker.Alerts)(t.Model).AddNamed("InstrumentLeavesSignals", fmt.Sprintf("Instrument leaves %v signal(s) on the stack", u.StackAfter), tracker.Warning)
 		}
-		if u.Disabled {
-			color = disabledTextColor
-			f.Style = font.Italic
-		}
 
-		stackLabel := LabelStyle{Text: stackText, ShadeColor: black, Color: mediumEmphasisTextColor, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+		stackLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Stack, stackText)
+
 		rightMargin := layout.Inset{Right: unit.Dp(10)}
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
@@ -435,24 +421,21 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 						ie.searchEditor.SetText(str.Value())
 						ie.unitDragList.Focus()
 					}
-					style := MaterialEditor(t.Theme, ie.searchEditor, "---")
-					style.Color = color
-					style.HintColor = instrumentNameHintColor
-					style.TextSize = unit.Sp(12)
-					style.Font = f
+					style := MaterialEditor(t.Theme, &editorStyle, ie.searchEditor, "---")
 					ret := style.Layout(gtx)
 					str.Set(ie.searchEditor.Text())
 					return ret
 				} else {
-					unitNameLabel := LabelStyle{Text: u.Type, ShadeColor: black, Color: color, Font: f, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
-					if unitNameLabel.Text == "" {
-						unitNameLabel.Text = "---"
+					text := u.Type
+					if text == "" {
+						text = "---"
 					}
-					return unitNameLabel.Layout(gtx)
+					l := editorStyle.AsLabelStyle()
+					return Label(t.Theme, &l, text).Layout(gtx)
 				}
 			}),
 			layout.Flexed(1, func(gtx C) D {
-				unitNameLabel := LabelStyle{Text: u.Comment, ShadeColor: black, Color: mediumEmphasisTextColor, Font: f, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+				unitNameLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Comment, u.Comment)
 				inset := layout.Inset{Left: unit.Dp(5)}
 				return inset.Layout(gtx, unitNameLabel.Layout)
 			}),

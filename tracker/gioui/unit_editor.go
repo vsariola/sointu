@@ -141,7 +141,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 	} else {
 		text = pe.caser.String(text)
 	}
-	hintText := Label(text, white, t.Theme.Shaper)
+	hintText := Label(t.Theme, &t.Theme.UnitEditor.Hint, text)
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(deleteUnitBtnStyle.Layout),
 		layout.Rigid(copyUnitBtnStyle.Layout),
@@ -156,7 +156,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		}),
 		layout.Rigid(func(gtx C) D {
 			gtx.Constraints.Min.X = gtx.Dp(120)
-			return hintText(gtx)
+			return hintText.Layout(gtx)
 		}),
 		layout.Flexed(1, func(gtx C) D {
 			s := t.UnitComment().String()
@@ -164,11 +164,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 			for pe.commentEditor.Submitted(gtx) || pe.commentEditor.Cancelled(gtx) {
 				t.InstrumentEditor.Focus()
 			}
-			commentStyle := MaterialEditor(t.Theme, pe.commentEditor, "---")
-			commentStyle.Font = labelDefaultFont
-			commentStyle.TextSize = labelDefaultFontSize
-			commentStyle.Color = mediumEmphasisTextColor
-			commentStyle.HintColor = mediumEmphasisTextColor
+			commentStyle := MaterialEditor(t.Theme, &t.Theme.InstrumentEditor.UnitComment, pe.commentEditor, "---")
 			ret := commentStyle.Layout(gtx)
 			s.Set(pe.commentEditor.Text())
 			return ret
@@ -185,7 +181,8 @@ func (pe *UnitEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 		names[i] = item
 	}
 	element := func(gtx C, i int) D {
-		w := LabelStyle{Text: names[i], ShadeColor: black, Color: white, Font: labelDefaultFont, FontSize: unit.Sp(12), Shaper: t.Theme.Shaper}
+		w := Label(t.Theme, &t.Theme.UnitEditor.Chooser, names[i])
+
 		if i == pe.searchList.TrackerList.Selected() {
 			for pe.SelectTypeBtn.Clicked(gtx) {
 				t.Units().SetSelectedType(names[i])
@@ -248,17 +245,17 @@ type ParameterWidget struct {
 type ParameterStyle struct {
 	tracker         *Tracker
 	w               *ParameterWidget
-	Theme           *material.Theme
+	Theme           *Theme
 	SendTargetTheme *material.Theme
 	Focus           bool
 }
 
-func (t *Tracker) ParamStyle(th *material.Theme, paramWidget *ParameterWidget) ParameterStyle {
-	sendTargetTheme := th.WithPalette(material.Palette{
-		Bg:         th.Bg,
-		Fg:         paramIsSendTargetColor,
-		ContrastBg: th.ContrastBg,
-		ContrastFg: th.ContrastFg,
+func (t *Tracker) ParamStyle(th *Theme, paramWidget *ParameterWidget) ParameterStyle {
+	sendTargetTheme := th.Material.WithPalette(material.Palette{
+		Bg:         th.Material.Bg,
+		Fg:         th.UnitEditor.SendTarget,
+		ContrastBg: th.Material.ContrastBg,
+		ContrastFg: th.Material.ContrastFg,
 	})
 	return ParameterStyle{
 		tracker:         t, // TODO: we need this to pull the instrument names for ID style parameters, find out another way
@@ -273,7 +270,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			gtx.Constraints.Min.X = gtx.Dp(unit.Dp(110))
-			return layout.E.Layout(gtx, Label(p.w.Parameter.Name(), white, p.tracker.Theme.Shaper))
+			return layout.E.Layout(gtx, Label(p.Theme, &p.Theme.UnitEditor.ParameterName, p.w.Parameter.Name()).Layout)
 		}),
 		layout.Rigid(func(gtx C) D {
 			switch p.w.Parameter.Type() {
@@ -298,10 +295,9 @@ func (p ParameterStyle) Layout(gtx C) D {
 				if !p.w.floatWidget.Dragging() {
 					p.w.floatWidget.Value = (float32(p.w.Parameter.Value()) - float32(ra.Min)) / float32(ra.Max-ra.Min)
 				}
-				sliderStyle := material.Slider(p.Theme, &p.w.floatWidget)
-				sliderStyle.Color = p.Theme.Fg
+				sliderStyle := material.Slider(&p.Theme.Material, &p.w.floatWidget)
 				if isSendTarget {
-					sliderStyle.Color = paramIsSendTargetColor
+					sliderStyle.Color = p.Theme.UnitEditor.SendTarget
 				}
 				r := image.Rectangle{Max: gtx.Constraints.Min}
 				defer clip.Rect(r).Push(gtx.Ops).Pop()
@@ -317,9 +313,8 @@ func (p ParameterStyle) Layout(gtx C) D {
 				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
 				ra := p.w.Parameter.Range()
 				p.w.boolWidget.Value = p.w.Parameter.Value() > ra.Min
-				boolStyle := material.Switch(p.Theme, &p.w.boolWidget, "Toggle boolean parameter")
-				boolStyle.Color.Disabled = p.Theme.Fg
-				boolStyle.Color.Enabled = white
+				boolStyle := material.Switch(&p.Theme.Material, &p.w.boolWidget, "Toggle boolean parameter")
+				boolStyle.Color.Disabled = p.Theme.Material.Fg
 				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
 				dims := layout.Center.Layout(gtx, boolStyle.Layout)
 				if p.w.boolWidget.Value {
@@ -374,17 +369,16 @@ func (p ParameterStyle) Layout(gtx C) D {
 		}),
 		layout.Rigid(func(gtx C) D {
 			if p.w.Parameter.Type() != tracker.IDParameter {
-				color := white
 				hint := p.w.Parameter.Hint()
+				label := Label(p.tracker.Theme, &p.tracker.Theme.UnitEditor.Hint, hint.Label)
 				if !hint.Valid {
-					color = paramValueInvalidColor
+					label.Color = p.tracker.Theme.UnitEditor.InvalidParam
 				}
-				label := Label(hint.Label, color, p.tracker.Theme.Shaper)
 				if info == "" {
-					return label(gtx)
+					return label.Layout(gtx)
 				}
 				tooltip := component.PlatformTooltip(p.SendTargetTheme, info)
-				return p.w.tipArea.Layout(gtx, tooltip, label)
+				return p.w.tipArea.Layout(gtx, tooltip, label.Layout)
 			}
 			return D{}
 		}),
