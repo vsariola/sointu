@@ -77,3 +77,6 @@ var dialogBgColor = color.NRGBA{R: 0, G: 0, B: 0, A: 224}
 
 var paramIsSendTargetColor = color.NRGBA{R: 120, G: 120, B: 210, A: 255}
 var paramValueInvalidColor = color.NRGBA{R: 120, G: 120, B: 120, A: 190}
+
+var oscilloscopeLimitColor = color.NRGBA{R: 255, G: 255, B: 255, A: 8}
+var oscilloscopeCursorColor = color.NRGBA{R: 252, G: 186, B: 3, A: 255}

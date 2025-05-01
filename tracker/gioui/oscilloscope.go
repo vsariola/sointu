@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"math"
 
+	"gioui.org/f32"
 	"gioui.org/io/event"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
@@ -23,9 +24,10 @@ type (
 		triggerChannelNumber *NumberInput
 		xScale               int
 		xOffset              float32
+		yScale               float64
 		dragging             bool
 		dragId               pointer.ID
-		dragStartPx          float32
+		dragStartPoint       f32.Point
 	}
 
 	OscilloscopeStyle struct {
@@ -91,54 +93,49 @@ func (s *OscilloscopeStyle) layoutWave(gtx C) D {
 	}
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
 	event.Op(gtx.Ops, s.Oscilloscope)
-	paint.ColorOp{Color: disabledTextColor}.Add(gtx.Ops)
+	paint.ColorOp{Color: oscilloscopeCursorColor}.Add(gtx.Ops)
 	cursorX := int(s.sampleToPx(gtx, float32(s.Wave.Cursor)))
-	stack := clip.Rect{Min: image.Pt(cursorX, 0), Max: image.Pt(cursorX+1, gtx.Constraints.Max.Y)}.Push(gtx.Ops)
-	paint.PaintOp{}.Add(gtx.Ops)
-	stack.Pop()
-	for chn := 0; chn < 2; chn++ {
+	fillRect(gtx, clip.Rect{Min: image.Pt(cursorX, 0), Max: image.Pt(cursorX+1, gtx.Constraints.Max.Y)})
+	paint.ColorOp{Color: oscilloscopeLimitColor}.Add(gtx.Ops)
+	minusOneY := int(s.ampToY(gtx, -1))
+	fillRect(gtx, clip.Rect{Min: image.Pt(0, minusOneY), Max: image.Pt(gtx.Constraints.Max.X, minusOneY+1)})
+	plusOneY := int(s.ampToY(gtx, 1))
+	fillRect(gtx, clip.Rect{Min: image.Pt(0, plusOneY), Max: image.Pt(gtx.Constraints.Max.X, plusOneY+1)})
+	leftX := int(s.sampleToPx(gtx, 0))
+	fillRect(gtx, clip.Rect{Min: image.Pt(leftX, 0), Max: image.Pt(leftX+1, gtx.Constraints.Max.Y)})
+	rightX := int(s.sampleToPx(gtx, float32(len(s.Wave.Buffer)-1)))
+	fillRect(gtx, clip.Rect{Min: image.Pt(rightX, 0), Max: image.Pt(rightX+1, gtx.Constraints.Max.Y)})
+	for chn := range 2 {
 		paint.ColorOp{Color: s.Colors[chn]}.Add(gtx.Ops)
-		clippedColorSet := false
-		yprev := int((s.Wave.Buffer[0][chn] + 1) / 2 * float32(gtx.Constraints.Max.Y))
-		for px := 0; px < gtx.Constraints.Max.X; px++ {
-			x := int(s.pxToSample(gtx, float32(px)))
-			if x < 0 || x >= len(s.Wave.Buffer) {
+		for px := range gtx.Constraints.Max.X {
+			// left and right is the sample range covered by the pixel
+			left := int(s.pxToSample(gtx, float32(px)-0.5))
+			right := int(s.pxToSample(gtx, float32(px)+0.5))
+			if right < 0 || left >= len(s.Wave.Buffer) {
 				continue
 			}
-			y := int((s.Wave.Buffer[x][chn] + 1) / 2 * float32(gtx.Constraints.Max.Y))
-			if y < 0 {
-				y = 0
-			} else if y >= gtx.Constraints.Max.Y {
-				y = gtx.Constraints.Max.Y - 1
+			right = min(right, len(s.Wave.Buffer)-1)
+			left = max(left, 0)
+			// smin and smax are the smallest and largest sample values in the pixel range
+			smax := float32(math.Inf(-1))
+			smin := float32(math.Inf(1))
+			for x := left; x <= right; x++ {
+				smax = max(smax, s.Wave.Buffer[x][chn])
+				smin = min(smin, s.Wave.Buffer[x][chn])
 			}
-			y1, y2 := yprev, y
-			if y < yprev {
-				y1, y2 = y, yprev-1
-			} else if y > yprev {
-				y1++
-			}
-			clipped := false
-			if y1 == y2 && y1 == 0 {
-				clipped = true
-			}
-			if y1 == y2 && y1 == gtx.Constraints.Max.Y-1 {
-				clipped = true
-			}
-			if clippedColorSet != clipped {
-				if clipped {
-					paint.ColorOp{Color: s.ClippedColor}.Add(gtx.Ops)
-				} else {
-					paint.ColorOp{Color: s.Colors[chn]}.Add(gtx.Ops)
-				}
-				clippedColorSet = clipped
-			}
-			stack := clip.Rect{Min: image.Pt(px, y1), Max: image.Pt(px+1, y2+1)}.Push(gtx.Ops)
-			paint.PaintOp{}.Add(gtx.Ops)
-			stack.Pop()
-			yprev = y
+			// y1 and y2 are the pixel range covered by the sample value
+			y1 := min(max(int(s.ampToY(gtx, smax)+0.5), 0), gtx.Constraints.Max.Y-1)
+			y2 := min(max(int(s.ampToY(gtx, smin)+0.5), 0), gtx.Constraints.Max.Y-1)
+			fillRect(gtx, clip.Rect{Min: image.Pt(px, y1), Max: image.Pt(px+1, y2+1)})
 		}
 	}
 	return D{Size: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}
+}
+
+func fillRect(gtx C, rect clip.Rect) {
+	stack := rect.Push(gtx.Ops)
+	paint.PaintOp{}.Add(gtx.Ops)
+	stack.Pop()
 }
 
 func (o *OscilloscopeStyle) update(gtx C) {
@@ -162,17 +159,25 @@ func (o *OscilloscopeStyle) update(gtx C) {
 				if e.Buttons&pointer.ButtonSecondary != 0 {
 					o.Oscilloscope.xOffset = 0
 					o.Oscilloscope.xScale = 0
+					o.Oscilloscope.yScale = 0
 				}
 				if e.Buttons&pointer.ButtonPrimary != 0 {
 					o.Oscilloscope.dragging = true
 					o.Oscilloscope.dragId = e.PointerID
-					o.Oscilloscope.dragStartPx = e.Position.X
+					o.Oscilloscope.dragStartPoint = e.Position
 				}
 			case pointer.Drag:
 				if e.Buttons&pointer.ButtonPrimary != 0 && o.Oscilloscope.dragging && e.PointerID == o.Oscilloscope.dragId {
-					delta := o.pxToSample(gtx, e.Position.X) - o.pxToSample(gtx, o.Oscilloscope.dragStartPx)
-					o.Oscilloscope.xOffset += delta
-					o.Oscilloscope.dragStartPx = e.Position.X
+					deltaX := o.pxToSample(gtx, e.Position.X) - o.pxToSample(gtx, o.Oscilloscope.dragStartPoint.X)
+					o.Oscilloscope.xOffset += deltaX
+					num := o.yToAmp(gtx, e.Position.Y)
+					den := o.yToAmp(gtx, o.Oscilloscope.dragStartPoint.Y)
+					if l := math.Abs(float64(num / den)); l > 1e-3 && l < 1e3 {
+						o.Oscilloscope.yScale += math.Log(l)
+						o.Oscilloscope.yScale = min(max(o.Oscilloscope.yScale, -1e3), 1e3)
+					}
+					o.Oscilloscope.dragStartPoint = e.Position
+
 				}
 			case pointer.Release | pointer.Cancel:
 				o.Oscilloscope.dragging = false
@@ -191,4 +196,14 @@ func (s *OscilloscopeStyle) pxToSample(gtx C, px float32) float32 {
 
 func (s *OscilloscopeStyle) sampleToPx(gtx C, sample float32) float32 {
 	return (sample + s.Oscilloscope.xOffset) * float32(gtx.Constraints.Max.X) / float32(len(s.Wave.Buffer)) / s.scaleFactor()
+}
+
+func (s *OscilloscopeStyle) ampToY(gtx C, amp float32) float32 {
+	scale := float32(math.Exp(s.Oscilloscope.yScale))
+	return (1 - amp*scale) / 2 * float32(gtx.Constraints.Max.Y-1)
+}
+
+func (s *OscilloscopeStyle) yToAmp(gtx C, y float32) float32 {
+	scale := float32(math.Exp(s.Oscilloscope.yScale))
+	return (1 - y/float32(gtx.Constraints.Max.Y-1)*2) / scale
 }
