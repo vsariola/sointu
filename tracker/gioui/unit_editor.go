@@ -299,7 +299,6 @@ func (p ParameterStyle) Layout(gtx C) D {
 					p.w.floatWidget.Value = (float32(p.w.Parameter.Value()) - float32(ra.Min)) / float32(ra.Max-ra.Min)
 				}
 				sliderStyle := material.Slider(p.Theme, &p.w.floatWidget)
-				sliderStyle.Color = p.Theme.Fg
 				if isSendTarget {
 					sliderStyle.Color = paramIsSendTargetColor
 				}
@@ -319,7 +318,6 @@ func (p ParameterStyle) Layout(gtx C) D {
 				p.w.boolWidget.Value = p.w.Parameter.Value() > ra.Min
 				boolStyle := material.Switch(p.Theme, &p.w.boolWidget, "Toggle boolean parameter")
 				boolStyle.Color.Disabled = p.Theme.Fg
-				boolStyle.Color.Enabled = p.Theme.ContrastBg
 				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
 				dims := layout.Center.Layout(gtx, boolStyle.Layout)
 				if p.w.boolWidget.Value {

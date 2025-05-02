@@ -1,23 +1,49 @@
+primarycolor: &primarycolor { r: 243, g: 187, b: 252, a: 255 }
+secondarycolor: &secondarycolor { r: 187, g: 245, b: 252, a: 255 }
+transparentcolor: &transparentcolor { r: 0, g: 0, b: 0, a: 0 }
 material:
   textsize: 16
   fingersize: 38
   palette:
     bg: &bg { r: 18, g: 18, b: 18, a: 255 }
     fg: &fg { r: 255, g: 255, b: 255, a: 255 }
-    contrastbg: &contrastbg { r: 206, g: 147, b: 216, a: 255 }
+    contrastbg: *primarycolor
     contrastfg: &contrastfg { r: 0, g: 0, b: 0, a: 255 }
+filledbutton:
+  background: *primarycolor
+  color: *contrastfg
+  textsize: &buttontextsize 14
+  cornerradius: &buttoncornerradius 12
+  inset: &buttoninset { top: 0, bottom: 0, left: 6, right: 6 }
+textbutton:
+  background: *transparentcolor
+  color: *primarycolor
+  textsize: *buttontextsize
+  cornerradius: *buttoncornerradius
+  inset: *buttoninset
+disabledbutton:
+  background: { r: 53, g: 51, b: 55, a: 255 }
+  color: { r: 120, g: 116, b: 121, a: 255 }
+  textsize: *buttontextsize
+  cornerradius: *buttoncornerradius
+  inset: *buttoninset
+menubutton:
+  background: *transparentcolor
+  color: { r: 255, g: 255, b: 255, a: 255 }
+  textsize: *buttontextsize
+  cornerradius: 0
+  inset: *buttoninset
 oscilloscope:
-  curvecolors:
-    [{ r: 206, g: 147, b: 216, a: 255 }, { r: 128, g: 222, b: 234, a: 255 }]
+  curvecolors: [*primarycolor, *secondarycolor]
   limitcolor: { r: 255, g: 255, b: 255, a: 8 }
   cursorcolor: { r: 252, g: 186, b: 3, a: 255 }
 numericupdown:
   bgcolor: { r: 255, g: 255, b: 255, A: 3 }
   textcolor: *fg
-  iconcolor: *contrastbg
+  iconcolor: *primarycolor
   cornerradius: 4
   buttonwidth: 16
-  unitsperstep: 8
+  dpperstep: 8
   textsize: 14
   width: 70
   height: 20

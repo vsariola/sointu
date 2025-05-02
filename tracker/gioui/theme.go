@@ -15,23 +15,13 @@ import (
 )
 
 type Theme struct {
-	Material     material.Theme
-	Oscilloscope struct {
-		CurveColors [2]color.NRGBA `yaml:",flow"`
-		LimitColor  color.NRGBA    `yaml:",flow"`
-		CursorColor color.NRGBA    `yaml:",flow"`
-	}
-	NumericUpDown struct {
-		TextColor    color.NRGBA `yaml:",flow"`
-		IconColor    color.NRGBA `yaml:",flow"`
-		BgColor      color.NRGBA `yaml:",flow"`
-		CornerRadius unit.Dp
-		ButtonWidth  unit.Dp
-		Width        unit.Dp
-		Height       unit.Dp
-		TextSize     unit.Sp
-		DpPerStep    unit.Dp
-	}
+	Material       material.Theme
+	FilledButton   ButtonStyle
+	TextButton     ButtonStyle
+	DisabledButton ButtonStyle
+	MenuButton     ButtonStyle
+	Oscilloscope   OscilloscopeStyle
+	NumericUpDown  NumericUpDownStyle
 }
 
 //go:embed theme.yml
@@ -39,7 +29,10 @@ var defaultTheme []byte
 
 func NewTheme() *Theme {
 	var theme Theme
-	yaml.Unmarshal(defaultTheme, &theme)
+	err := yaml.Unmarshal(defaultTheme, &theme)
+	if err != nil {
+		panic(fmt.Errorf("failed to default theme: %w", err))
+	}
 	str, _ := yaml.Marshal(theme)
 	fmt.Printf(string(str))
 	ReadCustomConfigYml("theme.yml", &theme)

@@ -2,14 +2,17 @@ package gioui
 
 import (
 	"image"
+	"image/color"
 	"strconv"
 
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 
+	"gioui.org/font"
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/x/component"
 
@@ -30,26 +33,41 @@ type NumberInput struct {
 }
 
 type NumericUpDownStyle struct {
-	Theme       *Theme
+	TextColor    color.NRGBA `yaml:",flow"`
+	IconColor    color.NRGBA `yaml:",flow"`
+	BgColor      color.NRGBA `yaml:",flow"`
+	CornerRadius unit.Dp
+	ButtonWidth  unit.Dp
+	Width        unit.Dp
+	Height       unit.Dp
+	TextSize     unit.Sp
+	DpPerStep    unit.Dp
+}
+
+type NumericUpDown struct {
 	NumberInput *NumberInput
 	Tooltip     component.Tooltip
+	Shaper      *text.Shaper
+	Font        font.Font
+	NumericUpDownStyle
 }
 
 func NewNumberInput(v tracker.Int) *NumberInput {
 	return &NumberInput{Int: v}
 }
 
-func NumericUpDown(th *Theme, number *NumberInput, tooltip string) NumericUpDownStyle {
-	return NumericUpDownStyle{
-		NumberInput: number,
-		Theme:       th,
-		Tooltip:     Tooltip(&th.Material, tooltip),
+func NumUpDown(th *Theme, number *NumberInput, tooltip string) NumericUpDown {
+	return NumericUpDown{
+		NumberInput:        number,
+		Shaper:             th.Material.Shaper,
+		Tooltip:            Tooltip(&th.Material, tooltip),
+		NumericUpDownStyle: th.NumericUpDown,
 	}
 }
 
-func (s *NumericUpDownStyle) Update(gtx layout.Context) {
+func (s *NumericUpDown) Update(gtx layout.Context) {
 	// handle dragging
-	pxPerStep := float32(gtx.Dp(s.Theme.NumericUpDown.DpPerStep))
+	pxPerStep := float32(gtx.Dp(s.DpPerStep))
 	for {
 		ev, ok := gtx.Event(pointer.Filter{
 			Target: s.NumberInput,
@@ -84,22 +102,22 @@ func (s *NumericUpDownStyle) Update(gtx layout.Context) {
 	}
 }
 
-func (s NumericUpDownStyle) Layout(gtx C) D {
+func (s NumericUpDown) Layout(gtx C) D {
 	if s.Tooltip.Text.Text != "" {
 		return s.NumberInput.tipArea.Layout(gtx, s.Tooltip, s.actualLayout)
 	}
 	return s.actualLayout(gtx)
 }
 
-func (s *NumericUpDownStyle) actualLayout(gtx C) D {
+func (s *NumericUpDown) actualLayout(gtx C) D {
 	s.Update(gtx)
-	gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(s.Theme.NumericUpDown.Width), gtx.Dp(s.Theme.NumericUpDown.Height)))
-	width := gtx.Dp(s.Theme.NumericUpDown.ButtonWidth)
-	height := gtx.Dp(s.Theme.NumericUpDown.Height)
+	gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(s.Width), gtx.Dp(s.Height)))
+	width := gtx.Dp(s.ButtonWidth)
+	height := gtx.Dp(s.Height)
 	return layout.Background{}.Layout(gtx,
 		func(gtx C) D {
-			defer clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, gtx.Dp(s.Theme.NumericUpDown.CornerRadius)).Push(gtx.Ops).Pop()
-			paint.Fill(gtx.Ops, s.Theme.NumericUpDown.BgColor)
+			defer clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, gtx.Dp(s.CornerRadius)).Push(gtx.Ops).Pop()
+			paint.Fill(gtx.Ops, s.BgColor)
 			event.Op(gtx.Ops, s.NumberInput) // register drag inputs, if not hitting the clicks
 			return D{Size: gtx.Constraints.Min}
 		},
@@ -113,12 +131,12 @@ func (s *NumericUpDownStyle) actualLayout(gtx C) D {
 							s.NumberInput.clickDecrease.Add(gtx.Ops)
 							return D{Size: gtx.Constraints.Min}
 						},
-						func(gtx C) D { return widgetForIcon(icons.ContentRemove).Layout(gtx, s.Theme.NumericUpDown.IconColor) },
+						func(gtx C) D { return widgetForIcon(icons.ContentRemove).Layout(gtx, s.IconColor) },
 					)
 				}),
 				layout.Flexed(1, func(gtx C) D {
-					paint.ColorOp{Color: s.Theme.NumericUpDown.TextColor}.Add(gtx.Ops)
-					return widget.Label{Alignment: text.Middle}.Layout(gtx, s.Theme.Material.Shaper, s.Font, s.Theme.NumericUpDown.TextSize, strconv.Itoa(s.NumberInput.Int.Value()), op.CallOp{})
+					paint.ColorOp{Color: s.TextColor}.Add(gtx.Ops)
+					return widget.Label{Alignment: text.Middle}.Layout(gtx, s.Shaper, s.Font, s.TextSize, strconv.Itoa(s.NumberInput.Int.Value()), op.CallOp{})
 				}),
 				layout.Rigid(func(gtx C) D {
 					gtx.Constraints = layout.Exact(image.Pt(width, height))

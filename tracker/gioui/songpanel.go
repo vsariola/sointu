@@ -32,7 +32,7 @@ type SongPanel struct {
 	Step           *NumberInput
 	SongLength     *NumberInput
 
-	Scope *Oscilloscope
+	Scope *OscilloscopeState
 
 	MenuBar *MenuBar
 	PlayBar *PlayBar
@@ -97,7 +97,7 @@ func (s *SongPanel) Layout(gtx C, t *Tracker) D {
 func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 	paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 
-	scopeStyle := LineOscilloscope(t.Scope, tr.SignalAnalyzer().Waveform(), tr.Theme)
+	scopeStyle := Scope(t.Scope, tr.SignalAnalyzer().Waveform(), tr.Theme)
 
 	var weightingTxt string
 	switch tracker.WeightingType(tr.Model.DetectorWeighting().Value()) {
@@ -111,15 +111,13 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 		weightingTxt = "No weight (RMS)"
 	}
 
-	weightingBtn := LowEmphasisButton(&tr.Theme.Material, t.WeightingTypeBtn, weightingTxt)
-	weightingBtn.Color = mediumEmphasisTextColor
+	weightingBtn := Btn(tr.Theme, &tr.Theme.TextButton, t.WeightingTypeBtn, weightingTxt)
 
 	oversamplingTxt := "Sample peak"
 	if tr.Model.Oversampling().Value() {
 		oversamplingTxt = "True peak"
 	}
-	oversamplingBtn := LowEmphasisButton(&tr.Theme.Material, t.OversamplingBtn, oversamplingTxt)
-	oversamplingBtn.Color = mediumEmphasisTextColor
+	oversamplingBtn := Btn(tr.Theme, &tr.Theme.TextButton, t.OversamplingBtn, oversamplingTxt)
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
@@ -130,19 +128,19 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 				func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "BPM", NumericUpDown(&tr.Theme.Material, t.BPM, "Song Length").Layout)
+							return layoutSongOptionRow(gtx, &tr.Theme.Material, "BPM", NumUpDown(tr.Theme, t.BPM, "Song Length").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Song length", NumericUpDown(&tr.Theme.Material, t.SongLength, "Song Length").Layout)
+							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Song length", NumUpDown(tr.Theme, t.SongLength, "Song Length").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Rows per pat", NumericUpDown(&tr.Theme.Material, t.RowsPerPattern, "Rows per pattern").Layout)
+							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Rows per pat", NumUpDown(tr.Theme, t.RowsPerPattern, "Rows per pattern").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Rows per beat", NumericUpDown(&tr.Theme.Material, t.RowsPerBeat, "Rows per beat").Layout)
+							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Rows per beat", NumUpDown(tr.Theme, t.RowsPerBeat, "Rows per beat").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Cursor step", NumericUpDown(&tr.Theme.Material, t.Step, "Cursor step").Layout)
+							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Cursor step", NumUpDown(tr.Theme, t.Step, "Cursor step").Layout)
 						}),
 					)
 				})

@@ -130,7 +130,7 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 
 	octave := func(gtx C) D {
 		in := layout.UniformInset(unit.Dp(1))
-		numStyle := NumericUpDown(&t.Theme.Material, t.OctaveNumberInput, ie.octaveHint)
+		numStyle := NumUpDown(t.Theme, t.OctaveNumberInput, ie.octaveHint)
 		dims := in.Layout(gtx, numStyle.Layout)
 		return dims
 	}
@@ -217,7 +217,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				layout.Rigid(LabelStyle{Text: "Voices", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.Material.TextSize * 14.0 / 16.0, Shaper: t.Theme.Material.Shaper}.Layout),
 				layout.Rigid(layout.Spacer{Width: 4}.Layout),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					numStyle := NumericUpDown(&t.Theme.Material, t.InstrumentVoices, "Number of voices for this instrument")
+					numStyle := NumUpDown(t.Theme, t.InstrumentVoices, "Number of voices for this instrument")
 					dims := numStyle.Layout(gtx)
 					return dims
 				}),
