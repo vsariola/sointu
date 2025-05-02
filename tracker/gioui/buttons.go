@@ -259,6 +259,7 @@ type ButtonStyle struct {
 	TextSize     unit.Sp
 	Background   color.NRGBA
 	CornerRadius unit.Dp
+	Height       unit.Dp
 	Inset        layout.Inset
 }
 
@@ -304,8 +305,9 @@ func IconButton(th *material.Theme, button *Clickable, icon *widget.Icon, descri
 	}
 }
 
-func (b Button) Layout(gtx layout.Context) layout.Dimensions {
+func (b *Button) Layout(gtx layout.Context) layout.Dimensions {
 	min := gtx.Constraints.Min
+	min.Y = gtx.Dp(b.Height)
 	return b.Button.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 		semantic.Button.Add(gtx.Ops)
 		return layout.Background{}.Layout(gtx,

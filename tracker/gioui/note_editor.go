@@ -176,7 +176,7 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			layout.Rigid(effectBtnStyle.Layout),
 			layout.Rigid(uniqueBtnStyle.Layout),
 			layout.Rigid(layout.Spacer{Width: 10}.Layout),
-			layout.Rigid(LabelStyle{Text: "Voices", Color: disabledTextColor, Alignment: layout.W, FontSize: t.Theme.Material.TextSize * 14.0 / 16.0, Shaper: t.Theme.Material.Shaper}.Layout),
+			layout.Rigid(Label(t.Theme, &t.Theme.NoteEditor.Header, "Voices").Layout),
 			layout.Rigid(layout.Spacer{Width: 4}.Layout),
 			layout.Rigid(voiceUpDown),
 			layout.Rigid(splitTrackBtnStyle.Layout),
@@ -224,13 +224,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	colTitle := func(gtx C, i int) D {
 		h := gtx.Dp(trackColTitleHeight)
 		gtx.Constraints = layout.Exact(image.Pt(pxWidth, h))
-		LabelStyle{
-			Alignment: layout.N,
-			Text:      t.Model.TrackTitle(i),
-			FontSize:  unit.Sp(12),
-			Color:     mediumEmphasisTextColor,
-			Shaper:    t.Theme.Material.Shaper,
-		}.Layout(gtx)
+		Label(t.Theme, &t.Theme.NoteEditor.TrackTitle, t.Model.TrackTitle(i)).Layout(gtx)
 		return D{Size: image.Pt(pxWidth, h)}
 	}
 

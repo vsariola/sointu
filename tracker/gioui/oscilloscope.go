@@ -70,7 +70,7 @@ func (s *Oscilloscope) Layout(gtx C) D {
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(leftSpacer),
-				layout.Rigid(LabelStyle{Text: "Trigger", Color: disabledTextColor, Alignment: layout.W, FontSize: s.Theme.Material.TextSize * 14.0 / 16.0, Shaper: s.Theme.Material.Shaper}.Layout),
+				layout.Rigid(Label(s.Theme, &s.Theme.SongPanel.RowHeader, "Trigger").Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 				layout.Rigid(onceBtnStyle.Layout),
 				layout.Rigid(triggerChannelStyle.Layout),
@@ -80,7 +80,7 @@ func (s *Oscilloscope) Layout(gtx C) D {
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(leftSpacer),
-				layout.Rigid(LabelStyle{Text: "Buffer", Color: disabledTextColor, Alignment: layout.W, FontSize: s.Theme.Material.TextSize * 14.0 / 16.0, Shaper: s.Theme.Material.Shaper}.Layout),
+				layout.Rigid(Label(s.Theme, &s.Theme.SongPanel.RowHeader, "Buffer").Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 				layout.Rigid(wrapBtnStyle.Layout),
 				layout.Rigid(lengthNumberStyle.Layout),

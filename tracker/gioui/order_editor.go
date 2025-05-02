@@ -68,13 +68,7 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
 		defer op.Affine(f32.Affine2D{}.Rotate(f32.Pt(0, 0), -90*math.Pi/180).Offset(f32.Point{X: 0, Y: float32(h)})).Push(gtx.Ops).Pop()
 		gtx.Constraints = layout.Exact(image.Pt(1e6, 1e6))
-		LabelStyle{
-			Alignment: layout.NW,
-			Text:      t.Model.TrackTitle(i),
-			FontSize:  unit.Sp(12),
-			Color:     mediumEmphasisTextColor,
-			Shaper:    t.Theme.Material.Shaper,
-		}.Layout(gtx)
+		Label(t.Theme, &t.Theme.OrderEditor.TrackTitle, t.Model.TrackTitle(i)).Layout(gtx)
 		return D{Size: image.Pt(gtx.Dp(patternCellWidth), h)}
 	}
 

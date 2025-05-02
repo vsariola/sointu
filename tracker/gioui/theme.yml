@@ -1,6 +1,17 @@
-primarycolor: &primarycolor { r: 243, g: 187, b: 252, a: 255 }
-secondarycolor: &secondarycolor { r: 187, g: 245, b: 252, a: 255 }
+# following definitions are not in theme.go, but defined here just for
+# reusability, with &... *... references
+primarycolor: &primarycolor { r: 206, g: 147, b: 216, a: 255 } # { r: 243, g: 187, b: 252, a: 255 }
+secondarycolor: &secondarycolor { r: 128, g: 222, b: 234, a: 255 } # { r: 187, g: 245, b: 252, a: 255 }
 transparentcolor: &transparentcolor { r: 0, g: 0, b: 0, a: 0 }
+mediumemphasis: &mediumemphasis { r: 153, g: 153, b: 153, a: 255 }
+highemphasis: &highemphasis { r: 222, g: 222, b: 222, a: 255 }
+disabled: &disabled { r: 255, g: 255, b: 255, a: 97 }
+errorcolor: &errorcolor { r: 207, g: 102, b: 121, a: 255 }
+warningcolor: &warningcolor { r: 251, g: 192, b: 45, a: 255 }
+white: &white { r: 255, g: 255, b: 255, a: 255 }
+black: &black { r: 0, g: 0, b: 0, a: 255 }
+
+# from here on starts the structs defined in the theme.go
 material:
   textsize: 16
   fingersize: 38
@@ -13,25 +24,29 @@ filledbutton:
   background: *primarycolor
   color: *contrastfg
   textsize: &buttontextsize 14
-  cornerradius: &buttoncornerradius 12
+  cornerradius: &buttoncornerradius 18
+  height: &buttonheight 36
   inset: &buttoninset { top: 0, bottom: 0, left: 6, right: 6 }
 textbutton:
   background: *transparentcolor
   color: *primarycolor
   textsize: *buttontextsize
   cornerradius: *buttoncornerradius
+  height: *buttonheight
   inset: *buttoninset
 disabledbutton:
   background: { r: 53, g: 51, b: 55, a: 255 }
   color: { r: 120, g: 116, b: 121, a: 255 }
   textsize: *buttontextsize
   cornerradius: *buttoncornerradius
+  height: *buttonheight
   inset: *buttoninset
 menubutton:
   background: *transparentcolor
   color: { r: 255, g: 255, b: 255, a: 255 }
   textsize: *buttontextsize
   cornerradius: 0
+  height: *buttonheight
   inset: *buttoninset
 oscilloscope:
   curvecolors: [*primarycolor, *secondarycolor]
@@ -47,3 +62,56 @@ numericupdown:
   textsize: 14
   width: 70
   height: 20
+songpanel:
+  rowheader:
+    textsize: 14
+    color: *mediumemphasis
+  rowvalue:
+    textsize: 14
+    color: *mediumemphasis
+  expander:
+    textsize: 14
+    color: *highemphasis
+  errorcolor: *errorcolor
+  version:
+    textsize: 12
+    color: *mediumemphasis
+alerts:
+  error:
+    bg: *errorcolor
+    text: { textsize: 16, color: *black }
+  warning:
+    bg: *warningcolor
+    text: { textsize: 16, color: *black }
+  info:
+    bg: { r: 50, g: 50, b: 51, a: 255 }
+    text: { textsize: 16, shadowcolor: *black }
+dialog:
+  title: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+  text: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+ordereditor:
+  tracktitle:
+    textsize: 12
+    color: *mediumemphasis
+noteeditor:
+  tracktitle: { textsize: 12, color: *mediumemphasis }
+  header: { textsize: 14, color: *disabled }
+menu:
+  text: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+  shortcut: { textsize: 16, color: *mediumemphasis, shadowcolor: *black }
+instrumenteditor:
+  octave: { textsize: 14, color: *disabled }
+  voices: { textsize: 14, color: *disabled }
+  instrumentnumber:
+    { textsize: 10, color: *mediumemphasis, shadowcolor: *black, alignment: 1 }
+  instrumentname:
+    { textsize: 10, color: *white, shadowcolor: *black, alignment: 1 }
+  unitlist:
+    name: { textsize: 12, color: *mediumemphasis, shadowcolor: *black }
+    comment: { textsize: 12, color: *disabled }
+    stack: { textsize: 12, color: *mediumemphasis, shadowcolor: *black }
+    disabled: { textsize: 12, color: *disabled }
+uniteditor:
+  hint: { textsize: 12, color: *highemphasis, shadowcolor: *black }
+  chooser: { textsize: 12, color: *white, shadowcolor: *black }
+  parametername: { textsize: 12, color: *white, shadowcolor: *black }

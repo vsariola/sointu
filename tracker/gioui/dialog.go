@@ -4,7 +4,6 @@ import (
 	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op/paint"
-	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
@@ -28,7 +27,7 @@ type DialogStyle struct {
 	AltStyle    material.ButtonStyle
 	OkStyle     material.ButtonStyle
 	CancelStyle material.ButtonStyle
-	Shaper      *text.Shaper
+	Theme       *Theme
 }
 
 func NewDialog(ok, alt, cancel tracker.Action) *Dialog {
@@ -37,22 +36,22 @@ func NewDialog(ok, alt, cancel tracker.Action) *Dialog {
 	return ret
 }
 
-func ConfirmDialog(gtx C, th *material.Theme, dialog *Dialog, title, text string) DialogStyle {
+func ConfirmDialog(gtx C, th *Theme, dialog *Dialog, title, text string) DialogStyle {
 	ret := DialogStyle{
 		dialog:      dialog,
 		Title:       title,
 		Text:        text,
 		Inset:       layout.Inset{Top: unit.Dp(12), Bottom: unit.Dp(12), Left: unit.Dp(20), Right: unit.Dp(20)},
 		TextInset:   layout.Inset{Top: unit.Dp(12), Bottom: unit.Dp(12)},
-		AltStyle:    material.Button(th, &dialog.BtnAlt, "Alt"),
-		OkStyle:     material.Button(th, &dialog.BtnOk, "Ok"),
-		CancelStyle: material.Button(th, &dialog.BtnCancel, "Cancel"),
-		Shaper:      th.Shaper,
+		AltStyle:    material.Button(&th.Material, &dialog.BtnAlt, "Alt"),
+		OkStyle:     material.Button(&th.Material, &dialog.BtnOk, "Ok"),
+		CancelStyle: material.Button(&th.Material, &dialog.BtnCancel, "Cancel"),
+		Theme:       th,
 	}
 	for _, b := range [...]*material.ButtonStyle{&ret.AltStyle, &ret.OkStyle, &ret.CancelStyle} {
 		b.Background = transparent
 		b.Inset = layout.UniformInset(unit.Dp(6))
-		b.Color = th.Palette.Fg
+		b.Color = th.Material.Palette.Fg
 	}
 	return ret
 }
@@ -107,16 +106,13 @@ func (d *DialogStyle) Layout(gtx C) D {
 	}
 	d.dialog.handleKeys(gtx)
 	paint.Fill(gtx.Ops, dialogBgColor)
-	text := func(gtx C) D {
-		return d.TextInset.Layout(gtx, LabelStyle{Text: d.Text, Color: highEmphasisTextColor, Font: labelDefaultFont, FontSize: unit.Sp(14), Shaper: d.Shaper}.Layout)
-	}
 	visible := true
 	return layout.Center.Layout(gtx, func(gtx C) D {
 		return Popup(&visible).Layout(gtx, func(gtx C) D {
 			return d.Inset.Layout(gtx, func(gtx C) D {
 				return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(Label(d.Title, highEmphasisTextColor, d.Shaper)),
-					layout.Rigid(text),
+					layout.Rigid(Label(d.Theme, &d.Theme.Dialog.Title, d.Title).Layout),
+					layout.Rigid(Label(d.Theme, &d.Theme.Dialog.Text, d.Text).Layout),
 					layout.Rigid(func(gtx C) D {
 						return layout.E.Layout(gtx, func(gtx C) D {
 							gtx.Constraints.Min.X = gtx.Dp(unit.Dp(120))

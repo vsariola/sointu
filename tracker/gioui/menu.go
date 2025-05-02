@@ -10,7 +10,6 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"gioui.org/text"
 	"gioui.org/unit"
 	"github.com/vsariola/sointu/tracker"
 )
@@ -33,7 +32,7 @@ type MenuStyle struct {
 	FontSize      unit.Sp
 	IconSize      unit.Dp
 	HoverColor    color.NRGBA
-	Shaper        *text.Shaper
+	Theme         *Theme
 }
 
 type MenuItem struct {
@@ -105,11 +104,11 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 						iconColor = mediumEmphasisTextColor
 					}
 					iconInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(6)}
-					textLabel := LabelStyle{Text: item.Text, FontSize: m.FontSize, Color: m.TextColor, Shaper: m.Shaper}
+					textLabel := Label(m.Theme, &m.Theme.Menu.Text, item.Text)
 					if !item.Doer.Allowed() {
 						textLabel.Color = mediumEmphasisTextColor
 					}
-					shortcutLabel := LabelStyle{Text: item.ShortcutText, FontSize: m.FontSize, Color: m.ShortCutColor, Shaper: m.Shaper}
+					shortcutLabel := Label(m.Theme, &m.Theme.Menu.ShortCut, item.ShortcutText)
 					shortcutInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(12), Bottom: unit.Dp(2), Top: unit.Dp(2)}
 					dims := layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
@@ -153,7 +152,7 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 	return popup.Layout(gtx, contents)
 }
 
-func PopupMenu(menu *Menu, shaper *text.Shaper) MenuStyle {
+func PopupMenu(th *Theme, menu *Menu) MenuStyle {
 	return MenuStyle{
 		Menu:          menu,
 		IconColor:     white,
@@ -162,7 +161,7 @@ func PopupMenu(menu *Menu, shaper *text.Shaper) MenuStyle {
 		FontSize:      unit.Sp(16),
 		IconSize:      unit.Dp(16),
 		HoverColor:    menuHoverColor,
-		Shaper:        shaper,
+		Theme:         th,
 	}
 }
 
@@ -170,7 +169,7 @@ func (tr *Tracker) layoutMenu(gtx C, title string, clickable *Clickable, menu *M
 	for clickable.Clicked(gtx) {
 		menu.Visible = true
 	}
-	m := PopupMenu(menu, tr.Theme.Material.Shaper)
+	m := PopupMenu(tr.Theme, menu)
 	return func(gtx C) D {
 		defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 		titleBtn := Btn(tr.Theme, &tr.Theme.MenuButton, clickable, title)

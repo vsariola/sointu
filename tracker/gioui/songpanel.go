@@ -97,8 +97,6 @@ func (s *SongPanel) Layout(gtx C, t *Tracker) D {
 func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 	paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 
-	scopeStyle := Scope(t.Scope, tr.SignalAnalyzer().Waveform(), tr.Theme)
-
 	var weightingTxt string
 	switch tracker.WeightingType(tr.Model.DetectorWeighting().Value()) {
 	case tracker.KWeighting:
@@ -121,51 +119,51 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
-			return t.SongSettingsExpander.Layout(gtx, &tr.Theme.Material, "Song",
+			return t.SongSettingsExpander.Layout(gtx, tr.Theme, "Song",
 				func(gtx C) D {
-					return LabelStyle{Text: strconv.Itoa(tr.BPM().Value()) + " BPM", Color: mediumEmphasisTextColor, Alignment: layout.W, FontSize: tr.Theme.Material.TextSize * 14.0 / 16.0, Shaper: tr.Theme.Material.Shaper}.Layout(gtx)
+					return Label(tr.Theme, &tr.Theme.SongPanel.RowHeader, strconv.Itoa(tr.BPM().Value())+" BPM").Layout(gtx)
 				},
 				func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "BPM", NumUpDown(tr.Theme, t.BPM, "Song Length").Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "BPM", NumUpDown(tr.Theme, t.BPM, "Song Length").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Song length", NumUpDown(tr.Theme, t.SongLength, "Song Length").Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Song length", NumUpDown(tr.Theme, t.SongLength, "Song Length").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Rows per pat", NumUpDown(tr.Theme, t.RowsPerPattern, "Rows per pattern").Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Rows per pat", NumUpDown(tr.Theme, t.RowsPerPattern, "Rows per pattern").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Rows per beat", NumUpDown(tr.Theme, t.RowsPerBeat, "Rows per beat").Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Rows per beat", NumUpDown(tr.Theme, t.RowsPerBeat, "Rows per beat").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Cursor step", NumUpDown(tr.Theme, t.Step, "Cursor step").Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Cursor step", NumUpDown(tr.Theme, t.Step, "Cursor step").Layout)
 						}),
 					)
 				})
 		}),
 		layout.Rigid(func(gtx C) D {
-			return t.LoudnessExpander.Layout(gtx, &tr.Theme.Material, "Loudness",
+			return t.LoudnessExpander.Layout(gtx, tr.Theme, "Loudness",
 				func(gtx C) D {
-					return LabelStyle{Text: fmt.Sprintf("%.1f dB", tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm]), Color: mediumEmphasisTextColor, Alignment: layout.W, FontSize: tr.Theme.Material.TextSize * 14.0 / 16.0, Shaper: tr.Theme.Material.Shaper}.Layout(gtx)
+					return Label(tr.Theme, &tr.Theme.SongPanel.RowHeader, fmt.Sprintf("%.1f dB", tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm])).Layout(gtx)
 				},
 				func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical, Alignment: layout.End}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Momentary", dbLabel(&tr.Theme.Material, tr.Model.DetectorResult().Loudness[tracker.LoudnessMomentary]).Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Momentary", dbLabel(tr.Theme, tr.Model.DetectorResult().Loudness[tracker.LoudnessMomentary]).Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Short term", dbLabel(&tr.Theme.Material, tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm]).Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Short term", dbLabel(tr.Theme, tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm]).Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Integrated", dbLabel(&tr.Theme.Material, tr.Model.DetectorResult().Loudness[tracker.LoudnessIntegrated]).Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Integrated", dbLabel(tr.Theme, tr.Model.DetectorResult().Loudness[tracker.LoudnessIntegrated]).Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Max. momentary", dbLabel(&tr.Theme.Material, tr.Model.DetectorResult().Loudness[tracker.LoudnessMaxMomentary]).Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Max. momentary", dbLabel(tr.Theme, tr.Model.DetectorResult().Loudness[tracker.LoudnessMaxMomentary]).Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Max. short term", dbLabel(&tr.Theme.Material, tr.Model.DetectorResult().Loudness[tracker.LoudnessMaxShortTerm]).Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Max. short term", dbLabel(tr.Theme, tr.Model.DetectorResult().Loudness[tracker.LoudnessMaxShortTerm]).Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
 							gtx.Constraints.Min.X = 0
@@ -176,25 +174,25 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 			)
 		}),
 		layout.Rigid(func(gtx C) D {
-			return t.PeakExpander.Layout(gtx, &tr.Theme.Material, "Peaks",
+			return t.PeakExpander.Layout(gtx, tr.Theme, "Peaks",
 				func(gtx C) D {
 					maxPeak := max(tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][0], tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][1])
-					return dbLabel(&tr.Theme.Material, maxPeak).Layout(gtx)
+					return dbLabel(tr.Theme, maxPeak).Layout(gtx)
 				},
 				func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical, Alignment: layout.End}.Layout(gtx,
 						// no need to show momentary peak, it does not have too much meaning
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Short term L", dbLabel(&tr.Theme.Material, tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][0]).Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Short term L", dbLabel(tr.Theme, tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][0]).Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Short term R", dbLabel(&tr.Theme.Material, tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][1]).Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Short term R", dbLabel(tr.Theme, tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][1]).Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Integrated L", dbLabel(&tr.Theme.Material, tr.Model.DetectorResult().Peaks[tracker.PeakIntegrated][0]).Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Integrated L", dbLabel(tr.Theme, tr.Model.DetectorResult().Peaks[tracker.PeakIntegrated][0]).Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, &tr.Theme.Material, "Integrated R", dbLabel(&tr.Theme.Material, tr.Model.DetectorResult().Peaks[tracker.PeakIntegrated][1]).Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "Integrated R", dbLabel(tr.Theme, tr.Model.DetectorResult().Peaks[tracker.PeakIntegrated][1]).Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
 							gtx.Constraints.Min.X = 0
@@ -205,36 +203,27 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 			)
 		}),
 		layout.Flexed(1, func(gtx C) D {
-			return t.ScopeExpander.Layout(gtx, &tr.Theme.Material, "Oscilloscope", func(gtx C) D { return D{} }, scopeStyle.Layout)
+			return t.ScopeExpander.Layout(gtx, tr.Theme, "Oscilloscope", func(gtx C) D { return D{} }, Scope(t.Scope, tr.SignalAnalyzer().Waveform(), tr.Theme).Layout)
 		}),
-		layout.Rigid(func(gtx C) D {
-			labelStyle := LabelStyle{Text: version.VersionOrHash, FontSize: unit.Sp(12), Color: mediumEmphasisTextColor, Shaper: tr.Theme.Material.Shaper}
-			return labelStyle.Layout(gtx)
-		}),
+		layout.Rigid(Label(tr.Theme, &tr.Theme.SongPanel.Version, version.VersionOrHash).Layout),
 	)
 }
 
-func dbLabel(th *material.Theme, value tracker.Decibel) LabelStyle {
-	color := mediumEmphasisTextColor
+func dbLabel(th *Theme, value tracker.Decibel) LabelWidget {
+	ret := Label(th, &th.SongPanel.RowValue, fmt.Sprintf("%.1f dB", value))
 	if value >= 0 {
-		color = errorColor
+		ret.Color = th.SongPanel.ErrorColor
 	}
-	return LabelStyle{
-		Text:      fmt.Sprintf("%.1f dB", value),
-		Color:     color,
-		Alignment: layout.W,
-		FontSize:  th.TextSize * 14.0 / 16.0,
-		Shaper:    th.Shaper,
-	}
+	return ret
 }
 
-func layoutSongOptionRow(gtx C, th *material.Theme, label string, widget layout.Widget) D {
+func layoutSongOptionRow(gtx C, th *Theme, label string, widget layout.Widget) D {
 	leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
 	rightSpacer := layout.Spacer{Width: unit.Dp(6)}.Layout
 
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(leftSpacer),
-		layout.Rigid(LabelStyle{Text: label, Color: mediumEmphasisTextColor, Alignment: layout.W, FontSize: th.TextSize * 14.0 / 16.0, Shaper: th.Shaper}.Layout),
+		layout.Rigid(Label(th, &th.SongPanel.RowHeader, label).Layout),
 		layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 		layout.Rigid(widget),
 		layout.Rigid(rightSpacer),
@@ -255,7 +244,7 @@ func (e *Expander) Update(gtx C) {
 	}
 }
 
-func (e *Expander) Layout(gtx C, th *material.Theme, title string, smallWidget, largeWidget layout.Widget) D {
+func (e *Expander) Layout(gtx C, th *Theme, title string, smallWidget, largeWidget layout.Widget) D {
 	e.Update(gtx)
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D { return e.layoutHeader(gtx, th, title, smallWidget) }),
@@ -273,7 +262,7 @@ func (e *Expander) Layout(gtx C, th *material.Theme, title string, smallWidget, 
 	)
 }
 
-func (e *Expander) layoutHeader(gtx C, th *material.Theme, title string, smallWidget layout.Widget) D {
+func (e *Expander) layoutHeader(gtx C, th *Theme, title string, smallWidget layout.Widget) D {
 	return layout.Background{}.Layout(gtx,
 		func(gtx C) D {
 			defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)).Push(gtx.Ops).Pop()
@@ -285,7 +274,7 @@ func (e *Expander) layoutHeader(gtx C, th *material.Theme, title string, smallWi
 			leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(leftSpacer),
-				layout.Rigid(LabelStyle{Text: title, Color: disabledTextColor, Alignment: layout.W, FontSize: th.TextSize * 14.0 / 16.0, Shaper: th.Shaper}.Layout),
+				layout.Rigid(Label(th, &th.SongPanel.Expander, title).Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 				layout.Rigid(func(gtx C) D {
 					if !e.Expanded {
@@ -300,7 +289,7 @@ func (e *Expander) layoutHeader(gtx C, th *material.Theme, title string, smallWi
 						icon = icons.NavigationExpandLess
 					}
 					gtx.Constraints.Min = image.Pt(gtx.Dp(unit.Dp(24)), gtx.Dp(unit.Dp(24)))
-					return widgetForIcon(icon).Layout(gtx, th.Palette.Fg)
+					return widgetForIcon(icon).Layout(gtx, th.SongPanel.Expander.Color)
 				}),
 			)
 		},

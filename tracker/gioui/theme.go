@@ -22,6 +22,53 @@ type Theme struct {
 	MenuButton     ButtonStyle
 	Oscilloscope   OscilloscopeStyle
 	NumericUpDown  NumericUpDownStyle
+	DialogTitle    LabelStyle
+	DialogText     LabelStyle
+	SongPanel      struct {
+		RowHeader  LabelStyle
+		RowValue   LabelStyle
+		Expander   LabelStyle
+		Version    LabelStyle
+		ErrorColor color.NRGBA
+	}
+	Alert struct {
+		Warning PopupAlertStyle
+		Error   PopupAlertStyle
+		Info    PopupAlertStyle
+	}
+	NoteEditor struct {
+		TrackTitle LabelStyle
+		Header     LabelStyle
+	}
+	Dialog struct {
+		Title LabelStyle
+		Text  LabelStyle
+	}
+	OrderEditor struct {
+		TrackTitle LabelStyle
+	}
+	Menu struct {
+		Text     LabelStyle
+		ShortCut LabelStyle
+	}
+	InstrumentEditor struct {
+		Octave              LabelStyle
+		Voices              LabelStyle
+		InstrumentNumber    LabelStyle
+		InstrumentName      LabelStyle
+		InstrumentNameMuted LabelStyle
+		UnitList            struct {
+			Name     LabelStyle
+			Comment  LabelStyle
+			Stack    LabelStyle
+			Disabled LabelStyle
+		}
+	}
+	UnitEditor struct {
+		Hint          LabelStyle
+		Chooser       LabelStyle
+		ParameterName LabelStyle
+	}
 }
 
 //go:embed theme.yml

@@ -95,7 +95,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 		preferences:    MakePreferences(),
 	}
 	t.Theme.Material.Shaper = text.NewShaper(text.WithCollection(fontCollection))
-	t.PopupAlert = NewPopupAlert(model.Alerts(), t.Theme.Material.Shaper)
+	t.PopupAlert = NewPopupAlert(model.Alerts())
 	if t.preferences.YmlError != nil {
 		model.Alerts().Add(
 			fmt.Sprintf("Preferences YML Error: %s", t.preferences.YmlError),
@@ -201,7 +201,7 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 			t.layoutTop,
 			t.layoutBottom)
 	}
-	t.PopupAlert.Layout(gtx)
+	t.PopupAlert.Layout(gtx, t.Theme)
 	t.showDialog(gtx)
 	// this is the top level input handler for the whole app
 	// it handles all the global key events and clipboard events
@@ -241,12 +241,12 @@ func (t *Tracker) showDialog(gtx C) {
 	}
 	switch t.Dialog() {
 	case tracker.NewSongChanges, tracker.OpenSongChanges, tracker.QuitChanges:
-		dstyle := ConfirmDialog(gtx, &t.Theme.Material, t.SaveChangesDialog, "Save changes to song?", "Your changes will be lost if you don't save them.")
+		dstyle := ConfirmDialog(gtx, t.Theme, t.SaveChangesDialog, "Save changes to song?", "Your changes will be lost if you don't save them.")
 		dstyle.OkStyle.Text = "Save"
 		dstyle.AltStyle.Text = "Don't save"
 		dstyle.Layout(gtx)
 	case tracker.Export:
-		dstyle := ConfirmDialog(gtx, &t.Theme.Material, t.WaveTypeDialog, "", "Export .wav in int16 or float32 sample format?")
+		dstyle := ConfirmDialog(gtx, t.Theme, t.WaveTypeDialog, "", "Export .wav in int16 or float32 sample format?")
 		dstyle.OkStyle.Text = "Int16"
 		dstyle.AltStyle.Text = "Float32"
 		dstyle.Layout(gtx)
