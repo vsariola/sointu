@@ -102,16 +102,16 @@ menu:
 instrumenteditor:
   octave: { textsize: 14, color: *disabled }
   voices: { textsize: 14, color: *disabled }
-  instrumentnumber:
-    { textsize: 10, color: *mediumemphasis, shadowcolor: *black, alignment: 1 }
-  instrumentname:
-    { textsize: 10, color: *white, shadowcolor: *black, alignment: 1 }
+  instrumentlist:
+    number: { textsize: 10, color: *mediumemphasis, shadowcolor: *black }
+    name: { textsize: 12, color: *white, shadowcolor: *black }
+    namemuted: { textsize: 12, color: *disabled }
   unitlist:
-    name: { textsize: 12, color: *mediumemphasis, shadowcolor: *black }
+    name: { textsize: 12, color: *white, shadowcolor: *black }
     comment: { textsize: 12, color: *disabled }
     stack: { textsize: 12, color: *mediumemphasis, shadowcolor: *black }
     disabled: { textsize: 12, color: *disabled }
 uniteditor:
-  hint: { textsize: 12, color: *highemphasis, shadowcolor: *black }
+  hint: { textsize: 14, color: *highemphasis, shadowcolor: *black }
   chooser: { textsize: 12, color: *white, shadowcolor: *black }
-  parametername: { textsize: 12, color: *white, shadowcolor: *black }
+  parametername: { textsize: 14, color: *white, shadowcolor: *black }

@@ -270,22 +270,21 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 }
 
 func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
-	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(36))
+	gtx.Constraints.Max.Y = gtx.Dp(36)
+	gtx.Constraints.Min.Y = gtx.Dp(36)
 	element := func(gtx C, i int) D {
-		gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
-		gtx.Constraints.Min.X = gtx.Dp(unit.Dp(30))
-		grabhandle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentNumber, strconv.Itoa(i+1))
+		grabhandle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentList.Number, strconv.Itoa(i+1))
 		label := func(gtx C) D {
 			name, level, mute, ok := (*tracker.Instruments)(t.Model).Item(i)
 			if !ok {
-				labelStyle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentName, "")
+				labelStyle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentList.Number, "")
 				return layout.Center.Layout(gtx, labelStyle.Layout)
 			}
 			k := byte(255 - level*127)
 			color := color.NRGBA{R: 255, G: k, B: 255, A: 255}
-			s := t.Theme.InstrumentEditor.InstrumentName
+			s := t.Theme.InstrumentEditor.InstrumentList.Name
 			if mute {
-				s = t.Theme.InstrumentEditor.InstrumentNameMuted
+				s = t.Theme.InstrumentEditor.InstrumentList.NameMuted
 			}
 			s.Color = color
 			if i == ie.instrumentDragList.TrackerList.Selected() {
@@ -364,7 +363,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	// TODO: how to ie.unitDragList.Focus()
 	addUnitBtnStyle := ActionIcon(gtx, &t.Theme.Material, ie.addUnitBtn, icons.ContentAdd, "Add unit (Enter)")
 	addUnitBtnStyle.IconButtonStyle.Color = t.Theme.Material.ContrastFg
-	addUnitBtnStyle.IconButtonStyle.Background = t.Theme.Material.Fg
+	addUnitBtnStyle.IconButtonStyle.Background = t.Theme.Material.ContrastBg
 	addUnitBtnStyle.IconButtonStyle.Inset = layout.UniformInset(unit.Dp(4))
 
 	var units [256]tracker.UnitListItem
@@ -389,7 +388,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 			return layout.Dimensions{Size: gtx.Constraints.Min}
 		}
 		u := units[i]
-		var color color.NRGBA = white
+		var color color.NRGBA = t.Theme.InstrumentEditor.UnitList.Name.Color
 		f := labelDefaultFont
 
 		stackText := strconv.FormatInt(int64(u.StackAfter), 10)
@@ -434,9 +433,9 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 					}
 					style := MaterialEditor(&t.Theme.Material, ie.searchEditor, "---")
 					style.Color = color
-					style.HintColor = instrumentNameHintColor
-					style.TextSize = unit.Sp(12)
-					style.Font = f
+					style.HintColor = t.Theme.InstrumentEditor.UnitList.Comment.Color
+					style.TextSize = t.Theme.InstrumentEditor.UnitList.Name.TextSize
+					style.Font = t.Theme.InstrumentEditor.UnitList.Name.Font
 					ret := style.Layout(gtx)
 					str.Set(ie.searchEditor.Text())
 					return ret
@@ -450,6 +449,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 			}),
 			layout.Flexed(1, func(gtx C) D {
 				unitNameLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Comment, u.Comment)
+				unitNameLabel.Color = color
 				inset := layout.Inset{Left: unit.Dp(5)}
 				return inset.Layout(gtx, unitNameLabel.Layout)
 			}),

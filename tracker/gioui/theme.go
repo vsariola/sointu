@@ -52,12 +52,14 @@ type Theme struct {
 		ShortCut LabelStyle
 	}
 	InstrumentEditor struct {
-		Octave              LabelStyle
-		Voices              LabelStyle
-		InstrumentNumber    LabelStyle
-		InstrumentName      LabelStyle
-		InstrumentNameMuted LabelStyle
-		UnitList            struct {
+		Octave         LabelStyle
+		Voices         LabelStyle
+		InstrumentList struct {
+			Number    LabelStyle
+			Name      LabelStyle
+			NameMuted LabelStyle
+		}
+		UnitList struct {
 			Name     LabelStyle
 			Comment  LabelStyle
 			Stack    LabelStyle

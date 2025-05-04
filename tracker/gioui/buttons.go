@@ -61,6 +61,7 @@ func NewBoolClickable(b tracker.Bool) *BoolClickable {
 func Tooltip(th *material.Theme, tip string) component.Tooltip {
 	tooltip := component.PlatformTooltip(th, tip)
 	tooltip.Bg = black
+	tooltip.Text.Color = white
 	return tooltip
 }
 
