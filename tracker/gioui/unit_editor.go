@@ -164,11 +164,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 			for pe.commentEditor.Submitted(gtx) || pe.commentEditor.Cancelled(gtx) {
 				t.InstrumentEditor.Focus()
 			}
-			commentStyle := MaterialEditor(&t.Theme.Material, pe.commentEditor, "---")
-			commentStyle.Font = labelDefaultFont
-			commentStyle.TextSize = labelDefaultFontSize
-			commentStyle.Color = mediumEmphasisTextColor
-			commentStyle.HintColor = mediumEmphasisTextColor
+			commentStyle := MaterialEditor(t.Theme, &t.Theme.InstrumentEditor.UnitComment, pe.commentEditor, "---")
 			ret := commentStyle.Layout(gtx)
 			s.Set(pe.commentEditor.Text())
 			return ret

@@ -240,6 +240,10 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		return D{}
 	}
 
+	rowMarkerPatternTextColorOp := colorOp(gtx, rowMarkerPatternTextColor)
+	loopMarkerColorOp := colorOp(gtx, loopMarkerColor)
+	rowMarkerRowTextColorOp := colorOp(gtx, rowMarkerRowTextColor)
+
 	rowTitle := func(gtx C, j int) D {
 		rpp := max(t.RowsPerPattern().Value(), 1)
 		pat := j / rpp
@@ -247,16 +251,14 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		w := pxPatMarkWidth + pxRowMarkWidth
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
 		if row == 0 {
-			color := rowMarkerPatternTextColor
+			op := rowMarkerPatternTextColorOp
 			if l := t.Loop(); pat >= l.Start && pat < l.Start+l.Length {
-				color = loopMarkerColor
+				op = loopMarkerColorOp
 			}
-			paint.ColorOp{Color: color}.Add(gtx.Ops)
-			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", pat)), op.CallOp{})
+			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", pat)), op)
 		}
 		defer op.Offset(image.Pt(pxPatMarkWidth, 0)).Push(gtx.Ops).Pop()
-		paint.ColorOp{Color: rowMarkerRowTextColor}.Add(gtx.Ops)
-		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", row)), op.CallOp{})
+		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", row)), rowMarkerRowTextColorOp)
 		return D{Size: image.Pt(w, pxHeight)}
 	}
 
@@ -264,6 +266,11 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	drawSelection := cursor != te.scrollTable.Table.Cursor2()
 	selection := te.scrollTable.Table.Range()
 	hasTrackMidiIn := te.TrackMidiInBtn.Bool.Value()
+
+	trackerPatMarkerOp := colorOp(gtx, trackerPatMarker)
+	mediumEmphasisTextColorOp := colorOp(gtx, mediumEmphasisTextColor)
+	trackerActiveTextColorOp := colorOp(gtx, trackerActiveTextColor)
+	trackerInactiveTextColorOp := colorOp(gtx, trackerInactiveTextColor)
 
 	cell := func(gtx C, x, y int) D {
 		// draw the background, to indicate selection
@@ -303,23 +310,20 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
 		s := t.Model.Order().Value(tracker.Point{X: x, Y: pat})
 		if row == 0 { // draw the pattern marker
-			paint.ColorOp{Color: trackerPatMarker}.Add(gtx.Ops)
-			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, patternIndexToString(s), op.CallOp{})
+			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, patternIndexToString(s), trackerPatMarkerOp)
 		}
 		if row == 1 && t.Model.PatternUnique(x, s) { // draw a * if the pattern is unique
-			paint.ColorOp{Color: mediumEmphasisTextColor}.Add(gtx.Ops)
-			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, "*", op.CallOp{})
+			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, "*", mediumEmphasisTextColorOp)
 		}
+		op := trackerInactiveTextColorOp
 		if te.scrollTable.Table.Cursor() == point && te.scrollTable.Focused() {
-			paint.ColorOp{Color: trackerActiveTextColor}.Add(gtx.Ops)
-		} else {
-			paint.ColorOp{Color: trackerInactiveTextColor}.Add(gtx.Ops)
+			op = trackerActiveTextColorOp
 		}
 		val := noteStr[byte(t.Model.Notes().Value(tracker.Point{X: x, Y: y}))]
 		if t.Model.Notes().Effect(x) {
 			val = hexStr[byte(t.Model.Notes().Value(tracker.Point{X: x, Y: y}))]
 		}
-		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, val, op.CallOp{})
+		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, val, op)
 		return D{Size: image.Pt(pxWidth, pxHeight)}
 	}
 	table := FilledScrollTable(&t.Theme.Material, te.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)
@@ -328,6 +332,12 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	table.CellWidth = trackColWidth
 	table.CellHeight = trackRowHeight
 	return table.Layout(gtx)
+}
+
+func colorOp(gtx C, c color.NRGBA) op.CallOp {
+	macro := op.Record(gtx.Ops)
+	paint.ColorOp{Color: c}.Add(gtx.Ops)
+	return macro.Stop()
 }
 
 func (te *NoteEditor) paintColumnCell(gtx C, x int, t *Tracker, c color.NRGBA) {

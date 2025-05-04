@@ -17,8 +17,6 @@ type (
 		filters      []event.Filter
 		requestFocus bool
 	}
-
-	EditorStyle material.EditorStyle
 )
 
 func NewEditor(e widget.Editor) *Editor {
@@ -36,8 +34,12 @@ func NewEditor(e widget.Editor) *Editor {
 	return ret
 }
 
-func MaterialEditor(th *material.Theme, e *Editor, hint string) EditorStyle {
-	return EditorStyle(material.Editor(th, &e.Editor, hint))
+func MaterialEditor(th *Theme, style *LabelStyle, editor *Editor, hint string) material.EditorStyle {
+	ret := material.Editor(&th.Material, &editor.Editor, hint)
+	ret.Font = style.Font
+	ret.TextSize = style.TextSize
+	ret.Color = style.Color
+	return ret
 }
 
 func (e *Editor) SetText(s string) {
@@ -79,8 +81,4 @@ func (e *Editor) Cancelled(gtx C) bool {
 
 func (e *Editor) Focus() {
 	e.requestFocus = true
-}
-
-func (e *EditorStyle) Layout(gtx C) D {
-	return material.EditorStyle(*e).Layout(gtx)
 }

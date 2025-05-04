@@ -254,8 +254,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 					for ie.commentEditor.Submitted(gtx) || ie.commentEditor.Cancelled(gtx) {
 						ie.instrumentDragList.Focus()
 					}
-					style := MaterialEditor(&t.Theme.Material, ie.commentEditor, "Comment")
-					style.Color = highEmphasisTextColor
+					style := MaterialEditor(t.Theme, &t.Theme.InstrumentEditor.InstrumentComment, ie.commentEditor, "Comment")
 					ret := layout.UniformInset(unit.Dp(6)).Layout(gtx, style.Layout)
 					ie.commentString.Set(ie.commentEditor.Text())
 					return ret
@@ -292,11 +291,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				for ie.nameEditor.Submitted(gtx) || ie.nameEditor.Cancelled(gtx) {
 					ie.instrumentDragList.Focus()
 				}
-				style := MaterialEditor(&t.Theme.Material, ie.nameEditor, "Instr")
-				style.Color = s.Color
-				style.HintColor = instrumentNameHintColor
-				style.TextSize = s.TextSize
-				style.Font = s.Font
+				style := MaterialEditor(t.Theme, &s, ie.nameEditor, "Instr")
 				dims := layout.Center.Layout(gtx, func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 					return style.Layout(gtx)
@@ -431,11 +426,8 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 						ie.searchEditor.SetText(str.Value())
 						ie.unitDragList.Focus()
 					}
-					style := MaterialEditor(&t.Theme.Material, ie.searchEditor, "---")
+					style := MaterialEditor(t.Theme, &t.Theme.InstrumentEditor.UnitList.Name, ie.searchEditor, "---")
 					style.Color = color
-					style.HintColor = t.Theme.InstrumentEditor.UnitList.Comment.Color
-					style.TextSize = t.Theme.InstrumentEditor.UnitList.Name.TextSize
-					style.Font = t.Theme.InstrumentEditor.UnitList.Name.Font
 					ret := style.Layout(gtx)
 					str.Set(ie.searchEditor.Text())
 					return ret
