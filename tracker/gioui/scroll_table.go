@@ -14,7 +14,6 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/unit"
-	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
 )
 
@@ -72,7 +71,7 @@ func NewScrollTable(table tracker.Table, vertList, horizList tracker.List) *Scro
 	return ret
 }
 
-func FilledScrollTable(th *material.Theme, scrollTable *ScrollTable, element func(gtx C, x, y int) D, colTitle, rowTitle, colTitleBg, rowTitleBg func(gtx C, i int) D) ScrollTableStyle {
+func FilledScrollTable(th *Theme, scrollTable *ScrollTable, element func(gtx C, x, y int) D, colTitle, rowTitle, colTitleBg, rowTitleBg func(gtx C, i int) D) ScrollTableStyle {
 	return ScrollTableStyle{
 		RowTitleStyle:     FilledDragList(th, scrollTable.RowTitleList, rowTitle, rowTitleBg),
 		ColTitleStyle:     FilledDragList(th, scrollTable.ColTitleList, colTitle, colTitleBg),

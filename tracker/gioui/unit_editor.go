@@ -118,7 +118,7 @@ func (pe *UnitEditor) layoutSliders(gtx C, t *Tracker) D {
 		return D{Size: image.Pt(gtx.Constraints.Max.X, dims.Size.Y)}
 	}
 
-	fdl := FilledDragList(&t.Theme.Material, pe.sliderList, element, nil)
+	fdl := FilledDragList(t.Theme, pe.sliderList, element, nil)
 	dims := fdl.Layout(gtx)
 	gtx.Constraints = layout.Exact(dims.Size)
 	fdl.LayoutScrollBar(gtx)
@@ -191,7 +191,7 @@ func (pe *UnitEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 		}
 		return w.Layout(gtx)
 	}
-	fdl := FilledDragList(&t.Theme.Material, pe.searchList, element, nil)
+	fdl := FilledDragList(t.Theme, pe.searchList, element, nil)
 	dims := fdl.Layout(gtx)
 	gtx.Constraints = layout.Exact(dims.Size)
 	fdl.LayoutScrollBar(gtx)

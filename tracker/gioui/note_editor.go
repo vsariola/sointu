@@ -240,9 +240,9 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		return D{}
 	}
 
-	rowMarkerPatternTextColorOp := colorOp(gtx, rowMarkerPatternTextColor)
-	loopMarkerColorOp := colorOp(gtx, t.Theme.OrderEditor.Loop)
-	rowMarkerRowTextColorOp := colorOp(gtx, rowMarkerRowTextColor)
+	orderRowOp := colorOp(gtx, t.Theme.NoteEditor.OrderRow.Color)
+	loopColorOp := colorOp(gtx, t.Theme.OrderEditor.Loop)
+	patternRowOp := colorOp(gtx, t.Theme.NoteEditor.PatternRow.Color)
 
 	rowTitle := func(gtx C, j int) D {
 		rpp := max(t.RowsPerPattern().Value(), 1)
@@ -251,14 +251,14 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		w := pxPatMarkWidth + pxRowMarkWidth
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
 		if row == 0 {
-			op := rowMarkerPatternTextColorOp
+			op := orderRowOp
 			if l := t.Loop(); pat >= l.Start && pat < l.Start+l.Length {
-				op = loopMarkerColorOp
+				op = loopColorOp
 			}
 			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.OrderRow.Font, t.Theme.NoteEditor.OrderRow.TextSize, strings.ToUpper(fmt.Sprintf("%02x", pat)), op)
 		}
 		defer op.Offset(image.Pt(pxPatMarkWidth, 0)).Push(gtx.Ops).Pop()
-		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.PatternRow.Font, t.Theme.NoteEditor.PatternRow.TextSize, strings.ToUpper(fmt.Sprintf("%02x", row)), rowMarkerRowTextColorOp)
+		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.PatternRow.Font, t.Theme.NoteEditor.PatternRow.TextSize, strings.ToUpper(fmt.Sprintf("%02x", row)), patternRowOp)
 		return D{Size: image.Pt(w, pxHeight)}
 	}
 
@@ -277,17 +277,17 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		color := transparent
 		point := tracker.Point{X: x, Y: y}
 		if drawSelection && selection.Contains(point) {
-			color = inactiveSelectionColor
+			color = t.Theme.Selection.Inactive
 			if te.scrollTable.Focused() {
-				color = selectionColor
+				color = t.Theme.Selection.Active
 			}
 		}
 		paint.FillShape(gtx.Ops, color, clip.Rect{Min: image.Pt(0, 0), Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
 		// draw the cursor
 		if point == cursor {
-			c := inactiveSelectionColor
+			c := t.Theme.Cursor.Inactive
 			if te.scrollTable.Focused() {
-				c = cursorColor
+				c = t.Theme.Cursor.Active
 			}
 			if hasTrackMidiIn {
 				c = cursorForTrackMidiInColor
@@ -326,7 +326,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, val, op)
 		return D{Size: image.Pt(pxWidth, pxHeight)}
 	}
-	table := FilledScrollTable(&t.Theme.Material, te.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)
+	table := FilledScrollTable(t.Theme, te.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)
 	table.RowTitleWidth = trackPatMarkWidth + trackRowMarkWidth
 	table.ColumnTitleHeight = trackColTitleHeight
 	table.CellWidth = trackColWidth

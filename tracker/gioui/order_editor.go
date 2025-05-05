@@ -101,11 +101,14 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 		color := patternCellColor
 		point := tracker.Point{X: x, Y: y}
 		if selection.Contains(point) {
-			color = inactiveSelectionColor
+			color = t.Theme.Selection.Inactive
 			if oe.scrollTable.Focused() {
-				color = selectionColor
-				if point == oe.scrollTable.Table.Cursor() {
-					color = cursorColor
+				color = t.Theme.Selection.Active
+			}
+			if point == oe.scrollTable.Table.Cursor() {
+				color = t.Theme.Cursor.Inactive
+				if oe.scrollTable.Focused() {
+					color = t.Theme.Cursor.Active
 				}
 			}
 		}
@@ -115,7 +118,7 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 		return D{Size: image.Pt(gtx.Dp(patternCellWidth), gtx.Dp(patternCellHeight))}
 	}
 
-	table := FilledScrollTable(&t.Theme.Material, oe.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)
+	table := FilledScrollTable(t.Theme, oe.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)
 	table.ColumnTitleHeight = orderTitleHeight
 
 	return table.Layout(gtx)

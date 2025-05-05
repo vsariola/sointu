@@ -314,13 +314,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 		})
 	}
 
-	color := inactiveLightSurfaceColor
-	if ie.wasFocused {
-		color = activeLightSurfaceColor
-	}
-	instrumentList := FilledDragList(&t.Theme.Material, ie.instrumentDragList, element, nil)
-	instrumentList.SelectedColor = color
-	instrumentList.HoverColor = instrumentHoverColor
+	instrumentList := FilledDragList(t.Theme, ie.instrumentDragList, element, nil)
 	instrumentList.ScrollBarWidth = unit.Dp(6)
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
@@ -454,7 +448,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	}
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-	unitList := FilledDragList(&t.Theme.Material, ie.unitDragList, element, nil)
+	unitList := FilledDragList(t.Theme, ie.unitDragList, element, nil)
 	for {
 		event, ok := gtx.Event(
 			key.Filter{Focus: ie.unitDragList, Name: key.NameRightArrow},

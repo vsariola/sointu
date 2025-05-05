@@ -80,6 +80,14 @@ type Theme struct {
 		Chooser       LabelStyle
 		ParameterName LabelStyle
 	}
+	Cursor struct {
+		Active   color.NRGBA
+		Inactive color.NRGBA
+	}
+	Selection struct {
+		Active   color.NRGBA
+		Inactive color.NRGBA
+	}
 }
 
 //go:embed theme.yml
@@ -116,7 +124,6 @@ var black = color.NRGBA{R: 0, G: 0, B: 0, A: 255}
 var transparent = color.NRGBA{A: 0}
 
 var primaryColor = color.NRGBA{R: 206, G: 147, B: 216, A: 255}
-var secondaryColor = color.NRGBA{R: 128, G: 222, B: 234, A: 255}
 
 var highEmphasisTextColor = color.NRGBA{R: 222, G: 222, B: 222, A: 222}
 var mediumEmphasisTextColor = color.NRGBA{R: 153, G: 153, B: 153, A: 153}
@@ -125,9 +132,6 @@ var disabledTextColor = color.NRGBA{R: 255, G: 255, B: 255, A: 97}
 var backgroundColor = color.NRGBA{R: 18, G: 18, B: 18, A: 255}
 
 var labelDefaultFont = fontCollection[6].Font
-
-var rowMarkerPatternTextColor = secondaryColor
-var rowMarkerRowTextColor = mediumEmphasisTextColor
 
 var trackerFont = fontCollection[6].Font
 var trackerFontSize = unit.Sp(16)
@@ -140,24 +144,12 @@ var twoBeatHighlight = color.NRGBA{R: 31, G: 51, B: 53, A: 255}
 
 var patternPlayColor = color.NRGBA{R: 55, G: 55, B: 61, A: 255}
 var patternCellColor = color.NRGBA{R: 255, G: 255, B: 255, A: 3}
-var loopMarkerColor = color.NRGBA{R: 252, G: 186, B: 3, A: 255}
-
-var instrumentHoverColor = color.NRGBA{R: 30, G: 31, B: 38, A: 255}
 
 var songSurfaceColor = color.NRGBA{R: 24, G: 24, B: 24, A: 255}
 
 var popupSurfaceColor = color.NRGBA{R: 50, G: 50, B: 51, A: 255}
 var popupShadowColor = color.NRGBA{R: 0, G: 0, B: 0, A: 192}
 
-var dragListSelectedColor = color.NRGBA{R: 55, G: 55, B: 61, A: 255}
-var dragListHoverColor = color.NRGBA{R: 42, G: 45, B: 61, A: 255}
-
-var inactiveLightSurfaceColor = color.NRGBA{R: 37, G: 37, B: 38, A: 255}
-var activeLightSurfaceColor = color.NRGBA{R: 45, G: 45, B: 45, A: 255}
-
-var cursorColor = color.NRGBA{R: 100, G: 140, B: 255, A: 48}
-var selectionColor = color.NRGBA{R: 100, G: 140, B: 255, A: 12}
-var inactiveSelectionColor = color.NRGBA{R: 140, G: 140, B: 140, A: 16}
 var cursorForTrackMidiInColor = color.NRGBA{R: 255, G: 100, B: 140, A: 48}
 var cursorNeighborForTrackMidiInColor = color.NRGBA{R: 255, G: 100, B: 140, A: 24}
 
