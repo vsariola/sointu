@@ -108,14 +108,14 @@ func NewTheme() *Theme {
 	fmt.Printf(string(str))
 	ReadCustomConfigYml("theme.yml", &theme)
 	theme.Material.Shaper = &text.Shaper{}
-	theme.Material.Icon.CheckBoxChecked = mustIcon(widget.NewIcon(icons.ToggleCheckBox))
-	theme.Material.Icon.CheckBoxUnchecked = mustIcon(widget.NewIcon(icons.ToggleCheckBoxOutlineBlank))
-	theme.Material.Icon.RadioChecked = mustIcon(widget.NewIcon(icons.ToggleRadioButtonChecked))
-	theme.Material.Icon.RadioUnchecked = mustIcon(widget.NewIcon(icons.ToggleRadioButtonUnchecked))
+	theme.Material.Icon.CheckBoxChecked = must(widget.NewIcon(icons.ToggleCheckBox))
+	theme.Material.Icon.CheckBoxUnchecked = must(widget.NewIcon(icons.ToggleCheckBoxOutlineBlank))
+	theme.Material.Icon.RadioChecked = must(widget.NewIcon(icons.ToggleRadioButtonChecked))
+	theme.Material.Icon.RadioUnchecked = must(widget.NewIcon(icons.ToggleRadioButtonUnchecked))
 	return &theme
 }
 
-func mustIcon(ic *widget.Icon, err error) *widget.Icon {
+func must[T any](ic T, err error) T {
 	if err != nil {
 		panic(err)
 	}
