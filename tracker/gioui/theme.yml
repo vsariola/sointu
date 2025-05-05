@@ -64,6 +64,7 @@ numericupdown:
   width: 70
   height: 20
 songpanel:
+  bg: { r: 24, g: 24, b: 24, A: 255 }
   rowheader:
     textsize: 14
     color: *mediumemphasis
@@ -88,6 +89,7 @@ alerts:
     bg: { r: 50, g: 50, b: 51, a: 255 }
     text: { textsize: 16, shadowcolor: *black }
 dialog:
+  bg: { r: 0, g: 0, b: 0, a: 224 }
   title: { textsize: 16, color: *highemphasis, shadowcolor: *black }
   text: { textsize: 16, color: *highemphasis, shadowcolor: *black }
 ordereditor:
@@ -102,7 +104,11 @@ noteeditor:
     { textsize: 16, color: *secondarycolor, font: { typeface: "Go Mono" } }
   patternrow:
     { textsize: 16, color: *mediumemphasis, font: { typeface: "Go Mono" } }
-  cell: { textsize: 16, color: *primarycolor, font: { typeface: "Go Mono" } }
+  note: { textsize: 16, color: *highemphasis, font: { typeface: "Go Mono" } }
+  patternno:
+    { textsize: 16, color: *primarycolor, font: { typeface: "Go Mono" } }
+  unique:
+    { textsize: 16, color: *secondarycolor, font: { typeface: "Go Mono" } }
   loop: *loopcolor
   header: { textsize: 14, color: *disabled }
 menu:
@@ -119,9 +125,16 @@ instrumenteditor:
     namemuted: { textsize: 12, color: *disabled }
   unitlist:
     name: { textsize: 12, color: *white, shadowcolor: *black }
+    namedisabled:
+      textsize: 12
+      color: *disabled
+      shadowcolor: *black
+      font: { style: 1 }
     comment: { textsize: 12, color: *disabled }
     stack: { textsize: 12, color: *mediumemphasis, shadowcolor: *black }
     disabled: { textsize: 12, color: *disabled }
+    warning: *warningcolor
+    error: *errorcolor
 uniteditor:
   hint: { textsize: 16, color: *highemphasis, shadowcolor: *black }
   chooser: { textsize: 12, color: *white, shadowcolor: *black }

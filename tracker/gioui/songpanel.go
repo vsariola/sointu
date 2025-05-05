@@ -76,17 +76,7 @@ func (s *SongPanel) Layout(gtx C, t *Tracker) D {
 			return s.MenuBar.Layout(gtx, t)
 		}),
 		layout.Rigid(func(gtx C) D {
-			return layout.Background{}.Layout(gtx,
-				func(gtx C) D {
-					// push defer clip op
-					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Min.X, gtx.Constraints.Min.Y)).Push(gtx.Ops).Pop()
-					paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
-					return D{Size: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}
-				},
-				func(gtx C) D {
-					return s.PlayBar.Layout(gtx, &t.Theme.Material)
-				},
-			)
+			return s.PlayBar.Layout(gtx, &t.Theme.Material)
 		}),
 		layout.Rigid(func(gtx C) D {
 			return s.layoutSongOptions(gtx, t)
@@ -95,7 +85,7 @@ func (s *SongPanel) Layout(gtx C, t *Tracker) D {
 }
 
 func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
-	paint.FillShape(gtx.Ops, songSurfaceColor, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
+	paint.FillShape(gtx.Ops, tr.Theme.SongPanel.Bg, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 
 	var weightingTxt string
 	switch tracker.WeightingType(tr.Model.DetectorWeighting().Value()) {
@@ -346,7 +336,7 @@ func (t *MenuBar) Layout(gtx C, tr *Tracker) D {
 
 	panicBtnStyle := ToggleIcon(gtx, &tr.Theme.Material, t.PanicBtn, icons.AlertErrorOutline, icons.AlertError, t.panicHint, t.panicHint)
 	if t.PanicBtn.Bool.Value() {
-		panicBtnStyle.IconButtonStyle.Color = errorColor
+		panicBtnStyle.IconButtonStyle.Color = tr.Theme.SongPanel.ErrorColor
 	}
 	menuLayouts := []layout.FlexChild{
 		layout.Rigid(tr.layoutMenu(gtx, "File", &t.Clickables[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),

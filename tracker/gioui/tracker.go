@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"gioui.org/app"
+	"gioui.org/font/gofont"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
@@ -94,7 +95,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 		filePathString: model.FilePath().String(),
 		preferences:    MakePreferences(),
 	}
-	t.Theme.Material.Shaper = text.NewShaper(text.WithCollection(fontCollection))
+	t.Theme.Material.Shaper = text.NewShaper(text.WithCollection(gofont.Collection()))
 	t.PopupAlert = NewPopupAlert(model.Alerts())
 	if t.preferences.YmlError != nil {
 		model.Alerts().Add(
@@ -191,7 +192,7 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 	gtx.Metric.PxPerDp *= zoomFactor
 	gtx.Metric.PxPerSp *= zoomFactor
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
-	paint.Fill(gtx.Ops, backgroundColor)
+	paint.Fill(gtx.Ops, t.Theme.Material.Bg)
 	event.Op(gtx.Ops, t) // area for capturing scroll events
 
 	if t.InstrumentEditor.enlargeBtn.Bool.Value() {

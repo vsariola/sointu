@@ -267,22 +267,20 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	selection := te.scrollTable.Table.Range()
 	hasTrackMidiIn := te.TrackMidiInBtn.Bool.Value()
 
-	trackerPatMarkerOp := colorOp(gtx, trackerPatMarker)
-	mediumEmphasisTextColorOp := colorOp(gtx, mediumEmphasisTextColor)
-	trackerActiveTextColorOp := colorOp(gtx, trackerActiveTextColor)
-	trackerInactiveTextColorOp := colorOp(gtx, trackerInactiveTextColor)
+	patternNoOp := colorOp(gtx, t.Theme.NoteEditor.PatternNo.Color)
+	uniqueOp := colorOp(gtx, t.Theme.NoteEditor.Unique.Color)
+	noteOp := colorOp(gtx, t.Theme.NoteEditor.Note.Color)
 
 	cell := func(gtx C, x, y int) D {
 		// draw the background, to indicate selection
-		color := transparent
 		point := tracker.Point{X: x, Y: y}
 		if drawSelection && selection.Contains(point) {
-			color = t.Theme.Selection.Inactive
+			color := t.Theme.Selection.Inactive
 			if te.scrollTable.Focused() {
 				color = t.Theme.Selection.Active
 			}
+			paint.FillShape(gtx.Ops, color, clip.Rect{Min: image.Pt(0, 0), Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
 		}
-		paint.FillShape(gtx.Ops, color, clip.Rect{Min: image.Pt(0, 0), Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
 		// draw the cursor
 		if point == cursor {
 			c := t.Theme.Cursor.Inactive
@@ -310,20 +308,17 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
 		s := t.Model.Order().Value(tracker.Point{X: x, Y: pat})
 		if row == 0 { // draw the pattern marker
-			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, patternIndexToString(s), trackerPatMarkerOp)
+			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.PatternNo.Font, t.Theme.NoteEditor.PatternNo.TextSize, patternIndexToString(s), patternNoOp)
 		}
 		if row == 1 && t.Model.PatternUnique(x, s) { // draw a * if the pattern is unique
-			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, "*", mediumEmphasisTextColorOp)
+			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.Unique.Font, t.Theme.NoteEditor.Unique.TextSize, "*", uniqueOp)
 		}
-		op := trackerInactiveTextColorOp
-		if te.scrollTable.Table.Cursor() == point && te.scrollTable.Focused() {
-			op = trackerActiveTextColorOp
-		}
+		op := noteOp
 		val := noteStr[byte(t.Model.Notes().Value(tracker.Point{X: x, Y: y}))]
 		if t.Model.Notes().Effect(x) {
 			val = hexStr[byte(t.Model.Notes().Value(tracker.Point{X: x, Y: y}))]
 		}
-		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, val, op)
+		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.Note.Font, t.Theme.NoteEditor.Note.TextSize, val, op)
 		return D{Size: image.Pt(pxWidth, pxHeight)}
 	}
 	table := FilledScrollTable(t.Theme, te.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)

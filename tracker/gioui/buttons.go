@@ -290,7 +290,6 @@ func Btn(th *Theme, style *ButtonStyle, button *Clickable, txt string) Button {
 		Button:      button,
 		shaper:      th.Material.Shaper,
 	}
-	b.Font = labelDefaultFont
 	return b
 }
 

@@ -105,7 +105,7 @@ func (d *DialogStyle) Layout(gtx C) D {
 		gtx.Execute(key.FocusCmd{Tag: &d.dialog.BtnCancel})
 	}
 	d.dialog.handleKeys(gtx)
-	paint.Fill(gtx.Ops, dialogBgColor)
+	paint.Fill(gtx.Ops, d.Theme.Dialog.Bg)
 	visible := true
 	return layout.Center.Layout(gtx, func(gtx C) D {
 		return Popup(&visible).Layout(gtx, func(gtx C) D {

@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"gioui.org/font"
 	"gioui.org/io/clipboard"
 	"gioui.org/io/key"
 	"gioui.org/layout"
@@ -379,20 +378,19 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 			return layout.Dimensions{Size: gtx.Constraints.Min}
 		}
 		u := units[i]
-		var color color.NRGBA = t.Theme.InstrumentEditor.UnitList.Name.Color
-		f := labelDefaultFont
+
+		labelStyle := t.Theme.InstrumentEditor.UnitList.Name
+		if u.Disabled {
+			labelStyle = t.Theme.InstrumentEditor.UnitList.NameDisabled
+		}
 
 		stackText := strconv.FormatInt(int64(u.StackAfter), 10)
 		if u.StackNeed > u.StackBefore {
-			color = errorColor
+			labelStyle.Color = t.Theme.InstrumentEditor.UnitList.Error
 			(*tracker.Alerts)(t.Model).AddNamed("UnitNeedsInputs", fmt.Sprintf("%v needs at least %v input signals, got %v", u.Type, u.StackNeed, u.StackBefore), tracker.Error)
 		} else if i == count-1 && u.StackAfter != 0 {
-			color = warningColor
+			labelStyle.Color = t.Theme.InstrumentEditor.UnitList.Warning
 			(*tracker.Alerts)(t.Model).AddNamed("InstrumentLeavesSignals", fmt.Sprintf("Instrument leaves %v signal(s) on the stack", u.StackAfter), tracker.Warning)
-		}
-		if u.Disabled {
-			color = disabledTextColor
-			f.Style = font.Italic
 		}
 
 		stackLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Stack, stackText)
@@ -422,8 +420,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 						ie.searchEditor.SetText(str.Value())
 						ie.unitDragList.Focus()
 					}
-					style := MaterialEditor(t.Theme, &t.Theme.InstrumentEditor.UnitList.Name, ie.searchEditor, "---")
-					style.Color = color
+					style := MaterialEditor(t.Theme, &labelStyle, ie.searchEditor, "---")
 					ret := style.Layout(gtx)
 					str.Set(ie.searchEditor.Text())
 					return ret
@@ -432,12 +429,11 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 					if text == "" {
 						text = "---"
 					}
-					return Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Name, text).Layout(gtx)
+					return Label(t.Theme, &labelStyle, text).Layout(gtx)
 				}
 			}),
 			layout.Flexed(1, func(gtx C) D {
 				unitNameLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Comment, u.Comment)
-				unitNameLabel.Color = color
 				inset := layout.Inset{Left: unit.Dp(5)}
 				return inset.Layout(gtx, unitNameLabel.Layout)
 			}),
