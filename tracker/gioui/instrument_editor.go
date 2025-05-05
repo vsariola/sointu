@@ -304,11 +304,13 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 			}
 			return layout.Center.Layout(gtx, Label(t.Theme, &s, name).Layout)
 		}
-		return layout.Inset{Left: unit.Dp(6), Right: unit.Dp(6), Top: unit.Dp(4)}.Layout(gtx, func(gtx C) D {
-			return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(grabhandle.Layout),
-				layout.Rigid(label),
-			)
+		return layout.Center.Layout(gtx, func(gtx C) D {
+			return layout.Inset{Left: unit.Dp(6), Right: unit.Dp(6)}.Layout(gtx, func(gtx C) D {
+				return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
+					layout.Rigid(grabhandle.Layout),
+					layout.Rigid(label),
+				)
+			})
 		})
 	}
 

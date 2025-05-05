@@ -241,7 +241,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	}
 
 	rowMarkerPatternTextColorOp := colorOp(gtx, rowMarkerPatternTextColor)
-	loopMarkerColorOp := colorOp(gtx, loopMarkerColor)
+	loopMarkerColorOp := colorOp(gtx, t.Theme.OrderEditor.Loop)
 	rowMarkerRowTextColorOp := colorOp(gtx, rowMarkerRowTextColor)
 
 	rowTitle := func(gtx C, j int) D {
@@ -255,10 +255,10 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 			if l := t.Loop(); pat >= l.Start && pat < l.Start+l.Length {
 				op = loopMarkerColorOp
 			}
-			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", pat)), op)
+			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.OrderRow.Font, t.Theme.NoteEditor.OrderRow.TextSize, strings.ToUpper(fmt.Sprintf("%02x", pat)), op)
 		}
 		defer op.Offset(image.Pt(pxPatMarkWidth, 0)).Push(gtx.Ops).Pop()
-		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", row)), rowMarkerRowTextColorOp)
+		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.PatternRow.Font, t.Theme.NoteEditor.PatternRow.TextSize, strings.ToUpper(fmt.Sprintf("%02x", row)), rowMarkerRowTextColorOp)
 		return D{Size: image.Pt(w, pxHeight)}
 	}
 

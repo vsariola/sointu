@@ -9,7 +9,6 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"gioui.org/text"
 	"gioui.org/unit"
 	"github.com/vsariola/sointu/tracker"
 )
@@ -17,7 +16,6 @@ import (
 type PopupAlert struct {
 	alerts     *tracker.Alerts
 	prevUpdate time.Time
-	shaper     *text.Shaper
 }
 
 type PopupAlertStyle struct {

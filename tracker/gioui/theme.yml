@@ -10,6 +10,7 @@ errorcolor: &errorcolor { r: 207, g: 102, b: 121, a: 255 }
 warningcolor: &warningcolor { r: 251, g: 192, b: 45, a: 255 }
 white: &white { r: 255, g: 255, b: 255, a: 255 }
 black: &black { r: 0, g: 0, b: 0, a: 255 }
+loopcolor: &loopcolor { r: 252, g: 186, b: 3, a: 255 }
 
 # from here on starts the structs defined in the theme.go
 material:
@@ -90,11 +91,19 @@ dialog:
   title: { textsize: 16, color: *highemphasis, shadowcolor: *black }
   text: { textsize: 16, color: *highemphasis, shadowcolor: *black }
 ordereditor:
-  tracktitle:
-    textsize: 12
-    color: *mediumemphasis
+  tracktitle: { textsize: 12, color: *mediumemphasis }
+  rowtitle:
+    { textsize: 16, color: *secondarycolor, font: { typeface: "Go Mono" } }
+  cell: { textsize: 16, color: *primarycolor, font: { typeface: "Go Mono" } }
+  loop: *loopcolor
 noteeditor:
   tracktitle: { textsize: 12, color: *mediumemphasis }
+  orderrow:
+    { textsize: 16, color: *secondarycolor, font: { typeface: "Go Mono" } }
+  patternrow:
+    { textsize: 16, color: *mediumemphasis, font: { typeface: "Go Mono" } }
+  cell: { textsize: 16, color: *primarycolor, font: { typeface: "Go Mono" } }
+  loop: *loopcolor
   header: { textsize: 14, color: *disabled }
 menu:
   text: { textsize: 16, color: *highemphasis, shadowcolor: *black }

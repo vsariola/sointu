@@ -79,19 +79,22 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 		return D{}
 	}
 
+	rowMarkerPatternTextColorOp := colorOp(gtx, t.Theme.OrderEditor.RowTitle.Color)
+	loopMarkerColorOp := colorOp(gtx, t.Theme.OrderEditor.Loop)
+
 	rowTitle := func(gtx C, j int) D {
 		w := gtx.Dp(unit.Dp(30))
-		color := rowMarkerPatternTextColor
+		callOp := rowMarkerPatternTextColorOp
 		if l := t.Loop(); j >= l.Start && j < l.Start+l.Length {
-			color = loopMarkerColor
+			callOp = loopMarkerColorOp
 		}
-		paint.ColorOp{Color: color}.Add(gtx.Ops)
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
-		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, strings.ToUpper(fmt.Sprintf("%02x", j)), op.CallOp{})
+		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.OrderEditor.RowTitle.Font, t.Theme.OrderEditor.RowTitle.TextSize, strings.ToUpper(fmt.Sprintf("%02x", j)), callOp)
 		return D{Size: image.Pt(w, gtx.Dp(patternCellHeight))}
 	}
 
 	selection := oe.scrollTable.Table.Range()
+	cellColorOp := colorOp(gtx, t.Theme.OrderEditor.Cell.Color)
 
 	cell := func(gtx C, x, y int) D {
 		val := patternIndexToString(t.Model.Order().Value(tracker.Point{X: x, Y: y}))
@@ -107,9 +110,8 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 			}
 		}
 		paint.FillShape(gtx.Ops, color, clip.Rect{Min: image.Pt(1, 1), Max: image.Pt(gtx.Constraints.Min.X-1, gtx.Constraints.Min.X-1)}.Op())
-		paint.ColorOp{Color: patternTextColor}.Add(gtx.Ops)
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
-		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Material.Shaper, trackerFont, trackerFontSize, val, op.CallOp{})
+		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.OrderEditor.Cell.Font, t.Theme.OrderEditor.Cell.TextSize, val, cellColorOp)
 		return D{Size: image.Pt(gtx.Dp(patternCellWidth), gtx.Dp(patternCellHeight))}
 	}
 
