@@ -2,9 +2,10 @@ package tracker
 
 import (
 	"fmt"
-	"github.com/vsariola/sointu"
 	"iter"
 	"slices"
+
+	"github.com/vsariola/sointu"
 )
 
 /*
@@ -88,21 +89,21 @@ func (m *Model) ParameterInfo(unitId int, paramName string) (isSendTarget bool, 
 }
 
 func (m *Model) TrackTitle(index int) string {
-	if index < 0 || index > len(m.derived.forTrack) {
+	if index < 0 || index >= len(m.derived.forTrack) {
 		return ""
 	}
 	return m.derived.forTrack[index].title
 }
 
 func (m *Model) PatternUseCount(index int) []int {
-	if index < 0 || index > len(m.derived.forPattern) {
+	if index < 0 || index >= len(m.derived.forPattern) {
 		return nil
 	}
 	return m.derived.forPattern[index].useCount
 }
 
 func (m *Model) PatternUnique(t, p int) bool {
-	if t < 0 || t > len(m.derived.forPattern) {
+	if t < 0 || t >= len(m.derived.forPattern) {
 		return false
 	}
 	forPattern := m.derived.forPattern[t]
@@ -116,7 +117,7 @@ func (m *Model) PatternUnique(t, p int) bool {
 
 func (m *Model) TracksWithSameInstrumentAsCurrent() []int {
 	currentTrack := m.d.Cursor.Track
-	if currentTrack > len(m.derived.forTrack) {
+	if currentTrack >= len(m.derived.forTrack) {
 		return nil
 	}
 	return m.derived.forTrack[currentTrack].tracksWithSameInstrument
