@@ -1,8 +1,12 @@
 package gioui
 
 import (
+	"image/color"
+
+	"gioui.org/font"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 )
@@ -16,6 +20,13 @@ type (
 		Editor       widget.Editor
 		filters      []event.Filter
 		requestFocus bool
+	}
+
+	EditorStyle struct {
+		Color     color.NRGBA
+		HintColor color.NRGBA
+		Font      font.Font
+		TextSize  unit.Sp
 	}
 )
 
@@ -34,11 +45,20 @@ func NewEditor(e widget.Editor) *Editor {
 	return ret
 }
 
-func MaterialEditor(th *Theme, style *LabelStyle, editor *Editor, hint string) material.EditorStyle {
+func (s *EditorStyle) AsLabelStyle() LabelStyle {
+	return LabelStyle{
+		Color:    s.Color,
+		Font:     s.Font,
+		TextSize: s.TextSize,
+	}
+}
+
+func MaterialEditor(th *Theme, style *EditorStyle, editor *Editor, hint string) material.EditorStyle {
 	ret := material.Editor(&th.Material, &editor.Editor, hint)
 	ret.Font = style.Font
 	ret.TextSize = style.TextSize
 	ret.Color = style.Color
+	ret.HintColor = style.HintColor
 	return ret
 }
 

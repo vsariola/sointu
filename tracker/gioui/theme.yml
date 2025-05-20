@@ -92,7 +92,7 @@ alert:
     text: { textsize: 16, color: *black }
   info:
     bg: { r: 50, g: 50, b: 51, a: 255 }
-    text: { textsize: 16, shadowcolor: *black }
+    text: { textsize: 16, color: *highemphasis, shadowcolor: *black }
 dialog:
   bg: { r: 0, g: 0, b: 0, a: 224 }
   title: { textsize: 16, color: *highemphasis, shadowcolor: *black }
@@ -129,19 +129,20 @@ menu:
 instrumenteditor:
   octave: { textsize: 14, color: *disabled }
   voices: { textsize: 14, color: *disabled }
-  instrumentcomment: { textsize: 14, color: *mediumemphasis }
-  unitcomment: { textsize: 14, color: *mediumemphasis }
+  instrumentcomment:
+    { textsize: 14, color: *highemphasis, hintcolor: *disabled }
+  unitcomment: { textsize: 14, color: *highemphasis, hintcolor: *disabled }
   instrumentlist:
-    number: { textsize: 10, color: *mediumemphasis, shadowcolor: *black }
-    name: { textsize: 12, color: *white, shadowcolor: *black }
-    namemuted: { textsize: 12, color: *disabled }
+    number: { textsize: 10, color: *mediumemphasis }
+    name: { textsize: 12, color: *white, hintcolor: *disabled }
+    namemuted: { textsize: 12, color: *disabled, hintcolor: *disabled }
     scrollbar: { width: 6, color: *scrollbarcolor }
   unitlist:
-    name: { textsize: 12, color: *white, shadowcolor: *black }
+    name: { textsize: 12, color: *white, hintcolor: *disabled }
     namedisabled:
       textsize: 12
       color: *disabled
-      shadowcolor: *black
+      hintcolor: *disabled
       font: { style: 1 }
     comment: { textsize: 12, color: *disabled }
     stack: { textsize: 12, color: *mediumemphasis, shadowcolor: *black }

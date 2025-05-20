@@ -73,17 +73,17 @@ type Theme struct {
 	InstrumentEditor struct {
 		Octave            LabelStyle
 		Voices            LabelStyle
-		InstrumentComment LabelStyle
-		UnitComment       LabelStyle
+		InstrumentComment EditorStyle
+		UnitComment       EditorStyle
 		InstrumentList    struct {
 			Number    LabelStyle
-			Name      LabelStyle
-			NameMuted LabelStyle
+			Name      EditorStyle
+			NameMuted EditorStyle
 			ScrollBar ScrollBarStyle
 		}
 		UnitList struct {
-			Name         LabelStyle
-			NameDisabled LabelStyle
+			Name         EditorStyle
+			NameDisabled EditorStyle
 			Comment      LabelStyle
 			Stack        LabelStyle
 			Disabled     LabelStyle

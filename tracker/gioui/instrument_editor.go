@@ -301,7 +301,8 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 			if name == "" {
 				name = "Instr"
 			}
-			return layout.Center.Layout(gtx, Label(t.Theme, &s, name).Layout)
+			l := s.AsLabelStyle()
+			return layout.Center.Layout(gtx, Label(t.Theme, &l, name).Layout)
 		}
 		return layout.Center.Layout(gtx, func(gtx C) D {
 			return layout.Inset{Left: unit.Dp(6), Right: unit.Dp(6)}.Layout(gtx, func(gtx C) D {
@@ -379,17 +380,17 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		}
 		u := units[i]
 
-		labelStyle := t.Theme.InstrumentEditor.UnitList.Name
+		editorStyle := t.Theme.InstrumentEditor.UnitList.Name
 		if u.Disabled {
-			labelStyle = t.Theme.InstrumentEditor.UnitList.NameDisabled
+			editorStyle = t.Theme.InstrumentEditor.UnitList.NameDisabled
 		}
 
 		stackText := strconv.FormatInt(int64(u.StackAfter), 10)
 		if u.StackNeed > u.StackBefore {
-			labelStyle.Color = t.Theme.InstrumentEditor.UnitList.Error
+			editorStyle.Color = t.Theme.InstrumentEditor.UnitList.Error
 			(*tracker.Alerts)(t.Model).AddNamed("UnitNeedsInputs", fmt.Sprintf("%v needs at least %v input signals, got %v", u.Type, u.StackNeed, u.StackBefore), tracker.Error)
 		} else if i == count-1 && u.StackAfter != 0 {
-			labelStyle.Color = t.Theme.InstrumentEditor.UnitList.Warning
+			editorStyle.Color = t.Theme.InstrumentEditor.UnitList.Warning
 			(*tracker.Alerts)(t.Model).AddNamed("InstrumentLeavesSignals", fmt.Sprintf("Instrument leaves %v signal(s) on the stack", u.StackAfter), tracker.Warning)
 		}
 
@@ -420,7 +421,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 						ie.searchEditor.SetText(str.Value())
 						ie.unitDragList.Focus()
 					}
-					style := MaterialEditor(t.Theme, &labelStyle, ie.searchEditor, "---")
+					style := MaterialEditor(t.Theme, &editorStyle, ie.searchEditor, "---")
 					ret := style.Layout(gtx)
 					str.Set(ie.searchEditor.Text())
 					return ret
@@ -429,7 +430,8 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 					if text == "" {
 						text = "---"
 					}
-					return Label(t.Theme, &labelStyle, text).Layout(gtx)
+					l := editorStyle.AsLabelStyle()
+					return Label(t.Theme, &l, text).Layout(gtx)
 				}
 			}),
 			layout.Flexed(1, func(gtx C) D {
