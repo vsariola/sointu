@@ -132,9 +132,9 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 			t.Alerts().Add("Unit copied to clipboard", tracker.Info)
 		}
 	}
-	copyUnitBtnStyle := TipIcon(&t.Theme.Material, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
-	deleteUnitBtnStyle := ActionIcon(gtx, &t.Theme.Material, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
-	disableUnitBtnStyle := ToggleIcon(gtx, &t.Theme.Material, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
+	copyUnitBtnStyle := TipIcon(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
+	deleteUnitBtnStyle := ActionIcon(gtx, t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
+	disableUnitBtnStyle := ToggleIcon(gtx, t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
 	text := t.Units().SelectedType()
 	if text == "" {
 		text = "Choose unit type"
@@ -149,7 +149,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		layout.Rigid(func(gtx C) D {
 			var dims D
 			if t.Units().SelectedType() != "" {
-				clearUnitBtnStyle := ActionIcon(gtx, &t.Theme.Material, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
+				clearUnitBtnStyle := ActionIcon(gtx, t.Theme, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
 				dims = clearUnitBtnStyle.Layout(gtx)
 			}
 			return D{Size: image.Pt(gtx.Dp(unit.Dp(48)), dims.Size.Y)}
@@ -253,7 +253,7 @@ type ParameterStyle struct {
 func (t *Tracker) ParamStyle(th *Theme, paramWidget *ParameterWidget) ParameterStyle {
 	sendTargetTheme := th.Material.WithPalette(material.Palette{
 		Bg:         th.Material.Bg,
-		Fg:         paramIsSendTargetColor,
+		Fg:         th.UnitEditor.SendTarget,
 		ContrastBg: th.Material.ContrastBg,
 		ContrastFg: th.Material.ContrastFg,
 	})
@@ -297,7 +297,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 				}
 				sliderStyle := material.Slider(&p.Theme.Material, &p.w.floatWidget)
 				if isSendTarget {
-					sliderStyle.Color = paramIsSendTargetColor
+					sliderStyle.Color = p.Theme.UnitEditor.SendTarget
 				}
 				r := image.Rectangle{Max: gtx.Constraints.Min}
 				defer clip.Rect(r).Push(gtx.Ops).Pop()
@@ -372,7 +372,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 				hint := p.w.Parameter.Hint()
 				label := Label(p.tracker.Theme, &p.tracker.Theme.UnitEditor.Hint, hint.Label)
 				if !hint.Valid {
-					label.Color = paramValueInvalidColor
+					label.Color = p.tracker.Theme.UnitEditor.InvalidParam
 				}
 				if info == "" {
 					return label.Layout(gtx)

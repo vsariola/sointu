@@ -13,16 +13,19 @@ import (
 )
 
 type Theme struct {
-	Material       material.Theme
-	FilledButton   ButtonStyle
-	TextButton     ButtonStyle
-	DisabledButton ButtonStyle
-	MenuButton     ButtonStyle
-	Oscilloscope   OscilloscopeStyle
-	NumericUpDown  NumericUpDownStyle
-	DialogTitle    LabelStyle
-	DialogText     LabelStyle
-	SongPanel      struct {
+	Define   any // this is just needed for yaml.UnmarshalStrict, so we can have "defines" in the yaml
+	Material material.Theme
+	Button   struct {
+		Filled   ButtonStyle
+		Text     ButtonStyle
+		Disabled ButtonStyle
+		Menu     ButtonStyle
+	}
+	Oscilloscope  OscilloscopeStyle
+	NumericUpDown NumericUpDownStyle
+	DialogTitle   LabelStyle
+	DialogText    LabelStyle
+	SongPanel     struct {
 		RowHeader  LabelStyle
 		RowValue   LabelStyle
 		Expander   LabelStyle
@@ -44,6 +47,9 @@ type Theme struct {
 		Unique     LabelStyle
 		Loop       color.NRGBA
 		Header     LabelStyle
+		Play       color.NRGBA
+		OneBeat    color.NRGBA
+		TwoBeat    color.NRGBA
 	}
 	Dialog struct {
 		Bg    color.NRGBA
@@ -55,10 +61,14 @@ type Theme struct {
 		RowTitle   LabelStyle
 		Cell       LabelStyle
 		Loop       color.NRGBA
+		CellBg     color.NRGBA
+		Play       color.NRGBA
 	}
 	Menu struct {
 		Text     LabelStyle
-		ShortCut LabelStyle
+		ShortCut color.NRGBA
+		Hover    color.NRGBA
+		Disabled color.NRGBA
 	}
 	InstrumentEditor struct {
 		Octave            LabelStyle
@@ -69,6 +79,7 @@ type Theme struct {
 			Number    LabelStyle
 			Name      LabelStyle
 			NameMuted LabelStyle
+			ScrollBar ScrollBarStyle
 		}
 		UnitList struct {
 			Name         LabelStyle
@@ -84,15 +95,26 @@ type Theme struct {
 		Hint          LabelStyle
 		Chooser       LabelStyle
 		ParameterName LabelStyle
+		InvalidParam  color.NRGBA
+		SendTarget    color.NRGBA
 	}
-	Cursor struct {
-		Active   color.NRGBA
-		Inactive color.NRGBA
+	Cursor    CursorStyle
+	Selection CursorStyle
+	Tooltip   struct {
+		Color color.NRGBA
+		Bg    color.NRGBA
 	}
-	Selection struct {
-		Active   color.NRGBA
-		Inactive color.NRGBA
+	Popup struct {
+		Bg     color.NRGBA
+		Shadow color.NRGBA
 	}
+	ScrollBar ScrollBarStyle
+}
+
+type CursorStyle struct {
+	Active    color.NRGBA
+	ActiveAlt color.NRGBA // alternative color for the cursor, used e.g. when the midi input is active
+	Inactive  color.NRGBA
 }
 
 //go:embed theme.yml
@@ -100,12 +122,10 @@ var defaultTheme []byte
 
 func NewTheme() *Theme {
 	var theme Theme
-	err := yaml.Unmarshal(defaultTheme, &theme)
+	err := yaml.UnmarshalStrict(defaultTheme, &theme)
 	if err != nil {
 		panic(fmt.Errorf("failed to default theme: %w", err))
 	}
-	str, _ := yaml.Marshal(theme)
-	fmt.Printf(string(str))
 	ReadCustomConfigYml("theme.yml", &theme)
 	theme.Material.Shaper = &text.Shaper{}
 	theme.Material.Icon.CheckBoxChecked = must(widget.NewIcon(icons.ToggleCheckBox))
@@ -121,30 +141,3 @@ func must[T any](ic T, err error) T {
 	}
 	return ic
 }
-
-var white = color.NRGBA{R: 255, G: 255, B: 255, A: 255}
-var black = color.NRGBA{R: 0, G: 0, B: 0, A: 255}
-var transparent = color.NRGBA{A: 0}
-
-var mediumEmphasisTextColor = color.NRGBA{R: 153, G: 153, B: 153, A: 153}
-var disabledTextColor = color.NRGBA{R: 255, G: 255, B: 255, A: 97}
-
-var trackerPlayColor = color.NRGBA{R: 55, G: 55, B: 61, A: 255}
-var oneBeatHighlight = color.NRGBA{R: 31, G: 37, B: 38, A: 255}
-var twoBeatHighlight = color.NRGBA{R: 31, G: 51, B: 53, A: 255}
-
-var patternPlayColor = color.NRGBA{R: 55, G: 55, B: 61, A: 255}
-var patternCellColor = color.NRGBA{R: 255, G: 255, B: 255, A: 3}
-
-var popupSurfaceColor = color.NRGBA{R: 50, G: 50, B: 51, A: 255}
-var popupShadowColor = color.NRGBA{R: 0, G: 0, B: 0, A: 192}
-
-var cursorForTrackMidiInColor = color.NRGBA{R: 255, G: 100, B: 140, A: 48}
-var cursorNeighborForTrackMidiInColor = color.NRGBA{R: 255, G: 100, B: 140, A: 24}
-
-var menuHoverColor = color.NRGBA{R: 30, G: 31, B: 38, A: 255}
-
-var scrollBarColor = color.NRGBA{R: 255, G: 255, B: 255, A: 32}
-
-var paramIsSendTargetColor = color.NRGBA{R: 120, G: 120, B: 210, A: 255}
-var paramValueInvalidColor = color.NRGBA{R: 120, G: 120, B: 120, A: 190}

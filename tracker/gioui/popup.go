@@ -24,11 +24,11 @@ type PopupStyle struct {
 	SE, SW, NW, NE unit.Dp
 }
 
-func Popup(visible *bool) PopupStyle {
+func Popup(th *Theme, visible *bool) PopupStyle {
 	return PopupStyle{
 		Visible:      visible,
-		SurfaceColor: popupSurfaceColor,
-		ShadowColor:  popupShadowColor,
+		SurfaceColor: th.Popup.Bg,
+		ShadowColor:  th.Popup.Shadow,
 		ShadowN:      unit.Dp(2),
 		ShadowE:      unit.Dp(2),
 		ShadowS:      unit.Dp(2),

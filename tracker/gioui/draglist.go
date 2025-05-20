@@ -15,7 +15,6 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"gioui.org/unit"
 	"github.com/vsariola/sointu/tracker"
 )
 
@@ -33,18 +32,12 @@ type DragList struct {
 }
 
 type FilledDragListStyle struct {
-	dragList   *DragList
-	HoverColor color.NRGBA
-	Cursor     struct {
-		Active   color.NRGBA
-		Inactive color.NRGBA
-	}
-	Selection struct {
-		Active   color.NRGBA
-		Inactive color.NRGBA
-	}
-	ScrollBarWidth unit.Dp
-	element, bg    func(gtx C, i int) D
+	dragList    *DragList
+	HoverColor  color.NRGBA
+	Cursor      CursorStyle
+	Selection   CursorStyle
+	ScrollBar   ScrollBarStyle
+	element, bg func(gtx C, i int) D
 }
 
 func NewDragList(model tracker.List, axis layout.Axis) *DragList {
@@ -53,13 +46,13 @@ func NewDragList(model tracker.List, axis layout.Axis) *DragList {
 
 func FilledDragList(th *Theme, dragList *DragList, element, bg func(gtx C, i int) D) FilledDragListStyle {
 	return FilledDragListStyle{
-		dragList:       dragList,
-		element:        element,
-		bg:             bg,
-		HoverColor:     hoveredColor(th.Selection.Active),
-		Cursor:         th.Cursor,
-		Selection:      th.Selection,
-		ScrollBarWidth: unit.Dp(10),
+		dragList:   dragList,
+		element:    element,
+		bg:         bg,
+		HoverColor: hoveredColor(th.Selection.Active),
+		Cursor:     th.Cursor,
+		Selection:  th.Selection,
+		ScrollBar:  th.ScrollBar,
 	}
 }
 
@@ -72,7 +65,7 @@ func (d *DragList) Focused() bool {
 }
 
 func (s FilledDragListStyle) LayoutScrollBar(gtx C) D {
-	return s.dragList.ScrollBar.Layout(gtx, s.ScrollBarWidth, s.dragList.TrackerList.Count(), &s.dragList.List.Position)
+	return s.dragList.ScrollBar.Layout(gtx, &s.ScrollBar, s.dragList.TrackerList.Count(), &s.dragList.List.Position)
 }
 
 func (s FilledDragListStyle) Layout(gtx C) D {

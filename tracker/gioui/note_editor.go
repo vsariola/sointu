@@ -150,21 +150,21 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 
 func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 	return Surface{Gray: 37, Focus: te.scrollTable.Focused() || te.scrollTable.ChildFocused()}.Layout(gtx, func(gtx C) D {
-		addSemitoneBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.TextButton, te.AddSemitoneBtn, "+1")
-		subtractSemitoneBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.TextButton, te.SubtractSemitoneBtn, "-1")
-		addOctaveBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.TextButton, te.AddOctaveBtn, "+12")
-		subtractOctaveBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.TextButton, te.SubtractOctaveBtn, "-12")
-		noteOffBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.TextButton, te.NoteOffBtn, "Note Off")
-		deleteTrackBtnStyle := ActionIcon(gtx, &t.Theme.Material, te.DeleteTrackBtn, icons.ActionDelete, te.deleteTrackHint)
-		splitTrackBtnStyle := ActionIcon(gtx, &t.Theme.Material, te.SplitTrackBtn, icons.CommunicationCallSplit, te.splitTrackHint)
-		newTrackBtnStyle := ActionIcon(gtx, &t.Theme.Material, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
+		addSemitoneBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.Button.Text, te.AddSemitoneBtn, "+1")
+		subtractSemitoneBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.Button.Text, te.SubtractSemitoneBtn, "-1")
+		addOctaveBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.Button.Text, te.AddOctaveBtn, "+12")
+		subtractOctaveBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.Button.Text, te.SubtractOctaveBtn, "-12")
+		noteOffBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.Button.Text, te.NoteOffBtn, "Note Off")
+		deleteTrackBtnStyle := ActionIcon(gtx, t.Theme, te.DeleteTrackBtn, icons.ActionDelete, te.deleteTrackHint)
+		splitTrackBtnStyle := ActionIcon(gtx, t.Theme, te.SplitTrackBtn, icons.CommunicationCallSplit, te.splitTrackHint)
+		newTrackBtnStyle := ActionIcon(gtx, t.Theme, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
 		in := layout.UniformInset(unit.Dp(1))
 		voiceUpDown := func(gtx C) D {
 			numStyle := NumUpDown(t.Theme, te.TrackVoices, "Track voices")
 			return in.Layout(gtx, numStyle.Layout)
 		}
 		effectBtnStyle := ToggleButton(gtx, t.Theme, te.EffectBtn, "Hex")
-		uniqueBtnStyle := ToggleIcon(gtx, &t.Theme.Material, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
+		uniqueBtnStyle := ToggleIcon(gtx, t.Theme, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
 		midiInBtnStyle := ToggleButton(gtx, t.Theme, te.TrackMidiInBtn, "MIDI")
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Dp(unit.Dp(12)), 0)} }),
@@ -230,12 +230,12 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 
 	rowTitleBg := func(gtx C, j int) D {
 		if mod(j, beatMarkerDensity*2) == 0 {
-			paint.FillShape(gtx.Ops, twoBeatHighlight, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, pxHeight)}.Op())
+			paint.FillShape(gtx.Ops, t.Theme.NoteEditor.TwoBeat, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, pxHeight)}.Op())
 		} else if mod(j, beatMarkerDensity) == 0 {
-			paint.FillShape(gtx.Ops, oneBeatHighlight, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, pxHeight)}.Op())
+			paint.FillShape(gtx.Ops, t.Theme.NoteEditor.OneBeat, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, pxHeight)}.Op())
 		}
 		if t.Model.Playing().Value() && j == playSongRow {
-			paint.FillShape(gtx.Ops, trackerPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, pxHeight)}.Op())
+			paint.FillShape(gtx.Ops, t.Theme.NoteEditor.Play, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, pxHeight)}.Op())
 		}
 		return D{}
 	}
@@ -288,7 +288,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 				c = t.Theme.Cursor.Active
 			}
 			if hasTrackMidiIn {
-				c = cursorForTrackMidiInColor
+				c = t.Theme.Cursor.ActiveAlt
 			}
 			te.paintColumnCell(gtx, x, t, c)
 		}
@@ -296,7 +296,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		if hasTrackMidiIn {
 			for _, trackIndex := range t.Model.TracksWithSameInstrumentAsCurrent() {
 				if x == trackIndex && y == cursor.Y {
-					te.paintColumnCell(gtx, x, t, cursorNeighborForTrackMidiInColor)
+					te.paintColumnCell(gtx, x, t, t.Theme.Selection.ActiveAlt)
 				}
 			}
 		}

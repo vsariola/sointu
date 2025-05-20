@@ -17,7 +17,6 @@ import (
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/vsariola/sointu/tracker"
 )
@@ -58,28 +57,28 @@ func NewBoolClickable(b tracker.Bool) *BoolClickable {
 	}
 }
 
-func Tooltip(th *material.Theme, tip string) component.Tooltip {
-	tooltip := component.PlatformTooltip(th, tip)
-	tooltip.Bg = black
-	tooltip.Text.Color = white
+func Tooltip(th *Theme, tip string) component.Tooltip {
+	tooltip := component.PlatformTooltip(&th.Material, tip)
+	tooltip.Bg = th.Tooltip.Bg
+	tooltip.Text.Color = th.Tooltip.Color
 	return tooltip
 }
 
-func ActionIcon(gtx C, th *material.Theme, w *ActionClickable, icon []byte, tip string) TipIconButtonStyle {
+func ActionIcon(gtx C, th *Theme, w *ActionClickable, icon []byte, tip string) TipIconButtonStyle {
 	ret := TipIcon(th, &w.TipClickable, icon, tip)
 	for w.Clickable.Clicked(gtx) {
 		w.Action.Do()
 	}
 	if !w.Action.Allowed() {
-		ret.IconButtonStyle.Color = disabledTextColor
+		ret.IconButtonStyle.Color = th.Button.Disabled.Color
 	}
 	return ret
 }
 
-func TipIcon(th *material.Theme, w *TipClickable, icon []byte, tip string) TipIconButtonStyle {
+func TipIcon(th *Theme, w *TipClickable, icon []byte, tip string) TipIconButtonStyle {
 	iconButtonStyle := IconButton(th, &w.Clickable, widgetForIcon(icon), "")
-	iconButtonStyle.Color = th.Palette.ContrastBg
-	iconButtonStyle.Background = transparent
+	iconButtonStyle.Color = th.Material.Palette.ContrastBg
+	iconButtonStyle.Background = color.NRGBA{}
 	iconButtonStyle.Inset = layout.UniformInset(unit.Dp(6))
 	return TipIconButtonStyle{
 		TipArea:         &w.TipArea,
@@ -88,7 +87,7 @@ func TipIcon(th *material.Theme, w *TipClickable, icon []byte, tip string) TipIc
 	}
 }
 
-func ToggleIcon(gtx C, th *material.Theme, w *BoolClickable, offIcon, onIcon []byte, offTip, onTip string) TipIconButtonStyle {
+func ToggleIcon(gtx C, th *Theme, w *BoolClickable, offIcon, onIcon []byte, offTip, onTip string) TipIconButtonStyle {
 	icon := offIcon
 	tip := offTip
 	if w.Bool.Value() {
@@ -99,11 +98,11 @@ func ToggleIcon(gtx C, th *material.Theme, w *BoolClickable, offIcon, onIcon []b
 		w.Bool.Toggle()
 	}
 	ibStyle := IconButton(th, &w.Clickable, widgetForIcon(icon), "")
-	ibStyle.Background = transparent
+	ibStyle.Background = color.NRGBA{}
 	ibStyle.Inset = layout.UniformInset(unit.Dp(6))
-	ibStyle.Color = th.Palette.ContrastBg
+	ibStyle.Color = th.Material.Palette.ContrastBg
 	if !w.Bool.Enabled() {
-		ibStyle.Color = disabledTextColor
+		ibStyle.Color = th.Button.Disabled.Color
 	}
 	return TipIconButtonStyle{
 		TipArea:         &w.TipArea,
@@ -121,7 +120,7 @@ func ActionButton(gtx C, th *Theme, style *ButtonStyle, w *ActionClickable, text
 		w.Action.Do()
 	}
 	if !w.Action.Allowed() {
-		return Btn(th, &th.DisabledButton, &w.Clickable, text)
+		return Btn(th, &th.Button.Disabled, &w.Clickable, text)
 	}
 	return Btn(th, style, &w.Clickable, text)
 }
@@ -131,12 +130,12 @@ func ToggleButton(gtx C, th *Theme, b *BoolClickable, text string) Button {
 		b.Bool.Toggle()
 	}
 	if !b.Bool.Enabled() {
-		return Btn(th, &th.DisabledButton, &b.Clickable, text)
+		return Btn(th, &th.Button.Disabled, &b.Clickable, text)
 	}
 	if b.Bool.Value() {
-		return Btn(th, &th.FilledButton, &b.Clickable, text)
+		return Btn(th, &th.Button.Filled, &b.Clickable, text)
 	}
-	return Btn(th, &th.TextButton, &b.Clickable, text)
+	return Btn(th, &th.Button.Text, &b.Clickable, text)
 }
 
 // Clickable represents a clickable area.
@@ -293,10 +292,10 @@ func Btn(th *Theme, style *ButtonStyle, button *Clickable, txt string) Button {
 	return b
 }
 
-func IconButton(th *material.Theme, button *Clickable, icon *widget.Icon, description string) IconButtonStyle {
+func IconButton(th *Theme, button *Clickable, icon *widget.Icon, description string) IconButtonStyle {
 	return IconButtonStyle{
-		Background:  th.Palette.ContrastBg,
-		Color:       th.Palette.ContrastFg,
+		Background:  th.Material.Palette.ContrastBg,
+		Color:       th.Material.Palette.ContrastFg,
 		Icon:        icon,
 		Size:        24,
 		Inset:       layout.UniformInset(12),

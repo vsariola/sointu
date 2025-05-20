@@ -1,6 +1,8 @@
 package gioui
 
 import (
+	"image/color"
+
 	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op/paint"
@@ -49,7 +51,7 @@ func ConfirmDialog(gtx C, th *Theme, dialog *Dialog, title, text string) DialogS
 		Theme:       th,
 	}
 	for _, b := range [...]*material.ButtonStyle{&ret.AltStyle, &ret.OkStyle, &ret.CancelStyle} {
-		b.Background = transparent
+		b.Background = color.NRGBA{}
 		b.Inset = layout.UniformInset(unit.Dp(6))
 		b.Color = th.Material.Palette.Fg
 	}
@@ -108,7 +110,7 @@ func (d *DialogStyle) Layout(gtx C) D {
 	paint.Fill(gtx.Ops, d.Theme.Dialog.Bg)
 	visible := true
 	return layout.Center.Layout(gtx, func(gtx C) D {
-		return Popup(&visible).Layout(gtx, func(gtx C) D {
+		return Popup(d.Theme, &visible).Layout(gtx, func(gtx C) D {
 			return d.Inset.Layout(gtx, func(gtx C) D {
 				return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
 					layout.Rigid(Label(d.Theme, &d.Theme.Dialog.Title, d.Title).Layout),

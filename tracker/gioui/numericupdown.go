@@ -60,7 +60,7 @@ func NumUpDown(th *Theme, number *NumberInput, tooltip string) NumericUpDown {
 	return NumericUpDown{
 		NumberInput:        number,
 		Shaper:             th.Material.Shaper,
-		Tooltip:            Tooltip(&th.Material, tooltip),
+		Tooltip:            Tooltip(th, tooltip),
 		NumericUpDownStyle: th.NumericUpDown,
 	}
 }

@@ -74,7 +74,7 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 
 	rowTitleBg := func(gtx C, j int) D {
 		if t.Model.Playing().Value() && j == t.PlayPosition().OrderRow {
-			paint.FillShape(gtx.Ops, patternPlayColor, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Dp(patternCellHeight))}.Op())
+			paint.FillShape(gtx.Ops, t.Theme.OrderEditor.Play, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Dp(patternCellHeight))}.Op())
 		}
 		return D{}
 	}
@@ -98,7 +98,7 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 
 	cell := func(gtx C, x, y int) D {
 		val := patternIndexToString(t.Model.Order().Value(tracker.Point{X: x, Y: y}))
-		color := patternCellColor
+		color := t.Theme.OrderEditor.CellBg
 		point := tracker.Point{X: x, Y: y}
 		if selection.Contains(point) {
 			color = t.Theme.Selection.Inactive

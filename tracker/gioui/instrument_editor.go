@@ -124,8 +124,8 @@ func (ie *InstrumentEditor) childFocused(gtx C) bool {
 
 func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 	ie.wasFocused = ie.Focused() || ie.childFocused(gtx)
-	fullscreenBtnStyle := ToggleIcon(gtx, &t.Theme.Material, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, ie.enlargeHint, ie.shrinkHint)
-	linkBtnStyle := ToggleIcon(gtx, &t.Theme.Material, ie.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, ie.linkDisabledHint, ie.linkEnabledHint)
+	fullscreenBtnStyle := ToggleIcon(gtx, t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, ie.enlargeHint, ie.shrinkHint)
+	linkBtnStyle := ToggleIcon(gtx, t.Theme, ie.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, ie.linkDisabledHint, ie.linkEnabledHint)
 
 	octave := func(gtx C) D {
 		in := layout.UniformInset(unit.Dp(1))
@@ -134,7 +134,7 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 		return dims
 	}
 
-	newBtnStyle := ActionIcon(gtx, &t.Theme.Material, ie.newInstrumentBtn, icons.ContentAdd, ie.addInstrumentHint)
+	newBtnStyle := ActionIcon(gtx, t.Theme, ie.newInstrumentBtn, icons.ContentAdd, ie.addInstrumentHint)
 	ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(
@@ -175,17 +175,17 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 
 func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 	header := func(gtx C) D {
-		commentExpandBtnStyle := ToggleIcon(gtx, &t.Theme.Material, ie.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, ie.expandCommentHint, ie.collapseCommentHint)
-		presetMenuBtnStyle := TipIcon(&t.Theme.Material, ie.presetMenuBtn, icons.NavigationMenu, "Load preset")
-		copyInstrumentBtnStyle := TipIcon(&t.Theme.Material, ie.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
-		saveInstrumentBtnStyle := TipIcon(&t.Theme.Material, ie.saveInstrumentBtn, icons.ContentSave, "Save instrument")
-		loadInstrumentBtnStyle := TipIcon(&t.Theme.Material, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
-		deleteInstrumentBtnStyle := ActionIcon(gtx, &t.Theme.Material, ie.deleteInstrumentBtn, icons.ActionDelete, ie.deleteInstrumentHint)
-		splitInstrumentBtnStyle := ActionIcon(gtx, &t.Theme.Material, ie.splitInstrumentBtn, icons.CommunicationCallSplit, ie.splitInstrumentHint)
-		soloBtnStyle := ToggleIcon(gtx, &t.Theme.Material, ie.soloBtn, icons.SocialGroup, icons.SocialPerson, ie.soloHint, ie.unsoloHint)
-		muteBtnStyle := ToggleIcon(gtx, &t.Theme.Material, ie.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, ie.muteHint, ie.unmuteHint)
+		commentExpandBtnStyle := ToggleIcon(gtx, t.Theme, ie.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, ie.expandCommentHint, ie.collapseCommentHint)
+		presetMenuBtnStyle := TipIcon(t.Theme, ie.presetMenuBtn, icons.NavigationMenu, "Load preset")
+		copyInstrumentBtnStyle := TipIcon(t.Theme, ie.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
+		saveInstrumentBtnStyle := TipIcon(t.Theme, ie.saveInstrumentBtn, icons.ContentSave, "Save instrument")
+		loadInstrumentBtnStyle := TipIcon(t.Theme, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
+		deleteInstrumentBtnStyle := ActionIcon(gtx, t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, ie.deleteInstrumentHint)
+		splitInstrumentBtnStyle := ActionIcon(gtx, t.Theme, ie.splitInstrumentBtn, icons.CommunicationCallSplit, ie.splitInstrumentHint)
+		soloBtnStyle := ToggleIcon(gtx, t.Theme, ie.soloBtn, icons.SocialGroup, icons.SocialPerson, ie.soloHint, ie.unsoloHint)
+		muteBtnStyle := ToggleIcon(gtx, t.Theme, ie.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, ie.muteHint, ie.unmuteHint)
 
-		m := PopupMenu(t.Theme, &ie.presetMenu)
+		m := PopupMenu(t.Theme, &t.Theme.Menu.Text, &ie.presetMenu)
 
 		for ie.copyInstrumentBtn.Clickable.Clicked(gtx) {
 			if contents, ok := t.Instruments().List().CopyElements(); ok {
@@ -314,7 +314,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 	}
 
 	instrumentList := FilledDragList(t.Theme, ie.instrumentDragList, element, nil)
-	instrumentList.ScrollBarWidth = unit.Dp(6)
+	instrumentList.ScrollBar = t.Theme.InstrumentEditor.InstrumentList.ScrollBar
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
@@ -351,7 +351,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 
 func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	// TODO: how to ie.unitDragList.Focus()
-	addUnitBtnStyle := ActionIcon(gtx, &t.Theme.Material, ie.addUnitBtn, icons.ContentAdd, "Add unit (Enter)")
+	addUnitBtnStyle := ActionIcon(gtx, t.Theme, ie.addUnitBtn, icons.ContentAdd, "Add unit (Enter)")
 	addUnitBtnStyle.IconButtonStyle.Color = t.Theme.Material.ContrastFg
 	addUnitBtnStyle.IconButtonStyle.Background = t.Theme.Material.ContrastBg
 	addUnitBtnStyle.IconButtonStyle.Inset = layout.UniformInset(unit.Dp(4))
