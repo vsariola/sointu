@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Theme can be user configured, in theme.yml. This theme.yml should be placed in
+  the usual sointu config directory (i.e.
+  `os.UserConfigDir()/sointu/theme.yml`). See
+  [theme.yml](tracker/gioui/theme.yml) for the default theme, and
+  [theme.go](tracker/gioui/theme.go) for what can be changed.
 - Ctrl + scroll wheel adjusts the global scaling of the GUI ([#153][i153])
 - The loudness detection supports LUFS, A-weighting, C-weighting or
   RMS-weighting, and peak detection supports true peak or sample peak detection.
