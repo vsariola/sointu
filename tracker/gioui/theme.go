@@ -2,14 +2,12 @@ package gioui
 
 import (
 	_ "embed"
-	"fmt"
 	"image/color"
 
 	"gioui.org/text"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"golang.org/x/exp/shiny/materialdesign/icons"
-	"gopkg.in/yaml.v2"
 )
 
 type Theme struct {
@@ -120,19 +118,16 @@ type CursorStyle struct {
 //go:embed theme.yml
 var defaultTheme []byte
 
-func NewTheme() *Theme {
-	var theme Theme
-	err := yaml.UnmarshalStrict(defaultTheme, &theme)
-	if err != nil {
-		panic(fmt.Errorf("failed to default theme: %w", err))
-	}
-	ReadCustomConfigYml("theme.yml", &theme)
-	theme.Material.Shaper = &text.Shaper{}
-	theme.Material.Icon.CheckBoxChecked = must(widget.NewIcon(icons.ToggleCheckBox))
-	theme.Material.Icon.CheckBoxUnchecked = must(widget.NewIcon(icons.ToggleCheckBoxOutlineBlank))
-	theme.Material.Icon.RadioChecked = must(widget.NewIcon(icons.ToggleRadioButtonChecked))
-	theme.Material.Icon.RadioUnchecked = must(widget.NewIcon(icons.ToggleRadioButtonUnchecked))
-	return &theme
+// NewTheme returns a new theme and potentially a warning if the theme file was not found or could not be read
+func NewTheme() (*Theme, error) {
+	var ret Theme
+	warn := ReadConfig(defaultTheme, "theme.yml", &ret)
+	ret.Material.Shaper = &text.Shaper{}
+	ret.Material.Icon.CheckBoxChecked = must(widget.NewIcon(icons.ToggleCheckBox))
+	ret.Material.Icon.CheckBoxUnchecked = must(widget.NewIcon(icons.ToggleCheckBoxOutlineBlank))
+	ret.Material.Icon.RadioChecked = must(widget.NewIcon(icons.ToggleRadioButtonChecked))
+	ret.Material.Icon.RadioUnchecked = must(widget.NewIcon(icons.ToggleRadioButtonUnchecked))
+	return &ret, warn
 }
 
 func must[T any](ic T, err error) T {

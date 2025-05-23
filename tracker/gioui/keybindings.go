@@ -24,33 +24,17 @@ type (
 var keyBindingMap = map[key.Event]string{}
 var keyActionMap = map[KeyAction]string{} // holds an informative string of the first key bound to an action
 
-func loadCustomKeyBindings() []KeyBinding {
-	var keyBindings []KeyBinding
-	_, err := ReadCustomConfigYml("keybindings.yml", &keyBindings)
-	if err != nil {
-		return nil
-	}
-	if len(keyBindings) == 0 {
-		return nil
-	}
-	return keyBindings
-}
-
 //go:embed keybindings.yml
-var defaultKeyBindingsYaml []byte
-
-func loadDefaultKeyBindings() []KeyBinding {
-	var keyBindings []KeyBinding
-	err := yaml.UnmarshalStrict(defaultKeyBindingsYaml, &keyBindings)
-	if err != nil {
-		panic(fmt.Errorf("failed to unmarshal keybindings: %w", err))
-	}
-	return keyBindings
-}
+var defaultKeyBindings []byte
 
 func init() {
-	keyBindings := loadDefaultKeyBindings()
-	keyBindings = append(keyBindings, loadCustomKeyBindings()...)
+	var keyBindings, userKeybindings []KeyBinding
+	if err := yaml.UnmarshalStrict(defaultKeyBindings, &keyBindings); err != nil {
+		panic(fmt.Errorf("failed to unmarshal default keybindings: %w", err))
+	}
+	if err := ReadCustomConfig("keybindings.yml", &userKeybindings); err == nil {
+		keyBindings = append(keyBindings, userKeybindings...)
+	}
 
 	for _, kb := range keyBindings {
 		var mods key.Modifiers

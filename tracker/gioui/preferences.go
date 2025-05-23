@@ -13,8 +13,7 @@ import (
 
 type (
 	Preferences struct {
-		Window   WindowPreferences
-		YmlError error
+		Window WindowPreferences
 	}
 
 	WindowPreferences struct {
@@ -25,39 +24,39 @@ type (
 )
 
 //go:embed preferences.yml
-var defaultPreferencesYaml []byte
+var defaultPreferences []byte
 
-func loadDefaultPreferences() Preferences {
-	var preferences Preferences
-	err := yaml.UnmarshalStrict(defaultPreferencesYaml, &preferences)
-	if err != nil {
-		panic(fmt.Errorf("failed to unmarshal preferences: %w", err))
-	}
-	return preferences
-}
-
-// ReadCustomConfigYml modifies the target argument, i.e. needs a pointer
-func ReadCustomConfigYml(filename string, target interface{}) (exists bool, err error) {
+// ReadCustomConfig modifies the target argument, i.e. needs a pointer. Just
+// fails silently if the file cannot be found/read, but will warn about
+// malformed files.
+func ReadCustomConfig(filename string, target any) error {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		return false, err
+		return nil
 	}
 	path := filepath.Join(configDir, "sointu", filename)
-	bytes, err2 := os.ReadFile(path)
-	if err2 != nil {
-		return false, err2
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return nil
 	}
-	err = yaml.Unmarshal(bytes, target)
-	return true, err
+	if err := yaml.Unmarshal(bytes, target); err != nil {
+		return fmt.Errorf("ReadCustomConfig %v: %w", filename, err)
+	}
+	return nil
 }
 
-func MakePreferences() Preferences {
-	preferences := loadDefaultPreferences()
-	exists, err := ReadCustomConfigYml("preferences.yml", &preferences)
-	if exists {
-		preferences.YmlError = err
+// ReadConfig first unmarshals the defaultConfig which should be the embedded
+// default config, and then tries to read the custom config with
+// ReadCustomConfig. It panics right away if the embedded defaultConfig could
+// not be parsed as yaml as this should never happen except during development.
+// The returned error should be treated as a warning: this function will always
+// return at least the default config, and the warning will just tell if there
+// was a problem parsing the custom config.
+func ReadConfig(defaultConfig []byte, path string, target any) (warn error) {
+	if err := yaml.UnmarshalStrict(defaultConfig, target); err != nil {
+		panic(fmt.Errorf("ReadConfig %v failed to unmarshal the embedded default config: %w", path, err))
 	}
-	return preferences
+	return ReadCustomConfig(path, target)
 }
 
 func (p Preferences) WindowSize() (unit.Dp, unit.Dp) {

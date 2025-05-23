@@ -71,7 +71,6 @@ var ZoomFactors = []float32{.25, 1. / 3, .5, 2. / 3, .75, .8, 1, 1.1, 1.25, 1.5,
 
 func NewTracker(model *tracker.Model) *Tracker {
 	t := &Tracker{
-		Theme:             NewTheme(),
 		OctaveNumberInput: NewNumberInput(model.Octave().Int()),
 		InstrumentVoices:  NewNumberInput(model.InstrumentVoices().Int()),
 
@@ -93,15 +92,23 @@ func NewTracker(model *tracker.Model) *Tracker {
 		Model: model,
 
 		filePathString: model.FilePath().String(),
-		preferences:    MakePreferences(),
+	}
+	t.PopupAlert = NewPopupAlert(model.Alerts())
+	var warn error
+	if t.Theme, warn = NewTheme(); warn != nil {
+		model.Alerts().AddAlert(tracker.Alert{
+			Priority: tracker.Warning,
+			Message:  warn.Error(),
+			Duration: 10 * time.Second,
+		})
 	}
 	t.Theme.Material.Shaper = text.NewShaper(text.WithCollection(gofont.Collection()))
-	t.PopupAlert = NewPopupAlert(model.Alerts())
-	if t.preferences.YmlError != nil {
-		model.Alerts().Add(
-			fmt.Sprintf("Preferences YML Error: %s", t.preferences.YmlError),
-			tracker.Warning,
-		)
+	if warn := ReadConfig(defaultPreferences, "preferences.yml", &t.preferences); warn != nil {
+		model.Alerts().AddAlert(tracker.Alert{
+			Priority: tracker.Warning,
+			Message:  warn.Error(),
+			Duration: 10 * time.Second,
+		})
 	}
 	t.TrackEditor.scrollTable.Focus()
 	return t
