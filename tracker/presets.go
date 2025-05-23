@@ -11,7 +11,7 @@ import (
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 //go:generate go run generate/main.go
@@ -180,7 +180,7 @@ func init() {
 			return nil
 		}
 		var instr sointu.Instrument
-		if yaml.Unmarshal(data, &instr) == nil {
+		if yaml.UnmarshalStrict(data, &instr) == nil {
 			noExt := path[:len(path)-len(filepath.Ext(path))]
 			splitted := splitPath(noExt)
 			splitted = splitted[1:] // remove "presets" from the path

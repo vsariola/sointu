@@ -41,7 +41,7 @@ var defaultKeyBindingsYaml []byte
 
 func loadDefaultKeyBindings() []KeyBinding {
 	var keyBindings []KeyBinding
-	err := yaml.Unmarshal(defaultKeyBindingsYaml, &keyBindings)
+	err := yaml.UnmarshalStrict(defaultKeyBindingsYaml, &keyBindings)
 	if err != nil {
 		panic(fmt.Errorf("failed to unmarshal keybindings: %w", err))
 	}

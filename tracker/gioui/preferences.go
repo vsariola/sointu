@@ -29,7 +29,7 @@ var defaultPreferencesYaml []byte
 
 func loadDefaultPreferences() Preferences {
 	var preferences Preferences
-	err := yaml.Unmarshal(defaultPreferencesYaml, &preferences)
+	err := yaml.UnmarshalStrict(defaultPreferencesYaml, &preferences)
 	if err != nil {
 		panic(fmt.Errorf("failed to unmarshal preferences: %w", err))
 	}
