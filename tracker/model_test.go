@@ -71,10 +71,10 @@ func (s *modelFuzzState) Iterate(yield func(string, func(p string, t *testing.T)
 	s.IterateBool("UniquePatterns", s.model.UniquePatterns(), yield, seed)
 	s.IterateBool("LinkInstrTrack", s.model.LinkInstrTrack(), yield, seed)
 	// Strings
-	s.IterateString("FilePath", s.model.FilePath().String(), yield, seed)
-	s.IterateString("InstrumentName", s.model.InstrumentName().String(), yield, seed)
-	s.IterateString("InstrumentComment", s.model.InstrumentComment().String(), yield, seed)
-	s.IterateString("UnitSearchText", s.model.UnitSearch().String(), yield, seed)
+	s.IterateString("FilePath", s.model.FilePath(), yield, seed)
+	s.IterateString("InstrumentName", s.model.InstrumentName(), yield, seed)
+	s.IterateString("InstrumentComment", s.model.InstrumentComment(), yield, seed)
+	s.IterateString("UnitSearchText", s.model.UnitSearch(), yield, seed)
 	// Actions
 	s.IterateAction("AddTrack", s.model.AddTrack(), yield, seed)
 	s.IterateAction("DeleteTrack", s.model.DeleteTrack(), yield, seed)
@@ -162,7 +162,7 @@ func (s *modelFuzzState) IterateBool(name string, b tracker.Bool, yield func(str
 
 func (s *modelFuzzState) IterateString(name string, str tracker.String, yield func(string, func(p string, t *testing.T)) bool, seed int) {
 	yield(name+".Set", func(p string, t *testing.T) {
-		str.Set(fmt.Sprintf("%d", seed))
+		str.SetValue(fmt.Sprintf("%d", seed))
 	})
 }
 

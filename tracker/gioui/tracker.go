@@ -91,7 +91,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 
 		Model: model,
 
-		filePathString: model.FilePath().String(),
+		filePathString: model.FilePath(),
 	}
 	t.PopupAlert = NewPopupAlert(model.Alerts())
 	var warn error

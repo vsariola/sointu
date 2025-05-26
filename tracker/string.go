@@ -2,13 +2,12 @@ package tracker
 
 type (
 	String struct {
-		StringData
+		value StringValue
 	}
 
-	StringData interface {
+	StringValue interface {
 		Value() string
-		setValue(string)
-		change(kind string) func()
+		SetValue(string) bool
 	}
 
 	FilePath          Model
@@ -18,31 +17,39 @@ type (
 	UnitComment       Model
 )
 
-func (v String) Set(value string) {
-	if v.Value() != value {
-		defer v.change("Set")()
-		v.setValue(value)
+func MakeString(value StringValue) String {
+	return String{value: value}
+}
+
+func (v String) SetValue(value string) bool {
+	if v.value == nil || v.value.Value() == value {
+		return false
 	}
+	return v.value.SetValue(value)
+}
+
+func (v String) Value() string {
+	if v.value == nil {
+		return ""
+	}
+	return v.value.Value()
 }
 
 // Model methods
 
-func (m *Model) FilePath() *FilePath                   { return (*FilePath)(m) }
-func (m *Model) InstrumentName() *InstrumentName       { return (*InstrumentName)(m) }
-func (m *Model) InstrumentComment() *InstrumentComment { return (*InstrumentComment)(m) }
-func (m *Model) UnitSearch() *UnitSearch               { return (*UnitSearch)(m) }
-func (m *Model) UnitComment() *UnitComment             { return (*UnitComment)(m) }
+func (m *Model) FilePath() String          { return MakeString((*FilePath)(m)) }
+func (m *Model) InstrumentName() String    { return MakeString((*InstrumentName)(m)) }
+func (m *Model) InstrumentComment() String { return MakeString((*InstrumentComment)(m)) }
+func (m *Model) UnitSearch() String        { return MakeString((*UnitSearch)(m)) }
+func (m *Model) UnitComment() String       { return MakeString((*UnitComment)(m)) }
 
 // FilePathString
 
-func (v *FilePath) String() String            { return String{v} }
-func (v *FilePath) Value() string             { return v.d.FilePath }
-func (v *FilePath) setValue(value string)     { v.d.FilePath = value }
-func (v *FilePath) change(kind string) func() { return func() {} }
+func (v *FilePath) Value() string              { return v.d.FilePath }
+func (v *FilePath) SetValue(value string) bool { v.d.FilePath = value; return true }
 
 // UnitSearchString
 
-func (v *UnitSearch) String() String { return String{v} }
 func (v *UnitSearch) Value() string {
 	// return current unit type string if not searching
 	if !v.d.UnitSearching {
@@ -57,17 +64,13 @@ func (v *UnitSearch) Value() string {
 		return v.d.UnitSearchString
 	}
 }
-func (v *UnitSearch) setValue(value string) {
+func (v *UnitSearch) SetValue(value string) bool {
 	v.d.UnitSearchString = value
 	v.d.UnitSearching = true
+	return true
 }
-func (v *UnitSearch) change(kind string) func() { return func() {} }
 
 // InstrumentNameString
-
-func (v *InstrumentName) String() String {
-	return String{v}
-}
 
 func (v *InstrumentName) Value() string {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
@@ -76,22 +79,16 @@ func (v *InstrumentName) Value() string {
 	return v.d.Song.Patch[v.d.InstrIndex].Name
 }
 
-func (v *InstrumentName) setValue(value string) {
+func (v *InstrumentName) SetValue(value string) bool {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
-		return
+		return false
 	}
+	defer (*Model)(v).change("InstrumentNameString", PatchChange, MinorChange)()
 	v.d.Song.Patch[v.d.InstrIndex].Name = value
-}
-
-func (v *InstrumentName) change(kind string) func() {
-	return (*Model)(v).change("InstrumentNameString."+kind, PatchChange, MinorChange)
+	return true
 }
 
 // InstrumentComment
-
-func (v *InstrumentComment) String() String {
-	return String{v}
-}
 
 func (v *InstrumentComment) Value() string {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
@@ -100,20 +97,17 @@ func (v *InstrumentComment) Value() string {
 	return v.d.Song.Patch[v.d.InstrIndex].Comment
 }
 
-func (v *InstrumentComment) setValue(value string) {
+func (v *InstrumentComment) SetValue(value string) bool {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
-		return
+		return false
 	}
+	defer (*Model)(v).change("InstrumentComment", PatchChange, MinorChange)()
 	v.d.Song.Patch[v.d.InstrIndex].Comment = value
-}
-
-func (v *InstrumentComment) change(kind string) func() {
-	return (*Model)(v).change("InstrumentComment."+kind, PatchChange, MinorChange)
+	return true
 }
 
 // UnitComment
 
-func (v *UnitComment) String() String { return String{v} }
 func (v *UnitComment) Value() string {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) ||
 		v.d.UnitIndex < 0 || v.d.UnitIndex >= len(v.d.Song.Patch[v.d.InstrIndex].Units) {
@@ -122,14 +116,12 @@ func (v *UnitComment) Value() string {
 	return v.d.Song.Patch[v.d.InstrIndex].Units[v.d.UnitIndex].Comment
 }
 
-func (v *UnitComment) setValue(value string) {
+func (v *UnitComment) SetValue(value string) bool {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) ||
 		v.d.UnitIndex < 0 || v.d.UnitIndex >= len(v.d.Song.Patch[v.d.InstrIndex].Units) {
-		return
+		return false
 	}
+	defer (*Model)(v).change("UnitComment", PatchChange, MinorChange)()
 	v.d.Song.Patch[v.d.InstrIndex].Units[v.d.UnitIndex].Comment = value
-}
-
-func (v *UnitComment) change(kind string) func() {
-	return (*Model)(v).change("UnitComment."+kind, PatchChange, MinorChange)
+	return true
 }

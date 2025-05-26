@@ -159,14 +159,14 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 			return hintText.Layout(gtx)
 		}),
 		layout.Flexed(1, func(gtx C) D {
-			s := t.UnitComment().String()
+			s := t.UnitComment()
 			pe.commentEditor.SetText(s.Value())
 			for pe.commentEditor.Submitted(gtx) || pe.commentEditor.Cancelled(gtx) {
 				t.InstrumentEditor.Focus()
 			}
 			commentStyle := MaterialEditor(t.Theme, &t.Theme.InstrumentEditor.UnitComment, pe.commentEditor, "---")
 			ret := commentStyle.Layout(gtx)
-			s.Set(pe.commentEditor.Text())
+			s.SetValue(pe.commentEditor.Text())
 			return ret
 		}),
 	)

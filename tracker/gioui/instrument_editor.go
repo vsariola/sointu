@@ -84,8 +84,8 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		commentEditor:       NewEditor(widget.Editor{}),
 		nameEditor:          NewEditor(widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle}),
 		searchEditor:        NewEditor(widget.Editor{SingleLine: true, Submit: true, Alignment: text.Start}),
-		commentString:       model.InstrumentComment().String(),
-		nameString:          model.InstrumentName().String(),
+		commentString:       model.InstrumentComment(),
+		nameString:          model.InstrumentName(),
 		instrumentDragList:  NewDragList(model.Instruments().List(), layout.Horizontal),
 		unitDragList:        NewDragList(model.Units().List(), layout.Vertical),
 		unitEditor:          NewUnitEditor(model),
@@ -271,7 +271,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 					}
 					style := MaterialEditor(t.Theme, &t.Theme.InstrumentEditor.InstrumentComment, ie.commentEditor, "Comment")
 					ret := layout.UniformInset(unit.Dp(6)).Layout(gtx, style.Layout)
-					ie.commentString.Set(ie.commentEditor.Text())
+					ie.commentString.SetValue(ie.commentEditor.Text())
 					return ret
 				}),
 			)
@@ -311,7 +311,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 					return style.Layout(gtx)
 				})
-				ie.nameString.Set(ie.nameEditor.Text())
+				ie.nameString.SetValue(ie.nameEditor.Text())
 				return dims
 			}
 			if name == "" {
@@ -417,7 +417,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 			layout.Rigid(func(gtx C) D {
 				if i == ie.unitDragList.TrackerList.Selected() {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					str := tracker.String{StringData: (*tracker.UnitSearch)(t.Model)}
+					str := t.Model.UnitSearch()
 					ie.searchEditor.SetText(str.Value())
 					for ie.searchEditor.Submitted(gtx) {
 						ie.unitDragList.Focus()
@@ -439,7 +439,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 					}
 					style := MaterialEditor(t.Theme, &editorStyle, ie.searchEditor, "---")
 					ret := style.Layout(gtx)
-					str.Set(ie.searchEditor.Text())
+					str.SetValue(ie.searchEditor.Text())
 					return ret
 				} else {
 					text := u.Type
