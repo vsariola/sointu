@@ -46,14 +46,14 @@ func (mwc *myWriteCloser) Close() error {
 
 func (s *modelFuzzState) Iterate(yield func(string, func(p string, t *testing.T)) bool, seed int) {
 	// Ints
-	s.IterateInt("InstrumentVoices", s.model.InstrumentVoices().Int(), yield, seed)
-	s.IterateInt("TrackVoices", s.model.TrackVoices().Int(), yield, seed)
-	s.IterateInt("SongLength", s.model.SongLength().Int(), yield, seed)
-	s.IterateInt("BPM", s.model.BPM().Int(), yield, seed)
-	s.IterateInt("RowsPerPattern", s.model.RowsPerPattern().Int(), yield, seed)
-	s.IterateInt("RowsPerBeat", s.model.RowsPerBeat().Int(), yield, seed)
-	s.IterateInt("Step", s.model.Step().Int(), yield, seed)
-	s.IterateInt("Octave", s.model.Octave().Int(), yield, seed)
+	s.IterateInt("InstrumentVoices", s.model.InstrumentVoices(), yield, seed)
+	s.IterateInt("TrackVoices", s.model.TrackVoices(), yield, seed)
+	s.IterateInt("SongLength", s.model.SongLength(), yield, seed)
+	s.IterateInt("BPM", s.model.BPM(), yield, seed)
+	s.IterateInt("RowsPerPattern", s.model.RowsPerPattern(), yield, seed)
+	s.IterateInt("RowsPerBeat", s.model.RowsPerBeat(), yield, seed)
+	s.IterateInt("Step", s.model.Step(), yield, seed)
+	s.IterateInt("Octave", s.model.Octave(), yield, seed)
 	// Lists
 	s.IterateList("Instruments", s.model.Instruments().List(), yield, seed)
 	s.IterateList("Units", s.model.Units().List(), yield, seed)
@@ -135,7 +135,7 @@ func (s *modelFuzzState) Iterate(yield func(string, func(p string, t *testing.T)
 func (s *modelFuzzState) IterateInt(name string, i tracker.Int, yield func(string, func(p string, t *testing.T)) bool, seed int) {
 	r := i.Range()
 	yield(name+".Set", func(p string, t *testing.T) {
-		i.Set(seed%(r.Max-r.Min+10) - 5 + r.Min)
+		i.SetValue(seed%(r.Max-r.Min+10) - 5 + r.Min)
 	})
 	yield(name+".Value", func(p string, t *testing.T) {
 		if v := i.Value(); v < r.Min || v > r.Max {

@@ -39,11 +39,11 @@ type SongPanel struct {
 
 func NewSongPanel(model *tracker.Model) *SongPanel {
 	ret := &SongPanel{
-		BPM:            NewNumberInput(model.BPM().Int()),
-		RowsPerPattern: NewNumberInput(model.RowsPerPattern().Int()),
-		RowsPerBeat:    NewNumberInput(model.RowsPerBeat().Int()),
-		Step:           NewNumberInput(model.Step().Int()),
-		SongLength:     NewNumberInput(model.SongLength().Int()),
+		BPM:            NewNumberInput(model.BPM()),
+		RowsPerPattern: NewNumberInput(model.RowsPerPattern()),
+		RowsPerBeat:    NewNumberInput(model.RowsPerBeat()),
+		Step:           NewNumberInput(model.Step()),
+		SongLength:     NewNumberInput(model.SongLength()),
 		Scope:          NewOscilloscope(model),
 		MenuBar:        NewMenuBar(model),
 		PlayBar:        NewPlayBar(model),
@@ -61,7 +61,7 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 
 func (s *SongPanel) Update(gtx C, t *Tracker) {
 	for s.WeightingTypeBtn.Clicked(gtx) {
-		t.Model.DetectorWeighting().Int().Set((t.DetectorWeighting().Value() + 1) % int(tracker.NumWeightingTypes))
+		t.Model.DetectorWeighting().SetValue((t.DetectorWeighting().Value() + 1) % int(tracker.NumWeightingTypes))
 	}
 	for s.OversamplingBtn.Clicked(gtx) {
 		t.Model.Oversampling().SetValue(!t.Oversampling().Value())

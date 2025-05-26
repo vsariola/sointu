@@ -208,22 +208,22 @@ func (pe *UnitEditor) command(e key.Event, t *Tracker) {
 			if sel == nil {
 				return
 			}
-			i := (&tracker.Int{IntData: sel})
+			i := tracker.MakeInt(sel)
 			if e.Modifiers.Contain(key.ModShift) {
-				i.Set(i.Value() - sel.LargeStep())
+				i.SetValue(i.Value() - sel.LargeStep())
 			} else {
-				i.Set(i.Value() - 1)
+				i.SetValue(i.Value() - 1)
 			}
 		case key.NameRightArrow:
 			sel := params.SelectedItem()
 			if sel == nil {
 				return
 			}
-			i := (&tracker.Int{IntData: sel})
+			i := tracker.MakeInt(sel)
 			if e.Modifiers.Contain(key.ModShift) {
-				i.Set(i.Value() + sel.LargeStep())
+				i.SetValue(i.Value() + sel.LargeStep())
 			} else {
-				i.Set(i.Value() + 1)
+				i.SetValue(i.Value() + 1)
 			}
 		case key.NameEscape:
 			t.InstrumentEditor.unitDragList.Focus()
@@ -286,7 +286,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 					}
 					if ev, ok := e.(pointer.Event); ok && ev.Kind == pointer.Scroll {
 						delta := math.Min(math.Max(float64(ev.Scroll.Y), -1), 1)
-						tracker.Int{IntData: p.w.Parameter}.Add(-int(delta))
+						tracker.MakeInt(p.w.Parameter).Add(-int(delta))
 					}
 				}
 				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(200))
@@ -306,7 +306,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 					event.Op(gtx.Ops, &p.w.floatWidget)
 				}
 				dims := sliderStyle.Layout(gtx)
-				tracker.Int{IntData: p.w.Parameter}.Set(int(p.w.floatWidget.Value*float32(ra.Max-ra.Min) + float32(ra.Min) + 0.5))
+				tracker.MakeInt(p.w.Parameter).SetValue(int(p.w.floatWidget.Value*float32(ra.Max-ra.Min) + float32(ra.Min) + 0.5))
 				return dims
 			case tracker.BoolParameter:
 				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(60))
@@ -318,9 +318,9 @@ func (p ParameterStyle) Layout(gtx C) D {
 				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
 				dims := layout.Center.Layout(gtx, boolStyle.Layout)
 				if p.w.boolWidget.Value {
-					tracker.Int{IntData: p.w.Parameter}.Set(ra.Max)
+					tracker.MakeInt(p.w.Parameter).SetValue(ra.Max)
 				} else {
-					tracker.Int{IntData: p.w.Parameter}.Set(ra.Min)
+					tracker.MakeInt(p.w.Parameter).SetValue(ra.Min)
 				}
 				return dims
 			case tracker.IDParameter:
@@ -334,7 +334,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 					instrItems[i].IconBytes = icons.NavigationChevronRight
 					instrItems[i].Doer = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
 						if id, ok := p.tracker.Instruments().FirstID(i); ok {
-							tracker.Int{IntData: p.w.Parameter}.Set(id)
+							tracker.MakeInt(p.w.Parameter).SetValue(id)
 						}
 					}))
 				}
@@ -351,7 +351,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 						unitItems[j].Text = buildUnitLabel(j, unit)
 						unitItems[j].IconBytes = icons.NavigationChevronRight
 						unitItems[j].Doer = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
-							tracker.Int{IntData: p.w.Parameter}.Set(id)
+							tracker.MakeInt(p.w.Parameter).SetValue(id)
 						}))
 					}
 				}

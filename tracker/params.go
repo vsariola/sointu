@@ -12,7 +12,7 @@ import (
 
 type (
 	Parameter interface {
-		IntData
+		IntValue
 		Type() ParameterType
 		Name() string
 		Hint() ParameterHint
@@ -60,12 +60,6 @@ const (
 // Model methods
 
 func (m *Model) Params() *Params { return (*Params)(m) }
-
-// parameter methods
-
-func (p parameter) change(kind string) func() {
-	return p.m.change("Parameter."+kind, PatchChange, MinorChange)
-}
 
 // ParamList
 
@@ -151,17 +145,21 @@ func (pl *Params) Iterate(yield ParamYieldFunc) {
 
 // NamedParameter
 
-func (p NamedParameter) Name() string       { return p.up.Name }
-func (p NamedParameter) Range() intRange    { return intRange{Min: p.up.MinValue, Max: p.up.MaxValue} }
-func (p NamedParameter) Value() int         { return p.unit.Parameters[p.up.Name] }
-func (p NamedParameter) setValue(value int) { p.unit.Parameters[p.up.Name] = value }
+func (p NamedParameter) Name() string    { return p.up.Name }
+func (p NamedParameter) Range() IntRange { return IntRange{Min: p.up.MinValue, Max: p.up.MaxValue} }
+func (p NamedParameter) Value() int      { return p.unit.Parameters[p.up.Name] }
+func (p NamedParameter) SetValue(value int) bool {
+	defer p.m.change("Parameter"+p.Name(), PatchChange, MinorChange)()
+	p.unit.Parameters[p.up.Name] = value
+	return true
+}
 
 func (p NamedParameter) Reset() {
 	v, ok := defaultUnits[p.unit.Type].Parameters[p.up.Name]
 	if !ok || p.unit.Parameters[p.up.Name] == v {
 		return
 	}
-	defer p.parameter.change("Reset")()
+	defer p.m.change("Reset"+p.Name(), PatchChange, MinorChange)()
 	p.unit.Parameters[p.up.Name] = v
 }
 
@@ -220,7 +218,7 @@ func (p NamedParameter) Unit() sointu.Unit {
 
 func (p GmDlsEntryParameter) Name() string        { return "sample" }
 func (p GmDlsEntryParameter) Type() ParameterType { return IntegerParameter }
-func (p GmDlsEntryParameter) Range() intRange     { return intRange{Min: 0, Max: len(GmDlsEntries)} }
+func (p GmDlsEntryParameter) Range() IntRange     { return IntRange{Min: 0, Max: len(GmDlsEntries)} }
 func (p GmDlsEntryParameter) LargeStep() int      { return 16 }
 func (p GmDlsEntryParameter) Reset()              { return }
 
@@ -232,15 +230,17 @@ func (p GmDlsEntryParameter) Value() int {
 	return 0
 }
 
-func (p GmDlsEntryParameter) setValue(v int) {
+func (p GmDlsEntryParameter) SetValue(v int) bool {
 	if v < 1 || v > len(GmDlsEntries) {
-		return
+		return false
 	}
+	defer p.m.change("GmDlsEntryParameter", PatchChange, MinorChange)()
 	e := GmDlsEntries[v-1]
 	p.unit.Parameters["samplestart"] = e.Start
 	p.unit.Parameters["loopstart"] = e.LoopStart
 	p.unit.Parameters["looplength"] = e.LoopLength
 	p.unit.Parameters["transpose"] = 64 + e.SuggestedTranspose
+	return true
 }
 
 func (p GmDlsEntryParameter) Hint() ParameterHint {
@@ -265,15 +265,17 @@ func (p DelayTimeParameter) Value() int {
 	return p.unit.VarArgs[p.index]
 }
 
-func (p DelayTimeParameter) setValue(v int) {
+func (p DelayTimeParameter) SetValue(v int) bool {
+	defer p.m.change("DelayTimeParameter", PatchChange, MinorChange)()
 	p.unit.VarArgs[p.index] = v
+	return true
 }
 
-func (p DelayTimeParameter) Range() intRange {
+func (p DelayTimeParameter) Range() IntRange {
 	if p.unit.Parameters["notetracking"] == 2 {
-		return intRange{Min: 1, Max: 576}
+		return IntRange{Min: 1, Max: 576}
 	}
-	return intRange{Min: 1, Max: 65535}
+	return IntRange{Min: 1, Max: 65535}
 }
 
 func (p DelayTimeParameter) Hint() ParameterHint {
@@ -325,7 +327,7 @@ func (p DelayTimeParameter) Hint() ParameterHint {
 
 func (p DelayLinesParameter) Name() string        { return "delaylines" }
 func (p DelayLinesParameter) Type() ParameterType { return IntegerParameter }
-func (p DelayLinesParameter) Range() intRange     { return intRange{Min: 1, Max: 32} }
+func (p DelayLinesParameter) Range() IntRange     { return IntRange{Min: 1, Max: 32} }
 func (p DelayLinesParameter) LargeStep() int      { return 4 }
 func (p DelayLinesParameter) Reset()              { return }
 
@@ -341,7 +343,8 @@ func (p DelayLinesParameter) Value() int {
 	return val
 }
 
-func (p DelayLinesParameter) setValue(v int) {
+func (p DelayLinesParameter) SetValue(v int) bool {
+	defer p.m.change("DelayLinesParameter", PatchChange, MinorChange)()
 	targetLines := v
 	if p.unit.Parameters["stereo"] == 1 {
 		targetLines *= 2
@@ -350,13 +353,14 @@ func (p DelayLinesParameter) setValue(v int) {
 		p.unit.VarArgs = append(p.unit.VarArgs, 1)
 	}
 	p.unit.VarArgs = p.unit.VarArgs[:targetLines]
+	return true
 }
 
 // ReverbParameter
 
 func (p ReverbParameter) Name() string        { return "reverb" }
 func (p ReverbParameter) Type() ParameterType { return IntegerParameter }
-func (p ReverbParameter) Range() intRange     { return intRange{Min: 0, Max: len(reverbs)} }
+func (p ReverbParameter) Range() IntRange     { return IntRange{Min: 0, Max: len(reverbs)} }
 func (p ReverbParameter) LargeStep() int      { return 1 }
 func (p ReverbParameter) Reset()              { return }
 
@@ -367,15 +371,17 @@ func (p ReverbParameter) Value() int {
 	return i + 1
 }
 
-func (p ReverbParameter) setValue(v int) {
+func (p ReverbParameter) SetValue(v int) bool {
 	if v < 1 || v > len(reverbs) {
-		return
+		return false
 	}
+	defer p.m.change("ReverbParameter", PatchChange, MinorChange)()
 	entry := reverbs[v-1]
 	p.unit.Parameters["stereo"] = entry.stereo
 	p.unit.Parameters["notetracking"] = 0
 	p.unit.VarArgs = make([]int, len(entry.varArgs))
 	copy(p.unit.VarArgs, entry.varArgs)
+	return true
 }
 
 func (p ReverbParameter) Hint() ParameterHint {

@@ -47,8 +47,8 @@ func NewOscilloscope(model *tracker.Model) *OscilloscopeState {
 	return &OscilloscopeState{
 		onceBtn:              NewBoolClickable(model.SignalAnalyzer().Once()),
 		wrapBtn:              NewBoolClickable(model.SignalAnalyzer().Wrap()),
-		lengthInBeatsNumber:  NewNumberInput(model.SignalAnalyzer().LengthInBeats().Int()),
-		triggerChannelNumber: NewNumberInput(model.SignalAnalyzer().TriggerChannel().Int()),
+		lengthInBeatsNumber:  NewNumberInput(model.SignalAnalyzer().LengthInBeats()),
+		triggerChannelNumber: NewNumberInput(model.SignalAnalyzer().TriggerChannel()),
 	}
 }
 

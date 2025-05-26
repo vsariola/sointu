@@ -5,146 +5,150 @@ import (
 )
 
 type (
+	// Int represents an integer value in the tracker model e.g. BPM, song
+	// length, etc. It is a wrapper around an IntValue interface that provides
+	// methods to manipulate the value, but Int guard that all changes are
+	// within the range of the underlying IntValue implementation and that
+	// SetValue is not called when the value is unchanged.
 	Int struct {
-		IntData
+		value IntValue
 	}
 
-	IntData interface {
+	IntValue interface {
 		Value() int
-		Range() intRange
-
-		setValue(int)
-		change(kind string) func()
+		SetValue(int) bool // returns true if the value was changed
+		Range() IntRange
 	}
 
-	intRange struct {
+	IntRange struct {
 		Min, Max int
 	}
 
-	InstrumentVoices Model
-	TrackVoices      Model
-	SongLength       Model
-	BPM              Model
-	RowsPerPattern   Model
-	RowsPerBeat      Model
-	Step             Model
-	Octave           Model
-
+	InstrumentVoices  Model
+	TrackVoices       Model
+	SongLength        Model
+	BPM               Model
+	RowsPerPattern    Model
+	RowsPerBeat       Model
+	Step              Model
+	Octave            Model
 	DetectorWeighting Model
 )
 
+func MakeInt(value IntValue) Int {
+	return Int{value}
+}
+
 func (v Int) Add(delta int) (ok bool) {
+	return v.SetValue(v.Value() + delta)
+}
+
+func (v Int) SetValue(value int) (ok bool) {
 	r := v.Range()
-	value := r.Clamp(v.Value() + delta)
+	value = r.Clamp(value)
 	if value == v.Value() || value < r.Min || value > r.Max {
 		return false
 	}
-	defer v.change("Add")()
-	v.setValue(value)
-	return true
+	return v.value.SetValue(value)
 }
 
-func (v Int) Set(value int) (ok bool) {
-	r := v.Range()
-	value = v.Range().Clamp(value)
-	if value == v.Value() || value < r.Min || value > r.Max {
-		return false
+func (v Int) Range() IntRange {
+	if v.value == nil {
+		return IntRange{0, 0}
 	}
-	defer v.change("Set")()
-	v.setValue(value)
-	return true
+	return v.value.Range()
 }
 
-func (r intRange) Clamp(value int) int {
+func (v Int) Value() int {
+	if v.value == nil {
+		return 0
+	}
+	return v.value.Value()
+}
+
+func (r IntRange) Clamp(value int) int {
 	return max(min(value, r.Max), r.Min)
 }
 
 // Model methods
 
-func (m *Model) InstrumentVoices() *InstrumentVoices   { return (*InstrumentVoices)(m) }
-func (m *Model) TrackVoices() *TrackVoices             { return (*TrackVoices)(m) }
-func (m *Model) SongLength() *SongLength               { return (*SongLength)(m) }
-func (m *Model) BPM() *BPM                             { return (*BPM)(m) }
-func (m *Model) RowsPerPattern() *RowsPerPattern       { return (*RowsPerPattern)(m) }
-func (m *Model) RowsPerBeat() *RowsPerBeat             { return (*RowsPerBeat)(m) }
-func (m *Model) Step() *Step                           { return (*Step)(m) }
-func (m *Model) Octave() *Octave                       { return (*Octave)(m) }
-func (m *Model) DetectorWeighting() *DetectorWeighting { return (*DetectorWeighting)(m) }
+func (m *Model) BPM() Int               { return MakeInt((*BPM)(m)) }
+func (m *Model) InstrumentVoices() Int  { return MakeInt((*InstrumentVoices)(m)) }
+func (m *Model) TrackVoices() Int       { return MakeInt((*TrackVoices)(m)) }
+func (m *Model) SongLength() Int        { return MakeInt((*SongLength)(m)) }
+func (m *Model) RowsPerPattern() Int    { return MakeInt((*RowsPerPattern)(m)) }
+func (m *Model) RowsPerBeat() Int       { return MakeInt((*RowsPerBeat)(m)) }
+func (m *Model) Step() Int              { return MakeInt((*Step)(m)) }
+func (m *Model) Octave() Int            { return MakeInt((*Octave)(m)) }
+func (m *Model) DetectorWeighting() Int { return MakeInt((*DetectorWeighting)(m)) }
 
 // BeatsPerMinuteInt
 
-func (v *BPM) Int() Int           { return Int{v} }
-func (v *BPM) Value() int         { return v.d.Song.BPM }
-func (v *BPM) setValue(value int) { v.d.Song.BPM = value }
-func (v *BPM) Range() intRange    { return intRange{1, 999} }
-func (v *BPM) change(kind string) func() {
-	return (*Model)(v).change("BPMInt."+kind, SongChange, MinorChange)
+func (v *BPM) Value() int { return v.d.Song.BPM }
+func (v *BPM) SetValue(value int) bool {
+	defer (*Model)(v).change("BPMInt", SongChange, MinorChange)()
+	v.d.Song.BPM = value
+	return true
 }
+func (v *BPM) Range() IntRange { return IntRange{1, 999} }
 
 // RowsPerPatternInt
 
-func (v *RowsPerPattern) Int() Int           { return Int{v} }
-func (v *RowsPerPattern) Value() int         { return v.d.Song.Score.RowsPerPattern }
-func (v *RowsPerPattern) setValue(value int) { v.d.Song.Score.RowsPerPattern = value }
-func (v *RowsPerPattern) Range() intRange    { return intRange{1, 256} }
-func (v *RowsPerPattern) change(kind string) func() {
-	return (*Model)(v).change("RowsPerPatternInt."+kind, SongChange, MinorChange)
+func (v *RowsPerPattern) Value() int { return v.d.Song.Score.RowsPerPattern }
+func (v *RowsPerPattern) SetValue(value int) bool {
+	defer (*Model)(v).change("RowsPerPatternInt", SongChange, MinorChange)()
+	v.d.Song.Score.RowsPerPattern = value
+	return true
 }
+func (v *RowsPerPattern) Range() IntRange { return IntRange{1, 256} }
 
 // SongLengthInt
 
-func (v *SongLength) Int() Int           { return Int{v} }
-func (v *SongLength) Value() int         { return v.d.Song.Score.Length }
-func (v *SongLength) setValue(value int) { v.d.Song.Score.Length = value }
-func (v *SongLength) Range() intRange    { return intRange{1, math.MaxInt32} }
-func (v *SongLength) change(kind string) func() {
-	return (*Model)(v).change("SongLengthInt."+kind, SongChange, MinorChange)
+func (v *SongLength) Value() int { return v.d.Song.Score.Length }
+func (v *SongLength) SetValue(value int) bool {
+	defer (*Model)(v).change("SongLengthInt", SongChange, MinorChange)()
+	v.d.Song.Score.Length = value
+	return true
 }
+func (v *SongLength) Range() IntRange { return IntRange{1, math.MaxInt32} }
 
 // StepInt
 
-func (v *Step) Int() Int           { return Int{v} }
-func (v *Step) Value() int         { return v.d.Step }
-func (v *Step) setValue(value int) { v.d.Step = value }
-func (v *Step) Range() intRange    { return intRange{0, 8} }
-func (v *Step) change(kind string) func() {
-	return (*Model)(v).change("StepInt"+kind, NoChange, MinorChange)
+func (v *Step) Value() int { return v.d.Step }
+func (v *Step) SetValue(value int) bool {
+	defer (*Model)(v).change("StepInt", NoChange, MinorChange)()
+	v.d.Step = value
+	return true
 }
+func (v *Step) Range() IntRange { return IntRange{0, 8} }
 
 // OctaveInt
 
-func (v *Octave) Int() Int                  { return Int{v} }
-func (v *Octave) Value() int                { return v.d.Octave }
-func (v *Octave) setValue(value int)        { v.d.Octave = value }
-func (v *Octave) Range() intRange           { return intRange{0, 9} }
-func (v *Octave) change(kind string) func() { return func() {} }
+func (v *Octave) Value() int              { return v.d.Octave }
+func (v *Octave) SetValue(value int) bool { v.d.Octave = value; return true }
+func (v *Octave) Range() IntRange         { return IntRange{0, 9} }
 
 // RowsPerBeatInt
 
-func (v *RowsPerBeat) Int() Int           { return Int{v} }
-func (v *RowsPerBeat) Value() int         { return v.d.Song.RowsPerBeat }
-func (v *RowsPerBeat) setValue(value int) { v.d.Song.RowsPerBeat = value }
-func (v *RowsPerBeat) Range() intRange    { return intRange{1, 32} }
-func (v *RowsPerBeat) change(kind string) func() {
-	return (*Model)(v).change("RowsPerBeatInt."+kind, SongChange, MinorChange)
+func (v *RowsPerBeat) Value() int { return v.d.Song.RowsPerBeat }
+func (v *RowsPerBeat) SetValue(value int) bool {
+	defer (*Model)(v).change("RowsPerBeatInt", SongChange, MinorChange)()
+	v.d.Song.RowsPerBeat = value
+	return true
 }
+func (v *RowsPerBeat) Range() IntRange { return IntRange{1, 32} }
 
 // ModelLoudnessType
 
-func (v *DetectorWeighting) Int() Int   { return Int{v} }
 func (v *DetectorWeighting) Value() int { return int(v.weightingType) }
-func (v *DetectorWeighting) setValue(value int) {
+func (v *DetectorWeighting) SetValue(value int) bool {
 	v.weightingType = WeightingType(value)
 	TrySend(v.broker.ToDetector, MsgToDetector{HasWeightingType: true, WeightingType: WeightingType(value)})
+	return true
 }
-func (v *DetectorWeighting) Range() intRange           { return intRange{0, int(NumLoudnessTypes) - 1} }
-func (v *DetectorWeighting) change(kind string) func() { return func() {} }
+func (v *DetectorWeighting) Range() IntRange { return IntRange{0, int(NumLoudnessTypes) - 1} }
 
 // InstrumentVoicesInt
-
-func (v *InstrumentVoices) Int() Int {
-	return Int{v}
-}
 
 func (v *InstrumentVoices) Value() int {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
@@ -153,10 +157,11 @@ func (v *InstrumentVoices) Value() int {
 	return max(v.d.Song.Patch[v.d.InstrIndex].NumVoices, 1)
 }
 
-func (m *InstrumentVoices) setValue(value int) {
+func (m *InstrumentVoices) SetValue(value int) bool {
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
-		return
+		return false
 	}
+	defer (*Model)(m).change("InstrumentVoices", SongChange, MinorChange)()
 	voiceIndex := m.d.Song.Patch.FirstVoiceForInstrument(m.d.InstrIndex)
 	voiceRange := Range{voiceIndex, voiceIndex + m.d.Song.Patch[m.d.InstrIndex].NumVoices}
 	ranges := MakeSetLength(voiceRange, value)
@@ -164,21 +169,14 @@ func (m *InstrumentVoices) setValue(value int) {
 	if !ok {
 		m.changeCancel = true
 	}
+	return ok
 }
 
-func (v *InstrumentVoices) Range() intRange {
-	return intRange{1, (*Model)(v).remainingVoices(true, v.linkInstrTrack) + v.Value()}
-}
-
-func (v *InstrumentVoices) change(kind string) func() {
-	return (*Model)(v).change("InstrumentVoices."+kind, SongChange, MinorChange)
+func (v *InstrumentVoices) Range() IntRange {
+	return IntRange{1, (*Model)(v).remainingVoices(true, v.linkInstrTrack) + v.Value()}
 }
 
 // TrackVoicesInt
-
-func (v *TrackVoices) Int() Int {
-	return Int{v}
-}
 
 func (v *TrackVoices) Value() int {
 	t := v.d.Cursor.Track
@@ -188,7 +186,8 @@ func (v *TrackVoices) Value() int {
 	return max(v.d.Song.Score.Tracks[t].NumVoices, 1)
 }
 
-func (m *TrackVoices) setValue(value int) {
+func (m *TrackVoices) SetValue(value int) bool {
+	defer (*Model)(m).change("TrackVoices", SongChange, MinorChange)()
 	voiceIndex := m.d.Song.Score.FirstVoiceForTrack(m.d.Cursor.Track)
 	voiceRange := Range{voiceIndex, voiceIndex + m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices}
 	ranges := MakeSetLength(voiceRange, value)
@@ -196,16 +195,13 @@ func (m *TrackVoices) setValue(value int) {
 	if !ok {
 		m.changeCancel = true
 	}
+	return ok
 }
 
-func (v *TrackVoices) Range() intRange {
+func (v *TrackVoices) Range() IntRange {
 	t := v.d.Cursor.Track
 	if t < 0 || t >= len(v.d.Song.Score.Tracks) {
-		return intRange{1, 1}
+		return IntRange{1, 1}
 	}
-	return intRange{1, (*Model)(v).remainingVoices(v.linkInstrTrack, true) + v.d.Song.Score.Tracks[t].NumVoices}
-}
-
-func (v *TrackVoices) change(kind string) func() {
-	return (*Model)(v).change("TrackVoices."+kind, SongChange, MinorChange)
+	return IntRange{1, (*Model)(v).remainingVoices(v.linkInstrTrack, true) + v.d.Song.Score.Tracks[t].NumVoices}
 }

@@ -84,7 +84,7 @@ func (s *NumericUpDown) Update(gtx layout.Context) {
 			case pointer.Drag:
 				var deltaCoord float32
 				deltaCoord = e.Position.X - e.Position.Y - s.NumberInput.dragStartXY
-				s.NumberInput.Int.Set(s.NumberInput.dragStartValue + int(deltaCoord/pxPerStep+0.5))
+				s.NumberInput.Int.SetValue(s.NumberInput.dragStartValue + int(deltaCoord/pxPerStep+0.5))
 			}
 		}
 	}

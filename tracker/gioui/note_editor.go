@@ -76,7 +76,7 @@ type NoteEditor struct {
 
 func NewNoteEditor(model *tracker.Model) *NoteEditor {
 	ret := &NoteEditor{
-		TrackVoices:         NewNumberInput(model.TrackVoices().Int()),
+		TrackVoices:         NewNumberInput(model.TrackVoices()),
 		NewTrackBtn:         NewActionClickable(model.AddTrack()),
 		DeleteTrackBtn:      NewActionClickable(model.DeleteTrack()),
 		SplitTrackBtn:       NewActionClickable(model.SplitTrack()),

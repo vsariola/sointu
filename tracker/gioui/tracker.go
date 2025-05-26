@@ -71,8 +71,8 @@ var ZoomFactors = []float32{.25, 1. / 3, .5, 2. / 3, .75, .8, 1, 1.1, 1.25, 1.5,
 
 func NewTracker(model *tracker.Model) *Tracker {
 	t := &Tracker{
-		OctaveNumberInput: NewNumberInput(model.Octave().Int()),
-		InstrumentVoices:  NewNumberInput(model.InstrumentVoices().Int()),
+		OctaveNumberInput: NewNumberInput(model.Octave()),
+		InstrumentVoices:  NewNumberInput(model.InstrumentVoices()),
 
 		TopHorizontalSplit:    &Split{Ratio: -.5, MinSize1: 180, MinSize2: 180},
 		BottomHorizontalSplit: &Split{Ratio: -.6, MinSize1: 180, MinSize2: 180},
