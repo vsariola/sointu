@@ -92,7 +92,7 @@ func (d *Dialog) handleKeys(gtx C) {
 	for d.BtnCancel.Clicked(gtx) {
 		d.cancel.Do()
 	}
-	if d.alt.Allowed() {
+	if d.alt.Enabled() {
 		d.handleKeysForButton(gtx, &d.BtnAlt, &d.BtnCancel, &d.BtnOk)
 		d.handleKeysForButton(gtx, &d.BtnCancel, &d.BtnOk, &d.BtnAlt)
 		d.handleKeysForButton(gtx, &d.BtnOk, &d.BtnAlt, &d.BtnCancel)
@@ -118,7 +118,7 @@ func (d *DialogStyle) Layout(gtx C) D {
 					layout.Rigid(func(gtx C) D {
 						return layout.E.Layout(gtx, func(gtx C) D {
 							gtx.Constraints.Min.X = gtx.Dp(unit.Dp(120))
-							if d.dialog.alt.Allowed() {
+							if d.dialog.alt.Enabled() {
 								return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween}.Layout(gtx,
 									layout.Rigid(d.OkStyle.Layout),
 									layout.Rigid(d.AltStyle.Layout),

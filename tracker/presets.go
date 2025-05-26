@@ -143,22 +143,22 @@ func NumPresets() int {
 
 // LoadPreset loads a preset from the list of instrument presets. The index
 // should be within the range of 0 to NumPresets()-1.
+
 func (m *Model) LoadPreset(index int) Action {
-	return Action{do: func() {
-		defer m.change("LoadPreset", PatchChange, MajorChange)()
-		if m.d.InstrIndex < 0 {
-			m.d.InstrIndex = 0
-		}
-		m.d.InstrIndex2 = m.d.InstrIndex
-		for m.d.InstrIndex >= len(m.d.Song.Patch) {
-			m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
-		}
-		newInstr := instrumentPresets[index].Copy()
-		(*Model)(m).assignUnitIDs(newInstr.Units)
-		m.d.Song.Patch[m.d.InstrIndex] = newInstr
-	}, allowed: func() bool {
-		return true
-	}}
+	return MakeEnabledAction(LoadPreset{Index: index, Model: m})
+}
+func (m LoadPreset) Do() {
+	defer m.change("LoadPreset", PatchChange, MajorChange)()
+	if m.d.InstrIndex < 0 {
+		m.d.InstrIndex = 0
+	}
+	m.d.InstrIndex2 = m.d.InstrIndex
+	for m.d.InstrIndex >= len(m.d.Song.Patch) {
+		m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
+	}
+	newInstr := instrumentPresets[m.Index].Copy()
+	m.Model.assignUnitIDs(newInstr.Units)
+	m.d.Song.Patch[m.d.InstrIndex] = newInstr
 }
 
 type instrumentPresetsSlice []sointu.Instrument

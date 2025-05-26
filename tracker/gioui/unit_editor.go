@@ -332,11 +332,11 @@ func (p ParameterStyle) Layout(gtx C) D {
 					name, _, _, _ := p.tracker.Instruments().Item(i)
 					instrItems[i].Text = name
 					instrItems[i].IconBytes = icons.NavigationChevronRight
-					instrItems[i].Doer = tracker.Allow(func() {
+					instrItems[i].Doer = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
 						if id, ok := p.tracker.Instruments().FirstID(i); ok {
 							tracker.Int{IntData: p.w.Parameter}.Set(id)
 						}
-					})
+					}))
 				}
 				var unitItems []MenuItem
 				instrName := "<instr>"
@@ -350,9 +350,9 @@ func (p ParameterStyle) Layout(gtx C) D {
 						id := unit.ID
 						unitItems[j].Text = buildUnitLabel(j, unit)
 						unitItems[j].IconBytes = icons.NavigationChevronRight
-						unitItems[j].Doer = tracker.Allow(func() {
+						unitItems[j].Doer = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
 							tracker.Int{IntData: p.w.Parameter}.Set(id)
-						})
+						}))
 					}
 				}
 				defer pointer.PassOp{}.Push(gtx.Ops).Pop()

@@ -93,7 +93,7 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 					defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 					var macro op.MacroOp
 					item := &items[i]
-					if i == m.Menu.hover-1 && item.Doer.Allowed() {
+					if i == m.Menu.hover-1 && item.Doer.Enabled() {
 						macro = op.Record(gtx.Ops)
 					}
 					icon := widgetForIcon(item.IconBytes)
@@ -102,7 +102,7 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 					textLabel := Label(m.Theme, &m.Theme.Menu.Text, item.Text)
 					shortcutLabel := Label(m.Theme, &m.Theme.Menu.Text, item.ShortcutText)
 					shortcutLabel.Color = m.ShortCutColor
-					if !item.Doer.Allowed() {
+					if !item.Doer.Enabled() {
 						iconColor = m.Disabled
 						textLabel.Color = m.Disabled
 						shortcutLabel.Color = m.Disabled
@@ -122,14 +122,14 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 							return shortcutInset.Layout(gtx, shortcutLabel.Layout)
 						}),
 					)
-					if i == m.Menu.hover-1 && item.Doer.Allowed() {
+					if i == m.Menu.hover-1 && item.Doer.Enabled() {
 						recording := macro.Stop()
 						paint.FillShape(gtx.Ops, m.HoverColor, clip.Rect{
 							Max: image.Pt(dims.Size.X, dims.Size.Y),
 						}.Op())
 						recording.Add(gtx.Ops)
 					}
-					if item.Doer.Allowed() {
+					if item.Doer.Enabled() {
 						rect := image.Rect(0, 0, dims.Size.X, dims.Size.Y)
 						area := clip.Rect(rect).Push(gtx.Ops)
 						event.Op(gtx.Ops, &m.Menu.tags[i])

@@ -69,7 +69,7 @@ func ActionIcon(gtx C, th *Theme, w *ActionClickable, icon []byte, tip string) T
 	for w.Clickable.Clicked(gtx) {
 		w.Action.Do()
 	}
-	if !w.Action.Allowed() {
+	if !w.Action.Enabled() {
 		ret.IconButtonStyle.Color = th.Button.Disabled.Color
 	}
 	return ret
@@ -119,7 +119,7 @@ func ActionButton(gtx C, th *Theme, style *ButtonStyle, w *ActionClickable, text
 	for w.Clickable.Clicked(gtx) {
 		w.Action.Do()
 	}
-	if !w.Action.Allowed() {
+	if !w.Action.Enabled() {
 		return Btn(th, &th.Button.Disabled, &w.Clickable, text)
 	}
 	return Btn(th, style, &w.Clickable, text)

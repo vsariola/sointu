@@ -22,44 +22,50 @@ import (
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
-type InstrumentEditor struct {
-	newInstrumentBtn    *ActionClickable
-	enlargeBtn          *BoolClickable
-	deleteInstrumentBtn *ActionClickable
-	linkInstrTrackBtn   *BoolClickable
-	splitInstrumentBtn  *ActionClickable
-	copyInstrumentBtn   *TipClickable
-	saveInstrumentBtn   *TipClickable
-	loadInstrumentBtn   *TipClickable
-	addUnitBtn          *ActionClickable
-	presetMenuBtn       *TipClickable
-	commentExpandBtn    *BoolClickable
-	soloBtn             *BoolClickable
-	muteBtn             *BoolClickable
-	commentEditor       *Editor
-	commentString       tracker.String
-	nameEditor          *Editor
-	nameString          tracker.String
-	searchEditor        *Editor
-	instrumentDragList  *DragList
-	unitDragList        *DragList
-	unitEditor          *UnitEditor
-	wasFocused          bool
-	presetMenuItems     []MenuItem
-	presetMenu          Menu
+type (
+	InstrumentEditor struct {
+		newInstrumentBtn    *ActionClickable
+		enlargeBtn          *BoolClickable
+		deleteInstrumentBtn *ActionClickable
+		linkInstrTrackBtn   *BoolClickable
+		splitInstrumentBtn  *ActionClickable
+		copyInstrumentBtn   *TipClickable
+		saveInstrumentBtn   *TipClickable
+		loadInstrumentBtn   *TipClickable
+		addUnitBtn          *ActionClickable
+		presetMenuBtn       *TipClickable
+		commentExpandBtn    *BoolClickable
+		soloBtn             *BoolClickable
+		muteBtn             *BoolClickable
+		commentEditor       *Editor
+		commentString       tracker.String
+		nameEditor          *Editor
+		nameString          tracker.String
+		searchEditor        *Editor
+		instrumentDragList  *DragList
+		unitDragList        *DragList
+		unitEditor          *UnitEditor
+		wasFocused          bool
+		presetMenuItems     []MenuItem
+		presetMenu          Menu
 
-	enlargeHint, shrinkHint string
-	addInstrumentHint       string
-	octaveHint              string
-	expandCommentHint       string
-	collapseCommentHint     string
-	deleteInstrumentHint    string
-	muteHint, unmuteHint    string
-	soloHint, unsoloHint    string
-	linkDisabledHint        string
-	linkEnabledHint         string
-	splitInstrumentHint     string
-}
+		addUnit tracker.Action
+
+		enlargeHint, shrinkHint string
+		addInstrumentHint       string
+		octaveHint              string
+		expandCommentHint       string
+		collapseCommentHint     string
+		deleteInstrumentHint    string
+		muteHint, unmuteHint    string
+		soloHint, unsoloHint    string
+		linkDisabledHint        string
+		linkEnabledHint         string
+		splitInstrumentHint     string
+	}
+
+	AddUnitThenFocus InstrumentEditor
+)
 
 func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 	ret := &InstrumentEditor{
@@ -89,7 +95,8 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		ret.presetMenuItems = append(ret.presetMenuItems, MenuItem{Text: name, IconBytes: icons.ImageAudiotrack, Doer: model.LoadPreset(index)})
 		return true
 	})
-	ret.addUnitBtn = NewActionClickable(model.AddUnitAndThen(func() { ret.searchEditor.Focus() }))
+	ret.addUnit = model.AddUnit(false)
+	ret.addUnitBtn = NewActionClickable(tracker.MakeEnabledAction(ret.AddUnitThenFocus()))
 	ret.enlargeHint = makeHint("Enlarge", " (%s)", "InstrEnlargedToggle")
 	ret.shrinkHint = makeHint("Shrink", " (%s)", "InstrEnlargedToggle")
 	ret.addInstrumentHint = makeHint("Add\ninstrument", "\n(%s)", "AddInstrument")
@@ -105,6 +112,15 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 	ret.linkEnabledHint = makeHint("Instrument-Track\nlinking enabled", "\n(%s)", "LinkInstrTrackToggle")
 	ret.splitInstrumentHint = makeHint("Split instrument", " (%s)", "SplitInstrument")
 	return ret
+}
+
+func (ie *InstrumentEditor) AddUnitThenFocus() tracker.Action {
+	return tracker.MakeAction((*AddUnitThenFocus)(ie))
+}
+func (a *AddUnitThenFocus) Enabled() bool { return a.addUnit.Enabled() }
+func (a *AddUnitThenFocus) Do() {
+	a.addUnit.Do()
+	a.searchEditor.Focus()
 }
 
 func (ie *InstrumentEditor) Focus() {
