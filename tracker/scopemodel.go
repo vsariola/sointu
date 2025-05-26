@@ -67,20 +67,16 @@ func NewScopeModel(broker *Broker, bpm int) *ScopeModel {
 
 func (s *ScopeModel) Waveform() RingBuffer[[2]float32] { return s.waveForm }
 
-func (s *ScopeModel) Once() *SignalOnce                   { return (*SignalOnce)(s) }
-func (s *ScopeModel) Wrap() *SignalWrap                   { return (*SignalWrap)(s) }
+func (s *ScopeModel) Once() Bool                          { return MakeEnabledBool((*SignalOnce)(s)) }
+func (s *ScopeModel) Wrap() Bool                          { return MakeEnabledBool((*SignalWrap)(s)) }
 func (s *ScopeModel) LengthInBeats() *SignalLengthInBeats { return (*SignalLengthInBeats)(s) }
 func (s *ScopeModel) TriggerChannel() *TriggerChannel     { return (*TriggerChannel)(s) }
 
-func (m *SignalOnce) Bool() Bool        { return Bool{m} }
 func (m *SignalOnce) Value() bool       { return m.once }
-func (m *SignalOnce) setValue(val bool) { m.once = val }
-func (m *SignalOnce) Enabled() bool     { return true }
+func (m *SignalOnce) SetValue(val bool) { m.once = val }
 
-func (m *SignalWrap) Bool() Bool        { return Bool{m} }
 func (m *SignalWrap) Value() bool       { return m.wrap }
-func (m *SignalWrap) setValue(val bool) { m.wrap = val }
-func (m *SignalWrap) Enabled() bool     { return true }
+func (m *SignalWrap) SetValue(val bool) { m.wrap = val }
 
 func (m *SignalLengthInBeats) Int() Int   { return Int{m} }
 func (m *SignalLengthInBeats) Value() int { return m.lengthInBeats }

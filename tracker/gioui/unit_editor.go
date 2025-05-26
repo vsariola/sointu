@@ -46,7 +46,7 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 	ret := &UnitEditor{
 		DeleteUnitBtn:  NewActionClickable(m.DeleteUnit()),
 		ClearUnitBtn:   NewActionClickable(m.ClearUnit()),
-		DisableUnitBtn: NewBoolClickable(m.UnitDisabled().Bool()),
+		DisableUnitBtn: NewBoolClickable(m.UnitDisabled()),
 		CopyUnitBtn:    new(TipClickable),
 		SelectTypeBtn:  new(Clickable),
 		commentEditor:  NewEditor(widget.Editor{SingleLine: true, Submit: true}),

@@ -82,12 +82,12 @@ func init() {
 		go detector.Run()
 
 		t := gioui.NewTracker(model)
-		model.InstrEnlarged().Bool().Set(true)
+		model.InstrEnlarged().SetValue(true)
 		// since the VST is usually working without any regard for the tracks
 		// until recording, disable the Instrument-Track linking by default
 		// because it might just confuse the user why instrument cannot be
 		// swapped/added etc.
-		model.LinkInstrTrack().Bool().Set(false)
+		model.LinkInstrTrack().SetValue(false)
 		go t.Main()
 		context := VSTIProcessContext{host: h}
 		buf := make(sointu.AudioBuffer, 1024)

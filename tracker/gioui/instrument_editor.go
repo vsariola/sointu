@@ -70,17 +70,17 @@ type (
 func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 	ret := &InstrumentEditor{
 		newInstrumentBtn:    NewActionClickable(model.AddInstrument()),
-		enlargeBtn:          NewBoolClickable(model.InstrEnlarged().Bool()),
+		enlargeBtn:          NewBoolClickable(model.InstrEnlarged()),
 		deleteInstrumentBtn: NewActionClickable(model.DeleteInstrument()),
-		linkInstrTrackBtn:   NewBoolClickable(model.LinkInstrTrack().Bool()),
+		linkInstrTrackBtn:   NewBoolClickable(model.LinkInstrTrack()),
 		splitInstrumentBtn:  NewActionClickable(model.SplitInstrument()),
 		copyInstrumentBtn:   new(TipClickable),
 		saveInstrumentBtn:   new(TipClickable),
 		loadInstrumentBtn:   new(TipClickable),
-		commentExpandBtn:    NewBoolClickable(model.CommentExpanded().Bool()),
+		commentExpandBtn:    NewBoolClickable(model.CommentExpanded()),
 		presetMenuBtn:       new(TipClickable),
-		soloBtn:             NewBoolClickable(model.Solo().Bool()),
-		muteBtn:             NewBoolClickable(model.Mute().Bool()),
+		soloBtn:             NewBoolClickable(model.Solo()),
+		muteBtn:             NewBoolClickable(model.Mute()),
 		commentEditor:       NewEditor(widget.Editor{}),
 		nameEditor:          NewEditor(widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle}),
 		searchEditor:        NewEditor(widget.Editor{SingleLine: true, Submit: true, Alignment: text.Start}),
@@ -429,11 +429,11 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 								}
 							}
 						}
-						t.UnitSearching().Bool().Set(false)
+						t.UnitSearching().SetValue(false)
 						ie.searchEditor.SetText(str.Value())
 					}
 					for ie.searchEditor.Cancelled(gtx) {
-						t.UnitSearching().Bool().Set(false)
+						t.UnitSearching().SetValue(false)
 						ie.searchEditor.SetText(str.Value())
 						ie.unitDragList.Focus()
 					}
@@ -485,11 +485,11 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 					ie.unitEditor.sliderList.Focus()
 				case key.NameDeleteBackward:
 					t.Units().SetSelectedType("")
-					t.UnitSearching().Bool().Set(true)
+					t.UnitSearching().SetValue(true)
 					gtx.Execute(key.FocusCmd{Tag: &ie.searchEditor.Editor})
 				case key.NameEnter, key.NameReturn:
 					t.Model.AddUnit(e.Modifiers.Contain(key.ModCtrl)).Do()
-					t.UnitSearching().Bool().Set(true)
+					t.UnitSearching().SetValue(true)
 					gtx.Execute(key.FocusCmd{Tag: &ie.searchEditor.Editor})
 				}
 			}

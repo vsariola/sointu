@@ -85,9 +85,9 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 		AddOctaveBtn:        NewActionClickable(model.AddOctave()),
 		SubtractOctaveBtn:   NewActionClickable(model.SubtractOctave()),
 		NoteOffBtn:          NewActionClickable(model.EditNoteOff()),
-		EffectBtn:           NewBoolClickable(model.Effect().Bool()),
-		UniqueBtn:           NewBoolClickable(model.UniquePatterns().Bool()),
-		TrackMidiInBtn:      NewBoolClickable(model.TrackMidiIn().Bool()),
+		EffectBtn:           NewBoolClickable(model.Effect()),
+		UniqueBtn:           NewBoolClickable(model.UniquePatterns()),
+		TrackMidiInBtn:      NewBoolClickable(model.TrackMidiIn()),
 		scrollTable: NewScrollTable(
 			model.Notes().Table(),
 			model.Tracks().List(),

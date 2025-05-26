@@ -129,28 +129,28 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 	case "RemoveUnused":
 		t.RemoveUnused().Do()
 	case "PlayCurrentPosFollow":
-		t.Follow().Bool().Set(true)
+		t.Follow().SetValue(true)
 		t.PlayCurrentPos().Do()
 	case "PlayCurrentPosUnfollow":
-		t.Follow().Bool().Set(false)
+		t.Follow().SetValue(false)
 		t.PlayCurrentPos().Do()
 	case "PlaySongStartFollow":
-		t.Follow().Bool().Set(true)
+		t.Follow().SetValue(true)
 		t.PlaySongStart().Do()
 	case "PlaySongStartUnfollow":
-		t.Follow().Bool().Set(false)
+		t.Follow().SetValue(false)
 		t.PlaySongStart().Do()
 	case "PlaySelectedFollow":
-		t.Follow().Bool().Set(true)
+		t.Follow().SetValue(true)
 		t.PlaySelected().Do()
 	case "PlaySelectedUnfollow":
-		t.Follow().Bool().Set(false)
+		t.Follow().SetValue(false)
 		t.PlaySelected().Do()
 	case "PlayLoopFollow":
-		t.Follow().Bool().Set(true)
+		t.Follow().SetValue(true)
 		t.PlayFromLoopStart().Do()
 	case "PlayLoopUnfollow":
-		t.Follow().Bool().Set(false)
+		t.Follow().SetValue(false)
 		t.PlayFromLoopStart().Do()
 	case "StopPlaying":
 		t.StopPlaying().Do()
@@ -186,33 +186,33 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		t.SplitInstrument().Do()
 	// Booleans
 	case "PanicToggle":
-		t.Panic().Bool().Toggle()
+		t.Panic().Toggle()
 	case "RecordingToggle":
-		t.IsRecording().Bool().Toggle()
+		t.IsRecording().Toggle()
 	case "PlayingToggleFollow":
-		t.Follow().Bool().Set(true)
-		t.Playing().Bool().Toggle()
+		t.Follow().SetValue(true)
+		t.Playing().Toggle()
 	case "PlayingToggleUnfollow":
-		t.Follow().Bool().Set(false)
-		t.Playing().Bool().Toggle()
+		t.Follow().SetValue(false)
+		t.Playing().Toggle()
 	case "InstrEnlargedToggle":
-		t.InstrEnlarged().Bool().Toggle()
+		t.InstrEnlarged().Toggle()
 	case "LinkInstrTrackToggle":
-		t.LinkInstrTrack().Bool().Toggle()
+		t.LinkInstrTrack().Toggle()
 	case "CommentExpandedToggle":
-		t.CommentExpanded().Bool().Toggle()
+		t.CommentExpanded().Toggle()
 	case "FollowToggle":
-		t.Follow().Bool().Toggle()
+		t.Follow().Toggle()
 	case "UnitDisabledToggle":
-		t.UnitDisabled().Bool().Toggle()
+		t.UnitDisabled().Toggle()
 	case "LoopToggle":
-		t.LoopToggle().Bool().Toggle()
+		t.LoopToggle().Toggle()
 	case "UniquePatternsToggle":
-		t.UniquePatterns().Bool().Toggle()
+		t.UniquePatterns().Toggle()
 	case "MuteToggle":
-		t.Mute().Bool().Toggle()
+		t.Mute().Toggle()
 	case "SoloToggle":
-		t.Solo().Bool().Toggle()
+		t.Solo().Toggle()
 	// Integers
 	case "InstrumentVoicesAdd":
 		t.Model.InstrumentVoices().Int().Add(1)

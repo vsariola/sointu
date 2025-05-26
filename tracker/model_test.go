@@ -61,15 +61,15 @@ func (s *modelFuzzState) Iterate(yield func(string, func(p string, t *testing.T)
 	s.IterateList("OrderRows", s.model.OrderRows().List(), yield, seed)
 	s.IterateList("NoteRows", s.model.NoteRows().List(), yield, seed)
 	s.IterateList("UnitSearchResults", s.model.SearchResults().List(), yield, seed)
-	s.IterateBool("Panic", s.model.Panic().Bool(), yield, seed)
-	s.IterateBool("Recording", s.model.IsRecording().Bool(), yield, seed)
-	s.IterateBool("Playing", s.model.Playing().Bool(), yield, seed)
-	s.IterateBool("InstrEnlarged", s.model.InstrEnlarged().Bool(), yield, seed)
-	s.IterateBool("Effect", s.model.Effect().Bool(), yield, seed)
-	s.IterateBool("CommentExpanded", s.model.CommentExpanded().Bool(), yield, seed)
-	s.IterateBool("Follow", s.model.Follow().Bool(), yield, seed)
-	s.IterateBool("UniquePatterns", s.model.UniquePatterns().Bool(), yield, seed)
-	s.IterateBool("LinkInstrTrack", s.model.LinkInstrTrack().Bool(), yield, seed)
+	s.IterateBool("Panic", s.model.Panic(), yield, seed)
+	s.IterateBool("Recording", s.model.IsRecording(), yield, seed)
+	s.IterateBool("Playing", s.model.Playing(), yield, seed)
+	s.IterateBool("InstrEnlarged", s.model.InstrEnlarged(), yield, seed)
+	s.IterateBool("Effect", s.model.Effect(), yield, seed)
+	s.IterateBool("CommentExpanded", s.model.CommentExpanded(), yield, seed)
+	s.IterateBool("Follow", s.model.Follow(), yield, seed)
+	s.IterateBool("UniquePatterns", s.model.UniquePatterns(), yield, seed)
+	s.IterateBool("LinkInstrTrack", s.model.LinkInstrTrack(), yield, seed)
 	// Strings
 	s.IterateString("FilePath", s.model.FilePath().String(), yield, seed)
 	s.IterateString("InstrumentName", s.model.InstrumentName().String(), yield, seed)
@@ -153,7 +153,7 @@ func (s *modelFuzzState) IterateAction(name string, a tracker.Action, yield func
 
 func (s *modelFuzzState) IterateBool(name string, b tracker.Bool, yield func(string, func(p string, t *testing.T)) bool, seed int) {
 	yield(name+".Set", func(p string, t *testing.T) {
-		b.Set(seed%2 == 0)
+		b.SetValue(seed%2 == 0)
 	})
 	yield(name+".Toggle", func(p string, t *testing.T) {
 		b.Toggle()

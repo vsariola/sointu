@@ -2,13 +2,13 @@ package tracker
 
 type (
 	Bool struct {
-		BoolData
+		value   BoolValue
+		enabler Enabler
 	}
 
-	BoolData interface {
+	BoolValue interface {
 		Value() bool
-		Enabled() bool
-		setValue(bool)
+		SetValue(bool)
 	}
 
 	Panic           Model
@@ -29,60 +29,66 @@ type (
 	Oversampling    Model
 )
 
-func (v Bool) Toggle() {
-	v.Set(!v.Value())
+func MakeBool(valueEnabler interface {
+	BoolValue
+	Enabler
+}) Bool {
+	return Bool{value: valueEnabler, enabler: valueEnabler}
 }
 
-func (v Bool) Set(value bool) {
+func MakeEnabledBool(value BoolValue) Bool {
+	return Bool{value: value, enabler: nil}
+}
+
+func (v Bool) Toggle() {
+	v.SetValue(!v.Value())
+}
+
+func (v Bool) SetValue(value bool) {
 	if v.Enabled() && v.Value() != value {
-		v.setValue(value)
+		v.value.SetValue(value)
 	}
+}
+
+func (v Bool) Value() bool {
+	if v.value == nil {
+		return false
+	}
+	return v.value.Value()
+}
+
+func (v Bool) Enabled() bool {
+	if v.enabler == nil {
+		return true
+	}
+	return v.enabler.Enabled()
 }
 
 // Model methods
 
-func (m *Model) Panic() *Panic                     { return (*Panic)(m) }
-func (m *Model) IsRecording() *IsRecording         { return (*IsRecording)(m) }
-func (m *Model) Playing() *Playing                 { return (*Playing)(m) }
-func (m *Model) InstrEnlarged() *InstrEnlarged     { return (*InstrEnlarged)(m) }
-func (m *Model) Effect() *Effect                   { return (*Effect)(m) }
-func (m *Model) TrackMidiIn() *TrackMidiIn         { return (*TrackMidiIn)(m) }
-func (m *Model) CommentExpanded() *CommentExpanded { return (*CommentExpanded)(m) }
-func (m *Model) Follow() *Follow                   { return (*Follow)(m) }
-func (m *Model) UnitSearching() *UnitSearching     { return (*UnitSearching)(m) }
-func (m *Model) UnitDisabled() *UnitDisabled       { return (*UnitDisabled)(m) }
-func (m *Model) LoopToggle() *LoopToggle           { return (*LoopToggle)(m) }
-func (m *Model) UniquePatterns() *UniquePatterns   { return (*UniquePatterns)(m) }
-func (m *Model) Mute() *Mute                       { return (*Mute)(m) }
-func (m *Model) Solo() *Solo                       { return (*Solo)(m) }
-func (m *Model) LinkInstrTrack() *LinkInstrTrack   { return (*LinkInstrTrack)(m) }
-func (m *Model) Oversampling() *Oversampling       { return (*Oversampling)(m) }
-
 // Panic methods
 
-func (m *Panic) Bool() Bool  { return Bool{m} }
+func (m *Model) Panic() Bool { return MakeEnabledBool((*Panic)(m)) }
 func (m *Panic) Value() bool { return m.panic }
-func (m *Panic) setValue(val bool) {
+func (m *Panic) SetValue(val bool) {
 	(*Model)(m).setPanic(val)
 }
-func (m *Panic) Enabled() bool { return true }
 
 // IsRecording methods
 
-func (m *IsRecording) Bool() Bool  { return Bool{m} }
+func (m *Model) IsRecording() Bool { return MakeEnabledBool((*IsRecording)(m)) }
 func (m *IsRecording) Value() bool { return (*Model)(m).recording }
-func (m *IsRecording) setValue(val bool) {
+func (m *IsRecording) SetValue(val bool) {
 	m.recording = val
 	m.instrEnlarged = val
 	TrySend(m.broker.ToPlayer, any(RecordingMsg{val}))
 }
-func (m *IsRecording) Enabled() bool { return true }
 
 // Playing methods
 
-func (m *Playing) Bool() Bool  { return Bool{m} }
+func (m *Model) Playing() Bool { return MakeBool((*Playing)(m)) }
 func (m *Playing) Value() bool { return m.playing }
-func (m *Playing) setValue(val bool) {
+func (m *Playing) SetValue(val bool) {
 	m.playing = val
 	if m.playing {
 		(*Model)(m).setPanic(false)
@@ -95,64 +101,59 @@ func (m *Playing) Enabled() bool { return m.playing || !m.instrEnlarged }
 
 // InstrEnlarged methods
 
-func (m *InstrEnlarged) Bool() Bool        { return Bool{m} }
+func (m *Model) InstrEnlarged() Bool       { return MakeEnabledBool((*InstrEnlarged)(m)) }
 func (m *InstrEnlarged) Value() bool       { return m.instrEnlarged }
-func (m *InstrEnlarged) setValue(val bool) { m.instrEnlarged = val }
-func (m *InstrEnlarged) Enabled() bool     { return true }
+func (m *InstrEnlarged) SetValue(val bool) { m.instrEnlarged = val }
 
 // CommentExpanded methods
 
-func (m *CommentExpanded) Bool() Bool        { return Bool{m} }
+func (m *Model) CommentExpanded() Bool       { return MakeEnabledBool((*CommentExpanded)(m)) }
 func (m *CommentExpanded) Value() bool       { return m.commentExpanded }
-func (m *CommentExpanded) setValue(val bool) { m.commentExpanded = val }
-func (m *CommentExpanded) Enabled() bool     { return true }
+func (m *CommentExpanded) SetValue(val bool) { m.commentExpanded = val }
 
 // Follow methods
 
-func (m *Follow) Bool() Bool        { return Bool{m} }
+func (m *Model) Follow() Bool       { return MakeEnabledBool((*Follow)(m)) }
 func (m *Follow) Value() bool       { return m.follow }
-func (m *Follow) setValue(val bool) { m.follow = val }
-func (m *Follow) Enabled() bool     { return true }
+func (m *Follow) SetValue(val bool) { m.follow = val }
 
 // TrackMidiIn (Midi Input for notes in the tracks)
 
-func (m *TrackMidiIn) Bool() Bool        { return Bool{m} }
+func (m *Model) TrackMidiIn() Bool       { return MakeBool((*TrackMidiIn)(m)) }
 func (m *TrackMidiIn) Value() bool       { return m.trackMidiIn }
-func (m *TrackMidiIn) setValue(val bool) { m.trackMidiIn = val }
+func (m *TrackMidiIn) SetValue(val bool) { m.trackMidiIn = val }
 func (m *TrackMidiIn) Enabled() bool     { return m.MIDI.HasDeviceOpen() }
 
 // Effect methods
 
-func (m *Effect) Bool() Bool { return Bool{m} }
+func (m *Model) Effect() Bool { return MakeEnabledBool((*Effect)(m)) }
 func (m *Effect) Value() bool {
 	if m.d.Cursor.Track < 0 || m.d.Cursor.Track >= len(m.d.Song.Score.Tracks) {
 		return false
 	}
 	return m.d.Song.Score.Tracks[m.d.Cursor.Track].Effect
 }
-func (m *Effect) setValue(val bool) {
+func (m *Effect) SetValue(val bool) {
 	if m.d.Cursor.Track < 0 || m.d.Cursor.Track >= len(m.d.Song.Score.Tracks) {
 		return
 	}
 	m.d.Song.Score.Tracks[m.d.Cursor.Track].Effect = val
 }
-func (m *Effect) Enabled() bool { return true }
 
 // Oversampling methods
 
-func (m *Oversampling) Bool() Bool  { return Bool{m} }
+func (m *Model) Oversampling() Bool { return MakeEnabledBool((*Oversampling)(m)) }
 func (m *Oversampling) Value() bool { return m.oversampling }
-func (m *Oversampling) setValue(val bool) {
+func (m *Oversampling) SetValue(val bool) {
 	m.oversampling = val
 	TrySend(m.broker.ToDetector, MsgToDetector{HasOversampling: true, Oversampling: val})
 }
-func (m *Oversampling) Enabled() bool { return true }
 
 // UnitSearching methods
 
-func (m *UnitSearching) Bool() Bool  { return Bool{m} }
+func (m *Model) UnitSearching() Bool { return MakeEnabledBool((*UnitSearching)(m)) }
 func (m *UnitSearching) Value() bool { return m.d.UnitSearching }
-func (m *UnitSearching) setValue(val bool) {
+func (m *UnitSearching) SetValue(val bool) {
 	m.d.UnitSearching = val
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		m.d.UnitSearchString = ""
@@ -164,11 +165,10 @@ func (m *UnitSearching) setValue(val bool) {
 	}
 	m.d.UnitSearchString = m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].Type
 }
-func (m *UnitSearching) Enabled() bool { return true }
 
 // UnitDisabled methods
 
-func (m *UnitDisabled) Bool() Bool { return Bool{m} }
+func (m *Model) UnitDisabled() Bool { return MakeBool((*UnitDisabled)(m)) }
 func (m *UnitDisabled) Value() bool {
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return false
@@ -178,7 +178,7 @@ func (m *UnitDisabled) Value() bool {
 	}
 	return m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].Disabled
 }
-func (m *UnitDisabled) setValue(val bool) {
+func (m *UnitDisabled) SetValue(val bool) {
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return
 	}
@@ -201,9 +201,9 @@ func (m *UnitDisabled) Enabled() bool {
 
 // LoopToggle methods
 
-func (m *LoopToggle) Bool() Bool  { return Bool{m} }
+func (m *Model) LoopToggle() Bool { return MakeEnabledBool((*LoopToggle)(m)) }
 func (m *LoopToggle) Value() bool { return m.loop.Length > 0 }
-func (t *LoopToggle) setValue(val bool) {
+func (t *LoopToggle) SetValue(val bool) {
 	m := (*Model)(t)
 	newLoop := Loop{}
 	if val {
@@ -213,25 +213,22 @@ func (t *LoopToggle) setValue(val bool) {
 	}
 	m.setLoop(newLoop)
 }
-func (m *LoopToggle) Enabled() bool { return true }
 
 // UniquePatterns methods
 
-func (m *UniquePatterns) Bool() Bool        { return Bool{m} }
+func (m *Model) UniquePatterns() Bool       { return MakeEnabledBool((*UniquePatterns)(m)) }
 func (m *UniquePatterns) Value() bool       { return m.uniquePatterns }
-func (m *UniquePatterns) setValue(val bool) { m.uniquePatterns = val }
-func (m *UniquePatterns) Enabled() bool     { return true }
+func (m *UniquePatterns) SetValue(val bool) { m.uniquePatterns = val }
 
 // Mute methods
-
-func (m *Mute) Bool() Bool { return Bool{m} }
+func (m *Model) Mute() Bool { return MakeBool((*Mute)(m)) }
 func (m *Mute) Value() bool {
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return false
 	}
 	return m.d.Song.Patch[m.d.InstrIndex].Mute
 }
-func (m *Mute) setValue(val bool) {
+func (m *Mute) SetValue(val bool) {
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return
 	}
@@ -248,7 +245,7 @@ func (m *Mute) Enabled() bool { return m.d.InstrIndex >= 0 && m.d.InstrIndex < l
 
 // Solo methods
 
-func (m *Solo) Bool() Bool { return Bool{m} }
+func (m *Model) Solo() Bool { return MakeBool((*Solo)(m)) }
 func (m *Solo) Value() bool {
 	a, b := min(m.d.InstrIndex, m.d.InstrIndex2), max(m.d.InstrIndex, m.d.InstrIndex2)
 	for i := range m.d.Song.Patch {
@@ -261,7 +258,7 @@ func (m *Solo) Value() bool {
 	}
 	return true
 }
-func (m *Solo) setValue(val bool) {
+func (m *Solo) SetValue(val bool) {
 	defer (*Model)(m).change("Solo", PatchChange, MinorChange)()
 	a, b := min(m.d.InstrIndex, m.d.InstrIndex2), max(m.d.InstrIndex, m.d.InstrIndex2)
 	for i := range m.d.Song.Patch {
@@ -275,7 +272,6 @@ func (m *Solo) Enabled() bool { return m.d.InstrIndex >= 0 && m.d.InstrIndex < l
 
 // LinkInstrTrack methods
 
-func (m *LinkInstrTrack) Bool() Bool        { return Bool{m} }
+func (m *Model) LinkInstrTrack() Bool       { return MakeEnabledBool((*LinkInstrTrack)(m)) }
 func (m *LinkInstrTrack) Value() bool       { return m.linkInstrTrack }
-func (m *LinkInstrTrack) setValue(val bool) { m.linkInstrTrack = val }
-func (m *LinkInstrTrack) Enabled() bool     { return true }
+func (m *LinkInstrTrack) SetValue(val bool) { m.linkInstrTrack = val }

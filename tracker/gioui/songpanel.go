@@ -64,7 +64,7 @@ func (s *SongPanel) Update(gtx C, t *Tracker) {
 		t.Model.DetectorWeighting().Int().Set((t.DetectorWeighting().Value() + 1) % int(tracker.NumWeightingTypes))
 	}
 	for s.OversamplingBtn.Clicked(gtx) {
-		t.Model.Oversampling().Bool().Set(!t.Oversampling().Value())
+		t.Model.Oversampling().SetValue(!t.Oversampling().Value())
 	}
 }
 
@@ -301,7 +301,7 @@ func NewMenuBar(model *tracker.Model) *MenuBar {
 	ret := &MenuBar{
 		Clickables: make([]Clickable, 3),
 		Menus:      make([]Menu, 3),
-		PanicBtn:   NewBoolClickable(model.Panic().Bool()),
+		PanicBtn:   NewBoolClickable(model.Panic()),
 		panicHint:  makeHint("Panic", " (%s)", "PanicToggle"),
 	}
 	ret.fileMenuItems = []MenuItem{
@@ -369,10 +369,10 @@ type PlayBar struct {
 
 func NewPlayBar(model *tracker.Model) *PlayBar {
 	ret := &PlayBar{
-		LoopBtn:    NewBoolClickable(model.LoopToggle().Bool()),
-		RecordBtn:  NewBoolClickable(model.IsRecording().Bool()),
-		FollowBtn:  NewBoolClickable(model.Follow().Bool()),
-		PlayingBtn: NewBoolClickable(model.Playing().Bool()),
+		LoopBtn:    NewBoolClickable(model.LoopToggle()),
+		RecordBtn:  NewBoolClickable(model.IsRecording()),
+		FollowBtn:  NewBoolClickable(model.Follow()),
+		PlayingBtn: NewBoolClickable(model.Playing()),
 		RewindBtn:  NewActionClickable(model.PlaySongStart()),
 	}
 	ret.rewindHint = makeHint("Rewind", "\n(%s)", "PlaySongStartUnfollow")
