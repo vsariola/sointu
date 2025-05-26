@@ -321,12 +321,12 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.Note.Font, t.Theme.NoteEditor.Note.TextSize, val, op)
 		return D{Size: image.Pt(pxWidth, pxHeight)}
 	}
-	table := FilledScrollTable(t.Theme, te.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)
+	table := FilledScrollTable(t.Theme, te.scrollTable)
 	table.RowTitleWidth = trackPatMarkWidth + trackRowMarkWidth
 	table.ColumnTitleHeight = trackColTitleHeight
 	table.CellWidth = trackColWidth
 	table.CellHeight = trackRowHeight
-	return table.Layout(gtx)
+	return table.Layout(gtx, cell, colTitle, rowTitle, nil, rowTitleBg)
 }
 
 func colorOp(gtx C, c color.NRGBA) op.CallOp {

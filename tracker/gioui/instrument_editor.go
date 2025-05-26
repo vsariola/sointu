@@ -330,7 +330,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 		})
 	}
 
-	instrumentList := FilledDragList(t.Theme, ie.instrumentDragList, element, nil)
+	instrumentList := FilledDragList(t.Theme, ie.instrumentDragList)
 	instrumentList.ScrollBar = t.Theme.InstrumentEditor.InstrumentList.ScrollBar
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
@@ -360,7 +360,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 		}
 	}
 
-	dims := instrumentList.Layout(gtx)
+	dims := instrumentList.Layout(gtx, element, nil)
 	gtx.Constraints = layout.Exact(dims.Size)
 	instrumentList.LayoutScrollBar(gtx)
 	return dims
@@ -462,7 +462,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 	}
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-	unitList := FilledDragList(t.Theme, ie.unitDragList, element, nil)
+	unitList := FilledDragList(t.Theme, ie.unitDragList)
 	for {
 		event, ok := gtx.Event(
 			key.Filter{Focus: ie.unitDragList, Name: key.NameRightArrow},
@@ -500,7 +500,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 			layout.Expanded(func(gtx C) D {
 				defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 				gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(140), gtx.Constraints.Max.Y))
-				dims := unitList.Layout(gtx)
+				dims := unitList.Layout(gtx, element, nil)
 				unitList.LayoutScrollBar(gtx)
 				return dims
 			}),

@@ -32,23 +32,20 @@ type DragList struct {
 }
 
 type FilledDragListStyle struct {
-	dragList    *DragList
-	HoverColor  color.NRGBA
-	Cursor      CursorStyle
-	Selection   CursorStyle
-	ScrollBar   ScrollBarStyle
-	element, bg func(gtx C, i int) D
+	dragList   *DragList
+	HoverColor color.NRGBA
+	Cursor     CursorStyle
+	Selection  CursorStyle
+	ScrollBar  ScrollBarStyle
 }
 
 func NewDragList(model tracker.List, axis layout.Axis) *DragList {
 	return &DragList{TrackerList: model, List: &layout.List{Axis: axis}, HoverItem: -1, ScrollBar: &ScrollBar{Axis: axis}}
 }
 
-func FilledDragList(th *Theme, dragList *DragList, element, bg func(gtx C, i int) D) FilledDragListStyle {
+func FilledDragList(th *Theme, dragList *DragList) FilledDragListStyle {
 	return FilledDragListStyle{
 		dragList:   dragList,
-		element:    element,
-		bg:         bg,
 		HoverColor: hoveredColor(th.Selection.Active),
 		Cursor:     th.Cursor,
 		Selection:  th.Selection,
@@ -68,7 +65,7 @@ func (s FilledDragListStyle) LayoutScrollBar(gtx C) D {
 	return s.dragList.ScrollBar.Layout(gtx, &s.ScrollBar, s.dragList.TrackerList.Count(), &s.dragList.List.Position)
 }
 
-func (s FilledDragListStyle) Layout(gtx C) D {
+func (s FilledDragListStyle) Layout(gtx C, element, bg func(gtx C, i int) D) D {
 	swap := 0
 
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
@@ -243,11 +240,11 @@ func (s FilledDragListStyle) Layout(gtx C) D {
 			return layout.Dimensions{Size: gtx.Constraints.Min}
 		}
 		macro := op.Record(gtx.Ops)
-		dims := s.element(gtx, index)
+		dims := element(gtx, index)
 		call := macro.Stop()
 		gtx.Constraints.Min = dims.Size
-		if s.bg != nil {
-			s.bg(gtx, index)
+		if bg != nil {
+			bg(gtx, index)
 		}
 		cursorBg(gtx)
 		call.Add(gtx.Ops)

@@ -118,10 +118,10 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 		return D{Size: image.Pt(gtx.Dp(patternCellWidth), gtx.Dp(patternCellHeight))}
 	}
 
-	table := FilledScrollTable(t.Theme, oe.scrollTable, cell, colTitle, rowTitle, nil, rowTitleBg)
+	table := FilledScrollTable(t.Theme, oe.scrollTable)
 	table.ColumnTitleHeight = orderTitleHeight
 
-	return table.Layout(gtx)
+	return table.Layout(gtx, cell, colTitle, rowTitle, nil, rowTitleBg)
 }
 
 func (oe *OrderEditor) handleEvents(gtx C, t *Tracker) {
