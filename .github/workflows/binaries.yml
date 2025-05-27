@@ -123,7 +123,7 @@ jobs:
         fetch-depth: 0
     - uses: actions/setup-go@v5 # has to be after checkout, see https://medium.com/@s0k0mata/github-actions-and-go-the-new-cache-feature-in-actions-setup-go-v4-and-what-to-watch-out-for-aeea373ed07d
       with:
-        go-version: '>=1.23.0 <1.23.9'
+        go-version: '>=1.23.8 <1.23.9'
     - uses: ilammy/setup-nasm@v1.5.1
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
