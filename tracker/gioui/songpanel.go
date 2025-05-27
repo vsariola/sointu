@@ -337,20 +337,15 @@ func (t *MenuBar) Layout(gtx C, tr *Tracker) D {
 	if t.PanicBtn.Bool.Value() {
 		panicBtnStyle.IconButtonStyle.Color = tr.Theme.SongPanel.ErrorColor
 	}
-	menuLayouts := []layout.FlexChild{
-		layout.Rigid(tr.layoutMenu(gtx, "File", &t.Clickables[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...)),
-		layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.Clickables[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...)),
-	}
+	flex := layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}
+	fileFC := layout.Rigid(tr.layoutMenu(gtx, "File", &t.Clickables[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...))
+	editFC := layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.Clickables[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...))
+	midiFC := layout.Rigid(tr.layoutMenu(gtx, "MIDI", &t.Clickables[2], &t.Menus[2], unit.Dp(200), t.midiMenuItems...))
+	panicFC := layout.Flexed(1, func(gtx C) D { return layout.E.Layout(gtx, panicBtnStyle.Layout) })
 	if len(t.midiMenuItems) > 0 {
-		menuLayouts = append(
-			menuLayouts,
-			layout.Rigid(tr.layoutMenu(gtx, "MIDI", &t.Clickables[2], &t.Menus[2], unit.Dp(200), t.midiMenuItems...)),
-		)
+		return flex.Layout(gtx, fileFC, editFC, midiFC, panicFC)
 	}
-	menuLayouts = append(menuLayouts, layout.Flexed(1, func(gtx C) D {
-		return layout.E.Layout(gtx, panicBtnStyle.Layout)
-	}))
-	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}.Layout(gtx, menuLayouts...)
+	return flex.Layout(gtx, fileFC, editFC, panicFC)
 }
 
 type PlayBar struct {
