@@ -76,16 +76,16 @@ func (m *Model) UnitHintInfo(id int) (instrIndex int, unitType string, ok bool) 
 	return fu.instrumentIndex, fu.unit.Type, ok
 }
 
-func (m *Model) ParameterInfo(unitId int, paramName string) (isSendTarget bool, tooltip string, exists bool) {
+func (m *Model) ParameterInfo(unitId int, paramName string) (tooltip string, ok bool) {
 	du, ok1 := m.derived.forUnit[unitId]
 	if !ok1 {
-		return false, "", false
+		return "", false
 	}
 	dp, ok2 := du.forParameter[paramName]
 	if !ok2 {
-		return false, "", false
+		return "", false
 	}
-	return len(dp.sendSources) > 0, dp.sendTooltip, true
+	return dp.sendTooltip, len(dp.sendSources) > 0
 }
 
 func (m *Model) TrackTitle(index int) string {

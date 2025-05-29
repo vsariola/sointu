@@ -199,29 +199,21 @@ func (pe *UnitEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 }
 
 func (pe *UnitEditor) command(e key.Event, t *Tracker) {
-	params := (*tracker.Params)(t.Model)
+	params := t.Model.Params()
 	switch e.State {
 	case key.Press:
 		switch e.Name {
 		case key.NameLeftArrow:
-			sel := params.SelectedItem()
-			if sel == nil {
-				return
-			}
-			i := tracker.MakeInt(sel)
+			i := params.SelectedItem()
 			if e.Modifiers.Contain(key.ModShift) {
-				i.SetValue(i.Value() - sel.LargeStep())
+				i.SetValue(i.Value() - i.LargeStep())
 			} else {
 				i.SetValue(i.Value() - 1)
 			}
 		case key.NameRightArrow:
-			sel := params.SelectedItem()
-			if sel == nil {
-				return
-			}
-			i := tracker.MakeInt(sel)
+			i := params.SelectedItem()
 			if e.Modifiers.Contain(key.ModShift) {
-				i.SetValue(i.Value() + sel.LargeStep())
+				i.SetValue(i.Value() + i.LargeStep())
 			} else {
 				i.SetValue(i.Value() + 1)
 			}
@@ -266,7 +258,7 @@ func (t *Tracker) ParamStyle(th *Theme, paramWidget *ParameterWidget) ParameterS
 }
 
 func (p ParameterStyle) Layout(gtx C) D {
-	isSendTarget, info := p.tryDerivedParameterInfo()
+	info, infoOk := p.w.Parameter.Info()
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			gtx.Constraints.Min.X = gtx.Dp(unit.Dp(110))
@@ -286,7 +278,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 					}
 					if ev, ok := e.(pointer.Event); ok && ev.Kind == pointer.Scroll {
 						delta := math.Min(math.Max(float64(ev.Scroll.Y), -1), 1)
-						tracker.MakeInt(p.w.Parameter).Add(-int(delta))
+						p.w.Parameter.SetValue(p.w.Parameter.Value() - int(delta))
 					}
 				}
 				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(200))
@@ -296,7 +288,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 					p.w.floatWidget.Value = (float32(p.w.Parameter.Value()) - float32(ra.Min)) / float32(ra.Max-ra.Min)
 				}
 				sliderStyle := material.Slider(&p.Theme.Material, &p.w.floatWidget)
-				if isSendTarget {
+				if infoOk {
 					sliderStyle.Color = p.Theme.UnitEditor.SendTarget
 				}
 				r := image.Rectangle{Max: gtx.Constraints.Min}
@@ -306,7 +298,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 					event.Op(gtx.Ops, &p.w.floatWidget)
 				}
 				dims := sliderStyle.Layout(gtx)
-				tracker.MakeInt(p.w.Parameter).SetValue(int(p.w.floatWidget.Value*float32(ra.Max-ra.Min) + float32(ra.Min) + 0.5))
+				p.w.Parameter.SetValue(int(p.w.floatWidget.Value*float32(ra.Max-ra.Min) + float32(ra.Min) + 0.5))
 				return dims
 			case tracker.BoolParameter:
 				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(60))
@@ -318,9 +310,9 @@ func (p ParameterStyle) Layout(gtx C) D {
 				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
 				dims := layout.Center.Layout(gtx, boolStyle.Layout)
 				if p.w.boolWidget.Value {
-					tracker.MakeInt(p.w.Parameter).SetValue(ra.Max)
+					p.w.Parameter.SetValue(ra.Max)
 				} else {
-					tracker.MakeInt(p.w.Parameter).SetValue(ra.Min)
+					p.w.Parameter.SetValue(ra.Min)
 				}
 				return dims
 			case tracker.IDParameter:
@@ -334,7 +326,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 					instrItems[i].IconBytes = icons.NavigationChevronRight
 					instrItems[i].Doer = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
 						if id, ok := p.tracker.Instruments().FirstID(i); ok {
-							tracker.MakeInt(p.w.Parameter).SetValue(id)
+							p.w.Parameter.SetValue(id)
 						}
 					}))
 				}
@@ -351,7 +343,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 						unitItems[j].Text = buildUnitLabel(j, unit)
 						unitItems[j].IconBytes = icons.NavigationChevronRight
 						unitItems[j].Doer = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
-							tracker.MakeInt(p.w.Parameter).SetValue(id)
+							p.w.Parameter.SetValue(id)
 						}))
 					}
 				}
@@ -391,13 +383,4 @@ func buildUnitLabel(index int, u sointu.Unit) string {
 		text = fmt.Sprintf("%s \"%s\"", text, u.Comment)
 	}
 	return fmt.Sprintf("%d: %s", index, text)
-}
-
-func (p ParameterStyle) tryDerivedParameterInfo() (isSendTarget bool, sendInfo string) {
-	param, ok := (p.w.Parameter).(tracker.NamedParameter)
-	if !ok {
-		return false, ""
-	}
-	isSendTarget, sendInfo, _ = p.tracker.ParameterInfo(param.Unit().ID, param.Name())
-	return isSendTarget, sendInfo
 }

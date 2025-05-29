@@ -11,35 +11,37 @@ import (
 )
 
 type (
-	Parameter interface {
-		IntValue
-		Type() ParameterType
-		Name() string
-		Hint() ParameterHint
-		LargeStep() int
-		Reset()
+	// Parameter represents a parameter of a unit. To support polymorphism
+	// without causing allocations, it has a vtable that defines the methods for
+	// the specific parameter type, to which all the method calls are delegated.
+	Parameter struct {
+		m      *Model
+		unit   *sointu.Unit
+		up     *sointu.UnitParameter
+		index  int
+		vtable parameterVtable
 	}
 
-	parameter struct {
-		m    *Model
-		unit *sointu.Unit
+	parameterVtable interface {
+		Value(*Parameter) int
+		SetValue(*Parameter, int) bool
+		Range(*Parameter) IntRange
+		Type(*Parameter) ParameterType
+		Name(*Parameter) string
+		Hint(*Parameter) ParameterHint
+		Info(*Parameter) (string, bool) // additional info for the parameter, used to display send targets
+		LargeStep(*Parameter) int
+		Reset(*Parameter)
 	}
-
-	NamedParameter struct {
-		parameter
-		up *sointu.UnitParameter
-	}
-
-	DelayTimeParameter struct {
-		parameter
-		index int
-	}
-
-	DelayLinesParameter struct{ parameter }
-	GmDlsEntryParameter struct{ parameter }
-	ReverbParameter     struct{ parameter }
 
 	Params Model
+	// different parameter vtables to handle different types of parameters.
+	// Casting struct{} to interface does not cause allocations.
+	namedParameter      struct{}
+	delayTimeParameter  struct{}
+	delayLinesParameter struct{}
+	gmDlsEntryParameter struct{}
+	reverbParameter     struct{}
 
 	ParamYieldFunc func(param Parameter) bool
 
@@ -57,22 +59,76 @@ const (
 	IDParameter
 )
 
-// Model methods
+// Parameter methods
 
-func (m *Model) Params() *Params { return (*Params)(m) }
+func (p *Parameter) Value() int {
+	if p.vtable == nil {
+		return 0
+	}
+	return p.vtable.Value(p)
+}
+func (p *Parameter) SetValue(value int) bool {
+	if p.vtable == nil {
+		return false
+	}
+	r := p.Range()
+	value = r.Clamp(value)
+	if value == p.Value() || value < r.Min || value > r.Max {
+		return false
+	}
+	return p.vtable.SetValue(p, value)
+}
+func (p *Parameter) Range() IntRange {
+	if p.vtable == nil {
+		return IntRange{}
+	}
+	return p.vtable.Range(p)
+}
+func (p *Parameter) Type() ParameterType {
+	if p.vtable == nil {
+		return IntegerParameter
+	}
+	return p.vtable.Type(p)
+}
+func (p *Parameter) Name() string {
+	if p.vtable == nil {
+		return ""
+	}
+	return p.vtable.Name(p)
+}
+func (p *Parameter) Hint() ParameterHint {
+	if p.vtable == nil {
+		return ParameterHint{}
+	}
+	return p.vtable.Hint(p)
+}
+func (p *Parameter) Info() (string, bool) {
+	if p.vtable == nil {
+		return "", false
+	}
+	return p.vtable.Info(p)
+}
+func (p *Parameter) LargeStep() int {
+	if p.vtable == nil {
+		return 1
+	}
+	return p.vtable.LargeStep(p)
+}
+func (p *Parameter) Reset() {
+	if p.vtable == nil {
+		return
+	}
+	p.vtable.Reset(p)
+}
 
-// ParamList
+// Model and Params methods
 
+func (m *Model) Params() *Params          { return (*Params)(m) }
 func (pl *Params) List() List             { return List{pl} }
 func (pl *Params) Selected() int          { return pl.d.ParamIndex }
 func (pl *Params) Selected2() int         { return pl.Selected() }
 func (pl *Params) SetSelected(value int)  { pl.d.ParamIndex = max(min(value, pl.Count()-1), 0) }
 func (pl *Params) SetSelected2(value int) {}
-func (pl *Params) cancel()                { (*Model)(pl).changeCancel = true }
-
-func (pl *Params) change(n string, severity ChangeSeverity) func() {
-	return (*Model)(pl).change("ParamList."+n, PatchChange, severity)
-}
 
 func (pl *Params) Count() int {
 	count := 0
@@ -105,65 +161,52 @@ func (pl *Params) Iterate(yield ParamYieldFunc) {
 	if !ok {
 		return
 	}
-	for i := range unitType {
-		if !unitType[i].CanSet {
+	for i, up := range unitType {
+		if !up.CanSet {
 			continue
 		}
-		if unit.Type == "oscillator" && unit.Parameters["type"] != sointu.Sample && i >= 11 {
-			break // don't show the sample related params unless necessary
+		if unit.Type == "oscillator" && unit.Parameters["type"] != sointu.Sample && (up.Name == "samplestart" || up.Name == "loopstart" || up.Name == "looplength") {
+			continue // don't show the sample related params unless necessary
 		}
-		if !yield(NamedParameter{
-			parameter: parameter{m: (*Model)(pl), unit: unit},
-			up:        &unitType[i],
-		}) {
+		if !yield(Parameter{m: (*Model)(pl), unit: unit, up: &unitType[i], vtable: &namedParameter{}}) {
 			return
 		}
 	}
 	if unit.Type == "oscillator" && unit.Parameters["type"] == sointu.Sample {
-		if !yield(GmDlsEntryParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
+		if !yield(Parameter{m: (*Model)(pl), unit: unit, vtable: &gmDlsEntryParameter{}}) {
 			return
 		}
 	}
-	switch {
-	case unit.Type == "delay":
+	if unit.Type == "delay" {
 		if unit.Parameters["stereo"] == 1 && len(unit.VarArgs)%2 == 1 {
 			unit.VarArgs = append(unit.VarArgs, 1)
 		}
-		if !yield(ReverbParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
+		if !yield(Parameter{m: (*Model)(pl), unit: unit, vtable: &reverbParameter{}}) {
 			return
 		}
-		if !yield(DelayLinesParameter{parameter: parameter{m: (*Model)(pl), unit: unit}}) {
+		if !yield(Parameter{m: (*Model)(pl), unit: unit, vtable: &delayLinesParameter{}}) {
 			return
 		}
 		for i := range unit.VarArgs {
-			if !yield(DelayTimeParameter{parameter: parameter{m: (*Model)(pl), unit: unit}, index: i}) {
+			if !yield(Parameter{m: (*Model)(pl), unit: unit, index: i, vtable: &delayTimeParameter{}}) {
 				return
 			}
 		}
 	}
 }
 
-// NamedParameter
+// namedParameter vtable
 
-func (p NamedParameter) Name() string    { return p.up.Name }
-func (p NamedParameter) Range() IntRange { return IntRange{Min: p.up.MinValue, Max: p.up.MaxValue} }
-func (p NamedParameter) Value() int      { return p.unit.Parameters[p.up.Name] }
-func (p NamedParameter) SetValue(value int) bool {
+func (n *namedParameter) Value(p *Parameter) int { return p.unit.Parameters[p.up.Name] }
+func (n *namedParameter) SetValue(p *Parameter, value int) bool {
 	defer p.m.change("Parameter"+p.Name(), PatchChange, MinorChange)()
 	p.unit.Parameters[p.up.Name] = value
 	return true
 }
-
-func (p NamedParameter) Reset() {
-	v, ok := defaultUnits[p.unit.Type].Parameters[p.up.Name]
-	if !ok || p.unit.Parameters[p.up.Name] == v {
-		return
-	}
-	defer p.m.change("Reset"+p.Name(), PatchChange, MinorChange)()
-	p.unit.Parameters[p.up.Name] = v
+func (n *namedParameter) Range(p *Parameter) IntRange {
+	return IntRange{Min: p.up.MinValue, Max: p.up.MaxValue}
 }
-
-func (p NamedParameter) Type() ParameterType {
+func (n *namedParameter) Type(p *Parameter) ParameterType {
 	if p.unit.Type == "send" && p.up.Name == "target" {
 		return IDParameter
 	}
@@ -172,8 +215,10 @@ func (p NamedParameter) Type() ParameterType {
 	}
 	return IntegerParameter
 }
-
-func (p NamedParameter) Hint() ParameterHint {
+func (n *namedParameter) Name(p *Parameter) string {
+	return p.up.Name
+}
+func (n *namedParameter) Hint(p *Parameter) ParameterHint {
 	val := p.Value()
 	label := strconv.Itoa(val)
 	if p.up.DisplayFunc != nil {
@@ -197,40 +242,44 @@ func (p NamedParameter) Hint() ParameterHint {
 			if val < 0 || val >= len(portList) {
 				return ParameterHint{label, false}
 			}
-			label = fmt.Sprintf(portList[val])
+			label = portList[val]
 		}
 	}
 	return ParameterHint{label, true}
 }
-
-func (p NamedParameter) LargeStep() int {
+func (n *namedParameter) Info(p *Parameter) (string, bool) {
+	sendInfo, ok := p.m.ParameterInfo(p.unit.ID, p.up.Name)
+	return sendInfo, ok
+}
+func (n *namedParameter) LargeStep(p *Parameter) int {
 	if p.up.Name == "transpose" {
 		return 12
 	}
 	return 16
 }
-
-func (p NamedParameter) Unit() sointu.Unit {
-	return *p.parameter.unit
+func (n *namedParameter) Reset(p *Parameter) {
+	v, ok := defaultUnits[p.unit.Type].Parameters[p.up.Name]
+	if !ok || p.unit.Parameters[p.up.Name] == v {
+		return
+	}
+	defer p.m.change("Reset"+p.Name(), PatchChange, MinorChange)()
+	p.unit.Parameters[p.up.Name] = v
 }
 
-// GmDlsEntryParameter
+// gmDlsEntryParameter vtable
 
-func (p GmDlsEntryParameter) Name() string        { return "sample" }
-func (p GmDlsEntryParameter) Type() ParameterType { return IntegerParameter }
-func (p GmDlsEntryParameter) Range() IntRange     { return IntRange{Min: 0, Max: len(GmDlsEntries)} }
-func (p GmDlsEntryParameter) LargeStep() int      { return 16 }
-func (p GmDlsEntryParameter) Reset()              { return }
-
-func (p GmDlsEntryParameter) Value() int {
-	key := vm.SampleOffset{Start: uint32(p.unit.Parameters["samplestart"]), LoopStart: uint16(p.unit.Parameters["loopstart"]), LoopLength: uint16(p.unit.Parameters["looplength"])}
+func (g *gmDlsEntryParameter) Value(p *Parameter) int {
+	key := vm.SampleOffset{
+		Start:      uint32(p.unit.Parameters["samplestart"]),
+		LoopStart:  uint16(p.unit.Parameters["loopstart"]),
+		LoopLength: uint16(p.unit.Parameters["looplength"]),
+	}
 	if v, ok := gmDlsEntryMap[key]; ok {
 		return v + 1
 	}
 	return 0
 }
-
-func (p GmDlsEntryParameter) SetValue(v int) bool {
+func (g *gmDlsEntryParameter) SetValue(p *Parameter, v int) bool {
 	if v < 1 || v > len(GmDlsEntries) {
 		return false
 	}
@@ -242,44 +291,57 @@ func (p GmDlsEntryParameter) SetValue(v int) bool {
 	p.unit.Parameters["transpose"] = 64 + e.SuggestedTranspose
 	return true
 }
-
-func (p GmDlsEntryParameter) Hint() ParameterHint {
+func (g *gmDlsEntryParameter) Range(p *Parameter) IntRange {
+	return IntRange{Min: 0, Max: len(GmDlsEntries)}
+}
+func (g *gmDlsEntryParameter) Type(p *Parameter) ParameterType {
+	return IntegerParameter
+}
+func (g *gmDlsEntryParameter) Name(p *Parameter) string {
+	return "sample"
+}
+func (g *gmDlsEntryParameter) Hint(p *Parameter) ParameterHint {
 	label := "0 / custom"
-	if v := p.Value(); v > 0 {
+	if v := g.Value(p); v > 0 {
 		label = fmt.Sprintf("%v / %v", v, GmDlsEntries[v-1].Name)
 	}
 	return ParameterHint{label, true}
 }
+func (g *gmDlsEntryParameter) Info(p *Parameter) (string, bool) {
+	return "", false
+}
+func (g *gmDlsEntryParameter) LargeStep(p *Parameter) int {
+	return 16
+}
+func (g *gmDlsEntryParameter) Reset(p *Parameter) {}
 
-// DelayTimeParameter
+// delayTimeParameter vtable
 
-func (p DelayTimeParameter) Name() string        { return "delaytime" }
-func (p DelayTimeParameter) Type() ParameterType { return IntegerParameter }
-func (p DelayTimeParameter) LargeStep() int      { return 16 }
-func (p DelayTimeParameter) Reset()              { return }
-
-func (p DelayTimeParameter) Value() int {
+func (d *delayTimeParameter) Value(p *Parameter) int {
 	if p.index < 0 || p.index >= len(p.unit.VarArgs) {
 		return 1
 	}
 	return p.unit.VarArgs[p.index]
 }
-
-func (p DelayTimeParameter) SetValue(v int) bool {
+func (d *delayTimeParameter) SetValue(p *Parameter, v int) bool {
 	defer p.m.change("DelayTimeParameter", PatchChange, MinorChange)()
 	p.unit.VarArgs[p.index] = v
 	return true
 }
-
-func (p DelayTimeParameter) Range() IntRange {
+func (d *delayTimeParameter) Range(p *Parameter) IntRange {
 	if p.unit.Parameters["notetracking"] == 2 {
 		return IntRange{Min: 1, Max: 576}
 	}
 	return IntRange{Min: 1, Max: 65535}
 }
-
-func (p DelayTimeParameter) Hint() ParameterHint {
-	val := p.Value()
+func (d *delayTimeParameter) Type(p *Parameter) ParameterType {
+	return IntegerParameter
+}
+func (d *delayTimeParameter) Name(p *Parameter) string {
+	return "delaytime"
+}
+func (d *delayTimeParameter) Hint(p *Parameter) ParameterHint {
+	val := d.Value(p)
 	var text string
 	switch p.unit.Parameters["notetracking"] {
 	default:
@@ -292,7 +354,7 @@ func (p DelayTimeParameter) Hint() ParameterHint {
 	case 2:
 		k := 0
 		v := val
-		for v&1 == 0 { // divide val by 2 until it is odd
+		for v&1 == 0 {
 			v >>= 1
 			k++
 		}
@@ -305,7 +367,6 @@ func (p DelayTimeParameter) Hint() ParameterHint {
 			if k <= 6 {
 				text = fmt.Sprintf(" (1/%d)", 1<<(6-k))
 			}
-			break
 		case 9:
 			if k <= 5 {
 				text = fmt.Sprintf(" (1/%d dotted)", 1<<(5-k))
@@ -322,28 +383,24 @@ func (p DelayTimeParameter) Hint() ParameterHint {
 	}
 	return ParameterHint{text, true}
 }
-
-// DelayLinesParameter
-
-func (p DelayLinesParameter) Name() string        { return "delaylines" }
-func (p DelayLinesParameter) Type() ParameterType { return IntegerParameter }
-func (p DelayLinesParameter) Range() IntRange     { return IntRange{Min: 1, Max: 32} }
-func (p DelayLinesParameter) LargeStep() int      { return 4 }
-func (p DelayLinesParameter) Reset()              { return }
-
-func (p DelayLinesParameter) Hint() ParameterHint {
-	return ParameterHint{strconv.Itoa(p.Value()), true}
+func (d *delayTimeParameter) Info(p *Parameter) (string, bool) {
+	return "", false
 }
+func (d *delayTimeParameter) LargeStep(p *Parameter) int {
+	return 16
+}
+func (d *delayTimeParameter) Reset(p *Parameter) {}
 
-func (p DelayLinesParameter) Value() int {
+// delayLinesParameter vtable
+
+func (d *delayLinesParameter) Value(p *Parameter) int {
 	val := len(p.unit.VarArgs)
 	if p.unit.Parameters["stereo"] == 1 {
 		val /= 2
 	}
 	return val
 }
-
-func (p DelayLinesParameter) SetValue(v int) bool {
+func (d *delayLinesParameter) SetValue(p *Parameter, v int) bool {
 	defer p.m.change("DelayLinesParameter", PatchChange, MinorChange)()
 	targetLines := v
 	if p.unit.Parameters["stereo"] == 1 {
@@ -355,23 +412,35 @@ func (p DelayLinesParameter) SetValue(v int) bool {
 	p.unit.VarArgs = p.unit.VarArgs[:targetLines]
 	return true
 }
+func (d *delayLinesParameter) Range(p *Parameter) IntRange {
+	return IntRange{Min: 1, Max: 32}
+}
+func (d *delayLinesParameter) Type(p *Parameter) ParameterType {
+	return IntegerParameter
+}
+func (d *delayLinesParameter) Name(p *Parameter) string {
+	return "delaylines"
+}
+func (d *delayLinesParameter) Hint(p *Parameter) ParameterHint {
+	return ParameterHint{strconv.Itoa(d.Value(p)), true}
+}
+func (d *delayLinesParameter) Info(p *Parameter) (string, bool) {
+	return "", false
+}
+func (d *delayLinesParameter) LargeStep(p *Parameter) int {
+	return 4
+}
+func (d *delayLinesParameter) Reset(p *Parameter) {}
 
-// ReverbParameter
+// reverbParameter vtable
 
-func (p ReverbParameter) Name() string        { return "reverb" }
-func (p ReverbParameter) Type() ParameterType { return IntegerParameter }
-func (p ReverbParameter) Range() IntRange     { return IntRange{Min: 0, Max: len(reverbs)} }
-func (p ReverbParameter) LargeStep() int      { return 1 }
-func (p ReverbParameter) Reset()              { return }
-
-func (p ReverbParameter) Value() int {
+func (r *reverbParameter) Value(p *Parameter) int {
 	i := slices.IndexFunc(reverbs, func(d delayPreset) bool {
 		return d.stereo == p.unit.Parameters["stereo"] && p.unit.Parameters["notetracking"] == 0 && slices.Equal(d.varArgs, p.unit.VarArgs)
 	})
 	return i + 1
 }
-
-func (p ReverbParameter) SetValue(v int) bool {
+func (r *reverbParameter) SetValue(p *Parameter, v int) bool {
 	if v < 1 || v > len(reverbs) {
 		return false
 	}
@@ -383,12 +452,27 @@ func (p ReverbParameter) SetValue(v int) bool {
 	copy(p.unit.VarArgs, entry.varArgs)
 	return true
 }
-
-func (p ReverbParameter) Hint() ParameterHint {
-	i := p.Value()
+func (r *reverbParameter) Range(p *Parameter) IntRange {
+	return IntRange{Min: 0, Max: len(reverbs)}
+}
+func (r *reverbParameter) Type(p *Parameter) ParameterType {
+	return IntegerParameter
+}
+func (r *reverbParameter) Name(p *Parameter) string {
+	return "reverb"
+}
+func (r *reverbParameter) Hint(p *Parameter) ParameterHint {
+	i := r.Value(p)
 	label := "0 / custom"
 	if i > 0 {
 		label = fmt.Sprintf("%v / %v", i, reverbs[i-1].name)
 	}
 	return ParameterHint{label, true}
 }
+func (r *reverbParameter) Info(p *Parameter) (string, bool) {
+	return "", false
+}
+func (r *reverbParameter) LargeStep(p *Parameter) int {
+	return 1
+}
+func (r *reverbParameter) Reset(p *Parameter) {}
