@@ -34,28 +34,6 @@ func (m NullMIDIContext) Close() {}
 
 func (m NullMIDIContext) HasDeviceOpen() bool { return false }
 
-func (c *VSTIProcessContext) NextEvent(frame int) (event tracker.MIDINoteEvent, ok bool) {
-	for c.eventIndex < len(c.events) {
-		ev := c.events[c.eventIndex]
-		c.eventIndex++
-		switch {
-		case ev.Data[0] >= 0x80 && ev.Data[0] < 0x90:
-			channel := ev.Data[0] - 0x80
-			note := ev.Data[1]
-			return tracker.MIDINoteEvent{Frame: int(ev.DeltaFrames), On: false, Channel: int(channel), Note: note}, true
-		case ev.Data[0] >= 0x90 && ev.Data[0] < 0xA0:
-			channel := ev.Data[0] - 0x90
-			note := ev.Data[1]
-			return tracker.MIDINoteEvent{Frame: int(ev.DeltaFrames), On: true, Channel: int(channel), Note: note}, true
-		default:
-			// ignore all other MIDI messages
-		}
-	}
-	return tracker.MIDINoteEvent{}, false
-}
-
-func (c *VSTIProcessContext) FinishBlock(frame int) {}
-
 func (c *VSTIProcessContext) BPM() (bpm float64, ok bool) {
 	timeInfo := c.host.GetTimeInfo(vst2.TempoValid)
 	if timeInfo == nil || timeInfo.Flags&vst2.TempoValid == 0 || timeInfo.Tempo == 0 {
@@ -89,8 +67,9 @@ func init() {
 		// swapped/added etc.
 		model.LinkInstrTrack().SetValue(false)
 		go t.Main()
-		context := VSTIProcessContext{host: h}
+		context := &VSTIProcessContext{host: h}
 		buf := make(sointu.AudioBuffer, 1024)
+		var totalFrames int64 = 0
 		return vst2.Plugin{
 				UniqueID:       PLUGIN_ID,
 				Version:        version,
@@ -110,12 +89,11 @@ func init() {
 						buf = append(buf, make(sointu.AudioBuffer, out.Frames-len(buf))...)
 					}
 					buf = buf[:out.Frames]
-					player.Process(buf, &context, nil)
+					player.Process(buf, context)
 					for i := 0; i < out.Frames; i++ {
 						left[i], right[i] = buf[i][0], buf[i][1]
 					}
-					context.events = context.events[:0] // reset buffer, but keep the allocated memory
-					context.eventIndex = 0
+					totalFrames += int64(out.Frames)
 				},
 			}, vst2.Dispatcher{
 				CanDoFunc: func(pcds vst2.PluginCanDoString) vst2.CanDoResponse {
@@ -125,12 +103,17 @@ func init() {
 					}
 					return vst2.NoCanDo
 				},
-				ProcessEventsFunc: func(ev *vst2.EventsPtr) {
-					for i := 0; i < ev.NumEvents(); i++ {
-						a := ev.Event(i)
-						switch v := a.(type) {
+				ProcessEventsFunc: func(events *vst2.EventsPtr) {
+					for i := 0; i < events.NumEvents(); i++ {
+						switch ev := events.Event(i).(type) {
 						case *vst2.MIDIEvent:
-							context.events = append(context.events, *v)
+							if ev.Data[0] >= 0x80 && ev.Data[0] <= 0x9F {
+								channel := ev.Data[0] & 0x0F
+								note := ev.Data[1]
+								on := ev.Data[0] >= 0x90
+								trackerEvent := tracker.NoteEvent{Timestamp: int64(ev.DeltaFrames) + totalFrames, On: on, Channel: int(channel), Note: note, Source: &context}
+								tracker.TrySend(broker.MIDIChannel(), any(trackerEvent))
+							}
 						}
 					}
 				},

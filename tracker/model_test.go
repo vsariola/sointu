@@ -13,10 +13,6 @@ import (
 
 type NullContext struct{}
 
-func (NullContext) NextEvent(frame int) (event tracker.MIDINoteEvent, ok bool) {
-	return tracker.MIDINoteEvent{}, false
-}
-
 func (NullContext) FinishBlock(frame int) {}
 
 func (NullContext) BPM() (bpm float64, ok bool) {
@@ -277,7 +273,7 @@ func FuzzModel(f *testing.F) {
 					break loop
 				default:
 					ctx := NullContext{}
-					player.Process(buf, ctx, nil)
+					player.Process(buf, ctx)
 				}
 			}
 		}()

@@ -27,7 +27,6 @@ type DragList struct {
 	dragID       pointer.ID
 	tags         []bool
 	swapped      bool
-	focused      bool
 	requestFocus bool
 }
 
@@ -57,8 +56,8 @@ func (d *DragList) Focus() {
 	d.requestFocus = true
 }
 
-func (d *DragList) Focused() bool {
-	return d.focused
+func (d *DragList) Focused(gtx C) bool {
+	return gtx.Focused(d)
 }
 
 func (s FilledDragListStyle) LayoutScrollBar(gtx C) D {
@@ -114,12 +113,11 @@ func (s FilledDragListStyle) Layout(gtx C, element, bg func(gtx C, i int) D) D {
 		}
 		switch ke := event.(type) {
 		case key.FocusEvent:
-			s.dragList.focused = ke.Focus
-			if !s.dragList.focused {
+			if !ke.Focus {
 				s.dragList.TrackerList.SetSelected2(s.dragList.TrackerList.Selected())
 			}
 		case key.Event:
-			if !s.dragList.focused || ke.State != key.Press {
+			if !s.dragList.Focused(gtx) || ke.State != key.Press {
 				break
 			}
 			s.dragList.command(gtx, ke)
@@ -141,13 +139,13 @@ func (s FilledDragListStyle) Layout(gtx C, element, bg func(gtx C, i int) D) D {
 		cursorBg := func(gtx C) D {
 			var color color.NRGBA
 			if s.dragList.TrackerList.Selected() == index {
-				if s.dragList.focused {
+				if gtx.Focused(s.dragList) {
 					color = s.Cursor.Active
 				} else {
 					color = s.Cursor.Inactive
 				}
 			} else if between(s.dragList.TrackerList.Selected(), index, s.dragList.TrackerList.Selected2()) {
-				if s.dragList.focused {
+				if gtx.Focused(s.dragList) {
 					color = s.Selection.Active
 				} else {
 					color = s.Selection.Inactive
@@ -193,7 +191,7 @@ func (s FilledDragListStyle) Layout(gtx C, element, bg func(gtx C, i int) D) D {
 			area.Pop()
 			if index == s.dragList.TrackerList.Selected() && isMutable {
 				for {
-					target := &s.dragList.focused
+					target := &s.dragList.drag
 					if s.dragList.drag {
 						target = nil
 					}
@@ -233,7 +231,7 @@ func (s FilledDragListStyle) Layout(gtx C, element, bg func(gtx C, i int) D) D {
 					}
 				}
 				area := clip.Rect(rect).Push(gtx.Ops)
-				event.Op(gtx.Ops, &s.dragList.focused)
+				event.Op(gtx.Ops, &s.dragList.drag)
 				pointer.CursorGrab.Add(gtx.Ops)
 				area.Pop()
 			}

@@ -21,7 +21,6 @@ type ScrollTable struct {
 	ColTitleList *DragList
 	RowTitleList *DragList
 	Table        tracker.Table
-	focused      bool
 	requestFocus bool
 	cursorMoved  bool
 	eventFilters []event.Filter
@@ -94,8 +93,8 @@ func (st *ScrollTable) Focus() {
 	st.requestFocus = true
 }
 
-func (st *ScrollTable) Focused() bool {
-	return st.focused
+func (st *ScrollTable) Focused(gtx C) bool {
+	return gtx.Source.Focused(st)
 }
 
 func (st *ScrollTable) EnsureCursorVisible() {
@@ -103,8 +102,8 @@ func (st *ScrollTable) EnsureCursorVisible() {
 	st.RowTitleList.EnsureVisible(st.Table.Cursor().Y)
 }
 
-func (st *ScrollTable) ChildFocused() bool {
-	return st.ColTitleList.Focused() || st.RowTitleList.Focused()
+func (st *ScrollTable) ChildFocused(gtx C) bool {
+	return st.ColTitleList.Focused(gtx) || st.RowTitleList.Focused(gtx)
 }
 
 func (s ScrollTableStyle) Layout(gtx C, element func(gtx C, x, y int) D, colTitle, rowTitle, colTitleBg, rowTitleBg func(gtx C, i int) D) D {
@@ -114,7 +113,7 @@ func (s ScrollTableStyle) Layout(gtx C, element func(gtx C, x, y int) D, colTitl
 	p := image.Pt(gtx.Dp(s.RowTitleWidth), gtx.Dp(s.ColumnTitleHeight))
 	s.handleEvents(gtx, p)
 
-	return Surface{Gray: 24, Focus: s.ScrollTable.Focused() || s.ScrollTable.ChildFocused()}.Layout(gtx, func(gtx C) D {
+	return Surface{Gray: 24, Focus: s.ScrollTable.Focused(gtx) || s.ScrollTable.ChildFocused(gtx)}.Layout(gtx, func(gtx C) D {
 		defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 		dims := gtx.Constraints.Max
 		s.layoutColTitles(gtx, p, colTitle, colTitleBg)
@@ -135,8 +134,6 @@ func (s *ScrollTableStyle) handleEvents(gtx layout.Context, p image.Point) {
 			break
 		}
 		switch e := e.(type) {
-		case key.FocusEvent:
-			s.ScrollTable.focused = e.Focus
 		case pointer.Event:
 			switch e.Kind {
 			case pointer.Press:

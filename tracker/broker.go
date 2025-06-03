@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/vsariola/sointu"
@@ -37,12 +38,18 @@ type (
 		ToModel    chan MsgToModel
 		ToPlayer   chan any // TODO: consider using a sum type here, for a bit more type safety. See: https://www.jerf.org/iri/post/2917/
 		ToDetector chan MsgToDetector
+		ToGUI      chan any
 
 		CloseDetector chan struct{}
 		CloseGUI      chan struct{}
 
 		FinishedGUI      chan struct{}
 		FinishedDetector chan struct{}
+
+		// mIDIEventsToGUI is true if all MIDI events should be sent to the GUI,
+		// for inputting notes to tracks. If false, they should be sent to the
+		// player instead.
+		mIDIEventsToGUI atomic.Bool
 
 		bufferPool sync.Pool
 	}
@@ -79,6 +86,19 @@ type (
 		Oversampling     bool
 		HasOversampling  bool
 	}
+
+	MsgToGUI struct {
+		Kind  GUIMessageKind
+		Param int
+	}
+
+	GUIMessageKind int
+)
+
+const (
+	GUIMessageKindNone GUIMessageKind = iota
+	GUIMessageCenterOnRow
+	GUIMessageEnsureCursorVisible
 )
 
 func NewBroker() *Broker {
@@ -86,12 +106,20 @@ func NewBroker() *Broker {
 		ToPlayer:         make(chan interface{}, 1024),
 		ToModel:          make(chan MsgToModel, 1024),
 		ToDetector:       make(chan MsgToDetector, 1024),
+		ToGUI:            make(chan any, 1024),
 		CloseDetector:    make(chan struct{}, 1),
 		CloseGUI:         make(chan struct{}, 1),
 		FinishedGUI:      make(chan struct{}),
 		FinishedDetector: make(chan struct{}),
 		bufferPool:       sync.Pool{New: func() interface{} { return &sointu.AudioBuffer{} }},
 	}
+}
+
+func (b *Broker) MIDIChannel() chan<- any {
+	if b.mIDIEventsToGUI.Load() {
+		return b.ToGUI
+	}
+	return b.ToPlayer
 }
 
 // GetAudioBuffer returns an audio buffer from the buffer pool. The buffer is

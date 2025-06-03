@@ -82,8 +82,7 @@ type (
 
 		broker *Broker
 
-		MIDI        MIDIContext
-		trackMidiIn bool
+		MIDI MIDIContext
 	}
 
 	// Cursor identifies a row and a track in a song score.
@@ -104,26 +103,12 @@ type (
 		Continuation func(string) // function to call with the selected file path
 	}
 
-	// Describes a note triggered either a track or an instrument
-	// If Go had union or Either types, this would be it, but in absence
-	// those, this uses a boolean to define if the instrument is defined or the track
-	NoteID struct {
-		IsInstr bool
-		Instr   int
-		Track   int
-		Note    byte
-
-		model *Model
-	}
-
 	IsPlayingMsg   struct{ bool }
 	StartPlayMsg   struct{ sointu.SongPos }
 	BPMMsg         struct{ int }
 	RowsPerBeatMsg struct{ int }
 	PanicMsg       struct{ bool }
 	RecordingMsg   struct{ bool }
-	NoteOnMsg      struct{ NoteID }
-	NoteOffMsg     struct{ NoteID }
 
 	ChangeSeverity int
 	ChangeType     int
@@ -187,7 +172,6 @@ func NewModel(broker *Broker, synther sointu.Synther, midiContext MIDIContext, r
 	m := new(Model)
 	m.synther = synther
 	m.MIDI = midiContext
-	m.trackMidiIn = midiContext.HasDeviceOpen()
 	m.broker = broker
 	m.d.Octave = 4
 	m.linkInstrTrack = true
@@ -353,6 +337,10 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 		if m.playing && m.follow {
 			m.d.Cursor.SongPos = msg.SongPosition
 			m.d.Cursor2.SongPos = msg.SongPosition
+			TrySend(m.broker.ToGUI, any(MsgToGUI{
+				Kind:  GUIMessageCenterOnRow,
+				Param: m.PlaySongRow(),
+			}))
 		}
 		m.panic = msg.Panic
 	}
@@ -386,28 +374,11 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 		m.playing = e.bool
 	case *sointu.AudioBuffer:
 		m.signalAnalyzer.ProcessAudioBuffer(e)
-	default:
 	}
 }
 
 func (m *Model) SignalAnalyzer() *ScopeModel { return m.signalAnalyzer }
 func (m *Model) Broker() *Broker             { return m.broker }
-
-func (m *Model) TrackNoteOn(track int, note byte) (id NoteID) {
-	id = NoteID{IsInstr: false, Track: track, Note: note, model: m}
-	TrySend(m.broker.ToPlayer, any(NoteOnMsg{id}))
-	return id
-}
-
-func (m *Model) InstrNoteOn(instr int, note byte) (id NoteID) {
-	id = NoteID{IsInstr: true, Instr: instr, Note: note, model: m}
-	TrySend(m.broker.ToPlayer, any(NoteOnMsg{id}))
-	return id
-}
-
-func (n NoteID) NoteOff() {
-	TrySend(n.model.broker.ToPlayer, any(NoteOffMsg{n}))
-}
 
 func (d *modelData) Copy() modelData {
 	ret := *d

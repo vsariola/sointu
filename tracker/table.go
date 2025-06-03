@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"math"
+	"time"
 
 	"github.com/vsariola/sointu"
 	"gopkg.in/yaml.v3"
@@ -437,7 +438,7 @@ func (v *Notes) MoveCursor(dx, dy int) (ok bool) {
 }
 
 func (v *Notes) clear(p Point) {
-	v.SetValue(p, 1)
+	v.Input(1)
 }
 
 func (v *Notes) set(p Point, value int) {
@@ -586,7 +587,12 @@ func (m *Notes) SetValue(p Point, val byte) {
 	(*track).SetNote(pos, val, m.uniquePatterns)
 }
 
-func (v *Notes) FillNibble(value byte, lowNibble bool) {
+func (v *Notes) Input(note byte) NoteEvent {
+	v.Table().Fill(int(note))
+	return v.finishInput(note)
+}
+
+func (v *Notes) InputNibble(nibble byte) NoteEvent {
 	defer v.change("FillNibble", MajorChange)()
 	rect := Table{v}.Range()
 	for y := rect.TopLeft.Y; y <= rect.BottomRight.Y; y++ {
@@ -595,12 +601,24 @@ func (v *Notes) FillNibble(value byte, lowNibble bool) {
 			if val == 1 {
 				val = 0 // treat hold also as 0
 			}
-			if lowNibble {
-				val = (val & 0xf0) | byte(value&15)
+			if v.d.LowNibble {
+				val = (val & 0xf0) | byte(nibble&15)
 			} else {
-				val = (val & 0x0f) | byte((value&15)<<4)
+				val = (val & 0x0f) | byte((nibble&15)<<4)
 			}
 			v.SetValue(Point{x, y}, val)
 		}
 	}
+	return v.finishInput(v.Value(v.Cursor()))
+}
+
+func (v *Notes) finishInput(note byte) NoteEvent {
+	if step := v.d.Step; step > 0 {
+		v.Table().MoveCursor(0, step)
+		v.Table().SetCursor2(v.Table().Cursor())
+	}
+	TrySend(v.broker.ToGUI, any(MsgToGUI{Kind: GUIMessageEnsureCursorVisible, Param: v.Table().Cursor().Y}))
+	track := v.Cursor().X
+	ts := time.Now().UnixMilli() * 441 / 10 // convert to 44100Hz frames
+	return NoteEvent{IsTrack: true, Channel: track, Note: note, On: true, Timestamp: ts}
 }

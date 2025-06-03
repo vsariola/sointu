@@ -127,19 +127,19 @@ func (ie *InstrumentEditor) Focus() {
 	ie.unitDragList.Focus()
 }
 
-func (ie *InstrumentEditor) Focused() bool {
-	return ie.unitDragList.focused
+func (ie *InstrumentEditor) Focused(gtx C) bool {
+	return gtx.Focused(ie.unitDragList)
 }
 
 func (ie *InstrumentEditor) childFocused(gtx C) bool {
-	return ie.unitEditor.sliderList.Focused() ||
-		ie.instrumentDragList.Focused() || gtx.Source.Focused(ie.commentEditor) || gtx.Source.Focused(ie.nameEditor) || gtx.Source.Focused(ie.searchEditor) ||
+	return ie.unitEditor.sliderList.Focused(gtx) ||
+		ie.instrumentDragList.Focused(gtx) || gtx.Source.Focused(ie.commentEditor) || gtx.Source.Focused(ie.nameEditor) || gtx.Source.Focused(ie.searchEditor) ||
 		gtx.Source.Focused(ie.addUnitBtn.Clickable) || gtx.Source.Focused(ie.commentExpandBtn.Clickable) || gtx.Source.Focused(ie.presetMenuBtn.Clickable) ||
 		gtx.Source.Focused(ie.deleteInstrumentBtn.Clickable) || gtx.Source.Focused(ie.copyInstrumentBtn.Clickable)
 }
 
 func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
-	ie.wasFocused = ie.Focused() || ie.childFocused(gtx)
+	ie.wasFocused = ie.Focused(gtx) || ie.childFocused(gtx)
 	fullscreenBtnStyle := ToggleIcon(gtx, t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, ie.enlargeHint, ie.shrinkHint)
 	linkBtnStyle := ToggleIcon(gtx, t.Theme, ie.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, ie.linkDisabledHint, ie.linkEnabledHint)
 

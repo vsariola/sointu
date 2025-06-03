@@ -33,8 +33,7 @@ type (
 		TopHorizontalSplit    *Split
 		BottomHorizontalSplit *Split
 		VerticalSplit         *Split
-		KeyPlaying            map[key.Name]tracker.NoteID
-		MidiNotePlaying       []byte
+		KeyNoteMap            Keyboard[key.Name]
 		PopupAlert            *PopupAlert
 		Zoom                  int
 
@@ -50,6 +49,7 @@ type (
 		SongPanel        *SongPanel
 
 		filePathString tracker.String
+		noteEvents     []tracker.NoteEvent
 
 		execChan    chan func()
 		preferences Preferences
@@ -78,8 +78,6 @@ func NewTracker(model *tracker.Model) *Tracker {
 		BottomHorizontalSplit: &Split{Ratio: -.6, MinSize1: 180, MinSize2: 180},
 		VerticalSplit:         &Split{Axis: layout.Vertical, MinSize1: 180, MinSize2: 180},
 
-		KeyPlaying:        make(map[key.Name]tracker.NoteID),
-		MidiNotePlaying:   make([]byte, 0, 32),
 		SaveChangesDialog: NewDialog(model.SaveSong(), model.DiscardSong(), model.Cancel()),
 		WaveTypeDialog:    NewDialog(model.ExportInt16(), model.ExportFloat(), model.Cancel()),
 		InstrumentEditor:  NewInstrumentEditor(model),
@@ -93,6 +91,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 
 		filePathString: model.FilePath(),
 	}
+	t.KeyNoteMap = MakeKeyboard[key.Name](model.Broker())
 	t.PopupAlert = NewPopupAlert(model.Alerts())
 	var warn error
 	if t.Theme, warn = NewTheme(); warn != nil {
@@ -138,6 +137,19 @@ func (t *Tracker) Main() {
 	F:
 		for {
 			select {
+			case e := <-t.Broker().ToGUI:
+				switch e := e.(type) {
+				case tracker.NoteEvent:
+					t.noteEvents = append(t.noteEvents, e)
+				case tracker.MsgToGUI:
+					switch e.Kind {
+					case tracker.GUIMessageCenterOnRow:
+						t.TrackEditor.scrollTable.RowTitleList.CenterOn(e.Param)
+					case tracker.GUIMessageEnsureCursorVisible:
+						t.TrackEditor.scrollTable.EnsureCursorVisible()
+					}
+				}
+				w.Invalidate()
 			case e := <-t.Broker().ToModel:
 				t.ProcessMsg(e)
 				w.Invalidate()
@@ -158,9 +170,6 @@ func (t *Tracker) Main() {
 						w.Option(app.Title(titleFromPath(titlePath)))
 					}
 					gtx := app.NewContext(&ops, e)
-					if t.Playing().Value() && t.Follow().Value() {
-						t.TrackEditor.scrollTable.RowTitleList.CenterOn(t.PlaySongRow())
-					}
 					t.Layout(gtx, w)
 					e.Frame(gtx.Ops)
 					if t.Quitted() {
@@ -240,7 +249,16 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 			t.ReadSong(e.Open())
 		}
 	}
-
+	// if no-one else handled the note events, we handle them here
+	for len(t.noteEvents) > 0 {
+		ev := t.noteEvents[0]
+		ev.IsTrack = false
+		ev.Channel = t.Model.Instruments().Selected()
+		ev.Source = t
+		copy(t.noteEvents, t.noteEvents[1:])
+		t.noteEvents = t.noteEvents[:len(t.noteEvents)-1]
+		tracker.TrySend(t.Broker().ToPlayer, any(ev))
+	}
 }
 
 func (t *Tracker) showDialog(gtx C) {
@@ -327,47 +345,4 @@ func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
 			return t.InstrumentEditor.Layout(gtx, t)
 		},
 	)
-}
-
-/// Event Handling (for UI updates when playing etc.)
-
-func (t *Tracker) ProcessMessage(msg interface{}) {
-	switch msg.(type) {
-	case tracker.StartPlayMsg:
-		fmt.Println("Tracker received StartPlayMsg")
-	case tracker.RecordingMsg:
-		fmt.Println("Tracker received RecordingMsg")
-	default:
-		break
-	}
-}
-
-func (t *Tracker) ProcessEvent(event tracker.MIDINoteEvent) {
-	// MIDINoteEvent can be only NoteOn / NoteOff, i.e. its On field
-	if event.On {
-		t.addToMidiNotePlaying(event.Note)
-	} else {
-		t.removeFromMidiNotePlaying(event.Note)
-	}
-	t.TrackEditor.HandleMidiInput(t)
-}
-
-func (t *Tracker) addToMidiNotePlaying(note byte) {
-	for _, n := range t.MidiNotePlaying {
-		if n == note {
-			return
-		}
-	}
-	t.MidiNotePlaying = append(t.MidiNotePlaying, note)
-}
-
-func (t *Tracker) removeFromMidiNotePlaying(note byte) {
-	for i, n := range t.MidiNotePlaying {
-		if n == note {
-			t.MidiNotePlaying = append(
-				t.MidiNotePlaying[:i],
-				t.MidiNotePlaying[i+1:]...,
-			)
-		}
-	}
 }

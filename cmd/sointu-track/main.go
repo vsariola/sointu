@@ -46,10 +46,10 @@ func main() {
 	if configDir, err := os.UserConfigDir(); err == nil {
 		recoveryFile = filepath.Join(configDir, "Sointu", "sointu-track-recovery")
 	}
-	midiContext := gomidi.NewContext()
+	broker := tracker.NewBroker()
+	midiContext := gomidi.NewContext(broker)
 	defer midiContext.Close()
 	midiContext.TryToOpenBy(*defaultMidiInput, *firstMidiInput)
-	broker := tracker.NewBroker()
 	model := tracker.NewModel(broker, cmd.MainSynther, midiContext, recoveryFile)
 	player := tracker.NewPlayer(broker, cmd.MainSynther)
 	detector := tracker.NewDetector(broker)
@@ -65,7 +65,7 @@ func main() {
 
 	trackerUi := gioui.NewTracker(model)
 	audioCloser := audioContext.Play(func(buf sointu.AudioBuffer) error {
-		player.Process(buf, midiContext, trackerUi)
+		player.Process(buf, midiContext)
 		return nil
 	})
 

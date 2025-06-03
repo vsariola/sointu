@@ -119,10 +119,12 @@ func (m *Follow) SetValue(val bool) { m.follow = val }
 
 // TrackMidiIn (Midi Input for notes in the tracks)
 
-func (m *Model) TrackMidiIn() Bool       { return MakeBool((*TrackMidiIn)(m)) }
-func (m *TrackMidiIn) Value() bool       { return m.trackMidiIn }
-func (m *TrackMidiIn) SetValue(val bool) { m.trackMidiIn = val }
-func (m *TrackMidiIn) Enabled() bool     { return m.MIDI.HasDeviceOpen() }
+func (m *Model) TrackMidiIn() Bool { return MakeBool((*TrackMidiIn)(m)) }
+func (m *TrackMidiIn) Value() bool { return m.broker.mIDIEventsToGUI.Load() }
+func (m *TrackMidiIn) SetValue(val bool) {
+	m.broker.mIDIEventsToGUI.Store(val)
+}
+func (m *TrackMidiIn) Enabled() bool { return true }
 
 // Effect methods
 

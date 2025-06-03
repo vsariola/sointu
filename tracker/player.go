@@ -1,8 +1,10 @@
 package tracker
 
 import (
+	"cmp"
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
@@ -24,59 +26,57 @@ type (
 		voices      [vm.MAX_VOICES]voice
 		loop        Loop
 
-		recState  recState  // is the recording off; are we waiting for a note; or are we recording
 		recording Recording // the recorded MIDI events and BPM
+
+		frame       int64         // the current player frame, used to time events
+		frameDeltas map[any]int64 // Player.frame (approx.)= event.Timestamp + frameDeltas[event.Source]
+		events      NoteEventList
 
 		synther sointu.Synther // the synther used to create new synths
 		broker  *Broker        // the broker used to communicate with different parts of the tracker
 	}
 
 	// PlayerProcessContext is the context given to the player when processing
-	// audio. It is used to get MIDI events and the current BPM.
+	// audio. Currently it is only used to get BPM from the VSTI host.
 	PlayerProcessContext interface {
-		NextEvent(frame int) (event MIDINoteEvent, ok bool)
-		FinishBlock(frame int)
 		BPM() (bpm float64, ok bool)
 	}
 
-	EventProcessor interface {
-		ProcessMessage(msg interface{})
-		ProcessEvent(event MIDINoteEvent)
-	}
+	// NoteEvent describes triggering or releasing of a note. The timestamps are
+	// in frames, and relative to the clock of the event source. Different
+	// sources can use different clocks. Player tries to adjust the timestamps
+	// so that each note events would fall inside the current processing block,
+	// by maintaining an estimate of the delta from the source clock to the
+	// player clock.
+	NoteEvent struct {
+		Timestamp int64 // in frames, relative to whatever clock the source is using
+		On        bool
+		Channel   int
+		Note      byte
+		IsTrack   bool // true if "Channel" means track number, false if it means instrument number
+		Source    any
 
-	// MIDINoteEvent is a MIDI event triggering or releasing a note. In
-	// processing, the Frame is relative to the start of the current buffer. In
-	// a Recording, the Frame is relative to the start of the recording.
-	MIDINoteEvent struct {
-		Frame   int
-		On      bool
-		Channel int
-		Note    byte
+		playerTimestamp int64 // the timestamp of the event, adjusted to the player's clock, used to sort events
 	}
 )
 
 type (
-	recState int
-
 	voice struct {
-		noteID            int
+		triggerEvent      NoteEvent // which event triggered this voice, used to release the voice
 		sustain           bool
 		samplesSinceEvent int
 	}
-)
 
-const (
-	recStateNone recState = iota
-	recStateWaitingForNote
-	recStateRecording
+	NoteEventList []NoteEvent
 )
 
 const numRenderTries = 10000
 
 func NewPlayer(broker *Broker, synther sointu.Synther) *Player {
 	return &Player{
-		broker:  broker,
-		synther: synther,
+		broker:      broker,
+		synther:     synther,
+		frameDeltas: make(map[any]int64),
 	}
 }
 
@@ -85,70 +85,41 @@ func NewPlayer(broker *Broker, synther sointu.Synther) *Player {
 // model. context tells the player which MIDI events happen during the current
 // buffer. It is used to trigger and release notes during processing. The
 // context is also used to get the current BPM from the host.
-func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext, ui EventProcessor) {
-	p.processMessages(context, ui)
-
-	frame := 0
-	midi, midiOk := context.NextEvent(frame)
-
-	if p.recState == recStateRecording {
-		p.recording.TotalFrames += len(buffer)
-	}
+func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext) {
+	p.processMessages(context)
+	p.events.adjustTimes(p.frameDeltas, p.frame, p.frame+int64(len(buffer)))
 
 	for i := 0; i < numRenderTries; i++ {
-		for midiOk && frame >= midi.Frame {
-			if p.recState == recStateWaitingForNote {
-				p.recording.TotalFrames = len(buffer)
-				p.recState = recStateRecording
-			}
-			if p.recState == recStateRecording {
-				midiTotalFrame := midi
-				midiTotalFrame.Frame = p.recording.TotalFrames - len(buffer)
-				p.recording.Events = append(p.recording.Events, midiTotalFrame)
-			}
-			if midi.On {
-				p.triggerInstrument(midi.Channel, midi.Note)
-			} else {
-				p.releaseInstrument(midi.Channel, midi.Note)
-			}
-			if ui != nil {
-				ui.ProcessEvent(midi)
-			}
-
-			midi, midiOk = context.NextEvent(frame)
+		for len(p.events) > 0 && p.events[0].playerTimestamp <= p.frame {
+			ev := p.events[0]
+			copy(p.events, p.events[1:]) // remove processed events
+			p.events = p.events[:len(p.events)-1]
+			p.recording.Record(ev, p.frame)
+			p.processNoteEvent(ev)
 		}
-		framesUntilMidi := len(buffer)
-		if delta := midi.Frame - frame; midiOk && delta < framesUntilMidi {
-			framesUntilMidi = delta
+		framesUntilEvent := len(buffer)
+		if len(p.events) > 0 {
+			framesUntilEvent = min(int(p.events[0].playerTimestamp-p.frame), len(buffer))
 		}
 		if p.playing && p.rowtime >= p.song.SamplesPerRow() {
 			p.advanceRow()
 		}
 		timeUntilRowAdvance := math.MaxInt32
 		if p.playing {
-			timeUntilRowAdvance = p.song.SamplesPerRow() - p.rowtime
-		}
-		if timeUntilRowAdvance < 0 {
-			timeUntilRowAdvance = 0
+			timeUntilRowAdvance = max(p.song.SamplesPerRow()-p.rowtime, 0)
 		}
 		var rendered, timeAdvanced int
 		var err error
 		if p.synth != nil {
-			rendered, timeAdvanced, err = p.synth.Render(buffer[:framesUntilMidi], timeUntilRowAdvance)
+			rendered, timeAdvanced, err = p.synth.Render(buffer[:framesUntilEvent], timeUntilRowAdvance)
+			if err != nil {
+				p.synth = nil
+				p.send(Alert{Message: fmt.Sprintf("synth.Render: %s", err.Error()), Priority: Error, Name: "PlayerCrash"})
+			}
 		} else {
-			mx := framesUntilMidi
-			if timeUntilRowAdvance < mx {
-				mx = timeUntilRowAdvance
-			}
-			for i := 0; i < mx; i++ {
-				buffer[i] = [2]float32{}
-			}
-			rendered = mx
-			timeAdvanced = mx
-		}
-		if err != nil {
-			p.synth = nil
-			p.send(Alert{Message: fmt.Sprintf("synth.Render: %s", err.Error()), Priority: Error, Name: "PlayerCrash"})
+			rendered = min(framesUntilEvent, timeUntilRowAdvance)
+			timeAdvanced = rendered
+			clear(buffer[:rendered])
 		}
 
 		bufPtr := p.broker.GetAudioBuffer() // borrow a buffer from the broker
@@ -159,7 +130,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 			p.broker.PutAudioBuffer(bufPtr)
 		}
 		buffer = buffer[rendered:]
-		frame += rendered
+		p.frame += int64(rendered)
 		p.rowtime += timeAdvanced
 		for i := range p.voices {
 			p.voices[i].samplesSinceEvent += rendered
@@ -175,12 +146,12 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		// when the buffer is full, return
 		if len(buffer) == 0 {
 			p.send(nil)
-			context.FinishBlock(frame)
 			return
 		}
 	}
 	// we were not able to fill the buffer with NUM_RENDER_TRIES attempts, destroy synth and throw an error
 	p.synth = nil
+	p.events = p.events[:0] // clear events, so we don't try to process them again
 	p.SendAlert("PlayerCrash", fmt.Sprintf("synth did not fill the audio buffer even with %d render calls", numRenderTries), Error)
 }
 
@@ -199,28 +170,24 @@ func (p *Player) advanceRow() {
 		p.send(IsPlayingMsg{bool: false})
 		p.playing = false
 		for i := range p.song.Score.Tracks {
-			p.releaseTrack(i)
+			p.processNoteEvent(NoteEvent{Channel: i, IsTrack: true, Source: p})
 		}
 		return
 	}
-	p.send(nil) // just send volume and song row information
-	lastVoice := 0
 	for i, t := range p.song.Score.Tracks {
-		start := lastVoice
-		lastVoice = start + t.NumVoices
 		n := t.Note(p.songPos)
 		switch {
 		case n == 0:
-			p.releaseTrack(i)
+			p.processNoteEvent(NoteEvent{Channel: i, IsTrack: true, Source: p, On: false})
 		case n > 1:
-			p.triggerTrack(i, n)
-		default: // n == 1
-		}
+			p.processNoteEvent(NoteEvent{Channel: i, IsTrack: true, Source: p, Note: n, On: true})
+		} // n = 1 means hold so do nothing
 	}
 	p.rowtime = 0
+	p.send(nil) // just send volume and song row information
 }
 
-func (p *Player) processMessages(context PlayerProcessContext, uiProcessor EventProcessor) {
+func (p *Player) processMessages(context PlayerProcessContext) {
 loop:
 	for { // process new message
 		select {
@@ -246,7 +213,7 @@ loop:
 				p.playing = bool(m.bool)
 				if !p.playing {
 					for i := range p.song.Score.Tracks {
-						p.releaseTrack(i)
+						p.processNoteEvent(NoteEvent{Channel: i, IsTrack: true, Source: p})
 					}
 				} else {
 					TrySend(p.broker.ToModel, MsgToModel{Reset: true})
@@ -265,43 +232,75 @@ loop:
 				for i, t := range p.song.Score.Tracks {
 					if !t.Effect {
 						// when starting to play from another position, release only non-effect tracks
-						p.releaseTrack(i)
+						p.processNoteEvent(NoteEvent{Channel: i, IsTrack: true, Source: p})
 					}
 				}
 				TrySend(p.broker.ToModel, MsgToModel{Reset: true})
-			case NoteOnMsg:
-				if m.IsInstr {
-					p.triggerInstrument(m.Instr, m.Note)
-				} else {
-					p.triggerTrack(m.Track, m.Note)
-				}
-			case NoteOffMsg:
-				if m.IsInstr {
-					p.releaseInstrument(m.Instr, m.Note)
-				} else {
-					p.releaseTrack(m.Track)
-				}
+			case NoteEvent:
+				p.events = append(p.events, m)
 			case RecordingMsg:
 				if m.bool {
-					p.recState = recStateWaitingForNote
-					p.recording = Recording{}
+					p.recording = Recording{State: RecordingWaitingForNote}
 				} else {
-					if p.recState == recStateRecording && len(p.recording.Events) > 0 {
+					if p.recording.State == RecordingStarted && len(p.recording.Events) > 0 {
+						p.recording.Finish(p.frame, p.frameDeltas)
 						p.recording.BPM, _ = context.BPM()
 						p.send(p.recording)
 					}
-					p.recState = recStateNone
+					p.recording = Recording{} // reset recording
 				}
 			default:
 				// ignore unknown messages
-			}
-			if uiProcessor != nil {
-				uiProcessor.ProcessMessage(msg)
 			}
 		default:
 			break loop
 		}
 	}
+}
+
+func (l NoteEventList) adjustTimes(frameDeltas map[any]int64, minFrame, maxFrame int64) {
+	// add new sources to the map
+	for _, ev := range l {
+		if _, ok := frameDeltas[ev.Source]; !ok {
+			frameDeltas[ev.Source] = 0 // doesn't matter, we will adjust it immediately after this
+		}
+	}
+	// for each source, calculate the min and max of the frame
+	for source, delta := range frameDeltas {
+		var srcMinFrame int64 = math.MaxInt64
+		var srcMaxFrame int64 = math.MinInt64
+		for _, ev := range l {
+			if ev.Source != source {
+				continue
+			}
+			if ev.Timestamp < srcMinFrame {
+				srcMinFrame = ev.Timestamp
+			}
+			if ev.Timestamp > srcMaxFrame {
+				srcMaxFrame = ev.Timestamp
+			}
+		}
+		if srcMinFrame == math.MaxInt64 || srcMaxFrame == math.MinInt64 {
+			continue // no events for this source in this processing block
+		}
+		// "left" is the difference between the left edge of the source's events
+		// and the left edge of the player clock, calculated using the current frameDelta
+		left := minFrame - srcMinFrame - delta
+		right := maxFrame - srcMaxFrame - delta
+		// we try to adjust the frameDelta so that the source's events are
+		// within the processing block
+		positiveAdjust := min(max(left, 0), max(right, 0)) // always a positive value
+		negativeAdjust := max(min(left, 0), min(right, 0)) // always a negative value
+		frameDeltas[source] += positiveAdjust + negativeAdjust
+	}
+	for i, ev := range l {
+		l[i].playerTimestamp = ev.Timestamp + frameDeltas[ev.Source]
+	}
+	// the events should have been sorted already within each source, but they
+	// are not necessarily interleaved correctly, so we sort them now
+	slices.SortFunc(l, func(a, b NoteEvent) int {
+		return cmp.Compare(a.playerTimestamp, b.playerTimestamp)
+	})
 }
 
 func (p *Player) SendAlert(name, message string, priority AlertPriority) {
@@ -349,36 +348,38 @@ func (p *Player) send(message interface{}) {
 	TrySend(p.broker.ToModel, MsgToModel{HasPanicPosLevels: true, Panic: p.synth == nil, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, Data: message})
 }
 
-func (p *Player) triggerInstrument(instrument int, note byte) {
-	ID := idForInstrumentNote(instrument, note)
-	p.release(ID)
-	if p.song.Patch == nil || instrument < 0 || instrument >= len(p.song.Patch) {
-		return
-	}
-	voiceStart := p.song.Patch.FirstVoiceForInstrument(instrument)
-	voiceEnd := voiceStart + p.song.Patch[instrument].NumVoices
-	p.trigger(voiceStart, voiceEnd, note, ID)
-}
-
-func (p *Player) releaseInstrument(instrument int, note byte) {
-	p.release(idForInstrumentNote(instrument, note))
-}
-
-func (p *Player) triggerTrack(track int, note byte) {
-	ID := idForTrack(track)
-	p.release(ID)
-	voiceStart := p.song.Score.FirstVoiceForTrack(track)
-	voiceEnd := voiceStart + p.song.Score.Tracks[track].NumVoices
-	p.trigger(voiceStart, voiceEnd, note, ID)
-}
-
-func (p *Player) releaseTrack(track int) {
-	p.release(idForTrack(track))
-}
-
-func (p *Player) trigger(voiceStart, voiceEnd int, note byte, ID int) {
+func (p *Player) processNoteEvent(ev NoteEvent) {
 	if p.synth == nil {
 		return
+	}
+	// release previous voice
+	for i := range p.voices {
+		if p.voices[i].sustain &&
+			p.voices[i].triggerEvent.Source == ev.Source &&
+			p.voices[i].triggerEvent.Channel == ev.Channel &&
+			p.voices[i].triggerEvent.IsTrack == ev.IsTrack &&
+			(ev.IsTrack || (p.voices[i].triggerEvent.Note == ev.Note)) { // tracks don't match the note number when triggering new event, but instrument events do
+			p.voices[i].sustain = false
+			p.voices[i].samplesSinceEvent = 0
+			p.synth.Release(i)
+		}
+	}
+	if !ev.On {
+		return
+	}
+	var voiceStart, voiceEnd int
+	if ev.IsTrack {
+		if ev.Channel < 0 || ev.Channel >= len(p.song.Score.Tracks) {
+			return
+		}
+		voiceStart = p.song.Score.FirstVoiceForTrack(ev.Channel)
+		voiceEnd = voiceStart + p.song.Score.Tracks[ev.Channel].NumVoices
+	} else {
+		if p.song.Patch == nil || ev.Channel < 0 || ev.Channel >= len(p.song.Patch) {
+			return
+		}
+		voiceStart = p.song.Patch.FirstVoiceForInstrument(ev.Channel)
+		voiceEnd = voiceStart + p.song.Patch[ev.Channel].NumVoices
 	}
 	var age int = 0
 	oldestReleased := false
@@ -399,34 +400,8 @@ func (p *Player) trigger(voiceStart, voiceEnd int, note byte, ID int) {
 	if err != nil || p.song.Patch[instrIndex].Mute {
 		return
 	}
-	p.voices[oldestVoice] = voice{noteID: ID, sustain: true, samplesSinceEvent: 0}
+	p.voices[oldestVoice] = voice{triggerEvent: ev, sustain: true, samplesSinceEvent: 0}
 	p.voiceLevels[oldestVoice] = 1.0
-	p.synth.Trigger(oldestVoice, note)
+	p.synth.Trigger(oldestVoice, ev.Note)
 	TrySend(p.broker.ToModel, MsgToModel{TriggerChannel: instrIndex + 1})
-}
-
-func (p *Player) release(ID int) {
-	if p.synth == nil {
-		return
-	}
-	for i := range p.voices {
-		if p.voices[i].noteID == ID && p.voices[i].sustain {
-			p.voices[i].sustain = false
-			p.voices[i].samplesSinceEvent = 0
-			p.synth.Release(i)
-			return
-		}
-	}
-}
-
-// we need to give voices triggered by different sources a identifier who triggered it
-// positive values are for voices triggered by instrument jamming i.e. MIDI message from
-// host or pressing key on the keyboard
-// negative values are for voices triggered by tracks when playing a song
-func idForInstrumentNote(instrument int, note byte) int {
-	return instrument*256 + int(note)
-}
-
-func idForTrack(track int) int {
-	return -1 - track
 }

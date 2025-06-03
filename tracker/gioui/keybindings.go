@@ -8,6 +8,7 @@ import (
 
 	"gioui.org/io/clipboard"
 	"gioui.org/io/key"
+	"github.com/vsariola/sointu/tracker"
 	"gopkg.in/yaml.v2"
 )
 
@@ -87,7 +88,7 @@ func makeHint(hint, format, action string) string {
 // KeyEvent handles incoming key events and returns true if repaint is needed.
 func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 	if e.State == key.Release {
-		t.JammingReleased(e)
+		t.KeyNoteMap.Release(e.Name)
 		return
 	}
 	action, ok := keyBindingMap[e]
@@ -257,11 +258,11 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		t.InstrumentEditor.Focus()
 	case "FocusPrev":
 		switch {
-		case t.OrderEditor.scrollTable.Focused():
+		case t.OrderEditor.scrollTable.Focused(gtx):
 			t.InstrumentEditor.unitEditor.sliderList.Focus()
-		case t.TrackEditor.scrollTable.Focused():
+		case t.TrackEditor.scrollTable.Focused(gtx):
 			t.OrderEditor.scrollTable.Focus()
-		case t.InstrumentEditor.Focused():
+		case t.InstrumentEditor.Focused(gtx):
 			if t.InstrumentEditor.enlargeBtn.Bool.Value() {
 				t.InstrumentEditor.unitEditor.sliderList.Focus()
 			} else {
@@ -272,11 +273,11 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		}
 	case "FocusNext":
 		switch {
-		case t.OrderEditor.scrollTable.Focused():
+		case t.OrderEditor.scrollTable.Focused(gtx):
 			t.TrackEditor.scrollTable.Focus()
-		case t.TrackEditor.scrollTable.Focused():
+		case t.TrackEditor.scrollTable.Focused(gtx):
 			t.InstrumentEditor.Focus()
-		case t.InstrumentEditor.Focused():
+		case t.InstrumentEditor.Focused(gtx):
 			t.InstrumentEditor.unitEditor.sliderList.Focus()
 		default:
 			if t.InstrumentEditor.enlargeBtn.Bool.Value() {
@@ -291,26 +292,9 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 			if err != nil {
 				break
 			}
-			t.JammingPressed(e, val-12)
+			instr := t.InstrumentEditor.instrumentDragList.TrackerList.Selected()
+			n := noteAsValue(t.OctaveNumberInput.Int.Value(), val-12)
+			t.KeyNoteMap.Press(e.Name, tracker.NoteEvent{Channel: instr, Note: n})
 		}
 	}
-}
-
-func (t *Tracker) JammingPressed(e key.Event, val int) byte {
-	if _, ok := t.KeyPlaying[e.Name]; !ok {
-		n := noteAsValue(t.OctaveNumberInput.Int.Value(), val)
-		instr := t.InstrumentEditor.instrumentDragList.TrackerList.Selected()
-		t.KeyPlaying[e.Name] = t.InstrNoteOn(instr, n)
-		return n
-	}
-	return 0
-}
-
-func (t *Tracker) JammingReleased(e key.Event) bool {
-	if noteID, ok := t.KeyPlaying[e.Name]; ok {
-		noteID.NoteOff()
-		delete(t.KeyPlaying, e.Name)
-		return true
-	}
-	return false
 }
