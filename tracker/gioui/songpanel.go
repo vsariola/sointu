@@ -115,7 +115,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 				func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, tr.Theme, "BPM", NumUpDown(tr.Theme, t.BPM, "Song Length").Layout)
+							return layoutSongOptionRow(gtx, tr.Theme, "BPM", NumUpDown(tr.Theme, t.BPM, "BPM").Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
 							return layoutSongOptionRow(gtx, tr.Theme, "Song length", NumUpDown(tr.Theme, t.SongLength, "Song Length").Layout)
