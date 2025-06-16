@@ -294,6 +294,8 @@ func (m *Undo) Do() {
 	m.d = m.undoStack[len(m.undoStack)-1]
 	m.undoStack = m.undoStack[:len(m.undoStack)-1]
 	m.prevUndoKind = ""
+	(*Model)(m).updateDerivedScoreData()
+	(*Model)(m).updateDerivedPatchData()
 	TrySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
 }
 
@@ -310,6 +312,8 @@ func (m *Redo) Do() {
 	m.d = m.redoStack[len(m.redoStack)-1]
 	m.redoStack = m.redoStack[:len(m.redoStack)-1]
 	m.prevUndoKind = ""
+	(*Model)(m).updateDerivedScoreData()
+	(*Model)(m).updateDerivedPatchData()
 	TrySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
 }
 
