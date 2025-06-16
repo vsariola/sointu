@@ -43,7 +43,7 @@ if(WIN32)
 	add_dependencies(examples cplay-directsound)
 elseif(UNIX)
 	add_executable(cplay
-		cplay.unix.c
+		cplay.linux.c
 		physics_girl_st.h
 	)
 	target_link_libraries(cplay PRIVATE asound pthread)
