@@ -294,13 +294,12 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				labelStyle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentList.Number, "")
 				return layout.Center.Layout(gtx, labelStyle.Layout)
 			}
-			k := byte(255 - level*127)
-			color := color.NRGBA{R: 255, G: k, B: 255, A: 255}
-			s := t.Theme.InstrumentEditor.InstrumentList.Name
-			if mute {
-				s = t.Theme.InstrumentEditor.InstrumentList.NameMuted
+			s := t.Theme.InstrumentEditor.InstrumentList.NameMuted
+			if !mute {
+				s = t.Theme.InstrumentEditor.InstrumentList.Name
+				k := byte(255 - level*127)
+				s.Color = color.NRGBA{R: 255, G: k, B: 255, A: 255}
 			}
-			s.Color = color
 			if i == ie.instrumentDragList.TrackerList.Selected() {
 				ie.nameEditor.SetText(name)
 				for ie.nameEditor.Submitted(gtx) || ie.nameEditor.Cancelled(gtx) {

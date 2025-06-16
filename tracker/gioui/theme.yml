@@ -135,7 +135,11 @@ instrumenteditor:
   instrumentlist:
     number: { textsize: 10, color: *mediumemphasis }
     name: { textsize: 12, color: *white, hintcolor: *disabled }
-    namemuted: { textsize: 12, color: *disabled, hintcolor: *disabled }
+    namemuted:
+      textsize: 12
+      color: *disabled
+      hintcolor: *disabled
+      font: { style: 1 }
     scrollbar: { width: 6, color: *scrollbarcolor }
   unitlist:
     name: { textsize: 12, color: *white, hintcolor: *disabled }
