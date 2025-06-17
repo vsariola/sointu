@@ -206,11 +206,15 @@ there by default.
 
 ### Native virtual machine
 
-The native bridge allows Go to call the sointu compiled x86 native virtual
-machine, through cgo, instead of using the Go written bytecode interpreter. It's
-likely slightly faster than the interpreter. Before you can actually run it, you
-need to build the bridge using CMake (thus, ***this will not work with go
-get***).
+The native bridge allows Go to call the Sointu compiled x86 native virtual
+machine, through cgo, instead of using the Go written bytecode interpreter. With
+the latest Go compiler, the native virtual machine is actually slower than the
+Go-written one, but importantly, the native virtual machine allows you to test
+that the patch also works within the stack limits of the x87 virtual machine,
+which is the VM used in the compiled intros.
+
+Before you can actually run it, you need to build the bridge using CMake (thus,
+***this will not work with go get***).
 
 #### Prerequisites
 
