@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"slices"
+	"time"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
@@ -31,6 +32,8 @@ type (
 		frame       int64         // the current player frame, used to time events
 		frameDeltas map[any]int64 // Player.frame (approx.)= event.Timestamp + frameDeltas[event.Source]
 		events      NoteEventList
+
+		cpuload float64 // current CPU load of the player, used to adjust the render rate
 
 		synther sointu.Synther // the synther used to create new synths
 		broker  *Broker        // the broker used to communicate with different parts of the tracker
@@ -86,6 +89,9 @@ func NewPlayer(broker *Broker, synther sointu.Synther) *Player {
 // buffer. It is used to trigger and release notes during processing. The
 // context is also used to get the current BPM from the host.
 func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext) {
+	startTime := time.Now()
+	startFrame := p.frame
+
 	p.processMessages(context)
 	p.events.adjustTimes(p.frameDeltas, p.frame, p.frame+int64(len(buffer)))
 
@@ -145,6 +151,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		}
 		// when the buffer is full, return
 		if len(buffer) == 0 {
+			p.updateCPULoad(time.Since(startTime), p.frame-startFrame)
 			p.send(nil)
 			return
 		}
@@ -345,7 +352,7 @@ func (p *Player) compileOrUpdateSynth() {
 
 // all sendTargets from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
 func (p *Player) send(message interface{}) {
-	TrySend(p.broker.ToModel, MsgToModel{HasPanicPosLevels: true, Panic: p.synth == nil, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, Data: message})
+	TrySend(p.broker.ToModel, MsgToModel{HasPanicPosLevels: true, Panic: p.synth == nil, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, CPULoad: p.cpuload, Data: message})
 }
 
 func (p *Player) processNoteEvent(ev NoteEvent) {
@@ -404,4 +411,15 @@ func (p *Player) processNoteEvent(ev NoteEvent) {
 	p.voiceLevels[oldestVoice] = 1.0
 	p.synth.Trigger(oldestVoice, ev.Note)
 	TrySend(p.broker.ToModel, MsgToModel{TriggerChannel: instrIndex + 1})
+}
+
+func (p *Player) updateCPULoad(duration time.Duration, frames int64) {
+	if frames <= 0 {
+		return // no frames rendered, so cannot compute CPU load
+	}
+	realtime := float64(duration) / 1e9
+	songtime := float64(frames) / 44100
+	newload := realtime / songtime
+	alpha := math.Exp(-songtime) // smoothing factor, time constant of 1 second
+	p.cpuload = float64(p.cpuload)*alpha + newload*(1-alpha)
 }

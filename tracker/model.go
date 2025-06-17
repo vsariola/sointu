@@ -69,6 +69,7 @@ type (
 		linkInstrTrack bool
 
 		voiceLevels [vm.MAX_VOICES]float32
+		cpuLoad     float64
 
 		signalAnalyzer *ScopeModel
 		detectorResult DetectorResult
@@ -343,6 +344,7 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 			}))
 		}
 		m.panic = msg.Panic
+		m.cpuLoad = msg.CPULoad
 	}
 	if msg.HasDetectorResult {
 		m.detectorResult = msg.DetectorResult
@@ -376,6 +378,8 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 		m.signalAnalyzer.ProcessAudioBuffer(e)
 	}
 }
+
+func (m *Model) CPULoad() float64 { return m.cpuLoad }
 
 func (m *Model) SignalAnalyzer() *ScopeModel { return m.signalAnalyzer }
 func (m *Model) Broker() *Broker             { return m.broker }

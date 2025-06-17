@@ -129,6 +129,14 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 						layout.Rigid(func(gtx C) D {
 							return layoutSongOptionRow(gtx, tr.Theme, "Cursor step", NumUpDown(tr.Theme, t.Step, "Cursor step").Layout)
 						}),
+						layout.Rigid(func(gtx C) D {
+							cpuload := tr.Model.CPULoad()
+							label := Label(tr.Theme, &tr.Theme.SongPanel.RowValue, fmt.Sprintf("%.0f %%", cpuload*100))
+							if cpuload >= 1 {
+								label.Color = tr.Theme.SongPanel.ErrorColor
+							}
+							return layoutSongOptionRow(gtx, tr.Theme, "CPU load", label.Layout)
+						}),
 					)
 				})
 		}),

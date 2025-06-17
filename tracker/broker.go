@@ -63,6 +63,7 @@ type (
 		Panic             bool
 		SongPosition      sointu.SongPos
 		VoiceLevels       [vm.MAX_VOICES]float32
+		CPULoad           float64
 
 		HasDetectorResult bool
 		DetectorResult    DetectorResult

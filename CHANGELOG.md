@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Show CPU load percentage in the song panel ([#192][i192])
 - Theme can be user configured, in theme.yml. This theme.yml should be placed in
   the usual sointu config directory (i.e.
   `os.UserConfigDir()/sointu/theme.yml`). See
@@ -332,3 +333,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i170]: https://github.com/vsariola/sointu/issues/170
 [i176]: https://github.com/vsariola/sointu/issues/176
 [i186]: https://github.com/vsariola/sointu/issues/186
+[i192]: https://github.com/vsariola/sointu/issues/192
