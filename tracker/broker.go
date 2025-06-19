@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/vm"
 )
 
 type (
@@ -59,11 +58,9 @@ type (
 	// avoid allocations. All the infrequently passed messages can be boxed &
 	// cast to any; casting pointer types to any is cheap (does not allocate).
 	MsgToModel struct {
-		HasPanicPosLevels bool
-		Panic             bool
-		SongPosition      sointu.SongPos
-		VoiceLevels       [vm.MAX_VOICES]float32
-		CPULoad           float64
+		HasPanicPlayerStatus bool
+		Panic                bool
+		PlayerStatus         PlayerStatus
 
 		HasDetectorResult bool
 		DetectorResult    DetectorResult

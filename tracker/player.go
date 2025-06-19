@@ -18,14 +18,12 @@ type (
 	// model via the playerMessages channel. The model sendTargets messages to the
 	// player via the modelMessages channel.
 	Player struct {
-		synth       sointu.Synth           // the synth used to render audio
-		song        sointu.Song            // the song being played
-		playing     bool                   // is the player playing the score or not
-		rowtime     int                    // how many samples have been played in the current row
-		songPos     sointu.SongPos         // the current position in the score
-		voiceLevels [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
-		voices      [vm.MAX_VOICES]voice
-		loop        Loop
+		synth   sointu.Synth // the synth used to render audio
+		song    sointu.Song  // the song being played
+		playing bool         // is the player playing the score or not
+		rowtime int          // how many samples have been played in the current row
+		voices  [vm.MAX_VOICES]voice
+		loop    Loop
 
 		recording Recording // the recorded MIDI events and BPM
 
@@ -33,10 +31,18 @@ type (
 		frameDeltas map[any]int64 // Player.frame (approx.)= event.Timestamp + frameDeltas[event.Source]
 		events      NoteEventList
 
-		cpuload float64 // current CPU load of the player, used to adjust the render rate
+		status PlayerStatus // the part of the Player state that is communicated to the model to visualize what Player is doing
 
 		synther sointu.Synther // the synther used to create new synths
 		broker  *Broker        // the broker used to communicate with different parts of the tracker
+	}
+
+	// PlayerStatus is the part of the player state that is communicated to the
+	// model, for different visualizations of what is happening in the player.
+	PlayerStatus struct {
+		SongPos     sointu.SongPos         // the current position in the score
+		VoiceLevels [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
+		CPULoad     float64                // current CPU load of the player, used to adjust the render rate
 	}
 
 	// PlayerProcessContext is the context given to the player when processing
@@ -144,9 +150,9 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		alpha := float32(math.Exp(-float64(rendered) / 15000))
 		for i, state := range p.voices {
 			if state.sustain {
-				p.voiceLevels[i] = (p.voiceLevels[i]-0.5)*alpha + 0.5
+				p.status.VoiceLevels[i] = (p.status.VoiceLevels[i]-0.5)*alpha + 0.5
 			} else {
-				p.voiceLevels[i] *= alpha
+				p.status.VoiceLevels[i] *= alpha
 			}
 		}
 		// when the buffer is full, return
@@ -166,14 +172,14 @@ func (p *Player) advanceRow() {
 	if p.song.Score.Length == 0 || p.song.Score.RowsPerPattern == 0 {
 		return
 	}
-	origPos := p.songPos
-	p.songPos.PatternRow++ // advance row (this is why we subtracted one in Play())
-	if p.loop.Length > 0 && p.songPos.PatternRow >= p.song.Score.RowsPerPattern && p.songPos.OrderRow == p.loop.Start+p.loop.Length-1 {
-		p.songPos.PatternRow = 0
-		p.songPos.OrderRow = p.loop.Start
+	origPos := p.status.SongPos
+	p.status.SongPos.PatternRow++ // advance row (this is why we subtracted one in Play())
+	if p.loop.Length > 0 && p.status.SongPos.PatternRow >= p.song.Score.RowsPerPattern && p.status.SongPos.OrderRow == p.loop.Start+p.loop.Length-1 {
+		p.status.SongPos.PatternRow = 0
+		p.status.SongPos.OrderRow = p.loop.Start
 	}
-	p.songPos = p.song.Score.Clamp(p.songPos)
-	if p.songPos == origPos {
+	p.status.SongPos = p.song.Score.Clamp(p.status.SongPos)
+	if p.status.SongPos == origPos {
 		p.send(IsPlayingMsg{bool: false})
 		p.playing = false
 		for i := range p.song.Score.Tracks {
@@ -182,7 +188,7 @@ func (p *Player) advanceRow() {
 		return
 	}
 	for i, t := range p.song.Score.Tracks {
-		n := t.Note(p.songPos)
+		n := t.Note(p.status.SongPos)
 		switch {
 		case n == 0:
 			p.processNoteEvent(NoteEvent{Channel: i, IsTrack: true, Source: p, On: false})
@@ -233,8 +239,8 @@ loop:
 				p.compileOrUpdateSynth()
 			case StartPlayMsg:
 				p.playing = true
-				p.songPos = m.SongPos
-				p.songPos.PatternRow--
+				p.status.SongPos = m.SongPos
+				p.status.SongPos.PatternRow--
 				p.rowtime = math.MaxInt
 				for i, t := range p.song.Score.Tracks {
 					if !t.Effect {
@@ -352,7 +358,7 @@ func (p *Player) compileOrUpdateSynth() {
 
 // all sendTargets from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock
 func (p *Player) send(message interface{}) {
-	TrySend(p.broker.ToModel, MsgToModel{HasPanicPosLevels: true, Panic: p.synth == nil, SongPosition: p.songPos, VoiceLevels: p.voiceLevels, CPULoad: p.cpuload, Data: message})
+	TrySend(p.broker.ToModel, MsgToModel{HasPanicPlayerStatus: true, Panic: p.synth == nil, PlayerStatus: p.status, Data: message})
 }
 
 func (p *Player) processNoteEvent(ev NoteEvent) {
@@ -408,7 +414,7 @@ func (p *Player) processNoteEvent(ev NoteEvent) {
 		return
 	}
 	p.voices[oldestVoice] = voice{triggerEvent: ev, sustain: true, samplesSinceEvent: 0}
-	p.voiceLevels[oldestVoice] = 1.0
+	p.status.VoiceLevels[oldestVoice] = 1.0
 	p.synth.Trigger(oldestVoice, ev.Note)
 	TrySend(p.broker.ToModel, MsgToModel{TriggerChannel: instrIndex + 1})
 }
@@ -421,5 +427,5 @@ func (p *Player) updateCPULoad(duration time.Duration, frames int64) {
 	songtime := float64(frames) / 44100
 	newload := realtime / songtime
 	alpha := math.Exp(-songtime) // smoothing factor, time constant of 1 second
-	p.cpuload = float64(p.cpuload)*alpha + newload*(1-alpha)
+	p.status.CPULoad = float64(p.status.CPULoad)*alpha + newload*(1-alpha)
 }

@@ -174,7 +174,7 @@ func (v *Instruments) Item(i int) (name string, maxLevel float32, mute bool, ok 
 		end = vm.MAX_VOICES
 	}
 	if start < end {
-		for _, level := range v.voiceLevels[start:end] {
+		for _, level := range v.playerStatus.VoiceLevels[start:end] {
 			if maxLevel < level {
 				maxLevel = level
 			}

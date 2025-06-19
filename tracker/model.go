@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/vm"
 )
 
 // Model implements the mutable state for the tracker program GUI.
@@ -58,7 +57,6 @@ type (
 		panic          bool
 		recording      bool
 		playing        bool
-		playPosition   sointu.SongPos
 		loop           Loop
 		follow         bool
 		quitted        bool
@@ -68,8 +66,7 @@ type (
 		// reordering or deleting instrument can delete track)
 		linkInstrTrack bool
 
-		voiceLevels [vm.MAX_VOICES]float32
-		cpuLoad     float64
+		playerStatus PlayerStatus
 
 		signalAnalyzer *ScopeModel
 		detectorResult DetectorResult
@@ -159,9 +156,9 @@ const (
 
 const maxUndo = 64
 
-func (m *Model) PlayPosition() sointu.SongPos { return m.playPosition }
+func (m *Model) PlayPosition() sointu.SongPos { return m.playerStatus.SongPos }
 func (m *Model) Loop() Loop                   { return m.loop }
-func (m *Model) PlaySongRow() int             { return m.d.Song.Score.SongRow(m.playPosition) }
+func (m *Model) PlaySongRow() int             { return m.d.Song.Score.SongRow(m.playerStatus.SongPos) }
 func (m *Model) ChangedSinceSave() bool       { return m.d.ChangedSinceSave }
 func (m *Model) Dialog() Dialog               { return m.dialog }
 func (m *Model) Quitted() bool                { return m.quitted }
@@ -332,19 +329,17 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 }
 
 func (m *Model) ProcessMsg(msg MsgToModel) {
-	if msg.HasPanicPosLevels {
-		m.playPosition = msg.SongPosition
-		m.voiceLevels = msg.VoiceLevels
+	if msg.HasPanicPlayerStatus {
+		m.playerStatus = msg.PlayerStatus
 		if m.playing && m.follow {
-			m.d.Cursor.SongPos = msg.SongPosition
-			m.d.Cursor2.SongPos = msg.SongPosition
+			m.d.Cursor.SongPos = msg.PlayerStatus.SongPos
+			m.d.Cursor2.SongPos = msg.PlayerStatus.SongPos
 			TrySend(m.broker.ToGUI, any(MsgToGUI{
 				Kind:  GUIMessageCenterOnRow,
 				Param: m.PlaySongRow(),
 			}))
 		}
 		m.panic = msg.Panic
-		m.cpuLoad = msg.CPULoad
 	}
 	if msg.HasDetectorResult {
 		m.detectorResult = msg.DetectorResult
@@ -379,7 +374,7 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 	}
 }
 
-func (m *Model) CPULoad() float64 { return m.cpuLoad }
+func (m *Model) CPULoad() float64 { return m.playerStatus.CPULoad }
 
 func (m *Model) SignalAnalyzer() *ScopeModel { return m.signalAnalyzer }
 func (m *Model) Broker() *Broker             { return m.broker }
