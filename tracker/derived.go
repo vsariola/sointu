@@ -8,13 +8,10 @@ import (
 	"github.com/vsariola/sointu"
 )
 
-/*
-	from modelData we can derive useful information that can be cached for performance
-	or easy access, because of nested iterations over the score or patch data.
-	i.e. this needs to update when the model changes, and only then.
-*/
-
 type (
+	// derivedModelData contains useful information derived from the modelData,
+	// cached for performance and/or easy access. This needs to be updated when
+	// corresponding part of the model changes.
 	derivedModelData struct {
 		// map Unit by ID, other entities by their respective index
 		forUnit    map[int]derivedForUnit
@@ -58,14 +55,6 @@ type (
 
 // public access functions
 
-func (m *Model) InstrumentForUnit(id int) (sointu.Instrument, int, bool) {
-	forUnit, ok := m.derived.forUnit[id]
-	if !ok {
-		return sointu.Instrument{}, -1, false
-	}
-	return forUnit.instrument, forUnit.instrumentIndex, true
-}
-
 func (m *Model) UnitInfo(id int) (instrName string, units []sointu.Unit, unitIndex int, ok bool) {
 	fu, ok := m.derived.forUnit[id]
 	return fu.instrument.Name, fu.instrument.Units, fu.unitIndex, ok
@@ -95,22 +84,15 @@ func (m *Model) TrackTitle(index int) string {
 	return m.derived.forTrack[index].title
 }
 
-func (m *Model) PatternUseCount(index int) []int {
-	if index < 0 || index >= len(m.derived.forPattern) {
-		return nil
-	}
-	return m.derived.forPattern[index].useCount
-}
-
-func (m *Model) PatternUnique(t, p int) bool {
-	if t < 0 || t >= len(m.derived.forPattern) {
+func (m *Model) PatternUnique(track, pat int) bool {
+	if track < 0 || track >= len(m.derived.forPattern) {
 		return false
 	}
-	forPattern := m.derived.forPattern[t]
-	if p < 0 || p >= len(forPattern.useCount) {
+	forPattern := m.derived.forPattern[track]
+	if pat < 0 || pat >= len(forPattern.useCount) {
 		return false
 	}
-	return forPattern.useCount[p] == 1
+	return forPattern.useCount[pat] == 1
 }
 
 // public getters with further model information
@@ -185,7 +167,7 @@ func (m *Model) updateDerivedPatchData() {
 }
 
 func (m *Model) updateDerivedParameterData(unit sointu.Unit) {
-	fu, _ := m.derived.forUnit[unit.ID]
+	fu := m.derived.forUnit[unit.ID]
 	for name := range fu.unit.Parameters {
 		sendSources := slices.Collect(m.collectSendSources(unit, name))
 		fu.forParameter[name] = derivedForParameter{
@@ -269,12 +251,12 @@ func (m *Model) instrumentRangeFor(trackIndex int) (int, int, error) {
 	return firstIndex, lastIndex, nil
 }
 
-func (m *Model) buildTrackTitle(x int) (title string) {
+func (m *Model) buildTrackTitle(track int) (title string) {
 	title = "?"
-	if x < 0 || x >= len(m.d.Song.Score.Tracks) {
+	if track < 0 || track >= len(m.d.Song.Score.Tracks) {
 		return
 	}
-	firstIndex, lastIndex, err := m.instrumentRangeFor(x)
+	firstIndex, lastIndex, err := m.instrumentRangeFor(track)
 	if err != nil {
 		return
 	}
