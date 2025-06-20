@@ -96,15 +96,17 @@ func (m *Alerts) AddAlert(a Alert) {
 }
 
 func (m *Alerts) Push(x any) {
+	if _, ok := x.(Alert); !ok {
+		panic("invalid type for Alerts.Push, expected Alert")
+	}
 	m.alerts = append(m.alerts, x.(Alert))
 }
 
 func (m *Alerts) Pop() any {
-	old := m.alerts
-	n := len(old)
-	x := old[n-1]
-	m.alerts = old[0 : n-1]
-	return x
+	n := len(m.alerts)
+	last := m.alerts[n-1]
+	m.alerts = m.alerts[:n-1]
+	return last
 }
 
 func (m Alerts) Len() int           { return len(m.alerts) }
