@@ -32,7 +32,6 @@ type (
 	//      case <-FinishedXXX:
 	//      case <-time.After(3 * time.Second):
 	//    }
-
 	Broker struct {
 		ToModel    chan MsgToModel
 		ToPlayer   chan any // TODO: consider using a sum type here, for a bit more type safety. See: https://www.jerf.org/iri/post/2917/
@@ -85,6 +84,10 @@ type (
 		HasOversampling  bool
 	}
 
+	// MsgToGUI is a message sent to the GUI, as GUI stores part of the state.
+	// In particular, GUI knows about where lists / tables are centered, so the
+	// kind of messages we send to the GUI are about centering the view on a
+	// specific row, or ensuring that the cursor is visible.
 	MsgToGUI struct {
 		Kind  GUIMessageKind
 		Param int
@@ -101,7 +104,7 @@ const (
 
 func NewBroker() *Broker {
 	return &Broker{
-		ToPlayer:         make(chan interface{}, 1024),
+		ToPlayer:         make(chan any, 1024),
 		ToModel:          make(chan MsgToModel, 1024),
 		ToDetector:       make(chan MsgToDetector, 1024),
 		ToGUI:            make(chan any, 1024),
@@ -109,7 +112,7 @@ func NewBroker() *Broker {
 		CloseGUI:         make(chan struct{}, 1),
 		FinishedGUI:      make(chan struct{}),
 		FinishedDetector: make(chan struct{}),
-		bufferPool:       sync.Pool{New: func() interface{} { return &sointu.AudioBuffer{} }},
+		bufferPool:       sync.Pool{New: func() any { return &sointu.AudioBuffer{} }},
 	}
 }
 
@@ -143,10 +146,10 @@ func (b *Broker) PutAudioBuffer(buf *sointu.AudioBuffer) {
 func TrySend[T any](c chan<- T, v T) bool {
 	select {
 	case c <- v:
+		return true
 	default:
 		return false
 	}
-	return true
 }
 
 // TimeoutReceive is a helper function to block until a value is received from a
