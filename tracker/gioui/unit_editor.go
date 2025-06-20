@@ -14,6 +14,7 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
+	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
@@ -49,7 +50,7 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 		DisableUnitBtn: NewBoolClickable(m.UnitDisabled()),
 		CopyUnitBtn:    new(TipClickable),
 		SelectTypeBtn:  new(Clickable),
-		commentEditor:  NewEditor(widget.Editor{SingleLine: true, Submit: true}),
+		commentEditor:  NewEditor(true, true, text.Start),
 		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
 		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
 	}
@@ -159,15 +160,14 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 			return hintText.Layout(gtx)
 		}),
 		layout.Flexed(1, func(gtx C) D {
-			s := t.UnitComment()
-			pe.commentEditor.SetText(s.Value())
-			for pe.commentEditor.Submitted(gtx) || pe.commentEditor.Cancelled(gtx) {
+			for {
+				_, ok := pe.commentEditor.Update(gtx, t.UnitComment())
+				if !ok {
+					break
+				}
 				t.InstrumentEditor.Focus()
 			}
-			commentStyle := MaterialEditor(t.Theme, &t.Theme.InstrumentEditor.UnitComment, pe.commentEditor, "---")
-			ret := commentStyle.Layout(gtx)
-			s.SetValue(pe.commentEditor.Text())
-			return ret
+			return pe.commentEditor.Layout(gtx, t.UnitComment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "---")
 		}),
 	)
 }

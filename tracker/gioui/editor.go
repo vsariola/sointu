@@ -6,9 +6,11 @@ import (
 	"gioui.org/font"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
+	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"github.com/vsariola/sointu/tracker"
 )
 
 type (
@@ -17,7 +19,7 @@ type (
 	// application while editing (particularly: to prevent triggering notes
 	// while editing).
 	Editor struct {
-		Editor       widget.Editor
+		widgetEditor widget.Editor
 		filters      []event.Filter
 		requestFocus bool
 	}
@@ -28,20 +30,23 @@ type (
 		Font      font.Font
 		TextSize  unit.Sp
 	}
+
+	EditorSubmitEvent struct{}
+	EditorCancelEvent struct{}
+
+	EditorEvent interface{ isEditorEvent() }
 )
 
-func NewEditor(e widget.Editor) *Editor {
-	ret := &Editor{
-		Editor: e,
-	}
+func NewEditor(singleLine, submit bool, alignment text.Alignment) *Editor {
+	ret := &Editor{widgetEditor: widget.Editor{SingleLine: singleLine, Submit: submit, Alignment: alignment}}
 	for c := 'A'; c <= 'Z'; c++ {
-		ret.filters = append(ret.filters, key.Filter{Name: key.Name(c), Focus: &ret.Editor})
+		ret.filters = append(ret.filters, key.Filter{Name: key.Name(c), Focus: &ret.widgetEditor, Optional: key.ModAlt | key.ModShift | key.ModShortcut})
 	}
 	for c := '0'; c <= '9'; c++ {
-		ret.filters = append(ret.filters, key.Filter{Name: key.Name(c), Focus: &ret.Editor})
+		ret.filters = append(ret.filters, key.Filter{Name: key.Name(c), Focus: &ret.widgetEditor, Optional: key.ModAlt | key.ModShift | key.ModShortcut})
 	}
-	ret.filters = append(ret.filters, key.Filter{Name: key.NameSpace, Focus: &ret.Editor})
-	ret.filters = append(ret.filters, key.Filter{Name: key.NameEscape, Focus: &ret.Editor})
+	ret.filters = append(ret.filters, key.Filter{Name: key.NameSpace, Focus: &ret.widgetEditor, Optional: key.ModAlt | key.ModShift | key.ModShortcut})
+	ret.filters = append(ret.filters, key.Filter{Name: key.NameEscape, Focus: &ret.widgetEditor, Optional: key.ModAlt | key.ModShift | key.ModShortcut})
 	return ret
 }
 
@@ -53,52 +58,57 @@ func (s *EditorStyle) AsLabelStyle() LabelStyle {
 	}
 }
 
-func MaterialEditor(th *Theme, style *EditorStyle, editor *Editor, hint string) material.EditorStyle {
-	ret := material.Editor(&th.Material, &editor.Editor, hint)
-	ret.Font = style.Font
-	ret.TextSize = style.TextSize
-	ret.Color = style.Color
-	ret.HintColor = style.HintColor
-	return ret
-}
-
-func (e *Editor) SetText(s string) {
-	if e.Editor.Text() != s {
-		e.Editor.SetText(s)
-	}
-}
-
-func (e *Editor) Text() string {
-	return e.Editor.Text()
-}
-
-func (e *Editor) Submitted(gtx C) bool {
+func (e *Editor) Layout(gtx C, str tracker.String, th *Theme, style *EditorStyle, hint string) D {
 	for {
-		ev, ok := e.Editor.Update(gtx)
+		if _, ok := e.Update(gtx, str); !ok {
+			break
+		}
+	}
+	if e.widgetEditor.Text() != str.Value() {
+		e.widgetEditor.SetText(str.Value())
+	}
+	me := material.Editor(&th.Material, &e.widgetEditor, hint)
+	me.Font = style.Font
+	me.TextSize = style.TextSize
+	me.Color = style.Color
+	me.HintColor = style.HintColor
+	return me.Layout(gtx)
+}
+
+func (e *Editor) Update(gtx C, str tracker.String) (ev EditorEvent, ok bool) {
+	if e.requestFocus {
+		e.requestFocus = false
+		gtx.Execute(key.FocusCmd{Tag: &e.widgetEditor})
+		l := len(e.widgetEditor.Text())
+		e.widgetEditor.SetCaret(l, l)
+	}
+	for {
+		ev, ok := e.widgetEditor.Update(gtx)
 		if !ok {
 			break
 		}
-		_, ok = ev.(widget.SubmitEvent)
-		if ok {
-			return true
+		if _, ok := ev.(widget.ChangeEvent); ok {
+			str.SetValue(e.widgetEditor.Text())
+		}
+		if _, ok := ev.(widget.SubmitEvent); ok {
+			return EditorSubmitEvent{}, true
 		}
 	}
-	return false
-}
-
-func (e *Editor) Cancelled(gtx C) bool {
 	for {
 		event, ok := gtx.Event(e.filters...)
 		if !ok {
 			break
 		}
 		if e, ok := event.(key.Event); ok && e.State == key.Press && e.Name == key.NameEscape {
-			return true
+			return EditorCancelEvent{}, true
 		}
 	}
-	return false
+	return nil, false
 }
 
 func (e *Editor) Focus() {
 	e.requestFocus = true
 }
+
+func (s EditorSubmitEvent) isEditorEvent() {}
+func (s EditorCancelEvent) isEditorEvent() {}

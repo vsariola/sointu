@@ -16,7 +16,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/text"
 	"gioui.org/unit"
-	"gioui.org/widget"
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -81,9 +80,9 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		presetMenuBtn:       new(TipClickable),
 		soloBtn:             NewBoolClickable(model.Solo()),
 		muteBtn:             NewBoolClickable(model.Mute()),
-		commentEditor:       NewEditor(widget.Editor{}),
-		nameEditor:          NewEditor(widget.Editor{SingleLine: true, Submit: true, Alignment: text.Middle}),
-		searchEditor:        NewEditor(widget.Editor{SingleLine: true, Submit: true, Alignment: text.Start}),
+		commentEditor:       NewEditor(false, false, text.Start),
+		nameEditor:          NewEditor(true, true, text.Middle),
+		searchEditor:        NewEditor(true, true, text.Start),
 		commentString:       model.InstrumentComment(),
 		nameString:          model.InstrumentName(),
 		instrumentDragList:  NewDragList(model.Instruments().List(), layout.Horizontal),
@@ -265,13 +264,16 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				layout.Rigid(header),
 				layout.Rigid(func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					ie.commentEditor.SetText(ie.commentString.Value())
-					for ie.commentEditor.Submitted(gtx) || ie.commentEditor.Cancelled(gtx) {
+					for {
+						_, ok := ie.commentEditor.Update(gtx, ie.commentString)
+						if !ok {
+							break
+						}
 						ie.instrumentDragList.Focus()
 					}
-					style := MaterialEditor(t.Theme, &t.Theme.InstrumentEditor.InstrumentComment, ie.commentEditor, "Comment")
-					ret := layout.UniformInset(unit.Dp(6)).Layout(gtx, style.Layout)
-					ie.commentString.SetValue(ie.commentEditor.Text())
+					ret := layout.UniformInset(unit.Dp(6)).Layout(gtx, func(gtx C) D {
+						return ie.commentEditor.Layout(gtx, ie.commentString, t.Theme, &t.Theme.InstrumentEditor.InstrumentComment, "Comment")
+					})
 					return ret
 				}),
 			)
@@ -301,17 +303,17 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				s.Color = color.NRGBA{R: 255, G: k, B: 255, A: 255}
 			}
 			if i == ie.instrumentDragList.TrackerList.Selected() {
-				ie.nameEditor.SetText(name)
-				for ie.nameEditor.Submitted(gtx) || ie.nameEditor.Cancelled(gtx) {
+				for {
+					_, ok := ie.nameEditor.Update(gtx, ie.nameString)
+					if !ok {
+						break
+					}
 					ie.instrumentDragList.Focus()
 				}
-				style := MaterialEditor(t.Theme, &s, ie.nameEditor, "Instr")
-				dims := layout.Center.Layout(gtx, func(gtx C) D {
+				return layout.Center.Layout(gtx, func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					return style.Layout(gtx)
+					return ie.nameEditor.Layout(gtx, ie.nameString, t.Theme, &s, "Instr")
 				})
-				ie.nameString.SetValue(ie.nameEditor.Text())
-				return dims
 			}
 			if name == "" {
 				name = "Instr"
@@ -351,9 +353,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				case key.NameDownArrow:
 					ie.unitDragList.Focus()
 				case key.NameReturn, key.NameEnter:
-					gtx.Execute(key.FocusCmd{Tag: &ie.nameEditor.Editor})
-					l := len(ie.nameEditor.Editor.Text())
-					ie.nameEditor.Editor.SetCaret(l, l)
+					ie.nameEditor.Focus()
 				}
 			}
 		}
@@ -380,12 +380,6 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 		units[i] = item
 	}
 	count := min(ie.unitDragList.TrackerList.Count(), 256)
-
-	if ie.searchEditor.requestFocus {
-		// for now, only the searchEditor has its requestFocus flag
-		ie.searchEditor.requestFocus = false
-		gtx.Execute(key.FocusCmd{Tag: &ie.searchEditor.Editor})
-	}
 
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Max.Y = gtx.Dp(20)
@@ -417,29 +411,25 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 				if i == ie.unitDragList.TrackerList.Selected() {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 					str := t.Model.UnitSearch()
-					ie.searchEditor.SetText(str.Value())
-					for ie.searchEditor.Submitted(gtx) {
-						ie.unitDragList.Focus()
-						if text := ie.searchEditor.Text(); text != "" {
-							for _, n := range sointu.UnitNames {
-								if strings.HasPrefix(n, ie.searchEditor.Text()) {
-									t.Units().SetSelectedType(n)
-									break
+					for {
+						ev, ok := ie.searchEditor.Update(gtx, str)
+						if !ok {
+							break
+						}
+						if _, ok := ev.(EditorSubmitEvent); ok {
+							if str.Value() != "" {
+								for _, n := range sointu.UnitNames {
+									if strings.HasPrefix(n, str.Value()) {
+										t.Units().SetSelectedType(n)
+										break
+									}
 								}
 							}
 						}
-						t.UnitSearching().SetValue(false)
-						ie.searchEditor.SetText(str.Value())
-					}
-					for ie.searchEditor.Cancelled(gtx) {
-						t.UnitSearching().SetValue(false)
-						ie.searchEditor.SetText(str.Value())
 						ie.unitDragList.Focus()
+						t.UnitSearching().SetValue(false)
 					}
-					style := MaterialEditor(t.Theme, &editorStyle, ie.searchEditor, "---")
-					ret := style.Layout(gtx)
-					str.SetValue(ie.searchEditor.Text())
-					return ret
+					return ie.searchEditor.Layout(gtx, str, t.Theme, &editorStyle, "---")
 				} else {
 					text := u.Type
 					if text == "" {
@@ -485,11 +475,11 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 				case key.NameDeleteBackward:
 					t.Units().SetSelectedType("")
 					t.UnitSearching().SetValue(true)
-					gtx.Execute(key.FocusCmd{Tag: &ie.searchEditor.Editor})
+					ie.searchEditor.Focus()
 				case key.NameEnter, key.NameReturn:
 					t.Model.AddUnit(e.Modifiers.Contain(key.ModCtrl)).Do()
 					t.UnitSearching().SetValue(true)
-					gtx.Execute(key.FocusCmd{Tag: &ie.searchEditor.Editor})
+					ie.searchEditor.Focus()
 				}
 			}
 		}
