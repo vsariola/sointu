@@ -107,6 +107,9 @@ type Theme struct {
 		Shadow color.NRGBA
 	}
 	ScrollBar ScrollBarStyle
+
+	// iconCache is used to cache the icons created from iconvg data
+	iconCache map[*byte]*widget.Icon
 }
 
 type CursorStyle struct {
@@ -127,7 +130,17 @@ func NewTheme() (*Theme, error) {
 	ret.Material.Icon.CheckBoxUnchecked = must(widget.NewIcon(icons.ToggleCheckBoxOutlineBlank))
 	ret.Material.Icon.RadioChecked = must(widget.NewIcon(icons.ToggleRadioButtonChecked))
 	ret.Material.Icon.RadioUnchecked = must(widget.NewIcon(icons.ToggleRadioButtonUnchecked))
+	ret.iconCache = make(map[*byte]*widget.Icon)
 	return &ret, warn
+}
+
+func (th *Theme) Icon(data []byte) *widget.Icon {
+	if icon, ok := th.iconCache[&data[0]]; ok {
+		return icon
+	}
+	icon := must(widget.NewIcon(data))
+	th.iconCache[&data[0]] = icon
+	return icon
 }
 
 func must[T any](ic T, err error) T {

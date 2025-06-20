@@ -47,7 +47,7 @@ type NumericUpDownStyle struct {
 type NumericUpDown struct {
 	NumberInput *NumberInput
 	Tooltip     component.Tooltip
-	Shaper      *text.Shaper
+	Theme       *Theme
 	Font        font.Font
 	NumericUpDownStyle
 }
@@ -59,7 +59,7 @@ func NewNumberInput(v tracker.Int) *NumberInput {
 func NumUpDown(th *Theme, number *NumberInput, tooltip string) NumericUpDown {
 	return NumericUpDown{
 		NumberInput:        number,
-		Shaper:             th.Material.Shaper,
+		Theme:              th,
 		Tooltip:            Tooltip(th, tooltip),
 		NumericUpDownStyle: th.NumericUpDown,
 	}
@@ -131,12 +131,12 @@ func (s *NumericUpDown) actualLayout(gtx C) D {
 							s.NumberInput.clickDecrease.Add(gtx.Ops)
 							return D{Size: gtx.Constraints.Min}
 						},
-						func(gtx C) D { return widgetForIcon(icons.ContentRemove).Layout(gtx, s.IconColor) },
+						func(gtx C) D { return s.Theme.Icon(icons.ContentRemove).Layout(gtx, s.IconColor) },
 					)
 				}),
 				layout.Flexed(1, func(gtx C) D {
 					paint.ColorOp{Color: s.TextColor}.Add(gtx.Ops)
-					return widget.Label{Alignment: text.Middle}.Layout(gtx, s.Shaper, s.Font, s.TextSize, strconv.Itoa(s.NumberInput.Int.Value()), op.CallOp{})
+					return widget.Label{Alignment: text.Middle}.Layout(gtx, s.Theme.Material.Shaper, s.Font, s.TextSize, strconv.Itoa(s.NumberInput.Int.Value()), op.CallOp{})
 				}),
 				layout.Rigid(func(gtx C) D {
 					gtx.Constraints = layout.Exact(image.Pt(width, height))
@@ -146,7 +146,7 @@ func (s *NumericUpDown) actualLayout(gtx C) D {
 							s.NumberInput.clickIncrease.Add(gtx.Ops)
 							return D{Size: gtx.Constraints.Min}
 						},
-						func(gtx C) D { return widgetForIcon(icons.ContentAdd).Layout(gtx, s.IconColor) },
+						func(gtx C) D { return s.Theme.Icon(icons.ContentAdd).Layout(gtx, s.IconColor) },
 					)
 				}),
 			)

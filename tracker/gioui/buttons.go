@@ -76,7 +76,7 @@ func ActionIcon(gtx C, th *Theme, w *ActionClickable, icon []byte, tip string) T
 }
 
 func TipIcon(th *Theme, w *TipClickable, icon []byte, tip string) TipIconButtonStyle {
-	iconButtonStyle := IconButton(th, &w.Clickable, widgetForIcon(icon), "")
+	iconButtonStyle := IconButton(th, &w.Clickable, th.Icon(icon), "")
 	iconButtonStyle.Color = th.Material.Palette.ContrastBg
 	iconButtonStyle.Background = color.NRGBA{}
 	iconButtonStyle.Inset = layout.UniformInset(unit.Dp(6))
@@ -97,7 +97,7 @@ func ToggleIcon(gtx C, th *Theme, w *BoolClickable, offIcon, onIcon []byte, offT
 	for w.Clickable.Clicked(gtx) {
 		w.Bool.Toggle()
 	}
-	ibStyle := IconButton(th, &w.Clickable, widgetForIcon(icon), "")
+	ibStyle := IconButton(th, &w.Clickable, th.Icon(icon), "")
 	ibStyle.Background = color.NRGBA{}
 	ibStyle.Inset = layout.UniformInset(unit.Dp(6))
 	ibStyle.Color = th.Material.Palette.ContrastBg

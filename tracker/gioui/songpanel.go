@@ -286,7 +286,7 @@ func (e *Expander) layoutHeader(gtx C, th *Theme, title string, smallWidget layo
 						icon = icons.NavigationExpandLess
 					}
 					gtx.Constraints.Min = image.Pt(gtx.Dp(unit.Dp(24)), gtx.Dp(unit.Dp(24)))
-					return widgetForIcon(icon).Layout(gtx, th.SongPanel.Expander.Color)
+					return th.Icon(icon).Layout(gtx, th.SongPanel.Expander.Color)
 				}),
 			)
 		},

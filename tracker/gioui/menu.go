@@ -96,7 +96,7 @@ func (m *MenuStyle) Layout(gtx C, items ...MenuItem) D {
 					if i == m.Menu.hover-1 && item.Doer.Enabled() {
 						macro = op.Record(gtx.Ops)
 					}
-					icon := widgetForIcon(item.IconBytes)
+					icon := m.Theme.Icon(item.IconBytes)
 					iconColor := m.LabelStyle.Color
 					iconInset := layout.Inset{Left: unit.Dp(12), Right: unit.Dp(6)}
 					textLabel := Label(m.Theme, &m.Theme.Menu.Text, item.Text)
