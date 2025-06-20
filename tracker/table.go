@@ -18,7 +18,6 @@ type (
 		Cursor2() Point
 		SetCursor(Point)
 		SetCursor2(Point)
-		SetCursorFloat(x, y float32)
 		Width() int
 		Height() int
 		MoveCursor(dx, dy int) (ok bool)
@@ -187,10 +186,6 @@ func (m *Order) SetCursor2(p Point) {
 	m.d.Cursor2.Track = max(min(p.X, len(m.d.Song.Score.Tracks)-1), 0)
 	m.d.Cursor2.OrderRow = max(min(p.Y, m.d.Song.Score.Length-1), 0)
 	m.updateCursorRows()
-}
-
-func (m *Order) SetCursorFloat(x, y float32) {
-	m.SetCursor(Point{int(x), int(y)})
 }
 
 func (v *Order) updateCursorRows() {

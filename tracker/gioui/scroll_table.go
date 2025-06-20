@@ -159,9 +159,10 @@ func (s *ScrollTableStyle) handleEvents(gtx layout.Context, p image.Point) {
 				dy := (e.Position.Y + float32(s.ScrollTable.RowTitleList.List.Position.Offset)) / float32(gtx.Dp(s.CellHeight))
 				x := dx + float32(s.ScrollTable.ColTitleList.List.Position.First)
 				y := dy + float32(s.ScrollTable.RowTitleList.List.Position.First)
-				s.ScrollTable.Table.SetCursor2(tracker.Point{X: int(x), Y: int(y)})
+				cursorPoint := tracker.Point{X: int(x), Y: int(y)}
+				s.ScrollTable.Table.SetCursor2(cursorPoint)
 				if e.Kind == pointer.Press && !e.Modifiers.Contain(key.ModShift) {
-					s.ScrollTable.Table.SetCursorFloat(x, y)
+					s.ScrollTable.Table.SetCursor(cursorPoint)
 				}
 				s.ScrollTable.cursorMoved = true
 			case pointer.Release:
