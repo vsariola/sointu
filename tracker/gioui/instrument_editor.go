@@ -424,6 +424,8 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 										break
 									}
 								}
+							} else {
+								t.Units().SetSelectedType("")
 							}
 						}
 						ie.unitDragList.Focus()
