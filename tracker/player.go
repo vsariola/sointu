@@ -51,6 +51,8 @@ type (
 		BPM() (bpm float64, ok bool)
 	}
 
+	NullPlayerProcessContext struct{}
+
 	// NoteEvent describes triggering or releasing of a note. The timestamps are
 	// in frames, and relative to the clock of the event source. Different
 	// sources can use different clocks. Player tries to adjust the timestamps
@@ -198,6 +200,10 @@ func (p *Player) advanceRow() {
 	}
 	p.rowtime = 0
 	p.send(nil) // just send volume and song row information
+}
+
+func (p NullPlayerProcessContext) BPM() (bpm float64, ok bool) {
+	return 0, false // no BPM available
 }
 
 func (p *Player) processMessages(context PlayerProcessContext) {

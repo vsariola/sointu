@@ -24,15 +24,7 @@ type (
 		eventIndex int
 		host       vst2.Host
 	}
-
-	NullMIDIContext struct{}
 )
-
-func (m NullMIDIContext) InputDevices(yield func(tracker.MIDIDevice) bool) {}
-
-func (m NullMIDIContext) Close() {}
-
-func (m NullMIDIContext) HasDeviceOpen() bool { return false }
 
 func (c *VSTIProcessContext) BPM() (bpm float64, ok bool) {
 	timeInfo := c.host.GetTimeInfo(vst2.TempoValid)
@@ -54,7 +46,7 @@ func init() {
 			recoveryFile = filepath.Join(configDir, "sointu", "sointu-vsti-recovery-"+hex.EncodeToString(randBytes))
 		}
 		broker := tracker.NewBroker()
-		model := tracker.NewModel(broker, cmd.MainSynther, NullMIDIContext{}, recoveryFile)
+		model := tracker.NewModel(broker, cmd.MainSynther, cmd.NewMidiContext(broker), recoveryFile)
 		player := tracker.NewPlayer(broker, cmd.MainSynther)
 		detector := tracker.NewDetector(broker)
 		go detector.Run()

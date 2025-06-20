@@ -117,7 +117,10 @@ type (
 		InputDevices(yield func(MIDIDevice) bool)
 		Close()
 		HasDeviceOpen() bool
+		TryToOpenBy(name string, first bool)
 	}
+
+	NullMIDIContext struct{}
 
 	MIDIDevice interface {
 		String() string
@@ -384,6 +387,11 @@ func (d *modelData) Copy() modelData {
 	ret.Song = d.Song.Copy()
 	return ret
 }
+
+func (m NullMIDIContext) InputDevices(yield func(MIDIDevice) bool) {}
+func (m NullMIDIContext) Close()                                   {}
+func (m NullMIDIContext) HasDeviceOpen() bool                      { return false }
+func (m NullMIDIContext) TryToOpenBy(name string, first bool)      {}
 
 func (m *Model) resetSong() {
 	m.d.Song = defaultSong.Copy()

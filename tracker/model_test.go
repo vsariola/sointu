@@ -13,17 +13,9 @@ import (
 
 type NullContext struct{}
 
-func (NullContext) FinishBlock(frame int) {}
-
 func (NullContext) BPM() (bpm float64, ok bool) {
 	return 0, false
 }
-
-func (NullContext) InputDevices(yield func(tracker.MIDIDevice) bool) {}
-
-func (NullContext) HasDeviceOpen() bool { return false }
-
-func (NullContext) Close() {}
 
 type modelFuzzState struct {
 	model     *tracker.Model
@@ -261,7 +253,7 @@ func FuzzModel(f *testing.F) {
 		reader := bytes.NewReader(slice)
 		synther := vm.GoSynther{}
 		broker := tracker.NewBroker()
-		model := tracker.NewModel(broker, synther, NullContext{}, "")
+		model := tracker.NewModel(broker, synther, tracker.NullMIDIContext{}, "")
 		player := tracker.NewPlayer(broker, synther)
 		buf := make([][2]float32, 2048)
 		closeChan := make(chan struct{})
