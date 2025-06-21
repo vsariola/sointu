@@ -316,7 +316,7 @@ func (m *Model) tracksWithSameInstrument(trackIndex int) iter.Seq[int] {
 
 func (m *Model) calcPatternUseCounts(track sointu.Track) []int {
 	result := make([]int, len(m.d.Song.Score.Tracks))
-	for j, _ := range result {
+	for j := range result {
 		result[j] = 0
 	}
 	for j := 0; j < m.d.Song.Score.Length; j++ {

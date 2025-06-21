@@ -51,7 +51,6 @@ type (
 		filePathString tracker.String
 		noteEvents     []tracker.NoteEvent
 
-		execChan    chan func()
 		preferences Preferences
 
 		*tracker.Model

@@ -206,7 +206,7 @@ func (b *Clickable) Update(gtx layout.Context) (widget.Click, bool) {
 	return b.update(b, gtx)
 }
 
-func (b *Clickable) update(t event.Tag, gtx layout.Context) (widget.Click, bool) {
+func (b *Clickable) update(_ event.Tag, gtx layout.Context) (widget.Click, bool) {
 	for len(b.history) > 0 {
 		c := b.history[0]
 		if c.End.IsZero() || gtx.Now.Sub(c.End) < 1*time.Second {

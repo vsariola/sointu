@@ -37,7 +37,6 @@ type ScrollTableStyle struct {
 	ColumnTitleHeight unit.Dp
 	CellWidth         unit.Dp
 	CellHeight        unit.Dp
-	element           func(gtx C, x, y int) D
 }
 
 func NewScrollTable(table tracker.Table, vertList, horizList tracker.List) *ScrollTable {
