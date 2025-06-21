@@ -54,6 +54,24 @@ button:
     cornerradius: 0
     height: *buttonheight
     inset: *buttoninset
+iconbutton:
+  enabled:
+    color: *primarycolor
+    size: 24
+    inset: { top: 6, bottom: 6, left: 6, right: 6 }
+  disabled:
+    color: *disabled
+    size: 24
+    inset: { top: 6, bottom: 6, left: 6, right: 6 }
+  emphasis:
+    color: *contrastfg
+    background: *primarycolor
+    size: 24
+    inset: { top: 6, bottom: 6, left: 6, right: 6 }
+  error:
+    color: *errorcolor
+    size: 24
+    inset: { top: 6, bottom: 6, left: 6, right: 6 }
 oscilloscope:
   curvecolors: [*primarycolor, *secondarycolor]
   limitcolor: { r: 255, g: 255, b: 255, a: 8 }

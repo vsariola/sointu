@@ -22,39 +22,271 @@ import (
 )
 
 type (
-	TipClickable struct {
-		Clickable Clickable
-		TipArea   component.TipArea
+	Clickable struct {
+		click   gesture.Click
+		history []widget.Press
+
+		requestClicks int
+		TipArea       component.TipArea // since almost all buttons have tooltips, we include the state for a tooltip here for convenience
 	}
 
-	ActionClickable struct {
-		Action tracker.Action
-		TipClickable
+	ButtonStyle struct {
+		// Color is the text color.
+		Color        color.NRGBA
+		Font         font.Font
+		TextSize     unit.Sp
+		Background   color.NRGBA
+		CornerRadius unit.Dp
+		Height       unit.Dp
+		Inset        layout.Inset
 	}
 
-	TipIconButtonStyle struct {
-		TipArea         *component.TipArea
-		IconButtonStyle IconButtonStyle
-		Tooltip         component.Tooltip
+	IconButtonStyle struct {
+		Background color.NRGBA
+		// Color is the icon color.
+		Color color.NRGBA
+		// Size is the icon size.
+		Size  unit.Dp
+		Inset layout.Inset
 	}
 
-	BoolClickable struct {
-		Clickable Clickable
-		TipArea   component.TipArea
-		Bool      tracker.Bool
+	// Button is a text button
+	Button struct {
+		Theme     *Theme
+		Style     *ButtonStyle
+		Text      string
+		Tip       string
+		Clickable *Clickable
+	}
+
+	// ActionButton is a text button that executes an action when clicked.
+	ActionButton struct {
+		Action        tracker.Action
+		DisabledStyle *ButtonStyle
+		Button
+	}
+
+	// ToggleButton is a text button that toggles a boolean value when clicked.
+	ToggleButton struct {
+		Bool          tracker.Bool
+		DisabledStyle *ButtonStyle
+		OffStyle      *ButtonStyle
+		Button
+	}
+
+	// IconButton is a button with an icon.
+	IconButton struct {
+		Theme     *Theme
+		Style     *IconButtonStyle
+		Icon      *widget.Icon
+		Tip       string
+		Clickable *Clickable
+	}
+
+	// ActionIconButton is an icon button that executes an action when clicked.
+	ActionIconButton struct {
+		Action        tracker.Action
+		DisabledStyle *IconButtonStyle
+		IconButton
+	}
+
+	// ToggleIconButton is an icon button that toggles a boolean value when clicked.
+	ToggleIconButton struct {
+		Bool          tracker.Bool
+		DisabledStyle *IconButtonStyle
+		OffIcon       *widget.Icon
+		OffTip        string
+		IconButton
 	}
 )
 
-func NewActionClickable(a tracker.Action) *ActionClickable {
-	return &ActionClickable{
-		Action: a,
+func Btn(th *Theme, st *ButtonStyle, c *Clickable, txt string, tip string) Button {
+	return Button{
+		Theme:     th,
+		Style:     st,
+		Clickable: c,
+		Text:      txt,
+		Tip:       tip,
 	}
 }
 
-func NewBoolClickable(b tracker.Bool) *BoolClickable {
-	return &BoolClickable{
-		Bool: b,
+func ActionBtn(act tracker.Action, th *Theme, c *Clickable, txt string, tip string) ActionButton {
+	return ActionButton{
+		Action:        act,
+		DisabledStyle: &th.Button.Disabled,
+		Button:        Btn(th, &th.Button.Text, c, txt, tip),
 	}
+}
+
+func ToggleBtn(b tracker.Bool, th *Theme, c *Clickable, text string, tip string) ToggleButton {
+	return ToggleButton{
+		Bool:          b,
+		DisabledStyle: &th.Button.Disabled,
+		OffStyle:      &th.Button.Text,
+		Button:        Btn(th, &th.Button.Filled, c, text, tip),
+	}
+}
+
+func IconBtn(th *Theme, st *IconButtonStyle, c *Clickable, icon []byte, tip string) IconButton {
+	return IconButton{
+		Theme:     th,
+		Style:     st,
+		Clickable: c,
+		Icon:      th.Icon(icon),
+		Tip:       tip,
+	}
+}
+
+func ActionIconBtn(act tracker.Action, th *Theme, c *Clickable, icon []byte, tip string) ActionIconButton {
+	return ActionIconButton{
+		Action:        act,
+		DisabledStyle: &th.IconButton.Disabled,
+		IconButton:    IconBtn(th, &th.IconButton.Enabled, c, icon, tip),
+	}
+}
+
+func ToggleIconBtn(b tracker.Bool, th *Theme, c *Clickable, offIcon, onIcon []byte, offTip, onTip string) ToggleIconButton {
+	return ToggleIconButton{
+		Bool:          b,
+		DisabledStyle: &th.IconButton.Disabled,
+		OffIcon:       th.Icon(offIcon),
+		OffTip:        offTip,
+		IconButton:    IconBtn(th, &th.IconButton.Enabled, c, onIcon, onTip),
+	}
+}
+
+func (b *Button) Layout(gtx C) D {
+	if b.Tip != "" {
+		return b.Clickable.TipArea.Layout(gtx, Tooltip(b.Theme, b.Tip), b.actualLayout)
+	}
+	return b.actualLayout(gtx)
+}
+
+func (b *Button) actualLayout(gtx C) D {
+	min := gtx.Constraints.Min
+	min.Y = gtx.Dp(b.Style.Height)
+	return b.Clickable.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+		semantic.Button.Add(gtx.Ops)
+		return layout.Background{}.Layout(gtx,
+			func(gtx layout.Context) layout.Dimensions {
+				rr := gtx.Dp(b.Style.CornerRadius)
+				defer clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, rr).Push(gtx.Ops).Pop()
+				background := b.Style.Background
+				switch {
+				case b.Clickable.Hovered():
+					background = hoveredColor(background)
+				}
+				paint.Fill(gtx.Ops, background)
+				for _, c := range b.Clickable.History() {
+					drawInk(gtx, (widget.Press)(c))
+				}
+				return layout.Dimensions{Size: gtx.Constraints.Min}
+			},
+			func(gtx layout.Context) layout.Dimensions {
+				gtx.Constraints.Min = min
+				return layout.Center.Layout(gtx, func(gtx C) D {
+					return b.Style.Inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						colMacro := op.Record(gtx.Ops)
+						paint.ColorOp{Color: b.Style.Color}.Add(gtx.Ops)
+						return widget.Label{Alignment: text.Middle}.Layout(gtx, b.Theme.Material.Shaper, b.Style.Font, b.Style.TextSize, b.Text, colMacro.Stop())
+					})
+				})
+			},
+		)
+	})
+}
+
+func (b *ActionButton) Layout(gtx C) D {
+	for b.Clickable.Clicked(gtx) {
+		b.Action.Do()
+	}
+	if !b.Action.Enabled() {
+		b.Style = b.DisabledStyle
+	}
+	return b.Button.Layout(gtx)
+}
+
+func (b *ToggleButton) Layout(gtx C) D {
+	for b.Clickable.Clicked(gtx) {
+		b.Bool.Toggle()
+	}
+	if !b.Bool.Enabled() {
+		b.Style = b.DisabledStyle
+	} else if !b.Bool.Value() {
+		b.Style = b.OffStyle
+	}
+	return b.Button.Layout(gtx)
+}
+
+func (b *IconButton) Layout(gtx C) D {
+	if b.Tip != "" {
+		return b.Clickable.TipArea.Layout(gtx, Tooltip(b.Theme, b.Tip), b.actualLayout)
+	}
+	return b.actualLayout(gtx)
+}
+
+func (b *IconButton) actualLayout(gtx C) D {
+	m := op.Record(gtx.Ops)
+	dims := b.Clickable.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+		semantic.Button.Add(gtx.Ops)
+		return layout.Background{}.Layout(gtx,
+			func(gtx layout.Context) layout.Dimensions {
+				rr := (gtx.Constraints.Min.X + gtx.Constraints.Min.Y) / 4
+				defer clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, rr).Push(gtx.Ops).Pop()
+				background := b.Style.Background
+				switch {
+				case b.Clickable.Hovered():
+					background = hoveredColor(background)
+				}
+				paint.Fill(gtx.Ops, background)
+				for _, c := range b.Clickable.History() {
+					drawInk(gtx, (widget.Press)(c))
+				}
+				return layout.Dimensions{Size: gtx.Constraints.Min}
+			},
+			func(gtx layout.Context) layout.Dimensions {
+				return b.Style.Inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+					size := gtx.Dp(b.Style.Size)
+					if b.Icon != nil {
+						gtx.Constraints.Min = image.Point{X: size}
+						b.Icon.Layout(gtx, b.Style.Color)
+					}
+					return layout.Dimensions{
+						Size: image.Point{X: size, Y: size},
+					}
+				})
+			},
+		)
+	})
+	c := m.Stop()
+	bounds := image.Rectangle{Max: dims.Size}
+	defer clip.Ellipse(bounds).Push(gtx.Ops).Pop()
+	c.Add(gtx.Ops)
+	return dims
+}
+
+func (b *ActionIconButton) Layout(gtx C) D {
+	for b.Clickable.Clicked(gtx) {
+		b.Action.Do()
+	}
+	if !b.Action.Enabled() {
+		b.Style = b.DisabledStyle
+	}
+	return b.IconButton.Layout(gtx)
+}
+
+func (b *ToggleIconButton) Layout(gtx C) D {
+	for b.Clickable.Clicked(gtx) {
+		b.Bool.Toggle()
+	}
+	if !b.Bool.Enabled() {
+		b.Style = b.DisabledStyle
+	}
+	if !b.Bool.Value() {
+		b.Icon = b.OffIcon
+		b.Tip = b.OffTip
+	}
+	return b.IconButton.Layout(gtx)
 }
 
 func Tooltip(th *Theme, tip string) component.Tooltip {
@@ -62,88 +294,6 @@ func Tooltip(th *Theme, tip string) component.Tooltip {
 	tooltip.Bg = th.Tooltip.Bg
 	tooltip.Text.Color = th.Tooltip.Color
 	return tooltip
-}
-
-func ActionIcon(gtx C, th *Theme, w *ActionClickable, icon []byte, tip string) TipIconButtonStyle {
-	ret := TipIcon(th, &w.TipClickable, icon, tip)
-	for w.Clickable.Clicked(gtx) {
-		w.Action.Do()
-	}
-	if !w.Action.Enabled() {
-		ret.IconButtonStyle.Color = th.Button.Disabled.Color
-	}
-	return ret
-}
-
-func TipIcon(th *Theme, w *TipClickable, icon []byte, tip string) TipIconButtonStyle {
-	iconButtonStyle := IconButton(th, &w.Clickable, th.Icon(icon), "")
-	iconButtonStyle.Color = th.Material.Palette.ContrastBg
-	iconButtonStyle.Background = color.NRGBA{}
-	iconButtonStyle.Inset = layout.UniformInset(unit.Dp(6))
-	return TipIconButtonStyle{
-		TipArea:         &w.TipArea,
-		IconButtonStyle: iconButtonStyle,
-		Tooltip:         Tooltip(th, tip),
-	}
-}
-
-func ToggleIcon(gtx C, th *Theme, w *BoolClickable, offIcon, onIcon []byte, offTip, onTip string) TipIconButtonStyle {
-	icon := offIcon
-	tip := offTip
-	if w.Bool.Value() {
-		icon = onIcon
-		tip = onTip
-	}
-	for w.Clickable.Clicked(gtx) {
-		w.Bool.Toggle()
-	}
-	ibStyle := IconButton(th, &w.Clickable, th.Icon(icon), "")
-	ibStyle.Background = color.NRGBA{}
-	ibStyle.Inset = layout.UniformInset(unit.Dp(6))
-	ibStyle.Color = th.Material.Palette.ContrastBg
-	if !w.Bool.Enabled() {
-		ibStyle.Color = th.Button.Disabled.Color
-	}
-	return TipIconButtonStyle{
-		TipArea:         &w.TipArea,
-		IconButtonStyle: ibStyle,
-		Tooltip:         Tooltip(th, tip),
-	}
-}
-
-func (t *TipIconButtonStyle) Layout(gtx C) D {
-	return t.TipArea.Layout(gtx, t.Tooltip, t.IconButtonStyle.Layout)
-}
-
-func ActionButton(gtx C, th *Theme, style *ButtonStyle, w *ActionClickable, text string) Button {
-	for w.Clickable.Clicked(gtx) {
-		w.Action.Do()
-	}
-	if !w.Action.Enabled() {
-		return Btn(th, &th.Button.Disabled, &w.Clickable, text)
-	}
-	return Btn(th, style, &w.Clickable, text)
-}
-
-func ToggleButton(gtx C, th *Theme, b *BoolClickable, text string) Button {
-	for b.Clickable.Clicked(gtx) {
-		b.Bool.Toggle()
-	}
-	if !b.Bool.Enabled() {
-		return Btn(th, &th.Button.Disabled, &b.Clickable, text)
-	}
-	if b.Bool.Value() {
-		return Btn(th, &th.Button.Filled, &b.Clickable, text)
-	}
-	return Btn(th, &th.Button.Text, &b.Clickable, text)
-}
-
-// Clickable represents a clickable area.
-type Clickable struct {
-	click   gesture.Click
-	history []widget.Press
-
-	requestClicks int
 }
 
 // Click executes a simple programmatic click.
@@ -250,135 +400,6 @@ func (b *Clickable) update(_ event.Tag, gtx layout.Context) (widget.Click, bool)
 		}
 	}
 	return widget.Click{}, false
-}
-
-type ButtonStyle struct {
-	// Color is the text color.
-	Color        color.NRGBA
-	Font         font.Font
-	TextSize     unit.Sp
-	Background   color.NRGBA
-	CornerRadius unit.Dp
-	Height       unit.Dp
-	Inset        layout.Inset
-}
-
-type Button struct {
-	Text   string
-	Button *Clickable
-	shaper *text.Shaper
-	ButtonStyle
-}
-
-type IconButtonStyle struct {
-	Background color.NRGBA
-	// Color is the icon color.
-	Color color.NRGBA
-	Icon  *widget.Icon
-	// Size is the icon size.
-	Size        unit.Dp
-	Inset       layout.Inset
-	Button      *Clickable
-	Description string
-}
-
-func Btn(th *Theme, style *ButtonStyle, button *Clickable, txt string) Button {
-	b := Button{
-		Text:        txt,
-		ButtonStyle: *style,
-		Button:      button,
-		shaper:      th.Material.Shaper,
-	}
-	return b
-}
-
-func IconButton(th *Theme, button *Clickable, icon *widget.Icon, description string) IconButtonStyle {
-	return IconButtonStyle{
-		Background:  th.Material.Palette.ContrastBg,
-		Color:       th.Material.Palette.ContrastFg,
-		Icon:        icon,
-		Size:        24,
-		Inset:       layout.UniformInset(12),
-		Button:      button,
-		Description: description,
-	}
-}
-
-func (b *Button) Layout(gtx layout.Context) layout.Dimensions {
-	min := gtx.Constraints.Min
-	min.Y = gtx.Dp(b.Height)
-	return b.Button.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-		semantic.Button.Add(gtx.Ops)
-		return layout.Background{}.Layout(gtx,
-			func(gtx layout.Context) layout.Dimensions {
-				rr := gtx.Dp(b.CornerRadius)
-				defer clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, rr).Push(gtx.Ops).Pop()
-				background := b.Background
-				switch {
-				case b.Button.Hovered():
-					background = hoveredColor(background)
-				}
-				paint.Fill(gtx.Ops, background)
-				for _, c := range b.Button.History() {
-					drawInk(gtx, (widget.Press)(c))
-				}
-				return layout.Dimensions{Size: gtx.Constraints.Min}
-			},
-			func(gtx layout.Context) layout.Dimensions {
-				gtx.Constraints.Min = min
-				return layout.Center.Layout(gtx, func(gtx C) D {
-					return b.Inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						colMacro := op.Record(gtx.Ops)
-						paint.ColorOp{Color: b.Color}.Add(gtx.Ops)
-						return widget.Label{Alignment: text.Middle}.Layout(gtx, b.shaper, b.Font, b.TextSize, b.Text, colMacro.Stop())
-					})
-				})
-			},
-		)
-	})
-}
-
-func (b IconButtonStyle) Layout(gtx layout.Context) layout.Dimensions {
-	m := op.Record(gtx.Ops)
-	dims := b.Button.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-		semantic.Button.Add(gtx.Ops)
-		if d := b.Description; d != "" {
-			semantic.DescriptionOp(b.Description).Add(gtx.Ops)
-		}
-		return layout.Background{}.Layout(gtx,
-			func(gtx layout.Context) layout.Dimensions {
-				rr := (gtx.Constraints.Min.X + gtx.Constraints.Min.Y) / 4
-				defer clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, rr).Push(gtx.Ops).Pop()
-				background := b.Background
-				switch {
-				case b.Button.Hovered():
-					background = hoveredColor(background)
-				}
-				paint.Fill(gtx.Ops, background)
-				for _, c := range b.Button.History() {
-					drawInk(gtx, (widget.Press)(c))
-				}
-				return layout.Dimensions{Size: gtx.Constraints.Min}
-			},
-			func(gtx layout.Context) layout.Dimensions {
-				return b.Inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-					size := gtx.Dp(b.Size)
-					if b.Icon != nil {
-						gtx.Constraints.Min = image.Point{X: size}
-						b.Icon.Layout(gtx, b.Color)
-					}
-					return layout.Dimensions{
-						Size: image.Point{X: size, Y: size},
-					}
-				})
-			},
-		)
-	})
-	c := m.Stop()
-	bounds := image.Rectangle{Max: dims.Size}
-	defer clip.Ellipse(bounds).Push(gtx.Ops).Pop()
-	c.Add(gtx.Ops)
-	return dims
 }
 
 func drawInk(gtx layout.Context, c widget.Press) {

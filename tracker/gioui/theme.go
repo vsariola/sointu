@@ -19,6 +19,12 @@ type Theme struct {
 		Disabled ButtonStyle
 		Menu     ButtonStyle
 	}
+	IconButton struct {
+		Enabled  IconButtonStyle
+		Disabled IconButtonStyle
+		Emphasis IconButtonStyle
+		Error    IconButtonStyle
+	}
 	Oscilloscope  OscilloscopeStyle
 	NumericUpDown NumericUpDownStyle
 	DialogTitle   LabelStyle

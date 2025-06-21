@@ -168,9 +168,8 @@ func (tr *Tracker) layoutMenu(gtx C, title string, clickable *Clickable, menu *M
 	m := PopupMenu(tr.Theme, &tr.Theme.Menu.Text, menu)
 	return func(gtx C) D {
 		defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-		titleBtn := Btn(tr.Theme, &tr.Theme.Button.Menu, clickable, title)
-		titleBtn.CornerRadius = unit.Dp(0)
-		dims := titleBtn.Layout(gtx)
+		btn := Btn(tr.Theme, &tr.Theme.Button.Menu, clickable, title, "")
+		dims := btn.Layout(gtx)
 		op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
 		gtx.Constraints.Max.X = gtx.Dp(width)
 		gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(300))

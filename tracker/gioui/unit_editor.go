@@ -30,10 +30,10 @@ type UnitEditor struct {
 	sliderList     *DragList
 	searchList     *DragList
 	Parameters     []*ParameterWidget
-	DeleteUnitBtn  *ActionClickable
-	CopyUnitBtn    *TipClickable
-	ClearUnitBtn   *ActionClickable
-	DisableUnitBtn *BoolClickable
+	DeleteUnitBtn  *Clickable
+	CopyUnitBtn    *Clickable
+	ClearUnitBtn   *Clickable
+	DisableUnitBtn *Clickable
 	SelectTypeBtn  *Clickable
 	commentEditor  *Editor
 	caser          cases.Caser
@@ -45,10 +45,10 @@ type UnitEditor struct {
 
 func NewUnitEditor(m *tracker.Model) *UnitEditor {
 	ret := &UnitEditor{
-		DeleteUnitBtn:  NewActionClickable(m.DeleteUnit()),
-		ClearUnitBtn:   NewActionClickable(m.ClearUnit()),
-		DisableUnitBtn: NewBoolClickable(m.UnitDisabled()),
-		CopyUnitBtn:    new(TipClickable),
+		DeleteUnitBtn:  new(Clickable),
+		ClearUnitBtn:   new(Clickable),
+		DisableUnitBtn: new(Clickable),
+		CopyUnitBtn:    new(Clickable),
 		SelectTypeBtn:  new(Clickable),
 		commentEditor:  NewEditor(true, true, text.Start),
 		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
@@ -127,15 +127,12 @@ func (pe *UnitEditor) layoutSliders(gtx C, t *Tracker) D {
 }
 
 func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
-	for pe.CopyUnitBtn.Clickable.Clicked(gtx) {
+	for pe.CopyUnitBtn.Clicked(gtx) {
 		if contents, ok := t.Units().List().CopyElements(); ok {
 			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
 			t.Alerts().Add("Unit copied to clipboard", tracker.Info)
 		}
 	}
-	copyUnitBtnStyle := TipIcon(t.Theme, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
-	deleteUnitBtnStyle := ActionIcon(gtx, t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
-	disableUnitBtnStyle := ToggleIcon(gtx, t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
 	text := t.Units().SelectedType()
 	if text == "" {
 		text = "Choose unit type"
@@ -143,15 +140,19 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		text = pe.caser.String(text)
 	}
 	hintText := Label(t.Theme, &t.Theme.UnitEditor.Hint, text)
+	deleteUnitBtn := ActionIconBtn(t.DeleteUnit(), t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
+	copyUnitBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
+	disableUnitBtn := ToggleIconBtn(t.UnitDisabled(), t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
+
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-		layout.Rigid(deleteUnitBtnStyle.Layout),
-		layout.Rigid(copyUnitBtnStyle.Layout),
-		layout.Rigid(disableUnitBtnStyle.Layout),
+		layout.Rigid(deleteUnitBtn.Layout),
+		layout.Rigid(copyUnitBtn.Layout),
+		layout.Rigid(disableUnitBtn.Layout),
 		layout.Rigid(func(gtx C) D {
 			var dims D
 			if t.Units().SelectedType() != "" {
-				clearUnitBtnStyle := ActionIcon(gtx, t.Theme, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
-				dims = clearUnitBtnStyle.Layout(gtx)
+				clearUnitBtn := ActionIconBtn(t.ClearUnit(), t.Theme, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
+				dims = clearUnitBtn.Layout(gtx)
 			}
 			return D{Size: image.Pt(gtx.Dp(unit.Dp(48)), dims.Size.Y)}
 		}),

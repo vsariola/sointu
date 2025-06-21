@@ -46,10 +46,10 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		SongLength:     NewNumericUpDown(),
 		Scope:          NewOscilloscope(model),
 		MenuBar:        NewMenuBar(model),
-		PlayBar:        NewPlayBar(model),
+		PlayBar:        NewPlayBar(),
 
-		WeightingTypeBtn: &Clickable{},
-		OversamplingBtn:  &Clickable{},
+		WeightingTypeBtn: new(Clickable),
+		OversamplingBtn:  new(Clickable),
 
 		SongSettingsExpander: &Expander{Expanded: true},
 		ScopeExpander:        &Expander{},
@@ -75,7 +75,7 @@ func (s *SongPanel) Layout(gtx C, t *Tracker) D {
 			return s.MenuBar.Layout(gtx, t)
 		}),
 		layout.Rigid(func(gtx C) D {
-			return s.PlayBar.Layout(gtx, t.Theme)
+			return s.PlayBar.Layout(gtx, t)
 		}),
 		layout.Rigid(func(gtx C) D {
 			return s.layoutSongOptions(gtx, t)
@@ -98,13 +98,13 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 		weightingTxt = "No weight (RMS)"
 	}
 
-	weightingBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.WeightingTypeBtn, weightingTxt)
+	weightingBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.WeightingTypeBtn, weightingTxt, "")
 
 	oversamplingTxt := "Sample peak"
 	if tr.Model.Oversampling().Value() {
 		oversamplingTxt = "True peak"
 	}
-	oversamplingBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.OversamplingBtn, oversamplingTxt)
+	oversamplingBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.OversamplingBtn, oversamplingTxt, "")
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
@@ -201,7 +201,7 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 		}),
 		layout.Flexed(1, func(gtx C) D {
 			return t.ScopeExpander.Layout(gtx, tr.Theme, "Oscilloscope", func(gtx C) D { return D{} }, func(gtx C) D {
-				return t.Scope.Layout(gtx, tr.Model.SignalAnalyzer().TriggerChannel(), tr.Model.SignalAnalyzer().LengthInBeats(), tr.Model.SignalAnalyzer().Waveform(), tr.Theme, &tr.Theme.Oscilloscope)
+				return t.Scope.Layout(gtx, tr.Model.SignalAnalyzer().TriggerChannel(), tr.Model.SignalAnalyzer().LengthInBeats(), tr.Model.SignalAnalyzer().Once(), tr.Model.SignalAnalyzer().Wrap(), tr.Model.SignalAnalyzer().Waveform(), tr.Theme, &tr.Theme.Oscilloscope)
 			})
 		}),
 		layout.Rigid(Label(tr.Theme, &tr.Theme.SongPanel.Version, version.VersionOrHash).Layout),
@@ -304,14 +304,14 @@ type MenuBar struct {
 	midiMenuItems []MenuItem
 
 	panicHint string
-	PanicBtn  *BoolClickable
+	PanicBtn  *Clickable
 }
 
 func NewMenuBar(model *tracker.Model) *MenuBar {
 	ret := &MenuBar{
 		Clickables: make([]Clickable, 3),
 		Menus:      make([]Menu, 3),
-		PanicBtn:   NewBoolClickable(model.Panic()),
+		PanicBtn:   new(Clickable),
 		panicHint:  makeHint("Panic", " (%s)", "PanicToggle"),
 	}
 	ret.fileMenuItems = []MenuItem{
@@ -343,15 +343,15 @@ func (t *MenuBar) Layout(gtx C, tr *Tracker) D {
 	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(36))
 	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 
-	panicBtnStyle := ToggleIcon(gtx, tr.Theme, t.PanicBtn, icons.AlertErrorOutline, icons.AlertError, t.panicHint, t.panicHint)
-	if t.PanicBtn.Bool.Value() {
-		panicBtnStyle.IconButtonStyle.Color = tr.Theme.SongPanel.ErrorColor
+	panicBtn := ToggleIconBtn(tr.Panic(), tr.Theme, t.PanicBtn, icons.AlertErrorOutline, icons.AlertError, t.panicHint, t.panicHint)
+	if tr.Panic().Value() {
+		panicBtn.Style = &tr.Theme.IconButton.Error
 	}
 	flex := layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}
 	fileFC := layout.Rigid(tr.layoutMenu(gtx, "File", &t.Clickables[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...))
 	editFC := layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.Clickables[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...))
 	midiFC := layout.Rigid(tr.layoutMenu(gtx, "MIDI", &t.Clickables[2], &t.Menus[2], unit.Dp(200), t.midiMenuItems...))
-	panicFC := layout.Flexed(1, func(gtx C) D { return layout.E.Layout(gtx, panicBtnStyle.Layout) })
+	panicFC := layout.Flexed(1, func(gtx C) D { return layout.E.Layout(gtx, panicBtn.Layout) })
 	if len(t.midiMenuItems) > 0 {
 		return flex.Layout(gtx, fileFC, editFC, midiFC, panicFC)
 	}
@@ -359,11 +359,11 @@ func (t *MenuBar) Layout(gtx C, tr *Tracker) D {
 }
 
 type PlayBar struct {
-	RewindBtn  *ActionClickable
-	PlayingBtn *BoolClickable
-	RecordBtn  *BoolClickable
-	FollowBtn  *BoolClickable
-	LoopBtn    *BoolClickable
+	RewindBtn  *Clickable
+	PlayingBtn *Clickable
+	RecordBtn  *Clickable
+	FollowBtn  *Clickable
+	LoopBtn    *Clickable
 	// Hints
 	rewindHint                  string
 	playHint, stopHint          string
@@ -372,13 +372,13 @@ type PlayBar struct {
 	loopOffHint, loopOnHint     string
 }
 
-func NewPlayBar(model *tracker.Model) *PlayBar {
+func NewPlayBar() *PlayBar {
 	ret := &PlayBar{
-		LoopBtn:    NewBoolClickable(model.LoopToggle()),
-		RecordBtn:  NewBoolClickable(model.IsRecording()),
-		FollowBtn:  NewBoolClickable(model.Follow()),
-		PlayingBtn: NewBoolClickable(model.Playing()),
-		RewindBtn:  NewActionClickable(model.PlaySongStart()),
+		LoopBtn:    new(Clickable),
+		RecordBtn:  new(Clickable),
+		FollowBtn:  new(Clickable),
+		PlayingBtn: new(Clickable),
+		RewindBtn:  new(Clickable),
 	}
 	ret.rewindHint = makeHint("Rewind", "\n(%s)", "PlaySongStartUnfollow")
 	ret.playHint = makeHint("Play", " (%s)", "PlayCurrentPosUnfollow")
@@ -392,20 +392,20 @@ func NewPlayBar(model *tracker.Model) *PlayBar {
 	return ret
 }
 
-func (pb *PlayBar) Layout(gtx C, th *Theme) D {
-	rewindBtnStyle := ActionIcon(gtx, th, pb.RewindBtn, icons.AVFastRewind, pb.rewindHint)
-	playBtnStyle := ToggleIcon(gtx, th, pb.PlayingBtn, icons.AVPlayArrow, icons.AVStop, pb.playHint, pb.stopHint)
-	recordBtnStyle := ToggleIcon(gtx, th, pb.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, pb.recordHint, pb.stopRecordHint)
-	noteTrackBtnStyle := ToggleIcon(gtx, th, pb.FollowBtn, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, pb.followOffHint, pb.followOnHint)
-	loopBtnStyle := ToggleIcon(gtx, th, pb.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, pb.loopOffHint, pb.loopOnHint)
+func (pb *PlayBar) Layout(gtx C, tr *Tracker) D {
+	playBtn := ToggleIconBtn(tr.Playing(), tr.Theme, pb.PlayingBtn, icons.AVPlayArrow, icons.AVStop, pb.playHint, pb.stopHint)
+	rewindBtn := ActionIconBtn(tr.PlaySongStart(), tr.Theme, pb.RewindBtn, icons.AVFastRewind, pb.rewindHint)
+	recordBtn := ToggleIconBtn(tr.IsRecording(), tr.Theme, pb.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, pb.recordHint, pb.stopRecordHint)
+	followBtn := ToggleIconBtn(tr.Follow(), tr.Theme, pb.FollowBtn, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, pb.followOffHint, pb.followOnHint)
+	loopBtn := ToggleIconBtn(tr.LoopToggle(), tr.Theme, pb.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, pb.loopOffHint, pb.loopOnHint)
 
 	return Surface{Gray: 37}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-			layout.Flexed(1, playBtnStyle.Layout),
-			layout.Rigid(rewindBtnStyle.Layout),
-			layout.Rigid(recordBtnStyle.Layout),
-			layout.Rigid(noteTrackBtnStyle.Layout),
-			layout.Rigid(loopBtnStyle.Layout),
+			layout.Flexed(1, playBtn.Layout),
+			layout.Rigid(rewindBtn.Layout),
+			layout.Rigid(recordBtn.Layout),
+			layout.Rigid(followBtn.Layout),
+			layout.Rigid(loopBtn.Layout),
 		)
 	})
 }
