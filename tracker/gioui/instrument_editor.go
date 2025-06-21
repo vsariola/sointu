@@ -262,11 +262,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				layout.Rigid(header),
 				layout.Rigid(func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					for {
-						_, ok := ie.commentEditor.Update(gtx, ie.commentString)
-						if !ok {
-							break
-						}
+					for ie.commentEditor.Update(gtx, ie.commentString) != EditorEventNone {
 						ie.instrumentDragList.Focus()
 					}
 					ret := layout.UniformInset(unit.Dp(6)).Layout(gtx, func(gtx C) D {
@@ -301,11 +297,7 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				s.Color = color.NRGBA{R: 255, G: k, B: 255, A: 255}
 			}
 			if i == ie.instrumentDragList.TrackerList.Selected() {
-				for {
-					_, ok := ie.nameEditor.Update(gtx, ie.nameString)
-					if !ok {
-						break
-					}
+				for ie.nameEditor.Update(gtx, ie.nameString) != EditorEventNone {
 					ie.instrumentDragList.Focus()
 				}
 				return layout.Center.Layout(gtx, func(gtx C) D {
@@ -409,12 +401,8 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 				if i == ie.unitDragList.TrackerList.Selected() {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 					str := t.Model.UnitSearch()
-					for {
-						ev, ok := ie.searchEditor.Update(gtx, str)
-						if !ok {
-							break
-						}
-						if _, ok := ev.(EditorSubmitEvent); ok {
+					for ev := ie.searchEditor.Update(gtx, str); ev != EditorEventNone; ev = ie.searchEditor.Update(gtx, str) {
+						if ev == EditorEventSubmit {
 							if str.Value() != "" {
 								for _, n := range sointu.UnitNames {
 									if strings.HasPrefix(n, str.Value()) {

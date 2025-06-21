@@ -31,10 +31,13 @@ type (
 		TextSize  unit.Sp
 	}
 
-	EditorSubmitEvent struct{}
-	EditorCancelEvent struct{}
+	EditorEvent int
+)
 
-	EditorEvent interface{ isEditorEvent() }
+const (
+	EditorEventNone EditorEvent = iota
+	EditorEventSubmit
+	EditorEventCancel
 )
 
 func NewEditor(singleLine, submit bool, alignment text.Alignment) *Editor {
@@ -59,10 +62,8 @@ func (s *EditorStyle) AsLabelStyle() LabelStyle {
 }
 
 func (e *Editor) Layout(gtx C, str tracker.String, th *Theme, style *EditorStyle, hint string) D {
-	for {
-		if _, ok := e.Update(gtx, str); !ok {
-			break
-		}
+	for e.Update(gtx, str) != EditorEventNone {
+		// just consume all events if the user did not consume them
 	}
 	if e.widgetEditor.Text() != str.Value() {
 		e.widgetEditor.SetText(str.Value())
@@ -75,7 +76,7 @@ func (e *Editor) Layout(gtx C, str tracker.String, th *Theme, style *EditorStyle
 	return me.Layout(gtx)
 }
 
-func (e *Editor) Update(gtx C, str tracker.String) (ev EditorEvent, ok bool) {
+func (e *Editor) Update(gtx C, str tracker.String) EditorEvent {
 	if e.requestFocus {
 		e.requestFocus = false
 		gtx.Execute(key.FocusCmd{Tag: &e.widgetEditor})
@@ -91,7 +92,7 @@ func (e *Editor) Update(gtx C, str tracker.String) (ev EditorEvent, ok bool) {
 			str.SetValue(e.widgetEditor.Text())
 		}
 		if _, ok := ev.(widget.SubmitEvent); ok {
-			return EditorSubmitEvent{}, true
+			return EditorEventSubmit
 		}
 	}
 	for {
@@ -100,15 +101,12 @@ func (e *Editor) Update(gtx C, str tracker.String) (ev EditorEvent, ok bool) {
 			break
 		}
 		if e, ok := event.(key.Event); ok && e.State == key.Press && e.Name == key.NameEscape {
-			return EditorCancelEvent{}, true
+			return EditorEventCancel
 		}
 	}
-	return nil, false
+	return EditorEventNone
 }
 
 func (e *Editor) Focus() {
 	e.requestFocus = true
 }
-
-func (s EditorSubmitEvent) isEditorEvent() {}
-func (s EditorCancelEvent) isEditorEvent() {}

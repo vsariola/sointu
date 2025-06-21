@@ -160,11 +160,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 			return hintText.Layout(gtx)
 		}),
 		layout.Flexed(1, func(gtx C) D {
-			for {
-				_, ok := pe.commentEditor.Update(gtx, t.UnitComment())
-				if !ok {
-					break
-				}
+			for pe.commentEditor.Update(gtx, t.UnitComment()) != EditorEventNone {
 				t.InstrumentEditor.Focus()
 			}
 			return pe.commentEditor.Layout(gtx, t.UnitComment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "---")
