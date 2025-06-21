@@ -156,7 +156,7 @@ jobs:
         MACOSX_DEPLOYMENT_TARGET: ${{ matrix.config.MACOSX_DEPLOYMENT_TARGET }}
       run: | # following https://github.com/RustAudio/vst-rs/blob/master/osx_vst_bundler.sh
         mkdir -p "bundle/${{ matrix.config.bundleoutput }}.vst/Contents/MacOS"
-        clang -L./build/ -lsointu -bundle -o bundle/${{ matrix.config.bundleoutput }} -all_load ${{ matrix.config.output }}
+        clang++ -D__MACOSX_CORE__ -framework CoreServices -framework CoreAudio -framework CoreMIDI -framework CoreFoundation -L./build/ -lsointu -bundle -o bundle/${{ matrix.config.bundleoutput }} -all_load ${{ matrix.config.output }}
         echo "BNDL????" > "bundle/${{ matrix.config.bundleoutput }}.vst/Contents/PkgInfo"
         echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
         <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
