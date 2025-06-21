@@ -144,9 +144,9 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 
 	octave := func(gtx C) D {
 		in := layout.UniformInset(unit.Dp(1))
-		numStyle := NumUpDown(t.Theme, t.OctaveNumberInput, ie.octaveHint)
-		dims := in.Layout(gtx, numStyle.Layout)
-		return dims
+		return in.Layout(gtx, func(gtx C) D {
+			return t.OctaveNumberInput.Layout(gtx, t.Octave(), t.Theme, &t.Theme.NumericUpDown, "Octave")
+		})
 	}
 
 	newBtnStyle := ActionIcon(gtx, t.Theme, ie.newInstrumentBtn, icons.ContentAdd, ie.addInstrumentHint)
@@ -231,9 +231,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				layout.Rigid(Label(t.Theme, &t.Theme.InstrumentEditor.Voices, "Voices").Layout),
 				layout.Rigid(layout.Spacer{Width: 4}.Layout),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					numStyle := NumUpDown(t.Theme, t.InstrumentVoices, "Number of voices for this instrument")
-					dims := numStyle.Layout(gtx)
-					return dims
+					return t.InstrumentVoices.Layout(gtx, t.Model.InstrumentVoices(), t.Theme, &t.Theme.NumericUpDown, "Number of voices for this instrument")
 				}),
 				layout.Rigid(splitInstrumentBtnStyle.Layout),
 				layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),

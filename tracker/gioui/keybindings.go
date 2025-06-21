@@ -293,7 +293,7 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 				break
 			}
 			instr := t.InstrumentEditor.instrumentDragList.TrackerList.Selected()
-			n := noteAsValue(t.OctaveNumberInput.Int.Value(), val-12)
+			n := noteAsValue(t.Model.Octave().Value(), val-12)
 			t.KeyNoteMap.Press(e.Name, tracker.NoteEvent{Channel: instr, Note: n})
 		}
 	}

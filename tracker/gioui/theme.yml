@@ -64,7 +64,6 @@ numericupdown:
   iconcolor: *primarycolor
   cornerradius: 4
   buttonwidth: 16
-  dpperstep: 8
   textsize: 14
   width: 70
   height: 20

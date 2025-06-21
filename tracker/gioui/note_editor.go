@@ -51,7 +51,7 @@ func init() {
 }
 
 type NoteEditor struct {
-	TrackVoices    *NumberInput
+	TrackVoices    *NumericUpDown
 	NewTrackBtn    *ActionClickable
 	DeleteTrackBtn *ActionClickable
 	SplitTrackBtn  *ActionClickable
@@ -76,7 +76,7 @@ type NoteEditor struct {
 
 func NewNoteEditor(model *tracker.Model) *NoteEditor {
 	ret := &NoteEditor{
-		TrackVoices:         NewNumberInput(model.TrackVoices()),
+		TrackVoices:         NewNumericUpDown(),
 		NewTrackBtn:         NewActionClickable(model.AddTrack()),
 		DeleteTrackBtn:      NewActionClickable(model.DeleteTrack()),
 		SplitTrackBtn:       NewActionClickable(model.SplitTrack()),
@@ -174,8 +174,9 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 		newTrackBtnStyle := ActionIcon(gtx, t.Theme, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
 		in := layout.UniformInset(unit.Dp(1))
 		voiceUpDown := func(gtx C) D {
-			numStyle := NumUpDown(t.Theme, te.TrackVoices, "Track voices")
-			return in.Layout(gtx, numStyle.Layout)
+			return in.Layout(gtx, func(gtx C) D {
+				return te.TrackVoices.Layout(gtx, t.Model.TrackVoices(), t.Theme, &t.Theme.NumericUpDown, "Track voices")
+			})
 		}
 		effectBtnStyle := ToggleButton(gtx, t.Theme, te.EffectBtn, "Hex")
 		uniqueBtnStyle := ToggleIcon(gtx, t.Theme, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
@@ -390,7 +391,7 @@ func (te *NoteEditor) command(t *Tracker, e key.Event) {
 			if err != nil {
 				return
 			}
-			n = noteAsValue(t.OctaveNumberInput.Int.Value(), val-12)
+			n = noteAsValue(t.Octave().Value(), val-12)
 			ev := t.Model.Notes().Input(n)
 			t.KeyNoteMap.Press(e.Name, ev)
 		}
