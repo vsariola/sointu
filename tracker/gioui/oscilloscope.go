@@ -17,8 +17,8 @@ import (
 
 type (
 	OscilloscopeState struct {
-		onceBtn              *BoolClickable
-		wrapBtn              *BoolClickable
+		onceBtn              *ClickableTip
+		wrapBtn              *ClickableTip
 		lengthInBeatsNumber  *NumericUpDown
 		triggerChannelNumber *NumericUpDown
 		xScale               int
@@ -38,17 +38,14 @@ type (
 
 func NewOscilloscope(model *tracker.Model) *OscilloscopeState {
 	return &OscilloscopeState{
-		onceBtn:              NewBoolClickable(model.SignalAnalyzer().Once()),
-		wrapBtn:              NewBoolClickable(model.SignalAnalyzer().Wrap()),
+		onceBtn:              new(ClickableTip),
+		wrapBtn:              new(ClickableTip),
 		lengthInBeatsNumber:  NewNumericUpDown(),
 		triggerChannelNumber: NewNumericUpDown(),
 	}
 }
 
-func (s *OscilloscopeState) Layout(gtx C, vtrig, vlen tracker.Int, wave tracker.RingBuffer[[2]float32], th *Theme, st *OscilloscopeStyle) D {
-	wrapBtnStyle := ToggleButton(gtx, th, s.wrapBtn, "Wrap")
-	onceBtnStyle := ToggleButton(gtx, th, s.onceBtn, "Once")
-
+func (s *OscilloscopeState) Layout(gtx C, vtrig, vlen tracker.Int, once, wrap tracker.Bool, wave tracker.RingBuffer[[2]float32], th *Theme, st *OscilloscopeStyle) D {
 	leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
 	rightSpacer := layout.Spacer{Width: unit.Dp(6)}.Layout
 
@@ -59,7 +56,7 @@ func (s *OscilloscopeState) Layout(gtx C, vtrig, vlen tracker.Int, wave tracker.
 				layout.Rigid(leftSpacer),
 				layout.Rigid(Label(th, &th.SongPanel.RowHeader, "Trigger").Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
-				layout.Rigid(onceBtnStyle.Layout),
+				layout.Rigid(ToggleBtn(once, th, s.onceBtn, "Once", "Trigger once on next event")),
 				layout.Rigid(func(gtx C) D {
 					return s.triggerChannelNumber.Layout(gtx, vtrig, th, &th.NumericUpDown, "Trigger channel")
 				}),
@@ -71,7 +68,7 @@ func (s *OscilloscopeState) Layout(gtx C, vtrig, vlen tracker.Int, wave tracker.
 				layout.Rigid(leftSpacer),
 				layout.Rigid(Label(th, &th.SongPanel.RowHeader, "Buffer").Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
-				layout.Rigid(wrapBtnStyle.Layout),
+				layout.Rigid(ToggleBtn(wrap, th, s.wrapBtn, "Wrap", "Wrap buffer when full")),
 				layout.Rigid(func(gtx C) D {
 					return s.lengthInBeatsNumber.Layout(gtx, vlen, th, &th.NumericUpDown, "Buffer length in beats")
 				}),

@@ -52,18 +52,18 @@ func init() {
 
 type NoteEditor struct {
 	TrackVoices    *NumericUpDown
-	NewTrackBtn    *ActionClickable
-	DeleteTrackBtn *ActionClickable
-	SplitTrackBtn  *ActionClickable
+	NewTrackBtn    *ClickableTip
+	DeleteTrackBtn *ClickableTip
+	SplitTrackBtn  *ClickableTip
 
-	AddSemitoneBtn      *ActionClickable
-	SubtractSemitoneBtn *ActionClickable
-	AddOctaveBtn        *ActionClickable
-	SubtractOctaveBtn   *ActionClickable
-	NoteOffBtn          *ActionClickable
-	EffectBtn           *BoolClickable
-	UniqueBtn           *BoolClickable
-	TrackMidiInBtn      *BoolClickable
+	AddSemitoneBtn      *ClickableTip
+	SubtractSemitoneBtn *ClickableTip
+	AddOctaveBtn        *ClickableTip
+	SubtractOctaveBtn   *ClickableTip
+	NoteOffBtn          *ClickableTip
+	EffectBtn           *ClickableTip
+	UniqueBtn           *ClickableTip
+	TrackMidiInBtn      *ClickableTip
 
 	scrollTable  *ScrollTable
 	eventFilters []event.Filter
@@ -77,17 +77,17 @@ type NoteEditor struct {
 func NewNoteEditor(model *tracker.Model) *NoteEditor {
 	ret := &NoteEditor{
 		TrackVoices:         NewNumericUpDown(),
-		NewTrackBtn:         NewActionClickable(model.AddTrack()),
-		DeleteTrackBtn:      NewActionClickable(model.DeleteTrack()),
-		SplitTrackBtn:       NewActionClickable(model.SplitTrack()),
-		AddSemitoneBtn:      NewActionClickable(model.AddSemitone()),
-		SubtractSemitoneBtn: NewActionClickable(model.SubtractSemitone()),
-		AddOctaveBtn:        NewActionClickable(model.AddOctave()),
-		SubtractOctaveBtn:   NewActionClickable(model.SubtractOctave()),
-		NoteOffBtn:          NewActionClickable(model.EditNoteOff()),
-		EffectBtn:           NewBoolClickable(model.Effect()),
-		UniqueBtn:           NewBoolClickable(model.UniquePatterns()),
-		TrackMidiInBtn:      NewBoolClickable(model.TrackMidiIn()),
+		NewTrackBtn:         new(ClickableTip),
+		DeleteTrackBtn:      new(ClickableTip),
+		SplitTrackBtn:       new(ClickableTip),
+		AddSemitoneBtn:      new(ClickableTip),
+		SubtractSemitoneBtn: new(ClickableTip),
+		AddOctaveBtn:        new(ClickableTip),
+		SubtractOctaveBtn:   new(ClickableTip),
+		NoteOffBtn:          new(ClickableTip),
+		EffectBtn:           new(ClickableTip),
+		UniqueBtn:           new(ClickableTip),
+		TrackMidiInBtn:      new(ClickableTip),
 		scrollTable: NewScrollTable(
 			model.Notes().Table(),
 			model.Tracks().List(),
@@ -164,42 +164,41 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 
 func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 	return Surface{Gray: 37, Focus: te.scrollTable.Focused(gtx) || te.scrollTable.ChildFocused(gtx)}.Layout(gtx, func(gtx C) D {
-		addSemitoneBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.Button.Text, te.AddSemitoneBtn, "+1")
-		subtractSemitoneBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.Button.Text, te.SubtractSemitoneBtn, "-1")
-		addOctaveBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.Button.Text, te.AddOctaveBtn, "+12")
-		subtractOctaveBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.Button.Text, te.SubtractOctaveBtn, "-12")
-		noteOffBtnStyle := ActionButton(gtx, t.Theme, &t.Theme.Button.Text, te.NoteOffBtn, "Note Off")
-		deleteTrackBtnStyle := ActionIcon(gtx, t.Theme, te.DeleteTrackBtn, icons.ActionDelete, te.deleteTrackHint)
-		splitTrackBtnStyle := ActionIcon(gtx, t.Theme, te.SplitTrackBtn, icons.CommunicationCallSplit, te.splitTrackHint)
-		newTrackBtnStyle := ActionIcon(gtx, t.Theme, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
+		addSemitoneBtnStyle := ActionBtn(t.AddSemitone(), t.Theme, te.AddSemitoneBtn, "+1", "Add semitone")
+		subtractSemitoneBtnStyle := ActionBtn(t.SubtractSemitone(), t.Theme, te.SubtractSemitoneBtn, "-1", "Subtract semitone")
+		addOctaveBtnStyle := ActionBtn(t.AddOctave(), t.Theme, te.AddOctaveBtn, "+12", "Add octave")
+		subtractOctaveBtnStyle := ActionBtn(t.SubtractOctave(), t.Theme, te.SubtractOctaveBtn, "-12", "Subtract octave")
+		noteOffBtnStyle := ActionBtn(t.EditNoteOff(), t.Theme, te.NoteOffBtn, "Note Off", "")
+		deleteTrackBtnStyle := ActionIconBtn(t.DeleteTrack(), t.Theme, te.DeleteTrackBtn, icons.ActionDelete, te.deleteTrackHint)
+		splitTrackBtnStyle := ActionIconBtn(t.SplitTrack(), t.Theme, te.SplitTrackBtn, icons.CommunicationCallSplit, te.splitTrackHint)
+		newTrackBtnStyle := ActionIconBtn(t.AddTrack(), t.Theme, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
 		in := layout.UniformInset(unit.Dp(1))
 		voiceUpDown := func(gtx C) D {
 			return in.Layout(gtx, func(gtx C) D {
 				return te.TrackVoices.Layout(gtx, t.Model.TrackVoices(), t.Theme, &t.Theme.NumericUpDown, "Track voices")
 			})
 		}
-		effectBtnStyle := ToggleButton(gtx, t.Theme, te.EffectBtn, "Hex")
-		uniqueBtnStyle := ToggleIcon(gtx, t.Theme, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
-		midiInBtnStyle := ToggleButton(gtx, t.Theme, te.TrackMidiInBtn, "MIDI")
+		effectBtnStyle := ToggleBtn(t.Effect(), t.Theme, te.EffectBtn, "Hex", "Input notes as hex values")
+		uniqueBtnStyle := ToggleIconBtn(t.UniquePatterns(), t.Theme, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
+		midiInBtnStyle := ToggleBtn(t.TrackMidiIn(), t.Theme, te.TrackMidiInBtn, "MIDI", "Input notes from MIDI keyboard")
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Dp(unit.Dp(12)), 0)} }),
-			layout.Rigid(addSemitoneBtnStyle.Layout),
-			layout.Rigid(subtractSemitoneBtnStyle.Layout),
-			layout.Rigid(addOctaveBtnStyle.Layout),
-			layout.Rigid(subtractOctaveBtnStyle.Layout),
-			layout.Rigid(noteOffBtnStyle.Layout),
-			layout.Rigid(effectBtnStyle.Layout),
-			layout.Rigid(uniqueBtnStyle.Layout),
+			layout.Rigid(addSemitoneBtnStyle),
+			layout.Rigid(subtractSemitoneBtnStyle),
+			layout.Rigid(addOctaveBtnStyle),
+			layout.Rigid(subtractOctaveBtnStyle),
+			layout.Rigid(noteOffBtnStyle),
+			layout.Rigid(effectBtnStyle),
+			layout.Rigid(uniqueBtnStyle),
 			layout.Rigid(layout.Spacer{Width: 10}.Layout),
 			layout.Rigid(Label(t.Theme, &t.Theme.NoteEditor.Header, "Voices").Layout),
 			layout.Rigid(layout.Spacer{Width: 4}.Layout),
 			layout.Rigid(voiceUpDown),
-			layout.Rigid(splitTrackBtnStyle.Layout),
+			layout.Rigid(splitTrackBtnStyle),
+			layout.Rigid(midiInBtnStyle),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
-			layout.Rigid(midiInBtnStyle.Layout),
-			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
-			layout.Rigid(deleteTrackBtnStyle.Layout),
-			layout.Rigid(newTrackBtnStyle.Layout))
+			layout.Rigid(deleteTrackBtnStyle),
+			layout.Rigid(newTrackBtnStyle))
 	})
 }
 
@@ -280,7 +279,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	cursor := te.scrollTable.Table.Cursor()
 	drawSelection := cursor != te.scrollTable.Table.Cursor2()
 	selection := te.scrollTable.Table.Range()
-	hasTrackMidiIn := te.TrackMidiInBtn.Bool.Value()
+	hasTrackMidiIn := t.Model.TrackMidiIn().Value()
 
 	patternNoOp := colorOp(gtx, t.Theme.NoteEditor.PatternNo.Color)
 	uniqueOp := colorOp(gtx, t.Theme.NoteEditor.Unique.Color)

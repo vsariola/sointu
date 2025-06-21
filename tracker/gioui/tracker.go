@@ -210,7 +210,7 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 	paint.Fill(gtx.Ops, t.Theme.Material.Bg)
 	event.Op(gtx.Ops, t) // area for capturing scroll events
 
-	if t.InstrumentEditor.enlargeBtn.Bool.Value() {
+	if t.InstrEnlarged().Value() {
 		t.layoutTop(gtx)
 	} else {
 		t.VerticalSplit.Layout(gtx,

@@ -263,7 +263,7 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		case t.TrackEditor.scrollTable.Focused(gtx):
 			t.OrderEditor.scrollTable.Focus()
 		case t.InstrumentEditor.Focused(gtx):
-			if t.InstrumentEditor.enlargeBtn.Bool.Value() {
+			if t.InstrEnlarged().Value() {
 				t.InstrumentEditor.unitEditor.sliderList.Focus()
 			} else {
 				t.TrackEditor.scrollTable.Focus()
@@ -280,7 +280,7 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		case t.InstrumentEditor.Focused(gtx):
 			t.InstrumentEditor.unitEditor.sliderList.Focus()
 		default:
-			if t.InstrumentEditor.enlargeBtn.Bool.Value() {
+			if t.InstrEnlarged().Value() {
 				t.InstrumentEditor.Focus()
 			} else {
 				t.OrderEditor.scrollTable.Focus()

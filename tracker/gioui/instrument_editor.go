@@ -23,19 +23,19 @@ import (
 
 type (
 	InstrumentEditor struct {
-		newInstrumentBtn    *ActionClickable
-		enlargeBtn          *BoolClickable
-		deleteInstrumentBtn *ActionClickable
-		linkInstrTrackBtn   *BoolClickable
-		splitInstrumentBtn  *ActionClickable
-		copyInstrumentBtn   *TipClickable
-		saveInstrumentBtn   *TipClickable
-		loadInstrumentBtn   *TipClickable
-		addUnitBtn          *ActionClickable
-		presetMenuBtn       *TipClickable
-		commentExpandBtn    *BoolClickable
-		soloBtn             *BoolClickable
-		muteBtn             *BoolClickable
+		newInstrumentBtn    *ClickableTip
+		enlargeBtn          *ClickableTip
+		deleteInstrumentBtn *ClickableTip
+		linkInstrTrackBtn   *ClickableTip
+		splitInstrumentBtn  *ClickableTip
+		copyInstrumentBtn   *ClickableTip
+		saveInstrumentBtn   *ClickableTip
+		loadInstrumentBtn   *ClickableTip
+		addUnitBtn          *ClickableTip
+		presetMenuBtn       *ClickableTip
+		commentExpandBtn    *ClickableTip
+		soloBtn             *ClickableTip
+		muteBtn             *ClickableTip
 		commentEditor       *Editor
 		commentString       tracker.String
 		nameEditor          *Editor
@@ -68,18 +68,19 @@ type (
 
 func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 	ret := &InstrumentEditor{
-		newInstrumentBtn:    NewActionClickable(model.AddInstrument()),
-		enlargeBtn:          NewBoolClickable(model.InstrEnlarged()),
-		deleteInstrumentBtn: NewActionClickable(model.DeleteInstrument()),
-		linkInstrTrackBtn:   NewBoolClickable(model.LinkInstrTrack()),
-		splitInstrumentBtn:  NewActionClickable(model.SplitInstrument()),
-		copyInstrumentBtn:   new(TipClickable),
-		saveInstrumentBtn:   new(TipClickable),
-		loadInstrumentBtn:   new(TipClickable),
-		commentExpandBtn:    NewBoolClickable(model.CommentExpanded()),
-		presetMenuBtn:       new(TipClickable),
-		soloBtn:             NewBoolClickable(model.Solo()),
-		muteBtn:             NewBoolClickable(model.Mute()),
+		newInstrumentBtn:    new(ClickableTip),
+		enlargeBtn:          new(ClickableTip),
+		deleteInstrumentBtn: new(ClickableTip),
+		linkInstrTrackBtn:   new(ClickableTip),
+		splitInstrumentBtn:  new(ClickableTip),
+		copyInstrumentBtn:   new(ClickableTip),
+		saveInstrumentBtn:   new(ClickableTip),
+		loadInstrumentBtn:   new(ClickableTip),
+		commentExpandBtn:    new(ClickableTip),
+		presetMenuBtn:       new(ClickableTip),
+		soloBtn:             new(ClickableTip),
+		muteBtn:             new(ClickableTip),
+		addUnitBtn:          new(ClickableTip),
 		commentEditor:       NewEditor(false, false, text.Start),
 		nameEditor:          NewEditor(true, true, text.Middle),
 		searchEditor:        NewEditor(true, true, text.Start),
@@ -95,7 +96,6 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		return true
 	})
 	ret.addUnit = model.AddUnit(false)
-	ret.addUnitBtn = NewActionClickable(tracker.MakeEnabledAction(ret.AddUnitThenFocus()))
 	ret.enlargeHint = makeHint("Enlarge", " (%s)", "InstrEnlargedToggle")
 	ret.shrinkHint = makeHint("Shrink", " (%s)", "InstrEnlargedToggle")
 	ret.addInstrumentHint = makeHint("Add\ninstrument", "\n(%s)", "AddInstrument")
@@ -139,8 +139,6 @@ func (ie *InstrumentEditor) childFocused(gtx C) bool {
 
 func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 	ie.wasFocused = ie.Focused(gtx) || ie.childFocused(gtx)
-	fullscreenBtnStyle := ToggleIcon(gtx, t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, ie.enlargeHint, ie.shrinkHint)
-	linkBtnStyle := ToggleIcon(gtx, t.Theme, ie.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, ie.linkDisabledHint, ie.linkEnabledHint)
 
 	octave := func(gtx C) D {
 		in := layout.UniformInset(unit.Dp(1))
@@ -149,7 +147,6 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 		})
 	}
 
-	newBtnStyle := ActionIcon(gtx, t.Theme, ie.newInstrumentBtn, icons.ContentAdd, ie.addInstrumentHint)
 	ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(
@@ -162,13 +159,13 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 				layout.Rigid(layout.Spacer{Width: 4}.Layout),
 				layout.Rigid(octave),
 				layout.Rigid(func(gtx C) D {
-					return layout.E.Layout(gtx, linkBtnStyle.Layout)
+					return layout.E.Layout(gtx, ToggleIconBtn(t.Model.LinkInstrTrack(), t.Theme, ie.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, ie.linkDisabledHint, ie.linkEnabledHint))
 				}),
 				layout.Rigid(func(gtx C) D {
-					return layout.E.Layout(gtx, fullscreenBtnStyle.Layout)
+					return layout.E.Layout(gtx, ToggleIconBtn(t.Model.InstrEnlarged(), t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, ie.enlargeHint, ie.shrinkHint))
 				}),
 				layout.Rigid(func(gtx C) D {
-					return layout.E.Layout(gtx, newBtnStyle.Layout)
+					return layout.E.Layout(gtx, ActionIconBtn(t.Model.AddInstrument(), t.Theme, ie.newInstrumentBtn, icons.ContentAdd, ie.addInstrumentHint))
 				}),
 			)
 		}),
@@ -190,16 +187,6 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 
 func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 	header := func(gtx C) D {
-		commentExpandBtnStyle := ToggleIcon(gtx, t.Theme, ie.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, ie.expandCommentHint, ie.collapseCommentHint)
-		presetMenuBtnStyle := TipIcon(t.Theme, ie.presetMenuBtn, icons.NavigationMenu, "Load preset")
-		copyInstrumentBtnStyle := TipIcon(t.Theme, ie.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
-		saveInstrumentBtnStyle := TipIcon(t.Theme, ie.saveInstrumentBtn, icons.ContentSave, "Save instrument")
-		loadInstrumentBtnStyle := TipIcon(t.Theme, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
-		deleteInstrumentBtnStyle := ActionIcon(gtx, t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, ie.deleteInstrumentHint)
-		splitInstrumentBtnStyle := ActionIcon(gtx, t.Theme, ie.splitInstrumentBtn, icons.CommunicationCallSplit, ie.splitInstrumentHint)
-		soloBtnStyle := ToggleIcon(gtx, t.Theme, ie.soloBtn, icons.SocialGroup, icons.SocialPerson, ie.soloHint, ie.unsoloHint)
-		muteBtnStyle := ToggleIcon(gtx, t.Theme, ie.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, ie.muteHint, ie.unmuteHint)
-
 		m := PopupMenu(t.Theme, &t.Theme.Menu.Text, &ie.presetMenu)
 
 		for ie.copyInstrumentBtn.Clickable.Clicked(gtx) {
@@ -233,31 +220,31 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					return t.InstrumentVoices.Layout(gtx, t.Model.InstrumentVoices(), t.Theme, &t.Theme.NumericUpDown, "Number of voices for this instrument")
 				}),
-				layout.Rigid(splitInstrumentBtnStyle.Layout),
+				layout.Rigid(ActionIconBtn(t.SplitInstrument(), t.Theme, ie.splitInstrumentBtn, icons.CommunicationCallSplit, ie.splitInstrumentHint)),
 				layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
-				layout.Rigid(commentExpandBtnStyle.Layout),
-				layout.Rigid(soloBtnStyle.Layout),
-				layout.Rigid(muteBtnStyle.Layout),
+				layout.Rigid(ToggleIconBtn(t.CommentExpanded(), t.Theme, ie.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, ie.expandCommentHint, ie.collapseCommentHint)),
+				layout.Rigid(ToggleIconBtn(t.Solo(), t.Theme, ie.soloBtn, icons.SocialGroup, icons.SocialPerson, ie.soloHint, ie.unsoloHint)),
+				layout.Rigid(ToggleIconBtn(t.Mute(), t.Theme, ie.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, ie.muteHint, ie.unmuteHint)),
 				layout.Rigid(func(gtx C) D {
-					//defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-					dims := presetMenuBtnStyle.Layout(gtx)
+					dims := TipIconBtn(t.Theme, &t.Theme.IconButton, ie.presetMenuBtn, icons.NavigationMenu, "Load preset", true).Layout(gtx)
 					op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
 					gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(500))
 					gtx.Constraints.Max.X = gtx.Dp(unit.Dp(180))
 					m.Layout(gtx, ie.presetMenuItems...)
 					return dims
 				}),
-				layout.Rigid(saveInstrumentBtnStyle.Layout),
-				layout.Rigid(loadInstrumentBtnStyle.Layout),
-				layout.Rigid(copyInstrumentBtnStyle.Layout),
-				layout.Rigid(deleteInstrumentBtnStyle.Layout))
+				layout.Rigid(TipIconBtn(t.Theme, &t.Theme.IconButton, ie.saveInstrumentBtn, icons.ContentSave, "Save instrument", true).Layout),
+				layout.Rigid(TipIconBtn(t.Theme, &t.Theme.IconButton, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument", true).Layout),
+				layout.Rigid(TipIconBtn(t.Theme, &t.Theme.IconButton, ie.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument", true).Layout),
+				layout.Rigid(ActionIconBtn(t.DeleteInstrument(), t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, ie.deleteInstrumentHint)),
+			)
 		}
 
 		for ie.presetMenuBtn.Clickable.Clicked(gtx) {
 			ie.presetMenu.Visible = true
 		}
 
-		if ie.commentExpandBtn.Bool.Value() || gtx.Source.Focused(ie.commentEditor) { // we draw once the widget after it manages to lose focus
+		if t.CommentExpanded().Value() || gtx.Source.Focused(ie.commentEditor) { // we draw once the widget after it manages to lose focus
 			ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 				layout.Rigid(header),
 				layout.Rigid(func(gtx C) D {
@@ -356,12 +343,6 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 }
 
 func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
-	// TODO: how to ie.unitDragList.Focus()
-	addUnitBtnStyle := ActionIcon(gtx, t.Theme, ie.addUnitBtn, icons.ContentAdd, "Add unit (Enter)")
-	addUnitBtnStyle.IconButtonStyle.Color = t.Theme.Material.ContrastFg
-	addUnitBtnStyle.IconButtonStyle.Background = t.Theme.Material.ContrastBg
-	addUnitBtnStyle.IconButtonStyle.Inset = layout.UniformInset(unit.Dp(4))
-
 	var units [256]tracker.UnitListItem
 	for i, item := range (*tracker.Units)(t.Model).Iterate {
 		if i >= 256 {
@@ -482,8 +463,11 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 				return dims
 			}),
 			layout.Stacked(func(gtx C) D {
+				for ie.addUnitBtn.Clickable.Clicked(gtx) {
+					t.AddUnit(false).Do()
+				}
 				margin := layout.Inset{Right: unit.Dp(20), Bottom: unit.Dp(1)}
-				return margin.Layout(gtx, addUnitBtnStyle.Layout)
+				return margin.Layout(gtx, TipIconBtn(t.Theme, &t.Theme.AddUnit, ie.addUnitBtn, icons.ContentAdd, "Add unit (Enter)", true).Layout)
 			}),
 		)
 	})
