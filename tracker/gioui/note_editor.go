@@ -183,22 +183,22 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 		midiInBtnStyle := ToggleBtn(t.TrackMidiIn(), t.Theme, te.TrackMidiInBtn, "MIDI", "Input notes from MIDI keyboard")
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Dp(unit.Dp(12)), 0)} }),
-			layout.Rigid(addSemitoneBtnStyle),
-			layout.Rigid(subtractSemitoneBtnStyle),
-			layout.Rigid(addOctaveBtnStyle),
-			layout.Rigid(subtractOctaveBtnStyle),
-			layout.Rigid(noteOffBtnStyle),
-			layout.Rigid(effectBtnStyle),
-			layout.Rigid(uniqueBtnStyle),
+			layout.Rigid(addSemitoneBtnStyle.Layout),
+			layout.Rigid(subtractSemitoneBtnStyle.Layout),
+			layout.Rigid(addOctaveBtnStyle.Layout),
+			layout.Rigid(subtractOctaveBtnStyle.Layout),
+			layout.Rigid(noteOffBtnStyle.Layout),
+			layout.Rigid(effectBtnStyle.Layout),
+			layout.Rigid(uniqueBtnStyle.Layout),
 			layout.Rigid(layout.Spacer{Width: 10}.Layout),
 			layout.Rigid(Label(t.Theme, &t.Theme.NoteEditor.Header, "Voices").Layout),
 			layout.Rigid(layout.Spacer{Width: 4}.Layout),
 			layout.Rigid(voiceUpDown),
-			layout.Rigid(splitTrackBtnStyle),
-			layout.Rigid(midiInBtnStyle),
+			layout.Rigid(splitTrackBtnStyle.Layout),
+			layout.Rigid(midiInBtnStyle.Layout),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
-			layout.Rigid(deleteTrackBtnStyle),
-			layout.Rigid(newTrackBtnStyle))
+			layout.Rigid(deleteTrackBtnStyle.Layout),
+			layout.Rigid(newTrackBtnStyle.Layout))
 	})
 }
 

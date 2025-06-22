@@ -161,14 +161,15 @@ func PopupMenu(th *Theme, s *LabelStyle, menu *Menu) MenuStyle {
 	}
 }
 
-func (tr *Tracker) layoutMenu(gtx C, title string, clickable *Clickable, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
-	for clickable.Clicked(gtx) {
+func (tr *Tracker) layoutMenu(gtx C, title string, ct *ClickableTip, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
+	for ct.Clicked(gtx) {
 		menu.Visible = true
 	}
 	m := PopupMenu(tr.Theme, &tr.Theme.Menu.Text, menu)
 	return func(gtx C) D {
 		defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-		dims := Btn(tr.Theme, &tr.Theme.Button.Menu, clickable, title)(gtx)
+		btn := Btn(tr.Theme, &tr.Theme.Button.Menu, ct, title, "")
+		dims := btn.Layout(gtx)
 		op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
 		gtx.Constraints.Max.X = gtx.Dp(width)
 		gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(300))

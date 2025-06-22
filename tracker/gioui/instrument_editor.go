@@ -159,13 +159,16 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 				layout.Rigid(layout.Spacer{Width: 4}.Layout),
 				layout.Rigid(octave),
 				layout.Rigid(func(gtx C) D {
-					return layout.E.Layout(gtx, ToggleIconBtn(t.Model.LinkInstrTrack(), t.Theme, ie.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, ie.linkDisabledHint, ie.linkEnabledHint))
+					linkInstrTrack := ToggleIconBtn(t.Model.LinkInstrTrack(), t.Theme, ie.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, ie.linkDisabledHint, ie.linkEnabledHint)
+					return layout.E.Layout(gtx, linkInstrTrack.Layout)
 				}),
 				layout.Rigid(func(gtx C) D {
-					return layout.E.Layout(gtx, ToggleIconBtn(t.Model.InstrEnlarged(), t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, ie.enlargeHint, ie.shrinkHint))
+					instrEnlarged := ToggleIconBtn(t.Model.InstrEnlarged(), t.Theme, ie.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, ie.enlargeHint, ie.shrinkHint)
+					return layout.E.Layout(gtx, instrEnlarged.Layout)
 				}),
 				layout.Rigid(func(gtx C) D {
-					return layout.E.Layout(gtx, ActionIconBtn(t.Model.AddInstrument(), t.Theme, ie.newInstrumentBtn, icons.ContentAdd, ie.addInstrumentHint))
+					addInstrumetn := ActionIconBtn(t.Model.AddInstrument(), t.Theme, ie.newInstrumentBtn, icons.ContentAdd, ie.addInstrumentHint)
+					return layout.E.Layout(gtx, addInstrumetn.Layout)
 				}),
 			)
 		}),
@@ -212,6 +215,15 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 			t.LoadInstrument(reader)
 		}
 
+		splitInstrument := ActionIconBtn(t.SplitInstrument(), t.Theme, ie.splitInstrumentBtn, icons.CommunicationCallSplit, ie.splitInstrumentHint)
+		commentExpanded := ToggleIconBtn(t.CommentExpanded(), t.Theme, ie.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, ie.expandCommentHint, ie.collapseCommentHint)
+		solo := ToggleIconBtn(t.Solo(), t.Theme, ie.soloBtn, icons.SocialGroup, icons.SocialPerson, ie.soloHint, ie.unsoloHint)
+		mute := ToggleIconBtn(t.Mute(), t.Theme, ie.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, ie.muteHint, ie.unmuteHint)
+		saveInstrument := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, ie.saveInstrumentBtn, icons.ContentSave, "Save instrument")
+		loadInstrument := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
+		copyInstrument := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, ie.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
+		deleteInstrument := ActionIconBtn(t.DeleteInstrument(), t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, ie.deleteInstrumentHint)
+
 		header := func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(layout.Spacer{Width: 6}.Layout),
@@ -220,23 +232,24 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					return t.InstrumentVoices.Layout(gtx, t.Model.InstrumentVoices(), t.Theme, &t.Theme.NumericUpDown, "Number of voices for this instrument")
 				}),
-				layout.Rigid(ActionIconBtn(t.SplitInstrument(), t.Theme, ie.splitInstrumentBtn, icons.CommunicationCallSplit, ie.splitInstrumentHint)),
+				layout.Rigid(splitInstrument.Layout),
 				layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
-				layout.Rigid(ToggleIconBtn(t.CommentExpanded(), t.Theme, ie.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, ie.expandCommentHint, ie.collapseCommentHint)),
-				layout.Rigid(ToggleIconBtn(t.Solo(), t.Theme, ie.soloBtn, icons.SocialGroup, icons.SocialPerson, ie.soloHint, ie.unsoloHint)),
-				layout.Rigid(ToggleIconBtn(t.Mute(), t.Theme, ie.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, ie.muteHint, ie.unmuteHint)),
+				layout.Rigid(commentExpanded.Layout),
+				layout.Rigid(solo.Layout),
+				layout.Rigid(mute.Layout),
 				layout.Rigid(func(gtx C) D {
-					dims := TipIconBtn(t.Theme, &t.Theme.IconButton, ie.presetMenuBtn, icons.NavigationMenu, "Load preset", true).Layout(gtx)
+					preset := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, ie.presetMenuBtn, icons.NavigationMenu, "Load preset")
+					dims := preset.Layout(gtx)
 					op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
 					gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(500))
 					gtx.Constraints.Max.X = gtx.Dp(unit.Dp(180))
 					m.Layout(gtx, ie.presetMenuItems...)
 					return dims
 				}),
-				layout.Rigid(TipIconBtn(t.Theme, &t.Theme.IconButton, ie.saveInstrumentBtn, icons.ContentSave, "Save instrument", true).Layout),
-				layout.Rigid(TipIconBtn(t.Theme, &t.Theme.IconButton, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument", true).Layout),
-				layout.Rigid(TipIconBtn(t.Theme, &t.Theme.IconButton, ie.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument", true).Layout),
-				layout.Rigid(ActionIconBtn(t.DeleteInstrument(), t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, ie.deleteInstrumentHint)),
+				layout.Rigid(saveInstrument.Layout),
+				layout.Rigid(loadInstrument.Layout),
+				layout.Rigid(copyInstrument.Layout),
+				layout.Rigid(deleteInstrument.Layout),
 			)
 		}
 
@@ -467,7 +480,8 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 					t.AddUnit(false).Do()
 				}
 				margin := layout.Inset{Right: unit.Dp(20), Bottom: unit.Dp(1)}
-				return margin.Layout(gtx, TipIconBtn(t.Theme, &t.Theme.AddUnit, ie.addUnitBtn, icons.ContentAdd, "Add unit (Enter)", true).Layout)
+				addUnit := IconBtn(t.Theme, &t.Theme.IconButton.Emphasis, ie.addUnitBtn, icons.ContentAdd, "Add unit (Enter)")
+				return margin.Layout(gtx, addUnit.Layout)
 			}),
 		)
 	})

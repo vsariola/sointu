@@ -140,14 +140,19 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		text = pe.caser.String(text)
 	}
 	hintText := Label(t.Theme, &t.Theme.UnitEditor.Hint, text)
+	deleteUnit := ActionIconBtn(t.DeleteUnit(), t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
+	copyUnit := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
+	disableUnit := ToggleIconBtn(t.UnitDisabled(), t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
+
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-		layout.Rigid(ActionIconBtn(t.DeleteUnit(), t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")),
-		layout.Rigid(TipIconBtn(t.Theme, &t.Theme.IconButton, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint, true).Layout),
-		layout.Rigid(ToggleIconBtn(t.UnitDisabled(), t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)),
+		layout.Rigid(deleteUnit.Layout),
+		layout.Rigid(copyUnit.Layout),
+		layout.Rigid(disableUnit.Layout),
 		layout.Rigid(func(gtx C) D {
 			var dims D
 			if t.Units().SelectedType() != "" {
-				dims = ActionIconBtn(t.ClearUnit(), t.Theme, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")(gtx)
+				clearUnit := ActionIconBtn(t.ClearUnit(), t.Theme, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
+				dims = clearUnit.Layout(gtx)
 			}
 			return D{Size: image.Pt(gtx.Dp(unit.Dp(48)), dims.Size.Y)}
 		}),
@@ -218,9 +223,9 @@ func (pe *UnitEditor) command(e key.Event, t *Tracker) {
 type ParameterWidget struct {
 	floatWidget widget.Float
 	boolWidget  widget.Bool
-	instrBtn    Clickable
+	instrBtn    ClickableTip
 	instrMenu   Menu
-	unitBtn     Clickable
+	unitBtn     ClickableTip
 	unitMenu    Menu
 	Parameter   tracker.Parameter
 	tipArea     component.TipArea

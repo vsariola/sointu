@@ -49,6 +49,9 @@ func (s *OscilloscopeState) Layout(gtx C, vtrig, vlen tracker.Int, once, wrap tr
 	leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
 	rightSpacer := layout.Spacer{Width: unit.Dp(6)}.Layout
 
+	onceBtn := ToggleBtn(once, th, s.onceBtn, "Once", "Trigger once on next event")
+	wrapBtn := ToggleBtn(wrap, th, s.wrapBtn, "Wrap", "Wrap buffer when full")
+
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Flexed(1, func(gtx C) D { return s.layoutWave(gtx, wave, th) }),
 		layout.Rigid(func(gtx C) D {
@@ -56,7 +59,7 @@ func (s *OscilloscopeState) Layout(gtx C, vtrig, vlen tracker.Int, once, wrap tr
 				layout.Rigid(leftSpacer),
 				layout.Rigid(Label(th, &th.SongPanel.RowHeader, "Trigger").Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
-				layout.Rigid(ToggleBtn(once, th, s.onceBtn, "Once", "Trigger once on next event")),
+				layout.Rigid(onceBtn.Layout),
 				layout.Rigid(func(gtx C) D {
 					return s.triggerChannelNumber.Layout(gtx, vtrig, th, &th.NumericUpDown, "Trigger channel")
 				}),
@@ -68,7 +71,7 @@ func (s *OscilloscopeState) Layout(gtx C, vtrig, vlen tracker.Int, once, wrap tr
 				layout.Rigid(leftSpacer),
 				layout.Rigid(Label(th, &th.SongPanel.RowHeader, "Buffer").Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
-				layout.Rigid(ToggleBtn(wrap, th, s.wrapBtn, "Wrap", "Wrap buffer when full")),
+				layout.Rigid(wrapBtn.Layout),
 				layout.Rigid(func(gtx C) D {
 					return s.lengthInBeatsNumber.Layout(gtx, vlen, th, &th.NumericUpDown, "Buffer length in beats")
 				}),
