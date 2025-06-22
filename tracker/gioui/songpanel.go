@@ -22,8 +22,8 @@ type SongPanel struct {
 	LoudnessExpander     *Expander
 	PeakExpander         *Expander
 
-	WeightingTypeBtn *ClickableTip
-	OversamplingBtn  *ClickableTip
+	WeightingTypeBtn *Clickable
+	OversamplingBtn  *Clickable
 
 	BPM            *NumericUpDown
 	RowsPerPattern *NumericUpDown
@@ -48,8 +48,8 @@ func NewSongPanel(model *tracker.Model) *SongPanel {
 		MenuBar:        NewMenuBar(model),
 		PlayBar:        NewPlayBar(),
 
-		WeightingTypeBtn: new(ClickableTip),
-		OversamplingBtn:  new(ClickableTip),
+		WeightingTypeBtn: new(Clickable),
+		OversamplingBtn:  new(Clickable),
 
 		SongSettingsExpander: &Expander{Expanded: true},
 		ScopeExpander:        &Expander{},
@@ -296,7 +296,7 @@ func (e *Expander) layoutHeader(gtx C, th *Theme, title string, smallWidget layo
 }
 
 type MenuBar struct {
-	Clickables []ClickableTip
+	Clickables []Clickable
 	Menus      []Menu
 
 	fileMenuItems []MenuItem
@@ -304,14 +304,14 @@ type MenuBar struct {
 	midiMenuItems []MenuItem
 
 	panicHint string
-	PanicBtn  *ClickableTip
+	PanicBtn  *Clickable
 }
 
 func NewMenuBar(model *tracker.Model) *MenuBar {
 	ret := &MenuBar{
-		Clickables: make([]ClickableTip, 3),
+		Clickables: make([]Clickable, 3),
 		Menus:      make([]Menu, 3),
-		PanicBtn:   new(ClickableTip),
+		PanicBtn:   new(Clickable),
 		panicHint:  makeHint("Panic", " (%s)", "PanicToggle"),
 	}
 	ret.fileMenuItems = []MenuItem{
@@ -359,11 +359,11 @@ func (t *MenuBar) Layout(gtx C, tr *Tracker) D {
 }
 
 type PlayBar struct {
-	RewindBtn  *ClickableTip
-	PlayingBtn *ClickableTip
-	RecordBtn  *ClickableTip
-	FollowBtn  *ClickableTip
-	LoopBtn    *ClickableTip
+	RewindBtn  *Clickable
+	PlayingBtn *Clickable
+	RecordBtn  *Clickable
+	FollowBtn  *Clickable
+	LoopBtn    *Clickable
 	// Hints
 	rewindHint                  string
 	playHint, stopHint          string
@@ -374,11 +374,11 @@ type PlayBar struct {
 
 func NewPlayBar() *PlayBar {
 	ret := &PlayBar{
-		LoopBtn:    new(ClickableTip),
-		RecordBtn:  new(ClickableTip),
-		FollowBtn:  new(ClickableTip),
-		PlayingBtn: new(ClickableTip),
-		RewindBtn:  new(ClickableTip),
+		LoopBtn:    new(Clickable),
+		RecordBtn:  new(Clickable),
+		FollowBtn:  new(Clickable),
+		PlayingBtn: new(Clickable),
+		RewindBtn:  new(Clickable),
 	}
 	ret.rewindHint = makeHint("Rewind", "\n(%s)", "PlaySongStartUnfollow")
 	ret.playHint = makeHint("Play", " (%s)", "PlayCurrentPosUnfollow")

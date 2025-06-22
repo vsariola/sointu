@@ -30,10 +30,10 @@ type UnitEditor struct {
 	sliderList     *DragList
 	searchList     *DragList
 	Parameters     []*ParameterWidget
-	DeleteUnitBtn  *ClickableTip
-	CopyUnitBtn    *ClickableTip
-	ClearUnitBtn   *ClickableTip
-	DisableUnitBtn *ClickableTip
+	DeleteUnitBtn  *Clickable
+	CopyUnitBtn    *Clickable
+	ClearUnitBtn   *Clickable
+	DisableUnitBtn *Clickable
 	SelectTypeBtn  *Clickable
 	commentEditor  *Editor
 	caser          cases.Caser
@@ -45,10 +45,10 @@ type UnitEditor struct {
 
 func NewUnitEditor(m *tracker.Model) *UnitEditor {
 	ret := &UnitEditor{
-		DeleteUnitBtn:  new(ClickableTip),
-		ClearUnitBtn:   new(ClickableTip),
-		DisableUnitBtn: new(ClickableTip),
-		CopyUnitBtn:    new(ClickableTip),
+		DeleteUnitBtn:  new(Clickable),
+		ClearUnitBtn:   new(Clickable),
+		DisableUnitBtn: new(Clickable),
+		CopyUnitBtn:    new(Clickable),
 		SelectTypeBtn:  new(Clickable),
 		commentEditor:  NewEditor(true, true, text.Start),
 		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
@@ -127,7 +127,7 @@ func (pe *UnitEditor) layoutSliders(gtx C, t *Tracker) D {
 }
 
 func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
-	for pe.CopyUnitBtn.Clickable.Clicked(gtx) {
+	for pe.CopyUnitBtn.Clicked(gtx) {
 		if contents, ok := t.Units().List().CopyElements(); ok {
 			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
 			t.Alerts().Add("Unit copied to clipboard", tracker.Info)
@@ -223,9 +223,9 @@ func (pe *UnitEditor) command(e key.Event, t *Tracker) {
 type ParameterWidget struct {
 	floatWidget widget.Float
 	boolWidget  widget.Bool
-	instrBtn    ClickableTip
+	instrBtn    Clickable
 	instrMenu   Menu
-	unitBtn     ClickableTip
+	unitBtn     Clickable
 	unitMenu    Menu
 	Parameter   tracker.Parameter
 	tipArea     component.TipArea

@@ -52,18 +52,18 @@ func init() {
 
 type NoteEditor struct {
 	TrackVoices    *NumericUpDown
-	NewTrackBtn    *ClickableTip
-	DeleteTrackBtn *ClickableTip
-	SplitTrackBtn  *ClickableTip
+	NewTrackBtn    *Clickable
+	DeleteTrackBtn *Clickable
+	SplitTrackBtn  *Clickable
 
-	AddSemitoneBtn      *ClickableTip
-	SubtractSemitoneBtn *ClickableTip
-	AddOctaveBtn        *ClickableTip
-	SubtractOctaveBtn   *ClickableTip
-	NoteOffBtn          *ClickableTip
-	EffectBtn           *ClickableTip
-	UniqueBtn           *ClickableTip
-	TrackMidiInBtn      *ClickableTip
+	AddSemitoneBtn      *Clickable
+	SubtractSemitoneBtn *Clickable
+	AddOctaveBtn        *Clickable
+	SubtractOctaveBtn   *Clickable
+	NoteOffBtn          *Clickable
+	EffectBtn           *Clickable
+	UniqueBtn           *Clickable
+	TrackMidiInBtn      *Clickable
 
 	scrollTable  *ScrollTable
 	eventFilters []event.Filter
@@ -77,17 +77,17 @@ type NoteEditor struct {
 func NewNoteEditor(model *tracker.Model) *NoteEditor {
 	ret := &NoteEditor{
 		TrackVoices:         NewNumericUpDown(),
-		NewTrackBtn:         new(ClickableTip),
-		DeleteTrackBtn:      new(ClickableTip),
-		SplitTrackBtn:       new(ClickableTip),
-		AddSemitoneBtn:      new(ClickableTip),
-		SubtractSemitoneBtn: new(ClickableTip),
-		AddOctaveBtn:        new(ClickableTip),
-		SubtractOctaveBtn:   new(ClickableTip),
-		NoteOffBtn:          new(ClickableTip),
-		EffectBtn:           new(ClickableTip),
-		UniqueBtn:           new(ClickableTip),
-		TrackMidiInBtn:      new(ClickableTip),
+		NewTrackBtn:         new(Clickable),
+		DeleteTrackBtn:      new(Clickable),
+		SplitTrackBtn:       new(Clickable),
+		AddSemitoneBtn:      new(Clickable),
+		SubtractSemitoneBtn: new(Clickable),
+		AddOctaveBtn:        new(Clickable),
+		SubtractOctaveBtn:   new(Clickable),
+		NoteOffBtn:          new(Clickable),
+		EffectBtn:           new(Clickable),
+		UniqueBtn:           new(Clickable),
+		TrackMidiInBtn:      new(Clickable),
 		scrollTable: NewScrollTable(
 			model.Notes().Table(),
 			model.Tracks().List(),

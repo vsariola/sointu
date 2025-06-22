@@ -17,8 +17,8 @@ import (
 
 type (
 	OscilloscopeState struct {
-		onceBtn              *ClickableTip
-		wrapBtn              *ClickableTip
+		onceBtn              *Clickable
+		wrapBtn              *Clickable
 		lengthInBeatsNumber  *NumericUpDown
 		triggerChannelNumber *NumericUpDown
 		xScale               int
@@ -38,8 +38,8 @@ type (
 
 func NewOscilloscope(model *tracker.Model) *OscilloscopeState {
 	return &OscilloscopeState{
-		onceBtn:              new(ClickableTip),
-		wrapBtn:              new(ClickableTip),
+		onceBtn:              new(Clickable),
+		wrapBtn:              new(Clickable),
 		lengthInBeatsNumber:  NewNumericUpDown(),
 		triggerChannelNumber: NewNumericUpDown(),
 	}

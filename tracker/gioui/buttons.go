@@ -27,10 +27,6 @@ type (
 		history []widget.Press
 
 		requestClicks int
-	}
-
-	ClickableTip struct {
-		Clickable
 		component.TipArea
 	}
 
@@ -59,7 +55,7 @@ type (
 		Style ButtonStyle
 		Text  string
 		Tip   string
-		*ClickableTip
+		*Clickable
 	}
 
 	ActionButton struct {
@@ -80,7 +76,7 @@ type (
 		Style IconButtonStyle
 		Icon  *widget.Icon
 		Tip   string
-		*ClickableTip
+		*Clickable
 	}
 
 	ActionIconButton struct {
@@ -98,17 +94,17 @@ type (
 	}
 )
 
-func Btn(th *Theme, st *ButtonStyle, b *ClickableTip, txt string, tip string) Button {
+func Btn(th *Theme, st *ButtonStyle, b *Clickable, txt string, tip string) Button {
 	return Button{
-		Theme:        th,
-		Style:        *st,
-		ClickableTip: b,
-		Text:         txt,
-		Tip:          tip,
+		Theme:     th,
+		Style:     *st,
+		Clickable: b,
+		Text:      txt,
+		Tip:       tip,
 	}
 }
 
-func ActionBtn(act tracker.Action, th *Theme, b *ClickableTip, txt string, tip string) ActionButton {
+func ActionBtn(act tracker.Action, th *Theme, b *Clickable, txt string, tip string) ActionButton {
 	return ActionButton{
 		act:           act,
 		DisabledStyle: th.Button.Disabled,
@@ -116,7 +112,7 @@ func ActionBtn(act tracker.Action, th *Theme, b *ClickableTip, txt string, tip s
 	}
 }
 
-func ToggleBtn(b tracker.Bool, th *Theme, c *ClickableTip, text string, tip string) ToggleButton {
+func ToggleBtn(b tracker.Bool, th *Theme, c *Clickable, text string, tip string) ToggleButton {
 	return ToggleButton{
 		b:             b,
 		DisabledStyle: th.Button.Disabled,
@@ -125,17 +121,17 @@ func ToggleBtn(b tracker.Bool, th *Theme, c *ClickableTip, text string, tip stri
 	}
 }
 
-func IconBtn(th *Theme, st *IconButtonStyle, b *ClickableTip, icon []byte, tip string) IconButton {
+func IconBtn(th *Theme, st *IconButtonStyle, b *Clickable, icon []byte, tip string) IconButton {
 	return IconButton{
-		Theme:        th,
-		Style:        *st,
-		ClickableTip: b,
-		Icon:         th.Icon(icon),
-		Tip:          tip,
+		Theme:     th,
+		Style:     *st,
+		Clickable: b,
+		Icon:      th.Icon(icon),
+		Tip:       tip,
 	}
 }
 
-func ActionIconBtn(act tracker.Action, th *Theme, b *ClickableTip, icon []byte, tip string) ActionIconButton {
+func ActionIconBtn(act tracker.Action, th *Theme, b *Clickable, icon []byte, tip string) ActionIconButton {
 	return ActionIconButton{
 		act:           act,
 		DisabledStyle: th.IconButton.Disabled,
@@ -143,7 +139,7 @@ func ActionIconBtn(act tracker.Action, th *Theme, b *ClickableTip, icon []byte, 
 	}
 }
 
-func ToggleIconBtn(b tracker.Bool, th *Theme, c *ClickableTip, offIcon, onIcon []byte, offTip, onTip string) ToggleIconButton {
+func ToggleIconBtn(b tracker.Bool, th *Theme, c *Clickable, offIcon, onIcon []byte, offTip, onTip string) ToggleIconButton {
 	return ToggleIconButton{
 		b:             b,
 		DisabledStyle: th.IconButton.Disabled,
@@ -155,7 +151,7 @@ func ToggleIconBtn(b tracker.Bool, th *Theme, c *ClickableTip, offIcon, onIcon [
 
 func (b *Button) Layout(gtx C) D {
 	if b.Tip != "" {
-		return b.ClickableTip.TipArea.Layout(gtx, Tooltip(b.Theme, b.Tip), b.actualLayout)
+		return b.Clickable.TipArea.Layout(gtx, Tooltip(b.Theme, b.Tip), b.actualLayout)
 	}
 	return b.actualLayout(gtx)
 }
@@ -218,7 +214,7 @@ func (b *ToggleButton) Layout(gtx C) D {
 
 func (i *IconButton) Layout(gtx C) D {
 	if i.Tip != "" {
-		return i.ClickableTip.TipArea.Layout(gtx, Tooltip(i.Theme, i.Tip), i.actualLayout)
+		return i.Clickable.TipArea.Layout(gtx, Tooltip(i.Theme, i.Tip), i.actualLayout)
 	}
 	return i.actualLayout(gtx)
 }

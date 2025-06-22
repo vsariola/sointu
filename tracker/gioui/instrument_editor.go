@@ -23,19 +23,19 @@ import (
 
 type (
 	InstrumentEditor struct {
-		newInstrumentBtn    *ClickableTip
-		enlargeBtn          *ClickableTip
-		deleteInstrumentBtn *ClickableTip
-		linkInstrTrackBtn   *ClickableTip
-		splitInstrumentBtn  *ClickableTip
-		copyInstrumentBtn   *ClickableTip
-		saveInstrumentBtn   *ClickableTip
-		loadInstrumentBtn   *ClickableTip
-		addUnitBtn          *ClickableTip
-		presetMenuBtn       *ClickableTip
-		commentExpandBtn    *ClickableTip
-		soloBtn             *ClickableTip
-		muteBtn             *ClickableTip
+		newInstrumentBtn    *Clickable
+		enlargeBtn          *Clickable
+		deleteInstrumentBtn *Clickable
+		linkInstrTrackBtn   *Clickable
+		splitInstrumentBtn  *Clickable
+		copyInstrumentBtn   *Clickable
+		saveInstrumentBtn   *Clickable
+		loadInstrumentBtn   *Clickable
+		addUnitBtn          *Clickable
+		presetMenuBtn       *Clickable
+		commentExpandBtn    *Clickable
+		soloBtn             *Clickable
+		muteBtn             *Clickable
 		commentEditor       *Editor
 		commentString       tracker.String
 		nameEditor          *Editor
@@ -68,19 +68,19 @@ type (
 
 func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 	ret := &InstrumentEditor{
-		newInstrumentBtn:    new(ClickableTip),
-		enlargeBtn:          new(ClickableTip),
-		deleteInstrumentBtn: new(ClickableTip),
-		linkInstrTrackBtn:   new(ClickableTip),
-		splitInstrumentBtn:  new(ClickableTip),
-		copyInstrumentBtn:   new(ClickableTip),
-		saveInstrumentBtn:   new(ClickableTip),
-		loadInstrumentBtn:   new(ClickableTip),
-		commentExpandBtn:    new(ClickableTip),
-		presetMenuBtn:       new(ClickableTip),
-		soloBtn:             new(ClickableTip),
-		muteBtn:             new(ClickableTip),
-		addUnitBtn:          new(ClickableTip),
+		newInstrumentBtn:    new(Clickable),
+		enlargeBtn:          new(Clickable),
+		deleteInstrumentBtn: new(Clickable),
+		linkInstrTrackBtn:   new(Clickable),
+		splitInstrumentBtn:  new(Clickable),
+		copyInstrumentBtn:   new(Clickable),
+		saveInstrumentBtn:   new(Clickable),
+		loadInstrumentBtn:   new(Clickable),
+		commentExpandBtn:    new(Clickable),
+		presetMenuBtn:       new(Clickable),
+		soloBtn:             new(Clickable),
+		muteBtn:             new(Clickable),
+		addUnitBtn:          new(Clickable),
 		commentEditor:       NewEditor(false, false, text.Start),
 		nameEditor:          NewEditor(true, true, text.Middle),
 		searchEditor:        NewEditor(true, true, text.Start),
@@ -133,8 +133,8 @@ func (ie *InstrumentEditor) Focused(gtx C) bool {
 func (ie *InstrumentEditor) childFocused(gtx C) bool {
 	return ie.unitEditor.sliderList.Focused(gtx) ||
 		ie.instrumentDragList.Focused(gtx) || gtx.Source.Focused(ie.commentEditor) || gtx.Source.Focused(ie.nameEditor) || gtx.Source.Focused(ie.searchEditor) ||
-		gtx.Source.Focused(ie.addUnitBtn.Clickable) || gtx.Source.Focused(ie.commentExpandBtn.Clickable) || gtx.Source.Focused(ie.presetMenuBtn.Clickable) ||
-		gtx.Source.Focused(ie.deleteInstrumentBtn.Clickable) || gtx.Source.Focused(ie.copyInstrumentBtn.Clickable)
+		gtx.Source.Focused(ie.addUnitBtn) || gtx.Source.Focused(ie.commentExpandBtn) || gtx.Source.Focused(ie.presetMenuBtn) ||
+		gtx.Source.Focused(ie.deleteInstrumentBtn) || gtx.Source.Focused(ie.copyInstrumentBtn)
 }
 
 func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
@@ -192,14 +192,14 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 	header := func(gtx C) D {
 		m := PopupMenu(t.Theme, &t.Theme.Menu.Text, &ie.presetMenu)
 
-		for ie.copyInstrumentBtn.Clickable.Clicked(gtx) {
+		for ie.copyInstrumentBtn.Clicked(gtx) {
 			if contents, ok := t.Instruments().List().CopyElements(); ok {
 				gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
 				t.Alerts().Add("Instrument copied to clipboard", tracker.Info)
 			}
 		}
 
-		for ie.saveInstrumentBtn.Clickable.Clicked(gtx) {
+		for ie.saveInstrumentBtn.Clicked(gtx) {
 			writer, err := t.Explorer.CreateFile(t.InstrumentName().Value() + ".yml")
 			if err != nil {
 				continue
@@ -207,7 +207,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 			t.SaveInstrument(writer)
 		}
 
-		for ie.loadInstrumentBtn.Clickable.Clicked(gtx) {
+		for ie.loadInstrumentBtn.Clicked(gtx) {
 			reader, err := t.Explorer.ChooseFile(".yml", ".json", ".4ki", ".4kp")
 			if err != nil {
 				continue
@@ -253,7 +253,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 			)
 		}
 
-		for ie.presetMenuBtn.Clickable.Clicked(gtx) {
+		for ie.presetMenuBtn.Clicked(gtx) {
 			ie.presetMenu.Visible = true
 		}
 
@@ -476,7 +476,7 @@ func (ie *InstrumentEditor) layoutUnitList(gtx C, t *Tracker) D {
 				return dims
 			}),
 			layout.Stacked(func(gtx C) D {
-				for ie.addUnitBtn.Clickable.Clicked(gtx) {
+				for ie.addUnitBtn.Clicked(gtx) {
 					t.AddUnit(false).Do()
 				}
 				margin := layout.Inset{Right: unit.Dp(20), Bottom: unit.Dp(1)}

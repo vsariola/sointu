@@ -161,7 +161,7 @@ func PopupMenu(th *Theme, s *LabelStyle, menu *Menu) MenuStyle {
 	}
 }
 
-func (tr *Tracker) layoutMenu(gtx C, title string, ct *ClickableTip, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
+func (tr *Tracker) layoutMenu(gtx C, title string, ct *Clickable, menu *Menu, width unit.Dp, items ...MenuItem) layout.Widget {
 	for ct.Clicked(gtx) {
 		menu.Visible = true
 	}
