@@ -52,6 +52,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   be computed every draw. ([#176][i176])
 
 ### Fixed
+- Tooltips will be hidden after certain amount of time has passed, to ensure
+  that the tooltips don't stay around ([#141][i141])
 - BREAKING CHANGE: always first modulate delay time, then apply notetracking. In
   a delay unit, modulation adds to the delay time, while note tracking
   multiplies it with a multiplier dependent on the note. The order of these
@@ -311,6 +313,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i130]: https://github.com/vsariola/sointu/issues/130
 [i136]: https://github.com/vsariola/sointu/issues/136
 [i139]: https://github.com/vsariola/sointu/issues/139
+[i141]: https://github.com/vsariola/sointu/issues/141
 [i142]: https://github.com/vsariola/sointu/issues/142
 [i144]: https://github.com/vsariola/sointu/issues/144
 [i145]: https://github.com/vsariola/sointu/issues/145

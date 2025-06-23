@@ -228,7 +228,7 @@ type ParameterWidget struct {
 	unitBtn     Clickable
 	unitMenu    Menu
 	Parameter   tracker.Parameter
-	tipArea     component.TipArea
+	tipArea     TipArea
 }
 
 type ParameterStyle struct {

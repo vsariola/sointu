@@ -14,7 +14,6 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"gioui.org/x/component"
 
 	"gioui.org/gesture"
 	"gioui.org/io/event"
@@ -31,7 +30,7 @@ type (
 		dragStartXY    float32
 		clickDecrease  gesture.Click
 		clickIncrease  gesture.Click
-		tipArea        component.TipArea
+		tipArea        TipArea
 	}
 
 	NumericUpDownStyle struct {

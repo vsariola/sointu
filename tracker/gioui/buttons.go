@@ -17,7 +17,6 @@ import (
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"gioui.org/x/component"
 	"github.com/vsariola/sointu/tracker"
 )
 
@@ -27,7 +26,7 @@ type (
 		history []widget.Press
 
 		requestClicks int
-		TipArea       component.TipArea // since almost all buttons have tooltips, we include the state for a tooltip here for convenience
+		TipArea       TipArea // since almost all buttons have tooltips, we include the state for a tooltip here for convenience
 	}
 
 	ButtonStyle struct {
@@ -287,13 +286,6 @@ func (b *ToggleIconButton) Layout(gtx C) D {
 		b.Tip = b.OffTip
 	}
 	return b.IconButton.Layout(gtx)
-}
-
-func Tooltip(th *Theme, tip string) component.Tooltip {
-	tooltip := component.PlatformTooltip(&th.Material, tip)
-	tooltip.Bg = th.Tooltip.Bg
-	tooltip.Text.Color = th.Tooltip.Color
-	return tooltip
 }
 
 // Click executes a simple programmatic click.
