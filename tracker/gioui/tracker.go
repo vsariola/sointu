@@ -20,6 +20,7 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/x/explorer"
+	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 )
 
@@ -39,6 +40,7 @@ type (
 
 		SaveChangesDialog *Dialog
 		WaveTypeDialog    *Dialog
+		LicenseDialog     *Dialog
 
 		ModalDialog      layout.Widget
 		InstrumentEditor *InstrumentEditor
@@ -79,6 +81,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 
 		SaveChangesDialog: NewDialog(model.SaveSong(), model.DiscardSong(), model.Cancel()),
 		WaveTypeDialog:    NewDialog(model.ExportInt16(), model.ExportFloat(), model.Cancel()),
+		LicenseDialog:     NewDialog(tracker.MakeAction(nil), tracker.MakeAction(nil), model.Cancel()),
 		InstrumentEditor:  NewInstrumentEditor(model),
 		OrderEditor:       NewOrderEditor(model),
 		TrackEditor:       NewNoteEditor(model),
@@ -291,6 +294,10 @@ func (t *Tracker) showDialog(gtx C) {
 		t.explorerCreateFile(func(wc io.WriteCloser) {
 			t.WriteWav(wc, t.Dialog() == tracker.ExportInt16Explorer)
 		}, filename)
+	case tracker.License:
+		dstyle := ConfirmDialog(gtx, t.Theme, t.LicenseDialog, "License", sointu.License)
+		dstyle.CancelStyle.Text = "Close"
+		dstyle.Layout(gtx)
 	}
 }
 

@@ -92,13 +92,15 @@ func (d *Dialog) handleKeys(gtx C) {
 	for d.BtnCancel.Clicked(gtx) {
 		d.cancel.Do()
 	}
-	if d.alt.Enabled() {
+	if d.alt.Enabled() && d.cancel.Enabled() {
 		d.handleKeysForButton(gtx, &d.BtnAlt, &d.BtnCancel, &d.BtnOk)
 		d.handleKeysForButton(gtx, &d.BtnCancel, &d.BtnOk, &d.BtnAlt)
 		d.handleKeysForButton(gtx, &d.BtnOk, &d.BtnAlt, &d.BtnCancel)
-	} else {
+	} else if d.ok.Enabled() {
 		d.handleKeysForButton(gtx, &d.BtnOk, &d.BtnCancel, &d.BtnCancel)
 		d.handleKeysForButton(gtx, &d.BtnCancel, &d.BtnOk, &d.BtnOk)
+	} else {
+		d.handleKeysForButton(gtx, &d.BtnCancel, &d.BtnCancel, &d.BtnCancel)
 	}
 }
 
@@ -117,18 +119,17 @@ func (d *DialogStyle) Layout(gtx C) D {
 					layout.Rigid(Label(d.Theme, &d.Theme.Dialog.Text, d.Text).Layout),
 					layout.Rigid(func(gtx C) D {
 						return layout.E.Layout(gtx, func(gtx C) D {
-							gtx.Constraints.Min.X = gtx.Dp(unit.Dp(120))
-							if d.dialog.alt.Enabled() {
-								return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween}.Layout(gtx,
-									layout.Rigid(d.OkStyle.Layout),
-									layout.Rigid(d.AltStyle.Layout),
-									layout.Rigid(d.CancelStyle.Layout),
-								)
+							fl := layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween}
+							ok := layout.Rigid(d.OkStyle.Layout)
+							alt := layout.Rigid(d.AltStyle.Layout)
+							cancel := layout.Rigid(d.CancelStyle.Layout)
+							if d.dialog.alt.Enabled() && d.dialog.cancel.Enabled() {
+								return fl.Layout(gtx, ok, alt, cancel)
 							}
-							return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween}.Layout(gtx,
-								layout.Rigid(d.OkStyle.Layout),
-								layout.Rigid(d.CancelStyle.Layout),
-							)
+							if d.dialog.ok.Enabled() {
+								return fl.Layout(gtx, ok, cancel)
+							}
+							return fl.Layout(gtx, cancel)
 						})
 					}),
 				)

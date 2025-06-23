@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Help menu, with a menu item to show the license ([#196][i196])
 - Show CPU load percentage in the song panel ([#192][i192])
 - Theme can be user configured, in theme.yml. This theme.yml should be placed in
   the usual sointu config directory (i.e.
@@ -337,3 +338,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i176]: https://github.com/vsariola/sointu/issues/176
 [i186]: https://github.com/vsariola/sointu/issues/186
 [i192]: https://github.com/vsariola/sointu/issues/192
+[i196]: https://github.com/vsariola/sointu/issues/196

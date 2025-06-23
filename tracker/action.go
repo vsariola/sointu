@@ -92,6 +92,7 @@ type (
 		Item MIDIDevice
 		*Model
 	}
+	ShowLicense Model
 )
 
 // Action methods
@@ -123,6 +124,9 @@ func (a Action) Do() {
 }
 
 func (a Action) Enabled() bool {
+	if a.doer == nil {
+		return false // no doer, not allowed
+	}
 	if a.enabler == nil {
 		return true // no enabler, always allowed
 	}
@@ -587,6 +591,9 @@ func (m *ExportFloat) Do()           { m.dialog = ExportFloatExplorer }
 
 func (m *Model) ExportInt16() Action { return MakeEnabledAction((*ExportInt16)(m)) }
 func (m *ExportInt16) Do()           { m.dialog = ExportInt16Explorer }
+
+func (m *Model) ShowLicense() Action { return MakeEnabledAction((*ShowLicense)(m)) }
+func (m *ShowLicense) Do()           { m.dialog = License }
 
 func (m *Model) SelectMidiInput(item MIDIDevice) Action {
 	return MakeEnabledAction(SelectMidiInput{Item: item, Model: m})

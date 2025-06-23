@@ -155,6 +155,7 @@ const (
 	ExportInt16Explorer
 	QuitChanges
 	QuitSaveExplorer
+	License
 )
 
 const maxUndo = 64

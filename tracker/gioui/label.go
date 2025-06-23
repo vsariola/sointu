@@ -32,7 +32,6 @@ func (l LabelWidget) Layout(gtx C) D {
 	textColor := textColorMacro.Stop()
 	t := widget.Label{
 		Alignment: l.Alignment,
-		MaxLines:  1,
 	}
 	if l.ShadowColor.A > 0 {
 		shadowColorMacro := op.Record(gtx.Ops)

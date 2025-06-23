@@ -1,6 +1,7 @@
 package sointu
 
 import (
+	_ "embed"
 	"errors"
 )
 
@@ -91,6 +92,9 @@ type (
 		NumVoicer
 	}
 )
+
+//go:embed LICENSE
+var License string
 
 func (s *Score) SongPos(songRow int) SongPos {
 	if s.RowsPerPattern == 0 {

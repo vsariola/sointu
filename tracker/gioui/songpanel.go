@@ -307,6 +307,7 @@ type MenuBar struct {
 	fileMenuItems []MenuItem
 	editMenuItems []MenuItem
 	midiMenuItems []MenuItem
+	helpMenuItems []MenuItem
 
 	panicHint string
 	PanicBtn  *Clickable
@@ -314,8 +315,8 @@ type MenuBar struct {
 
 func NewMenuBar(model *tracker.Model) *MenuBar {
 	ret := &MenuBar{
-		Clickables: make([]Clickable, 3),
-		Menus:      make([]Menu, 3),
+		Clickables: make([]Clickable, 4),
+		Menus:      make([]Menu, 4),
 		PanicBtn:   new(Clickable),
 		panicHint:  makeHint("Panic", " (%s)", "PanicToggle"),
 	}
@@ -341,6 +342,9 @@ func NewMenuBar(model *tracker.Model) *MenuBar {
 			Doer:      model.SelectMidiInput(input),
 		})
 	}
+	ret.helpMenuItems = []MenuItem{
+		{IconBytes: icons.ActionCopyright, Text: "License", ShortcutText: keyActionMap["ShowLicense"], Doer: model.ShowLicense()},
+	}
 	return ret
 }
 
@@ -356,11 +360,12 @@ func (t *MenuBar) Layout(gtx C, tr *Tracker) D {
 	fileFC := layout.Rigid(tr.layoutMenu(gtx, "File", &t.Clickables[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...))
 	editFC := layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.Clickables[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...))
 	midiFC := layout.Rigid(tr.layoutMenu(gtx, "MIDI", &t.Clickables[2], &t.Menus[2], unit.Dp(200), t.midiMenuItems...))
+	helpFC := layout.Rigid(tr.layoutMenu(gtx, "?", &t.Clickables[3], &t.Menus[3], unit.Dp(200), t.helpMenuItems...))
 	panicFC := layout.Flexed(1, func(gtx C) D { return layout.E.Layout(gtx, panicBtn.Layout) })
 	if len(t.midiMenuItems) > 0 {
-		return flex.Layout(gtx, fileFC, editFC, midiFC, panicFC)
+		return flex.Layout(gtx, fileFC, editFC, midiFC, helpFC, panicFC)
 	}
-	return flex.Layout(gtx, fileFC, editFC, panicFC)
+	return flex.Layout(gtx, fileFC, editFC, helpFC, panicFC)
 }
 
 type PlayBar struct {
