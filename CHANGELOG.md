@@ -5,7 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
-- Help menu, with a menu item to show the license ([#196][i196])
+- Help menu, with a menu item to show the license in a dialog, and also menu
+  items to open manual, Github Discussions & Github Issues in a browser
+  ([#196][i196])
 - Show CPU load percentage in the song panel ([#192][i192])
 - Theme can be user configured, in theme.yml. This theme.yml should be placed in
   the usual sointu config directory (i.e.

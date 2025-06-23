@@ -185,6 +185,12 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		t.SplitTrack().Do()
 	case "SplitInstrument":
 		t.SplitInstrument().Do()
+	case "ShowManual":
+		t.ShowManual().Do()
+	case "AskHelp":
+		t.AskHelp().Do()
+	case "ReportBug":
+		t.ReportBug().Do()
 	case "ShowLicense":
 		t.ShowLicense().Do()
 	// Booleans

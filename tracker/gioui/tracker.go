@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"gioui.org/app"
@@ -58,6 +60,10 @@ type (
 		*tracker.Model
 	}
 
+	ShowManual Tracker
+	AskHelp    Tracker
+	ReportBug  Tracker
+
 	C = layout.Context
 	D = layout.Dimensions
 )
@@ -85,7 +91,6 @@ func NewTracker(model *tracker.Model) *Tracker {
 		InstrumentEditor:  NewInstrumentEditor(model),
 		OrderEditor:       NewOrderEditor(model),
 		TrackEditor:       NewNoteEditor(model),
-		SongPanel:         NewSongPanel(model),
 
 		Zoom: 6,
 
@@ -93,6 +98,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 
 		filePathString: model.FilePath(),
 	}
+	t.SongPanel = NewSongPanel(t)
 	t.KeyNoteMap = MakeKeyboard[key.Name](model.Broker())
 	t.PopupAlert = NewPopupAlert(model.Alerts())
 	var warn error
@@ -351,4 +357,33 @@ func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
 			return t.InstrumentEditor.Layout(gtx, t)
 		},
 	)
+}
+
+func (t *Tracker) ShowManual() tracker.Action { return tracker.MakeEnabledAction((*ShowManual)(t)) }
+func (t *ShowManual) Do()                     { (*Tracker)(t).openUrl("https://github.com/vsariola/sointu/wiki") }
+
+func (t *Tracker) AskHelp() tracker.Action { return tracker.MakeEnabledAction((*AskHelp)(t)) }
+func (t *AskHelp) Do() {
+	(*Tracker)(t).openUrl("https://github.com/vsariola/sointu/discussions/categories/help-needed")
+}
+
+func (t *Tracker) ReportBug() tracker.Action { return tracker.MakeEnabledAction((*ReportBug)(t)) }
+func (t *ReportBug) Do()                     { (*Tracker)(t).openUrl("https://github.com/vsariola/sointu/issues") }
+
+func (t *Tracker) openUrl(url string) {
+	var err error
+	// following https://gist.github.com/hyg/9c4afcd91fe24316cbf0
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform for opening urls %s", runtime.GOOS)
+	}
+	if err != nil {
+		t.Alerts().Add(err.Error(), tracker.Error)
+	}
 }

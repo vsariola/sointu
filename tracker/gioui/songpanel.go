@@ -37,15 +37,15 @@ type SongPanel struct {
 	PlayBar *PlayBar
 }
 
-func NewSongPanel(model *tracker.Model) *SongPanel {
+func NewSongPanel(tr *Tracker) *SongPanel {
 	ret := &SongPanel{
 		BPM:            NewNumericUpDownState(),
 		RowsPerPattern: NewNumericUpDownState(),
 		RowsPerBeat:    NewNumericUpDownState(),
 		Step:           NewNumericUpDownState(),
 		SongLength:     NewNumericUpDownState(),
-		Scope:          NewOscilloscope(model),
-		MenuBar:        NewMenuBar(model),
+		Scope:          NewOscilloscope(tr.Model),
+		MenuBar:        NewMenuBar(tr),
 		PlayBar:        NewPlayBar(),
 
 		WeightingTypeBtn: new(Clickable),
@@ -313,7 +313,7 @@ type MenuBar struct {
 	PanicBtn  *Clickable
 }
 
-func NewMenuBar(model *tracker.Model) *MenuBar {
+func NewMenuBar(tr *Tracker) *MenuBar {
 	ret := &MenuBar{
 		Clickables: make([]Clickable, 4),
 		Menus:      make([]Menu, 4),
@@ -321,29 +321,32 @@ func NewMenuBar(model *tracker.Model) *MenuBar {
 		panicHint:  makeHint("Panic", " (%s)", "PanicToggle"),
 	}
 	ret.fileMenuItems = []MenuItem{
-		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: keyActionMap["NewSong"], Doer: model.NewSong()},
-		{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: keyActionMap["OpenSong"], Doer: model.OpenSong()},
-		{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: keyActionMap["SaveSong"], Doer: model.SaveSong()},
-		{IconBytes: icons.ContentSave, Text: "Save Song As...", ShortcutText: keyActionMap["SaveSongAs"], Doer: model.SaveSongAs()},
-		{IconBytes: icons.ImageAudiotrack, Text: "Export Wav...", ShortcutText: keyActionMap["ExportWav"], Doer: model.Export()},
+		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: keyActionMap["NewSong"], Doer: tr.NewSong()},
+		{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: keyActionMap["OpenSong"], Doer: tr.OpenSong()},
+		{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: keyActionMap["SaveSong"], Doer: tr.SaveSong()},
+		{IconBytes: icons.ContentSave, Text: "Save Song As...", ShortcutText: keyActionMap["SaveSongAs"], Doer: tr.SaveSongAs()},
+		{IconBytes: icons.ImageAudiotrack, Text: "Export Wav...", ShortcutText: keyActionMap["ExportWav"], Doer: tr.Export()},
 	}
 	if canQuit {
-		ret.fileMenuItems = append(ret.fileMenuItems, MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit", ShortcutText: keyActionMap["Quit"], Doer: model.RequestQuit()})
+		ret.fileMenuItems = append(ret.fileMenuItems, MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit", ShortcutText: keyActionMap["Quit"], Doer: tr.RequestQuit()})
 	}
 	ret.editMenuItems = []MenuItem{
-		{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: keyActionMap["Undo"], Doer: model.Undo()},
-		{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: keyActionMap["Redo"], Doer: model.Redo()},
-		{IconBytes: icons.ImageCrop, Text: "Remove unused data", ShortcutText: keyActionMap["RemoveUnused"], Doer: model.RemoveUnused()},
+		{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: keyActionMap["Undo"], Doer: tr.Undo()},
+		{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: keyActionMap["Redo"], Doer: tr.Redo()},
+		{IconBytes: icons.ImageCrop, Text: "Remove unused data", ShortcutText: keyActionMap["RemoveUnused"], Doer: tr.RemoveUnused()},
 	}
-	for input := range model.MIDI.InputDevices {
+	for input := range tr.MIDI.InputDevices {
 		ret.midiMenuItems = append(ret.midiMenuItems, MenuItem{
 			IconBytes: icons.ImageControlPoint,
 			Text:      input.String(),
-			Doer:      model.SelectMidiInput(input),
+			Doer:      tr.SelectMidiInput(input),
 		})
 	}
 	ret.helpMenuItems = []MenuItem{
-		{IconBytes: icons.ActionCopyright, Text: "License", ShortcutText: keyActionMap["ShowLicense"], Doer: model.ShowLicense()},
+		{IconBytes: icons.AVLibraryBooks, Text: "Manual", ShortcutText: keyActionMap["ShowManual"], Doer: tr.ShowManual()},
+		{IconBytes: icons.ActionHelp, Text: "Ask help", ShortcutText: keyActionMap["AskHelp"], Doer: tr.AskHelp()},
+		{IconBytes: icons.ActionBugReport, Text: "Report bug", ShortcutText: keyActionMap["ReportBug"], Doer: tr.ReportBug()},
+		{IconBytes: icons.ActionCopyright, Text: "License", ShortcutText: keyActionMap["ShowLicense"], Doer: tr.ShowLicense()},
 	}
 	return ret
 }
