@@ -25,11 +25,11 @@ type SongPanel struct {
 	WeightingTypeBtn *Clickable
 	OversamplingBtn  *Clickable
 
-	BPM            *NumericUpDown
-	RowsPerPattern *NumericUpDown
-	RowsPerBeat    *NumericUpDown
-	Step           *NumericUpDown
-	SongLength     *NumericUpDown
+	BPM            *NumericUpDownState
+	RowsPerPattern *NumericUpDownState
+	RowsPerBeat    *NumericUpDownState
+	Step           *NumericUpDownState
+	SongLength     *NumericUpDownState
 
 	Scope *OscilloscopeState
 
@@ -39,11 +39,11 @@ type SongPanel struct {
 
 func NewSongPanel(model *tracker.Model) *SongPanel {
 	ret := &SongPanel{
-		BPM:            NewNumericUpDown(),
-		RowsPerPattern: NewNumericUpDown(),
-		RowsPerBeat:    NewNumericUpDown(),
-		Step:           NewNumericUpDown(),
-		SongLength:     NewNumericUpDown(),
+		BPM:            NewNumericUpDownState(),
+		RowsPerPattern: NewNumericUpDownState(),
+		RowsPerBeat:    NewNumericUpDownState(),
+		Step:           NewNumericUpDownState(),
+		SongLength:     NewNumericUpDownState(),
 		Scope:          NewOscilloscope(model),
 		MenuBar:        NewMenuBar(model),
 		PlayBar:        NewPlayBar(),
@@ -115,19 +115,24 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 				func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, tr.Theme, "BPM", t.BPM.Widget(tr.Model.BPM(), tr.Theme, &tr.Theme.NumericUpDown, "BPM"))
+							bpm := NumUpDown(tr.BPM(), tr.Theme, t.BPM, "BPM")
+							return layoutSongOptionRow(gtx, tr.Theme, "BPM", bpm.Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, tr.Theme, "Song length", t.SongLength.Widget(tr.Model.SongLength(), tr.Theme, &tr.Theme.NumericUpDown, "Song length"))
+							songLength := NumUpDown(tr.SongLength(), tr.Theme, t.SongLength, "Song length")
+							return layoutSongOptionRow(gtx, tr.Theme, "Song length", songLength.Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, tr.Theme, "Rows per pat", t.RowsPerPattern.Widget(tr.Model.RowsPerPattern(), tr.Theme, &tr.Theme.NumericUpDown, "Rows per pattern"))
+							rowsPerPattern := NumUpDown(tr.RowsPerPattern(), tr.Theme, t.RowsPerPattern, "Rows per pattern")
+							return layoutSongOptionRow(gtx, tr.Theme, "Rows per pat", rowsPerPattern.Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, tr.Theme, "Rows per beat", t.RowsPerBeat.Widget(tr.Model.RowsPerBeat(), tr.Theme, &tr.Theme.NumericUpDown, "Rows per beat"))
+							rowsPerBeat := NumUpDown(tr.RowsPerBeat(), tr.Theme, t.RowsPerBeat, "Rows per beat")
+							return layoutSongOptionRow(gtx, tr.Theme, "Rows per beat", rowsPerBeat.Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
-							return layoutSongOptionRow(gtx, tr.Theme, "Cursor step", t.Step.Widget(tr.Model.Step(), tr.Theme, &tr.Theme.NumericUpDown, "Cursor step"))
+							step := NumUpDown(tr.Step(), tr.Theme, t.Step, "Cursor step")
+							return layoutSongOptionRow(gtx, tr.Theme, "Cursor step", step.Layout)
 						}),
 						layout.Rigid(func(gtx C) D {
 							cpuload := tr.Model.CPULoad()

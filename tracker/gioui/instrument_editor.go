@@ -142,9 +142,8 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 
 	octave := func(gtx C) D {
 		in := layout.UniformInset(unit.Dp(1))
-		return in.Layout(gtx, func(gtx C) D {
-			return t.OctaveNumberInput.Layout(gtx, t.Octave(), t.Theme, &t.Theme.NumericUpDown, "Octave")
-		})
+		octave := NumUpDown(t.Model.Octave(), t.Theme, t.OctaveNumberInput, "Octave")
+		return in.Layout(gtx, octave.Layout)
 	}
 
 	ret := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -223,15 +222,14 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		loadInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, ie.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
 		copyInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, ie.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
 		deleteInstrumentBtn := ActionIconBtn(t.DeleteInstrument(), t.Theme, ie.deleteInstrumentBtn, icons.ActionDelete, ie.deleteInstrumentHint)
+		instrumentVoices := NumUpDown(t.Model.InstrumentVoices(), t.Theme, t.InstrumentVoices, "Number of voices for this instrument")
 
 		header := func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(layout.Spacer{Width: 6}.Layout),
 				layout.Rigid(Label(t.Theme, &t.Theme.InstrumentEditor.Voices, "Voices").Layout),
 				layout.Rigid(layout.Spacer{Width: 4}.Layout),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return t.InstrumentVoices.Layout(gtx, t.Model.InstrumentVoices(), t.Theme, &t.Theme.NumericUpDown, "Number of voices for this instrument")
-				}),
+				layout.Rigid(instrumentVoices.Layout),
 				layout.Rigid(splitInstrumentBtn.Layout),
 				layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 				layout.Rigid(commentExpandedBtn.Layout),

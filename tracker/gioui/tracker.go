@@ -28,8 +28,8 @@ var canQuit = true // set to false in init() if plugin tag is enabled
 type (
 	Tracker struct {
 		Theme                 *Theme
-		OctaveNumberInput     *NumericUpDown
-		InstrumentVoices      *NumericUpDown
+		OctaveNumberInput     *NumericUpDownState
+		InstrumentVoices      *NumericUpDownState
 		TopHorizontalSplit    *Split
 		BottomHorizontalSplit *Split
 		VerticalSplit         *Split
@@ -70,8 +70,8 @@ var ZoomFactors = []float32{.25, 1. / 3, .5, 2. / 3, .75, .8, 1, 1.1, 1.25, 1.5,
 
 func NewTracker(model *tracker.Model) *Tracker {
 	t := &Tracker{
-		OctaveNumberInput: NewNumericUpDown(),
-		InstrumentVoices:  NewNumericUpDown(),
+		OctaveNumberInput: NewNumericUpDownState(),
+		InstrumentVoices:  NewNumericUpDownState(),
 
 		TopHorizontalSplit:    &Split{Ratio: -.5, MinSize1: 180, MinSize2: 180},
 		BottomHorizontalSplit: &Split{Ratio: -.6, MinSize1: 180, MinSize2: 180},

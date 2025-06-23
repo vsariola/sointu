@@ -51,7 +51,7 @@ func init() {
 }
 
 type NoteEditor struct {
-	TrackVoices    *NumericUpDown
+	TrackVoices    *NumericUpDownState
 	NewTrackBtn    *Clickable
 	DeleteTrackBtn *Clickable
 	SplitTrackBtn  *Clickable
@@ -76,7 +76,7 @@ type NoteEditor struct {
 
 func NewNoteEditor(model *tracker.Model) *NoteEditor {
 	ret := &NoteEditor{
-		TrackVoices:         NewNumericUpDown(),
+		TrackVoices:         NewNumericUpDownState(),
 		NewTrackBtn:         new(Clickable),
 		DeleteTrackBtn:      new(Clickable),
 		SplitTrackBtn:       new(Clickable),
@@ -172,11 +172,10 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 		deleteTrackBtn := ActionIconBtn(t.DeleteTrack(), t.Theme, te.DeleteTrackBtn, icons.ActionDelete, te.deleteTrackHint)
 		splitTrackBtn := ActionIconBtn(t.SplitTrack(), t.Theme, te.SplitTrackBtn, icons.CommunicationCallSplit, te.splitTrackHint)
 		newTrackBtn := ActionIconBtn(t.AddTrack(), t.Theme, te.NewTrackBtn, icons.ContentAdd, te.addTrackHint)
+		trackVoices := NumUpDown(t.Model.TrackVoices(), t.Theme, te.TrackVoices, "Track voices")
 		in := layout.UniformInset(unit.Dp(1))
-		voiceUpDown := func(gtx C) D {
-			return in.Layout(gtx, func(gtx C) D {
-				return te.TrackVoices.Layout(gtx, t.Model.TrackVoices(), t.Theme, &t.Theme.NumericUpDown, "Track voices")
-			})
+		trackVoicesInsetted := func(gtx C) D {
+			return in.Layout(gtx, trackVoices.Layout)
 		}
 		effectBtn := ToggleBtn(t.Effect(), t.Theme, te.EffectBtn, "Hex", "Input notes as hex values")
 		uniqueBtn := ToggleIconBtn(t.UniquePatterns(), t.Theme, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
@@ -193,7 +192,7 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			layout.Rigid(layout.Spacer{Width: 10}.Layout),
 			layout.Rigid(Label(t.Theme, &t.Theme.NoteEditor.Header, "Voices").Layout),
 			layout.Rigid(layout.Spacer{Width: 4}.Layout),
-			layout.Rigid(voiceUpDown),
+			layout.Rigid(trackVoicesInsetted),
 			layout.Rigid(splitTrackBtn.Layout),
 			layout.Rigid(midiInBtn.Layout),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
