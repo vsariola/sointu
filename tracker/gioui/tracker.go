@@ -37,7 +37,7 @@ type (
 		BottomHorizontalSplit *Split
 		VerticalSplit         *Split
 		KeyNoteMap            Keyboard[key.Name]
-		PopupAlert            *PopupAlert
+		PopupAlert            *AlertsState
 		Zoom                  int
 
 		DialogState *DialogState
@@ -96,7 +96,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 	}
 	t.SongPanel = NewSongPanel(t)
 	t.KeyNoteMap = MakeKeyboard[key.Name](model.Broker())
-	t.PopupAlert = NewPopupAlert(model.Alerts())
+	t.PopupAlert = NewAlertsState()
 	var warn error
 	if t.Theme, warn = NewTheme(); warn != nil {
 		model.Alerts().AddAlert(tracker.Alert{
@@ -222,7 +222,8 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 			t.layoutTop,
 			t.layoutBottom)
 	}
-	t.PopupAlert.Layout(gtx, t.Theme)
+	alerts := Alerts(t.Alerts(), t.Theme, t.PopupAlert)
+	alerts.Layout(gtx)
 	t.showDialog(gtx)
 	// this is the top level input handler for the whole app
 	// it handles all the global key events and clipboard events

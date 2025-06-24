@@ -110,6 +110,8 @@ alert:
   info:
     bg: { r: 50, g: 50, b: 51, a: 255 }
     text: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+  margin: { top: 6, bottom: 6, left: 6, right: 6 }
+  inset: { top: 6, bottom: 6, left: 6, right: 6 }
 ordereditor:
   tracktitle: { textsize: 12, color: *mediumemphasis }
   rowtitle:

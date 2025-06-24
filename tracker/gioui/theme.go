@@ -35,11 +35,7 @@ type Theme struct {
 		ErrorColor color.NRGBA
 		Bg         color.NRGBA
 	}
-	Alert struct {
-		Warning PopupAlertStyle
-		Error   PopupAlertStyle
-		Info    PopupAlertStyle
-	}
+	Alert      AlertStyles
 	NoteEditor struct {
 		TrackTitle LabelStyle
 		OrderRow   LabelStyle
