@@ -37,9 +37,7 @@ type (
 		soloBtn             *Clickable
 		muteBtn             *Clickable
 		commentEditor       *Editor
-		commentString       tracker.String
 		nameEditor          *Editor
-		nameString          tracker.String
 		searchEditor        *Editor
 		instrumentDragList  *DragList
 		unitDragList        *DragList
@@ -84,8 +82,6 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		commentEditor:       NewEditor(false, false, text.Start),
 		nameEditor:          NewEditor(true, true, text.Middle),
 		searchEditor:        NewEditor(true, true, text.Start),
-		commentString:       model.InstrumentComment(),
-		nameString:          model.InstrumentName(),
 		instrumentDragList:  NewDragList(model.Instruments().List(), layout.Horizontal),
 		unitDragList:        NewDragList(model.Units().List(), layout.Vertical),
 		unitEditor:          NewUnitEditor(model),
@@ -260,11 +256,11 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 				layout.Rigid(header),
 				layout.Rigid(func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					for ie.commentEditor.Update(gtx, ie.commentString) != EditorEventNone {
+					for ie.commentEditor.Update(gtx, t.InstrumentComment()) != EditorEventNone {
 						ie.instrumentDragList.Focus()
 					}
 					ret := layout.UniformInset(unit.Dp(6)).Layout(gtx, func(gtx C) D {
-						return ie.commentEditor.Layout(gtx, ie.commentString, t.Theme, &t.Theme.InstrumentEditor.InstrumentComment, "Comment")
+						return ie.commentEditor.Layout(gtx, t.InstrumentComment(), t.Theme, &t.Theme.InstrumentEditor.InstrumentComment, "Comment")
 					})
 					return ret
 				}),
@@ -295,12 +291,12 @@ func (ie *InstrumentEditor) layoutInstrumentList(gtx C, t *Tracker) D {
 				s.Color = color.NRGBA{R: 255, G: k, B: 255, A: 255}
 			}
 			if i == ie.instrumentDragList.TrackerList.Selected() {
-				for ie.nameEditor.Update(gtx, ie.nameString) != EditorEventNone {
+				for ie.nameEditor.Update(gtx, t.InstrumentName()) != EditorEventNone {
 					ie.instrumentDragList.Focus()
 				}
 				return layout.Center.Layout(gtx, func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					return ie.nameEditor.Layout(gtx, ie.nameString, t.Theme, &s, "Instr")
+					return ie.nameEditor.Layout(gtx, t.InstrumentName(), t.Theme, &s, "Instr")
 				})
 			}
 			if name == "" {
