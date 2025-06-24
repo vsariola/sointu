@@ -63,10 +63,8 @@ type Theme struct {
 		Play       color.NRGBA
 	}
 	Menu struct {
-		Text     LabelStyle
-		ShortCut color.NRGBA
-		Hover    color.NRGBA
-		Disabled color.NRGBA
+		Main   MenuStyle
+		Preset MenuStyle
 	}
 	InstrumentEditor struct {
 		Octave            LabelStyle

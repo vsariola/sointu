@@ -43,8 +43,8 @@ type (
 		unitDragList        *DragList
 		unitEditor          *UnitEditor
 		wasFocused          bool
-		presetMenuItems     []MenuItem
-		presetMenu          Menu
+		presetMenuItems     []ActionMenuItem
+		presetMenu          MenuState
 
 		addUnit tracker.Action
 
@@ -85,10 +85,10 @@ func NewInstrumentEditor(model *tracker.Model) *InstrumentEditor {
 		instrumentDragList:  NewDragList(model.Instruments().List(), layout.Horizontal),
 		unitDragList:        NewDragList(model.Units().List(), layout.Vertical),
 		unitEditor:          NewUnitEditor(model),
-		presetMenuItems:     []MenuItem{},
+		presetMenuItems:     []ActionMenuItem{},
 	}
 	model.IterateInstrumentPresets(func(index int, name string) bool {
-		ret.presetMenuItems = append(ret.presetMenuItems, MenuItem{Text: name, IconBytes: icons.ImageAudiotrack, Doer: model.LoadPreset(index)})
+		ret.presetMenuItems = append(ret.presetMenuItems, ActionMenuItem{Text: name, Icon: icons.ImageAudiotrack, Action: model.LoadPreset(index)})
 		return true
 	})
 	ret.addUnit = model.AddUnit(false)
@@ -185,8 +185,6 @@ func (ie *InstrumentEditor) Layout(gtx C, t *Tracker) D {
 
 func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 	header := func(gtx C) D {
-		m := PopupMenu(t.Theme, &t.Theme.Menu.Text, &ie.presetMenu)
-
 		for ie.copyInstrumentBtn.Clicked(gtx) {
 			if contents, ok := t.Instruments().List().CopyElements(); ok {
 				gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
@@ -235,8 +233,8 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 					presetBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, ie.presetMenuBtn, icons.NavigationMenu, "Load preset")
 					dims := presetBtn.Layout(gtx)
 					op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
-					gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(500))
-					gtx.Constraints.Max.X = gtx.Dp(unit.Dp(180))
+					m := Menu(t.Theme, &ie.presetMenu)
+					m.Style = &t.Theme.Menu.Preset
 					m.Layout(gtx, ie.presetMenuItems...)
 					return dims
 				}),
@@ -248,7 +246,7 @@ func (ie *InstrumentEditor) layoutInstrumentHeader(gtx C, t *Tracker) D {
 		}
 
 		for ie.presetMenuBtn.Clicked(gtx) {
-			ie.presetMenu.Visible = true
+			ie.presetMenu.visible = true
 		}
 
 		if t.CommentExpanded().Value() || gtx.Source.Focused(ie.commentEditor) { // we draw once the widget after it manages to lose focus

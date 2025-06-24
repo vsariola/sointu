@@ -224,9 +224,9 @@ type ParameterWidget struct {
 	floatWidget widget.Float
 	boolWidget  widget.Bool
 	instrBtn    Clickable
-	instrMenu   Menu
+	instrMenu   MenuState
 	unitBtn     Clickable
-	unitMenu    Menu
+	unitMenu    MenuState
 	Parameter   tracker.Parameter
 	tipArea     TipArea
 }
@@ -315,43 +315,45 @@ func (p ParameterStyle) Layout(gtx C) D {
 			case tracker.IDParameter:
 				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(200))
 				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
-				instrItems := make([]MenuItem, p.tracker.Instruments().Count())
+				instrItems := make([]ActionMenuItem, p.tracker.Instruments().Count())
 				for i := range instrItems {
 					i := i
 					name, _, _, _ := p.tracker.Instruments().Item(i)
 					instrItems[i].Text = name
-					instrItems[i].IconBytes = icons.NavigationChevronRight
-					instrItems[i].Doer = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
+					instrItems[i].Icon = icons.NavigationChevronRight
+					instrItems[i].Action = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
 						if id, ok := p.tracker.Instruments().FirstID(i); ok {
 							p.w.Parameter.SetValue(id)
 						}
 					}))
 				}
-				var unitItems []MenuItem
+				var unitItems []ActionMenuItem
 				instrName := "<instr>"
 				unitName := "<unit>"
 				targetInstrName, units, targetUnitIndex, ok := p.tracker.UnitInfo(p.w.Parameter.Value())
 				if ok {
 					instrName = targetInstrName
 					unitName = buildUnitLabel(targetUnitIndex, units[targetUnitIndex])
-					unitItems = make([]MenuItem, len(units))
+					unitItems = make([]ActionMenuItem, len(units))
 					for j, unit := range units {
 						id := unit.ID
 						unitItems[j].Text = buildUnitLabel(j, unit)
-						unitItems[j].IconBytes = icons.NavigationChevronRight
-						unitItems[j].Doer = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
+						unitItems[j].Icon = icons.NavigationChevronRight
+						unitItems[j].Action = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
 							p.w.Parameter.SetValue(id)
 						}))
 					}
 				}
 				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
+				instrBtn := MenuBtn(p.tracker.Theme, &p.w.instrMenu, &p.w.instrBtn, instrName)
+				unitBtn := MenuBtn(p.tracker.Theme, &p.w.unitMenu, &p.w.unitBtn, unitName)
 				return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-					layout.Rigid(p.tracker.layoutMenu(gtx, instrName, &p.w.instrBtn, &p.w.instrMenu, unit.Dp(200),
-						instrItems...,
-					)),
-					layout.Rigid(p.tracker.layoutMenu(gtx, unitName, &p.w.unitBtn, &p.w.unitMenu, unit.Dp(240),
-						unitItems...,
-					)),
+					layout.Rigid(func(gtx C) D {
+						return instrBtn.Layout(gtx, instrItems...)
+					}),
+					layout.Rigid(func(gtx C) D {
+						return unitBtn.Layout(gtx, unitItems...)
+					}),
 				)
 			}
 			return D{}

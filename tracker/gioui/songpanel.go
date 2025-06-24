@@ -302,12 +302,9 @@ func (e *Expander) layoutHeader(gtx C, th *Theme, title string, smallWidget layo
 
 type MenuBar struct {
 	Clickables []Clickable
-	Menus      []Menu
+	MenuStates []MenuState
 
-	fileMenuItems []MenuItem
-	editMenuItems []MenuItem
-	midiMenuItems []MenuItem
-	helpMenuItems []MenuItem
+	midiMenuItems []ActionMenuItem
 
 	panicHint string
 	PanicBtn  *Clickable
@@ -316,37 +313,14 @@ type MenuBar struct {
 func NewMenuBar(tr *Tracker) *MenuBar {
 	ret := &MenuBar{
 		Clickables: make([]Clickable, 4),
-		Menus:      make([]Menu, 4),
+		MenuStates: make([]MenuState, 4),
 		PanicBtn:   new(Clickable),
 		panicHint:  makeHint("Panic", " (%s)", "PanicToggle"),
 	}
-	ret.fileMenuItems = []MenuItem{
-		{IconBytes: icons.ContentClear, Text: "New Song", ShortcutText: keyActionMap["NewSong"], Doer: tr.NewSong()},
-		{IconBytes: icons.FileFolder, Text: "Open Song", ShortcutText: keyActionMap["OpenSong"], Doer: tr.OpenSong()},
-		{IconBytes: icons.ContentSave, Text: "Save Song", ShortcutText: keyActionMap["SaveSong"], Doer: tr.SaveSong()},
-		{IconBytes: icons.ContentSave, Text: "Save Song As...", ShortcutText: keyActionMap["SaveSongAs"], Doer: tr.SaveSongAs()},
-		{IconBytes: icons.ImageAudiotrack, Text: "Export Wav...", ShortcutText: keyActionMap["ExportWav"], Doer: tr.Export()},
-	}
-	if canQuit {
-		ret.fileMenuItems = append(ret.fileMenuItems, MenuItem{IconBytes: icons.ActionExitToApp, Text: "Quit", ShortcutText: keyActionMap["Quit"], Doer: tr.RequestQuit()})
-	}
-	ret.editMenuItems = []MenuItem{
-		{IconBytes: icons.ContentUndo, Text: "Undo", ShortcutText: keyActionMap["Undo"], Doer: tr.Undo()},
-		{IconBytes: icons.ContentRedo, Text: "Redo", ShortcutText: keyActionMap["Redo"], Doer: tr.Redo()},
-		{IconBytes: icons.ImageCrop, Text: "Remove unused data", ShortcutText: keyActionMap["RemoveUnused"], Doer: tr.RemoveUnused()},
-	}
 	for input := range tr.MIDI.InputDevices {
-		ret.midiMenuItems = append(ret.midiMenuItems, MenuItem{
-			IconBytes: icons.ImageControlPoint,
-			Text:      input.String(),
-			Doer:      tr.SelectMidiInput(input),
-		})
-	}
-	ret.helpMenuItems = []MenuItem{
-		{IconBytes: icons.AVLibraryBooks, Text: "Manual", ShortcutText: keyActionMap["ShowManual"], Doer: tr.ShowManual()},
-		{IconBytes: icons.ActionHelp, Text: "Ask help", ShortcutText: keyActionMap["AskHelp"], Doer: tr.AskHelp()},
-		{IconBytes: icons.ActionBugReport, Text: "Report bug", ShortcutText: keyActionMap["ReportBug"], Doer: tr.ReportBug()},
-		{IconBytes: icons.ActionCopyright, Text: "License", ShortcutText: keyActionMap["ShowLicense"], Doer: tr.ShowLicense()},
+		ret.midiMenuItems = append(ret.midiMenuItems,
+			MenuItem(tr.SelectMidiInput(input), input.String(), "", icons.ImageControlPoint),
+		)
 	}
 	return ret
 }
@@ -355,15 +329,46 @@ func (t *MenuBar) Layout(gtx C, tr *Tracker) D {
 	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(36))
 	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 
+	flex := layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}
+	fileBtn := MenuBtn(tr.Theme, &t.MenuStates[0], &t.Clickables[0], "File")
+	fileFC := layout.Rigid(func(gtx C) D {
+		items := [...]ActionMenuItem{
+			MenuItem(tr.NewSong(), "New Song", keyActionMap["NewSong"], icons.ContentClear),
+			MenuItem(tr.OpenSong(), "Open Song", keyActionMap["OpenSong"], icons.FileFolder),
+			MenuItem(tr.SaveSong(), "Save Song", keyActionMap["SaveSong"], icons.ContentSave),
+			MenuItem(tr.SaveSongAs(), "Save Song As...", keyActionMap["SaveSongAs"], icons.ContentSave),
+			MenuItem(tr.Export(), "Export Wav...", keyActionMap["ExportWav"], icons.ImageAudiotrack),
+			MenuItem(tr.RequestQuit(), "Quit", keyActionMap["Quit"], icons.ActionExitToApp),
+		}
+		if !canQuit {
+			return fileBtn.Layout(gtx, items[:len(items)-1]...)
+		}
+		return fileBtn.Layout(gtx, items[:]...)
+	})
+	editBtn := MenuBtn(tr.Theme, &t.MenuStates[1], &t.Clickables[1], "Edit")
+	editFC := layout.Rigid(func(gtx C) D {
+		return editBtn.Layout(gtx,
+			MenuItem(tr.Undo(), "Undo", keyActionMap["Undo"], icons.ContentUndo),
+			MenuItem(tr.Redo(), "Redo", keyActionMap["Redo"], icons.ContentRedo),
+			MenuItem(tr.RemoveUnused(), "Remove unused data", keyActionMap["RemoveUnused"], icons.ImageCrop),
+		)
+	})
+	midiBtn := MenuBtn(tr.Theme, &t.MenuStates[2], &t.Clickables[2], "MIDI")
+	midiFC := layout.Rigid(func(gtx C) D {
+		return midiBtn.Layout(gtx, t.midiMenuItems...)
+	})
+	helpBtn := MenuBtn(tr.Theme, &t.MenuStates[3], &t.Clickables[3], "?")
+	helpFC := layout.Rigid(func(gtx C) D {
+		return helpBtn.Layout(gtx,
+			MenuItem(tr.ShowManual(), "Manual", keyActionMap["ShowManual"], icons.AVLibraryBooks),
+			MenuItem(tr.AskHelp(), "Ask help", keyActionMap["AskHelp"], icons.ActionHelp),
+			MenuItem(tr.ReportBug(), "Report bug", keyActionMap["ReportBug"], icons.ActionBugReport),
+			MenuItem(tr.ShowLicense(), "License", keyActionMap["ShowLicense"], icons.ActionCopyright))
+	})
 	panicBtn := ToggleIconBtn(tr.Panic(), tr.Theme, t.PanicBtn, icons.AlertErrorOutline, icons.AlertError, t.panicHint, t.panicHint)
 	if tr.Panic().Value() {
 		panicBtn.Style = &tr.Theme.IconButton.Error
 	}
-	flex := layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}
-	fileFC := layout.Rigid(tr.layoutMenu(gtx, "File", &t.Clickables[0], &t.Menus[0], unit.Dp(200), t.fileMenuItems...))
-	editFC := layout.Rigid(tr.layoutMenu(gtx, "Edit", &t.Clickables[1], &t.Menus[1], unit.Dp(200), t.editMenuItems...))
-	midiFC := layout.Rigid(tr.layoutMenu(gtx, "MIDI", &t.Clickables[2], &t.Menus[2], unit.Dp(200), t.midiMenuItems...))
-	helpFC := layout.Rigid(tr.layoutMenu(gtx, "?", &t.Clickables[3], &t.Menus[3], unit.Dp(200), t.helpMenuItems...))
 	panicFC := layout.Flexed(1, func(gtx C) D { return layout.E.Layout(gtx, panicBtn.Layout) })
 	if len(t.midiMenuItems) > 0 {
 		return flex.Layout(gtx, fileFC, editFC, midiFC, helpFC, panicFC)
