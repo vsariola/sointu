@@ -205,9 +205,8 @@ func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
 			)
 		}),
 		layout.Flexed(1, func(gtx C) D {
-			return t.ScopeExpander.Layout(gtx, tr.Theme, "Oscilloscope", func(gtx C) D { return D{} }, func(gtx C) D {
-				return t.Scope.Layout(gtx, tr.Model.SignalAnalyzer().TriggerChannel(), tr.Model.SignalAnalyzer().LengthInBeats(), tr.Model.SignalAnalyzer().Once(), tr.Model.SignalAnalyzer().Wrap(), tr.Model.SignalAnalyzer().Waveform(), tr.Theme, &tr.Theme.Oscilloscope)
-			})
+			scope := Scope(tr.Theme, tr.Model.SignalAnalyzer(), t.Scope)
+			return t.ScopeExpander.Layout(gtx, tr.Theme, "Oscilloscope", func(gtx C) D { return D{} }, scope.Layout)
 		}),
 		layout.Rigid(Label(tr.Theme, &tr.Theme.SongPanel.Version, version.VersionOrHash).Layout),
 	)

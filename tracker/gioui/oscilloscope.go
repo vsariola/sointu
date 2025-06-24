@@ -34,6 +34,13 @@ type (
 		LimitColor  color.NRGBA    `yaml:",flow"`
 		CursorColor color.NRGBA    `yaml:",flow"`
 	}
+
+	Oscilloscope struct {
+		Theme *Theme
+		Model *tracker.ScopeModel
+		State *OscilloscopeState
+		Style *OscilloscopeStyle
+	}
 )
 
 func NewOscilloscope(model *tracker.Model) *OscilloscopeState {
@@ -45,22 +52,31 @@ func NewOscilloscope(model *tracker.Model) *OscilloscopeState {
 	}
 }
 
-func (s *OscilloscopeState) Layout(gtx C, vtrig, vlen tracker.Int, once, wrap tracker.Bool, wave tracker.RingBuffer[[2]float32], th *Theme, st *OscilloscopeStyle) D {
+func Scope(th *Theme, m *tracker.ScopeModel, st *OscilloscopeState) Oscilloscope {
+	return Oscilloscope{
+		Theme: th,
+		Model: m,
+		State: st,
+		Style: &th.Oscilloscope,
+	}
+}
+
+func (s *Oscilloscope) Layout(gtx C) D {
 	leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
 	rightSpacer := layout.Spacer{Width: unit.Dp(6)}.Layout
 
-	triggerChannel := NumUpDown(vtrig, th, s.triggerChannelNumber, "Trigger channel")
-	lengthInBeats := NumUpDown(vlen, th, s.lengthInBeatsNumber, "Buffer length in beats")
+	triggerChannel := NumUpDown(s.Model.TriggerChannel(), s.Theme, s.State.triggerChannelNumber, "Trigger channel")
+	lengthInBeats := NumUpDown(s.Model.LengthInBeats(), s.Theme, s.State.lengthInBeatsNumber, "Buffer length in beats")
 
-	onceBtn := ToggleBtn(once, th, s.onceBtn, "Once", "Trigger once on next event")
-	wrapBtn := ToggleBtn(wrap, th, s.wrapBtn, "Wrap", "Wrap buffer when full")
+	onceBtn := ToggleBtn(s.Model.Once(), s.Theme, s.State.onceBtn, "Once", "Trigger once on next event")
+	wrapBtn := ToggleBtn(s.Model.Wrap(), s.Theme, s.State.wrapBtn, "Wrap", "Wrap buffer when full")
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Flexed(1, func(gtx C) D { return s.layoutWave(gtx, wave, th) }),
+		layout.Flexed(1, s.layoutWave),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(leftSpacer),
-				layout.Rigid(Label(th, &th.SongPanel.RowHeader, "Trigger").Layout),
+				layout.Rigid(Label(s.Theme, &s.Theme.SongPanel.RowHeader, "Trigger").Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 				layout.Rigid(onceBtn.Layout),
 				layout.Rigid(triggerChannel.Layout),
@@ -70,7 +86,7 @@ func (s *OscilloscopeState) Layout(gtx C, vtrig, vlen tracker.Int, once, wrap tr
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(leftSpacer),
-				layout.Rigid(Label(th, &th.SongPanel.RowHeader, "Buffer").Layout),
+				layout.Rigid(Label(s.Theme, &s.Theme.SongPanel.RowHeader, "Buffer").Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 				layout.Rigid(wrapBtn.Layout),
 				layout.Rigid(lengthInBeats.Layout),
@@ -80,31 +96,32 @@ func (s *OscilloscopeState) Layout(gtx C, vtrig, vlen tracker.Int, once, wrap tr
 	)
 }
 
-func (s *OscilloscopeState) layoutWave(gtx C, wave tracker.RingBuffer[[2]float32], th *Theme) D {
-	s.update(gtx, wave)
+func (s *Oscilloscope) layoutWave(gtx C) D {
+	s.State.update(gtx, s.Model.Waveform())
 	if gtx.Constraints.Max.X == 0 || gtx.Constraints.Max.Y == 0 {
 		return D{}
 	}
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
-	event.Op(gtx.Ops, s)
-	paint.ColorOp{Color: th.Oscilloscope.CursorColor}.Add(gtx.Ops)
-	cursorX := int(s.sampleToPx(gtx, float32(wave.Cursor), wave))
+	wave := s.Model.Waveform()
+	event.Op(gtx.Ops, s.State)
+	paint.ColorOp{Color: s.Style.CursorColor}.Add(gtx.Ops)
+	cursorX := int(s.State.sampleToPx(gtx, float32(wave.Cursor), wave))
 	fillRect(gtx, clip.Rect{Min: image.Pt(cursorX, 0), Max: image.Pt(cursorX+1, gtx.Constraints.Max.Y)})
-	paint.ColorOp{Color: th.Oscilloscope.LimitColor}.Add(gtx.Ops)
-	minusOneY := int(s.ampToY(gtx, -1))
+	paint.ColorOp{Color: s.Style.LimitColor}.Add(gtx.Ops)
+	minusOneY := int(s.State.ampToY(gtx, -1))
 	fillRect(gtx, clip.Rect{Min: image.Pt(0, minusOneY), Max: image.Pt(gtx.Constraints.Max.X, minusOneY+1)})
-	plusOneY := int(s.ampToY(gtx, 1))
+	plusOneY := int(s.State.ampToY(gtx, 1))
 	fillRect(gtx, clip.Rect{Min: image.Pt(0, plusOneY), Max: image.Pt(gtx.Constraints.Max.X, plusOneY+1)})
-	leftX := int(s.sampleToPx(gtx, 0, wave))
+	leftX := int(s.State.sampleToPx(gtx, 0, wave))
 	fillRect(gtx, clip.Rect{Min: image.Pt(leftX, 0), Max: image.Pt(leftX+1, gtx.Constraints.Max.Y)})
-	rightX := int(s.sampleToPx(gtx, float32(len(wave.Buffer)-1), wave))
+	rightX := int(s.State.sampleToPx(gtx, float32(len(wave.Buffer)-1), wave))
 	fillRect(gtx, clip.Rect{Min: image.Pt(rightX, 0), Max: image.Pt(rightX+1, gtx.Constraints.Max.Y)})
 	for chn := range 2 {
-		paint.ColorOp{Color: th.Oscilloscope.CurveColors[chn]}.Add(gtx.Ops)
+		paint.ColorOp{Color: s.Style.CurveColors[chn]}.Add(gtx.Ops)
 		for px := range gtx.Constraints.Max.X {
 			// left and right is the sample range covered by the pixel
-			left := int(s.pxToSample(gtx, float32(px)-0.5, wave))
-			right := int(s.pxToSample(gtx, float32(px)+0.5, wave))
+			left := int(s.State.pxToSample(gtx, float32(px)-0.5, wave))
+			right := int(s.State.pxToSample(gtx, float32(px)+0.5, wave))
 			if right < 0 || left >= len(wave.Buffer) {
 				continue
 			}
@@ -118,8 +135,8 @@ func (s *OscilloscopeState) layoutWave(gtx C, wave tracker.RingBuffer[[2]float32
 				smin = min(smin, wave.Buffer[x][chn])
 			}
 			// y1 and y2 are the pixel range covered by the sample value
-			y1 := min(max(int(s.ampToY(gtx, smax)+0.5), 0), gtx.Constraints.Max.Y-1)
-			y2 := min(max(int(s.ampToY(gtx, smin)+0.5), 0), gtx.Constraints.Max.Y-1)
+			y1 := min(max(int(s.State.ampToY(gtx, smax)+0.5), 0), gtx.Constraints.Max.Y-1)
+			y2 := min(max(int(s.State.ampToY(gtx, smin)+0.5), 0), gtx.Constraints.Max.Y-1)
 			fillRect(gtx, clip.Rect{Min: image.Pt(px, y1), Max: image.Pt(px+1, y2+1)})
 		}
 	}
