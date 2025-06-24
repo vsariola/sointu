@@ -11,83 +11,29 @@ import (
 	"gioui.org/unit"
 )
 
-type Split struct {
-	// Ratio keeps the current layout.
-	// 0 is center, -1 completely to the left, 1 completely to the right.
-	Ratio float32
-	// Bar is the width for resizing the layout
-	Bar unit.Dp
-	// Axis is the split direction: layout.Horizontal splits the view in left
-	// and right, layout.Vertical splits the view in top and bottom
-	Axis layout.Axis
-	// Minimum sizes of the first and second widget in the split, in dp
-	MinSize1, MinSize2 unit.Dp
-
-	drag      bool
-	dragID    pointer.ID
-	dragCoord float32
-}
-
-var defaultBarWidth = unit.Dp(10)
-
-func (s *Split) Update(gtx layout.Context) {
-	for {
-		ev, ok := gtx.Event(pointer.Filter{
-			Target: s,
-			Kinds:  pointer.Press | pointer.Drag | pointer.Release,
-			// TODO: there should be a grab; there was Grab:  s.drag,
-		})
-		if !ok {
-			break
-		}
-		e, ok := ev.(pointer.Event)
-		if !ok {
-			continue
-		}
-
-		switch e.Kind {
-		case pointer.Press:
-			if s.drag {
-				break
-			}
-
-			s.dragID = e.PointerID
-			if s.Axis == layout.Horizontal {
-				s.dragCoord = e.Position.X
-			} else {
-				s.dragCoord = e.Position.Y
-			}
-			s.drag = true
-			// when the user start dragging, the new display ratio becomes the underlying ratio
-			s.Ratio = s.calculateRatio(gtx)
-
-		case pointer.Drag:
-			if s.dragID != e.PointerID {
-				break
-			}
-
-			if s.Axis == layout.Horizontal {
-				s.Ratio += (e.Position.X - s.dragCoord) / float32(gtx.Constraints.Max.X) * 2
-				s.dragCoord = e.Position.X
-			} else {
-				s.Ratio += (e.Position.Y - s.dragCoord) / float32(gtx.Constraints.Max.Y) * 2
-				s.dragCoord = e.Position.Y
-			}
-
-		case pointer.Release, pointer.Cancel:
-			if s.dragID == e.PointerID {
-				// when the user release the grab, the new display ratio becomes the underlying ratio
-				s.Ratio = s.calculateRatio(gtx)
-			}
-			s.drag = false
-		}
+type (
+	SplitState struct {
+		// Ratio keeps the current layout.
+		// 0 is center, -1 completely to the left, 1 completely to the right.
+		Ratio float32
+		// Axis is the split direction: layout.Horizontal splits the view in left
+		// and right, layout.Vertical splits the view in top and bottom
+		Axis      layout.Axis
+		drag      bool
+		dragID    pointer.ID
+		dragCoord float32
 	}
-}
 
-func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.Dimensions {
-	s.Update(gtx)
+	SplitStyle struct {
+		Bar                unit.Dp
+		MinSize1, MinSize2 unit.Dp
+	}
+)
 
-	size1, size2, bar := s.calculateSplitSizes(gtx)
+func (s *SplitState) Layout(gtx layout.Context, st *SplitStyle, first, second layout.Widget) layout.Dimensions {
+	s.update(gtx, st)
+
+	size1, size2, bar := s.calculateSplitSizes(gtx, st)
 	secondOffset := size1 + bar
 
 	{
@@ -142,8 +88,62 @@ func (s *Split) Layout(gtx layout.Context, first, second layout.Widget) layout.D
 	return layout.Dimensions{Size: gtx.Constraints.Max}
 }
 
-func (s *Split) calculateRatio(gtx layout.Context) float32 {
-	size1, size2, bar := s.calculateSplitSizes(gtx)
+func (s *SplitState) update(gtx layout.Context, st *SplitStyle) {
+	for {
+		ev, ok := gtx.Event(pointer.Filter{
+			Target: s,
+			Kinds:  pointer.Press | pointer.Drag | pointer.Release,
+			// TODO: there should be a grab; there was Grab:  s.drag,
+		})
+		if !ok {
+			break
+		}
+		e, ok := ev.(pointer.Event)
+		if !ok {
+			continue
+		}
+
+		switch e.Kind {
+		case pointer.Press:
+			if s.drag {
+				break
+			}
+
+			s.dragID = e.PointerID
+			if s.Axis == layout.Horizontal {
+				s.dragCoord = e.Position.X
+			} else {
+				s.dragCoord = e.Position.Y
+			}
+			s.drag = true
+			// when the user start dragging, the new display ratio becomes the underlying ratio
+			s.Ratio = s.calculateRatio(gtx, st)
+
+		case pointer.Drag:
+			if s.dragID != e.PointerID {
+				break
+			}
+
+			if s.Axis == layout.Horizontal {
+				s.Ratio += (e.Position.X - s.dragCoord) / float32(gtx.Constraints.Max.X) * 2
+				s.dragCoord = e.Position.X
+			} else {
+				s.Ratio += (e.Position.Y - s.dragCoord) / float32(gtx.Constraints.Max.Y) * 2
+				s.dragCoord = e.Position.Y
+			}
+
+		case pointer.Release, pointer.Cancel:
+			if s.dragID == e.PointerID {
+				// when the user release the grab, the new display ratio becomes the underlying ratio
+				s.Ratio = s.calculateRatio(gtx, st)
+			}
+			s.drag = false
+		}
+	}
+}
+
+func (s *SplitState) calculateRatio(gtx layout.Context, st *SplitStyle) float32 {
+	size1, size2, bar := s.calculateSplitSizes(gtx, st)
 	total := size1 + size2 + bar
 	if total <= 0 {
 		return 0
@@ -151,10 +151,10 @@ func (s *Split) calculateRatio(gtx layout.Context) float32 {
 	return 2*float32(size1+bar/2)/float32(total) - 1
 }
 
-func (s *Split) calculateSplitSizes(gtx layout.Context) (size1, size2, bar int) {
-	bar = gtx.Dp(s.Bar)
+func (s *SplitState) calculateSplitSizes(gtx layout.Context, st *SplitStyle) (size1, size2, bar int) {
+	bar = gtx.Dp(st.Bar)
 	if bar <= 1 {
-		bar = gtx.Dp(defaultBarWidth)
+		bar = gtx.Dp(1)
 	}
 
 	total := gtx.Constraints.Max.Y
@@ -169,8 +169,8 @@ func (s *Split) calculateSplitSizes(gtx layout.Context) (size1, size2, bar int) 
 	}
 	totalSize := total - bar
 	size1 = int((s.Ratio+1)/2*float32(total) - float32(bar)/2)
-	minSize1 := gtx.Dp(s.MinSize1)
-	minSize2 := gtx.Dp(s.MinSize2)
+	minSize1 := gtx.Dp(st.MinSize1)
+	minSize2 := gtx.Dp(st.MinSize2)
 
 	// we always hide the smaller split first
 	if s.Ratio < 0 {

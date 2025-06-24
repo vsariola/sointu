@@ -210,3 +210,4 @@ dialog:
   titleinset: { top: 12, left: 20, right: 20 }
   textinset: { top: 12, bottom: 12, left: 20, right: 20 }
   buttons: *textbutton
+split: { bar: 10, minsize1: 180, minsize2: 180 }

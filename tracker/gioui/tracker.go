@@ -33,9 +33,9 @@ type (
 		Theme                 *Theme
 		OctaveNumberInput     *NumericUpDownState
 		InstrumentVoices      *NumericUpDownState
-		TopHorizontalSplit    *Split
-		BottomHorizontalSplit *Split
-		VerticalSplit         *Split
+		TopHorizontalSplit    *SplitState
+		BottomHorizontalSplit *SplitState
+		VerticalSplit         *SplitState
 		KeyNoteMap            Keyboard[key.Name]
 		PopupAlert            *AlertsState
 		Zoom                  int
@@ -79,9 +79,9 @@ func NewTracker(model *tracker.Model) *Tracker {
 		OctaveNumberInput: NewNumericUpDownState(),
 		InstrumentVoices:  NewNumericUpDownState(),
 
-		TopHorizontalSplit:    &Split{Ratio: -.5, MinSize1: 180, MinSize2: 180},
-		BottomHorizontalSplit: &Split{Ratio: -.6, MinSize1: 180, MinSize2: 180},
-		VerticalSplit:         &Split{Axis: layout.Vertical, MinSize1: 180, MinSize2: 180},
+		TopHorizontalSplit:    &SplitState{Ratio: -.5},
+		BottomHorizontalSplit: &SplitState{Ratio: -.6},
+		VerticalSplit:         &SplitState{Axis: layout.Vertical},
 
 		DialogState:      new(DialogState),
 		InstrumentEditor: NewInstrumentEditor(model),
@@ -219,6 +219,7 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 		t.layoutTop(gtx)
 	} else {
 		t.VerticalSplit.Layout(gtx,
+			&t.Theme.Split,
 			t.layoutTop,
 			t.layoutBottom)
 	}
@@ -341,6 +342,7 @@ func (t *Tracker) explorerCreateFile(success func(io.WriteCloser), filename stri
 
 func (t *Tracker) layoutBottom(gtx layout.Context) layout.Dimensions {
 	return t.BottomHorizontalSplit.Layout(gtx,
+		&t.Theme.Split,
 		func(gtx C) D {
 			return t.OrderEditor.Layout(gtx, t)
 		},
@@ -352,6 +354,7 @@ func (t *Tracker) layoutBottom(gtx layout.Context) layout.Dimensions {
 
 func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
 	return t.TopHorizontalSplit.Layout(gtx,
+		&t.Theme.Split,
 		func(gtx C) D {
 			return t.SongPanel.Layout(gtx, t)
 		},

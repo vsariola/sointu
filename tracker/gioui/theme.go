@@ -100,6 +100,7 @@ type Theme struct {
 		Menu   PopupStyle
 		Dialog PopupStyle
 	}
+	Split     SplitStyle
 	ScrollBar ScrollBarStyle
 
 	// iconCache is used to cache the icons created from iconvg data
