@@ -1,11 +1,9 @@
 package gioui
 
 import (
-	"fmt"
 	"image"
 	"math"
 	"strconv"
-	"strings"
 
 	"gioui.org/f32"
 	"gioui.org/io/event"
@@ -89,7 +87,7 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 			callOp = loopMarkerColorOp
 		}
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
-		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.OrderEditor.RowTitle.Font, t.Theme.OrderEditor.RowTitle.TextSize, strings.ToUpper(fmt.Sprintf("%02x", j)), callOp)
+		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.OrderEditor.RowTitle.Font, t.Theme.OrderEditor.RowTitle.TextSize, hexStr[j&255], callOp)
 		return D{Size: image.Pt(w, gtx.Dp(patternCellHeight))}
 	}
 
