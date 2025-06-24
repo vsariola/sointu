@@ -97,8 +97,8 @@ type Theme struct {
 		Bg    color.NRGBA
 	}
 	Popup struct {
-		Bg     color.NRGBA
-		Shadow color.NRGBA
+		Menu   PopupStyle
+		Dialog PopupStyle
 	}
 	ScrollBar ScrollBarStyle
 

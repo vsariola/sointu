@@ -92,9 +92,7 @@ func (m *MenuWidget) Layout(gtx C, items ...ActionMenuItem) D {
 	// without causing heap escapes, so they are passed as a parameter to the Layout
 	m.update(gtx, items...)
 	popup := Popup(m.Theme, &m.State.visible)
-	popup.NE = unit.Dp(0)
-	popup.ShadowN = unit.Dp(0)
-	popup.NW = unit.Dp(0)
+	popup.Style = &m.Theme.Popup.Menu
 	return popup.Layout(gtx, func(gtx C) D {
 		gtx.Constraints.Max.X = gtx.Dp(m.Style.Width)
 		gtx.Constraints.Max.Y = gtx.Dp(m.Style.Height)
