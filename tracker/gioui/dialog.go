@@ -1,70 +1,143 @@
 package gioui
 
 import (
+	"fmt"
 	"image/color"
 
 	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op/paint"
-	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/vsariola/sointu/tracker"
 )
 
-type Dialog struct {
-	BtnAlt    widget.Clickable
-	BtnOk     widget.Clickable
-	BtnCancel widget.Clickable
+const DIALOG_MAX_BTNS = 3
 
-	ok, alt, cancel tracker.Action
-}
+type (
+	// DialogState is the state that needs to be retained between frames
+	DialogState struct {
+		Clickables [DIALOG_MAX_BTNS]widget.Clickable
 
-type DialogStyle struct {
-	dialog      *Dialog
-	Title       string
-	Text        string
-	Inset       layout.Inset
-	TextInset   layout.Inset
-	AltStyle    material.ButtonStyle
-	OkStyle     material.ButtonStyle
-	CancelStyle material.ButtonStyle
-	Theme       *Theme
-}
+		visible bool // this is used to control the visibility of the dialog
+	}
 
-func NewDialog(ok, alt, cancel tracker.Action) *Dialog {
-	ret := &Dialog{ok: ok, alt: alt, cancel: cancel}
+	// DialogStyle is the style for a dialog that is store in the theme.yml
+	DialogStyle struct {
+		TitleInset  layout.Inset
+		TextInset   layout.Inset
+		ButtonStyle ButtonStyle
+		Title       LabelStyle
+		Text        LabelStyle
+		Bg          color.NRGBA
+		Buttons     ButtonStyle
+	}
 
+	// Dialog is the widget with a Layout method that can be used to display a dialog.
+	Dialog struct {
+		Theme   *Theme
+		State   *DialogState
+		Style   *DialogStyle
+		Btns    [DIALOG_MAX_BTNS]DialogButton
+		NumBtns int
+		Title   string
+		Text    string
+	}
+
+	DialogButton struct {
+		Text   string
+		Action tracker.Action
+	}
+)
+
+func MakeDialog(th *Theme, d *DialogState, title, text string, btns ...DialogButton) Dialog {
+	ret := Dialog{
+		Theme: th,
+		Style: &th.Dialog,
+		State: d,
+		Title: title,
+		Text:  text,
+	}
+	if len(btns) > DIALOG_MAX_BTNS {
+		panic(fmt.Sprintf("too many buttons for dialog: %d, max is %d", len(btns), DIALOG_MAX_BTNS))
+	}
+	copy(ret.Btns[:], btns)
+	ret.NumBtns = len(btns)
+	d.visible = true
 	return ret
 }
 
-func ConfirmDialog(gtx C, th *Theme, dialog *Dialog, title, text string) DialogStyle {
-	ret := DialogStyle{
-		dialog:      dialog,
-		Title:       title,
-		Text:        text,
-		Inset:       layout.Inset{Top: unit.Dp(12), Bottom: unit.Dp(12), Left: unit.Dp(20), Right: unit.Dp(20)},
-		TextInset:   layout.Inset{Top: unit.Dp(12), Bottom: unit.Dp(12)},
-		AltStyle:    material.Button(&th.Material, &dialog.BtnAlt, "Alt"),
-		OkStyle:     material.Button(&th.Material, &dialog.BtnOk, "Ok"),
-		CancelStyle: material.Button(&th.Material, &dialog.BtnCancel, "Cancel"),
-		Theme:       th,
-	}
-	for _, b := range [...]*material.ButtonStyle{&ret.AltStyle, &ret.OkStyle, &ret.CancelStyle} {
-		b.Background = color.NRGBA{}
-		b.Inset = layout.UniformInset(unit.Dp(6))
-		b.Color = th.Material.Palette.Fg
-	}
-	return ret
+func DialogBtn(text string, action tracker.Action) DialogButton {
+	return DialogButton{Text: text, Action: action}
 }
 
-func (d *Dialog) handleKeysForButton(gtx C, btn, next, prev *widget.Clickable) {
+func (d *Dialog) Layout(gtx C) D {
+	anyFocused := false
+	for i := 0; i < d.NumBtns; i++ {
+		anyFocused = anyFocused || gtx.Source.Focused(&d.State.Clickables[i])
+	}
+	if !anyFocused {
+		gtx.Execute(key.FocusCmd{Tag: &d.State.Clickables[d.NumBtns-1]})
+	}
+	d.handleKeys(gtx)
+	paint.Fill(gtx.Ops, d.Style.Bg)
+	return layout.Center.Layout(gtx, func(gtx C) D {
+		return Popup(d.Theme, &d.State.visible).Layout(gtx, func(gtx C) D {
+			return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(func(gtx C) D {
+					return d.Style.TitleInset.Layout(gtx, Label(d.Theme, &d.Style.Title, d.Title).Layout)
+				}),
+				layout.Rigid(func(gtx C) D {
+					return d.Style.TextInset.Layout(gtx, Label(d.Theme, &d.Style.Text, d.Text).Layout)
+				}),
+				layout.Rigid(func(gtx C) D {
+					return layout.E.Layout(gtx, func(gtx C) D {
+						var fcs [DIALOG_MAX_BTNS]layout.FlexChild
+						var actBtns [DIALOG_MAX_BTNS]material.ButtonStyle
+						for i := 0; i < d.NumBtns; i++ {
+							actBtns[i] = material.Button(&d.Theme.Material, &d.State.Clickables[i], d.Btns[i].Text)
+							actBtns[i].Background = d.Style.Buttons.Background
+							actBtns[i].Color = d.Style.Buttons.Color
+							actBtns[i].TextSize = d.Style.Buttons.TextSize
+							actBtns[i].Font = d.Style.Buttons.Font
+							actBtns[i].Inset = d.Style.Buttons.Inset
+							actBtns[i].CornerRadius = d.Style.Buttons.CornerRadius
+						}
+						// putting this inside these inside the for loop
+						// cause heap escapes, so that's why this ugliness;
+						// remember to update if you change the
+						// DIAOLG_MAX_BTNS constant
+						fcs[0] = layout.Rigid(actBtns[0].Layout)
+						fcs[1] = layout.Rigid(actBtns[1].Layout)
+						fcs[2] = layout.Rigid(actBtns[2].Layout)
+						gtx.Constraints.Min.Y = gtx.Dp(d.Style.Buttons.Height)
+						return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween}.Layout(gtx, fcs[:d.NumBtns]...)
+					})
+				}),
+			)
+		})
+	})
+}
+
+func (d *Dialog) handleKeys(gtx C) {
+	for i := 0; i < d.NumBtns; i++ {
+		for d.State.Clickables[i].Clicked(gtx) {
+			d.Btns[i].Action.Do()
+		}
+		d.handleKeysForButton(gtx, (i+d.NumBtns-1)%d.NumBtns, i, (i+1)%d.NumBtns)
+	}
+}
+
+func (d *Dialog) handleKeysForButton(gtx C, prev, cur, next int) {
+	cPrev := &d.State.Clickables[prev]
+	cCur := &d.State.Clickables[cur]
+	cNext := &d.State.Clickables[next]
 	for {
 		e, ok := gtx.Event(
-			key.Filter{Focus: btn, Name: key.NameLeftArrow},
-			key.Filter{Focus: btn, Name: key.NameRightArrow},
-			key.Filter{Focus: btn, Name: key.NameEscape},
-			key.Filter{Focus: btn, Name: key.NameTab, Optional: key.ModShift},
+			key.Filter{Focus: cCur, Name: key.NameLeftArrow},
+			key.Filter{Focus: cCur, Name: key.NameRightArrow},
+			key.Filter{Focus: cCur, Name: key.NameEscape},
+			key.Filter{Focus: cCur, Name: key.NameTab, Optional: key.ModShift},
 		)
 		if !ok {
 			break
@@ -72,68 +145,12 @@ func (d *Dialog) handleKeysForButton(gtx C, btn, next, prev *widget.Clickable) {
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
 			switch {
 			case e.Name == key.NameLeftArrow || (e.Name == key.NameTab && e.Modifiers.Contain(key.ModShift)):
-				gtx.Execute(key.FocusCmd{Tag: prev})
+				gtx.Execute(key.FocusCmd{Tag: cPrev})
 			case e.Name == key.NameRightArrow || (e.Name == key.NameTab && !e.Modifiers.Contain(key.ModShift)):
-				gtx.Execute(key.FocusCmd{Tag: next})
+				gtx.Execute(key.FocusCmd{Tag: cNext})
 			case e.Name == key.NameEscape:
-				d.cancel.Do()
+				d.Btns[d.NumBtns-1].Action.Do() // last button is always the cancel button
 			}
 		}
 	}
-}
-
-func (d *Dialog) handleKeys(gtx C) {
-	for d.BtnOk.Clicked(gtx) {
-		d.ok.Do()
-	}
-	for d.BtnAlt.Clicked(gtx) {
-		d.alt.Do()
-	}
-	for d.BtnCancel.Clicked(gtx) {
-		d.cancel.Do()
-	}
-	if d.alt.Enabled() && d.cancel.Enabled() {
-		d.handleKeysForButton(gtx, &d.BtnAlt, &d.BtnCancel, &d.BtnOk)
-		d.handleKeysForButton(gtx, &d.BtnCancel, &d.BtnOk, &d.BtnAlt)
-		d.handleKeysForButton(gtx, &d.BtnOk, &d.BtnAlt, &d.BtnCancel)
-	} else if d.ok.Enabled() {
-		d.handleKeysForButton(gtx, &d.BtnOk, &d.BtnCancel, &d.BtnCancel)
-		d.handleKeysForButton(gtx, &d.BtnCancel, &d.BtnOk, &d.BtnOk)
-	} else {
-		d.handleKeysForButton(gtx, &d.BtnCancel, &d.BtnCancel, &d.BtnCancel)
-	}
-}
-
-func (d *DialogStyle) Layout(gtx C) D {
-	if !gtx.Source.Focused(&d.dialog.BtnOk) && !gtx.Source.Focused(&d.dialog.BtnCancel) && !gtx.Source.Focused(&d.dialog.BtnAlt) {
-		gtx.Execute(key.FocusCmd{Tag: &d.dialog.BtnCancel})
-	}
-	d.dialog.handleKeys(gtx)
-	paint.Fill(gtx.Ops, d.Theme.Dialog.Bg)
-	visible := true
-	return layout.Center.Layout(gtx, func(gtx C) D {
-		return Popup(d.Theme, &visible).Layout(gtx, func(gtx C) D {
-			return d.Inset.Layout(gtx, func(gtx C) D {
-				return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(Label(d.Theme, &d.Theme.Dialog.Title, d.Title).Layout),
-					layout.Rigid(Label(d.Theme, &d.Theme.Dialog.Text, d.Text).Layout),
-					layout.Rigid(func(gtx C) D {
-						return layout.E.Layout(gtx, func(gtx C) D {
-							fl := layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween}
-							ok := layout.Rigid(d.OkStyle.Layout)
-							alt := layout.Rigid(d.AltStyle.Layout)
-							cancel := layout.Rigid(d.CancelStyle.Layout)
-							if d.dialog.alt.Enabled() && d.dialog.cancel.Enabled() {
-								return fl.Layout(gtx, ok, alt, cancel)
-							}
-							if d.dialog.ok.Enabled() {
-								return fl.Layout(gtx, ok, cancel)
-							}
-							return fl.Layout(gtx, cancel)
-						})
-					}),
-				)
-			})
-		})
-	})
 }

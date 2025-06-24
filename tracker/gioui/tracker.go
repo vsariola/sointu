@@ -40,9 +40,7 @@ type (
 		PopupAlert            *PopupAlert
 		Zoom                  int
 
-		SaveChangesDialog *Dialog
-		WaveTypeDialog    *Dialog
-		LicenseDialog     *Dialog
+		DialogState *DialogState
 
 		ModalDialog      layout.Widget
 		InstrumentEditor *InstrumentEditor
@@ -85,12 +83,10 @@ func NewTracker(model *tracker.Model) *Tracker {
 		BottomHorizontalSplit: &Split{Ratio: -.6, MinSize1: 180, MinSize2: 180},
 		VerticalSplit:         &Split{Axis: layout.Vertical, MinSize1: 180, MinSize2: 180},
 
-		SaveChangesDialog: NewDialog(model.SaveSong(), model.DiscardSong(), model.Cancel()),
-		WaveTypeDialog:    NewDialog(model.ExportInt16(), model.ExportFloat(), model.Cancel()),
-		LicenseDialog:     NewDialog(tracker.MakeAction(nil), tracker.MakeAction(nil), model.Cancel()),
-		InstrumentEditor:  NewInstrumentEditor(model),
-		OrderEditor:       NewOrderEditor(model),
-		TrackEditor:       NewNoteEditor(model),
+		DialogState:      new(DialogState),
+		InstrumentEditor: NewInstrumentEditor(model),
+		OrderEditor:      NewOrderEditor(model),
+		TrackEditor:      NewNoteEditor(model),
 
 		Zoom: 6,
 
@@ -275,15 +271,19 @@ func (t *Tracker) showDialog(gtx C) {
 	}
 	switch t.Dialog() {
 	case tracker.NewSongChanges, tracker.OpenSongChanges, tracker.QuitChanges:
-		dstyle := ConfirmDialog(gtx, t.Theme, t.SaveChangesDialog, "Save changes to song?", "Your changes will be lost if you don't save them.")
-		dstyle.OkStyle.Text = "Save"
-		dstyle.AltStyle.Text = "Don't save"
-		dstyle.Layout(gtx)
+		dialog := MakeDialog(t.Theme, t.DialogState, "Save changes to song?", "Your changes will be lost if you don't save them.",
+			DialogBtn("Save", t.SaveSong()),
+			DialogBtn("Don't save", t.DiscardSong()),
+			DialogBtn("Cancel", t.Cancel()),
+		)
+		dialog.Layout(gtx)
 	case tracker.Export:
-		dstyle := ConfirmDialog(gtx, t.Theme, t.WaveTypeDialog, "", "Export .wav in int16 or float32 sample format?")
-		dstyle.OkStyle.Text = "Int16"
-		dstyle.AltStyle.Text = "Float32"
-		dstyle.Layout(gtx)
+		dialog := MakeDialog(t.Theme, t.DialogState, "Export format", "Choose the sample format for the exported .wav file.",
+			DialogBtn("Int16", t.ExportInt16()),
+			DialogBtn("Float32", t.ExportFloat()),
+			DialogBtn("Cancel", t.Cancel()),
+		)
+		dialog.Layout(gtx)
 	case tracker.OpenSongOpenExplorer:
 		t.explorerChooseFile(t.ReadSong, ".yml", ".json")
 	case tracker.NewSongSaveExplorer, tracker.OpenSongSaveExplorer, tracker.QuitSaveExplorer, tracker.SaveAsExplorer:
@@ -301,9 +301,10 @@ func (t *Tracker) showDialog(gtx C) {
 			t.WriteWav(wc, t.Dialog() == tracker.ExportInt16Explorer)
 		}, filename)
 	case tracker.License:
-		dstyle := ConfirmDialog(gtx, t.Theme, t.LicenseDialog, "License", sointu.License)
-		dstyle.CancelStyle.Text = "Close"
-		dstyle.Layout(gtx)
+		dialog := MakeDialog(t.Theme, t.DialogState, "License", sointu.License,
+			DialogBtn("Close", t.Cancel()),
+		)
+		dialog.Layout(gtx)
 	}
 }
 

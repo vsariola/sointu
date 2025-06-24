@@ -33,7 +33,7 @@ button:
     cornerradius: &buttoncornerradius 18
     height: &buttonheight 36
     inset: &buttoninset { top: 0, bottom: 0, left: 6, right: 6 }
-  text:
+  text: &textbutton
     background: *transparentcolor
     color: *primarycolor
     textsize: *buttontextsize
@@ -110,10 +110,6 @@ alert:
   info:
     bg: { r: 50, g: 50, b: 51, a: 255 }
     text: { textsize: 16, color: *highemphasis, shadowcolor: *black }
-dialog:
-  bg: { r: 0, g: 0, b: 0, a: 224 }
-  title: { textsize: 16, color: *highemphasis, shadowcolor: *black }
-  text: { textsize: 16, color: *highemphasis, shadowcolor: *black }
 ordereditor:
   tracktitle: { textsize: 12, color: *mediumemphasis }
   rowtitle:
@@ -189,3 +185,10 @@ tooltip: { color: *white, bg: *black }
 popup:
   bg: { r: 50, g: 50, b: 51, a: 255 }
   shadow: { r: 0, g: 0, b: 0, a: 192 }
+dialog:
+  bg: { r: 0, g: 0, b: 0, a: 224 }
+  title: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+  text: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+  titleinset: { top: 12, left: 20, right: 20 }
+  textinset: { top: 12, bottom: 12, left: 20, right: 20 }
+  buttons: *textbutton

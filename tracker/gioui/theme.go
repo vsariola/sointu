@@ -27,8 +27,6 @@ type Theme struct {
 	}
 	Oscilloscope  OscilloscopeStyle
 	NumericUpDown NumericUpDownStyle
-	DialogTitle   LabelStyle
-	DialogText    LabelStyle
 	SongPanel     struct {
 		RowHeader  LabelStyle
 		RowValue   LabelStyle
@@ -55,11 +53,7 @@ type Theme struct {
 		OneBeat    color.NRGBA
 		TwoBeat    color.NRGBA
 	}
-	Dialog struct {
-		Bg    color.NRGBA
-		Title LabelStyle
-		Text  LabelStyle
-	}
+	Dialog      DialogStyle
 	OrderEditor struct {
 		TrackTitle LabelStyle
 		RowTitle   LabelStyle
