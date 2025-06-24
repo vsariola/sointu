@@ -81,7 +81,7 @@ func (d *Dialog) Layout(gtx C) D {
 	}
 	d.handleKeys(gtx)
 	paint.Fill(gtx.Ops, d.Style.Bg)
-	return layout.Center.Layout(gtx, func(gtx C) D {
+	dims := layout.Center.Layout(gtx, func(gtx C) D {
 		return Popup(d.Theme, &d.State.visible).Layout(gtx, func(gtx C) D {
 			return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(func(gtx C) D {
@@ -117,6 +117,10 @@ func (d *Dialog) Layout(gtx C) D {
 			)
 		})
 	})
+	if !d.State.visible {
+		d.Btns[d.NumBtns-1].Action.Do()
+	}
+	return dims
 }
 
 func (d *Dialog) handleKeys(gtx C) {
