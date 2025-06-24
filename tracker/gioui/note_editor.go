@@ -5,7 +5,6 @@ import (
 	"image"
 	"image/color"
 	"strconv"
-	"strings"
 
 	"gioui.org/io/event"
 	"gioui.org/io/key"
@@ -26,26 +25,30 @@ const trackColTitleHeight = unit.Dp(16)
 const trackPatMarkWidth = unit.Dp(25)
 const trackRowMarkWidth = unit.Dp(25)
 
-var noteStr [256]string
+var noteName [256]string
+var noteHex [256]string
 var hexStr [256]string
 
 func init() {
 	// initialize these strings once, so we don't have to do it every time we draw the note editor
-	hexStr[0] = "--"
-	hexStr[1] = ".."
-	noteStr[0] = "---"
-	noteStr[1] = "..."
+	for i := range 256 {
+		hexStr[i] = fmt.Sprintf("%02X", i)
+	}
+	noteHex[0] = "--"
+	noteHex[1] = ".."
+	noteName[0] = "---"
+	noteName[1] = "..."
 	for i := 2; i < 256; i++ {
-		hexStr[i] = fmt.Sprintf("%02x", i)
+		noteHex[i] = fmt.Sprintf("%02x", i)
 		oNote := mod(i-baseNote, 12)
 		octave := (i - oNote - baseNote) / 12
 		switch {
 		case octave < 0:
-			noteStr[i] = fmt.Sprintf("%s%s", notes[oNote], string(byte('Z'+1+octave)))
+			noteName[i] = fmt.Sprintf("%s%s", notes[oNote], string(byte('Z'+1+octave)))
 		case octave >= 10:
-			noteStr[i] = fmt.Sprintf("%s%s", notes[oNote], string(byte('A'+octave-10)))
+			noteName[i] = fmt.Sprintf("%s%s", notes[oNote], string(byte('A'+octave-10)))
 		default:
-			noteStr[i] = fmt.Sprintf("%s%d", notes[oNote], octave)
+			noteName[i] = fmt.Sprintf("%s%d", notes[oNote], octave)
 		}
 	}
 }
@@ -147,7 +150,6 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 		tracker.TrySend(t.Broker().ToPlayer, any(ev))
 	}
 
-	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 
 	return Surface{Gray: 24, Focus: te.scrollTable.Focused(gtx)}.Layout(gtx, func(gtx C) D {
@@ -219,7 +221,6 @@ var notes = []string{
 }
 
 func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
-	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	defer clip.Rect{Max: gtx.Constraints.Max}.Push(gtx.Ops).Pop()
 
 	beatMarkerDensity := t.RowsPerBeat().Value()
@@ -268,10 +269,10 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 			if l := t.Loop(); pat >= l.Start && pat < l.Start+l.Length {
 				op = loopColorOp
 			}
-			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.OrderRow.Font, t.Theme.NoteEditor.OrderRow.TextSize, strings.ToUpper(fmt.Sprintf("%02x", pat)), op)
+			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.OrderRow.Font, t.Theme.NoteEditor.OrderRow.TextSize, hexStr[pat&255], op)
 		}
 		defer op.Offset(image.Pt(pxPatMarkWidth, 0)).Push(gtx.Ops).Pop()
-		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.PatternRow.Font, t.Theme.NoteEditor.PatternRow.TextSize, strings.ToUpper(fmt.Sprintf("%02x", row)), patternRowOp)
+		widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.PatternRow.Font, t.Theme.NoteEditor.PatternRow.TextSize, hexStr[row&255], patternRowOp)
 		return D{Size: image.Pt(w, pxHeight)}
 	}
 
@@ -319,9 +320,9 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 			widget.Label{}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.Unique.Font, t.Theme.NoteEditor.Unique.TextSize, "*", uniqueOp)
 		}
 		op := noteOp
-		val := noteStr[byte(t.Model.Notes().Value(tracker.Point{X: x, Y: y}))]
+		val := noteName[byte(t.Model.Notes().Value(tracker.Point{X: x, Y: y}))]
 		if t.Model.Notes().Effect(x) {
-			val = hexStr[byte(t.Model.Notes().Value(tracker.Point{X: x, Y: y}))]
+			val = noteHex[byte(t.Model.Notes().Value(tracker.Point{X: x, Y: y}))]
 		}
 		widget.Label{Alignment: text.Middle}.Layout(gtx, t.Theme.Material.Shaper, t.Theme.NoteEditor.Note.Font, t.Theme.NoteEditor.Note.TextSize, val, op)
 		return D{Size: image.Pt(pxWidth, pxHeight)}
