@@ -79,6 +79,8 @@ type (
 	}
 )
 
+// PatchPanel methods
+
 func NewPatchPanel(model *tracker.Model) *PatchPanel {
 	return &PatchPanel{
 		instrList:  MakeInstrList(model),
@@ -88,30 +90,32 @@ func NewPatchPanel(model *tracker.Model) *PatchPanel {
 	}
 }
 
-func (ie *PatchPanel) Layout(gtx C, t *Tracker) D {
+func (pp *PatchPanel) Layout(gtx C, t *Tracker) D {
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(func(gtx C) D { return ie.instrList.Layout(gtx, t) }),
-		layout.Rigid(func(gtx C) D { return ie.tools.Layout(gtx, t) }),
+		layout.Rigid(func(gtx C) D { return pp.instrList.Layout(gtx, t) }),
+		layout.Rigid(func(gtx C) D { return pp.tools.Layout(gtx, t) }),
 		layout.Flexed(1, func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return ie.unitList.Layout(gtx, t) }),
-				layout.Flexed(1, func(gtx C) D { return ie.unitEditor.Layout(gtx, t) }),
+				layout.Rigid(func(gtx C) D { return pp.unitList.Layout(gtx, t) }),
+				layout.Flexed(1, func(gtx C) D { return pp.unitEditor.Layout(gtx, t) }),
 			)
 		}))
 }
 
-func (ie *PatchPanel) Tags(curLevel int, yield TagYieldFunc) bool {
-	return ie.instrList.Tags(curLevel, yield) &&
-		ie.tools.Tags(curLevel, yield) &&
-		ie.unitList.Tags(curLevel, yield) &&
-		ie.unitEditor.Tags(curLevel, yield)
+func (pp *PatchPanel) Tags(level int, yield TagYieldFunc) bool {
+	return pp.instrList.Tags(level, yield) &&
+		pp.tools.Tags(level, yield) &&
+		pp.unitList.Tags(level, yield) &&
+		pp.unitEditor.Tags(level, yield)
 }
 
-func (ie *PatchPanel) TreeFocused(gtx C) bool {
-	return !ie.Tags(0, func(level int, tag event.Tag) bool {
+func (pp *PatchPanel) TreeFocused(gtx C) bool {
+	return !pp.Tags(0, func(level int, tag event.Tag) bool {
 		return !gtx.Focused(tag)
 	})
 }
+
+// InstrumentTools methods
 
 func MakeInstrumentTools(m *tracker.Model) InstrumentTools {
 	ret := InstrumentTools{
@@ -232,6 +236,8 @@ func (it *InstrumentTools) Tags(curLevel int, yield TagYieldFunc) bool {
 	return true
 }
 
+// InstrumentList methods
+
 func MakeInstrList(model *tracker.Model) InstrumentList {
 	return InstrumentList{
 		instrumentDragList: NewDragList(model.Instruments().List(), layout.Horizontal),
@@ -257,9 +263,7 @@ func (il *InstrumentList) Layout(gtx C, t *Tracker) D {
 	addInstrumentBtn := ActionIconBtn(t.Model.AddInstrument(), t.Theme, il.newInstrumentBtn, icons.ContentAdd, il.addInstrumentHint)
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(
 		gtx,
-		layout.Flexed(1, func(gtx C) D {
-			return il.actualLayout(gtx, t)
-		}),
+		layout.Flexed(1, func(gtx C) D { return il.actualLayout(gtx, t) }),
 		layout.Rigid(layout.Spacer{Width: 10}.Layout),
 		layout.Rigid(Label(t.Theme, &t.Theme.InstrumentEditor.Octave, "Octave").Layout),
 		layout.Rigid(layout.Spacer{Width: 4}.Layout),
@@ -341,9 +345,11 @@ func (il *InstrumentList) update(gtx C, t *Tracker) {
 	}
 }
 
-func (il *InstrumentList) Tags(curLevel int, yield TagYieldFunc) bool {
-	return yield(curLevel, il.instrumentDragList)
+func (il *InstrumentList) Tags(level int, yield TagYieldFunc) bool {
+	return yield(level, il.instrumentDragList)
 }
+
+// UnitList methods
 
 func MakeUnitList(m *tracker.Model) UnitList {
 	ret := UnitList{

@@ -220,8 +220,8 @@ func (pe *UnitEditor) command(gtx C, e key.Event, t *Tracker) {
 	}
 }
 
-func (t *UnitEditor) Tags(curLevel int, yield TagYieldFunc) bool {
-	return yield(curLevel, t.sliderList) && yield(curLevel+1, &t.commentEditor.widgetEditor)
+func (t *UnitEditor) Tags(level int, yield TagYieldFunc) bool {
+	return yield(level, t.sliderList) && yield(level+1, &t.commentEditor.widgetEditor)
 }
 
 type ParameterWidget struct {
