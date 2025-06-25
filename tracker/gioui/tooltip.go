@@ -83,6 +83,9 @@ func (t *TipArea) Layout(gtx C, tip component.Tooltip, w layout.Widget) D {
 		if !ok {
 			continue
 		}
+		// regardless of the event, we reset the exit timer to avoid tooltips
+		// staying visible indefinitely
+		t.Exit.SetTarget(gtx.Now.Add(t.ExitDuration))
 		switch e.Kind {
 		case pointer.Enter:
 			t.Hover.SetTarget(gtx.Now.Add(t.HoverDelay))
@@ -90,7 +93,6 @@ func (t *TipArea) Layout(gtx C, tip component.Tooltip, w layout.Widget) D {
 		case pointer.Leave:
 			t.VisibilityAnimation.Disappear(gtx.Now)
 			t.Hover.ClearTarget()
-			t.Exit.ClearTarget()
 		case pointer.Press:
 			t.Press.SetTarget(gtx.Now.Add(t.LongPressDelay))
 		case pointer.Release:
@@ -98,7 +100,6 @@ func (t *TipArea) Layout(gtx C, tip component.Tooltip, w layout.Widget) D {
 		case pointer.Cancel:
 			t.Hover.ClearTarget()
 			t.Press.ClearTarget()
-			t.Exit.ClearTarget()
 		}
 	}
 	if t.Hover.Process(gtx) {
