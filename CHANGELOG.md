@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Tabbing works more consistently, with widgets placed in a "tree", and plain
+  Tab moves to the next widget on the same level or more shallow in the tree,
+  while ctrl-Tab moves to next widget, regardless of its depth. This allows the
+  user to quickly move between different panels, but also tabbing into every
+  tiny widget if needed. Shift-* tab backwards.
 - Help menu, with a menu item to show the license in a dialog, and also menu
   items to open manual, Github Discussions & Github Issues in a browser
   ([#196][i196])

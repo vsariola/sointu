@@ -100,12 +100,12 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 		point := tracker.Point{X: x, Y: y}
 		if selection.Contains(point) {
 			color = t.Theme.Selection.Inactive
-			if oe.scrollTable.Focused(gtx) {
+			if gtx.Focused(oe.scrollTable) {
 				color = t.Theme.Selection.Active
 			}
 			if point == oe.scrollTable.Table.Cursor() {
 				color = t.Theme.Cursor.Inactive
-				if oe.scrollTable.Focused(gtx) {
+				if gtx.Focused(oe.scrollTable) {
 					color = t.Theme.Cursor.Active
 				}
 			}
@@ -198,6 +198,10 @@ func (oe *OrderEditor) command(t *Tracker, e key.Event) {
 		t.Model.Order().SetValue(oe.scrollTable.Table.Cursor(), b+10)
 		oe.scrollTable.EnsureCursorVisible()
 	}
+}
+
+func (t *OrderEditor) Tags(level int, yield TagYieldFunc) bool {
+	return yield(level+1, t.scrollTable.RowTitleList) && yield(level+1, t.scrollTable.ColTitleList) && yield(level, t.scrollTable)
 }
 
 func patternIndexToString(index int) string {

@@ -56,10 +56,6 @@ func (d *DragList) Focus() {
 	d.requestFocus = true
 }
 
-func (d *DragList) Focused(gtx C) bool {
-	return gtx.Focused(d)
-}
-
 func (s FilledDragListStyle) LayoutScrollBar(gtx C) D {
 	return s.dragList.ScrollBar.Layout(gtx, &s.ScrollBar, s.dragList.TrackerList.Count(), &s.dragList.List.Position)
 }
@@ -117,7 +113,7 @@ func (s FilledDragListStyle) Layout(gtx C, element, bg func(gtx C, i int) D) D {
 				s.dragList.TrackerList.SetSelected2(s.dragList.TrackerList.Selected())
 			}
 		case key.Event:
-			if !s.dragList.Focused(gtx) || ke.State != key.Press {
+			if ke.State != key.Press {
 				break
 			}
 			s.dragList.command(gtx, ke)

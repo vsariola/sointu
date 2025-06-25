@@ -74,7 +74,7 @@ func DialogBtn(text string, action tracker.Action) DialogButton {
 func (d *Dialog) Layout(gtx C) D {
 	anyFocused := false
 	for i := 0; i < d.NumBtns; i++ {
-		anyFocused = anyFocused || gtx.Source.Focused(&d.State.Clickables[i])
+		anyFocused = anyFocused || gtx.Focused(&d.State.Clickables[i])
 	}
 	if !anyFocused {
 		gtx.Execute(key.FocusCmd{Tag: &d.State.Clickables[d.NumBtns-1]})

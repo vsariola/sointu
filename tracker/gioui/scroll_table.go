@@ -92,17 +92,22 @@ func (st *ScrollTable) Focus() {
 	st.requestFocus = true
 }
 
-func (st *ScrollTable) Focused(gtx C) bool {
-	return gtx.Source.Focused(st)
+func (st *ScrollTable) Tags(level int, yield TagYieldFunc) bool {
+	return yield(level+1, st.RowTitleList) &&
+		yield(level+1, st.ColTitleList) &&
+		yield(level, st)
+}
+
+// TreeFocused return true if any of the tags in the scroll table has focus.
+func (st *ScrollTable) TreeFocused(gtx C) bool {
+	return !st.Tags(0, func(_ int, tag event.Tag) bool {
+		return !gtx.Focused(tag)
+	})
 }
 
 func (st *ScrollTable) EnsureCursorVisible() {
 	st.ColTitleList.EnsureVisible(st.Table.Cursor().X)
 	st.RowTitleList.EnsureVisible(st.Table.Cursor().Y)
-}
-
-func (st *ScrollTable) ChildFocused(gtx C) bool {
-	return st.ColTitleList.Focused(gtx) || st.RowTitleList.Focused(gtx)
 }
 
 func (s ScrollTableStyle) Layout(gtx C, element func(gtx C, x, y int) D, colTitle, rowTitle, colTitleBg, rowTitleBg func(gtx C, i int) D) D {
@@ -112,7 +117,7 @@ func (s ScrollTableStyle) Layout(gtx C, element func(gtx C, x, y int) D, colTitl
 	p := image.Pt(gtx.Dp(s.RowTitleWidth), gtx.Dp(s.ColumnTitleHeight))
 	s.handleEvents(gtx, p)
 
-	return Surface{Gray: 24, Focus: s.ScrollTable.Focused(gtx) || s.ScrollTable.ChildFocused(gtx)}.Layout(gtx, func(gtx C) D {
+	return Surface{Gray: 24, Focus: s.ScrollTable.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
 		defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 		dims := gtx.Constraints.Max
 		s.layoutColTitles(gtx, p, colTitle, colTitleBg)

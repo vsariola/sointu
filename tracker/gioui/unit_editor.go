@@ -74,7 +74,7 @@ func (pe *UnitEditor) Layout(gtx C, t *Tracker) D {
 		switch e := e.(type) {
 		case key.Event:
 			if e.State == key.Press {
-				pe.command(e, t)
+				pe.command(gtx, e, t)
 			}
 		}
 	}
@@ -85,7 +85,7 @@ func (pe *UnitEditor) Layout(gtx C, t *Tracker) D {
 	if t.UnitSearching().Value() || pe.sliderList.TrackerList.Count() == 0 {
 		editorFunc = pe.layoutUnitTypeChooser
 	}
-	return Surface{Gray: 24, Focus: t.InstrumentEditor.wasFocused}.Layout(gtx, func(gtx C) D {
+	return Surface{Gray: 24, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 			layout.Flexed(1, func(gtx C) D {
 				return editorFunc(gtx, t)
@@ -162,7 +162,7 @@ func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
 		}),
 		layout.Flexed(1, func(gtx C) D {
 			for pe.commentEditor.Update(gtx, t.UnitComment()) != EditorEventNone {
-				t.InstrumentEditor.Focus()
+				t.FocusPrev(gtx, false)
 			}
 			return pe.commentEditor.Layout(gtx, t.UnitComment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "---")
 		}),
@@ -195,7 +195,7 @@ func (pe *UnitEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 	return dims
 }
 
-func (pe *UnitEditor) command(e key.Event, t *Tracker) {
+func (pe *UnitEditor) command(gtx C, e key.Event, t *Tracker) {
 	params := t.Model.Params()
 	switch e.State {
 	case key.Press:
@@ -215,9 +215,13 @@ func (pe *UnitEditor) command(e key.Event, t *Tracker) {
 				i.SetValue(i.Value() + 1)
 			}
 		case key.NameEscape:
-			t.InstrumentEditor.unitDragList.Focus()
+			t.FocusPrev(gtx, false)
 		}
 	}
+}
+
+func (t *UnitEditor) Tags(level int, yield TagYieldFunc) bool {
+	return yield(level, t.sliderList) && yield(level+1, &t.commentEditor.widgetEditor)
 }
 
 type ParameterWidget struct {

@@ -117,10 +117,6 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 	return ret
 }
 
-func (te *NoteEditor) Focused(gtx C) bool {
-	return te.scrollTable.Focused(gtx) || te.scrollTable.ChildFocused(gtx)
-}
-
 func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 	for {
 		e, ok := gtx.Event(te.eventFilters...)
@@ -137,7 +133,7 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 		}
 	}
 
-	for te.Focused(gtx) && len(t.noteEvents) > 0 {
+	for gtx.Focused(te.scrollTable) && len(t.noteEvents) > 0 {
 		ev := t.noteEvents[0]
 		ev.IsTrack = true
 		ev.Channel = t.Model.Notes().Cursor().X
@@ -152,7 +148,7 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 
-	return Surface{Gray: 24, Focus: te.scrollTable.Focused(gtx)}.Layout(gtx, func(gtx C) D {
+	return Surface{Gray: 24, Focus: te.scrollTable.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
 				return te.layoutButtons(gtx, t)
@@ -165,7 +161,7 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 }
 
 func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
-	return Surface{Gray: 37, Focus: te.scrollTable.Focused(gtx) || te.scrollTable.ChildFocused(gtx)}.Layout(gtx, func(gtx C) D {
+	return Surface{Gray: 37, Focus: te.scrollTable.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
 		addSemitoneBtn := ActionBtn(t.AddSemitone(), t.Theme, te.AddSemitoneBtn, "+1", "Add semitone")
 		subtractSemitoneBtn := ActionBtn(t.SubtractSemitone(), t.Theme, te.SubtractSemitoneBtn, "-1", "Subtract semitone")
 		addOctaveBtn := ActionBtn(t.AddOctave(), t.Theme, te.AddOctaveBtn, "+12", "Add octave")
@@ -290,7 +286,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		point := tracker.Point{X: x, Y: y}
 		if drawSelection && selection.Contains(point) {
 			color := t.Theme.Selection.Inactive
-			if te.scrollTable.Focused(gtx) {
+			if gtx.Focused(te.scrollTable) {
 				color = t.Theme.Selection.Active
 			}
 			paint.FillShape(gtx.Ops, color, clip.Rect{Min: image.Pt(0, 0), Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
@@ -298,7 +294,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		// draw the cursor
 		if point == cursor {
 			c := t.Theme.Cursor.Inactive
-			if te.scrollTable.Focused(gtx) {
+			if gtx.Focused(te.scrollTable) {
 				c = t.Theme.Cursor.Active
 			}
 			if hasTrackMidiIn {
@@ -333,6 +329,12 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	table.CellWidth = trackColWidth
 	table.CellHeight = trackRowHeight
 	return table.Layout(gtx, cell, colTitle, rowTitle, nil, rowTitleBg)
+}
+
+func (t *NoteEditor) Tags(level int, yield TagYieldFunc) bool {
+	return yield(level+1, t.scrollTable.RowTitleList) &&
+		yield(level+1, t.scrollTable.ColTitleList) &&
+		yield(level, t.scrollTable)
 }
 
 func colorOp(gtx C, c color.NRGBA) op.CallOp {

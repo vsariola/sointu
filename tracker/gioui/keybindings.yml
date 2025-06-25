@@ -6,86 +6,89 @@
 # - {key: "A"}
 #
 # will stop the A key from sending NoteOff events.
-- {key: "C", shortcut: true, action: "Copy"}
-- {key: "V", shortcut: true, action: "Paste"}
-- {key: "A", shortcut: true, action: "SelectAll"}
-- {key: "X", shortcut: true, action: "Cut"}
-- {key: "Z", shortcut: true, action: "Undo"}
-- {key: "Y", shortcut: true, action: "Redo"}
-- {key: "D", shortcut: true, action: "UnitDisabledToggle"}
-- {key: "L", shortcut: true, action: "LoopToggle"}
-- {key: "N", shortcut: true, action: "NewSong"}
-- {key: "S", shortcut: true, action: "SaveSong"}
-- {key: "M", shortcut: true, action: "MuteToggle"}
-- {key: ",", shortcut: true, action: "SoloToggle"}
-- {key: "O", shortcut: true, action: "OpenSong"}
-- {key: "I", shortcut: true, shift: true, action: "DeleteInstrument"}
-- {key: "I", shortcut: true, action: "AddInstrument"}
-- {key: "I", shortcut: true, alt: true, action: "SplitInstrument"}
-- {key: "T", shortcut: true, shift: true, action: "DeleteTrack"}
-- {key: "T", shortcut: true, alt: true, action: "SplitTrack"}
-- {key: "T", shortcut: true, action: "AddTrack"}
-- {key: "E", shortcut: true, action: "InstrEnlargedToggle"}
-- {key: "K", shortcut: true, action: "LinkInstrTrackToggle"}
-- {key: "W", shortcut: true, action: "Quit"}
-- {key: "Space", action: "PlayingToggleUnfollow"}
-- {key: "Space", shift: true, action: "PlayingToggleFollow"}
-- {key: "F1", action: "OrderEditorFocus"}
-- {key: "F2", action: "TrackEditorFocus"}
-- {key: "F3", action: "InstrumentEditorFocus"}
-- {key: "F5", action: "PlayCurrentPosUnfollow"}
-- {key: "F5", shift: true, action: "PlayCurrentPosFollow"}
-- {key: "F5", shortcut: true, action: "PlaySongStartUnfollow"}
-- {key: "F5", shortcut: true, shift: true, action: "PlaySongStartFollow"}
-- {key: "F6", action: "PlaySelectedUnfollow"}
-- {key: "F6", shift: true, action: "PlaySelectedFollow"}
-- {key: "F6", shortcut: true, action: "PlayLoopUnfollow"}
-- {key: "F6", shortcut: true, shift: true, action: "PlayLoopFollow"}
-- {key: "F7", action: "RecordingToggle"}
-- {key: "F8", action: "StopPlaying"}
-- {key: "F9", action: "FollowToggle"}
-- {key: "F12", action: "PanicToggle"}
-- {key: "\\", shift: true, action: "OctaveAdd"}
-- {key: "\\", action: "OctaveSubtract"}
-- {key: ">", shift: true, action: "OctaveAdd"}
-- {key: ">", action: "OctaveSubtract"}
-- {key: "<", shift: true, action: "OctaveAdd"}
-- {key: "<", action: "OctaveSubtract"}
-- {key: "Tab", shift: true, action: "FocusPrev"}
-- {key: "Tab", action: "FocusNext"}
-- {key: "A", action: "NoteOff"}
-- {key: "1", action: "NoteOff"}
-- {key: "Z", action: "Note0"}
-- {key: "S", action: "Note1"}
-- {key: "X", action: "Note2"}
-- {key: "D", action: "Note3"}
-- {key: "C", action: "Note4"}
-- {key: "V", action: "Note5"}
-- {key: "G", action: "Note6"}
-- {key: "B", action: "Note7"}
-- {key: "H", action: "Note8"}
-- {key: "N", action: "Note9"}
-- {key: "J", action: "Note10"}
-- {key: "M", action: "Note11"}
-- {key: ",", action: "Note12"}
-- {key: "L", action: "Note13"}
-- {key: ".", action: "Note14"}
-- {key: "Q", action: "Note12"}
-- {key: "2", action: "Note13"}
-- {key: "W", action: "Note14"}
-- {key: "3", action: "Note15"}
-- {key: "E", action: "Note16"}
-- {key: "R", action: "Note17"}
-- {key: "5", action: "Note18"}
-- {key: "T", action: "Note19"}
-- {key: "6", action: "Note20"}
-- {key: "Y", action: "Note21"}
-- {key: "7", action: "Note22"}
-- {key: "U", action: "Note23"}
-- {key: "I", action: "Note24"}
-- {key: "9", action: "Note25"}
-- {key: "O", action: "Note26"}
-- {key: "0", action: "Note27"}
-- {key: "P", action: "Note28"}
-- {key: "+", action: "Increase"}
-- {key: "-", action: "Decrease"}
+- { key: "C", shortcut: true, action: "Copy" }
+- { key: "V", shortcut: true, action: "Paste" }
+- { key: "A", shortcut: true, action: "SelectAll" }
+- { key: "X", shortcut: true, action: "Cut" }
+- { key: "Z", shortcut: true, action: "Undo" }
+- { key: "Y", shortcut: true, action: "Redo" }
+- { key: "D", shortcut: true, action: "UnitDisabledToggle" }
+- { key: "L", shortcut: true, action: "LoopToggle" }
+- { key: "N", shortcut: true, action: "NewSong" }
+- { key: "S", shortcut: true, action: "SaveSong" }
+- { key: "M", shortcut: true, action: "MuteToggle" }
+- { key: ",", shortcut: true, action: "SoloToggle" }
+- { key: "O", shortcut: true, action: "OpenSong" }
+- { key: "I", shortcut: true, shift: true, action: "DeleteInstrument" }
+- { key: "I", shortcut: true, action: "AddInstrument" }
+- { key: "I", shortcut: true, alt: true, action: "SplitInstrument" }
+- { key: "T", shortcut: true, shift: true, action: "DeleteTrack" }
+- { key: "T", shortcut: true, alt: true, action: "SplitTrack" }
+- { key: "T", shortcut: true, action: "AddTrack" }
+- { key: "E", shortcut: true, action: "InstrEnlargedToggle" }
+- { key: "K", shortcut: true, action: "LinkInstrTrackToggle" }
+- { key: "W", shortcut: true, action: "Quit" }
+- { key: "Space", action: "PlayingToggleUnfollow" }
+- { key: "Space", shift: true, action: "PlayingToggleFollow" }
+- { key: "F1", action: "OrderEditorFocus" }
+- { key: "F2", action: "TrackEditorFocus" }
+- { key: "F3", action: "InstrumentListFocus" }
+- { key: "F4", action: "UnitListFocus" }
+- { key: "F5", action: "PlayCurrentPosUnfollow" }
+- { key: "F5", shift: true, action: "PlayCurrentPosFollow" }
+- { key: "F5", shortcut: true, action: "PlaySongStartUnfollow" }
+- { key: "F5", shortcut: true, shift: true, action: "PlaySongStartFollow" }
+- { key: "F6", action: "PlaySelectedUnfollow" }
+- { key: "F6", shift: true, action: "PlaySelectedFollow" }
+- { key: "F6", shortcut: true, action: "PlayLoopUnfollow" }
+- { key: "F6", shortcut: true, shift: true, action: "PlayLoopFollow" }
+- { key: "F7", action: "RecordingToggle" }
+- { key: "F8", action: "StopPlaying" }
+- { key: "F9", action: "FollowToggle" }
+- { key: "F12", action: "PanicToggle" }
+- { key: "\\", shift: true, action: "OctaveAdd" }
+- { key: "\\", action: "OctaveSubtract" }
+- { key: ">", shift: true, action: "OctaveAdd" }
+- { key: ">", action: "OctaveSubtract" }
+- { key: "<", shift: true, action: "OctaveAdd" }
+- { key: "<", action: "OctaveSubtract" }
+- { key: "Tab", shift: true, action: "FocusPrev" }
+- { key: "Tab", action: "FocusNext" }
+- { key: "Tab", shift: true, shortcut: true, action: "FocusPrevInto" }
+- { key: "Tab", shortcut: true, action: "FocusNextInto" }
+- { key: "A", action: "NoteOff" }
+- { key: "1", action: "NoteOff" }
+- { key: "Z", action: "Note0" }
+- { key: "S", action: "Note1" }
+- { key: "X", action: "Note2" }
+- { key: "D", action: "Note3" }
+- { key: "C", action: "Note4" }
+- { key: "V", action: "Note5" }
+- { key: "G", action: "Note6" }
+- { key: "B", action: "Note7" }
+- { key: "H", action: "Note8" }
+- { key: "N", action: "Note9" }
+- { key: "J", action: "Note10" }
+- { key: "M", action: "Note11" }
+- { key: ",", action: "Note12" }
+- { key: "L", action: "Note13" }
+- { key: ".", action: "Note14" }
+- { key: "Q", action: "Note12" }
+- { key: "2", action: "Note13" }
+- { key: "W", action: "Note14" }
+- { key: "3", action: "Note15" }
+- { key: "E", action: "Note16" }
+- { key: "R", action: "Note17" }
+- { key: "5", action: "Note18" }
+- { key: "T", action: "Note19" }
+- { key: "6", action: "Note20" }
+- { key: "Y", action: "Note21" }
+- { key: "7", action: "Note22" }
+- { key: "U", action: "Note23" }
+- { key: "I", action: "Note24" }
+- { key: "9", action: "Note25" }
+- { key: "O", action: "Note26" }
+- { key: "0", action: "Note27" }
+- { key: "P", action: "Note28" }
+- { key: "+", action: "Increase" }
+- { key: "-", action: "Decrease" }

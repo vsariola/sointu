@@ -42,13 +42,13 @@ type (
 
 		DialogState *DialogState
 
-		ModalDialog      layout.Widget
-		InstrumentEditor *InstrumentEditor
-		OrderEditor      *OrderEditor
-		TrackEditor      *NoteEditor
-		Explorer         *explorer.Explorer
-		Exploring        bool
-		SongPanel        *SongPanel
+		ModalDialog layout.Widget
+		PatchPanel  *PatchPanel
+		OrderEditor *OrderEditor
+		TrackEditor *NoteEditor
+		Explorer    *explorer.Explorer
+		Exploring   bool
+		SongPanel   *SongPanel
 
 		filePathString tracker.String
 		noteEvents     []tracker.NoteEvent
@@ -83,10 +83,10 @@ func NewTracker(model *tracker.Model) *Tracker {
 		BottomHorizontalSplit: &SplitState{Ratio: -.6},
 		VerticalSplit:         &SplitState{Axis: layout.Vertical},
 
-		DialogState:      new(DialogState),
-		InstrumentEditor: NewInstrumentEditor(model),
-		OrderEditor:      NewOrderEditor(model),
-		TrackEditor:      NewNoteEditor(model),
+		DialogState: new(DialogState),
+		PatchPanel:  NewPatchPanel(model),
+		OrderEditor: NewOrderEditor(model),
+		TrackEditor: NewNoteEditor(model),
 
 		Zoom: 6,
 
@@ -118,7 +118,6 @@ func NewTracker(model *tracker.Model) *Tracker {
 }
 
 func (t *Tracker) Main() {
-	t.InstrumentEditor.Focus()
 	recoveryTicker := time.NewTicker(time.Second * 30)
 	var ops op.Ops
 	titlePath := ""
@@ -233,7 +232,7 @@ func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
 	for {
 		ev, ok := gtx.Event(
 			key.Filter{Name: "", Optional: key.ModAlt | key.ModCommand | key.ModShift | key.ModShortcut | key.ModSuper},
-			key.Filter{Name: key.NameTab, Optional: key.ModShift},
+			key.Filter{Name: key.NameTab, Optional: key.ModShift | key.ModShortcut},
 			transfer.TargetFilter{Target: t, Type: "application/text"},
 			pointer.Filter{Target: t, Kinds: pointer.Scroll, ScrollY: pointer.ScrollRange{Min: -1, Max: 1}},
 		)
@@ -359,7 +358,7 @@ func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
 			return t.SongPanel.Layout(gtx, t)
 		},
 		func(gtx C) D {
-			return t.InstrumentEditor.Layout(gtx, t)
+			return t.PatchPanel.Layout(gtx, t)
 		},
 	)
 }
@@ -391,4 +390,13 @@ func (t *Tracker) openUrl(url string) {
 	if err != nil {
 		t.Alerts().Add(err.Error(), tracker.Error)
 	}
+}
+
+func (t *Tracker) Tags(curLevel int, yield TagYieldFunc) bool {
+	ret := t.PatchPanel.Tags(curLevel+1, yield)
+	if !t.InstrEnlarged().Value() {
+		ret = ret && t.OrderEditor.Tags(curLevel+1, yield) &&
+			t.TrackEditor.Tags(curLevel+1, yield)
+	}
+	return ret
 }
