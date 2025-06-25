@@ -121,6 +121,8 @@ func (t *Tracker) Main() {
 	recoveryTicker := time.NewTicker(time.Second * 30)
 	var ops op.Ops
 	titlePath := ""
+	globals := make(map[string]any, 1)
+	globals["Tracker"] = t
 	for !t.Quitted() {
 		w := t.newWindow()
 		w.Option(app.Title(titleFromPath(titlePath)))
@@ -173,6 +175,7 @@ func (t *Tracker) Main() {
 						w.Option(app.Title(titleFromPath(titlePath)))
 					}
 					gtx := app.NewContext(&ops, e)
+					gtx.Values = globals
 					t.Layout(gtx, w)
 					e.Frame(gtx.Ops)
 					if t.Quitted() {
@@ -188,6 +191,14 @@ func (t *Tracker) Main() {
 	recoveryTicker.Stop()
 	t.SaveRecovery()
 	close(t.Broker().FinishedGUI)
+}
+
+func TrackerFromContext(gtx C) *Tracker {
+	t, ok := gtx.Values["Tracker"]
+	if !ok {
+		panic("Tracker not found in context values")
+	}
+	return t.(*Tracker)
 }
 
 func (t *Tracker) newWindow() *app.Window {
@@ -342,24 +353,16 @@ func (t *Tracker) explorerCreateFile(success func(io.WriteCloser), filename stri
 func (t *Tracker) layoutBottom(gtx layout.Context) layout.Dimensions {
 	return t.BottomHorizontalSplit.Layout(gtx,
 		&t.Theme.Split,
-		func(gtx C) D {
-			return t.OrderEditor.Layout(gtx, t)
-		},
-		func(gtx C) D {
-			return t.TrackEditor.Layout(gtx, t)
-		},
+		t.OrderEditor.Layout,
+		t.TrackEditor.Layout,
 	)
 }
 
 func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
 	return t.TopHorizontalSplit.Layout(gtx,
 		&t.Theme.Split,
-		func(gtx C) D {
-			return t.SongPanel.Layout(gtx, t)
-		},
-		func(gtx C) D {
-			return t.PatchPanel.Layout(gtx, t)
-		},
+		t.SongPanel.Layout,
+		t.PatchPanel.Layout,
 	)
 }
 

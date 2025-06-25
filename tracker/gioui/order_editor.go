@@ -48,7 +48,8 @@ func NewOrderEditor(m *tracker.Model) *OrderEditor {
 	}
 }
 
-func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
+func (oe *OrderEditor) Layout(gtx C) D {
+	t := TrackerFromContext(gtx)
 	if oe.scrollTable.CursorMoved() {
 		cursor := t.TrackEditor.scrollTable.Table.Cursor()
 		t.TrackEditor.scrollTable.ColTitleList.CenterOn(cursor.X)

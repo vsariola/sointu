@@ -117,7 +117,8 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 	return ret
 }
 
-func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
+func (te *NoteEditor) Layout(gtx layout.Context) layout.Dimensions {
+	t := TrackerFromContext(gtx)
 	for {
 		e, ok := gtx.Event(te.eventFilters...)
 		if !ok {

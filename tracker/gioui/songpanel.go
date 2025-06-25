@@ -68,22 +68,18 @@ func (s *SongPanel) Update(gtx C, t *Tracker) {
 	}
 }
 
-func (s *SongPanel) Layout(gtx C, t *Tracker) D {
+func (s *SongPanel) Layout(gtx C) D {
+	t := TrackerFromContext(gtx)
 	s.Update(gtx, t)
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(func(gtx C) D {
-			return s.MenuBar.Layout(gtx, t)
-		}),
-		layout.Rigid(func(gtx C) D {
-			return s.PlayBar.Layout(gtx, t)
-		}),
-		layout.Rigid(func(gtx C) D {
-			return s.layoutSongOptions(gtx, t)
-		}),
+		layout.Rigid(s.MenuBar.Layout),
+		layout.Rigid(s.PlayBar.Layout),
+		layout.Rigid(s.layoutSongOptions),
 	)
 }
 
-func (t *SongPanel) layoutSongOptions(gtx C, tr *Tracker) D {
+func (t *SongPanel) layoutSongOptions(gtx C) D {
+	tr := TrackerFromContext(gtx)
 	paint.FillShape(gtx.Ops, tr.Theme.SongPanel.Bg, clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Op())
 
 	var weightingTxt string
@@ -324,7 +320,8 @@ func NewMenuBar(tr *Tracker) *MenuBar {
 	return ret
 }
 
-func (t *MenuBar) Layout(gtx C, tr *Tracker) D {
+func (t *MenuBar) Layout(gtx C) D {
+	tr := TrackerFromContext(gtx)
 	gtx.Constraints.Max.Y = gtx.Dp(unit.Dp(36))
 	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 
@@ -409,7 +406,8 @@ func NewPlayBar() *PlayBar {
 	return ret
 }
 
-func (pb *PlayBar) Layout(gtx C, tr *Tracker) D {
+func (pb *PlayBar) Layout(gtx C) D {
+	tr := TrackerFromContext(gtx)
 	playBtn := ToggleIconBtn(tr.Playing(), tr.Theme, pb.PlayingBtn, icons.AVPlayArrow, icons.AVStop, pb.playHint, pb.stopHint)
 	rewindBtn := ActionIconBtn(tr.PlaySongStart(), tr.Theme, pb.RewindBtn, icons.AVFastRewind, pb.rewindHint)
 	recordBtn := ToggleIconBtn(tr.IsRecording(), tr.Theme, pb.RecordBtn, icons.AVFiberManualRecord, icons.AVFiberSmartRecord, pb.recordHint, pb.stopRecordHint)

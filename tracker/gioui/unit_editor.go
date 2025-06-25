@@ -61,7 +61,8 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 	return ret
 }
 
-func (pe *UnitEditor) Layout(gtx C, t *Tracker) D {
+func (pe *UnitEditor) Layout(gtx C) D {
+	t := TrackerFromContext(gtx)
 	for {
 		e, ok := gtx.Event(
 			key.Filter{Focus: pe.sliderList, Name: key.NameLeftArrow, Optional: key.ModShift},

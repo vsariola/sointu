@@ -90,14 +90,14 @@ func NewPatchPanel(model *tracker.Model) *PatchPanel {
 	}
 }
 
-func (pp *PatchPanel) Layout(gtx C, t *Tracker) D {
+func (pp *PatchPanel) Layout(gtx C) D {
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(func(gtx C) D { return pp.instrList.Layout(gtx, t) }),
-		layout.Rigid(func(gtx C) D { return pp.tools.Layout(gtx, t) }),
+		layout.Rigid(pp.instrList.Layout),
+		layout.Rigid(pp.tools.Layout),
 		layout.Flexed(1, func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return pp.unitList.Layout(gtx, t) }),
-				layout.Flexed(1, func(gtx C) D { return pp.unitEditor.Layout(gtx, t) }),
+				layout.Rigid(pp.unitList.Layout),
+				layout.Flexed(1, pp.unitEditor.Layout),
 			)
 		}))
 }
@@ -148,7 +148,8 @@ func MakeInstrumentTools(m *tracker.Model) InstrumentTools {
 	return ret
 }
 
-func (it *InstrumentTools) Layout(gtx C, t *Tracker) D {
+func (it *InstrumentTools) Layout(gtx C) D {
+	t := TrackerFromContext(gtx)
 	it.update(gtx, t)
 	voicesLabel := Label(t.Theme, &t.Theme.InstrumentEditor.Voices, "Voices")
 	splitInstrumentBtn := ActionIconBtn(t.SplitInstrument(), t.Theme, it.splitInstrumentBtn, icons.CommunicationCallSplit, it.splitInstrumentHint)
@@ -256,7 +257,8 @@ func MakeInstrList(model *tracker.Model) InstrumentList {
 	}
 }
 
-func (il *InstrumentList) Layout(gtx C, t *Tracker) D {
+func (il *InstrumentList) Layout(gtx C) D {
+	t := TrackerFromContext(gtx)
 	il.update(gtx, t)
 	octave := NumUpDown(t.Model.Octave(), t.Theme, t.OctaveNumberInput, "Octave")
 	linkInstrTrackBtn := ToggleIconBtn(t.Model.LinkInstrTrack(), t.Theme, il.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, il.linkDisabledHint, il.linkEnabledHint)
@@ -264,7 +266,7 @@ func (il *InstrumentList) Layout(gtx C, t *Tracker) D {
 	addInstrumentBtn := ActionIconBtn(t.Model.AddInstrument(), t.Theme, il.newInstrumentBtn, icons.ContentAdd, il.addInstrumentHint)
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(
 		gtx,
-		layout.Flexed(1, func(gtx C) D { return il.actualLayout(gtx, t) }),
+		layout.Flexed(1, il.actualLayout),
 		layout.Rigid(layout.Spacer{Width: 10}.Layout),
 		layout.Rigid(Label(t.Theme, &t.Theme.InstrumentEditor.Octave, "Octave").Layout),
 		layout.Rigid(layout.Spacer{Width: 4}.Layout),
@@ -275,7 +277,8 @@ func (il *InstrumentList) Layout(gtx C, t *Tracker) D {
 	)
 }
 
-func (il *InstrumentList) actualLayout(gtx C, t *Tracker) D {
+func (il *InstrumentList) actualLayout(gtx C) D {
+	t := TrackerFromContext(gtx)
 	gtx.Constraints.Max.Y = gtx.Dp(36)
 	gtx.Constraints.Min.Y = gtx.Dp(36)
 	element := func(gtx C, i int) D {
@@ -365,7 +368,8 @@ func MakeUnitList(m *tracker.Model) UnitList {
 	return ret
 }
 
-func (ul *UnitList) Layout(gtx C, t *Tracker) D {
+func (ul *UnitList) Layout(gtx C) D {
+	t := TrackerFromContext(gtx)
 	ul.update(gtx, t)
 	var units [256]tracker.UnitListItem
 	for i, item := range (*tracker.Units)(t.Model).Iterate {

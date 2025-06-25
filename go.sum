@@ -2,6 +2,8 @@ eliasnaur.com/font v0.0.0-20230308162249-dd43949cb42d h1:ARo7NCVvN2NdhLlJE9xAbKw
 eliasnaur.com/font v0.0.0-20230308162249-dd43949cb42d/go.mod h1:OYVuxibdk9OSLX8vAqydtRPP87PyTFcT9uH3MlEGBQA=
 gioui.org v0.8.1-0.20250526181049-1a17e9ea3725 h1:8dzkqzvWLIwW6HEQv5CinK53vMeANmUEETzpcbtPRp0=
 gioui.org v0.8.1-0.20250526181049-1a17e9ea3725/go.mod h1:CjNig0wAhLt9WZxOPAusgFD8x8IRvqt26LdDBa3Jvao=
+gioui.org v0.8.1-0.20250624114559-c3ce484b5e80 h1:cnimNlq1PEHY4z1Cy32n6In86VUF5/VLi7cWHAM1XcY=
+gioui.org v0.8.1-0.20250624114559-c3ce484b5e80/go.mod h1:CjNig0wAhLt9WZxOPAusgFD8x8IRvqt26LdDBa3Jvao=
 gioui.org/cpu v0.0.0-20210808092351-bfe733dd3334/go.mod h1:A8M0Cn5o+vY5LTMlnRoK3O5kG+rH0kWfJjeKd9QpBmQ=
 gioui.org/shader v1.0.8 h1:6ks0o/A+b0ne7RzEqRZK5f4Gboz2CfG+mVliciy6+qA=
 gioui.org/shader v1.0.8/go.mod h1:mWdiME581d/kV7/iEhLmUgUK5iZ09XR5XpduXzbePVM=
