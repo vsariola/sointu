@@ -100,12 +100,12 @@ func (oe *OrderEditor) Layout(gtx C, t *Tracker) D {
 		point := tracker.Point{X: x, Y: y}
 		if selection.Contains(point) {
 			color = t.Theme.Selection.Inactive
-			if oe.scrollTable.Focused(gtx) {
+			if gtx.Focused(oe.scrollTable) {
 				color = t.Theme.Selection.Active
 			}
 			if point == oe.scrollTable.Table.Cursor() {
 				color = t.Theme.Cursor.Inactive
-				if oe.scrollTable.Focused(gtx) {
+				if gtx.Focused(oe.scrollTable) {
 					color = t.Theme.Cursor.Active
 				}
 			}

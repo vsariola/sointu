@@ -98,13 +98,9 @@ func (st *ScrollTable) Tags(level int, yield TagYieldFunc) bool {
 		yield(level, st)
 }
 
-func (st *ScrollTable) Focused(gtx C) bool {
-	return gtx.Source.Focused(st)
-}
-
 func (st *ScrollTable) TreeFocused(gtx C) bool {
 	return !st.Tags(0, func(level int, tag event.Tag) bool {
-		return !gtx.Source.Focused(tag)
+		return !gtx.Focused(tag)
 	})
 }
 

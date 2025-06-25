@@ -133,7 +133,7 @@ func (te *NoteEditor) Layout(gtx layout.Context, t *Tracker) layout.Dimensions {
 		}
 	}
 
-	for te.scrollTable.Focused(gtx) && len(t.noteEvents) > 0 {
+	for gtx.Focused(te.scrollTable) && len(t.noteEvents) > 0 {
 		ev := t.noteEvents[0]
 		ev.IsTrack = true
 		ev.Channel = t.Model.Notes().Cursor().X
@@ -286,7 +286,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		point := tracker.Point{X: x, Y: y}
 		if drawSelection && selection.Contains(point) {
 			color := t.Theme.Selection.Inactive
-			if te.scrollTable.Focused(gtx) {
+			if gtx.Focused(te.scrollTable) {
 				color = t.Theme.Selection.Active
 			}
 			paint.FillShape(gtx.Ops, color, clip.Rect{Min: image.Pt(0, 0), Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
@@ -294,7 +294,7 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 		// draw the cursor
 		if point == cursor {
 			c := t.Theme.Cursor.Inactive
-			if te.scrollTable.Focused(gtx) {
+			if gtx.Focused(te.scrollTable) {
 				c = t.Theme.Cursor.Active
 			}
 			if hasTrackMidiIn {

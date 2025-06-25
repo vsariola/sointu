@@ -109,7 +109,7 @@ func (ie *PatchPanel) Tags(curLevel int, yield TagYieldFunc) bool {
 
 func (ie *PatchPanel) TreeFocused(gtx C) bool {
 	return !ie.Tags(0, func(level int, tag event.Tag) bool {
-		return !gtx.Source.Focused(tag)
+		return !gtx.Focused(tag)
 	})
 }
 

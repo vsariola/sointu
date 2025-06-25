@@ -17,7 +17,7 @@ func (t *Tracker) FocusNext(gtx C, maxLevel int) {
 			next = tag
 			return false // we're done
 		}
-		if gtx.Source.Focused(tag) {
+		if gtx.Focused(tag) {
 			focused = tag
 		}
 		return true
@@ -39,7 +39,7 @@ func (t *Tracker) FocusPrev(gtx C, maxLevel int) {
 		if first == nil {
 			first = tag // remember the first tag
 		}
-		if gtx.Source.Focused(tag) {
+		if gtx.Focused(tag) {
 			if prev != nil {
 				return false // we're done
 			}
