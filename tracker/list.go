@@ -706,6 +706,15 @@ func (l *SearchResults) Iterate(yield UnitSearchYieldFunc) {
 	}
 }
 
+func (l *SearchResults) Item(index int) (name string, ok bool) {
+	for i, n := range l.Iterate {
+		if i == index {
+			return n, true
+		}
+	}
+	return "", false
+}
+
 func (l *SearchResults) Selected() int {
 	return max(min(l.d.UnitSearchIndex, l.Count()-1), 0)
 }

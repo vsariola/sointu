@@ -12,7 +12,6 @@ import (
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
-	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/text"
 	"gioui.org/unit"
@@ -41,6 +40,8 @@ type UnitEditor struct {
 	copyHint        string
 	disableUnitHint string
 	enableUnitHint  string
+
+	searching tracker.Bool
 }
 
 func NewUnitEditor(m *tracker.Model) *UnitEditor {
@@ -53,6 +54,7 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 		commentEditor:  NewEditor(true, true, text.Start),
 		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
 		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
+		searching:      m.UnitSearching(),
 	}
 	ret.caser = cases.Title(language.English)
 	ret.copyHint = makeHint("Copy unit", " (%s)", "Copy")
@@ -63,44 +65,93 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 
 func (pe *UnitEditor) Layout(gtx C) D {
 	t := TrackerFromContext(gtx)
-	for {
-		e, ok := gtx.Event(
-			key.Filter{Focus: pe.sliderList, Name: key.NameLeftArrow, Optional: key.ModShift},
-			key.Filter{Focus: pe.sliderList, Name: key.NameRightArrow, Optional: key.ModShift},
-			key.Filter{Focus: pe.sliderList, Name: key.NameEscape},
-		)
-		if !ok {
-			break
-		}
-		switch e := e.(type) {
-		case key.Event:
-			if e.State == key.Press {
-				pe.command(gtx, e, t)
-			}
-		}
-	}
-	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
+	pe.update(gtx, t)
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 	editorFunc := pe.layoutSliders
-
-	if t.UnitSearching().Value() || pe.sliderList.TrackerList.Count() == 0 {
+	if pe.showingChooser() {
 		editorFunc = pe.layoutUnitTypeChooser
 	}
 	return Surface{Gray: 24, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-			layout.Flexed(1, func(gtx C) D {
-				return editorFunc(gtx, t)
-			}),
-			layout.Rigid(func(gtx C) D {
-				return pe.layoutFooter(gtx, t)
-			}),
+			layout.Flexed(1, editorFunc),
+			layout.Rigid(pe.layoutFooter),
 		)
 	})
 }
 
-func (pe *UnitEditor) layoutSliders(gtx C, t *Tracker) D {
-	numItems := pe.sliderList.TrackerList.Count()
+func (pe *UnitEditor) showingChooser() bool {
+	return pe.searching.Value() || pe.sliderList.TrackerList.Count() == 0
+}
 
+func (pe *UnitEditor) update(gtx C, t *Tracker) {
+	for pe.CopyUnitBtn.Clicked(gtx) {
+		if contents, ok := t.Units().List().CopyElements(); ok {
+			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
+			t.Alerts().Add("Unit(s) copied to clipboard", tracker.Info)
+		}
+	}
+	for pe.SelectTypeBtn.Clicked(gtx) {
+		pe.ChooseUnitType(t)
+	}
+	for pe.commentEditor.Update(gtx, t.UnitComment()) != EditorEventNone {
+		t.FocusPrev(gtx, false)
+	}
+	for {
+		e, ok := gtx.Event(
+			key.Filter{Focus: pe.searchList, Name: key.NameEnter},
+			key.Filter{Focus: pe.searchList, Name: key.NameReturn},
+		)
+		if !ok {
+			break
+		}
+		if e, ok := e.(key.Event); ok && e.State == key.Press {
+			pe.ChooseUnitType(t)
+		}
+	}
+	for {
+		e, ok := gtx.Event(
+			key.Filter{Focus: pe.sliderList, Name: key.NameLeftArrow, Optional: key.ModShift},
+			key.Filter{Focus: pe.sliderList, Name: key.NameRightArrow, Optional: key.ModShift},
+			key.Filter{Focus: pe.searchList, Name: key.NameEnter},
+			key.Filter{Focus: pe.searchList, Name: key.NameReturn},
+		)
+		if !ok {
+			break
+		}
+		if e, ok := e.(key.Event); ok && e.State == key.Press {
+			params := t.Model.Params()
+			item := params.SelectedItem()
+			switch e.Name {
+			case key.NameLeftArrow:
+				if e.Modifiers.Contain(key.ModShift) {
+					item.SetValue(item.Value() - item.LargeStep())
+				} else {
+					item.SetValue(item.Value() - 1)
+				}
+			case key.NameRightArrow:
+				if e.Modifiers.Contain(key.ModShift) {
+					item.SetValue(item.Value() + item.LargeStep())
+				} else {
+					item.SetValue(item.Value() + 1)
+				}
+			case key.NameEnter, key.NameReturn:
+				item.Reset()
+			}
+		}
+	}
+}
+
+func (pe *UnitEditor) ChooseUnitType(t *Tracker) {
+	if ut, ok := t.SearchResults().Item(pe.searchList.TrackerList.Selected()); ok {
+		t.Units().SetSelectedType(ut)
+		t.PatchPanel.unitList.dragList.Focus()
+	}
+}
+
+func (pe *UnitEditor) layoutSliders(gtx C) D {
+	t := TrackerFromContext(gtx)
+	numItems := pe.sliderList.TrackerList.Count()
+	// create enough parameter widget to match the number of parameters
 	for len(pe.Parameters) < numItems {
 		pe.Parameters = append(pe.Parameters, new(ParameterWidget))
 	}
@@ -127,64 +178,50 @@ func (pe *UnitEditor) layoutSliders(gtx C, t *Tracker) D {
 	return dims
 }
 
-func (pe *UnitEditor) layoutFooter(gtx C, t *Tracker) D {
-	for pe.CopyUnitBtn.Clicked(gtx) {
-		if contents, ok := t.Units().List().CopyElements(); ok {
-			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
-			t.Alerts().Add("Unit copied to clipboard", tracker.Info)
-		}
-	}
-	text := t.Units().SelectedType()
-	if text == "" {
-		text = "Choose unit type"
-	} else {
-		text = pe.caser.String(text)
+func (pe *UnitEditor) layoutFooter(gtx C) D {
+	t := TrackerFromContext(gtx)
+	st := t.Units().SelectedType()
+	text := "Choose unit type"
+	if st != "" {
+		text = pe.caser.String(st)
 	}
 	hintText := Label(t.Theme, &t.Theme.UnitEditor.Hint, text)
 	deleteUnitBtn := ActionIconBtn(t.DeleteUnit(), t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
 	copyUnitBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
 	disableUnitBtn := ToggleIconBtn(t.UnitDisabled(), t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
-
+	w := layout.Spacer{Width: t.Theme.IconButton.Enabled.Size}.Layout
+	if st != "" {
+		clearUnitBtn := ActionIconBtn(t.ClearUnit(), t.Theme, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
+		w = clearUnitBtn.Layout
+	}
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(deleteUnitBtn.Layout),
 		layout.Rigid(copyUnitBtn.Layout),
 		layout.Rigid(disableUnitBtn.Layout),
-		layout.Rigid(func(gtx C) D {
-			var dims D
-			if t.Units().SelectedType() != "" {
-				clearUnitBtn := ActionIconBtn(t.ClearUnit(), t.Theme, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
-				dims = clearUnitBtn.Layout(gtx)
-			}
-			return D{Size: image.Pt(gtx.Dp(unit.Dp(48)), dims.Size.Y)}
-		}),
+		layout.Rigid(w),
 		layout.Rigid(func(gtx C) D {
 			gtx.Constraints.Min.X = gtx.Dp(120)
 			return hintText.Layout(gtx)
 		}),
 		layout.Flexed(1, func(gtx C) D {
-			for pe.commentEditor.Update(gtx, t.UnitComment()) != EditorEventNone {
-				t.FocusPrev(gtx, false)
-			}
 			return pe.commentEditor.Layout(gtx, t.UnitComment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "---")
 		}),
 	)
 }
 
-func (pe *UnitEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
-	var names [256]string
-	for i, item := range t.Model.SearchResults().Iterate {
-		if i >= 256 {
-			break
-		}
-		names[i] = item
+func (pe *UnitEditor) layoutUnitTypeChooser(gtx C) D {
+	t := TrackerFromContext(gtx)
+	var namesArray [256]string
+	names := namesArray[:0]
+	for _, item := range t.Model.SearchResults().Iterate {
+		names = append(names, item)
 	}
 	element := func(gtx C, i int) D {
+		if i < 0 || i >= len(names) {
+			return D{}
+		}
 		w := Label(t.Theme, &t.Theme.UnitEditor.Chooser, names[i])
-
 		if i == pe.searchList.TrackerList.Selected() {
-			for pe.SelectTypeBtn.Clicked(gtx) {
-				t.Units().SetSelectedType(names[i])
-			}
 			return pe.SelectTypeBtn.Layout(gtx, w.Layout)
 		}
 		return w.Layout(gtx)
@@ -196,33 +233,12 @@ func (pe *UnitEditor) layoutUnitTypeChooser(gtx C, t *Tracker) D {
 	return dims
 }
 
-func (pe *UnitEditor) command(gtx C, e key.Event, t *Tracker) {
-	params := t.Model.Params()
-	switch e.State {
-	case key.Press:
-		switch e.Name {
-		case key.NameLeftArrow:
-			i := params.SelectedItem()
-			if e.Modifiers.Contain(key.ModShift) {
-				i.SetValue(i.Value() - i.LargeStep())
-			} else {
-				i.SetValue(i.Value() - 1)
-			}
-		case key.NameRightArrow:
-			i := params.SelectedItem()
-			if e.Modifiers.Contain(key.ModShift) {
-				i.SetValue(i.Value() + i.LargeStep())
-			} else {
-				i.SetValue(i.Value() + 1)
-			}
-		case key.NameEscape:
-			t.FocusPrev(gtx, false)
-		}
-	}
-}
-
 func (t *UnitEditor) Tags(level int, yield TagYieldFunc) bool {
-	return yield(level, t.sliderList) && yield(level+1, &t.commentEditor.widgetEditor)
+	widget := t.sliderList
+	if t.showingChooser() {
+		widget = t.searchList
+	}
+	return yield(level, widget) && yield(level+1, &t.commentEditor.widgetEditor)
 }
 
 type ParameterWidget struct {

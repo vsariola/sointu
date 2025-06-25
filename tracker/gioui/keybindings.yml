@@ -52,9 +52,10 @@
 - { key: ">", action: "OctaveSubtract" }
 - { key: "<", shift: true, action: "OctaveAdd" }
 - { key: "<", action: "OctaveSubtract" }
+- { key: "⎋", action: "FocusPrev" } # Esc key
 - { key: "Tab", shift: true, action: "FocusPrev" }
-- { key: "Tab", action: "FocusNext" }
 - { key: "Tab", shift: true, shortcut: true, action: "FocusPrevInto" }
+- { key: "Tab", action: "FocusNext" }
 - { key: "Tab", shortcut: true, action: "FocusNextInto" }
 - { key: "A", action: "NoteOff" }
 - { key: "1", action: "NoteOff" }

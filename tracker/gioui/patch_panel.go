@@ -471,15 +471,12 @@ func (ul *UnitList) update(gtx C, t *Tracker) {
 			key.Filter{Focus: ul.dragList, Name: key.NameEnter, Optional: key.ModCtrl},
 			key.Filter{Focus: ul.dragList, Name: key.NameReturn, Optional: key.ModCtrl},
 			key.Filter{Focus: ul.dragList, Name: key.NameDeleteBackward},
-			key.Filter{Focus: ul.dragList, Name: key.NameEscape},
 		)
 		if !ok {
 			break
 		}
 		if e, ok := event.(key.Event); ok && e.State == key.Press {
 			switch e.Name {
-			case key.NameEscape:
-				t.PatchPanel.instrList.instrumentDragList.Focus()
 			case key.NameRightArrow:
 				t.PatchPanel.unitEditor.sliderList.Focus()
 			case key.NameDeleteBackward:
@@ -496,5 +493,5 @@ func (ul *UnitList) update(gtx C, t *Tracker) {
 }
 
 func (ul *UnitList) Tags(curLevel int, yield TagYieldFunc) bool {
-	return yield(curLevel, ul.dragList)
+	return yield(curLevel, ul.dragList) && yield(curLevel+1, &ul.searchEditor.widgetEditor)
 }
