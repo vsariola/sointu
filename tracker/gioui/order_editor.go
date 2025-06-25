@@ -200,6 +200,10 @@ func (oe *OrderEditor) command(t *Tracker, e key.Event) {
 	}
 }
 
+func (t *OrderEditor) Tags(level int, yield TagYieldFunc) bool {
+	return yield(level+1, t.scrollTable.RowTitleList) && yield(level+1, t.scrollTable.ColTitleList) && yield(level, t.scrollTable)
+}
+
 func patternIndexToString(index int) string {
 	if index < 0 {
 		return ""

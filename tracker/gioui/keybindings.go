@@ -259,48 +259,26 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 	case "Paste":
 		gtx.Execute(clipboard.ReadCmd{Tag: t})
 	case "OrderEditorFocus":
-		t.OrderEditor.scrollTable.Focus()
+		gtx.Execute(key.FocusCmd{Tag: t.OrderEditor.scrollTable})
 	case "TrackEditorFocus":
-		t.TrackEditor.scrollTable.Focus()
+		gtx.Execute(key.FocusCmd{Tag: t.TrackEditor.scrollTable})
 	case "InstrumentEditorFocus":
-		t.InstrumentEditor.Focus()
+		gtx.Execute(key.FocusCmd{Tag: t.PatchPanel.instrList.instrumentDragList})
 	case "FocusPrev":
-		switch {
-		case t.OrderEditor.scrollTable.Focused(gtx):
-			t.InstrumentEditor.unitEditor.sliderList.Focus()
-		case t.TrackEditor.scrollTable.Focused(gtx):
-			t.OrderEditor.scrollTable.Focus()
-		case t.InstrumentEditor.Focused(gtx):
-			if t.InstrEnlarged().Value() {
-				t.InstrumentEditor.unitEditor.sliderList.Focus()
-			} else {
-				t.TrackEditor.scrollTable.Focus()
-			}
-		default:
-			t.InstrumentEditor.Focus()
-		}
+		t.FocusPrev(gtx, 1)
+	case "FocusPrevDetail":
+		t.FocusPrev(gtx, 9)
 	case "FocusNext":
-		switch {
-		case t.OrderEditor.scrollTable.Focused(gtx):
-			t.TrackEditor.scrollTable.Focus()
-		case t.TrackEditor.scrollTable.Focused(gtx):
-			t.InstrumentEditor.Focus()
-		case t.InstrumentEditor.Focused(gtx):
-			t.InstrumentEditor.unitEditor.sliderList.Focus()
-		default:
-			if t.InstrEnlarged().Value() {
-				t.InstrumentEditor.Focus()
-			} else {
-				t.OrderEditor.scrollTable.Focus()
-			}
-		}
+		t.FocusNext(gtx, 1)
+	case "FocusNextDetail":
+		t.FocusNext(gtx, 9)
 	default:
 		if action[:4] == "Note" {
 			val, err := strconv.Atoi(string(action[4:]))
 			if err != nil {
 				break
 			}
-			instr := t.InstrumentEditor.instrumentDragList.TrackerList.Selected()
+			instr := t.Model.Instruments().List().Selected()
 			n := noteAsValue(t.Model.Octave().Value(), val-12)
 			t.KeyNoteMap.Press(e.Name, tracker.NoteEvent{Channel: instr, Note: n})
 		}
