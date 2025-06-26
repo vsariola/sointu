@@ -34,7 +34,9 @@ type (
 		Reset(*Parameter)
 	}
 
-	Params Model
+	Params        Model
+	ParamVertList Model
+
 	// different parameter vtables to handle different types of parameters.
 	// Casting struct{} to interface does not cause allocations.
 	namedParameter      struct{}
@@ -121,78 +123,82 @@ func (p *Parameter) Reset() {
 	p.vtable.Reset(p)
 }
 
+//
+
+func (m *Model) ParamVertList() *ParamVertList   { return (*ParamVertList)(m) }
+func (pt *ParamVertList) List() List             { return List{pt} }
+func (pt *ParamVertList) Selected() int          { return pt.d.ParamIndex }
+func (pt *ParamVertList) Selected2() int         { return pt.d.ParamIndex }
+func (pt *ParamVertList) SetSelected(index int)  { pt.d.ParamIndex = index }
+func (pt *ParamVertList) SetSelected2(index int) {}
+func (pt *ParamVertList) Count() int             { return (*Params)(pt).Width() }
+
 // Model and Params methods
 
-func (m *Model) Params() *Params          { return (*Params)(m) }
-func (pl *Params) List() List             { return List{pl} }
-func (pl *Params) Selected() int          { return pl.d.ParamIndex }
-func (pl *Params) Selected2() int         { return pl.Selected() }
-func (pl *Params) SetSelected(value int)  { pl.d.ParamIndex = max(min(value, pl.Count()-1), 0) }
-func (pl *Params) SetSelected2(value int) {}
-
-func (pl *Params) Count() int {
-	count := 0
-	for range pl.Iterate {
-		count++
-	}
-	return count
+func (m *Model) Params() *Params  { return (*Params)(m) }
+func (pt *Params) Table() Table   { return Table{pt} }
+func (pt *Params) Cursor() Point  { return Point{pt.d.ParamIndex, pt.d.UnitIndex} }
+func (pt *Params) Cursor2() Point { return pt.Cursor() }
+func (pt *Params) SetCursor(p Point) {
+	pt.d.ParamIndex = p.X
+	pt.d.UnitIndex = p.Y
 }
-
-func (pl *Params) SelectedItem() (ret Parameter) {
-	index := pl.Selected()
-	for param := range pl.Iterate {
-		if index == 0 {
-			ret = param
-		}
-		index--
+func (pt *Params) SetCursor2(p Point) {}
+func (pt *Params) Width() int {
+	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.d.Song.Patch) {
+		return 0
 	}
-	return
+	ret := 0
+	for _, unit := range pt.d.Song.Patch[pt.d.InstrIndex].Units {
+		ret = max(ret, len(pt.derived.forUnit[unit.ID].params))
+	}
+	return ret
 }
-
-func (pl *Params) Iterate(yield ParamYieldFunc) {
-	if pl.d.InstrIndex < 0 || pl.d.InstrIndex >= len(pl.d.Song.Patch) {
-		return
+func (pt *Params) Height() int { return (*Model)(pt).Units().Count() }
+func (pt *Params) MoveCursor(dx, dy int) (ok bool) {
+	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.d.Song.Patch) {
+		return false
 	}
-	if pl.d.UnitIndex < 0 || pl.d.UnitIndex >= len(pl.d.Song.Patch[pl.d.InstrIndex].Units) {
-		return
+	pt.d.ParamIndex += dx
+	pt.d.UnitIndex += dy
+	pt.d.ParamIndex = clamp(pt.d.ParamIndex, 0, 7)
+	pt.d.UnitIndex = clamp(pt.d.UnitIndex, 0, len(pt.d.Song.Patch[pt.d.InstrIndex].Units)-1)
+	return true
+}
+func (pt *Params) Item(p Point) Parameter {
+	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.d.Song.Patch) ||
+		p.Y < 0 || p.Y >= len(pt.d.Song.Patch[pt.d.InstrIndex].Units) {
+		return Parameter{}
 	}
-	unit := &pl.d.Song.Patch[pl.d.InstrIndex].Units[pl.d.UnitIndex]
-	unitType, ok := sointu.UnitTypes[unit.Type]
-	if !ok {
-		return
+	id := pt.d.Song.Patch[pt.d.InstrIndex].Units[p.Y].ID
+	if p.X < 0 || p.X >= len(pt.derived.forUnit[id].params) {
+		return Parameter{}
 	}
-	for i, up := range unitType {
-		if !up.CanSet {
-			continue
-		}
-		if unit.Type == "oscillator" && unit.Parameters["type"] != sointu.Sample && (up.Name == "samplestart" || up.Name == "loopstart" || up.Name == "looplength") {
-			continue // don't show the sample related params unless necessary
-		}
-		if !yield(Parameter{m: (*Model)(pl), unit: unit, up: &unitType[i], vtable: &namedParameter{}}) {
-			return
-		}
-	}
-	if unit.Type == "oscillator" && unit.Parameters["type"] == sointu.Sample {
-		if !yield(Parameter{m: (*Model)(pl), unit: unit, vtable: &gmDlsEntryParameter{}}) {
-			return
-		}
-	}
-	if unit.Type == "delay" {
-		if unit.Parameters["stereo"] == 1 && len(unit.VarArgs)%2 == 1 {
-			unit.VarArgs = append(unit.VarArgs, 1)
-		}
-		if !yield(Parameter{m: (*Model)(pl), unit: unit, vtable: &reverbParameter{}}) {
-			return
-		}
-		if !yield(Parameter{m: (*Model)(pl), unit: unit, vtable: &delayLinesParameter{}}) {
-			return
-		}
-		for i := range unit.VarArgs {
-			if !yield(Parameter{m: (*Model)(pl), unit: unit, index: i, vtable: &delayTimeParameter{}}) {
-				return
-			}
-		}
-	}
+	return pt.derived.forUnit[id].params[p.X]
+}
+func (pt *Params) clear(p Point) {
+	panic("NOT IMPLEMENTED")
+}
+func (pt *Params) set(p Point, value int) {
+	panic("NOT IMPLEMENTED")
+}
+func (pt *Params) add(rect Rect, delta int) (ok bool) {
+	panic("NOT IMPLEMENTED")
+}
+func (pt *Params) marshal(rect Rect) (data []byte, ok bool) {
+	panic("NOT IMPLEMENTED")
+}
+func (pt *Params) unmarshalAtCursor(data []byte) (ok bool) {
+	panic("NOT IMPLEMENTED")
+}
+func (pt *Params) unmarshalRange(rect Rect, data []byte) (ok bool) {
+	panic("NOT IMPLEMENTED")
+}
+func (pt *Params) change(kind string, severity ChangeSeverity) func() {
+	panic("NOT IMPLEMENTED")
+}
+func (pt *Params) cancel() {
+	panic("NOT IMPLEMENTED")
 }
 
 // namedParameter vtable

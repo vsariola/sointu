@@ -7,12 +7,15 @@ import (
 	"io"
 	"math"
 
+	"gioui.org/f32"
 	"gioui.org/io/clipboard"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
+	"gioui.org/op"
 	"gioui.org/op/clip"
+	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
@@ -26,9 +29,9 @@ import (
 )
 
 type UnitEditor struct {
-	sliderList     *DragList
+	paramTable     *ScrollTable
 	searchList     *DragList
-	Parameters     []*ParameterWidget
+	Parameters     [][]*ParameterWidget
 	DeleteUnitBtn  *Clickable
 	CopyUnitBtn    *Clickable
 	ClearUnitBtn   *Clickable
@@ -52,7 +55,7 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 		CopyUnitBtn:    new(Clickable),
 		SelectTypeBtn:  new(Clickable),
 		commentEditor:  NewEditor(true, true, text.Start),
-		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
+		paramTable:     NewScrollTable(m.Params().Table(), m.ParamVertList().List(), m.Units().List()),
 		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
 		searching:      m.UnitSearching(),
 	}
@@ -80,7 +83,7 @@ func (pe *UnitEditor) Layout(gtx C) D {
 }
 
 func (pe *UnitEditor) showingChooser() bool {
-	return pe.searching.Value() || pe.sliderList.TrackerList.Count() == 0
+	return pe.searching.Value()
 }
 
 func (pe *UnitEditor) update(gtx C, t *Tracker) {
@@ -110,17 +113,17 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 	}
 	for {
 		e, ok := gtx.Event(
-			key.Filter{Focus: pe.sliderList, Name: key.NameLeftArrow, Optional: key.ModShift},
-			key.Filter{Focus: pe.sliderList, Name: key.NameRightArrow, Optional: key.ModShift},
-			key.Filter{Focus: pe.sliderList, Name: key.NameDeleteBackward},
-			key.Filter{Focus: pe.sliderList, Name: key.NameDeleteForward},
+			key.Filter{Focus: pe.paramTable, Name: key.NameLeftArrow, Required: key.ModShift},
+			key.Filter{Focus: pe.paramTable, Name: key.NameRightArrow, Required: key.ModShift},
+			key.Filter{Focus: pe.paramTable, Name: key.NameDeleteBackward},
+			key.Filter{Focus: pe.paramTable, Name: key.NameDeleteForward},
 		)
 		if !ok {
 			break
 		}
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
 			params := t.Model.Params()
-			item := params.SelectedItem()
+			item := params.Item(params.Cursor())
 			switch e.Name {
 			case key.NameLeftArrow:
 				if e.Modifiers.Contain(key.ModShift) {
@@ -150,32 +153,56 @@ func (pe *UnitEditor) ChooseUnitType(t *Tracker) {
 
 func (pe *UnitEditor) layoutSliders(gtx C) D {
 	t := TrackerFromContext(gtx)
-	numItems := pe.sliderList.TrackerList.Count()
 	// create enough parameter widget to match the number of parameters
-	for len(pe.Parameters) < numItems {
-		pe.Parameters = append(pe.Parameters, new(ParameterWidget))
+	width := pe.paramTable.Table.Width()
+	for len(pe.Parameters) < pe.paramTable.Table.Height() {
+		pe.Parameters = append(pe.Parameters, make([]*ParameterWidget, 0))
 	}
-
-	index := 0
-	for param := range t.Model.Params().Iterate {
-		pe.Parameters[index].Parameter = param
-		index++
+	for i := range pe.Parameters {
+		for len(pe.Parameters[i]) < width {
+			pe.Parameters[i] = append(pe.Parameters[i], &ParameterWidget{})
+		}
 	}
-	element := func(gtx C, index int) D {
-		if index < 0 || index >= numItems {
+	coltitle := func(gtx C, x int) D {
+		return D{Size: image.Pt(gtx.Dp(100), gtx.Dp(10))}
+	}
+	rowtitle := func(gtx C, y int) D {
+		h := gtx.Dp(100)
+		//defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
+		defer op.Affine(f32.Affine2D{}.Rotate(f32.Pt(0, 0), -90*math.Pi/180).Offset(f32.Point{X: 0, Y: float32(h)})).Push(gtx.Ops).Pop()
+		gtx.Constraints = layout.Exact(image.Pt(1e6, 1e6))
+		Label(t.Theme, &t.Theme.OrderEditor.TrackTitle, t.Units().Item(y).Type).Layout(gtx)
+		return D{Size: image.Pt(gtx.Dp(patternCellWidth), h)}
+	}
+	cursor := t.Model.Params().Cursor()
+	cell := func(gtx C, x, y int) D {
+		gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(100), gtx.Dp(100)))
+		point := tracker.Point{X: x, Y: y}
+		if y < 0 || y >= len(pe.Parameters) || x < 0 || x >= len(pe.Parameters[y]) {
 			return D{}
 		}
-		paramStyle := t.ParamStyle(t.Theme, pe.Parameters[index])
-		paramStyle.Focus = pe.sliderList.TrackerList.Selected() == index
+		if point == cursor {
+			c := t.Theme.Cursor.Inactive
+			if gtx.Focused(pe.paramTable) {
+				c = t.Theme.Cursor.Active
+			}
+			paint.FillShape(gtx.Ops, c, clip.Rect{Min: image.Pt(0, 0), Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
+		}
+
+		param := t.Model.Params().Item(tracker.Point{X: x, Y: y})
+		pe.Parameters[y][x].Parameter = param
+		paramStyle := t.ParamStyle(t.Theme, pe.Parameters[y][x])
+		paramStyle.Focus = pe.paramTable.Table.Cursor() == tracker.Point{X: x, Y: y}
 		dims := paramStyle.Layout(gtx)
 		return D{Size: image.Pt(gtx.Constraints.Max.X, dims.Size.Y)}
 	}
+	table := FilledScrollTable(t.Theme, pe.paramTable)
+	table.RowTitleWidth = 10
+	table.ColumnTitleHeight = 10
+	table.CellWidth = 100
+	table.CellHeight = 100
+	return table.Layout(gtx, cell, coltitle, rowtitle, nil, nil)
 
-	fdl := FilledDragList(t.Theme, pe.sliderList)
-	dims := fdl.Layout(gtx, element, nil)
-	gtx.Constraints = layout.Exact(dims.Size)
-	fdl.LayoutScrollBar(gtx)
-	return dims
 }
 
 func (pe *UnitEditor) layoutFooter(gtx C) D {
@@ -234,9 +261,9 @@ func (pe *UnitEditor) layoutUnitTypeChooser(gtx C) D {
 }
 
 func (t *UnitEditor) Tags(level int, yield TagYieldFunc) bool {
-	widget := t.sliderList
+	widget := event.Tag(t.paramTable)
 	if t.showingChooser() {
-		widget = t.searchList
+		widget = event.Tag(t.searchList)
 	}
 	return yield(level, widget) && yield(level+1, &t.commentEditor.widgetEditor)
 }
@@ -299,8 +326,6 @@ func (p ParameterStyle) Layout(gtx C) D {
 						p.w.Parameter.SetValue(p.w.Parameter.Value() - int(delta))
 					}
 				}
-				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(200))
-				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
 				ra := p.w.Parameter.Range()
 				if !p.w.floatWidget.Dragging() {
 					p.w.floatWidget.Value = (float32(p.w.Parameter.Value()) - float32(ra.Min)) / float32(ra.Max-ra.Min)
@@ -319,8 +344,6 @@ func (p ParameterStyle) Layout(gtx C) D {
 				p.w.Parameter.SetValue(int(p.w.floatWidget.Value*float32(ra.Max-ra.Min) + float32(ra.Min) + 0.5))
 				return dims
 			case tracker.BoolParameter:
-				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(60))
-				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
 				ra := p.w.Parameter.Range()
 				p.w.boolWidget.Value = p.w.Parameter.Value() > ra.Min
 				boolStyle := material.Switch(&p.Theme.Material, &p.w.boolWidget, "Toggle boolean parameter")
@@ -334,8 +357,6 @@ func (p ParameterStyle) Layout(gtx C) D {
 				}
 				return dims
 			case tracker.IDParameter:
-				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(200))
-				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
 				instrItems := make([]ActionMenuItem, p.tracker.Instruments().Count())
 				for i := range instrItems {
 					i := i

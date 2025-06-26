@@ -478,7 +478,7 @@ func (ul *UnitList) update(gtx C, t *Tracker) {
 		if e, ok := event.(key.Event); ok && e.State == key.Press {
 			switch e.Name {
 			case key.NameRightArrow:
-				t.PatchPanel.unitEditor.sliderList.Focus()
+				t.PatchPanel.unitEditor.paramTable.Focus()
 			case key.NameDeleteBackward:
 				t.Units().SetSelectedType("")
 				t.UnitSearching().SetValue(true)

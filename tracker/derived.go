@@ -24,6 +24,7 @@ type (
 		instrument      sointu.Instrument
 		instrumentIndex int
 		unitIndex       int
+		params          []Parameter
 
 		// map param by Name
 		forParameter map[string]derivedForParameter
@@ -159,11 +160,44 @@ func (m *Model) updateDerivedPatchData() {
 				unitIndex:       u,
 				instrument:      instr,
 				instrumentIndex: i,
+				params:          m.deriveParams(&instr.Units[u]),
 				forParameter:    make(map[string]derivedForParameter),
 			}
 			m.updateDerivedParameterData(unit)
 		}
 	}
+}
+
+func (m *Model) deriveParams(unit *sointu.Unit) []Parameter {
+	ret := make([]Parameter, 0, 10)
+	unitType, ok := sointu.UnitTypes[unit.Type]
+	if !ok {
+		return ret
+	}
+	for i, up := range unitType {
+		if !up.CanSet {
+			continue
+		}
+		if unit.Type == "oscillator" && unit.Parameters["type"] != sointu.Sample && (up.Name == "samplestart" || up.Name == "loopstart" || up.Name == "looplength") {
+			continue // don't show the sample related params unless necessary
+		}
+		ret = append(ret, Parameter{m: m, unit: unit, up: &unitType[i], vtable: &namedParameter{}})
+	}
+	if unit.Type == "oscillator" && unit.Parameters["type"] == sointu.Sample {
+		ret = append(ret, Parameter{m: m, unit: unit, vtable: &gmDlsEntryParameter{}})
+	}
+	if unit.Type == "delay" {
+		if unit.Parameters["stereo"] == 1 && len(unit.VarArgs)%2 == 1 {
+			unit.VarArgs = append(unit.VarArgs, 1)
+		}
+		ret = append(ret,
+			Parameter{m: m, unit: unit, vtable: &reverbParameter{}},
+			Parameter{m: m, unit: unit, vtable: &delayLinesParameter{}})
+		for i := range unit.VarArgs {
+			ret = append(ret, Parameter{m: m, unit: unit, index: i, vtable: &delayTimeParameter{}})
+		}
+	}
+	return ret
 }
 
 func (m *Model) updateDerivedParameterData(unit sointu.Unit) {

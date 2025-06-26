@@ -320,6 +320,21 @@ func (v *Units) Iterate(yield UnitYieldFunc) {
 	}
 }
 
+func (v *Units) Item(index int) UnitListItem {
+	if index < 0 || index >= v.Count() {
+		return UnitListItem{}
+	}
+	unit := v.d.Song.Patch[v.d.InstrIndex].Units[index]
+	return UnitListItem{
+		Type:        unit.Type,
+		Comment:     unit.Comment,
+		Disabled:    unit.Disabled,
+		StackNeed:   unit.StackNeed(),
+		StackBefore: 0,
+		StackAfter:  0,
+	}
+}
+
 func (v *Units) Selected() int {
 	return max(min(v.d.UnitIndex, v.Count()-1), 0)
 }
