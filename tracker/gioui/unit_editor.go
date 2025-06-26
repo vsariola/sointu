@@ -17,7 +17,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
-	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
@@ -113,8 +112,8 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 	}
 	for {
 		e, ok := gtx.Event(
-			key.Filter{Focus: pe.paramTable, Name: key.NameLeftArrow, Required: key.ModShift},
-			key.Filter{Focus: pe.paramTable, Name: key.NameRightArrow, Required: key.ModShift},
+			key.Filter{Focus: pe.paramTable, Name: key.NameLeftArrow, Required: key.ModShift, Optional: key.ModShortcut},
+			key.Filter{Focus: pe.paramTable, Name: key.NameRightArrow, Required: key.ModShift, Optional: key.ModShortcut},
 			key.Filter{Focus: pe.paramTable, Name: key.NameDeleteBackward},
 			key.Filter{Focus: pe.paramTable, Name: key.NameDeleteForward},
 		)
@@ -126,13 +125,13 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 			item := params.Item(params.Cursor())
 			switch e.Name {
 			case key.NameLeftArrow:
-				if e.Modifiers.Contain(key.ModShift) {
+				if e.Modifiers.Contain(key.ModShortcut) {
 					item.SetValue(item.Value() - item.LargeStep())
 				} else {
 					item.SetValue(item.Value() - 1)
 				}
 			case key.NameRightArrow:
-				if e.Modifiers.Contain(key.ModShift) {
+				if e.Modifiers.Contain(key.ModShortcut) {
 					item.SetValue(item.Value() + item.LargeStep())
 				} else {
 					item.SetValue(item.Value() + 1)
@@ -172,7 +171,7 @@ func (pe *UnitEditor) layoutSliders(gtx C) D {
 		defer op.Affine(f32.Affine2D{}.Rotate(f32.Pt(0, 0), -90*math.Pi/180).Offset(f32.Point{X: 0, Y: float32(h)})).Push(gtx.Ops).Pop()
 		gtx.Constraints = layout.Exact(image.Pt(1e6, 1e6))
 		Label(t.Theme, &t.Theme.OrderEditor.TrackTitle, t.Units().Item(y).Type).Layout(gtx)
-		return D{Size: image.Pt(gtx.Dp(patternCellWidth), h)}
+		return D{Size: image.Pt(gtx.Dp(10), h)}
 	}
 	cursor := t.Model.Params().Cursor()
 	cell := func(gtx C, x, y int) D {
@@ -304,12 +303,13 @@ func (t *Tracker) ParamStyle(th *Theme, paramWidget *ParameterWidget) ParameterS
 
 func (p ParameterStyle) Layout(gtx C) D {
 	info, infoOk := p.w.Parameter.Info()
-	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+	title := Label(p.Theme, &p.Theme.UnitEditor.ParameterName, p.w.Parameter.Name())
+	title.Alignment = text.Middle
+	return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
+		layout.Rigid(title.Layout),
 		layout.Rigid(func(gtx C) D {
-			gtx.Constraints.Min.X = gtx.Dp(unit.Dp(110))
-			return layout.E.Layout(gtx, Label(p.Theme, &p.Theme.UnitEditor.ParameterName, p.w.Parameter.Name()).Layout)
-		}),
-		layout.Rigid(func(gtx C) D {
+			gtx.Constraints.Min.X = gtx.Dp(100)
+			gtx.Constraints.Min.Y = gtx.Dp(50)
 			switch p.w.Parameter.Type() {
 			case tracker.IntegerParameter:
 				for p.Focus {
@@ -404,6 +404,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 			if p.w.Parameter.Type() != tracker.IDParameter {
 				hint := p.w.Parameter.Hint()
 				label := Label(p.tracker.Theme, &p.tracker.Theme.UnitEditor.Hint, hint.Label)
+				label.Alignment = text.Middle
 				if !hint.Valid {
 					label.Color = p.tracker.Theme.UnitEditor.InvalidParam
 				}

@@ -56,7 +56,8 @@ type (
 )
 
 const (
-	IntegerParameter ParameterType = iota
+	NoParameter ParameterType = iota
+	IntegerParameter
 	BoolParameter
 	IDParameter
 )
@@ -88,7 +89,7 @@ func (p *Parameter) Range() IntRange {
 }
 func (p *Parameter) Type() ParameterType {
 	if p.vtable == nil {
-		return IntegerParameter
+		return NoParameter
 	}
 	return p.vtable.Type(p)
 }
@@ -140,8 +141,8 @@ func (pt *Params) Table() Table   { return Table{pt} }
 func (pt *Params) Cursor() Point  { return Point{pt.d.ParamIndex, pt.d.UnitIndex} }
 func (pt *Params) Cursor2() Point { return pt.Cursor() }
 func (pt *Params) SetCursor(p Point) {
-	pt.d.ParamIndex = p.X
-	pt.d.UnitIndex = p.Y
+	pt.d.ParamIndex = max(min(p.X, pt.Width()-1), 0)
+	pt.d.UnitIndex = max(min(p.Y, pt.Height()-1), 0)
 }
 func (pt *Params) SetCursor2(p Point) {}
 func (pt *Params) Width() int {
@@ -156,14 +157,11 @@ func (pt *Params) Width() int {
 }
 func (pt *Params) Height() int { return (*Model)(pt).Units().Count() }
 func (pt *Params) MoveCursor(dx, dy int) (ok bool) {
-	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.d.Song.Patch) {
-		return false
-	}
-	pt.d.ParamIndex += dx
-	pt.d.UnitIndex += dy
-	pt.d.ParamIndex = clamp(pt.d.ParamIndex, 0, 7)
-	pt.d.UnitIndex = clamp(pt.d.UnitIndex, 0, len(pt.d.Song.Patch[pt.d.InstrIndex].Units)-1)
-	return true
+	p := pt.Cursor()
+	p.X += dx
+	p.Y += dy
+	pt.SetCursor(p)
+	return p == pt.Cursor()
 }
 func (pt *Params) Item(p Point) Parameter {
 	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.d.Song.Patch) ||
