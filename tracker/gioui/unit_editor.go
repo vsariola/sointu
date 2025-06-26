@@ -112,8 +112,8 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 		e, ok := gtx.Event(
 			key.Filter{Focus: pe.sliderList, Name: key.NameLeftArrow, Optional: key.ModShift},
 			key.Filter{Focus: pe.sliderList, Name: key.NameRightArrow, Optional: key.ModShift},
-			key.Filter{Focus: pe.searchList, Name: key.NameEnter},
-			key.Filter{Focus: pe.searchList, Name: key.NameReturn},
+			key.Filter{Focus: pe.sliderList, Name: key.NameDeleteBackward},
+			key.Filter{Focus: pe.sliderList, Name: key.NameDeleteForward},
 		)
 		if !ok {
 			break
@@ -134,7 +134,7 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 				} else {
 					item.SetValue(item.Value() + 1)
 				}
-			case key.NameEnter, key.NameReturn:
+			case key.NameDeleteBackward, key.NameDeleteForward:
 				item.Reset()
 			}
 		}
