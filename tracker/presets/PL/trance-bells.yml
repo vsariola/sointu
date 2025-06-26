@@ -1,0 +1,70 @@
+name: trance-bells
+comment: |-
+    Generic pluck generator
+    Use oscillator type, color and shape to alter the sound properties
+numvoices: 1
+units:
+    - id: 1007
+      parameters: {}
+      comment: Main envelopes
+    - type: envelope
+      id: 163
+      parameters: {attack: 7, decay: 102, gain: 68, release: 78, stereo: 0, sustain: 47}
+    - type: envelope
+      id: 215
+      parameters: {attack: 0, decay: 84, gain: 127, release: 84, stereo: 0, sustain: 25}
+    - type: mulp
+      id: 216
+      parameters: {stereo: 0}
+    - id: 1008
+      parameters: {}
+      comment: Main oscillators
+    - type: oscillator
+      id: 164
+      parameters: {color: 91, detune: 52, gain: 128, lfo: 0, phase: 128, shape: 48, stereo: 0, transpose: 76, type: 0, unison: 3}
+    - type: add
+      id: 214
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 165
+      parameters: {color: 57, detune: 73, gain: 56, lfo: 0, phase: 0, shape: 37, stereo: 0, transpose: 88, type: 1, unison: 3}
+    - type: addp
+      id: 166
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1002
+      parameters: {color: 61, detune: 64, gain: 128, looplength: 821, loopstart: 2374, phase: 0, samplestart: 557335, shape: 58, stereo: 0, transpose: 55, type: 4, unison: 1}
+    - type: addp
+      id: 1004
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 167
+      parameters: {stereo: 0}
+    - id: 1006
+      parameters: {}
+      comment: Modulated filters
+    - type: loadnote
+      id: 219
+      parameters: {stereo: 0}
+    - type: send
+      id: 220
+      parameters: {amount: 82, port: 0, sendpop: 1, stereo: 0, target: 218, voice: 0}
+    - type: filter
+      id: 218
+      parameters: {bandpass: 0, frequency: 39, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
+    - type: filter
+      id: 217
+      parameters: {bandpass: 0, frequency: 23, highpass: 1, lowpass: 1, resonance: 128, stereo: 0}
+    - id: 1005
+      parameters: {}
+      comment: Delay & output
+    - type: pan
+      id: 168
+      parameters: {panning: 61, stereo: 0}
+    - type: delay
+      id: 169
+      parameters: {damp: 12, dry: 103, feedback: 84, notetracking: 0, pregain: 69, stereo: 1}
+      varargs: [12550, 24402, 21265, 32419]
+    - type: outaux
+      id: 172
+      parameters: {auxgain: 48, outgain: 24, stereo: 1}

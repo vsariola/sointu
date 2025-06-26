@@ -1,0 +1,67 @@
+name: kick-2
+comment: 'Suggested note: C-3'
+numvoices: 1
+units:
+    - id: 296
+      parameters: {}
+      comment: Tick
+    - type: noise
+      id: 269
+      parameters: {gain: 128, shape: 74, stereo: 0}
+    - type: send
+      id: 268
+      parameters: {amount: 81, port: 0, sendpop: 1, stereo: 0, target: 262, voice: 0}
+    - type: oscillator
+      id: 262
+      parameters: {color: 128, detune: 64, gain: 128, phase: 0, shape: 76, stereo: 0, transpose: 64, type: 0}
+    - type: filter
+      id: 281
+      parameters: {bandpass: 1, frequency: 86, highpass: -1, lowpass: 0, resonance: 54, stereo: 0}
+    - type: envelope
+      id: 261
+      parameters: {attack: 16, decay: 51, gain: 128, release: 59, stereo: 0, sustain: 0}
+    - type: mulp
+      id: 263
+      parameters: {stereo: 0}
+    - id: 286
+      parameters: {}
+      comment: Pitch drop
+    - type: envelope
+      id: 280
+      parameters: {attack: 39, decay: 64, gain: 99, release: 14, stereo: 0, sustain: 4}
+    - type: send
+      id: 284
+      parameters: {amount: 75, port: 0, sendpop: 1, stereo: 0, target: 277, voice: 0}
+    - type: noise
+      id: 275
+      parameters: {gain: 33, shape: 80, stereo: 0}
+    - type: send
+      id: 276
+      parameters: {amount: 86, port: 0, sendpop: 1, stereo: 0, target: 277, voice: 0}
+    - id: 297
+      parameters: {}
+      comment: Body & tail
+    - type: oscillator
+      id: 277
+      parameters: {color: 128, detune: 64, gain: 110, phase: 0, shape: 64, stereo: 0, transpose: 45, type: 0}
+    - type: filter
+      id: 283
+      parameters: {bandpass: 0, frequency: 17, highpass: -1, lowpass: 1, resonance: 98, stereo: 0}
+    - type: envelope
+      id: 274
+      parameters: {attack: 39, decay: 69, gain: 60, release: 42, stereo: 0, sustain: 1}
+    - type: mulp
+      id: 279
+      parameters: {stereo: 0}
+    - type: addp
+      id: 271
+      parameters: {stereo: 0}
+    - id: 295
+      parameters: {}
+      comment: Output
+    - type: pan
+      id: 294
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 266
+      parameters: {auxgain: 0, outgain: 123, stereo: 1}

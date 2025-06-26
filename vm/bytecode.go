@@ -144,10 +144,10 @@ func NewBytecode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode,
 				if unit.Parameters["highpass"] == 1 {
 					flags += 0x10
 				}
-				if unit.Parameters["negbandpass"] == 1 {
+				if unit.Parameters["bandpass"] == -1 {
 					flags += 0x08
 				}
-				if unit.Parameters["neghighpass"] == 1 {
+				if unit.Parameters["highpass"] == -1 {
 					flags += 0x04
 				}
 				b.op(opcode + p["stereo"])

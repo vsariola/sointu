@@ -1,7 +1,10 @@
-name: Snare 2
+name: snare
 comment: 'suggested note: E-4'
 numvoices: 1
 units:
+    - id: 334
+      parameters: {}
+      comment: Tom
     - type: envelope
       id: 288
       parameters: {attack: 0, decay: 53, gain: 64, release: 0, stereo: 0, sustain: 0}
@@ -11,14 +14,13 @@ units:
     - type: mulp
       id: 305
       parameters: {stereo: 0}
-    - id: 334
-      parameters: {}
     - type: delay
       id: 309
       parameters: {damp: 80, dry: 128, feedback: 86, notetracking: 0, pregain: 99, stereo: 0}
       varargs: [229]
     - id: 329
       parameters: {}
+      comment: Snare
     - type: envelope
       id: 313
       parameters: {attack: 0, decay: 70, gain: 63, release: 0, stereo: 0, sustain: 0}
@@ -33,12 +35,13 @@ units:
       parameters: {drive: 11, stereo: 0}
     - type: filter
       id: 333
-      parameters: {bandpass: 1, frequency: 86, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 86, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
     - type: addp
       id: 316
       parameters: {stereo: 0}
     - id: 328
       parameters: {}
+      comment: Effects & output
     - type: pan
       id: 292
       parameters: {panning: 64, stereo: 0}

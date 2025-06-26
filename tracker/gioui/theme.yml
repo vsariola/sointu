@@ -178,12 +178,6 @@ instrumenteditor:
     disabled: { textsize: 12, color: *disabled }
     warning: *warningcolor
     error: *errorcolor
-uniteditor:
-  hint: { textsize: 16, color: *highemphasis, shadowcolor: *black }
-  chooser: { textsize: 12, color: *white, shadowcolor: *black }
-  parametername: { textsize: 16, color: *white, shadowcolor: *black }
-  invalidparam: { r: 120, g: 120, b: 120, a: 190 }
-  sendtarget: { r: 120, g: 120, b: 210, a: 255 }
 cursor:
   active: { r: 100, g: 140, b: 255, a: 48 }
   activealt: { r: 255, g: 100, b: 140, a: 48 }
@@ -211,3 +205,62 @@ dialog:
   textinset: { top: 12, bottom: 12, left: 20, right: 20 }
   buttons: *textbutton
 split: { bar: 10, minsize1: 180, minsize2: 180 }
+uniteditor:
+  hint: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+  chooser: { textsize: 12, color: *white, shadowcolor: *black }
+  name:
+    { textsize: 12, alignment: 2, color: *highemphasis, shadowcolor: *black }
+  wirecolor: *secondarycolor
+  wirehighlight: *white
+  wirehint: { textsize: 12, color: *disabled, shadowcolor: *black }
+  width: 60
+  height: 70
+  unitlist:
+    labelwidth: 16
+    name: { textsize: 12, color: *white, alignment: 2 }
+    disabled:
+      { textsize: 12, color: *disabled, font: { style: 1 }, alignment: 2 }
+    error: *errorcolor
+  divider: { r: 255, g: 255, b: 255, a: 5 }
+  rackcomment: { textsize: 16, color: *mediumemphasis, shadowcolor: *black }
+knob:
+  diameter: 36
+  value: { textsize: 12, color: *highemphasis }
+  strokewidth: 4
+  bg: { r: 40, g: 40, b: 40, a: 255 }
+  pos: { color: *primarycolor, bg: { r: 51, g: 36, b: 54, a: 255 } }
+  neg: { color: *secondarycolor, bg: { r: 32, g: 55, b: 58, a: 255 } }
+  indicator: { color: *white, width: 2, innerdiam: 24, outerdiam: 36 }
+disabledknob:
+  diameter: 36
+  value: { textsize: 12, color: { r: 147, g: 143, b: 153, a: 255 }}
+  strokewidth: 4
+  bg: { r: 40, g: 40, b: 40, a: 255 }
+  pos: { color: { r: 147, g: 143, b: 153, a: 255 }, bg: { r: 54, g: 52, b: 59, a: 255 } }
+  neg: { color: { r: 147, g: 143, b: 153, a: 255 }, bg: { r: 54, g: 52, b: 59, a: 255 } }
+  indicator: { color: { r: 147, g: 143, b: 153, a: 255 }, width: 2, innerdiam: 24, outerdiam: 36 }
+signalrail:
+  color: *secondarycolor
+  signalwidth: 10
+  linewidth: 2
+  portdiameter: 8
+  portcolor: *primarycolor
+port:
+  diameter: 36
+  strokewidth: 4
+  color: { r: 32, g: 55, b: 58, a: 255 }
+switch:
+  width: 36
+  height: 20
+  handle: 16
+  neutral:
+    fg: { r: 147, g: 143, b: 153, a: 255 }
+    bg: { r: 54, g: 52, b: 59, a: 255 }
+  pos:
+    fg: *white
+    bg: { r: 125, g: 87, b: 128, a: 255 }
+  neg:
+    fg: *white
+    bg: { r: 70, g: 128, b: 131, a: 255 }
+  icon: 10
+  outline: 1

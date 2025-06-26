@@ -9,6 +9,8 @@ gioui.org/shader v1.0.8 h1:6ks0o/A+b0ne7RzEqRZK5f4Gboz2CfG+mVliciy6+qA=
 gioui.org/shader v1.0.8/go.mod h1:mWdiME581d/kV7/iEhLmUgUK5iZ09XR5XpduXzbePVM=
 gioui.org/x v0.7.1 h1:7bnQHsV7qB36tIUit2WDcUx4Cnmo+6T9I38B9brLQ7o=
 gioui.org/x v0.7.1/go.mod h1:5CzZ64oFpOaqb2kaMvj+QEr5T3nVuLKD0LizLH32ii0=
+gioui.org/x v0.8.1 h1:Q2wumEOfjz3XfRa3TEi6w7dq8+cxV8zsYK8xXQkrCRk=
+gioui.org/x v0.8.1/go.mod h1:v2g60aiZtIVR7lNFXZ123+U0kijJeOChODSuqr7MFSI=
 git.wow.st/gmp/jni v0.0.0-20210610011705-34026c7e22d0 h1:bGG/g4ypjrCJoSvFrP5hafr9PPB5aw8SjcOWWila7ZI=
 git.wow.st/gmp/jni v0.0.0-20210610011705-34026c7e22d0/go.mod h1:+axXBRUTIDlCeE73IKeD/os7LoEnTKdkp8/gQOFjqyo=
 github.com/Masterminds/goutils v1.1.0 h1:zukEsf/1JZwCMgHiK3GZftabmxiCw4apj3a28RPBiVg=
@@ -17,6 +19,8 @@ github.com/Masterminds/semver v1.5.0 h1:H65muMkzWKEuNDnfl9d70GUjFniHKHRbFPGBuZ3Q
 github.com/Masterminds/semver v1.5.0/go.mod h1:MB6lktGJrhw8PrUyiEoblNEGEQ+RzHPF078ddwwvV3Y=
 github.com/Masterminds/sprig v2.22.0+incompatible h1:z4yfnGrZ7netVz+0EDJ0Wi+5VZCSYp4Z0m2dk6cEM60=
 github.com/Masterminds/sprig v2.22.0+incompatible/go.mod h1:y6hNFY5UBTIWBxnzTeuNhlNS5hqE0NB0E6fgfo2Br3o=
+github.com/andybalholm/stroke v0.0.0-20221221101821-bd29b49d73f0 h1:uF5Q/hWnDU1XZeT6CsrRSxHLroUSEYYO3kgES+yd+So=
+github.com/andybalholm/stroke v0.0.0-20221221101821-bd29b49d73f0/go.mod h1:ccdDYaY5+gO+cbnQdFxEXqfy0RkoV25H3jLXUDNM3wg=
 github.com/chewxy/math32 v1.11.1 h1:b7PGHlp8KjylDoU8RrcEsRuGZhJuz8haxnKfuMMRqy8=
 github.com/chewxy/math32 v1.11.1/go.mod h1:dOB2rcuFrCn6UHrze36WSLVPKtzPMRAQvBvUwkSsLqs=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=

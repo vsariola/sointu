@@ -1,24 +1,9 @@
-name: LEAD Morpher
-numvoices: 3
+name: morpher
+numvoices: 1
 units:
-    - type: envelope
-      id: 1
-      parameters: {attack: 25, decay: 82, gain: 128, release: 64, stereo: 0, sustain: 103}
-    - type: oscillator
-      id: 2
-      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 96, shape: 64, stereo: 0, transpose: 40, type: 0}
-    - type: send
-      id: 3
-      parameters: {amount: 46, port: 0, sendpop: 1, target: 15}
-    - type: oscillator
-      id: 5
-      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 86, shape: 64, stereo: 0, transpose: 33, type: 0}
-    - type: send
-      id: 6
-      parameters: {amount: 80, port: 0, sendpop: 0, target: 17}
-    - type: send
-      id: 229
-      parameters: {amount: 80, port: 3, sendpop: 1, target: 231}
+    - id: 235
+      parameters: {}
+      comment: Main oscillators
     - type: oscillator
       id: 231
       parameters: {color: 69, detune: 74, gain: 57, lfo: 0, phase: 0, shape: 128, stereo: 0, transpose: 64, type: 2, unison: 3}
@@ -28,27 +13,54 @@ units:
     - type: addp
       id: 13
       parameters: {stereo: 0}
+    - id: 236
+      parameters: {}
+      comment: Modulated filters
     - type: push
       id: 14
       parameters: {stereo: 0}
+    - type: oscillator
+      id: 5
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 86, shape: 64, stereo: 0, transpose: 33, type: 0}
+    - type: send
+      id: 229
+      parameters: {amount: 80, port: 3, sendpop: 0, target: 231}
+    - type: send
+      id: 6
+      parameters: {amount: 80, port: 0, sendpop: 1, target: 17}
     - type: filter
-      id: 15
-      parameters: {bandpass: 1, frequency: 90, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      id: 17
+      parameters: {bandpass: 1, frequency: 78, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: xch
       id: 16
       parameters: {stereo: 0}
+    - type: oscillator
+      id: 2
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 96, shape: 64, stereo: 0, transpose: 40, type: 0}
+    - type: send
+      id: 3
+      parameters: {amount: 46, port: 0, sendpop: 1, target: 15}
     - type: filter
-      id: 17
-      parameters: {bandpass: 1, frequency: 78, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      id: 15
+      parameters: {bandpass: 1, frequency: 90, highpass: 0, lowpass: 0, resonance: 128, stereo: 0}
     - type: addp
       id: 18
       parameters: {stereo: 0}
     - type: filter
       id: 20
-      parameters: {bandpass: 0, frequency: 93, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 93, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
+    - id: 237
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1
+      parameters: {attack: 25, decay: 82, gain: 128, release: 64, stereo: 0, sustain: 103}
     - type: mulp
       id: 21
       parameters: {stereo: 0}
+    - id: 233
+      parameters: {}
+      comment: Delay & output
     - type: pan
       id: 23
       parameters: {panning: 61, stereo: 0}

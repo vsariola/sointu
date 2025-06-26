@@ -93,3 +93,6 @@
 - { key: "P", action: "Note28" }
 - { key: "+", action: "Increase" }
 - { key: "-", action: "Decrease" }
+- { key: "+", shortcut: true, action: "IncreaseMore" } # increase a large step
+- { key: "-", shortcut: true, action: "DecreaseMore" } # decrease a large step
+

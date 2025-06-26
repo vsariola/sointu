@@ -120,7 +120,9 @@ func (oe *OrderEditor) Layout(gtx C) D {
 	table := FilledScrollTable(t.Theme, oe.scrollTable)
 	table.ColumnTitleHeight = orderTitleHeight
 
-	return table.Layout(gtx, cell, colTitle, rowTitle, nil, rowTitleBg)
+	return Surface{Gray: 24, Focus: oe.scrollTable.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
+		return table.Layout(gtx, cell, colTitle, rowTitle, nil, rowTitleBg)
+	})
 }
 
 func (oe *OrderEditor) handleEvents(gtx C, t *Tracker) {

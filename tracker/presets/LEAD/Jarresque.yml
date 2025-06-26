@@ -1,33 +1,39 @@
-name: Jarresque
+name: jarresque
 numvoices: 1
 units:
-    - type: envelope
-      id: 1
-      parameters: {attack: 80, decay: 128, gain: 67, release: 80, stereo: 0, sustain: 128}
+    - id: 242
+      parameters: {}
+      comment: Modulations
     - type: oscillator
       id: 2
       parameters: {color: 64, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 16, type: 1}
     - type: send
-      id: 3
-      parameters: {amount: 80, port: 0, sendpop: 0, target: 14}
+      id: 5
+      parameters: {amount: 58, port: 1, sendpop: 0, target: 10}
     - type: send
       id: 4
       parameters: {amount: 48, port: 0, sendpop: 0, target: 10}
     - type: send
-      id: 5
-      parameters: {amount: 58, port: 1, sendpop: 1, target: 10}
+      id: 3
+      parameters: {amount: 80, port: 0, sendpop: 1, target: 14}
+    - id: 241
+      parameters: {}
+      comment: Modulated noise
+    - type: noise
+      id: 237
+      parameters: {gain: 16, shape: 64, stereo: 0}
+    - type: filter
+      id: 10
+      parameters: {bandpass: 1, frequency: 69, highpass: 0, lowpass: 0, resonance: 57, stereo: 0}
+    - id: 240
+      parameters: {}
+      comment: Main oscillators
     - type: oscillator
       id: 235
       parameters: {color: 3, detune: 73, gain: 63, lfo: 0, phase: 0, shape: 98, stereo: 0, transpose: 52, type: 1, unison: 1}
     - type: oscillator
       id: 236
       parameters: {color: 57, detune: 60, gain: 38, lfo: 0, phase: 17, shape: 71, stereo: 0, transpose: 71, type: 1}
-    - type: noise
-      id: 237
-      parameters: {gain: 16, shape: 64, stereo: 0}
-    - type: filter
-      id: 10
-      parameters: {bandpass: 1, frequency: 69, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 57, stereo: 0}
     - type: addp
       id: 11
       parameters: {stereo: 0}
@@ -39,19 +45,28 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 14
-      parameters: {bandpass: 1, frequency: 57, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 57, highpass: 0, lowpass: 0, resonance: 128, stereo: 0}
     - type: xch
       id: 15
       parameters: {stereo: 0}
     - type: filter
       id: 16
-      parameters: {bandpass: 1, frequency: 93, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 93, highpass: 0, lowpass: 0, resonance: 128, stereo: 0}
     - type: addp
       id: 17
       parameters: {stereo: 0}
+    - id: 239
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1
+      parameters: {attack: 80, decay: 128, gain: 67, release: 80, stereo: 0, sustain: 128}
     - type: mulp
       id: 18
       parameters: {stereo: 0}
+    - id: 238
+      parameters: {}
+      comment: Delay & output
     - type: delay
       id: 19
       parameters: {damp: 64, dry: 128, feedback: 64, notetracking: 2, pregain: 51, stereo: 0}

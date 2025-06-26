@@ -36,9 +36,9 @@ type (
 	}
 
 	UnitListItem struct {
-		Type, Comment                      string
-		Disabled                           bool
-		StackNeed, StackBefore, StackAfter int
+		Type, Comment string
+		Disabled      bool
+		Signals       Rail
 	}
 
 	// Range is used to represent a range [Start,End) of integers
@@ -299,24 +299,21 @@ func (m *Units) SetSelectedType(t string) {
 	m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].ID = oldUnit.ID // keep the ID of the replaced unit
 }
 
-func (v *Units) Iterate(yield UnitYieldFunc) {
-	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
-		return
+func (v *Units) Item(index int) UnitListItem {
+	i := v.d.InstrIndex
+	if i < 0 || i >= len(v.d.Song.Patch) || index < 0 || index >= v.Count() {
+		return UnitListItem{}
 	}
-	stackBefore := 0
-	for i, unit := range v.d.Song.Patch[v.d.InstrIndex].Units {
-		stackAfter := stackBefore + unit.StackChange()
-		if !yield(i, UnitListItem{
-			Type:        unit.Type,
-			Comment:     unit.Comment,
-			Disabled:    unit.Disabled,
-			StackNeed:   unit.StackNeed(),
-			StackBefore: stackBefore,
-			StackAfter:  stackAfter,
-		}) {
-			break
-		}
-		stackBefore = stackAfter
+	unit := v.d.Song.Patch[v.d.InstrIndex].Units[index]
+	signals := Rail{}
+	if i >= 0 && i < len(v.derived.patch) && index >= 0 && index < len(v.derived.patch[i].rails) {
+		signals = v.derived.patch[i].rails[index]
+	}
+	return UnitListItem{
+		Type:     unit.Type,
+		Comment:  unit.Comment,
+		Disabled: unit.Disabled,
+		Signals:  signals,
 	}
 }
 

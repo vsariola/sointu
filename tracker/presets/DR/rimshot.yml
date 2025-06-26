@@ -1,32 +1,84 @@
-name: Rimshot
+name: rimshot
 numvoices: 1
 units:
+    - id: 3021
+      parameters: {}
+      comment: Modulations
+    - type: envelope
+      id: 3002
+      parameters: {attack: 0, decay: 48, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: send
+      id: 3003
+      parameters: {amount: 107, port: 0, sendpop: 0, target: 3005}
+    - type: send
+      id: 3004
+      parameters: {amount: 80, port: 0, sendpop: 1, target: 3006}
+    - id: 3022
+      parameters: {}
+      comment: Main oscillators
+    - type: oscillator
+      id: 3005
+      parameters: {color: 128, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 32, stereo: 0, transpose: 64, type: 0}
+    - type: oscillator
+      id: 3006
+      parameters: {color: 128, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 80, stereo: 0, transpose: 64, type: 0}
+    - type: addp
+      id: 3010
+      parameters: {stereo: 0}
+    - id: 3023
+      parameters: {}
+      comment: Noise
+    - type: noise
+      id: 3007
+      parameters: {gain: 48, shape: 47, stereo: 0}
+    - type: filter
+      id: 3008
+      parameters: {bandpass: 1, frequency: 86, highpass: 0, lowpass: 1, resonance: 59, stereo: 0}
+    - type: filter
+      id: 3009
+      parameters: {bandpass: 1, frequency: 56, highpass: 1, lowpass: 1, resonance: 4, stereo: 0}
+    - type: addp
+      id: 3011
+      parameters: {stereo: 0}
+    - type: distort
+      id: 3012
+      parameters: {drive: 76, stereo: 0}
+    - id: 3024
+      parameters: {}
+      comment: Main envelope
     - type: envelope
       id: 3000
       parameters: {attack: 0, decay: 76, gain: 51, release: 74, stereo: 0, sustain: 0}
     - type: send
-      parameters: {amount: 128, port: 4, sendpop: 0, target: 3000}
-    - type: envelope      parameters: {attack: 0, decay: 48, gain: 128, release: 0, stereo: 0, sustain: 0}
-    - type: send      parameters: {amount: 107, port: 0, sendpop: 0, target: 3001}
-    - type: send
-       parameters: {amount: 80, port: 0, sendpop: 1, target: 3002}
-    - type: oscillator
       id: 3001
-      parameters: {color: 128, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 32, stereo: 0, transpose: 64, type: 0}
-    - type: oscillator
-      id: 3002
-      parameters: {color: 128, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 80, stereo: 0, transpose: 64, type: 0}
-    - type: noise      parameters: {gain: 48, shape: 47, stereo: 0}
-    - type: filter      parameters: {bandpass: 1, frequency: 86, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 59, stereo: 0}
-    - type: filter      parameters: {bandpass: 1, frequency: 56, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 4, stereo: 0}
-    - type: addp      parameters: {stereo: 0}
-    - type: addp      parameters: {stereo: 0}
-    - type: distort      parameters: {drive: 76, stereo: 0}
-    - type: mulp      parameters: {stereo: 0}
-    - type: dbgain      parameters: {decibels: 37, stereo: 0}
-    - type: compressor      parameters: {attack: 46, invgain: 114, ratio: 110, release: 49, stereo: 0, threshold: 62}
-    - type: mulp      parameters: {stereo: 0}
-    - type: filter      parameters: {bandpass: 0, frequency: 39, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 17, stereo: 0}
-    - type: filter      parameters: {bandpass: 0, frequency: 48, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
-    - type: pan      parameters: {panning: 64, stereo: 0}
-    - type: outaux      parameters: {auxgain: 0, outgain: 48, stereo: 1}
+      parameters: {amount: 128, port: 4, sendpop: 0, stereo: 0, target: 3000}
+    - type: mulp
+      id: 3013
+      parameters: {stereo: 0}
+    - id: 3025
+      parameters: {}
+      comment: Effects
+    - type: dbgain
+      id: 3014
+      parameters: {decibels: 37, stereo: 0}
+    - type: compressor
+      id: 3015
+      parameters: {attack: 46, invgain: 114, ratio: 110, release: 49, stereo: 0, threshold: 64}
+    - type: mulp
+      id: 3016
+      parameters: {stereo: 0}
+    - type: filter
+      id: 3017
+      parameters: {bandpass: 0, frequency: 39, highpass: 1, lowpass: 0, resonance: 17, stereo: 0}
+    - type: filter
+      id: 3018
+      parameters: {bandpass: 0, frequency: 48, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
+    - id: 3026
+      parameters: {}
+      comment: Output
+    - type: pan
+      id: 3019
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 3020
+      parameters: {auxgain: 0, outgain: 48, stereo: 1}

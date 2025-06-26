@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Signal rail that visualizes what happens in the stack, shown on the left side
+  of each unit in the rack.
+- The parameters are now displayed in a grid as knobs, with units of the
+  instrument going from the top to the bottom. Bezier lines are used to indicate
+  which sends modulate which ports. ([#173][i173])
 - Tabbing works more consistently, with widgets placed in a "tree", and plain
   Tab moves to the next widget on the same level or more shallow in the tree,
   while ctrl-Tab moves to next widget, regardless of its depth. This allows the
@@ -104,6 +109,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   ([#156][i156])
 
 ### Changed
+- Send amount defaults to 64 = 0.0 ([#178][i178])
+- BREAKING CHANGE: the negbandpass and neghighpass parameters of the filter unit
+  were removed. Setting bandpass or highpass to -1 achieves now the same end
+  result. Setting both negbandpass and bandpass to 1 was previously a no-op. Old
+  patch and instrument files are converted to the new format when loaded, but
+  newer Sointu files should not be compiled with an old version of
+  sointu-compile.
 - The maximum number of delaylines in the native synth was increased to 128,
   with slight increase in memory usage ([#155][i155])
 - The numeric updown widget has a new appearance.
@@ -342,7 +354,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i166]: https://github.com/vsariola/sointu/issues/166
 [i168]: https://github.com/vsariola/sointu/issues/168
 [i170]: https://github.com/vsariola/sointu/issues/170
+[i173]: https://github.com/vsariola/sointu/issues/173
 [i176]: https://github.com/vsariola/sointu/issues/176
+[i178]: https://github.com/vsariola/sointu/issues/178
 [i186]: https://github.com/vsariola/sointu/issues/186
 [i192]: https://github.com/vsariola/sointu/issues/192
 [i196]: https://github.com/vsariola/sointu/issues/196

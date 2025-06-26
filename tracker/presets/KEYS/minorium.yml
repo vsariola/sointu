@@ -1,51 +1,57 @@
 name: minorium
 numvoices: 1
 units:
-    - type: envelope
-      id: 1
-      parameters: {attack: 0, decay: 64, gain: 128, release: 48, stereo: 0, sustain: 88}
+    - id: 244
+      parameters: {}
+      comment: Modulations
+    - type: oscillator
+      id: 5
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 8, type: 0}
+    - type: send
+      id: 238
+      parameters: {amount: 68, port: 1, sendpop: 0, target: 12}
+    - type: send
+      id: 6
+      parameters: {amount: 32, port: 0, sendpop: 0, target: 13}
+    - type: send
+      id: 239
+      parameters: {amount: 88, port: 0, sendpop: 1, target: 15}
     - type: oscillator
       id: 2
       parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 16, type: 0}
     - type: send
       id: 3
       parameters: {amount: 48, port: 0, sendpop: 1, target: 241}
-    - type: oscillator
-      id: 5
-      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 8, type: 0}
-    - type: send
-      id: 6
-      parameters: {amount: 32, port: 0, sendpop: 0, target: 13}
-    - type: send
-      id: 238
-      parameters: {amount: 68, port: 1, sendpop: 0, target: 12}
-    - type: send
-      id: 239
-      parameters: {amount: 88, port: 0, sendpop: 1, target: 15}
-    - type: oscillator
-      id: 240
-      parameters: {color: 16, detune: 64, gain: 72, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 67, type: 1}
-    - type: filter
-      id: 241
-      parameters: {bandpass: 0, frequency: 64, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+    - id: 245
+      parameters: {}
+      comment: Main oscillators
     - type: oscillator
       id: 12
       parameters: {color: 16, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 71, type: 1}
     - type: filter
       id: 13
-      parameters: {bandpass: 0, frequency: 64, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 64, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: oscillator
       id: 14
       parameters: {color: 16, detune: 64, gain: 96, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
     - type: filter
       id: 15
-      parameters: {bandpass: 0, frequency: 64, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 64, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+    - type: oscillator
+      id: 240
+      parameters: {color: 16, detune: 64, gain: 72, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 67, type: 1}
+    - type: filter
+      id: 241
+      parameters: {bandpass: 0, frequency: 64, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: addp
       id: 16
       parameters: {stereo: 0}
     - type: addp
       id: 17
       parameters: {stereo: 0}
+    - id: 246
+      parameters: {}
+      comment: Filter
     - type: envelope
       id: 18
       parameters: {attack: 88, decay: 88, gain: 128, release: 96, stereo: 0, sustain: 96}
@@ -54,10 +60,19 @@ units:
       parameters: {amount: 88, port: 0, sendpop: 1, target: 21}
     - type: filter
       id: 21
-      parameters: {bandpass: 0, frequency: 32, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 16, stereo: 0}
+      parameters: {bandpass: 0, frequency: 32, highpass: 1, lowpass: 1, resonance: 16, stereo: 0}
+    - id: 242
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1
+      parameters: {attack: 0, decay: 64, gain: 128, release: 48, stereo: 0, sustain: 88}
     - type: mulp
       id: 22
       parameters: {stereo: 0}
+    - id: 243
+      parameters: {}
+      comment: Delay & output
     - type: delay
       id: 23
       parameters: {damp: 128, dry: 96, feedback: 48, notetracking: 2, pregain: 48, stereo: 0}

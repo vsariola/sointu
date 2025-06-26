@@ -2,47 +2,46 @@ package gioui
 
 import (
 	"bytes"
-	"fmt"
 	"image"
+	"image/color"
 	"io"
 	"math"
+	"time"
 
+	"gioui.org/f32"
 	"gioui.org/io/clipboard"
-	"gioui.org/io/event"
 	"gioui.org/io/key"
-	"gioui.org/io/pointer"
 	"gioui.org/layout"
+	"gioui.org/op"
 	"gioui.org/op/clip"
+	"gioui.org/op/paint"
 	"gioui.org/text"
-	"gioui.org/unit"
-	"gioui.org/widget"
-	"gioui.org/widget/material"
-	"gioui.org/x/component"
-	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
 
-type UnitEditor struct {
-	sliderList     *DragList
-	searchList     *DragList
-	Parameters     []*ParameterWidget
-	DeleteUnitBtn  *Clickable
-	CopyUnitBtn    *Clickable
-	ClearUnitBtn   *Clickable
-	DisableUnitBtn *Clickable
-	SelectTypeBtn  *Clickable
-	commentEditor  *Editor
-	caser          cases.Caser
+type (
+	UnitEditor struct {
+		paramTable     *ScrollTable
+		searchList     *DragList
+		Parameters     [][]*ParamState
+		DeleteUnitBtn  *Clickable
+		CopyUnitBtn    *Clickable
+		ClearUnitBtn   *Clickable
+		DisableUnitBtn *Clickable
+		SelectTypeBtn  *Clickable
+		commentEditor  *Editor
+		caser          cases.Caser
 
-	copyHint        string
-	disableUnitHint string
-	enableUnitHint  string
+		copyHint        string
+		disableUnitHint string
+		enableUnitHint  string
 
-	searching tracker.Bool
-}
+		searching tracker.Bool
+	}
+)
 
 func NewUnitEditor(m *tracker.Model) *UnitEditor {
 	ret := &UnitEditor{
@@ -52,7 +51,7 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 		CopyUnitBtn:    new(Clickable),
 		SelectTypeBtn:  new(Clickable),
 		commentEditor:  NewEditor(true, true, text.Start),
-		sliderList:     NewDragList(m.Params().List(), layout.Vertical),
+		paramTable:     NewScrollTable(m.Params().Table(), m.ParamVertList().List(), m.Units().List()),
 		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
 		searching:      m.UnitSearching(),
 	}
@@ -66,8 +65,7 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 func (pe *UnitEditor) Layout(gtx C) D {
 	t := TrackerFromContext(gtx)
 	pe.update(gtx, t)
-	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-	editorFunc := pe.layoutSliders
+	editorFunc := pe.layoutRack
 	if pe.showingChooser() {
 		editorFunc = pe.layoutUnitTypeChooser
 	}
@@ -80,7 +78,7 @@ func (pe *UnitEditor) Layout(gtx C) D {
 }
 
 func (pe *UnitEditor) showingChooser() bool {
-	return pe.searching.Value() || pe.sliderList.TrackerList.Count() == 0
+	return pe.searching.Value()
 }
 
 func (pe *UnitEditor) update(gtx C, t *Tracker) {
@@ -96,46 +94,82 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 	for pe.commentEditor.Update(gtx, t.UnitComment()) != EditorEventNone {
 		t.FocusPrev(gtx, false)
 	}
+	for pe.ClearUnitBtn.Clicked(gtx) {
+		t.ClearUnit().Do()
+		t.UnitSearch().SetValue("")
+		t.UnitSearching().SetValue(true)
+		pe.searchList.Focus()
+	}
 	for {
 		e, ok := gtx.Event(
 			key.Filter{Focus: pe.searchList, Name: key.NameEnter},
 			key.Filter{Focus: pe.searchList, Name: key.NameReturn},
+			key.Filter{Focus: pe.searchList, Name: key.NameEscape},
 		)
 		if !ok {
 			break
 		}
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
-			pe.ChooseUnitType(t)
+			switch e.Name {
+			case key.NameEscape:
+				t.UnitSearching().SetValue(false)
+				pe.paramTable.RowTitleList.Focus()
+			case key.NameEnter, key.NameReturn:
+				pe.ChooseUnitType(t)
+			}
 		}
 	}
 	for {
 		e, ok := gtx.Event(
-			key.Filter{Focus: pe.sliderList, Name: key.NameLeftArrow, Optional: key.ModShift},
-			key.Filter{Focus: pe.sliderList, Name: key.NameRightArrow, Optional: key.ModShift},
-			key.Filter{Focus: pe.sliderList, Name: key.NameDeleteBackward},
-			key.Filter{Focus: pe.sliderList, Name: key.NameDeleteForward},
+			key.Filter{Focus: pe.paramTable, Name: key.NameLeftArrow, Required: key.ModShift, Optional: key.ModShortcut},
+			key.Filter{Focus: pe.paramTable, Name: key.NameRightArrow, Required: key.ModShift, Optional: key.ModShortcut},
+			key.Filter{Focus: pe.paramTable, Name: key.NameDeleteBackward},
+			key.Filter{Focus: pe.paramTable, Name: key.NameDeleteForward},
 		)
 		if !ok {
 			break
 		}
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
-			params := t.Model.Params()
-			item := params.SelectedItem()
 			switch e.Name {
 			case key.NameLeftArrow:
-				if e.Modifiers.Contain(key.ModShift) {
-					item.SetValue(item.Value() - item.LargeStep())
-				} else {
-					item.SetValue(item.Value() - 1)
-				}
+				t.Model.Params().Table().Add(-1, e.Modifiers.Contain(key.ModShortcut))
 			case key.NameRightArrow:
-				if e.Modifiers.Contain(key.ModShift) {
-					item.SetValue(item.Value() + item.LargeStep())
-				} else {
-					item.SetValue(item.Value() + 1)
-				}
+				t.Model.Params().Table().Add(1, e.Modifiers.Contain(key.ModShortcut))
 			case key.NameDeleteBackward, key.NameDeleteForward:
-				item.Reset()
+				t.Model.Params().Table().Clear()
+			}
+			c := t.Model.Params().Cursor()
+			if c.X >= 0 && c.Y >= 0 && c.Y < len(pe.Parameters) && c.X < len(pe.Parameters[c.Y]) {
+				ta := &pe.Parameters[c.Y][c.X].tipArea
+				ta.Appear(gtx.Now)
+				ta.Exit.SetTarget(gtx.Now.Add(ta.ExitDuration))
+			}
+		}
+	}
+	for {
+		e, ok := gtx.Event(
+			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameEnter},
+			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameReturn},
+			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameLeftArrow},
+			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameDeleteBackward},
+		)
+		if !ok {
+			break
+		}
+		if e, ok := e.(key.Event); ok && e.State == key.Press {
+			switch e.Name {
+			case key.NameLeftArrow:
+				t.PatchPanel.unitList.dragList.Focus()
+			case key.NameDeleteBackward:
+				t.ClearUnit().Do()
+				t.UnitSearch().SetValue("")
+				t.UnitSearching().SetValue(true)
+				pe.searchList.Focus()
+			case key.NameEnter, key.NameReturn:
+				t.Model.AddUnit(e.Modifiers.Contain(key.ModCtrl)).Do()
+				t.UnitSearch().SetValue("")
+				t.UnitSearching().SetValue(true)
+				pe.searchList.Focus()
 			}
 		}
 	}
@@ -144,67 +178,237 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 func (pe *UnitEditor) ChooseUnitType(t *Tracker) {
 	if ut, ok := t.SearchResults().Item(pe.searchList.TrackerList.Selected()); ok {
 		t.Units().SetSelectedType(ut)
-		t.PatchPanel.unitList.dragList.Focus()
+		pe.paramTable.RowTitleList.Focus()
 	}
 }
 
-func (pe *UnitEditor) layoutSliders(gtx C) D {
+func (pe *UnitEditor) layoutRack(gtx C) D {
+	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 	t := TrackerFromContext(gtx)
-	numItems := pe.sliderList.TrackerList.Count()
 	// create enough parameter widget to match the number of parameters
-	for len(pe.Parameters) < numItems {
-		pe.Parameters = append(pe.Parameters, new(ParameterWidget))
+	width := pe.paramTable.Table.Width()
+	for len(pe.Parameters) < pe.paramTable.Table.Height() {
+		pe.Parameters = append(pe.Parameters, make([]*ParamState, 0))
 	}
-
-	index := 0
-	for param := range t.Model.Params().Iterate {
-		pe.Parameters[index].Parameter = param
-		index++
+	cellWidth := gtx.Dp(t.Theme.UnitEditor.Width)
+	cellHeight := gtx.Dp(t.Theme.UnitEditor.Height)
+	rowTitleLabelWidth := gtx.Dp(t.Theme.UnitEditor.UnitList.LabelWidth)
+	rowTitleSignalWidth := gtx.Dp(t.Theme.SignalRail.SignalWidth) * t.RailWidth()
+	rowTitleWidth := rowTitleLabelWidth + rowTitleSignalWidth
+	signalError := t.RailError()
+	columnTitleHeight := gtx.Dp(0)
+	for i := range pe.Parameters {
+		for len(pe.Parameters[i]) < width {
+			pe.Parameters[i] = append(pe.Parameters[i], &ParamState{tipArea: TipArea{ExitDuration: time.Second * 2}})
+		}
 	}
-	element := func(gtx C, index int) D {
-		if index < 0 || index >= numItems {
+	coltitle := func(gtx C, x int) D {
+		return D{Size: image.Pt(cellWidth, columnTitleHeight)}
+	}
+	rowtitle := func(gtx C, y int) D {
+		if y < 0 || y >= len(pe.Parameters) {
 			return D{}
 		}
-		paramStyle := t.ParamStyle(t.Theme, pe.Parameters[index])
-		paramStyle.Focus = pe.sliderList.TrackerList.Selected() == index
-		dims := paramStyle.Layout(gtx)
-		return D{Size: image.Pt(gtx.Constraints.Max.X, dims.Size.Y)}
+		item := t.Units().Item(y)
+		sr := Rail(t.Theme, item.Signals)
+		label := Label(t.Theme, &t.Theme.UnitEditor.UnitList.Name, item.Type)
+		switch {
+		case item.Disabled:
+			label.LabelStyle = t.Theme.UnitEditor.UnitList.Disabled
+		case signalError.Err != nil && signalError.UnitIndex == y:
+			label.Color = t.Theme.UnitEditor.UnitList.Error
+		}
+		gtx.Constraints = layout.Exact(image.Pt(rowTitleWidth, cellHeight))
+		sr.Layout(gtx)
+		defer op.Affine(f32.Affine2D{}.Rotate(f32.Pt(0, 0), -90*math.Pi/180).Offset(f32.Point{X: float32(rowTitleSignalWidth), Y: float32(cellHeight)})).Push(gtx.Ops).Pop()
+		gtx.Constraints = layout.Exact(image.Pt(cellHeight, rowTitleLabelWidth))
+		label.Layout(gtx)
+		return D{Size: image.Pt(rowTitleWidth, cellHeight)}
 	}
+	cursor := t.Model.Params().Cursor()
+	cell := func(gtx C, x, y int) D {
+		gtx.Constraints = layout.Exact(image.Pt(cellWidth, cellHeight))
+		point := tracker.Point{X: x, Y: y}
+		if y < 0 || y >= len(pe.Parameters) || x < 0 || x >= len(pe.Parameters[y]) {
+			return D{}
+		}
+		selection := pe.paramTable.Table.Range()
+		if selection.Contains(point) {
+			color := t.Theme.Selection.Inactive
+			if gtx.Focused(pe.paramTable) {
+				color = t.Theme.Selection.Active
+			}
+			if point == cursor {
+				color = t.Theme.Cursor.Inactive
+				if gtx.Focused(pe.paramTable) {
+					color = t.Theme.Cursor.Active
+				}
+			}
+			paint.FillShape(gtx.Ops, color, clip.Rect{Min: image.Pt(0, 0), Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
+		}
 
-	fdl := FilledDragList(t.Theme, pe.sliderList)
-	dims := fdl.Layout(gtx, element, nil)
-	gtx.Constraints = layout.Exact(dims.Size)
-	fdl.LayoutScrollBar(gtx)
+		param := t.Model.Params().Item(point)
+		paramStyle := Param(param, t.Theme, pe.Parameters[y][x], pe.paramTable.Table.Cursor() == point, t.Units().Item(y).Disabled)
+		paramStyle.Layout(gtx)
+		comment := t.Units().Item(y).Comment
+		if comment != "" && x == t.Model.Params().RowWidth(y) {
+			label := Label(t.Theme, &t.Theme.UnitEditor.RackComment, comment)
+			return layout.W.Layout(gtx, func(gtx C) D {
+				gtx.Constraints.Max.X = 1e6
+				gtx.Constraints.Min.Y = 0
+				return label.Layout(gtx)
+			})
+		}
+		return D{Size: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}
+	}
+	table := FilledScrollTable(t.Theme, pe.paramTable)
+	table.RowTitleWidth = gtx.Metric.PxToDp(rowTitleWidth)
+	table.ColumnTitleHeight = 0
+	table.CellWidth = t.Theme.UnitEditor.Width
+	table.CellHeight = t.Theme.UnitEditor.Height
+	pe.drawBackGround(gtx)
+	pe.drawSignals(gtx, rowTitleWidth)
+	dims := table.Layout(gtx, cell, coltitle, rowtitle, nil, nil)
 	return dims
+}
+
+func (pe *UnitEditor) drawSignals(gtx C, rowTitleWidth int) {
+	t := TrackerFromContext(gtx)
+	colP := pe.paramTable.ColTitleList.List.Position
+	rowP := pe.paramTable.RowTitleList.List.Position
+	p := image.Pt(rowTitleWidth, 0)
+	defer op.Offset(p).Push(gtx.Ops).Pop()
+	gtx.Constraints.Max = gtx.Constraints.Max.Sub(p)
+	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
+	defer op.Offset(image.Pt(-colP.Offset, -rowP.Offset)).Push(gtx.Ops).Pop()
+	for wire := range t.Wires {
+		clr := t.Theme.UnitEditor.WireColor
+		if wire.Highlight {
+			clr = t.Theme.UnitEditor.WireHighlight
+		}
+		switch {
+		case wire.FromSet && !wire.ToSet:
+			pe.drawRemoteSendSignal(gtx, wire, colP.First, rowP.First)
+		case !wire.FromSet && wire.ToSet:
+			pe.drawRemoteReceiveSignal(gtx, wire, colP.First, rowP.First, clr)
+		case wire.FromSet && wire.ToSet:
+			pe.drawSignal(gtx, wire, colP.First, rowP.First, clr)
+		}
+	}
+}
+
+func (pe *UnitEditor) drawBackGround(gtx C) {
+	t := TrackerFromContext(gtx)
+	rowP := pe.paramTable.RowTitleList.List.Position
+	defer op.Offset(image.Pt(0, -rowP.Offset)).Push(gtx.Ops).Pop()
+	for range pe.paramTable.RowTitleList.List.Position.Count + 1 {
+		paint.FillShape(gtx.Ops, t.Theme.UnitEditor.Divider, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, 1)}.Op())
+		op.Offset(image.Pt(0, gtx.Dp(t.Theme.UnitEditor.Height))).Add(gtx.Ops)
+	}
+}
+
+func (pe *UnitEditor) drawRemoteSendSignal(gtx C, wire tracker.Wire, col, row int) {
+	sy := wire.From - row
+	t := TrackerFromContext(gtx)
+	defer op.Offset(image.Pt(gtx.Dp(5), (sy+1)*gtx.Dp(t.Theme.UnitEditor.Height)-gtx.Dp(16))).Push(gtx.Ops).Pop()
+	Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
+}
+
+func (pe *UnitEditor) drawRemoteReceiveSignal(gtx C, wire tracker.Wire, col, row int, clr color.NRGBA) {
+	ex := wire.To.X - col
+	ey := wire.To.Y - row
+	t := TrackerFromContext(gtx)
+	width := float32(gtx.Dp(t.Theme.UnitEditor.Width))
+	height := float32(gtx.Dp(t.Theme.UnitEditor.Height))
+	topLeft := f32.Pt(float32(ex)*width, float32(ey)*height)
+	center := topLeft.Add(f32.Pt(width/2, height/2))
+	c := float32(gtx.Dp(t.Theme.Knob.Diameter)) / 2 / float32(math.Sqrt2)
+	from := f32.Pt(c, c).Add(center)
+	q := c
+	c1 := f32.Pt(c+q, c+q).Add(center)
+	o := float32(gtx.Dp(8))
+	c2 := f32.Pt(width-q, height-o).Add(topLeft)
+	to := f32.Pt(width, height-o).Add(topLeft)
+	var path clip.Path
+	path.Begin(gtx.Ops)
+	path.MoveTo(from)
+	path.CubeTo(c1, c2, to)
+	paint.FillShape(gtx.Ops, clr,
+		clip.Stroke{
+			Path:  path.End(),
+			Width: float32(gtx.Dp(t.Theme.SignalRail.LineWidth)),
+		}.Op())
+	defer op.Offset(image.Pt((ex+1)*gtx.Dp(t.Theme.UnitEditor.Width)+gtx.Dp(5), (ey+1)*gtx.Dp(t.Theme.UnitEditor.Height)-gtx.Dp(16))).Push(gtx.Ops).Pop()
+	Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
+}
+
+func (pe *UnitEditor) drawSignal(gtx C, wire tracker.Wire, col, row int, clr color.NRGBA) {
+	sy := wire.From - row
+	ex := wire.To.X - col
+	ey := wire.To.Y - row
+	t := TrackerFromContext(gtx)
+	diam := gtx.Dp(t.Theme.Knob.Diameter)
+	c := float32(diam) / 2 / float32(math.Sqrt2)
+	width := float32(gtx.Dp(t.Theme.UnitEditor.Width))
+	height := float32(gtx.Dp(t.Theme.UnitEditor.Height))
+	from := f32.Pt(0, float32((sy+1)*gtx.Dp(t.Theme.UnitEditor.Height))-float32(gtx.Dp(8)))
+	corner := f32.Pt(1, 1)
+	if ex > 0 {
+		corner.X = -corner.X
+	}
+	if sy < ey {
+		corner.Y = -corner.Y
+	}
+	topLeft := f32.Pt(float32(ex)*width, float32(ey)*height)
+	center := topLeft.Add(f32.Pt(width/2, height/2))
+	to := mulVec(corner, f32.Pt(c, c)).Add(center)
+	p2 := mulVec(corner, f32.Pt(width/2, height/2)).Add(center)
+	p1 := f32.Pt(p2.X, float32((sy+1)*gtx.Dp(t.Theme.UnitEditor.Height)))
+	if sy > ey {
+		p1 = f32.Pt(p2.X, (float32(sy)+0.5)*float32(gtx.Dp(t.Theme.UnitEditor.Height))+float32(diam)/2)
+	}
+	k := float32(width) / 4
+	p2Tan := mulVec(corner, f32.Pt(-k, -k))
+	p1Tan := f32.Pt(k, p2Tan.Y)
+	fromTan := f32.Pt(k, 0)
+	var path clip.Path
+	path.Begin(gtx.Ops)
+	path.MoveTo(from)
+	path.CubeTo(from.Add(fromTan), p1.Sub(p1Tan), p1)
+	path.CubeTo(p1.Add(p1Tan), p2, to)
+	paint.FillShape(gtx.Ops, clr,
+		clip.Stroke{
+			Path:  path.End(),
+			Width: float32(gtx.Dp(t.Theme.SignalRail.LineWidth)),
+		}.Op())
+}
+
+func mulVec(a, b f32.Point) f32.Point {
+	return f32.Pt(a.X*b.X, a.Y*b.Y)
 }
 
 func (pe *UnitEditor) layoutFooter(gtx C) D {
 	t := TrackerFromContext(gtx)
-	st := t.Units().SelectedType()
 	text := "Choose unit type"
-	if st != "" {
-		text = pe.caser.String(st)
+	if !t.UnitSearching().Value() {
+		text = pe.caser.String(t.Units().SelectedType())
 	}
 	hintText := Label(t.Theme, &t.Theme.UnitEditor.Hint, text)
 	deleteUnitBtn := ActionIconBtn(t.DeleteUnit(), t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
 	copyUnitBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
 	disableUnitBtn := ToggleIconBtn(t.UnitDisabled(), t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
-	w := layout.Spacer{Width: t.Theme.IconButton.Enabled.Size}.Layout
-	if st != "" {
-		clearUnitBtn := ActionIconBtn(t.ClearUnit(), t.Theme, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
-		w = clearUnitBtn.Layout
-	}
+	clearUnitBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(deleteUnitBtn.Layout),
 		layout.Rigid(copyUnitBtn.Layout),
 		layout.Rigid(disableUnitBtn.Layout),
-		layout.Rigid(w),
+		layout.Rigid(clearUnitBtn.Layout),
 		layout.Rigid(func(gtx C) D {
-			gtx.Constraints.Min.X = gtx.Dp(120)
+			gtx.Constraints.Min.X = gtx.Dp(130)
 			return hintText.Layout(gtx)
 		}),
 		layout.Flexed(1, func(gtx C) D {
-			return pe.commentEditor.Layout(gtx, t.UnitComment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "---")
+			return pe.commentEditor.Layout(gtx, t.UnitComment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "Comment")
 		}),
 	)
 }
@@ -234,173 +438,8 @@ func (pe *UnitEditor) layoutUnitTypeChooser(gtx C) D {
 }
 
 func (t *UnitEditor) Tags(level int, yield TagYieldFunc) bool {
-	widget := t.sliderList
 	if t.showingChooser() {
-		widget = t.searchList
+		return yield(level, t.searchList) && yield(level+1, &t.commentEditor.widgetEditor)
 	}
-	return yield(level, widget) && yield(level+1, &t.commentEditor.widgetEditor)
-}
-
-type ParameterWidget struct {
-	floatWidget widget.Float
-	boolWidget  widget.Bool
-	instrBtn    Clickable
-	instrMenu   MenuState
-	unitBtn     Clickable
-	unitMenu    MenuState
-	Parameter   tracker.Parameter
-	tipArea     TipArea
-}
-
-type ParameterStyle struct {
-	tracker         *Tracker
-	w               *ParameterWidget
-	Theme           *Theme
-	SendTargetTheme *material.Theme
-	Focus           bool
-}
-
-func (t *Tracker) ParamStyle(th *Theme, paramWidget *ParameterWidget) ParameterStyle {
-	sendTargetTheme := th.Material.WithPalette(material.Palette{
-		Bg:         th.Material.Bg,
-		Fg:         th.UnitEditor.SendTarget,
-		ContrastBg: th.Material.ContrastBg,
-		ContrastFg: th.Material.ContrastFg,
-	})
-	return ParameterStyle{
-		tracker:         t, // TODO: we need this to pull the instrument names for ID style parameters, find out another way
-		Theme:           th,
-		SendTargetTheme: &sendTargetTheme,
-		w:               paramWidget,
-	}
-}
-
-func (p ParameterStyle) Layout(gtx C) D {
-	info, infoOk := p.w.Parameter.Info()
-	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-		layout.Rigid(func(gtx C) D {
-			gtx.Constraints.Min.X = gtx.Dp(unit.Dp(110))
-			return layout.E.Layout(gtx, Label(p.Theme, &p.Theme.UnitEditor.ParameterName, p.w.Parameter.Name()).Layout)
-		}),
-		layout.Rigid(func(gtx C) D {
-			switch p.w.Parameter.Type() {
-			case tracker.IntegerParameter:
-				for p.Focus {
-					e, ok := gtx.Event(pointer.Filter{
-						Target:  &p.w.floatWidget,
-						Kinds:   pointer.Scroll,
-						ScrollY: pointer.ScrollRange{Min: -1e6, Max: 1e6},
-					})
-					if !ok {
-						break
-					}
-					if ev, ok := e.(pointer.Event); ok && ev.Kind == pointer.Scroll {
-						delta := math.Min(math.Max(float64(ev.Scroll.Y), -1), 1)
-						p.w.Parameter.SetValue(p.w.Parameter.Value() - int(delta))
-					}
-				}
-				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(200))
-				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
-				ra := p.w.Parameter.Range()
-				if !p.w.floatWidget.Dragging() {
-					p.w.floatWidget.Value = (float32(p.w.Parameter.Value()) - float32(ra.Min)) / float32(ra.Max-ra.Min)
-				}
-				sliderStyle := material.Slider(&p.Theme.Material, &p.w.floatWidget)
-				if infoOk {
-					sliderStyle.Color = p.Theme.UnitEditor.SendTarget
-				}
-				r := image.Rectangle{Max: gtx.Constraints.Min}
-				defer clip.Rect(r).Push(gtx.Ops).Pop()
-				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
-				if p.Focus {
-					event.Op(gtx.Ops, &p.w.floatWidget)
-				}
-				dims := sliderStyle.Layout(gtx)
-				p.w.Parameter.SetValue(int(p.w.floatWidget.Value*float32(ra.Max-ra.Min) + float32(ra.Min) + 0.5))
-				return dims
-			case tracker.BoolParameter:
-				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(60))
-				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
-				ra := p.w.Parameter.Range()
-				p.w.boolWidget.Value = p.w.Parameter.Value() > ra.Min
-				boolStyle := material.Switch(&p.Theme.Material, &p.w.boolWidget, "Toggle boolean parameter")
-				boolStyle.Color.Disabled = p.Theme.Material.Fg
-				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
-				dims := layout.Center.Layout(gtx, boolStyle.Layout)
-				if p.w.boolWidget.Value {
-					p.w.Parameter.SetValue(ra.Max)
-				} else {
-					p.w.Parameter.SetValue(ra.Min)
-				}
-				return dims
-			case tracker.IDParameter:
-				gtx.Constraints.Min.X = gtx.Dp(unit.Dp(200))
-				gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(40))
-				instrItems := make([]ActionMenuItem, p.tracker.Instruments().Count())
-				for i := range instrItems {
-					i := i
-					name, _, _, _ := p.tracker.Instruments().Item(i)
-					instrItems[i].Text = name
-					instrItems[i].Icon = icons.NavigationChevronRight
-					instrItems[i].Action = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
-						if id, ok := p.tracker.Instruments().FirstID(i); ok {
-							p.w.Parameter.SetValue(id)
-						}
-					}))
-				}
-				var unitItems []ActionMenuItem
-				instrName := "<instr>"
-				unitName := "<unit>"
-				targetInstrName, units, targetUnitIndex, ok := p.tracker.UnitInfo(p.w.Parameter.Value())
-				if ok {
-					instrName = targetInstrName
-					unitName = buildUnitLabel(targetUnitIndex, units[targetUnitIndex])
-					unitItems = make([]ActionMenuItem, len(units))
-					for j, unit := range units {
-						id := unit.ID
-						unitItems[j].Text = buildUnitLabel(j, unit)
-						unitItems[j].Icon = icons.NavigationChevronRight
-						unitItems[j].Action = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
-							p.w.Parameter.SetValue(id)
-						}))
-					}
-				}
-				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
-				instrBtn := MenuBtn(p.tracker.Theme, &p.w.instrMenu, &p.w.instrBtn, instrName)
-				unitBtn := MenuBtn(p.tracker.Theme, &p.w.unitMenu, &p.w.unitBtn, unitName)
-				return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-					layout.Rigid(func(gtx C) D {
-						return instrBtn.Layout(gtx, instrItems...)
-					}),
-					layout.Rigid(func(gtx C) D {
-						return unitBtn.Layout(gtx, unitItems...)
-					}),
-				)
-			}
-			return D{}
-		}),
-		layout.Rigid(func(gtx C) D {
-			if p.w.Parameter.Type() != tracker.IDParameter {
-				hint := p.w.Parameter.Hint()
-				label := Label(p.tracker.Theme, &p.tracker.Theme.UnitEditor.Hint, hint.Label)
-				if !hint.Valid {
-					label.Color = p.tracker.Theme.UnitEditor.InvalidParam
-				}
-				if info == "" {
-					return label.Layout(gtx)
-				}
-				tooltip := component.PlatformTooltip(p.SendTargetTheme, info)
-				return p.w.tipArea.Layout(gtx, tooltip, label.Layout)
-			}
-			return D{}
-		}),
-	)
-}
-
-func buildUnitLabel(index int, u sointu.Unit) string {
-	text := u.Type
-	if u.Comment != "" {
-		text = fmt.Sprintf("%s \"%s\"", text, u.Comment)
-	}
-	return fmt.Sprintf("%d: %s", index, text)
+	return yield(level+1, t.paramTable.RowTitleList) && yield(level, t.paramTable) && yield(level+1, &t.commentEditor.widgetEditor)
 }

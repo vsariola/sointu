@@ -1,9 +1,9 @@
-name: MoreAndMore
+name: more-and-more
 numvoices: 1
 units:
-    - type: envelope
-      id: 1
-      parameters: {attack: 0, decay: 63, gain: 128, release: 32, stereo: 0, sustain: 0}
+    - id: 233
+      parameters: {}
+      comment: Modulations
     - type: oscillator
       id: 2
       parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 0}
@@ -13,6 +13,9 @@ units:
     - type: send
       id: 4
       parameters: {amount: 72, port: 1, sendpop: 1, target: 226}
+    - id: 232
+      parameters: {}
+      comment: Main oscillators
     - type: oscillator
       id: 6
       parameters: {color: 0, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
@@ -22,6 +25,9 @@ units:
     - type: addp
       id: 227
       parameters: {stereo: 0}
+    - id: 231
+      parameters: {}
+      comment: Modulated filters
     - type: envelope
       id: 228
       parameters: {attack: 0, decay: 76, gain: 128, release: 32, stereo: 0, sustain: 0}
@@ -33,13 +39,22 @@ units:
       parameters: {amount: 88, port: 0, sendpop: 1, target: 14}
     - type: filter
       id: 13
-      parameters: {bandpass: 0, frequency: 80, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 80, highpass: 1, lowpass: 1, resonance: 128, stereo: 0}
     - type: filter
       id: 14
-      parameters: {bandpass: 0, frequency: 80, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 80, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+    - id: 229
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1
+      parameters: {attack: 0, decay: 63, gain: 128, release: 32, stereo: 0, sustain: 0}
     - type: mulp
       id: 15
       parameters: {stereo: 0}
+    - id: 230
+      parameters: {}
+      comment: Delay & output
     - type: delay
       id: 16
       parameters: {damp: 64, dry: 128, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}

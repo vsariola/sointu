@@ -111,6 +111,8 @@ func (s FilledDragListStyle) Layout(gtx C, element, bg func(gtx C, i int) D) D {
 		case key.FocusEvent:
 			if !ke.Focus {
 				s.dragList.TrackerList.SetSelected2(s.dragList.TrackerList.Selected())
+			} else {
+				s.dragList.EnsureVisible(s.dragList.TrackerList.Selected())
 			}
 		case key.Event:
 			if ke.State != key.Press {

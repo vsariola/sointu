@@ -19,12 +19,12 @@ patch:
         - type: mulp
           parameters: {stereo: 0}
         - type: filter
-          parameters: {bandpass: 1, frequency: 32, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+          parameters: {bandpass: 1, frequency: 32, highpass: 1, lowpass: 1, resonance: 128, stereo: 0}
         - type: delay
           parameters: {damp: 16, dry: 128, feedback: 128, notetracking: 1, pregain: 128, stereo: 0}
           varargs: [10787]
         - type: filter
-          parameters: {bandpass: 1, frequency: 24, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+          parameters: {bandpass: 1, frequency: 24, highpass: 1, lowpass: 1, resonance: 128, stereo: 0}
         - type: mulp
           parameters: {stereo: 0}
         - type: pan

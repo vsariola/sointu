@@ -1,5 +1,5 @@
-name: KEYS Lullaby2
-numvoices: 4
+name: lullaby2
+numvoices: 1
 units:
     - type: envelope
       id: 1

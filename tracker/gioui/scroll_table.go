@@ -62,7 +62,7 @@ func NewScrollTable(table tracker.Table, vertList, horizList tracker.List) *Scro
 	}
 	for k, a := range keyBindingMap {
 		switch a {
-		case "Copy", "Paste", "Cut", "Increase", "Decrease":
+		case "Copy", "Paste", "Cut", "Increase", "Decrease", "IncreaseMore", "DecreaseMore":
 			ret.eventFilters = append(ret.eventFilters, key.Filter{Focus: ret, Name: k.Name, Required: k.Modifiers})
 		}
 	}
@@ -117,18 +117,18 @@ func (s ScrollTableStyle) Layout(gtx C, element func(gtx C, x, y int) D, colTitl
 	p := image.Pt(gtx.Dp(s.RowTitleWidth), gtx.Dp(s.ColumnTitleHeight))
 	s.handleEvents(gtx, p)
 
-	return Surface{Gray: 24, Focus: s.ScrollTable.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
-		defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-		dims := gtx.Constraints.Max
-		s.layoutColTitles(gtx, p, colTitle, colTitleBg)
-		s.layoutRowTitles(gtx, p, rowTitle, rowTitleBg)
-		defer op.Offset(p).Push(gtx.Ops).Pop()
-		gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X-p.X, gtx.Constraints.Max.Y-p.Y))
-		s.layoutTable(gtx, element)
-		s.RowTitleStyle.LayoutScrollBar(gtx)
-		s.ColTitleStyle.LayoutScrollBar(gtx)
-		return D{Size: dims}
-	})
+	//return Surface{Gray: 24, Focus: s.ScrollTable.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
+	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
+	dims := gtx.Constraints.Max
+	s.layoutColTitles(gtx, p, colTitle, colTitleBg)
+	s.layoutRowTitles(gtx, p, rowTitle, rowTitleBg)
+	defer op.Offset(p).Push(gtx.Ops).Pop()
+	gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X-p.X, gtx.Constraints.Max.Y-p.Y))
+	s.layoutTable(gtx, element)
+	s.RowTitleStyle.LayoutScrollBar(gtx)
+	s.ColTitleStyle.LayoutScrollBar(gtx)
+	return D{Size: dims}
+	//})
 }
 
 func (s *ScrollTableStyle) handleEvents(gtx layout.Context, p image.Point) {
@@ -176,11 +176,16 @@ func (s *ScrollTableStyle) handleEvents(gtx layout.Context, p image.Point) {
 			}
 		case key.Event:
 			if e.State == key.Press {
-				s.ScrollTable.command(gtx, e)
+				s.ScrollTable.command(gtx, e, p)
 			}
 		case transfer.DataEvent:
 			if b, err := io.ReadAll(e.Open()); err == nil {
 				s.ScrollTable.Table.Paste(b)
+			}
+		case key.FocusEvent:
+			if e.Focus {
+				s.ScrollTable.ColTitleList.EnsureVisible(s.ScrollTable.Table.Cursor().X)
+				s.ScrollTable.RowTitleList.EnsureVisible(s.ScrollTable.Table.Cursor().Y)
 			}
 		}
 	}
@@ -250,7 +255,7 @@ func (s *ScrollTableStyle) layoutColTitles(gtx C, p image.Point, fg, bg func(gtx
 	s.ColTitleStyle.Layout(gtx, fg, bg)
 }
 
-func (s *ScrollTable) command(gtx C, e key.Event) {
+func (s *ScrollTable) command(gtx C, e key.Event, p image.Point) {
 	stepX := 1
 	stepY := 1
 	if e.Modifiers.Contain(key.ModAlt) {
@@ -265,13 +270,13 @@ func (s *ScrollTable) command(gtx C, e key.Event) {
 		s.Table.Clear()
 		return
 	case key.NameUpArrow:
-		if !s.Table.MoveCursor(0, -stepY) && stepY == 1 {
+		if !s.Table.MoveCursor(0, -stepY) && stepY == 1 && p.Y > 0 {
 			s.ColTitleList.Focus()
 		}
 	case key.NameDownArrow:
 		s.Table.MoveCursor(0, stepY)
 	case key.NameLeftArrow:
-		if !s.Table.MoveCursor(-stepX, 0) && stepX == 1 {
+		if !s.Table.MoveCursor(-stepX, 0) && stepX == 1 && p.X > 0 {
 			s.RowTitleList.Focus()
 		}
 	case key.NameRightArrow:
@@ -300,11 +305,11 @@ func (s *ScrollTable) command(gtx C, e key.Event) {
 		case "Paste":
 			gtx.Execute(clipboard.ReadCmd{Tag: s})
 			return
-		case "Increase":
-			s.Table.Add(1)
+		case "Increase", "IncreaseMore":
+			s.Table.Add(1, a == "IncreaseMore")
 			return
-		case "Decrease":
-			s.Table.Add(-1)
+		case "Decrease", "DecreaseMore":
+			s.Table.Add(-1, a == "DecreaseMore")
 			return
 		}
 	}

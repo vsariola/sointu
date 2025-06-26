@@ -1,0 +1,73 @@
+name: kick-5
+comment: 'Suggested note: C-3'
+numvoices: 1
+units:
+    - id: 285
+      parameters: {}
+      comment: Pitch drop
+    - type: noise
+      id: 275
+      parameters: {gain: 92, shape: 33, stereo: 0}
+    - type: send
+      id: 276
+      parameters: {amount: 77, port: 0, sendpop: 1, stereo: 0, target: 277, voice: 0}
+    - type: envelope
+      id: 280
+      parameters: {attack: 0, decay: 63, gain: 90, release: 0, stereo: 0, sustain: 0}
+    - type: envelope
+      id: 334
+      parameters: {attack: 0, decay: 65, gain: 99, release: 0, stereo: 0, sustain: 0}
+    - type: addp
+      id: 335
+      parameters: {stereo: 0}
+    - type: send
+      id: 284
+      parameters: {amount: 75, port: 0, sendpop: 1, stereo: 0, target: 277, voice: 0}
+    - id: 286
+      parameters: {}
+      comment: Body & tail
+    - type: oscillator
+      id: 277
+      parameters: {color: 128, detune: 64, gain: 104, phase: 0, shape: 64, stereo: 0, transpose: 46, type: 0}
+    - type: filter
+      id: 283
+      parameters: {bandpass: 1, frequency: 10, highpass: 1, lowpass: 0, resonance: 39, stereo: 0}
+    - type: envelope
+      id: 274
+      parameters: {attack: 48, decay: 74, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: envelope
+      id: 336
+      parameters: {attack: 45, decay: 72, gain: 124, release: 0, stereo: 0, sustain: 0}
+    - type: mulp
+      id: 337
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 279
+      parameters: {stereo: 0}
+    - id: 339
+      parameters: {}
+      comment: Tick
+    - type: envelope
+      id: 261
+      parameters: {attack: 0, decay: 51, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: noise
+      id: 269
+      parameters: {gain: 128, shape: 108, stereo: 0}
+    - type: filter
+      id: 333
+      parameters: {bandpass: 1, frequency: 50, highpass: 0, lowpass: 0, resonance: 128, stereo: 0}
+    - type: mulp
+      id: 263
+      parameters: {stereo: 0}
+    - type: addp
+      id: 271
+      parameters: {stereo: 0}
+    - id: 338
+      parameters: {}
+      comment: Output
+    - type: pan
+      id: 294
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 266
+      parameters: {auxgain: 0, outgain: 90, stereo: 1}

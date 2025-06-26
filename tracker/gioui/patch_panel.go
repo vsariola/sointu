@@ -2,7 +2,6 @@ package gioui
 
 import (
 	"bytes"
-	"fmt"
 	"image"
 	"image/color"
 	"io"
@@ -371,79 +370,45 @@ func MakeUnitList(m *tracker.Model) UnitList {
 func (ul *UnitList) Layout(gtx C) D {
 	t := TrackerFromContext(gtx)
 	ul.update(gtx, t)
-	var units [256]tracker.UnitListItem
-	for i, item := range (*tracker.Units)(t.Model).Iterate {
-		if i >= 256 {
-			break
-		}
-		units[i] = item
-	}
-	count := min(ul.dragList.TrackerList.Count(), 256)
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Max.Y = gtx.Dp(20)
 		gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
-		if i < 0 || i > 255 {
-			return layout.Dimensions{Size: gtx.Constraints.Min}
-		}
-		u := units[i]
+		u := t.Units().Item(i)
 		editorStyle := t.Theme.InstrumentEditor.UnitList.Name
-		if u.Disabled {
+		signalError := t.RailError()
+		switch {
+		case u.Disabled:
 			editorStyle = t.Theme.InstrumentEditor.UnitList.NameDisabled
-		}
-		stackText := strconv.FormatInt(int64(u.StackAfter), 10)
-		if u.StackNeed > u.StackBefore {
+		case signalError.Err != nil && signalError.UnitIndex == i:
 			editorStyle.Color = t.Theme.InstrumentEditor.UnitList.Error
-			(*tracker.Alerts)(t.Model).AddNamed("UnitNeedsInputs", fmt.Sprintf("%v needs at least %v input signals, got %v", u.Type, u.StackNeed, u.StackBefore), tracker.Error)
-		} else if i == count-1 && u.StackAfter != 0 {
-			editorStyle.Color = t.Theme.InstrumentEditor.UnitList.Warning
-			(*tracker.Alerts)(t.Model).AddNamed("InstrumentLeavesSignals", fmt.Sprintf("Instrument leaves %v signal(s) on the stack", u.StackAfter), tracker.Warning)
 		}
-		stackLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Stack, stackText)
-		rightMargin := layout.Inset{Right: unit.Dp(10)}
-		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-			layout.Rigid(func(gtx C) D {
-				if i == ul.dragList.TrackerList.Selected() {
-					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					str := t.Model.UnitSearch()
-					for ev := ul.searchEditor.Update(gtx, str); ev != EditorEventNone; ev = ul.searchEditor.Update(gtx, str) {
-						if ev == EditorEventSubmit {
-							if str.Value() != "" {
-								for _, n := range sointu.UnitNames {
-									if strings.HasPrefix(n, str.Value()) {
-										t.Units().SetSelectedType(n)
-										break
-									}
-								}
-							} else {
-								t.Units().SetSelectedType("")
-							}
-						}
-						ul.dragList.Focus()
-						t.UnitSearching().SetValue(false)
-					}
-					return ul.searchEditor.Layout(gtx, str, t.Theme, &editorStyle, "---")
-				} else {
-					text := u.Type
-					if text == "" {
-						text = "---"
-					}
-					l := editorStyle.AsLabelStyle()
-					return Label(t.Theme, &l, text).Layout(gtx)
+		unitName := func(gtx C) D {
+			if i == ul.dragList.TrackerList.Selected() {
+				defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
+				return ul.searchEditor.Layout(gtx, t.Model.UnitSearch(), t.Theme, &editorStyle, "---")
+			} else {
+				text := u.Type
+				if text == "" {
+					text = "---"
 				}
-			}),
-			layout.Flexed(1, func(gtx C) D {
-				unitNameLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Comment, u.Comment)
-				inset := layout.Inset{Left: unit.Dp(5)}
-				return inset.Layout(gtx, unitNameLabel.Layout)
-			}),
-			layout.Rigid(func(gtx C) D {
-				return rightMargin.Layout(gtx, stackLabel.Layout)
-			}),
+				l := editorStyle.AsLabelStyle()
+				return Label(t.Theme, &l, text).Layout(gtx)
+			}
+		}
+		stackText := strconv.FormatInt(int64(u.Signals.StackAfter()), 10)
+		commentLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Comment, u.Comment)
+		stackLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Stack, stackText)
+		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+			layout.Rigid(unitName),
+			layout.Rigid(layout.Spacer{Width: 5}.Layout),
+			layout.Flexed(1, commentLabel.Layout),
+			layout.Rigid(stackLabel.Layout),
+			layout.Rigid(layout.Spacer{Width: 10}.Layout),
 		)
 	}
 	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
 	unitList := FilledDragList(t.Theme, ul.dragList)
-	return Surface{Gray: 30, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
+	surface := func(gtx C) D {
 		return layout.Stack{Alignment: layout.SE}.Layout(gtx,
 			layout.Expanded(func(gtx C) D {
 				defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
@@ -458,7 +423,8 @@ func (ul *UnitList) Layout(gtx C) D {
 				return margin.Layout(gtx, addUnitBtn.Layout)
 			}),
 		)
-	})
+	}
+	return Surface{Gray: 30, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, surface)
 }
 
 func (ul *UnitList) update(gtx C, t *Tracker) {
@@ -478,7 +444,7 @@ func (ul *UnitList) update(gtx C, t *Tracker) {
 		if e, ok := event.(key.Event); ok && e.State == key.Press {
 			switch e.Name {
 			case key.NameRightArrow:
-				t.PatchPanel.unitEditor.sliderList.Focus()
+				t.PatchPanel.unitEditor.paramTable.RowTitleList.Focus()
 			case key.NameDeleteBackward:
 				t.Units().SetSelectedType("")
 				t.UnitSearching().SetValue(true)
@@ -489,6 +455,23 @@ func (ul *UnitList) update(gtx C, t *Tracker) {
 				ul.searchEditor.Focus()
 			}
 		}
+	}
+	str := t.Model.UnitSearch()
+	for ev := ul.searchEditor.Update(gtx, str); ev != EditorEventNone; ev = ul.searchEditor.Update(gtx, str) {
+		if ev == EditorEventSubmit {
+			if str.Value() != "" {
+				for _, n := range sointu.UnitNames {
+					if strings.HasPrefix(n, str.Value()) {
+						t.Units().SetSelectedType(n)
+						break
+					}
+				}
+			} else {
+				t.Units().SetSelectedType("")
+			}
+		}
+		ul.dragList.Focus()
+		t.UnitSearching().SetValue(false)
 	}
 }
 

@@ -35,6 +35,7 @@ type (
 		ChangedSinceSave        bool
 		RecoveryFilePath        string
 		ChangedSinceRecovery    bool
+		SendSource              int
 	}
 
 	Model struct {
@@ -189,7 +190,7 @@ func NewModel(broker *Broker, synther sointu.Synther, midiContext MIDIContext, r
 	}
 	TrySend(broker.ToPlayer, any(m.d.Song.Copy())) // we should be non-blocking in the constructor
 	m.signalAnalyzer = NewScopeModel(broker, m.d.Song.BPM)
-	m.initDerivedData()
+	m.updateDeriveData(SongChange)
 	return m
 }
 
@@ -223,7 +224,6 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			if m.changeType&ScoreChange != 0 {
 				m.d.Cursor.SongPos = m.d.Song.Score.Clamp(m.d.Cursor.SongPos)
 				m.d.Cursor2.SongPos = m.d.Song.Score.Clamp(m.d.Cursor2.SongPos)
-				m.updateDerivedScoreData()
 				TrySend(m.broker.ToPlayer, any(m.d.Song.Score.Copy()))
 			}
 			if m.changeType&PatchChange != 0 {
@@ -239,7 +239,7 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 				m.d.UnitIndex2 = clamp(m.d.UnitIndex2, 0, unitCount-1)
 				m.d.UnitSearching = false // if we change anything in the patch, reset the unit searching
 				m.d.UnitSearchString = ""
-				m.updateDerivedPatchData()
+				m.d.SendSource = 0
 				TrySend(m.broker.ToPlayer, any(m.d.Song.Patch.Copy()))
 			}
 			if m.changeType&BPMChange != 0 {
@@ -249,6 +249,7 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			if m.changeType&RowsPerBeatChange != 0 {
 				TrySend(m.broker.ToPlayer, any(RowsPerBeatMsg{m.d.Song.RowsPerBeat}))
 			}
+			m.updateDeriveData(m.changeType)
 			m.undoSkipCounter++
 			var limit int
 			switch m.changeSeverity {
@@ -329,7 +330,7 @@ func (m *Model) UnmarshalRecovery(bytes []byte) {
 	}
 	m.d.ChangedSinceRecovery = false
 	TrySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
-	m.initDerivedData()
+	m.updateDeriveData(SongChange)
 }
 
 func (m *Model) ProcessMsg(msg MsgToModel) {

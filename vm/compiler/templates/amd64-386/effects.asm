@@ -182,13 +182,13 @@ su_op_filter_skipbandpass:
     fadd    dword [{{.WRK}}+4]
 su_op_filter_skiphighpass:
 {{- end}}
-{{- if .SupportsParamValue "filter" "negbandpass" 1}}
+{{- if .SupportsParamValue "filter" "bandpass" -1}}
     test    al, byte 0x08
     jz      short su_op_filter_skipnegbandpass
     fsub    dword [{{.WRK}}+8]
 su_op_filter_skipnegbandpass:
 {{- end}}
-{{- if .SupportsParamValue "filter" "neghighpass" 1}}
+{{- if .SupportsParamValue "filter" "highpass" -1}}
     test    al, byte 0x04
     jz      short su_op_filter_skipneghighpass
     fsub    dword [{{.WRK}}+4]

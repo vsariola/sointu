@@ -1,9 +1,9 @@
-name: Fairies
+name: fairies
 numvoices: 1
 units:
-    - type: envelope
-      id: 1
-      parameters: {attack: 80, decay: 96, gain: 64, release: 88, stereo: 0, sustain: 80}
+    - id: 235
+      parameters: {}
+      comment: Modulations
     - type: envelope
       id: 2
       parameters: {attack: 0, decay: 96, gain: 63, release: 88, stereo: 0, sustain: 40}
@@ -13,6 +13,9 @@ units:
     - type: send
       id: 5
       parameters: {amount: 96, port: 0, sendpop: 1, target: 12}
+    - id: 236
+      parameters: {}
+      comment: Main oscillators
     - type: oscillator
       id: 232
       parameters: {color: 3, detune: 56, gain: 52, lfo: 0, phase: 3, shape: 64, stereo: 0, transpose: 64, type: 1}
@@ -22,15 +25,24 @@ units:
     - type: addp
       id: 234
       parameters: {stereo: 0}
+    - type: filter
+      id: 12
+      parameters: {bandpass: 0, frequency: 16, highpass: 1, lowpass: 0, resonance: 37, stereo: 0}
+    - id: 237
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1
+      parameters: {attack: 80, decay: 96, gain: 64, release: 88, stereo: 0, sustain: 80}
     - type: distort
       id: 10
       parameters: {drive: 69, stereo: 0}
-    - type: filter
-      id: 12
-      parameters: {bandpass: 0, frequency: 16, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 37, stereo: 0}
     - type: mulp
       id: 13
       parameters: {stereo: 0}
+    - id: 238
+      parameters: {}
+      comment: Delay & output
     - type: pan
       id: 14
       parameters: {panning: 64, stereo: 0}

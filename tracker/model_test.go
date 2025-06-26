@@ -239,7 +239,7 @@ func (s *modelFuzzState) IterateTable(name string, table tracker.Table, yield fu
 		table.Fill(seed % 16)
 	})
 	yield(name+".Add", func(p string, t *testing.T) {
-		table.Add(seed % 16)
+		table.Add((seed>>1)%16, seed%2 == 0)
 	})
 }
 

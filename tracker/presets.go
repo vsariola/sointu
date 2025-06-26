@@ -66,7 +66,7 @@ var defaultUnits = map[string]sointu.Unit{
 	"clip":       {Type: "clip", Parameters: map[string]int{"stereo": 0}},
 	"hold":       {Type: "hold", Parameters: map[string]int{"stereo": 0, "holdfreq": 64}},
 	"distort":    {Type: "distort", Parameters: map[string]int{"stereo": 0, "drive": 64}},
-	"filter":     {Type: "filter", Parameters: map[string]int{"stereo": 0, "frequency": 64, "resonance": 64, "lowpass": 1, "bandpass": 0, "highpass": 0, "negbandpass": 0, "neghighpass": 0}},
+	"filter":     {Type: "filter", Parameters: map[string]int{"stereo": 0, "frequency": 64, "resonance": 64, "lowpass": 1, "bandpass": 0, "highpass": 0}},
 	"out":        {Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 64}},
 	"outaux":     {Type: "outaux", Parameters: map[string]int{"stereo": 1, "outgain": 64, "auxgain": 64}},
 	"aux":        {Type: "aux", Parameters: map[string]int{"stereo": 1, "gain": 64, "channel": 2}},
@@ -76,7 +76,7 @@ var defaultUnits = map[string]sointu.Unit{
 	"in":         {Type: "in", Parameters: map[string]int{"stereo": 1, "channel": 2}},
 	"speed":      {Type: "speed", Parameters: map[string]int{}},
 	"compressor": {Type: "compressor", Parameters: map[string]int{"stereo": 0, "attack": 64, "release": 64, "invgain": 64, "threshold": 64, "ratio": 64}},
-	"send":       {Type: "send", Parameters: map[string]int{"stereo": 0, "amount": 128, "voice": 0, "unit": 0, "port": 0, "sendpop": 1}},
+	"send":       {Type: "send", Parameters: map[string]int{"stereo": 0, "amount": 64, "voice": 0, "unit": 0, "port": 0, "sendpop": 1}},
 	"sync":       {Type: "sync", Parameters: map[string]int{}},
 }
 
@@ -157,6 +157,7 @@ func (m LoadPreset) Do() {
 		m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
 	}
 	newInstr := instrumentPresets[m.Index].Copy()
+	newInstr.NumVoices = clamp(m.d.Song.Patch[m.d.InstrIndex].NumVoices, 1, vm.MAX_VOICES)
 	m.Model.assignUnitIDs(newInstr.Units)
 	m.d.Song.Patch[m.d.InstrIndex] = newInstr
 }

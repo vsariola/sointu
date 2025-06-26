@@ -1,18 +1,21 @@
-name: String
-numvoices: 3
+name: string
+numvoices: 1
 units:
-    - type: envelope
-      id: 1
-      parameters: {attack: 88, decay: 88, gain: 88, release: 88, stereo: 0, sustain: 88}
+    - id: 66
+      parameters: {}
+      comment: Modulations
     - type: oscillator
       id: 2
       parameters: {color: 128, detune: 64, gain: 64, lfo: 1, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 0}
     - type: send
-      id: 3
-      parameters: {amount: 70, port: 1, sendpop: 0, target: 6}
-    - type: send
       id: 4
-      parameters: {amount: 70, port: 3, sendpop: 1, target: 63}
+      parameters: {amount: 70, port: 3, sendpop: 0, target: 63}
+    - type: send
+      id: 3
+      parameters: {amount: 70, port: 1, sendpop: 1, target: 6}
+    - id: 67
+      parameters: {}
+      comment: Main oscillators
     - type: oscillator
       id: 6
       parameters: {color: 52, detune: 65, gain: 64, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1}
@@ -22,9 +25,18 @@ units:
     - type: addp
       id: 64
       parameters: {stereo: 0}
+    - id: 68
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1
+      parameters: {attack: 88, decay: 88, gain: 88, release: 88, stereo: 0, sustain: 88}
     - type: mulp
       id: 65
       parameters: {stereo: 0}
+    - id: 69
+      parameters: {}
+      comment: Output
     - type: pan
       id: 10
       parameters: {panning: 64, stereo: 0}

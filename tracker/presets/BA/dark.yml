@@ -1,30 +1,42 @@
 name: dark
 numvoices: 1
 units:
-    - type: envelope
-      id: 1
-      parameters: {attack: 0, decay: 64, gain: 128, release: 64, stereo: 0, sustain: 64}
-    - type: oscillator
-      id: 2
-      parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2}
+    - id: 184
+      parameters: {}
+      comment: Modulations
     - type: oscillator
       id: 3
       parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 0}
     - type: send
       id: 4
       parameters: {amount: 96, port: 3, sendpop: 1, target: 6}
+    - id: 185
+      parameters: {}
+      comment: Main oscillators
     - type: oscillator
       id: 6
       parameters: {color: 64, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 127, stereo: 0, transpose: 40, type: 1}
+    - type: oscillator
+      id: 2
+      parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2}
     - type: mulp
       id: 181
       parameters: {stereo: 0}
-    - type: filter
-      id: 182
-      parameters: {bandpass: 0, frequency: 48, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 48, stereo: 0}
+    - id: 186
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1
+      parameters: {attack: 0, decay: 64, gain: 128, release: 64, stereo: 0, sustain: 64}
     - type: mulp
       id: 183
       parameters: {stereo: 0}
+    - id: 187
+      parameters: {}
+      comment: Effects & output
+    - type: filter
+      id: 182
+      parameters: {bandpass: 0, frequency: 48, highpass: 0, lowpass: 1, resonance: 48, stereo: 0}
     - type: pan
       id: 10
       parameters: {panning: 64, stereo: 0}
