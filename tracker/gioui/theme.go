@@ -5,6 +5,7 @@ import (
 	"image/color"
 
 	"gioui.org/text"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -84,11 +85,16 @@ type Theme struct {
 		}
 	}
 	UnitEditor struct {
-		Hint          LabelStyle
-		Chooser       LabelStyle
-		ParameterName LabelStyle
-		InvalidParam  color.NRGBA
-		SendTarget    color.NRGBA
+		Name              LabelStyle
+		Chooser           LabelStyle
+		Hint              LabelStyle
+		InvalidParam      color.NRGBA
+		SendTarget        color.NRGBA
+		Width             unit.Dp
+		Height            unit.Dp
+		RowTitleWidth     unit.Dp
+		ColumnTitleHeight unit.Dp
+		RowTitle          LabelStyle
 	}
 	Cursor    CursorStyle
 	Selection CursorStyle
@@ -102,6 +108,7 @@ type Theme struct {
 	}
 	Split     SplitStyle
 	ScrollBar ScrollBarStyle
+	Knob      KnobStyle
 
 	// iconCache is used to cache the icons created from iconvg data
 	iconCache map[*byte]*widget.Icon

@@ -143,6 +143,7 @@ func (pt *Params) Cursor2() Point { return pt.Cursor() }
 func (pt *Params) SetCursor(p Point) {
 	pt.d.ParamIndex = max(min(p.X, pt.Width()-1), 0)
 	pt.d.UnitIndex = max(min(p.Y, pt.Height()-1), 0)
+	pt.d.UnitIndex2 = pt.d.UnitIndex
 }
 func (pt *Params) SetCursor2(p Point) {}
 func (pt *Params) Width() int {
@@ -227,7 +228,7 @@ func (n *namedParameter) Hint(p *Parameter) ParameterHint {
 	label := strconv.Itoa(val)
 	if p.up.DisplayFunc != nil {
 		valueInUnits, units := p.up.DisplayFunc(val)
-		label = fmt.Sprintf("%d / %s %s", val, valueInUnits, units)
+		label = fmt.Sprintf("%s %s", valueInUnits, units)
 	}
 	if p.unit.Type == "send" {
 		instrIndex, targetType, ok := p.m.UnitHintInfo(p.unit.Parameters["target"])
@@ -305,9 +306,9 @@ func (g *gmDlsEntryParameter) Name(p *Parameter) string {
 	return "sample"
 }
 func (g *gmDlsEntryParameter) Hint(p *Parameter) ParameterHint {
-	label := "0 / custom"
+	label := "custom"
 	if v := g.Value(p); v > 0 {
-		label = fmt.Sprintf("%v / %v", v, GmDlsEntries[v-1].Name)
+		label = GmDlsEntries[v-1].Name
 	}
 	return ParameterHint{label, true}
 }
@@ -350,11 +351,11 @@ func (d *delayTimeParameter) Hint(p *Parameter) ParameterHint {
 	switch p.unit.Parameters["notetracking"] {
 	default:
 	case 0:
-		text = fmt.Sprintf("%v / %.3f rows", val, float32(val)/float32(p.m.d.Song.SamplesPerRow()))
+		text = fmt.Sprintf("%.3f rows", float32(val)/float32(p.m.d.Song.SamplesPerRow()))
 	case 1:
 		relPitch := float64(val) / 10787
 		semitones := -math.Log2(relPitch) * 12
-		text = fmt.Sprintf("%v / %.3f st", val, semitones)
+		text = fmt.Sprintf("%.3f st", semitones)
 	case 2:
 		k := 0
 		v := val
@@ -467,9 +468,9 @@ func (r *reverbParameter) Name(p *Parameter) string {
 }
 func (r *reverbParameter) Hint(p *Parameter) ParameterHint {
 	i := r.Value(p)
-	label := "0 / custom"
+	label := "custom"
 	if i > 0 {
-		label = fmt.Sprintf("%v / %v", i, reverbs[i-1].name)
+		label = reverbs[i-1].name
 	}
 	return ParameterHint{label, true}
 }

@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"image/color"
 	"io"
 	"math"
+	"strconv"
 
 	"gioui.org/f32"
+	"gioui.org/gesture"
 	"gioui.org/io/clipboard"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
@@ -17,9 +20,9 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-	"gioui.org/x/component"
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -27,24 +30,52 @@ import (
 	"golang.org/x/text/language"
 )
 
-type UnitEditor struct {
-	paramTable     *ScrollTable
-	searchList     *DragList
-	Parameters     [][]*ParameterWidget
-	DeleteUnitBtn  *Clickable
-	CopyUnitBtn    *Clickable
-	ClearUnitBtn   *Clickable
-	DisableUnitBtn *Clickable
-	SelectTypeBtn  *Clickable
-	commentEditor  *Editor
-	caser          cases.Caser
+type (
+	UnitEditor struct {
+		paramTable     *ScrollTable
+		searchList     *DragList
+		Parameters     [][]*ParameterWidget
+		DeleteUnitBtn  *Clickable
+		CopyUnitBtn    *Clickable
+		ClearUnitBtn   *Clickable
+		DisableUnitBtn *Clickable
+		SelectTypeBtn  *Clickable
+		commentEditor  *Editor
+		caser          cases.Caser
 
-	copyHint        string
-	disableUnitHint string
-	enableUnitHint  string
+		copyHint        string
+		disableUnitHint string
+		enableUnitHint  string
 
-	searching tracker.Bool
-}
+		searching tracker.Bool
+	}
+
+	KnobState struct {
+		click        gesture.Click
+		drag         gesture.Drag
+		dragStartPt  f32.Point // used to calculate the drag amount
+		dragStartVal int
+		tipArea      TipArea
+	}
+
+	KnobStyle struct {
+		Diameter    unit.Dp
+		StrokeWidth unit.Dp
+		Color       color.NRGBA
+		TrackColor  color.NRGBA
+		Value       LabelStyle
+		Title       LabelStyle
+	}
+
+	KnobWidget struct {
+		Theme  *Theme
+		Value  tracker.Parameter
+		State  *KnobState
+		Style  *KnobStyle
+		Hint   string
+		Scroll bool
+	}
+)
 
 func NewUnitEditor(m *tracker.Model) *UnitEditor {
 	ret := &UnitEditor{
@@ -157,25 +188,28 @@ func (pe *UnitEditor) layoutSliders(gtx C) D {
 	for len(pe.Parameters) < pe.paramTable.Table.Height() {
 		pe.Parameters = append(pe.Parameters, make([]*ParameterWidget, 0))
 	}
+	cellWidth := gtx.Dp(t.Theme.UnitEditor.Width)
+	cellHeight := gtx.Dp(t.Theme.UnitEditor.Height)
+	rowTitleWidth := gtx.Dp(t.Theme.UnitEditor.RowTitleWidth)
+	columnTitleHeight := gtx.Dp(t.Theme.UnitEditor.ColumnTitleHeight)
 	for i := range pe.Parameters {
 		for len(pe.Parameters[i]) < width {
 			pe.Parameters[i] = append(pe.Parameters[i], &ParameterWidget{})
 		}
 	}
 	coltitle := func(gtx C, x int) D {
-		return D{Size: image.Pt(gtx.Dp(100), gtx.Dp(10))}
+		return D{Size: image.Pt(cellWidth, columnTitleHeight)}
 	}
 	rowtitle := func(gtx C, y int) D {
-		h := gtx.Dp(100)
 		//defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
-		defer op.Affine(f32.Affine2D{}.Rotate(f32.Pt(0, 0), -90*math.Pi/180).Offset(f32.Point{X: 0, Y: float32(h)})).Push(gtx.Ops).Pop()
-		gtx.Constraints = layout.Exact(image.Pt(1e6, 1e6))
-		Label(t.Theme, &t.Theme.OrderEditor.TrackTitle, t.Units().Item(y).Type).Layout(gtx)
-		return D{Size: image.Pt(gtx.Dp(10), h)}
+		defer op.Affine(f32.Affine2D{}.Rotate(f32.Pt(0, 0), -90*math.Pi/180).Offset(f32.Point{X: 0, Y: float32(cellHeight)})).Push(gtx.Ops).Pop()
+		gtx.Constraints = layout.Exact(image.Pt(cellHeight, rowTitleWidth))
+		Label(t.Theme, &t.Theme.UnitEditor.RowTitle, t.Units().Item(y).Type).Layout(gtx)
+		return D{Size: image.Pt(rowTitleWidth, cellHeight)}
 	}
 	cursor := t.Model.Params().Cursor()
 	cell := func(gtx C, x, y int) D {
-		gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(100), gtx.Dp(100)))
+		gtx.Constraints = layout.Exact(image.Pt(cellWidth, cellHeight))
 		point := tracker.Point{X: x, Y: y}
 		if y < 0 || y >= len(pe.Parameters) || x < 0 || x >= len(pe.Parameters[y]) {
 			return D{}
@@ -192,14 +226,14 @@ func (pe *UnitEditor) layoutSliders(gtx C) D {
 		pe.Parameters[y][x].Parameter = param
 		paramStyle := t.ParamStyle(t.Theme, pe.Parameters[y][x])
 		paramStyle.Focus = pe.paramTable.Table.Cursor() == tracker.Point{X: x, Y: y}
-		dims := paramStyle.Layout(gtx)
-		return D{Size: image.Pt(gtx.Constraints.Max.X, dims.Size.Y)}
+		paramStyle.Layout(gtx)
+		return D{Size: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}
 	}
 	table := FilledScrollTable(t.Theme, pe.paramTable)
-	table.RowTitleWidth = 10
-	table.ColumnTitleHeight = 10
-	table.CellWidth = 100
-	table.CellHeight = 100
+	table.RowTitleWidth = t.Theme.UnitEditor.RowTitleWidth
+	table.ColumnTitleHeight = t.Theme.UnitEditor.ColumnTitleHeight
+	table.CellWidth = t.Theme.UnitEditor.Width
+	table.CellHeight = t.Theme.UnitEditor.Height
 	return table.Layout(gtx, cell, coltitle, rowtitle, nil, nil)
 
 }
@@ -268,14 +302,14 @@ func (t *UnitEditor) Tags(level int, yield TagYieldFunc) bool {
 }
 
 type ParameterWidget struct {
-	floatWidget widget.Float
-	boolWidget  widget.Bool
-	instrBtn    Clickable
-	instrMenu   MenuState
-	unitBtn     Clickable
-	unitMenu    MenuState
-	Parameter   tracker.Parameter
-	tipArea     TipArea
+	knobState  KnobState
+	boolWidget widget.Bool
+	instrBtn   Clickable
+	instrMenu  MenuState
+	unitBtn    Clickable
+	unitMenu   MenuState
+	Parameter  tracker.Parameter
+	tipArea    TipArea
 }
 
 type ParameterStyle struct {
@@ -302,120 +336,89 @@ func (t *Tracker) ParamStyle(th *Theme, paramWidget *ParameterWidget) ParameterS
 }
 
 func (p ParameterStyle) Layout(gtx C) D {
-	info, infoOk := p.w.Parameter.Info()
-	title := Label(p.Theme, &p.Theme.UnitEditor.ParameterName, p.w.Parameter.Name())
-	title.Alignment = text.Middle
-	return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-		layout.Rigid(title.Layout),
-		layout.Rigid(func(gtx C) D {
-			gtx.Constraints.Min.X = gtx.Dp(100)
-			gtx.Constraints.Min.Y = gtx.Dp(50)
-			switch p.w.Parameter.Type() {
-			case tracker.IntegerParameter:
-				for p.Focus {
-					e, ok := gtx.Event(pointer.Filter{
-						Target:  &p.w.floatWidget,
-						Kinds:   pointer.Scroll,
-						ScrollY: pointer.ScrollRange{Min: -1e6, Max: 1e6},
-					})
-					if !ok {
-						break
+	//_, _ := p.w.Parameter.Info()
+	title := Label(p.Theme, &p.Theme.UnitEditor.Name, p.w.Parameter.Name())
+	widget := func(gtx C) D {
+		switch p.w.Parameter.Type() {
+		case tracker.IntegerParameter:
+			k := Knob(p.w.Parameter, p.Theme, &p.w.knobState, p.w.Parameter.Hint().Label, p.Focus)
+			return k.Layout(gtx)
+		case tracker.BoolParameter:
+			ra := p.w.Parameter.Range()
+			p.w.boolWidget.Value = p.w.Parameter.Value() > ra.Min
+			boolStyle := material.Switch(&p.Theme.Material, &p.w.boolWidget, "Toggle boolean parameter")
+			boolStyle.Color.Disabled = p.Theme.Material.Fg
+			defer pointer.PassOp{}.Push(gtx.Ops).Pop()
+			dims := layout.Center.Layout(gtx, boolStyle.Layout)
+			if p.w.boolWidget.Value {
+				p.w.Parameter.SetValue(ra.Max)
+			} else {
+				p.w.Parameter.SetValue(ra.Min)
+			}
+			return dims
+		case tracker.IDParameter:
+			instrItems := make([]ActionMenuItem, p.tracker.Instruments().Count())
+			for i := range instrItems {
+				i := i
+				name, _, _, _ := p.tracker.Instruments().Item(i)
+				instrItems[i].Text = name
+				instrItems[i].Icon = icons.NavigationChevronRight
+				instrItems[i].Action = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
+					if id, ok := p.tracker.Instruments().FirstID(i); ok {
+						p.w.Parameter.SetValue(id)
 					}
-					if ev, ok := e.(pointer.Event); ok && ev.Kind == pointer.Scroll {
-						delta := math.Min(math.Max(float64(ev.Scroll.Y), -1), 1)
-						p.w.Parameter.SetValue(p.w.Parameter.Value() - int(delta))
-					}
-				}
-				ra := p.w.Parameter.Range()
-				if !p.w.floatWidget.Dragging() {
-					p.w.floatWidget.Value = (float32(p.w.Parameter.Value()) - float32(ra.Min)) / float32(ra.Max-ra.Min)
-				}
-				sliderStyle := material.Slider(&p.Theme.Material, &p.w.floatWidget)
-				if infoOk {
-					sliderStyle.Color = p.Theme.UnitEditor.SendTarget
-				}
-				r := image.Rectangle{Max: gtx.Constraints.Min}
-				defer clip.Rect(r).Push(gtx.Ops).Pop()
-				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
-				if p.Focus {
-					event.Op(gtx.Ops, &p.w.floatWidget)
-				}
-				dims := sliderStyle.Layout(gtx)
-				p.w.Parameter.SetValue(int(p.w.floatWidget.Value*float32(ra.Max-ra.Min) + float32(ra.Min) + 0.5))
-				return dims
-			case tracker.BoolParameter:
-				ra := p.w.Parameter.Range()
-				p.w.boolWidget.Value = p.w.Parameter.Value() > ra.Min
-				boolStyle := material.Switch(&p.Theme.Material, &p.w.boolWidget, "Toggle boolean parameter")
-				boolStyle.Color.Disabled = p.Theme.Material.Fg
-				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
-				dims := layout.Center.Layout(gtx, boolStyle.Layout)
-				if p.w.boolWidget.Value {
-					p.w.Parameter.SetValue(ra.Max)
-				} else {
-					p.w.Parameter.SetValue(ra.Min)
-				}
-				return dims
-			case tracker.IDParameter:
-				instrItems := make([]ActionMenuItem, p.tracker.Instruments().Count())
-				for i := range instrItems {
-					i := i
-					name, _, _, _ := p.tracker.Instruments().Item(i)
-					instrItems[i].Text = name
-					instrItems[i].Icon = icons.NavigationChevronRight
-					instrItems[i].Action = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
-						if id, ok := p.tracker.Instruments().FirstID(i); ok {
-							p.w.Parameter.SetValue(id)
-						}
+				}))
+			}
+			var unitItems []ActionMenuItem
+			instrName := "<instr>"
+			unitName := "<unit>"
+			targetInstrName, units, targetUnitIndex, ok := p.tracker.UnitInfo(p.w.Parameter.Value())
+			if ok {
+				instrName = targetInstrName
+				unitName = buildUnitLabel(targetUnitIndex, units[targetUnitIndex])
+				unitItems = make([]ActionMenuItem, len(units))
+				for j, unit := range units {
+					id := unit.ID
+					unitItems[j].Text = buildUnitLabel(j, unit)
+					unitItems[j].Icon = icons.NavigationChevronRight
+					unitItems[j].Action = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
+						p.w.Parameter.SetValue(id)
 					}))
 				}
-				var unitItems []ActionMenuItem
-				instrName := "<instr>"
-				unitName := "<unit>"
-				targetInstrName, units, targetUnitIndex, ok := p.tracker.UnitInfo(p.w.Parameter.Value())
-				if ok {
-					instrName = targetInstrName
-					unitName = buildUnitLabel(targetUnitIndex, units[targetUnitIndex])
-					unitItems = make([]ActionMenuItem, len(units))
-					for j, unit := range units {
-						id := unit.ID
-						unitItems[j].Text = buildUnitLabel(j, unit)
-						unitItems[j].Icon = icons.NavigationChevronRight
-						unitItems[j].Action = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
-							p.w.Parameter.SetValue(id)
-						}))
-					}
-				}
-				defer pointer.PassOp{}.Push(gtx.Ops).Pop()
-				instrBtn := MenuBtn(p.tracker.Theme, &p.w.instrMenu, &p.w.instrBtn, instrName)
-				unitBtn := MenuBtn(p.tracker.Theme, &p.w.unitMenu, &p.w.unitBtn, unitName)
-				return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-					layout.Rigid(func(gtx C) D {
-						return instrBtn.Layout(gtx, instrItems...)
-					}),
-					layout.Rigid(func(gtx C) D {
-						return unitBtn.Layout(gtx, unitItems...)
-					}),
-				)
 			}
-			return D{}
-		}),
-		layout.Rigid(func(gtx C) D {
-			if p.w.Parameter.Type() != tracker.IDParameter {
-				hint := p.w.Parameter.Hint()
-				label := Label(p.tracker.Theme, &p.tracker.Theme.UnitEditor.Hint, hint.Label)
-				label.Alignment = text.Middle
-				if !hint.Valid {
-					label.Color = p.tracker.Theme.UnitEditor.InvalidParam
-				}
-				if info == "" {
-					return label.Layout(gtx)
-				}
-				tooltip := component.PlatformTooltip(p.SendTargetTheme, info)
-				return p.w.tipArea.Layout(gtx, tooltip, label.Layout)
+			defer pointer.PassOp{}.Push(gtx.Ops).Pop()
+			instrBtn := MenuBtn(p.tracker.Theme, &p.w.instrMenu, &p.w.instrBtn, instrName)
+			unitBtn := MenuBtn(p.tracker.Theme, &p.w.unitMenu, &p.w.unitBtn, unitName)
+			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+				layout.Rigid(func(gtx C) D {
+					return instrBtn.Layout(gtx, instrItems...)
+				}),
+				layout.Rigid(func(gtx C) D {
+					return unitBtn.Layout(gtx, unitItems...)
+				}),
+			)
+		}
+		return D{}
+	}
+	return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
+		layout.Rigid(title.Layout),
+		layout.Flexed(1, func(gtx C) D { return layout.Center.Layout(gtx, widget) }),
+	/*	layout.Rigid(func(gtx C) D {
+		if p.w.Parameter.Type() != tracker.IDParameter {
+			hint := p.w.Parameter.Hint()
+			label := Label(p.tracker.Theme, &p.tracker.Theme.UnitEditor.Hint, hint.Label)
+			label.Alignment = text.Middle
+			if !hint.Valid {
+				label.Color = p.tracker.Theme.UnitEditor.InvalidParam
 			}
-			return D{}
-		}),
+			if info == "" {
+				return label.Layout(gtx)
+			}
+			tooltip := component.PlatformTooltip(p.SendTargetTheme, info)
+			return p.w.tipArea.Layout(gtx, tooltip, label.Layout)
+		}
+		return D{}
+	}),*/
 	)
 }
 
@@ -425,4 +428,114 @@ func buildUnitLabel(index int, u sointu.Unit) string {
 		text = fmt.Sprintf("%s \"%s\"", text, u.Comment)
 	}
 	return fmt.Sprintf("%d: %s", index, text)
+}
+
+func Knob(v tracker.Parameter, th *Theme, state *KnobState, hint string, scroll bool) KnobWidget {
+	return KnobWidget{
+		Theme:  th,
+		Value:  v,
+		State:  state,
+		Style:  &th.Knob,
+		Hint:   hint,
+		Scroll: scroll,
+	}
+}
+
+func (k *KnobWidget) Layout(gtx C) D {
+	k.update(gtx)
+	knob := func(gtx C) D {
+		m := k.Value.Range()
+		amount := float32(k.Value.Value()-m.Min) / float32(m.Max-m.Min)
+		sw := gtx.Dp(k.Style.StrokeWidth)
+		d := gtx.Dp(k.Style.Diameter)
+		defer clip.Rect(image.Rectangle{Max: image.Pt(d, d)}).Push(gtx.Ops).Pop()
+		event.Op(gtx.Ops, k.State)
+		k.State.drag.Add(gtx.Ops)
+		k.State.click.Add(gtx.Ops)
+		strokeKnobArc(gtx, k.Style.TrackColor, sw, d, 1)
+		strokeKnobArc(gtx, k.Style.Color, sw, d, amount)
+		return D{Size: image.Pt(d, d)}
+	}
+	label := Label(k.Theme, &k.Style.Value, strconv.Itoa(k.Value.Value()))
+	w := func(gtx C) D {
+		return layout.Stack{Alignment: layout.Center}.Layout(gtx,
+			layout.Stacked(knob),
+			layout.Stacked(label.Layout))
+	}
+	if k.Hint != "" {
+		c := gtx.Constraints
+		gtx.Constraints.Max = image.Pt(1e6, 1e6)
+		return k.State.tipArea.Layout(gtx, Tooltip(k.Theme, k.Hint), func(gtx C) D {
+			gtx.Constraints = c
+			return w(gtx)
+		})
+	}
+	return w(gtx)
+}
+
+func (k *KnobWidget) update(gtx C) {
+	for {
+		p, ok := k.State.drag.Update(gtx.Metric, gtx.Source, gesture.Both)
+		if !ok {
+			break
+		}
+		switch p.Kind {
+		case pointer.Press:
+			k.State.dragStartPt = p.Position
+			k.State.dragStartVal = k.Value.Value()
+		case pointer.Drag:
+			// update the value based on the drag amount
+			m := k.Value.Range()
+			d := p.Position.Sub(k.State.dragStartPt)
+			amount := float32(d.X-d.Y) / float32(gtx.Dp(k.Style.Diameter)) / 4
+			newValue := int(float32(k.State.dragStartVal) + amount*float32(m.Max-m.Min))
+			k.Value.SetValue(newValue)
+			k.State.tipArea.Appear(gtx.Now)
+		}
+	}
+	for {
+		g, ok := k.State.click.Update(gtx.Source)
+		if !ok {
+			break
+		}
+		if g.Kind == gesture.KindClick && g.NumClicks > 1 {
+			k.Value.Reset()
+		}
+	}
+	for k.Scroll {
+		e, ok := gtx.Event(pointer.Filter{
+			Target:  k.State,
+			Kinds:   pointer.Scroll,
+			ScrollY: pointer.ScrollRange{Min: -1e6, Max: 1e6},
+		})
+		if !ok {
+			break
+		}
+		if ev, ok := e.(pointer.Event); ok && ev.Kind == pointer.Scroll {
+			delta := math.Min(math.Max(float64(ev.Scroll.Y), -1), 1)
+			k.Value.SetValue(k.Value.Value() - int(delta))
+			k.State.tipArea.Appear(gtx.Now)
+		}
+	}
+}
+
+func strokeKnobArc(gtx C, color color.NRGBA, strokeWidth, diameter int, amount float32) {
+	var path clip.Path
+	rad := float32(diameter) / 2
+	amount = min(max(amount, 0), 1)
+	if amount <= 0 {
+		return
+	}
+	angle := amount * 8 * math.Pi / 5
+	center := f32.Point{X: rad, Y: rad}
+	r2 := rad - float32(strokeWidth)/2
+	start := f32.Point{X: rad - r2*float32(math.Sin(math.Pi/5)), Y: rad + r2*float32(math.Cos(math.Pi/5))}
+	path.Begin(gtx.Ops)
+	path.MoveTo(start)
+	path.ArcTo(center, center, angle)
+	paint.FillShape(gtx.Ops, color,
+		clip.Stroke{
+			Path:  path.End(),
+			Width: float32(strokeWidth),
+		}.Op())
 }

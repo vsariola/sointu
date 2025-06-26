@@ -178,12 +178,6 @@ instrumenteditor:
     disabled: { textsize: 12, color: *disabled }
     warning: *warningcolor
     error: *errorcolor
-uniteditor:
-  hint: { textsize: 16, color: *highemphasis, shadowcolor: *black }
-  chooser: { textsize: 12, color: *white, shadowcolor: *black }
-  parametername: { textsize: 16, color: *white, shadowcolor: *black }
-  invalidparam: { r: 120, g: 120, b: 120, a: 190 }
-  sendtarget: { r: 120, g: 120, b: 210, a: 255 }
 cursor:
   active: { r: 100, g: 140, b: 255, a: 48 }
   activealt: { r: 255, g: 100, b: 140, a: 48 }
@@ -211,3 +205,21 @@ dialog:
   textinset: { top: 12, bottom: 12, left: 20, right: 20 }
   buttons: *textbutton
 split: { bar: 10, minsize1: 180, minsize2: 180 }
+uniteditor:
+  hint: { textsize: 16, color: *highemphasis, shadowcolor: *black }
+  chooser: { textsize: 12, color: *white, shadowcolor: *black }
+  name:
+    { textsize: 12, alignment: 2, color: *highemphasis, shadowcolor: *black }
+  invalidparam: { r: 120, g: 120, b: 120, a: 190 }
+  sendtarget: { r: 120, g: 120, b: 210, a: 255 }
+  width: 60
+  height: 60
+  rowtitlewidth: 16
+  columntitleheight: 16
+  rowtitle: { textsize: 12, color: *white, alignment: 2 }
+knob:
+  diameter: 36
+  strokewidth: 4
+  color: *primarycolor
+  trackcolor: { r: 0, g: 0, b: 0, a: 255 }
+  value: { textsize: 12, color: *highemphasis }
