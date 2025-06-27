@@ -23,6 +23,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"gioui.org/x/stroke"
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -61,10 +62,22 @@ type (
 	KnobStyle struct {
 		Diameter    unit.Dp
 		StrokeWidth unit.Dp
-		Color       color.NRGBA
-		TrackColor  color.NRGBA
-		Value       LabelStyle
-		Title       LabelStyle
+		Pos         struct {
+			Color color.NRGBA
+			Bg    color.NRGBA
+		}
+		Neg struct {
+			Color color.NRGBA
+			Bg    color.NRGBA
+		}
+		Indicator struct {
+			Color     color.NRGBA
+			Width     unit.Dp
+			InnerDiam unit.Dp
+			OuterDiam unit.Dp
+		}
+		Value LabelStyle
+		Title LabelStyle
 	}
 
 	KnobWidget struct {
@@ -452,8 +465,9 @@ func (k *KnobWidget) Layout(gtx C) D {
 		event.Op(gtx.Ops, k.State)
 		k.State.drag.Add(gtx.Ops)
 		k.State.click.Add(gtx.Ops)
-		strokeKnobArc(gtx, k.Style.TrackColor, sw, d, 1)
-		strokeKnobArc(gtx, k.Style.Color, sw, d, amount)
+		k.strokeKnobArc(gtx, k.Style.Pos.Bg, sw, d, amount, 1)
+		k.strokeKnobArc(gtx, k.Style.Pos.Color, sw, d, 0, amount)
+		k.strokeIndicator(gtx, amount)
 		return D{Size: image.Pt(d, d)}
 	}
 	label := Label(k.Theme, &k.Style.Value, strconv.Itoa(k.Value.Value()))
@@ -519,23 +533,50 @@ func (k *KnobWidget) update(gtx C) {
 	}
 }
 
-func strokeKnobArc(gtx C, color color.NRGBA, strokeWidth, diameter int, amount float32) {
-	var path clip.Path
+func (k *KnobWidget) strokeKnobArc(gtx C, color color.NRGBA, strokeWidth, diameter int, start, end float32) {
 	rad := float32(diameter) / 2
-	amount = min(max(amount, 0), 1)
-	if amount <= 0 {
+	end = min(max(end, 0), 1)
+	if end <= 0 {
 		return
 	}
-	angle := amount * 8 * math.Pi / 5
+	startAngle := float64((start*8 + 1) / 10 * 2 * math.Pi)
+	deltaAngle := (end - start) * 8 * math.Pi / 5
 	center := f32.Point{X: rad, Y: rad}
 	r2 := rad - float32(strokeWidth)/2
-	start := f32.Point{X: rad - r2*float32(math.Sin(math.Pi/5)), Y: rad + r2*float32(math.Cos(math.Pi/5))}
-	path.Begin(gtx.Ops)
-	path.MoveTo(start)
-	path.ArcTo(center, center, angle)
-	paint.FillShape(gtx.Ops, color,
-		clip.Stroke{
-			Path:  path.End(),
-			Width: float32(strokeWidth),
-		}.Op())
+	startPt := f32.Point{X: rad - r2*float32(math.Sin(startAngle)), Y: rad + r2*float32(math.Cos(startAngle))}
+	segments := [...]stroke.Segment{
+		stroke.MoveTo(startPt),
+		stroke.ArcTo(center, deltaAngle),
+	}
+	s := stroke.Stroke{
+		Path:  stroke.Path{Segments: segments[:]},
+		Width: float32(strokeWidth),
+		Cap:   stroke.FlatCap,
+	}
+	paint.FillShape(gtx.Ops, color, s.Op(gtx.Ops))
+}
+
+func (k *KnobWidget) strokeIndicator(gtx C, amount float32) {
+	innerRad := float32(gtx.Dp(k.Style.Indicator.InnerDiam)) / 2
+	outerRad := float32(gtx.Dp(k.Style.Indicator.OuterDiam)) / 2
+	center := float32(gtx.Dp(k.Style.Diameter)) / 2
+	angle := (float64(amount)*8 + 1) / 10 * 2 * math.Pi
+	start := f32.Point{
+		X: center - innerRad*float32(math.Sin(angle)),
+		Y: center + innerRad*float32(math.Cos(angle)),
+	}
+	end := f32.Point{
+		X: center - outerRad*float32(math.Sin(angle)),
+		Y: center + outerRad*float32(math.Cos(angle)),
+	}
+	segments := [...]stroke.Segment{
+		stroke.MoveTo(start),
+		stroke.LineTo(end),
+	}
+	s := stroke.Stroke{
+		Path:  stroke.Path{Segments: segments[:]},
+		Width: float32(k.Style.Indicator.Width),
+		Cap:   stroke.FlatCap,
+	}
+	paint.FillShape(gtx.Ops, k.Style.Indicator.Color, s.Op(gtx.Ops))
 }

@@ -181,6 +181,9 @@ func (m *Model) deriveParams(unit *sointu.Unit) []Parameter {
 		if unit.Type == "oscillator" && unit.Parameters["type"] != sointu.Sample && (up.Name == "samplestart" || up.Name == "loopstart" || up.Name == "looplength") {
 			continue // don't show the sample related params unless necessary
 		}
+		if unit.Type == "send" && up.Name == "port" {
+			continue
+		}
 		ret = append(ret, Parameter{m: m, unit: unit, up: &unitType[i], vtable: &namedParameter{}})
 	}
 	if unit.Type == "oscillator" && unit.Parameters["type"] == sointu.Sample {

@@ -6,7 +6,7 @@ toolchain go1.24.0
 
 require (
 	gioui.org v0.8.1-0.20250624114559-c3ce484b5e80
-	gioui.org/x v0.7.1
+	gioui.org/x v0.8.1
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/ebitengine/oto/v3 v3.3.0
 	github.com/viterin/vek v0.4.2
@@ -23,6 +23,7 @@ require (
 	git.wow.st/gmp/jni v0.0.0-20210610011705-34026c7e22d0 // indirect
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/andybalholm/stroke v0.0.0-20221221101821-bd29b49d73f0 // indirect
 	github.com/chewxy/math32 v1.11.1 // indirect
 	github.com/ebitengine/purego v0.8.0 // indirect
 	github.com/go-text/typesetting v0.3.0 // indirect

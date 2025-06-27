@@ -219,7 +219,8 @@ uniteditor:
   rowtitle: { textsize: 12, color: *white, alignment: 2 }
 knob:
   diameter: 36
-  strokewidth: 4
-  color: *primarycolor
-  trackcolor: { r: 0, g: 0, b: 0, a: 255 }
   value: { textsize: 12, color: *highemphasis }
+  strokewidth: 4
+  pos: { color: *primarycolor, bg: { r: 51, g: 36, b: 54, a: 255 } }
+  neg: { color: *secondarycolor, bg: { r: 32, g: 55, b: 58, a: 255 } }
+  indicator: { color: *white, width: 2, innerdiam: 24, outerdiam: 36 }
