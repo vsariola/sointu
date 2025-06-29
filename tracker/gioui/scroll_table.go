@@ -117,18 +117,18 @@ func (s ScrollTableStyle) Layout(gtx C, element func(gtx C, x, y int) D, colTitl
 	p := image.Pt(gtx.Dp(s.RowTitleWidth), gtx.Dp(s.ColumnTitleHeight))
 	s.handleEvents(gtx, p)
 
-	return Surface{Gray: 24, Focus: s.ScrollTable.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
-		defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-		dims := gtx.Constraints.Max
-		s.layoutColTitles(gtx, p, colTitle, colTitleBg)
-		s.layoutRowTitles(gtx, p, rowTitle, rowTitleBg)
-		defer op.Offset(p).Push(gtx.Ops).Pop()
-		gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X-p.X, gtx.Constraints.Max.Y-p.Y))
-		s.layoutTable(gtx, element)
-		s.RowTitleStyle.LayoutScrollBar(gtx)
-		s.ColTitleStyle.LayoutScrollBar(gtx)
-		return D{Size: dims}
-	})
+	//return Surface{Gray: 24, Focus: s.ScrollTable.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
+	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
+	dims := gtx.Constraints.Max
+	s.layoutColTitles(gtx, p, colTitle, colTitleBg)
+	s.layoutRowTitles(gtx, p, rowTitle, rowTitleBg)
+	defer op.Offset(p).Push(gtx.Ops).Pop()
+	gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X-p.X, gtx.Constraints.Max.Y-p.Y))
+	s.layoutTable(gtx, element)
+	s.RowTitleStyle.LayoutScrollBar(gtx)
+	s.ColTitleStyle.LayoutScrollBar(gtx)
+	return D{Size: dims}
+	//})
 }
 
 func (s *ScrollTableStyle) handleEvents(gtx layout.Context, p image.Point) {

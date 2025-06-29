@@ -211,7 +211,7 @@ uniteditor:
   name:
     { textsize: 12, alignment: 2, color: *highemphasis, shadowcolor: *black }
   invalidparam: { r: 120, g: 120, b: 120, a: 190 }
-  sendtarget: { r: 120, g: 120, b: 210, a: 255 }
+  sendtarget: { r: 120, g: 120, b: 210, a: 63 }
   width: 60
   height: 60
   rowtitlewidth: 16
@@ -221,6 +221,12 @@ knob:
   diameter: 36
   value: { textsize: 12, color: *highemphasis }
   strokewidth: 4
+  bg: { r: 40, g: 40, b: 40, a: 255 }
   pos: { color: *primarycolor, bg: { r: 51, g: 36, b: 54, a: 255 } }
   neg: { color: *secondarycolor, bg: { r: 32, g: 55, b: 58, a: 255 } }
   indicator: { color: *white, width: 2, innerdiam: 24, outerdiam: 36 }
+signalrail:
+  color: *primarycolor
+  linewidth: 2
+  portdiameter: 8
+  portcolor: *secondarycolor

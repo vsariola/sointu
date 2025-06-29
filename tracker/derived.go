@@ -17,6 +17,7 @@ type (
 		forUnit    map[int]derivedForUnit
 		forTrack   []derivedForTrack
 		forPattern []derivedForPattern
+		rail       SignalRail // signal rail for the current patch
 	}
 
 	derivedForUnit struct {
@@ -152,6 +153,7 @@ func (m *Model) updateDerivedScoreData() {
 }
 
 func (m *Model) updateDerivedPatchData() {
+	m.derived.rail.update(m.d.Song.Patch)
 	clear(m.derived.forUnit)
 	for i, instr := range m.d.Song.Patch {
 		for u, unit := range instr.Units {

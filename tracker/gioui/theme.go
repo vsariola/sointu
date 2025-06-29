@@ -106,9 +106,10 @@ type Theme struct {
 		Menu   PopupStyle
 		Dialog PopupStyle
 	}
-	Split     SplitStyle
-	ScrollBar ScrollBarStyle
-	Knob      KnobStyle
+	Split      SplitStyle
+	ScrollBar  ScrollBarStyle
+	Knob       KnobStyle
+	SignalRail SignalRailStyle
 
 	// iconCache is used to cache the icons created from iconvg data
 	iconCache map[*byte]*widget.Icon

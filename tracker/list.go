@@ -39,6 +39,7 @@ type (
 		Type, Comment                      string
 		Disabled                           bool
 		StackNeed, StackBefore, StackAfter int
+		TargetUnit, TargetPort             int
 	}
 
 	// Range is used to represent a range [Start,End) of integers
@@ -325,11 +326,19 @@ func (v *Units) Item(index int) UnitListItem {
 		return UnitListItem{}
 	}
 	unit := v.d.Song.Patch[v.d.InstrIndex].Units[index]
+	targetUnit := 0
+	if unit.Type == "send" {
+		if _, tu, err := v.d.Song.Patch.FindUnit(unit.Parameters["target"]); err == nil {
+			targetUnit = tu + 1
+		}
+	}
 	return UnitListItem{
 		Type:        unit.Type,
 		Comment:     unit.Comment,
 		Disabled:    unit.Disabled,
 		StackNeed:   unit.StackNeed(),
+		TargetUnit:  targetUnit,
+		TargetPort:  unit.Parameters["port"],
 		StackBefore: 0,
 		StackAfter:  0,
 	}

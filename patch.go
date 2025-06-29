@@ -67,6 +67,13 @@ type (
 		DisplayFunc UnitParameterDisplayFunc
 	}
 
+	// StackUse documents how a unit will affect the signal stack.
+	StackUse struct {
+		Inputs     [][]int // Inputs documents which inputs contribute to which outputs. len(Inputs) is the number of inputs. Each input can contribute to multiple outputs, so its a slice.
+		Modifies   []bool  // Modifies documents which of the (mixed) inputs are actually modified by the unit
+		NumOutputs int     // NumOutputs is the number of outputs produced by the unit. This is used to determine how many outputs are needed for the unit.
+	}
+
 	UnitParameterDisplayFunc func(int) (value string, unit string)
 )
 
@@ -304,6 +311,103 @@ func (u *Unit) Copy() Unit {
 	return Unit{Type: u.Type, Parameters: parameters, VarArgs: varArgs, ID: u.ID, Disabled: u.Disabled, Comment: u.Comment}
 }
 
+var stackUseSource = [2]StackUse{
+	{Inputs: [][]int{}, Modifies: []bool{true}, NumOutputs: 1},       // mono
+	{Inputs: [][]int{}, Modifies: []bool{true, true}, NumOutputs: 2}, // stereo
+}
+var stackUseSink = [2]StackUse{
+	{Inputs: [][]int{{0}}, Modifies: []bool{true}, NumOutputs: 0},            // mono
+	{Inputs: [][]int{{0}, {1}}, Modifies: []bool{true, true}, NumOutputs: 0}, // stereo
+}
+var stackUseEffect = [2]StackUse{
+	{Inputs: [][]int{{0}}, Modifies: []bool{true}, NumOutputs: 1},            // mono
+	{Inputs: [][]int{{0}, {1}}, Modifies: []bool{true, true}, NumOutputs: 2}, // stereo
+}
+var stackUseMonoStereo = map[string][2]StackUse{
+	"add": {
+		{Inputs: [][]int{{0, 1}, {1}}, Modifies: []bool{false, true}, NumOutputs: 2},
+		{Inputs: [][]int{{0, 2}, {1, 3}, {2}, {3}}, Modifies: []bool{false, false, true, true}, NumOutputs: 4},
+	},
+	"mul": {
+		{Inputs: [][]int{{0, 1}, {1}}, Modifies: []bool{false, true}, NumOutputs: 2},
+		{Inputs: [][]int{{0, 2}, {1, 3}, {2}, {3}}, Modifies: []bool{false, false, true, true}, NumOutputs: 4},
+	},
+	"addp": {
+		{Inputs: [][]int{{0}, {0}}, Modifies: []bool{true}, NumOutputs: 1},
+		{Inputs: [][]int{{0}, {1}, {0}, {1}}, Modifies: []bool{true, true}, NumOutputs: 2},
+	},
+	"mulp": {
+		{Inputs: [][]int{{0}, {0}}, Modifies: []bool{true}, NumOutputs: 1},
+		{Inputs: [][]int{{0}, {1}, {0}, {1}}, Modifies: []bool{true, true}, NumOutputs: 2},
+	},
+	"xch": {
+		{Inputs: [][]int{{1}, {0}}, Modifies: []bool{false, false}, NumOutputs: 2},
+		{Inputs: [][]int{{2}, {3}, {0}, {1}}, Modifies: []bool{false, false, false, false}, NumOutputs: 4},
+	},
+	"push": {
+		{Inputs: [][]int{{0, 1}}, Modifies: []bool{false, false}, NumOutputs: 2},
+		{Inputs: [][]int{{0, 2}, {1, 3}}, Modifies: []bool{false, false, false, false}, NumOutputs: 4},
+	},
+	"pop":        stackUseSink,
+	"envelope":   stackUseSource,
+	"oscillator": stackUseSource,
+	"noise":      stackUseSource,
+	"loadnote":   stackUseSource,
+	"loadval":    stackUseSource,
+	"receive":    stackUseSource,
+	"in":         stackUseSource,
+	"out":        stackUseSink,
+	"outaux":     stackUseSink,
+	"aux":        stackUseSink,
+	"distort":    stackUseEffect,
+	"hold":       stackUseEffect,
+	"crush":      stackUseEffect,
+	"gain":       stackUseEffect,
+	"invgain":    stackUseEffect,
+	"dbgain":     stackUseEffect,
+	"filter":     stackUseEffect,
+	"clip":       stackUseEffect,
+	"delay":      stackUseEffect,
+	"compressor": {
+		{Inputs: [][]int{{0, 1}}, Modifies: []bool{false, true}, NumOutputs: 2},                            // mono
+		{Inputs: [][]int{{0, 2, 3}, {1, 2, 3}}, Modifies: []bool{false, false, true, true}, NumOutputs: 4}, // stereo
+	},
+	"pan": {
+		{Inputs: [][]int{{0, 1}}, Modifies: []bool{true, true}, NumOutputs: 2},         // mono
+		{Inputs: [][]int{{0, 1}, {0, 1}}, Modifies: []bool{true, true}, NumOutputs: 2}, // mono
+	},
+	"speed": {
+		{Inputs: [][]int{{0}}, Modifies: []bool{true}, NumOutputs: 0},
+		{},
+	},
+	"sync": {
+		{Inputs: [][]int{{0}}, Modifies: []bool{false}, NumOutputs: 0},
+		{},
+	},
+}
+var stackUseSendNoPop = [2]StackUse{
+	{Inputs: [][]int{{0}}, Modifies: []bool{false}, NumOutputs: 1},
+	{Inputs: [][]int{{0}, {1}}, Modifies: []bool{false, false}, NumOutputs: 2},
+}
+var stackUseSendPop = [2]StackUse{
+	{Inputs: [][]int{{0}}, Modifies: []bool{true}, NumOutputs: 0},            // mono
+	{Inputs: [][]int{{0}, {1}}, Modifies: []bool{true, true}, NumOutputs: 0}, // stereo
+}
+
+func (u *Unit) StackUse() StackUse {
+	if u.Disabled {
+		return StackUse{}
+	}
+	if u.Type == "send" {
+		// "send" unit is special, it has a different stack use depending on sendpop
+		if u.Parameters["sendpop"] == 0 {
+			return stackUseSendNoPop[u.Parameters["stereo"]]
+		}
+		return stackUseSendPop[u.Parameters["stereo"]]
+	}
+	return stackUseMonoStereo[u.Type][u.Parameters["stereo"]]
+}
+
 // StackChange returns how this unit will affect the signal stack. "pop" and
 // "addp" and such will consume the topmost signal, and thus return -1 (or -2,
 // if the unit is a stereo unit). On the other hand, "oscillator" and "envelope"
@@ -311,40 +415,15 @@ func (u *Unit) Copy() Unit {
 // unit). Effects that just change the topmost signal and will not change the
 // number of signals on the stack and thus return 0.
 func (u *Unit) StackChange() int {
-	if u.Disabled {
-		return 0
-	}
-	switch u.Type {
-	case "addp", "mulp", "pop", "out", "outaux", "aux":
-		return -1 - u.Parameters["stereo"]
-	case "envelope", "oscillator", "push", "noise", "receive", "loadnote", "loadval", "in", "compressor":
-		return 1 + u.Parameters["stereo"]
-	case "pan":
-		return 1 - u.Parameters["stereo"]
-	case "speed":
-		return -1
-	case "send":
-		return (-1 - u.Parameters["stereo"]) * u.Parameters["sendpop"]
-	}
-	return 0
+	s := u.StackUse()
+	return s.NumOutputs - len(s.Inputs)
 }
 
 // StackNeed returns the number of signals that should be on the stack before
 // this unit is executed. Used to prevent stack underflow. Units producing
 // signals do not care what is on the stack before and will return 0.
 func (u *Unit) StackNeed() int {
-	if u.Disabled {
-		return 0
-	}
-	switch u.Type {
-	case "", "envelope", "oscillator", "noise", "receive", "loadnote", "loadval", "in":
-		return 0
-	case "mulp", "mul", "add", "addp", "xch":
-		return 2 * (1 + u.Parameters["stereo"])
-	case "speed":
-		return 1
-	}
-	return 1 + u.Parameters["stereo"]
+	return len(u.StackUse().Inputs)
 }
 
 // Copy makes a deep copy of an Instrument

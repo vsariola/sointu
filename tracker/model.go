@@ -35,6 +35,7 @@ type (
 		ChangedSinceSave        bool
 		RecoveryFilePath        string
 		ChangedSinceRecovery    bool
+		SendSource              int
 	}
 
 	Model struct {

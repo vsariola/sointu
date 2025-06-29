@@ -7,10 +7,8 @@ import (
 	"image/color"
 	"io"
 	"math"
-	"strconv"
 
 	"gioui.org/f32"
-	"gioui.org/gesture"
 	"gioui.org/io/clipboard"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
@@ -20,10 +18,8 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
-	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-	"gioui.org/x/stroke"
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -49,44 +45,6 @@ type (
 		enableUnitHint  string
 
 		searching tracker.Bool
-	}
-
-	KnobState struct {
-		click        gesture.Click
-		drag         gesture.Drag
-		dragStartPt  f32.Point // used to calculate the drag amount
-		dragStartVal int
-		tipArea      TipArea
-	}
-
-	KnobStyle struct {
-		Diameter    unit.Dp
-		StrokeWidth unit.Dp
-		Pos         struct {
-			Color color.NRGBA
-			Bg    color.NRGBA
-		}
-		Neg struct {
-			Color color.NRGBA
-			Bg    color.NRGBA
-		}
-		Indicator struct {
-			Color     color.NRGBA
-			Width     unit.Dp
-			InnerDiam unit.Dp
-			OuterDiam unit.Dp
-		}
-		Value LabelStyle
-		Title LabelStyle
-	}
-
-	KnobWidget struct {
-		Theme  *Theme
-		Value  tracker.Parameter
-		State  *KnobState
-		Style  *KnobStyle
-		Hint   string
-		Scroll bool
 	}
 )
 
@@ -222,6 +180,11 @@ func (pe *UnitEditor) layoutSliders(gtx C) D {
 	}
 	cursor := t.Model.Params().Cursor()
 	cell := func(gtx C, x, y int) D {
+		if x == 0 {
+			sr := SignalRail(t.Theme, t.SignalRail().Item(y))
+			return sr.Layout(gtx)
+		}
+		x--
 		gtx.Constraints = layout.Exact(image.Pt(cellWidth, cellHeight))
 		point := tracker.Point{X: x, Y: y}
 		if y < 0 || y >= len(pe.Parameters) || x < 0 || x >= len(pe.Parameters[y]) {
@@ -247,8 +210,57 @@ func (pe *UnitEditor) layoutSliders(gtx C) D {
 	table.ColumnTitleHeight = t.Theme.UnitEditor.ColumnTitleHeight
 	table.CellWidth = t.Theme.UnitEditor.Width
 	table.CellHeight = t.Theme.UnitEditor.Height
-	return table.Layout(gtx, cell, coltitle, rowtitle, nil, nil)
+	pe.drawSignals(gtx)
+	dims := table.Layout(gtx, cell, coltitle, rowtitle, nil, nil)
+	return dims
+}
 
+func (pe *UnitEditor) drawSignals(gtx C) {
+	t := TrackerFromContext(gtx)
+	units := t.Units()
+	colP := pe.paramTable.ColTitleList.List.Position
+	rowP := pe.paramTable.RowTitleList.List.Position
+	p := image.Pt(gtx.Dp(t.Theme.UnitEditor.RowTitleWidth), gtx.Dp(t.Theme.UnitEditor.ColumnTitleHeight))
+	defer op.Offset(p).Push(gtx.Ops).Pop()
+	gtx.Constraints.Max = gtx.Constraints.Max.Sub(p)
+	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
+	defer op.Offset(image.Pt(-colP.Offset, -rowP.Offset)).Push(gtx.Ops).Pop()
+	for i := 0; i < units.Count(); i++ {
+		item := units.Item(i)
+		if item.TargetUnit > 0 {
+			pe.drawSignal(gtx, 3-colP.First, i-rowP.First, item.TargetPort-colP.First, item.TargetUnit-1-rowP.First)
+		}
+	}
+}
+
+func (pe *UnitEditor) drawSignal(gtx C, sx, sy, ex, ey int) {
+	t := TrackerFromContext(gtx)
+	width := float32(gtx.Dp(t.Theme.UnitEditor.Width))
+	height := float32(gtx.Dp(t.Theme.UnitEditor.Height))
+	diam := gtx.Dp(t.Theme.Knob.Diameter)
+	from := f32.Pt((float32(sx)+.5)*width, (float32(sy)+.6)*height)
+	to := f32.Pt((float32(ex)+.5)*width, (float32(ey)+.6)*height)
+	var c1, c2 f32.Point
+	if sy < ey {
+		from.Y += float32(diam) / 2
+		to.Y -= float32(diam) / 2
+		c1 = from.Add(f32.Pt(0, height/2))
+		c2 = to.Sub(f32.Pt(0, height/2))
+	} else {
+		from.Y -= float32(diam) / 2
+		to.Y += float32(diam) / 2
+		c1 = from.Sub(f32.Pt(0, height/2))
+		c2 = to.Add(f32.Pt(0, height/2))
+	}
+	var path clip.Path
+	path.Begin(gtx.Ops)
+	path.MoveTo(from)
+	path.CubeTo(c1, c2, to)
+	paint.FillShape(gtx.Ops, t.Theme.UnitEditor.SendTarget,
+		clip.Stroke{
+			Path:  path.End(),
+			Width: float32(gtx.Dp(4)),
+		}.Op())
 }
 
 func (pe *UnitEditor) layoutFooter(gtx C) D {
@@ -370,7 +382,8 @@ func (p ParameterStyle) Layout(gtx C) D {
 			}
 			return dims
 		case tracker.IDParameter:
-			instrItems := make([]ActionMenuItem, p.tracker.Instruments().Count())
+			return drawCircle(gtx, gtx.Dp(p.Theme.Knob.Diameter), p.Theme.Knob.Pos.Bg)
+			/*instrItems := make([]ActionMenuItem, p.tracker.Instruments().Count())
 			for i := range instrItems {
 				i := i
 				name, _, _, _ := p.tracker.Instruments().Item(i)
@@ -409,7 +422,7 @@ func (p ParameterStyle) Layout(gtx C) D {
 				layout.Rigid(func(gtx C) D {
 					return unitBtn.Layout(gtx, unitItems...)
 				}),
-			)
+			)*/
 		}
 		return D{}
 	}
@@ -435,148 +448,16 @@ func (p ParameterStyle) Layout(gtx C) D {
 	)
 }
 
+func drawCircle(gtx C, i int, nRGBA color.NRGBA) D {
+	defer clip.Ellipse(image.Rectangle{Max: image.Pt(i, i)}).Push(gtx.Ops).Pop()
+	paint.FillShape(gtx.Ops, nRGBA, clip.Ellipse{Max: image.Pt(i, i)}.Op(gtx.Ops))
+	return D{Size: image.Pt(i, i)}
+}
+
 func buildUnitLabel(index int, u sointu.Unit) string {
 	text := u.Type
 	if u.Comment != "" {
 		text = fmt.Sprintf("%s \"%s\"", text, u.Comment)
 	}
 	return fmt.Sprintf("%d: %s", index, text)
-}
-
-func Knob(v tracker.Parameter, th *Theme, state *KnobState, hint string, scroll bool) KnobWidget {
-	return KnobWidget{
-		Theme:  th,
-		Value:  v,
-		State:  state,
-		Style:  &th.Knob,
-		Hint:   hint,
-		Scroll: scroll,
-	}
-}
-
-func (k *KnobWidget) Layout(gtx C) D {
-	k.update(gtx)
-	knob := func(gtx C) D {
-		m := k.Value.Range()
-		amount := float32(k.Value.Value()-m.Min) / float32(m.Max-m.Min)
-		sw := gtx.Dp(k.Style.StrokeWidth)
-		d := gtx.Dp(k.Style.Diameter)
-		defer clip.Rect(image.Rectangle{Max: image.Pt(d, d)}).Push(gtx.Ops).Pop()
-		event.Op(gtx.Ops, k.State)
-		k.State.drag.Add(gtx.Ops)
-		k.State.click.Add(gtx.Ops)
-		k.strokeKnobArc(gtx, k.Style.Pos.Bg, sw, d, amount, 1)
-		k.strokeKnobArc(gtx, k.Style.Pos.Color, sw, d, 0, amount)
-		k.strokeIndicator(gtx, amount)
-		return D{Size: image.Pt(d, d)}
-	}
-	label := Label(k.Theme, &k.Style.Value, strconv.Itoa(k.Value.Value()))
-	w := func(gtx C) D {
-		return layout.Stack{Alignment: layout.Center}.Layout(gtx,
-			layout.Stacked(knob),
-			layout.Stacked(label.Layout))
-	}
-	if k.Hint != "" {
-		c := gtx.Constraints
-		gtx.Constraints.Max = image.Pt(1e6, 1e6)
-		return k.State.tipArea.Layout(gtx, Tooltip(k.Theme, k.Hint), func(gtx C) D {
-			gtx.Constraints = c
-			return w(gtx)
-		})
-	}
-	return w(gtx)
-}
-
-func (k *KnobWidget) update(gtx C) {
-	for {
-		p, ok := k.State.drag.Update(gtx.Metric, gtx.Source, gesture.Both)
-		if !ok {
-			break
-		}
-		switch p.Kind {
-		case pointer.Press:
-			k.State.dragStartPt = p.Position
-			k.State.dragStartVal = k.Value.Value()
-		case pointer.Drag:
-			// update the value based on the drag amount
-			m := k.Value.Range()
-			d := p.Position.Sub(k.State.dragStartPt)
-			amount := float32(d.X-d.Y) / float32(gtx.Dp(k.Style.Diameter)) / 4
-			newValue := int(float32(k.State.dragStartVal) + amount*float32(m.Max-m.Min))
-			k.Value.SetValue(newValue)
-			k.State.tipArea.Appear(gtx.Now)
-		}
-	}
-	for {
-		g, ok := k.State.click.Update(gtx.Source)
-		if !ok {
-			break
-		}
-		if g.Kind == gesture.KindClick && g.NumClicks > 1 {
-			k.Value.Reset()
-		}
-	}
-	for k.Scroll {
-		e, ok := gtx.Event(pointer.Filter{
-			Target:  k.State,
-			Kinds:   pointer.Scroll,
-			ScrollY: pointer.ScrollRange{Min: -1e6, Max: 1e6},
-		})
-		if !ok {
-			break
-		}
-		if ev, ok := e.(pointer.Event); ok && ev.Kind == pointer.Scroll {
-			delta := math.Min(math.Max(float64(ev.Scroll.Y), -1), 1)
-			k.Value.SetValue(k.Value.Value() - int(delta))
-			k.State.tipArea.Appear(gtx.Now)
-		}
-	}
-}
-
-func (k *KnobWidget) strokeKnobArc(gtx C, color color.NRGBA, strokeWidth, diameter int, start, end float32) {
-	rad := float32(diameter) / 2
-	end = min(max(end, 0), 1)
-	if end <= 0 {
-		return
-	}
-	startAngle := float64((start*8 + 1) / 10 * 2 * math.Pi)
-	deltaAngle := (end - start) * 8 * math.Pi / 5
-	center := f32.Point{X: rad, Y: rad}
-	r2 := rad - float32(strokeWidth)/2
-	startPt := f32.Point{X: rad - r2*float32(math.Sin(startAngle)), Y: rad + r2*float32(math.Cos(startAngle))}
-	segments := [...]stroke.Segment{
-		stroke.MoveTo(startPt),
-		stroke.ArcTo(center, deltaAngle),
-	}
-	s := stroke.Stroke{
-		Path:  stroke.Path{Segments: segments[:]},
-		Width: float32(strokeWidth),
-		Cap:   stroke.FlatCap,
-	}
-	paint.FillShape(gtx.Ops, color, s.Op(gtx.Ops))
-}
-
-func (k *KnobWidget) strokeIndicator(gtx C, amount float32) {
-	innerRad := float32(gtx.Dp(k.Style.Indicator.InnerDiam)) / 2
-	outerRad := float32(gtx.Dp(k.Style.Indicator.OuterDiam)) / 2
-	center := float32(gtx.Dp(k.Style.Diameter)) / 2
-	angle := (float64(amount)*8 + 1) / 10 * 2 * math.Pi
-	start := f32.Point{
-		X: center - innerRad*float32(math.Sin(angle)),
-		Y: center + innerRad*float32(math.Cos(angle)),
-	}
-	end := f32.Point{
-		X: center - outerRad*float32(math.Sin(angle)),
-		Y: center + outerRad*float32(math.Cos(angle)),
-	}
-	segments := [...]stroke.Segment{
-		stroke.MoveTo(start),
-		stroke.LineTo(end),
-	}
-	s := stroke.Stroke{
-		Path:  stroke.Path{Segments: segments[:]},
-		Width: float32(k.Style.Indicator.Width),
-		Cap:   stroke.FlatCap,
-	}
-	paint.FillShape(gtx.Ops, k.Style.Indicator.Color, s.Op(gtx.Ops))
 }
