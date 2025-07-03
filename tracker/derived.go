@@ -153,7 +153,7 @@ func (m *Model) updateDerivedScoreData() {
 }
 
 func (m *Model) updateDerivedPatchData() {
-	m.derived.rail.update(m.d.Song.Patch)
+	m.SignalRail().update()
 	clear(m.derived.forUnit)
 	for i, instr := range m.d.Song.Patch {
 		for u, unit := range instr.Units {
@@ -177,8 +177,8 @@ func (m *Model) deriveParams(unit *sointu.Unit) []Parameter {
 		return ret
 	}
 	for i, up := range unitType {
-		if !up.CanSet {
-			continue
+		if !up.CanSet && !up.CanModulate {
+			continue // skip parameters that cannot be set or modulated
 		}
 		if unit.Type == "oscillator" && unit.Parameters["type"] != sointu.Sample && (up.Name == "samplestart" || up.Name == "loopstart" || up.Name == "looplength") {
 			continue // don't show the sample related params unless necessary
@@ -230,7 +230,7 @@ func (m *Model) collectSendSources(unit sointu.Unit, paramName string) iter.Seq[
 					continue
 				}
 				port := u.Parameters["port"]
-				unitParam, ok := sointu.FindParamForModulationPort(unit.Type, port)
+				unitParam, _, ok := sointu.FindParamForModulationPort(unit.Type, port)
 				if !ok || unitParam.Name != paramName {
 					continue
 				}

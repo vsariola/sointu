@@ -85,16 +85,16 @@ type Theme struct {
 		}
 	}
 	UnitEditor struct {
-		Name              LabelStyle
-		Chooser           LabelStyle
-		Hint              LabelStyle
-		InvalidParam      color.NRGBA
-		SendTarget        color.NRGBA
-		Width             unit.Dp
-		Height            unit.Dp
-		RowTitleWidth     unit.Dp
-		ColumnTitleHeight unit.Dp
-		RowTitle          LabelStyle
+		Name          LabelStyle
+		Chooser       LabelStyle
+		Hint          LabelStyle
+		InvalidParam  color.NRGBA
+		SendTarget    color.NRGBA
+		Width         unit.Dp
+		Height        unit.Dp
+		RowTitle      LabelStyle
+		RowTitleWidth unit.Dp
+		Error         color.NRGBA
 	}
 	Cursor    CursorStyle
 	Selection CursorStyle

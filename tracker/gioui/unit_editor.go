@@ -71,7 +71,7 @@ func (pe *UnitEditor) Layout(gtx C) D {
 	t := TrackerFromContext(gtx)
 	pe.update(gtx, t)
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-	editorFunc := pe.layoutSliders
+	editorFunc := pe.layoutRack
 	if pe.showingChooser() {
 		editorFunc = pe.layoutUnitTypeChooser
 	}
@@ -152,7 +152,7 @@ func (pe *UnitEditor) ChooseUnitType(t *Tracker) {
 	}
 }
 
-func (pe *UnitEditor) layoutSliders(gtx C) D {
+func (pe *UnitEditor) layoutRack(gtx C) D {
 	t := TrackerFromContext(gtx)
 	// create enough parameter widget to match the number of parameters
 	width := pe.paramTable.Table.Width()
@@ -161,8 +161,11 @@ func (pe *UnitEditor) layoutSliders(gtx C) D {
 	}
 	cellWidth := gtx.Dp(t.Theme.UnitEditor.Width)
 	cellHeight := gtx.Dp(t.Theme.UnitEditor.Height)
-	rowTitleWidth := gtx.Dp(t.Theme.UnitEditor.RowTitleWidth)
-	columnTitleHeight := gtx.Dp(t.Theme.UnitEditor.ColumnTitleHeight)
+	rowTitleLabelWidth := gtx.Dp(t.Theme.UnitEditor.RowTitleWidth)
+	rowTitleSignalWidth := gtx.Dp(t.Theme.SignalRail.SignalWidth) * t.SignalRail().MaxWidth()
+	rowTitleWidth := rowTitleLabelWidth + rowTitleSignalWidth
+	signalError := t.SignalRail().Error()
+	columnTitleHeight := gtx.Dp(0)
 	for i := range pe.Parameters {
 		for len(pe.Parameters[i]) < width {
 			pe.Parameters[i] = append(pe.Parameters[i], &ParameterWidget{})
@@ -171,20 +174,29 @@ func (pe *UnitEditor) layoutSliders(gtx C) D {
 	coltitle := func(gtx C, x int) D {
 		return D{Size: image.Pt(cellWidth, columnTitleHeight)}
 	}
+	rowTitleBg := func(gtx C, j int) D {
+		paint.FillShape(gtx.Ops, t.Theme.NoteEditor.Play, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, 1)}.Op())
+		return D{}
+	}
 	rowtitle := func(gtx C, y int) D {
-		//defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
-		defer op.Affine(f32.Affine2D{}.Rotate(f32.Pt(0, 0), -90*math.Pi/180).Offset(f32.Point{X: 0, Y: float32(cellHeight)})).Push(gtx.Ops).Pop()
-		gtx.Constraints = layout.Exact(image.Pt(cellHeight, rowTitleWidth))
-		Label(t.Theme, &t.Theme.UnitEditor.RowTitle, t.Units().Item(y).Type).Layout(gtx)
+		if y < 0 || y >= len(pe.Parameters) {
+			return D{}
+		}
+
+		sr := SignalRail(t.Theme, t.SignalRail().Item(y))
+		label := Label(t.Theme, &t.Theme.UnitEditor.RowTitle, t.Units().Item(y).Type)
+		if signalError.Err != nil && signalError.UnitIndex == y {
+			label.Color = t.Theme.UnitEditor.Error
+		}
+		gtx.Constraints = layout.Exact(image.Pt(rowTitleWidth, cellHeight))
+		sr.Layout(gtx)
+		defer op.Affine(f32.Affine2D{}.Rotate(f32.Pt(0, 0), -90*math.Pi/180).Offset(f32.Point{X: float32(rowTitleSignalWidth), Y: float32(cellHeight)})).Push(gtx.Ops).Pop()
+		gtx.Constraints = layout.Exact(image.Pt(cellHeight, rowTitleLabelWidth))
+		label.Layout(gtx)
 		return D{Size: image.Pt(rowTitleWidth, cellHeight)}
 	}
 	cursor := t.Model.Params().Cursor()
 	cell := func(gtx C, x, y int) D {
-		if x == 0 {
-			sr := SignalRail(t.Theme, t.SignalRail().Item(y))
-			return sr.Layout(gtx)
-		}
-		x--
 		gtx.Constraints = layout.Exact(image.Pt(cellWidth, cellHeight))
 		point := tracker.Point{X: x, Y: y}
 		if y < 0 || y >= len(pe.Parameters) || x < 0 || x >= len(pe.Parameters[y]) {
@@ -206,61 +218,74 @@ func (pe *UnitEditor) layoutSliders(gtx C) D {
 		return D{Size: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}
 	}
 	table := FilledScrollTable(t.Theme, pe.paramTable)
-	table.RowTitleWidth = t.Theme.UnitEditor.RowTitleWidth
-	table.ColumnTitleHeight = t.Theme.UnitEditor.ColumnTitleHeight
+	table.RowTitleWidth = gtx.Metric.PxToDp(rowTitleWidth)
+	table.ColumnTitleHeight = 0
 	table.CellWidth = t.Theme.UnitEditor.Width
 	table.CellHeight = t.Theme.UnitEditor.Height
-	pe.drawSignals(gtx)
-	dims := table.Layout(gtx, cell, coltitle, rowtitle, nil, nil)
+	pe.drawSignals(gtx, rowTitleWidth)
+	dims := table.Layout(gtx, cell, coltitle, rowtitle, nil, rowTitleBg)
 	return dims
 }
 
-func (pe *UnitEditor) drawSignals(gtx C) {
+func (pe *UnitEditor) drawSignals(gtx C, rowTitleWidth int) {
 	t := TrackerFromContext(gtx)
 	units := t.Units()
 	colP := pe.paramTable.ColTitleList.List.Position
 	rowP := pe.paramTable.RowTitleList.List.Position
-	p := image.Pt(gtx.Dp(t.Theme.UnitEditor.RowTitleWidth), gtx.Dp(t.Theme.UnitEditor.ColumnTitleHeight))
+	p := image.Pt(rowTitleWidth, 0)
 	defer op.Offset(p).Push(gtx.Ops).Pop()
 	gtx.Constraints.Max = gtx.Constraints.Max.Sub(p)
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
 	defer op.Offset(image.Pt(-colP.Offset, -rowP.Offset)).Push(gtx.Ops).Pop()
 	for i := 0; i < units.Count(); i++ {
 		item := units.Item(i)
-		if item.TargetUnit > 0 {
-			pe.drawSignal(gtx, 3-colP.First, i-rowP.First, item.TargetPort-colP.First, item.TargetUnit-1-rowP.First)
+		if item.TargetOk {
+			pe.drawSignal(gtx, i-rowP.First, item.TargetX-colP.First, item.TargetY-rowP.First)
 		}
 	}
 }
 
-func (pe *UnitEditor) drawSignal(gtx C, sx, sy, ex, ey int) {
+func (pe *UnitEditor) drawSignal(gtx C, sy, ex, ey int) {
 	t := TrackerFromContext(gtx)
 	width := float32(gtx.Dp(t.Theme.UnitEditor.Width))
 	height := float32(gtx.Dp(t.Theme.UnitEditor.Height))
 	diam := gtx.Dp(t.Theme.Knob.Diameter)
-	from := f32.Pt((float32(sx)+.5)*width, (float32(sy)+.6)*height)
-	to := f32.Pt((float32(ex)+.5)*width, (float32(ey)+.6)*height)
-	var c1, c2 f32.Point
-	if sy < ey {
-		from.Y += float32(diam) / 2
-		to.Y -= float32(diam) / 2
-		c1 = from.Add(f32.Pt(0, height/2))
-		c2 = to.Sub(f32.Pt(0, height/2))
-	} else {
-		from.Y -= float32(diam) / 2
-		to.Y += float32(diam) / 2
-		c1 = from.Sub(f32.Pt(0, height/2))
-		c2 = to.Add(f32.Pt(0, height/2))
+	from := f32.Pt(0, float32((sy+1)*gtx.Dp(t.Theme.UnitEditor.Height))-float32(gtx.Dp(t.Theme.SignalRail.SignalWidth)/2))
+	corner := f32.Pt(1, 1)
+	if ex > 0 {
+		corner.X = -corner.X
 	}
+	if sy < ey {
+		corner.Y = -corner.Y
+	}
+	c := float32(diam) / 2 / float32(math.Sqrt2)
+	topLeft := f32.Pt(float32(ex)*width, float32(ey)*height)
+	center := topLeft.Add(f32.Pt(width/2, height/2))
+	to := mulVec(corner, f32.Pt(c, c)).Add(center)
+	p2 := mulVec(corner, f32.Pt(width/2, height/2)).Add(center)
+	p1 := f32.Pt(p2.X, float32((sy+1)*gtx.Dp(t.Theme.UnitEditor.Height)))
+	if sy > ey {
+		p1 = f32.Pt(p2.X, (float32(sy)+0.5)*float32(gtx.Dp(t.Theme.UnitEditor.Height))+float32(diam)/2)
+	}
+	k := float32(width) / 4
+	//toTan := mulVec(corner, f32.Pt(-k, -k))
+	p2Tan := mulVec(corner, f32.Pt(-k, -k))
+	p1Tan := f32.Pt(k, p2Tan.Y)
+	fromTan := f32.Pt(k, 0)
 	var path clip.Path
 	path.Begin(gtx.Ops)
 	path.MoveTo(from)
-	path.CubeTo(c1, c2, to)
+	path.CubeTo(from.Add(fromTan), p1.Sub(p1Tan), p1)
+	path.CubeTo(p1.Add(p1Tan), p2, to)
 	paint.FillShape(gtx.Ops, t.Theme.UnitEditor.SendTarget,
 		clip.Stroke{
 			Path:  path.End(),
-			Width: float32(gtx.Dp(4)),
+			Width: float32(gtx.Dp(t.Theme.SignalRail.LineWidth)),
 		}.Op())
+}
+
+func mulVec(a, b f32.Point) f32.Point {
+	return f32.Pt(a.X*b.X, a.Y*b.Y)
 }
 
 func (pe *UnitEditor) layoutFooter(gtx C) D {
@@ -426,9 +451,9 @@ func (p ParameterStyle) Layout(gtx C) D {
 		}
 		return D{}
 	}
-	return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-		layout.Rigid(title.Layout),
-		layout.Flexed(1, func(gtx C) D { return layout.Center.Layout(gtx, widget) }),
+	title.Layout(gtx)
+	layout.Center.Layout(gtx, widget)
+	return D{Size: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}
 	/*	layout.Rigid(func(gtx C) D {
 		if p.w.Parameter.Type() != tracker.IDParameter {
 			hint := p.w.Parameter.Hint()
@@ -445,7 +470,6 @@ func (p ParameterStyle) Layout(gtx C) D {
 		}
 		return D{}
 	}),*/
-	)
 }
 
 func drawCircle(gtx C, i int, nRGBA color.NRGBA) D {

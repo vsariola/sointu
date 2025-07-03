@@ -39,7 +39,8 @@ type (
 		Type, Comment                      string
 		Disabled                           bool
 		StackNeed, StackBefore, StackAfter int
-		TargetUnit, TargetPort             int
+		TargetOk                           bool // TargetOk indicates if the target unit is valid
+		TargetX, TargetY                   int
 	}
 
 	// Range is used to represent a range [Start,End) of integers
@@ -326,10 +327,17 @@ func (v *Units) Item(index int) UnitListItem {
 		return UnitListItem{}
 	}
 	unit := v.d.Song.Patch[v.d.InstrIndex].Units[index]
-	targetUnit := 0
+	targetOk := false
+	targetY := 0
+	targetX := 0
 	if unit.Type == "send" {
-		if _, tu, err := v.d.Song.Patch.FindUnit(unit.Parameters["target"]); err == nil {
-			targetUnit = tu + 1
+		if i, y, err := v.d.Song.Patch.FindUnit(unit.Parameters["target"]); err == nil {
+			targetUnit := v.d.Song.Patch[i].Units[y]
+			if _, x, ok := sointu.FindParamForModulationPort(targetUnit.Type, unit.Parameters["port"]); ok {
+				targetX = x
+				targetY = y
+				targetOk = true
+			}
 		}
 	}
 	return UnitListItem{
@@ -337,8 +345,9 @@ func (v *Units) Item(index int) UnitListItem {
 		Comment:     unit.Comment,
 		Disabled:    unit.Disabled,
 		StackNeed:   unit.StackNeed(),
-		TargetUnit:  targetUnit,
-		TargetPort:  unit.Parameters["port"],
+		TargetOk:    targetOk,
+		TargetY:     targetY,
+		TargetX:     targetX,
 		StackBefore: 0,
 		StackAfter:  0,
 	}

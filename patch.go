@@ -386,8 +386,8 @@ var stackUseMonoStereo = map[string][2]StackUse{
 	},
 }
 var stackUseSendNoPop = [2]StackUse{
-	{Inputs: [][]int{{0}}, Modifies: []bool{false}, NumOutputs: 1},
-	{Inputs: [][]int{{0}, {1}}, Modifies: []bool{false, false}, NumOutputs: 2},
+	{Inputs: [][]int{{0}}, Modifies: []bool{true}, NumOutputs: 1},
+	{Inputs: [][]int{{0}, {1}}, Modifies: []bool{true, true}, NumOutputs: 2},
 }
 var stackUseSendPop = [2]StackUse{
 	{Inputs: [][]int{{0}}, Modifies: []bool{true}, NumOutputs: 0},            // mono
@@ -544,19 +544,19 @@ func (p Patch) FindUnit(id int) (instrIndex int, unitIndex int, err error) {
 	return 0, 0, fmt.Errorf("could not find a unit with id %v", id)
 }
 
-func FindParamForModulationPort(unitName string, index int) (UnitParameter, bool) {
+func FindParamForModulationPort(unitName string, index int) (up UnitParameter, upIndex int, ok bool) {
 	unitType, ok := UnitTypes[unitName]
 	if !ok {
-		return UnitParameter{}, false
+		return UnitParameter{}, 0, false
 	}
-	for _, param := range unitType {
+	for i, param := range unitType {
 		if !param.CanModulate {
 			continue
 		}
 		if index == 0 {
-			return param, true
+			return param, i, true
 		}
 		index--
 	}
-	return UnitParameter{}, false
+	return UnitParameter{}, 0, false
 }
