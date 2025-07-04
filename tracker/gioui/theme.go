@@ -85,16 +85,20 @@ type Theme struct {
 		}
 	}
 	UnitEditor struct {
-		Name          LabelStyle
-		Chooser       LabelStyle
-		Hint          LabelStyle
-		InvalidParam  color.NRGBA
-		SendTarget    color.NRGBA
-		Width         unit.Dp
-		Height        unit.Dp
-		RowTitle      LabelStyle
-		RowTitleWidth unit.Dp
-		Error         color.NRGBA
+		Name         LabelStyle
+		Chooser      LabelStyle
+		Hint         LabelStyle
+		InvalidParam color.NRGBA
+		SendTarget   color.NRGBA
+		Width        unit.Dp
+		Height       unit.Dp
+		UnitList     struct {
+			LabelWidth unit.Dp
+			Name       LabelStyle
+			Disabled   LabelStyle
+			Error      color.NRGBA
+		}
+		Error color.NRGBA
 	}
 	Cursor    CursorStyle
 	Selection CursorStyle
@@ -110,6 +114,7 @@ type Theme struct {
 	ScrollBar  ScrollBarStyle
 	Knob       KnobStyle
 	SignalRail SignalRailStyle
+	Port       PortStyle
 
 	// iconCache is used to cache the icons created from iconvg data
 	iconCache map[*byte]*widget.Icon

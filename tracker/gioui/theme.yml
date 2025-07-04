@@ -214,9 +214,12 @@ uniteditor:
   sendtarget: *secondarycolor
   width: 60
   height: 70
-  rowtitle: { textsize: 12, color: *white, alignment: 2 }
-  rowtitlewidth: 16
-  error: *errorcolor
+  unitlist:
+    labelwidth: 16
+    name: { textsize: 12, color: *white, alignment: 2 }
+    disabled:
+      { textsize: 12, color: *disabled, font: { style: 1 }, alignment: 2 }
+    error: *errorcolor
 knob:
   diameter: 36
   value: { textsize: 12, color: *highemphasis }
@@ -231,3 +234,7 @@ signalrail:
   linewidth: 2
   portdiameter: 8
   portcolor: *primarycolor
+port:
+  diameter: 36
+  strokewidth: 4
+  color: *secondarycolor

@@ -31,7 +31,7 @@ type (
 	UnitEditor struct {
 		paramTable     *ScrollTable
 		searchList     *DragList
-		Parameters     [][]*ParameterWidget
+		Parameters     [][]*ParameterState
 		DeleteUnitBtn  *Clickable
 		CopyUnitBtn    *Clickable
 		ClearUnitBtn   *Clickable
@@ -157,18 +157,18 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 	// create enough parameter widget to match the number of parameters
 	width := pe.paramTable.Table.Width()
 	for len(pe.Parameters) < pe.paramTable.Table.Height() {
-		pe.Parameters = append(pe.Parameters, make([]*ParameterWidget, 0))
+		pe.Parameters = append(pe.Parameters, make([]*ParameterState, 0))
 	}
 	cellWidth := gtx.Dp(t.Theme.UnitEditor.Width)
 	cellHeight := gtx.Dp(t.Theme.UnitEditor.Height)
-	rowTitleLabelWidth := gtx.Dp(t.Theme.UnitEditor.RowTitleWidth)
+	rowTitleLabelWidth := gtx.Dp(t.Theme.UnitEditor.UnitList.LabelWidth)
 	rowTitleSignalWidth := gtx.Dp(t.Theme.SignalRail.SignalWidth) * t.SignalRail().MaxWidth()
 	rowTitleWidth := rowTitleLabelWidth + rowTitleSignalWidth
 	signalError := t.SignalRail().Error()
 	columnTitleHeight := gtx.Dp(0)
 	for i := range pe.Parameters {
 		for len(pe.Parameters[i]) < width {
-			pe.Parameters[i] = append(pe.Parameters[i], &ParameterWidget{})
+			pe.Parameters[i] = append(pe.Parameters[i], &ParameterState{})
 		}
 	}
 	coltitle := func(gtx C, x int) D {
@@ -184,9 +184,12 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 		}
 
 		sr := SignalRail(t.Theme, t.SignalRail().Item(y))
-		label := Label(t.Theme, &t.Theme.UnitEditor.RowTitle, t.Units().Item(y).Type)
-		if signalError.Err != nil && signalError.UnitIndex == y {
-			label.Color = t.Theme.UnitEditor.Error
+		label := Label(t.Theme, &t.Theme.UnitEditor.UnitList.Name, t.Units().Item(y).Type)
+		switch {
+		case t.Units().Item(y).Disabled:
+			label.LabelStyle = t.Theme.UnitEditor.UnitList.Disabled
+		case signalError.Err != nil && signalError.UnitIndex == y:
+			label.Color = t.Theme.UnitEditor.UnitList.Error
 		}
 		gtx.Constraints = layout.Exact(image.Pt(rowTitleWidth, cellHeight))
 		sr.Layout(gtx)
@@ -210,10 +213,8 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 			paint.FillShape(gtx.Ops, c, clip.Rect{Min: image.Pt(0, 0), Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
 		}
 
-		param := t.Model.Params().Item(tracker.Point{X: x, Y: y})
-		pe.Parameters[y][x].Parameter = param
-		paramStyle := t.ParamStyle(t.Theme, pe.Parameters[y][x])
-		paramStyle.Focus = pe.paramTable.Table.Cursor() == tracker.Point{X: x, Y: y}
+		param := t.Model.Params().Item(point)
+		paramStyle := t.ParamStyle(param, t.Theme, pe.Parameters[y][x], pe.paramTable.Table.Cursor() == point)
 		paramStyle.Layout(gtx)
 		return D{Size: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}
 	}
@@ -351,63 +352,61 @@ func (t *UnitEditor) Tags(level int, yield TagYieldFunc) bool {
 	return yield(level, widget) && yield(level+1, &t.commentEditor.widgetEditor)
 }
 
-type ParameterWidget struct {
+type ParameterState struct {
 	knobState  KnobState
 	boolWidget widget.Bool
-	instrBtn   Clickable
-	instrMenu  MenuState
-	unitBtn    Clickable
-	unitMenu   MenuState
-	Parameter  tracker.Parameter
-	tipArea    TipArea
+	clickable  Clickable
+	portState  PortState
 }
 
 type ParameterStyle struct {
-	tracker         *Tracker
-	w               *ParameterWidget
-	Theme           *Theme
-	SendTargetTheme *material.Theme
-	Focus           bool
+	Parameter tracker.Parameter
+	State     *ParameterState
+	Theme     *Theme
+	Focus     bool
 }
 
-func (t *Tracker) ParamStyle(th *Theme, paramWidget *ParameterWidget) ParameterStyle {
-	sendTargetTheme := th.Material.WithPalette(material.Palette{
-		Bg:         th.Material.Bg,
-		Fg:         th.UnitEditor.SendTarget,
-		ContrastBg: th.Material.ContrastBg,
-		ContrastFg: th.Material.ContrastFg,
-	})
+func (t *Tracker) ParamStyle(Parameter tracker.Parameter, th *Theme, paramWidget *ParameterState, focus bool) ParameterStyle {
 	return ParameterStyle{
-		tracker:         t, // TODO: we need this to pull the instrument names for ID style parameters, find out another way
-		Theme:           th,
-		SendTargetTheme: &sendTargetTheme,
-		w:               paramWidget,
+		Theme:     th,
+		State:     paramWidget,
+		Parameter: Parameter,
+		Focus:     focus,
 	}
 }
 
 func (p ParameterStyle) Layout(gtx C) D {
 	//_, _ := p.w.Parameter.Info()
-	title := Label(p.Theme, &p.Theme.UnitEditor.Name, p.w.Parameter.Name())
+	title := Label(p.Theme, &p.Theme.UnitEditor.Name, p.Parameter.Name())
+	t := TrackerFromContext(gtx)
 	widget := func(gtx C) D {
-		switch p.w.Parameter.Type() {
+		if port, ok := p.Parameter.Port(); t.IsChoosingSendTarget() && ok {
+			for p.State.portState.Clicked(gtx) {
+				t.ChooseSendTarget(p.Parameter.UnitID(), port).Do()
+			}
+			k := Port(p.Theme, &p.State.portState)
+			return k.Layout(gtx)
+		}
+		switch p.Parameter.Type() {
 		case tracker.IntegerParameter:
-			k := Knob(p.w.Parameter, p.Theme, &p.w.knobState, p.w.Parameter.Hint().Label, p.Focus)
+			k := Knob(p.Parameter, p.Theme, &p.State.knobState, p.Parameter.Hint().Label, p.Focus)
 			return k.Layout(gtx)
 		case tracker.BoolParameter:
-			ra := p.w.Parameter.Range()
-			p.w.boolWidget.Value = p.w.Parameter.Value() > ra.Min
-			boolStyle := material.Switch(&p.Theme.Material, &p.w.boolWidget, "Toggle boolean parameter")
+			ra := p.Parameter.Range()
+			p.State.boolWidget.Value = p.Parameter.Value() > ra.Min
+			boolStyle := material.Switch(&p.Theme.Material, &p.State.boolWidget, "Toggle boolean parameter")
 			boolStyle.Color.Disabled = p.Theme.Material.Fg
 			defer pointer.PassOp{}.Push(gtx.Ops).Pop()
 			dims := layout.Center.Layout(gtx, boolStyle.Layout)
-			if p.w.boolWidget.Value {
-				p.w.Parameter.SetValue(ra.Max)
+			if p.State.boolWidget.Value {
+				p.Parameter.SetValue(ra.Max)
 			} else {
-				p.w.Parameter.SetValue(ra.Min)
+				p.Parameter.SetValue(ra.Min)
 			}
 			return dims
 		case tracker.IDParameter:
-			return drawCircle(gtx, gtx.Dp(p.Theme.Knob.Diameter), p.Theme.Knob.Pos.Bg)
+			btn := ActionBtn(t.ChooseSendSource(p.Parameter.UnitID()), t.Theme, &p.State.clickable, "Set", p.Parameter.Hint().Label)
+			return btn.Layout(gtx)
 			/*instrItems := make([]ActionMenuItem, p.tracker.Instruments().Count())
 			for i := range instrItems {
 				i := i
@@ -448,6 +447,10 @@ func (p ParameterStyle) Layout(gtx C) D {
 					return unitBtn.Layout(gtx, unitItems...)
 				}),
 			)*/
+		}
+		if _, ok := p.Parameter.Port(); ok {
+			k := Port(p.Theme, &p.State.portState)
+			return k.Layout(gtx)
 		}
 		return D{}
 	}

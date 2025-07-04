@@ -93,6 +93,16 @@ type (
 		*Model
 	}
 	ShowLicense Model
+
+	ChooseSendSource struct {
+		ID int
+		*Model
+	}
+	ChooseSendTarget struct {
+		ID   int
+		Port int
+		*Model
+	}
 )
 
 // Action methods
@@ -515,6 +525,40 @@ func (d DeleteOrderRow) Do() {
 		}
 	}
 	m.d.Cursor2.OrderRow = m.d.Cursor.OrderRow
+}
+
+// ChooseSendSource
+
+func (m *Model) IsChoosingSendTarget() bool {
+	return m.d.SendSource > 0
+}
+
+func (m *Model) ChooseSendSource(id int) Action {
+	return MakeEnabledAction(ChooseSendSource{ID: id, Model: m})
+}
+func (s ChooseSendSource) Do() {
+	defer (*Model)(s.Model).change("ChooseSendSource", NoChange, MinorChange)()
+	s.Model.d.SendSource = s.ID
+}
+
+// ChooseSendTarget
+
+func (m *Model) ChooseSendTarget(id int, port int) Action {
+	return MakeEnabledAction(ChooseSendTarget{ID: id, Port: port, Model: m})
+}
+func (s ChooseSendTarget) Do() {
+	defer (*Model)(s.Model).change("ChooseSendTarget", SongChange, MinorChange)()
+	sourceID := (*Model)(s.Model).d.SendSource
+	s.d.SendSource = 0
+	if sourceID <= 0 || s.ID <= 0 || s.Port < 0 || s.Port > 7 {
+		return
+	}
+	si, su, err := s.d.Song.Patch.FindUnit(sourceID)
+	if err != nil {
+		return
+	}
+	s.d.Song.Patch[si].Units[su].Parameters["target"] = s.ID
+	s.d.Song.Patch[si].Units[su].Parameters["port"] = s.Port
 }
 
 // NewSong

@@ -20,6 +20,7 @@ type (
 		up     *sointu.UnitParameter
 		index  int
 		vtable parameterVtable
+		port   int
 	}
 
 	parameterVtable interface {
@@ -69,6 +70,12 @@ func (p *Parameter) Value() int {
 		return 0
 	}
 	return p.vtable.Value(p)
+}
+func (p *Parameter) Port() (int, bool) {
+	if p.port <= 0 {
+		return 0, false
+	}
+	return p.port - 1, true
 }
 func (p *Parameter) SetValue(value int) bool {
 	if p.vtable == nil {
@@ -122,6 +129,12 @@ func (p *Parameter) Reset() {
 		return
 	}
 	p.vtable.Reset(p)
+}
+func (p *Parameter) UnitID() int {
+	if p.unit == nil {
+		return 0
+	}
+	return p.unit.ID
 }
 
 //
@@ -212,6 +225,9 @@ func (n *namedParameter) Range(p *Parameter) IntRange {
 	return IntRange{Min: p.up.MinValue, Max: p.up.MaxValue}
 }
 func (n *namedParameter) Type(p *Parameter) ParameterType {
+	if p.up == nil || !p.up.CanSet {
+		return NoParameter
+	}
 	if p.unit.Type == "send" && p.up.Name == "target" {
 		return IDParameter
 	}

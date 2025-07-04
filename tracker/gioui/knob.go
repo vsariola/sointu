@@ -149,15 +149,6 @@ func (k *KnobWidget) update(gtx C) {
 	}
 }
 
-func (k *KnobWidget) strokeBg(gtx C) {
-	diam := gtx.Dp(k.Style.Diameter)
-	circle := clip.Ellipse{
-		Min: image.Pt(0, 0),
-		Max: image.Pt(diam, diam),
-	}.Op(gtx.Ops)
-	paint.FillShape(gtx.Ops, k.Style.Bg, circle)
-}
-
 func (k *KnobWidget) strokeKnobArc(gtx C, color color.NRGBA, strokeWidth, diameter int, start, end float32) {
 	rad := float32(diameter) / 2
 	end = min(max(end, 0), 1)

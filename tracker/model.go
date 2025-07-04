@@ -240,6 +240,7 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 				m.d.UnitIndex2 = clamp(m.d.UnitIndex2, 0, unitCount-1)
 				m.d.UnitSearching = false // if we change anything in the patch, reset the unit searching
 				m.d.UnitSearchString = ""
+				m.d.SendSource = 0
 				m.updateDerivedPatchData()
 				TrySend(m.broker.ToPlayer, any(m.d.Song.Patch.Copy()))
 			}
