@@ -153,7 +153,7 @@ var UnitTypes = map[string]([]UnitParameter){
 	"send": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "amount", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(float64(v)/64 - 1), "" }},
-		{Name: "voice", MinValue: 0, MaxValue: 32, CanSet: true, CanModulate: false},
+		{Name: "voice", MinValue: 0, MaxValue: 32, CanSet: true, CanModulate: false, DisplayFunc: sendVoiceDispFunc},
 		{Name: "target", MinValue: 0, MaxValue: math.MaxInt32, CanSet: true, CanModulate: false},
 		{Name: "port", MinValue: 0, MaxValue: 7, CanSet: true, CanModulate: false},
 		{Name: "sendpop", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}},
@@ -244,6 +244,13 @@ func oscillatorTransposeDispFunc(v int) (string, string) {
 		return strconv.Itoa(octaves), "oct"
 	}
 	return strconv.Itoa(semitones), "st"
+}
+
+func sendVoiceDispFunc(v int) (string, string) {
+	if v == 0 {
+		return "default", ""
+	}
+	return strconv.Itoa(v), ""
 }
 
 func engineeringTime(sec float64) (string, string) {

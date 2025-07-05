@@ -210,8 +210,8 @@ uniteditor:
   chooser: { textsize: 12, color: *white, shadowcolor: *black }
   name:
     { textsize: 12, alignment: 2, color: *highemphasis, shadowcolor: *black }
-  invalidparam: { r: 120, g: 120, b: 120, a: 190 }
-  sendtarget: *secondarycolor
+  wirecolor: *secondarycolor
+  wirehint: { textsize: 12, color: *disabled, shadowcolor: *black }
   width: 60
   height: 70
   unitlist:

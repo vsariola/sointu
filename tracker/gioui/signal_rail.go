@@ -25,12 +25,12 @@ type (
 
 	SignalRailWidget struct {
 		Style  *SignalRailStyle
-		Signal tracker.Signal
+		Signal tracker.Rail
 		Height unit.Dp
 	}
 )
 
-func SignalRail(th *Theme, signal tracker.Signal) SignalRailWidget {
+func SignalRail(th *Theme, signal tracker.Rail) SignalRailWidget {
 	return SignalRailWidget{
 		Style:  &th.SignalRail,
 		Signal: signal,
@@ -41,6 +41,9 @@ func SignalRail(th *Theme, signal tracker.Signal) SignalRailWidget {
 func (s SignalRailWidget) Layout(gtx C) D {
 	sw := gtx.Dp(s.Style.SignalWidth)
 	h := gtx.Dp(s.Height)
+	if s.Signal.PassThrough == 0 && len(s.Signal.StackUse.Inputs) == 0 && s.Signal.StackUse.NumOutputs == 0 {
+		return D{Size: image.Pt(sw, h)}
+	}
 	lw := gtx.Dp(s.Style.LineWidth)
 	pd := gtx.Dp(s.Style.PortDiameter)
 	center := sw / 2

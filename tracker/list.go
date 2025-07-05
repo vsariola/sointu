@@ -36,11 +36,9 @@ type (
 	}
 
 	UnitListItem struct {
-		Type, Comment                      string
-		Disabled                           bool
-		StackNeed, StackBefore, StackAfter int
-		TargetOk                           bool // TargetOk indicates if the target unit is valid
-		TargetX, TargetY                   int
+		Type, Comment string
+		Disabled      bool
+		Signals       Rail
 	}
 
 	// Range is used to represent a range [Start,End) of integers
@@ -301,55 +299,21 @@ func (m *Units) SetSelectedType(t string) {
 	m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].ID = oldUnit.ID // keep the ID of the replaced unit
 }
 
-func (v *Units) Iterate(yield UnitYieldFunc) {
-	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
-		return
-	}
-	stackBefore := 0
-	for i, unit := range v.d.Song.Patch[v.d.InstrIndex].Units {
-		stackAfter := stackBefore + unit.StackChange()
-		if !yield(i, UnitListItem{
-			Type:        unit.Type,
-			Comment:     unit.Comment,
-			Disabled:    unit.Disabled,
-			StackNeed:   unit.StackNeed(),
-			StackBefore: stackBefore,
-			StackAfter:  stackAfter,
-		}) {
-			break
-		}
-		stackBefore = stackAfter
-	}
-}
-
 func (v *Units) Item(index int) UnitListItem {
-	if index < 0 || index >= v.Count() {
+	i := v.d.InstrIndex
+	if i < 0 || i >= len(v.d.Song.Patch) || index < 0 || index >= v.Count() {
 		return UnitListItem{}
 	}
 	unit := v.d.Song.Patch[v.d.InstrIndex].Units[index]
-	targetOk := false
-	targetY := 0
-	targetX := 0
-	if unit.Type == "send" {
-		if i, y, err := v.d.Song.Patch.FindUnit(unit.Parameters["target"]); err == nil {
-			targetUnit := v.d.Song.Patch[i].Units[y]
-			if _, x, ok := sointu.FindParamForModulationPort(targetUnit.Type, unit.Parameters["port"]); ok {
-				targetX = x
-				targetY = y
-				targetOk = true
-			}
-		}
+	signals := Rail{}
+	if i >= 0 && i < len(v.derived.patch) && index >= 0 && index < len(v.derived.patch[i].rails) {
+		signals = v.derived.patch[i].rails[index]
 	}
 	return UnitListItem{
-		Type:        unit.Type,
-		Comment:     unit.Comment,
-		Disabled:    unit.Disabled,
-		StackNeed:   unit.StackNeed(),
-		TargetOk:    targetOk,
-		TargetY:     targetY,
-		TargetX:     targetX,
-		StackBefore: 0,
-		StackAfter:  0,
+		Type:     unit.Type,
+		Comment:  unit.Comment,
+		Disabled: unit.Disabled,
+		Signals:  signals,
 	}
 }
 

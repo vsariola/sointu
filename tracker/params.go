@@ -30,7 +30,6 @@ type (
 		Type(*Parameter) ParameterType
 		Name(*Parameter) string
 		Hint(*Parameter) ParameterHint
-		Info(*Parameter) (string, bool) // additional info for the parameter, used to display send targets
 		LargeStep(*Parameter) int
 		Reset(*Parameter)
 	}
@@ -112,12 +111,6 @@ func (p *Parameter) Hint() ParameterHint {
 	}
 	return p.vtable.Hint(p)
 }
-func (p *Parameter) Info() (string, bool) {
-	if p.vtable == nil {
-		return "", false
-	}
-	return p.vtable.Info(p)
-}
 func (p *Parameter) LargeStep() int {
 	if p.vtable == nil {
 		return 1
@@ -160,14 +153,10 @@ func (pt *Params) SetCursor(p Point) {
 }
 func (pt *Params) SetCursor2(p Point) {}
 func (pt *Params) Width() int {
-	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.d.Song.Patch) {
+	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.derived.patch) {
 		return 0
 	}
-	ret := 0
-	for _, unit := range pt.d.Song.Patch[pt.d.InstrIndex].Units {
-		ret = max(ret, len(pt.derived.forUnit[unit.ID].params))
-	}
-	return ret
+	return pt.derived.patch[pt.d.InstrIndex].paramsWidth
 }
 func (pt *Params) Height() int { return (*Model)(pt).Units().Count() }
 func (pt *Params) MoveCursor(dx, dy int) (ok bool) {
@@ -178,15 +167,10 @@ func (pt *Params) MoveCursor(dx, dy int) (ok bool) {
 	return p == pt.Cursor()
 }
 func (pt *Params) Item(p Point) Parameter {
-	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.d.Song.Patch) ||
-		p.Y < 0 || p.Y >= len(pt.d.Song.Patch[pt.d.InstrIndex].Units) {
+	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.derived.patch) || p.Y < 0 || p.Y >= len(pt.derived.patch[pt.d.InstrIndex].params) || p.X < 0 || p.X >= len(pt.derived.patch[pt.d.InstrIndex].params[p.Y]) {
 		return Parameter{}
 	}
-	id := pt.d.Song.Patch[pt.d.InstrIndex].Units[p.Y].ID
-	if p.X < 0 || p.X >= len(pt.derived.forUnit[id].params) {
-		return Parameter{}
-	}
-	return pt.derived.forUnit[id].params[p.X]
+	return pt.derived.patch[pt.d.InstrIndex].params[p.Y][p.X]
 }
 func (pt *Params) clear(p Point) {
 	panic("NOT IMPLEMENTED")
@@ -246,31 +230,7 @@ func (n *namedParameter) Hint(p *Parameter) ParameterHint {
 		valueInUnits, units := p.up.DisplayFunc(val)
 		label = fmt.Sprintf("%s %s", valueInUnits, units)
 	}
-	if p.unit.Type == "send" {
-		instrIndex, targetType, ok := p.m.UnitHintInfo(p.unit.Parameters["target"])
-		if p.up.Name == "voice" && val == 0 {
-			if ok && instrIndex != p.m.d.InstrIndex {
-				label = "all"
-			} else {
-				label = "self"
-			}
-		}
-		if p.up.Name == "port" {
-			if !ok {
-				return ParameterHint{label, false}
-			}
-			portList := sointu.Ports[targetType]
-			if val < 0 || val >= len(portList) {
-				return ParameterHint{label, false}
-			}
-			label = portList[val]
-		}
-	}
 	return ParameterHint{label, true}
-}
-func (n *namedParameter) Info(p *Parameter) (string, bool) {
-	sendInfo, ok := p.m.ParameterInfo(p.unit.ID, p.up.Name)
-	return sendInfo, ok
 }
 func (n *namedParameter) LargeStep(p *Parameter) int {
 	if p.up.Name == "transpose" {
@@ -327,9 +287,6 @@ func (g *gmDlsEntryParameter) Hint(p *Parameter) ParameterHint {
 		label = GmDlsEntries[v-1].Name
 	}
 	return ParameterHint{label, true}
-}
-func (g *gmDlsEntryParameter) Info(p *Parameter) (string, bool) {
-	return "", false
 }
 func (g *gmDlsEntryParameter) LargeStep(p *Parameter) int {
 	return 16
@@ -404,9 +361,6 @@ func (d *delayTimeParameter) Hint(p *Parameter) ParameterHint {
 	}
 	return ParameterHint{text, true}
 }
-func (d *delayTimeParameter) Info(p *Parameter) (string, bool) {
-	return "", false
-}
 func (d *delayTimeParameter) LargeStep(p *Parameter) int {
 	return 16
 }
@@ -444,9 +398,6 @@ func (d *delayLinesParameter) Name(p *Parameter) string {
 }
 func (d *delayLinesParameter) Hint(p *Parameter) ParameterHint {
 	return ParameterHint{strconv.Itoa(d.Value(p)), true}
-}
-func (d *delayLinesParameter) Info(p *Parameter) (string, bool) {
-	return "", false
 }
 func (d *delayLinesParameter) LargeStep(p *Parameter) int {
 	return 4
@@ -489,9 +440,6 @@ func (r *reverbParameter) Hint(p *Parameter) ParameterHint {
 		label = reverbs[i-1].name
 	}
 	return ParameterHint{label, true}
-}
-func (r *reverbParameter) Info(p *Parameter) (string, bool) {
-	return "", false
 }
 func (r *reverbParameter) LargeStep(p *Parameter) int {
 	return 1

@@ -162,9 +162,9 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 	cellWidth := gtx.Dp(t.Theme.UnitEditor.Width)
 	cellHeight := gtx.Dp(t.Theme.UnitEditor.Height)
 	rowTitleLabelWidth := gtx.Dp(t.Theme.UnitEditor.UnitList.LabelWidth)
-	rowTitleSignalWidth := gtx.Dp(t.Theme.SignalRail.SignalWidth) * t.SignalRail().MaxWidth()
+	rowTitleSignalWidth := gtx.Dp(t.Theme.SignalRail.SignalWidth) * t.RailWidth()
 	rowTitleWidth := rowTitleLabelWidth + rowTitleSignalWidth
-	signalError := t.SignalRail().Error()
+	signalError := t.RailError()
 	columnTitleHeight := gtx.Dp(0)
 	for i := range pe.Parameters {
 		for len(pe.Parameters[i]) < width {
@@ -182,11 +182,11 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 		if y < 0 || y >= len(pe.Parameters) {
 			return D{}
 		}
-
-		sr := SignalRail(t.Theme, t.SignalRail().Item(y))
-		label := Label(t.Theme, &t.Theme.UnitEditor.UnitList.Name, t.Units().Item(y).Type)
+		item := t.Units().Item(y)
+		sr := SignalRail(t.Theme, item.Signals)
+		label := Label(t.Theme, &t.Theme.UnitEditor.UnitList.Name, item.Type)
 		switch {
-		case t.Units().Item(y).Disabled:
+		case item.Disabled:
 			label.LabelStyle = t.Theme.UnitEditor.UnitList.Disabled
 		case signalError.Err != nil && signalError.UnitIndex == y:
 			label.Color = t.Theme.UnitEditor.UnitList.Error
@@ -230,7 +230,6 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 
 func (pe *UnitEditor) drawSignals(gtx C, rowTitleWidth int) {
 	t := TrackerFromContext(gtx)
-	units := t.Units()
 	colP := pe.paramTable.ColTitleList.List.Position
 	rowP := pe.paramTable.RowTitleList.List.Position
 	p := image.Pt(rowTitleWidth, 0)
@@ -238,16 +237,25 @@ func (pe *UnitEditor) drawSignals(gtx C, rowTitleWidth int) {
 	gtx.Constraints.Max = gtx.Constraints.Max.Sub(p)
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
 	defer op.Offset(image.Pt(-colP.Offset, -rowP.Offset)).Push(gtx.Ops).Pop()
-	for i := 0; i < units.Count(); i++ {
-		item := units.Item(i)
-		if item.TargetOk {
-			pe.drawSignal(gtx, i-rowP.First, item.TargetX-colP.First, item.TargetY-rowP.First)
-		}
+	for wire := range t.Wires {
+		pe.drawSignal(gtx, wire, colP.First, rowP.First)
 	}
 }
 
-func (pe *UnitEditor) drawSignal(gtx C, sy, ex, ey int) {
+func (pe *UnitEditor) drawSignal(gtx C, wire tracker.Wire, col, row int) {
+	sy := wire.From - row
+	ex := wire.To.X - col
+	ey := wire.To.Y - row
 	t := TrackerFromContext(gtx)
+	if wire.FromSet && !wire.ToSet {
+		defer op.Offset(image.Pt(0, (sy+1)*gtx.Dp(t.Theme.UnitEditor.Height)-gtx.Dp(16))).Push(gtx.Ops).Pop()
+		Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
+		return
+	}
+	if !wire.FromSet && wire.ToSet {
+		Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
+		return
+	}
 	width := float32(gtx.Dp(t.Theme.UnitEditor.Width))
 	height := float32(gtx.Dp(t.Theme.UnitEditor.Height))
 	diam := gtx.Dp(t.Theme.Knob.Diameter)
@@ -278,7 +286,7 @@ func (pe *UnitEditor) drawSignal(gtx C, sy, ex, ey int) {
 	path.MoveTo(from)
 	path.CubeTo(from.Add(fromTan), p1.Sub(p1Tan), p1)
 	path.CubeTo(p1.Add(p1Tan), p2, to)
-	paint.FillShape(gtx.Ops, t.Theme.UnitEditor.SendTarget,
+	paint.FillShape(gtx.Ops, t.Theme.UnitEditor.WireColor,
 		clip.Stroke{
 			Path:  path.End(),
 			Width: float32(gtx.Dp(t.Theme.SignalRail.LineWidth)),
