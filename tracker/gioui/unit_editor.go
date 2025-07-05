@@ -10,7 +10,6 @@ import (
 
 	"gioui.org/f32"
 	"gioui.org/io/clipboard"
-	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
@@ -127,20 +126,21 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 			item := params.Item(params.Cursor())
 			switch e.Name {
 			case key.NameLeftArrow:
-				if e.Modifiers.Contain(key.ModShortcut) {
-					item.SetValue(item.Value() - item.LargeStep())
-				} else {
-					item.SetValue(item.Value() - 1)
-				}
+				item.Add(-1, e.Modifiers.Contain(key.ModShortcut))
 			case key.NameRightArrow:
-				if e.Modifiers.Contain(key.ModShortcut) {
-					item.SetValue(item.Value() + item.LargeStep())
-				} else {
-					item.SetValue(item.Value() + 1)
-				}
+				item.Add(1, e.Modifiers.Contain(key.ModShortcut))
 			case key.NameDeleteBackward, key.NameDeleteForward:
 				item.Reset()
 			}
+		}
+	}
+	for {
+		e, ok := gtx.Event(key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameLeftArrow})
+		if !ok {
+			break
+		}
+		if e, ok := e.(key.Event); ok && e.State == key.Press {
+			t.PatchPanel.unitList.dragList.Focus()
 		}
 	}
 }
@@ -173,10 +173,6 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 	}
 	coltitle := func(gtx C, x int) D {
 		return D{Size: image.Pt(cellWidth, columnTitleHeight)}
-	}
-	rowTitleBg := func(gtx C, j int) D {
-		paint.FillShape(gtx.Ops, t.Theme.NoteEditor.Play, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, 1)}.Op())
-		return D{}
 	}
 	rowtitle := func(gtx C, y int) D {
 		if y < 0 || y >= len(pe.Parameters) {
@@ -223,8 +219,9 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 	table.ColumnTitleHeight = 0
 	table.CellWidth = t.Theme.UnitEditor.Width
 	table.CellHeight = t.Theme.UnitEditor.Height
+	pe.drawBackGround(gtx)
 	pe.drawSignals(gtx, rowTitleWidth)
-	dims := table.Layout(gtx, cell, coltitle, rowtitle, nil, rowTitleBg)
+	dims := table.Layout(gtx, cell, coltitle, rowtitle, nil, nil)
 	return dims
 }
 
@@ -238,8 +235,60 @@ func (pe *UnitEditor) drawSignals(gtx C, rowTitleWidth int) {
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
 	defer op.Offset(image.Pt(-colP.Offset, -rowP.Offset)).Push(gtx.Ops).Pop()
 	for wire := range t.Wires {
-		pe.drawSignal(gtx, wire, colP.First, rowP.First)
+		switch {
+		case wire.FromSet && !wire.ToSet:
+			pe.drawRemoteSendSignal(gtx, wire, colP.First, rowP.First)
+		case !wire.FromSet && wire.ToSet:
+			pe.drawRemoteReceiveSignal(gtx, wire, colP.First, rowP.First)
+		case wire.FromSet && wire.ToSet:
+			pe.drawSignal(gtx, wire, colP.First, rowP.First)
+		}
 	}
+}
+
+func (pe *UnitEditor) drawBackGround(gtx C) {
+	t := TrackerFromContext(gtx)
+	rowP := pe.paramTable.RowTitleList.List.Position
+	defer op.Offset(image.Pt(0, -rowP.Offset)).Push(gtx.Ops).Pop()
+	for range pe.paramTable.RowTitleList.List.Position.Count + 1 {
+		paint.FillShape(gtx.Ops, t.Theme.UnitEditor.Divider, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, 1)}.Op())
+		op.Offset(image.Pt(0, gtx.Dp(t.Theme.UnitEditor.Height))).Add(gtx.Ops)
+	}
+}
+
+func (pe *UnitEditor) drawRemoteSendSignal(gtx C, wire tracker.Wire, col, row int) {
+	sy := wire.From - row
+	t := TrackerFromContext(gtx)
+	defer op.Offset(image.Pt(0, (sy+1)*gtx.Dp(t.Theme.UnitEditor.Height)-gtx.Dp(16))).Push(gtx.Ops).Pop()
+	Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
+}
+
+func (pe *UnitEditor) drawRemoteReceiveSignal(gtx C, wire tracker.Wire, col, row int) {
+	ex := wire.To.X - col
+	ey := wire.To.Y - row
+	t := TrackerFromContext(gtx)
+	width := float32(gtx.Dp(t.Theme.UnitEditor.Width))
+	height := float32(gtx.Dp(t.Theme.UnitEditor.Height))
+	topLeft := f32.Pt(float32(ex)*width, float32(ey)*height)
+	center := topLeft.Add(f32.Pt(width/2, height/2))
+	c := float32(gtx.Dp(t.Theme.Knob.Diameter)) / 2 / float32(math.Sqrt2)
+	from := f32.Pt(c, c).Add(center)
+	q := c
+	c1 := f32.Pt(c+q, c+q).Add(center)
+	o := float32(gtx.Dp(8))
+	c2 := f32.Pt(width-q, height-o).Add(topLeft)
+	to := f32.Pt(width, height-o).Add(topLeft)
+	var path clip.Path
+	path.Begin(gtx.Ops)
+	path.MoveTo(from)
+	path.CubeTo(c1, c2, to)
+	paint.FillShape(gtx.Ops, t.Theme.UnitEditor.WireColor,
+		clip.Stroke{
+			Path:  path.End(),
+			Width: float32(gtx.Dp(t.Theme.SignalRail.LineWidth)),
+		}.Op())
+	defer op.Offset(image.Pt((ex+1)*gtx.Dp(t.Theme.UnitEditor.Width)+gtx.Dp(5), (ey+1)*gtx.Dp(t.Theme.UnitEditor.Height)-gtx.Dp(16))).Push(gtx.Ops).Pop()
+	Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
 }
 
 func (pe *UnitEditor) drawSignal(gtx C, wire tracker.Wire, col, row int) {
@@ -247,18 +296,10 @@ func (pe *UnitEditor) drawSignal(gtx C, wire tracker.Wire, col, row int) {
 	ex := wire.To.X - col
 	ey := wire.To.Y - row
 	t := TrackerFromContext(gtx)
-	if wire.FromSet && !wire.ToSet {
-		defer op.Offset(image.Pt(0, (sy+1)*gtx.Dp(t.Theme.UnitEditor.Height)-gtx.Dp(16))).Push(gtx.Ops).Pop()
-		Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
-		return
-	}
-	if !wire.FromSet && wire.ToSet {
-		Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
-		return
-	}
+	diam := gtx.Dp(t.Theme.Knob.Diameter)
+	c := float32(diam) / 2 / float32(math.Sqrt2)
 	width := float32(gtx.Dp(t.Theme.UnitEditor.Width))
 	height := float32(gtx.Dp(t.Theme.UnitEditor.Height))
-	diam := gtx.Dp(t.Theme.Knob.Diameter)
 	from := f32.Pt(0, float32((sy+1)*gtx.Dp(t.Theme.UnitEditor.Height))-float32(gtx.Dp(t.Theme.SignalRail.SignalWidth)/2))
 	corner := f32.Pt(1, 1)
 	if ex > 0 {
@@ -267,7 +308,6 @@ func (pe *UnitEditor) drawSignal(gtx C, wire tracker.Wire, col, row int) {
 	if sy < ey {
 		corner.Y = -corner.Y
 	}
-	c := float32(diam) / 2 / float32(math.Sqrt2)
 	topLeft := f32.Pt(float32(ex)*width, float32(ey)*height)
 	center := topLeft.Add(f32.Pt(width/2, height/2))
 	to := mulVec(corner, f32.Pt(c, c)).Add(center)
@@ -277,7 +317,6 @@ func (pe *UnitEditor) drawSignal(gtx C, wire tracker.Wire, col, row int) {
 		p1 = f32.Pt(p2.X, (float32(sy)+0.5)*float32(gtx.Dp(t.Theme.UnitEditor.Height))+float32(diam)/2)
 	}
 	k := float32(width) / 4
-	//toTan := mulVec(corner, f32.Pt(-k, -k))
 	p2Tan := mulVec(corner, f32.Pt(-k, -k))
 	p1Tan := f32.Pt(k, p2Tan.Y)
 	fromTan := f32.Pt(k, 0)
@@ -353,11 +392,10 @@ func (pe *UnitEditor) layoutUnitTypeChooser(gtx C) D {
 }
 
 func (t *UnitEditor) Tags(level int, yield TagYieldFunc) bool {
-	widget := event.Tag(t.paramTable)
 	if t.showingChooser() {
-		widget = event.Tag(t.searchList)
+		return yield(level, t.searchList) && yield(level+1, &t.commentEditor.widgetEditor)
 	}
-	return yield(level, widget) && yield(level+1, &t.commentEditor.widgetEditor)
+	return yield(level+1, t.paramTable.RowTitleList) && yield(level, t.paramTable) && yield(level+1, &t.commentEditor.widgetEditor)
 }
 
 type ParameterState struct {

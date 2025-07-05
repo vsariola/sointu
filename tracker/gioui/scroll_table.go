@@ -176,11 +176,16 @@ func (s *ScrollTableStyle) handleEvents(gtx layout.Context, p image.Point) {
 			}
 		case key.Event:
 			if e.State == key.Press {
-				s.ScrollTable.command(gtx, e)
+				s.ScrollTable.command(gtx, e, p)
 			}
 		case transfer.DataEvent:
 			if b, err := io.ReadAll(e.Open()); err == nil {
 				s.ScrollTable.Table.Paste(b)
+			}
+		case key.FocusEvent:
+			if e.Focus {
+				s.ScrollTable.ColTitleList.EnsureVisible(s.ScrollTable.Table.Cursor().X)
+				s.ScrollTable.RowTitleList.EnsureVisible(s.ScrollTable.Table.Cursor().Y)
 			}
 		}
 	}
@@ -250,7 +255,7 @@ func (s *ScrollTableStyle) layoutColTitles(gtx C, p image.Point, fg, bg func(gtx
 	s.ColTitleStyle.Layout(gtx, fg, bg)
 }
 
-func (s *ScrollTable) command(gtx C, e key.Event) {
+func (s *ScrollTable) command(gtx C, e key.Event, p image.Point) {
 	stepX := 1
 	stepY := 1
 	if e.Modifiers.Contain(key.ModAlt) {
@@ -265,13 +270,13 @@ func (s *ScrollTable) command(gtx C, e key.Event) {
 		s.Table.Clear()
 		return
 	case key.NameUpArrow:
-		if !s.Table.MoveCursor(0, -stepY) && stepY == 1 {
+		if !s.Table.MoveCursor(0, -stepY) && stepY == 1 && p.Y > 0 {
 			s.ColTitleList.Focus()
 		}
 	case key.NameDownArrow:
 		s.Table.MoveCursor(0, stepY)
 	case key.NameLeftArrow:
-		if !s.Table.MoveCursor(-stepX, 0) && stepX == 1 {
+		if !s.Table.MoveCursor(-stepX, 0) && stepX == 1 && p.X > 0 {
 			s.RowTitleList.Focus()
 		}
 	case key.NameRightArrow:

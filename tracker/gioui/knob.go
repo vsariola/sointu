@@ -9,6 +9,7 @@ import (
 	"gioui.org/f32"
 	"gioui.org/gesture"
 	"gioui.org/io/event"
+	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op/clip"
@@ -142,8 +143,8 @@ func (k *KnobWidget) update(gtx C) {
 			break
 		}
 		if ev, ok := e.(pointer.Event); ok && ev.Kind == pointer.Scroll {
-			delta := math.Min(math.Max(float64(ev.Scroll.Y), -1), 1)
-			k.Value.SetValue(k.Value.Value() - int(delta))
+			delta := -int(math.Min(math.Max(float64(ev.Scroll.Y), -1), 1))
+			k.Value.Add(delta, ev.Modifiers.Contain(key.ModShortcut))
 			k.State.tipArea.Appear(gtx.Now)
 		}
 	}

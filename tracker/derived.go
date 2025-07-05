@@ -39,7 +39,7 @@ type (
 	derivedInstrument struct {
 		wires       []Wire
 		rails       []Rail
-		railsWidth  int
+		railWidth   int
 		params      [][]Parameter
 		paramsWidth int
 	}
@@ -59,7 +59,7 @@ func (s *Model) RailWidth() int {
 	if i < 0 || i >= len(s.derived.patch) {
 		return 0
 	}
-	return s.derived.patch[i].railsWidth
+	return s.derived.patch[i].railWidth
 }
 
 func (m *Model) Wires(yield func(wire Wire) bool) {
@@ -121,9 +121,10 @@ func (m *Model) updateParams() {
 	for i, instr := range m.d.Song.Patch {
 		setSliceLength(&m.derived.patch[i].params, len(instr.Units))
 		paramsWidth := 0
-		for u, unit := range instr.Units {
-			m.derived.patch[i].params[u] = m.deriveParams(&unit, m.derived.patch[i].params[u])
-			paramsWidth = max(paramsWidth, len(m.derived.patch[i].params[u]))
+		for u := range instr.Units {
+			p := m.deriveParams(&instr.Units[u], m.derived.patch[i].params[u])
+			m.derived.patch[i].params[u] = p
+			paramsWidth = max(paramsWidth, len(p))
 		}
 		m.derived.patch[i].paramsWidth = paramsWidth
 	}
@@ -264,7 +265,7 @@ func (m *Model) updateRails() {
 				scratch = append(scratch, stackElem{instr: i, unit: u})
 			}
 		}
-		m.derived.patch[i].railsWidth = maxWidth
+		m.derived.patch[i].railWidth = maxWidth
 		diff := len(scratch) - start
 		if instr.NumVoices > 1 && diff != 0 {
 			if diff < 0 {
@@ -314,7 +315,7 @@ func (m *Model) updateWires() {
 			if err != nil {
 				continue
 			}
-			_, tX, ok := sointu.FindParamForModulationPort(m.d.Song.Patch[tI].Units[tU].Type, unit.Parameters["port"])
+			up, tX, ok := sointu.FindParamForModulationPort(m.d.Song.Patch[tI].Units[tU].Type, unit.Parameters["port"])
 			if !ok {
 				continue
 			}
@@ -325,20 +326,28 @@ func (m *Model) updateWires() {
 					FromSet: true,
 					To:      Point{X: tX, Y: tU},
 					ToSet:   true,
-					Hint:    "TBW",
 				})
 			} else {
 				// remote send
 				m.derived.patch[i].wires = append(m.derived.patch[i].wires, Wire{
 					From:    u,
 					FromSet: true,
-					Hint:    "TBW",
+					Hint:    fmt.Sprintf("To instrument #%d (%s), unit #%d (%s), port %s", tI, m.d.Song.Patch[tI].Name, tU, m.d.Song.Patch[tI].Units[tU].Type, up.Name),
 				})
+				toPt := Point{X: tX, Y: tU}
+				hint := fmt.Sprintf("From instrument #%d (%s), send #%d", i, m.d.Song.Patch[i].Name, u)
+				for i, w := range m.derived.patch[tI].wires {
+					if !w.FromSet && w.ToSet && w.To == toPt {
+						m.derived.patch[tI].wires[i].Hint += "; " + hint
+						goto skipAppend
+					}
+				}
 				m.derived.patch[tI].wires = append(m.derived.patch[tI].wires, Wire{
-					To:    Point{X: tX, Y: tU},
+					To:    toPt,
 					ToSet: true,
-					Hint:  "TBW",
+					Hint:  hint,
 				})
+			skipAppend:
 			}
 		}
 	}

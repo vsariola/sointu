@@ -98,7 +98,8 @@ type Theme struct {
 			Disabled   LabelStyle
 			Error      color.NRGBA
 		}
-		Error color.NRGBA
+		Error   color.NRGBA
+		Divider color.NRGBA
 	}
 	Cursor    CursorStyle
 	Selection CursorStyle

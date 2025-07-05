@@ -30,8 +30,8 @@ type (
 		Type(*Parameter) ParameterType
 		Name(*Parameter) string
 		Hint(*Parameter) ParameterHint
-		LargeStep(*Parameter) int
 		Reset(*Parameter)
+		RoundToGrid(*Parameter, int, bool) int
 	}
 
 	Params        Model
@@ -87,6 +87,17 @@ func (p *Parameter) SetValue(value int) bool {
 	}
 	return p.vtable.SetValue(p, value)
 }
+func (p *Parameter) Add(delta int, snapToGrid bool) bool {
+	if p.vtable == nil {
+		return false
+	}
+	newVal := p.Value() + delta
+	if snapToGrid && p.vtable != nil {
+		newVal = p.vtable.RoundToGrid(p, newVal, delta > 0)
+	}
+	return p.SetValue(newVal)
+}
+
 func (p *Parameter) Range() IntRange {
 	if p.vtable == nil {
 		return IntRange{}
@@ -110,12 +121,6 @@ func (p *Parameter) Hint() ParameterHint {
 		return ParameterHint{}
 	}
 	return p.vtable.Hint(p)
-}
-func (p *Parameter) LargeStep() int {
-	if p.vtable == nil {
-		return 1
-	}
-	return p.vtable.LargeStep(p)
 }
 func (p *Parameter) Reset() {
 	if p.vtable == nil {
@@ -173,13 +178,24 @@ func (pt *Params) Item(p Point) Parameter {
 	return pt.derived.patch[pt.d.InstrIndex].params[p.Y][p.X]
 }
 func (pt *Params) clear(p Point) {
-	panic("NOT IMPLEMENTED")
+	q := pt.Item(p)
+	q.Reset()
 }
 func (pt *Params) set(p Point, value int) {
-	panic("NOT IMPLEMENTED")
+	q := pt.Item(p)
+	q.SetValue(value)
 }
 func (pt *Params) add(rect Rect, delta int) (ok bool) {
-	panic("NOT IMPLEMENTED")
+	for y := rect.TopLeft.Y; y <= rect.BottomRight.Y; y++ {
+		for x := rect.TopLeft.X; x <= rect.BottomRight.X; x++ {
+			p := Point{x, y}
+			q := pt.Item(p)
+			if !q.SetValue(q.Value() + delta) {
+				return false
+			}
+		}
+	}
+	return true
 }
 func (pt *Params) marshal(rect Rect) (data []byte, ok bool) {
 	panic("NOT IMPLEMENTED")
@@ -191,10 +207,10 @@ func (pt *Params) unmarshalRange(rect Rect, data []byte) (ok bool) {
 	panic("NOT IMPLEMENTED")
 }
 func (pt *Params) change(kind string, severity ChangeSeverity) func() {
-	panic("NOT IMPLEMENTED")
+	return (*Model)(pt).change(kind, PatchChange, severity)
 }
 func (pt *Params) cancel() {
-	panic("NOT IMPLEMENTED")
+	pt.changeCancel = true
 }
 
 // namedParameter vtable
@@ -232,11 +248,12 @@ func (n *namedParameter) Hint(p *Parameter) ParameterHint {
 	}
 	return ParameterHint{label, true}
 }
-func (n *namedParameter) LargeStep(p *Parameter) int {
+func (n *namedParameter) RoundToGrid(p *Parameter, val int, up bool) int {
+	grid := 16
 	if p.up.Name == "transpose" {
-		return 12
+		grid = 12
 	}
-	return 16
+	return roundToGrid(val, grid, up)
 }
 func (n *namedParameter) Reset(p *Parameter) {
 	v, ok := defaultUnits[p.unit.Type].Parameters[p.up.Name]
@@ -288,13 +305,30 @@ func (g *gmDlsEntryParameter) Hint(p *Parameter) ParameterHint {
 	}
 	return ParameterHint{label, true}
 }
-func (g *gmDlsEntryParameter) LargeStep(p *Parameter) int {
-	return 16
+func (g *gmDlsEntryParameter) RoundToGrid(p *Parameter, val int, up bool) int {
+	return roundToGrid(val, 16, up)
 }
 func (g *gmDlsEntryParameter) Reset(p *Parameter) {}
 
 // delayTimeParameter vtable
 
+var delayNoteTrackGrid, delayBpmTrackGrid []int
+
+func init() {
+	for st := -48; st <= 48; st++ {
+		gridVal := int(math.Exp2(-float64(st)/12)*10787 + 0.5)
+		delayNoteTrackGrid = append(delayNoteTrackGrid, gridVal)
+	}
+	for i := 0; i < 16; i++ {
+		delayBpmTrackGrid = append(delayBpmTrackGrid, 1<<i)
+		delayBpmTrackGrid = append(delayBpmTrackGrid, 3<<i)
+		delayBpmTrackGrid = append(delayBpmTrackGrid, 9<<i)
+	}
+	slices.Sort(delayBpmTrackGrid)
+}
+
+func (d *delayTimeParameter) Type(p *Parameter) ParameterType { return IntegerParameter }
+func (d *delayTimeParameter) Name(p *Parameter) string        { return "delaytime" }
 func (d *delayTimeParameter) Value(p *Parameter) int {
 	if p.index < 0 || p.index >= len(p.unit.VarArgs) {
 		return 1
@@ -311,12 +345,6 @@ func (d *delayTimeParameter) Range(p *Parameter) IntRange {
 		return IntRange{Min: 1, Max: 576}
 	}
 	return IntRange{Min: 1, Max: 65535}
-}
-func (d *delayTimeParameter) Type(p *Parameter) ParameterType {
-	return IntegerParameter
-}
-func (d *delayTimeParameter) Name(p *Parameter) string {
-	return "delaytime"
 }
 func (d *delayTimeParameter) Hint(p *Parameter) ParameterHint {
 	val := d.Value(p)
@@ -350,7 +378,7 @@ func (d *delayTimeParameter) Hint(p *Parameter) ParameterHint {
 				text = fmt.Sprintf(" (1/%d dotted)", 1<<(5-k))
 			}
 		}
-		text = fmt.Sprintf("%v / %.3f beats%s", val, float32(val)/48.0, text)
+		text = fmt.Sprintf("%.3f beats%s", float32(val)/48.0, text)
 	}
 	if p.unit.Parameters["stereo"] == 1 {
 		if p.index < len(p.unit.VarArgs)/2 {
@@ -361,8 +389,15 @@ func (d *delayTimeParameter) Hint(p *Parameter) ParameterHint {
 	}
 	return ParameterHint{text, true}
 }
-func (d *delayTimeParameter) LargeStep(p *Parameter) int {
-	return 16
+func (d *delayTimeParameter) RoundToGrid(p *Parameter, val int, up bool) int {
+	switch p.unit.Parameters["notetracking"] {
+	default:
+		return roundToGrid(val, 16, up)
+	case 1:
+		return roundToSliceGrid(val, delayNoteTrackGrid, up)
+	case 2:
+		return roundToSliceGrid(val, delayBpmTrackGrid, up)
+	}
 }
 func (d *delayTimeParameter) Reset(p *Parameter) {}
 
@@ -387,15 +422,10 @@ func (d *delayLinesParameter) SetValue(p *Parameter, v int) bool {
 	p.unit.VarArgs = p.unit.VarArgs[:targetLines]
 	return true
 }
-func (d *delayLinesParameter) Range(p *Parameter) IntRange {
-	return IntRange{Min: 1, Max: 32}
-}
-func (d *delayLinesParameter) Type(p *Parameter) ParameterType {
-	return IntegerParameter
-}
-func (d *delayLinesParameter) Name(p *Parameter) string {
-	return "delaylines"
-}
+func (d *delayLinesParameter) Range(p *Parameter) IntRange                    { return IntRange{Min: 1, Max: 32} }
+func (d *delayLinesParameter) Type(p *Parameter) ParameterType                { return IntegerParameter }
+func (d *delayLinesParameter) Name(p *Parameter) string                       { return "delaylines" }
+func (r *delayLinesParameter) RoundToGrid(p *Parameter, val int, up bool) int { return val }
 func (d *delayLinesParameter) Hint(p *Parameter) ParameterHint {
 	return ParameterHint{strconv.Itoa(d.Value(p)), true}
 }
@@ -424,15 +454,11 @@ func (r *reverbParameter) SetValue(p *Parameter, v int) bool {
 	copy(p.unit.VarArgs, entry.varArgs)
 	return true
 }
-func (r *reverbParameter) Range(p *Parameter) IntRange {
-	return IntRange{Min: 0, Max: len(reverbs)}
-}
-func (r *reverbParameter) Type(p *Parameter) ParameterType {
-	return IntegerParameter
-}
-func (r *reverbParameter) Name(p *Parameter) string {
-	return "reverb"
-}
+func (r *reverbParameter) Range(p *Parameter) IntRange                    { return IntRange{Min: 0, Max: len(reverbs)} }
+func (r *reverbParameter) Type(p *Parameter) ParameterType                { return IntegerParameter }
+func (r *reverbParameter) Name(p *Parameter) string                       { return "reverb" }
+func (r *reverbParameter) RoundToGrid(p *Parameter, val int, up bool) int { return val }
+func (r *reverbParameter) Reset(p *Parameter)                             {}
 func (r *reverbParameter) Hint(p *Parameter) ParameterHint {
 	i := r.Value(p)
 	label := "custom"
@@ -441,7 +467,38 @@ func (r *reverbParameter) Hint(p *Parameter) ParameterHint {
 	}
 	return ParameterHint{label, true}
 }
-func (r *reverbParameter) LargeStep(p *Parameter) int {
-	return 1
+
+func roundToGrid(value, grid int, up bool) int {
+	if up {
+		return value + mod(-value, grid)
+	}
+	return value - mod(value, grid)
 }
-func (r *reverbParameter) Reset(p *Parameter) {}
+
+func mod(a, b int) int {
+	m := a % b
+	if a < 0 && b < 0 {
+		m -= b
+	}
+	if a < 0 && b > 0 {
+		m += b
+	}
+	return m
+}
+
+func roundToSliceGrid(value int, grid []int, up bool) int {
+	if up {
+		for _, v := range grid {
+			if value < v {
+				return v
+			}
+		}
+	} else {
+		for i := len(grid) - 1; i >= 0; i-- {
+			if value > grid[i] {
+				return grid[i]
+			}
+		}
+	}
+	return value
+}

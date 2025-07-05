@@ -380,8 +380,8 @@ var stackUseMonoStereo = map[string][2]StackUse{
 		{Inputs: [][]int{{0, 2, 3}, {1, 2, 3}}, Modifies: []bool{false, false, true, true}, NumOutputs: 4}, // stereo
 	},
 	"pan": {
-		{Inputs: [][]int{{0, 1}}, Modifies: []bool{true, true}, NumOutputs: 2},         // mono
-		{Inputs: [][]int{{0, 1}, {0, 1}}, Modifies: []bool{true, true}, NumOutputs: 2}, // mono
+		{Inputs: [][]int{{0, 1}}, Modifies: []bool{true, true}, NumOutputs: 2},   // mono
+		{Inputs: [][]int{{0}, {1}}, Modifies: []bool{true, true}, NumOutputs: 2}, // mono
 	},
 	"speed": {
 		{Inputs: [][]int{{0}}, Modifies: []bool{true}, NumOutputs: 0},

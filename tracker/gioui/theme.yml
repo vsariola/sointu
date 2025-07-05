@@ -220,6 +220,7 @@ uniteditor:
     disabled:
       { textsize: 12, color: *disabled, font: { style: 1 }, alignment: 2 }
     error: *errorcolor
+  divider: { r: 255, g: 255, b: 255, a: 5 }
 knob:
   diameter: 36
   value: { textsize: 12, color: *highemphasis }
@@ -237,4 +238,4 @@ signalrail:
 port:
   diameter: 36
   strokewidth: 4
-  color: *secondarycolor
+  color: { r: 32, g: 55, b: 58, a: 255 }
