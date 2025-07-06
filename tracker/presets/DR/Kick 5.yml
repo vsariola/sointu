@@ -10,7 +10,7 @@ units:
       parameters: {color: 64, detune: 64, gain: 128, phase: 0, shape: 108, stereo: 0, transpose: 64, type: 0}
     - type: filter
       id: 333
-      parameters: {bandpass: 1, frequency: 50, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 50, highpass: 0, lowpass: 0, resonance: 128, stereo: 0}
     - type: mulp
       id: 263
       parameters: {auxgain: 64, outgain: 64, stereo: 0}
@@ -50,7 +50,7 @@ units:
       parameters: {color: 128, detune: 64, gain: 104, phase: 0, shape: 64, stereo: 0, transpose: 46, type: 0}
     - type: filter
       id: 283
-      parameters: {bandpass: 1, frequency: 10, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 39, stereo: 0}
+      parameters: {bandpass: 1, frequency: 10, highpass: 1, lowpass: 0, resonance: 39, stereo: 0}
     - type: mulp
       id: 279
       parameters: {stereo: 0}

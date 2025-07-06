@@ -21,7 +21,7 @@ units:
       parameters: {stereo: 1}
     - type: filter
       id: 175
-      parameters: {bandpass: 0, frequency: 38, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 111, stereo: 1}
+      parameters: {bandpass: 0, frequency: 38, highpass: 0, lowpass: 1, resonance: 111, stereo: 1}
     - type: oscillator
       id: 180
       parameters: {color: 128, detune: 64, gain: 33, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 63, type: 0, unison: 0}

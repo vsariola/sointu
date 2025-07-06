@@ -30,10 +30,10 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 11
-      parameters: {bandpass: 0, frequency: 80, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 24, stereo: 0}
+      parameters: {bandpass: 0, frequency: 80, highpass: 0, lowpass: 1, resonance: 24, stereo: 0}
     - type: filter
       id: 12
-      parameters: {bandpass: 0, frequency: 48, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 24, stereo: 0}
+      parameters: {bandpass: 0, frequency: 48, highpass: 1, lowpass: 0, resonance: 24, stereo: 0}
     - type: pan
       id: 13
       parameters: {panning: 64, stereo: 0}

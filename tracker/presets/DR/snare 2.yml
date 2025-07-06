@@ -33,7 +33,7 @@ units:
       parameters: {drive: 10, stereo: 0}
     - type: filter
       id: 339
-      parameters: {bandpass: 0, frequency: 60, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 60, highpass: -1, lowpass: 0, resonance: 128, stereo: 0}
     - type: addp
       id: 316
       parameters: {stereo: 0}

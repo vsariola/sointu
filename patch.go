@@ -6,6 +6,8 @@ import (
 	"math"
 	"sort"
 	"strconv"
+
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -39,7 +41,7 @@ type (
 		// an oscillator, unit.Type == "oscillator" and unit.Parameters["attack"]
 		// could be 64. Most parameters are either limites to 0 and 1 (e.g. stereo
 		// parameters) or between 0 and 128, inclusive.
-		Parameters map[string]int `yaml:",flow"`
+		Parameters ParamMap `yaml:",flow"`
 
 		// VarArgs is a list containing the variable number arguments that some
 		// units require, most notably the DELAY units. For example, for a DELAY
@@ -57,11 +59,14 @@ type (
 		Comment string `yaml:",omitempty"`
 	}
 
+	ParamMap map[string]int
+
 	// UnitParameter documents one parameter that an unit takes
 	UnitParameter struct {
 		Name        string // thould be found with this name in the Unit.Parameters map
 		MinValue    int    // minimum value of the parameter, inclusive
 		MaxValue    int    // maximum value of the parameter, inclusive
+		Neutral     int    // neutral value of the parameter
 		CanSet      bool   // if this parameter can be set before hand i.e. through the gui
 		CanModulate bool   // if this parameter can be modulated i.e. has a port number in "send" unit
 		DisplayFunc UnitParameterDisplayFunc
@@ -90,7 +95,7 @@ var UnitTypes = map[string]([]UnitParameter){
 	"xch":      []UnitParameter{{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}},
 	"distort": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "drive", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "drive", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"hold": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "holdfreq", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
@@ -105,20 +110,18 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "invgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"dbgain": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "decibels", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(40 * (float64(v)/64 - 1)), "dB" }}},
+		{Name: "decibels", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(40 * (float64(v)/64 - 1)), "dB" }}},
 	"filter": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "frequency", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: filterFrequencyDispFunc},
 		{Name: "resonance", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "lowpass", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "bandpass", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "highpass", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "negbandpass", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "neghighpass", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}},
+		{Name: "bandpass", MinValue: -1, MaxValue: 1, CanSet: true, CanModulate: false},
+		{Name: "highpass", MinValue: -1, MaxValue: 1, CanSet: true, CanModulate: false}},
 	"clip": []UnitParameter{{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false}},
 	"pan": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "panning", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "panning", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"delay": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "pregain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
@@ -152,7 +155,7 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false, DisplayFunc: arrDispFunc(channelNames[:])}},
 	"send": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "amount", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(float64(v)/64 - 1), "" }},
+		{Name: "amount", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(float64(v)/64 - 1), "" }},
 		{Name: "voice", MinValue: 0, MaxValue: 32, CanSet: true, CanModulate: false, DisplayFunc: sendVoiceDispFunc},
 		{Name: "target", MinValue: 0, MaxValue: math.MaxInt32, CanSet: true, CanModulate: false},
 		{Name: "port", MinValue: 0, MaxValue: 7, CanSet: true, CanModulate: false},
@@ -166,15 +169,15 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"noise": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "shape", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "shape", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
 	"oscillator": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "transpose", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: oscillatorTransposeDispFunc},
-		{Name: "detune", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(float64(v-64) / 64), "st" }},
+		{Name: "transpose", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: oscillatorTransposeDispFunc},
+		{Name: "detune", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(float64(v-64) / 64), "st" }},
 		{Name: "phase", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "color", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "shape", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "shape", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "frequency", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true},
 		{Name: "type", MinValue: int(Sine), MaxValue: int(Sample), CanSet: true, CanModulate: false, DisplayFunc: arrDispFunc(oscTypes[:])},
@@ -194,6 +197,30 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false, DisplayFunc: arrDispFunc(channelNames[:])}},
 	"sync": []UnitParameter{},
+}
+
+// compile errors if interface is not implemented.
+var _ yaml.Unmarshaler = &ParamMap{}
+
+func (a *ParamMap) UnmarshalYAML(value *yaml.Node) error {
+	var m map[string]int
+	if err := value.Decode(&m); err != nil {
+		return err
+	}
+	// Backwards compatibility hack: if the patch was saved with an older
+	// version of Sointu, it might have used the negbandpass and neghighpass
+	// parameters, which now correspond to having bandpass as value -1 and
+	// highpass as value -1.
+	if n, ok := m["negbandpass"]; ok {
+		m["bandpass"] = m["bandpass"] - n
+		delete(m, "negbandpass")
+	}
+	if n, ok := m["neghighpass"]; ok {
+		m["highpass"] = m["highpass"] - n
+		delete(m, "neghighpass")
+	}
+	*a = m
+	return nil
 }
 
 var channelNames = [...]string{"left", "right", "aux1 left", "aux1 right", "aux2 left", "aux2 right", "aux3 left", "aux3 right"}
@@ -238,12 +265,10 @@ func compressorTimeDispFunc(v int) (string, string) {
 
 func oscillatorTransposeDispFunc(v int) (string, string) {
 	relvalue := v - 64
-	octaves := relvalue / 12
-	semitones := relvalue % 12
-	if semitones == 0 {
-		return strconv.Itoa(octaves), "oct"
+	if relvalue%12 == 0 {
+		return strconv.Itoa(relvalue / 12), "oct"
 	}
-	return strconv.Itoa(semitones), "st"
+	return strconv.Itoa(relvalue), "st"
 }
 
 func sendVoiceDispFunc(v int) (string, string) {

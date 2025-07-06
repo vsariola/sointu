@@ -18,14 +18,14 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 6
-      parameters: {bandpass: 0, frequency: 48, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 48, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: delay
       id: 60
       parameters: {damp: 8, dry: 64, feedback: 127, notetracking: 1, pregain: 64, stereo: 0}
       varargs: [10787]
     - type: filter
       id: 61
-      parameters: {bandpass: 0, frequency: 48, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 48, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: mulp
       id: 62
       parameters: {stereo: 0}

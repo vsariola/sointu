@@ -27,7 +27,7 @@ units:
       parameters: {color: 67, detune: 64, gain: 128, looplength: 905, loopstart: 6513, phase: 0, samplestart: 1252819, shape: 105, stereo: 0, transpose: 93, type: 4, unison: 0}
     - type: filter
       id: 1035
-      parameters: {bandpass: 0, frequency: 50, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 100, stereo: 0}
+      parameters: {bandpass: 0, frequency: 50, highpass: -1, lowpass: 1, resonance: 100, stereo: 0}
     - type: addp
       id: 1032
       parameters: {stereo: 0}
@@ -36,10 +36,10 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 170
-      parameters: {bandpass: 0, frequency: 28, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 65, stereo: 0}
+      parameters: {bandpass: 0, frequency: 28, highpass: 0, lowpass: 1, resonance: 65, stereo: 0}
     - type: filter
       id: 1062
-      parameters: {bandpass: 0, frequency: 57, highpass: 0, lowpass: 1, negbandpass: 1, neghighpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: -1, frequency: 57, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
     - type: pan
       id: 18
       parameters: {panning: 64, stereo: 0}

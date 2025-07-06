@@ -320,7 +320,7 @@ func read4klangVCO(vals [15]byte, version int) []Unit {
 
 func read4klangVCF(vals [15]byte, _ int) []Unit {
 	flags := vals[2]
-	var stereo, lowpass, bandpass, highpass, neghighpass int
+	var stereo, lowpass, bandpass, highpass int
 	if flags&0x01 == 0x01 {
 		lowpass = 1
 	}
@@ -332,7 +332,7 @@ func read4klangVCF(vals [15]byte, _ int) []Unit {
 	}
 	if flags&0x08 == 0x08 {
 		lowpass = 1
-		neghighpass = 1
+		highpass = -1
 	}
 	if flags&0x10 == 0x10 {
 		stereo = 1
@@ -340,14 +340,12 @@ func read4klangVCF(vals [15]byte, _ int) []Unit {
 	return []Unit{{
 		Type: "filter",
 		Parameters: map[string]int{
-			"stereo":      stereo,
-			"frequency":   int(vals[0]),
-			"resonance":   int(vals[1]),
-			"lowpass":     lowpass,
-			"bandpass":    bandpass,
-			"highpass":    highpass,
-			"negbandpass": 0,
-			"neghighpass": neghighpass,
+			"stereo":    stereo,
+			"frequency": int(vals[0]),
+			"resonance": int(vals[1]),
+			"lowpass":   lowpass,
+			"bandpass":  bandpass,
+			"highpass":  highpass,
 		}},
 	}
 }

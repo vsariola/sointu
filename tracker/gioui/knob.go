@@ -12,11 +12,13 @@ import (
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
+	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/x/stroke"
 	"github.com/vsariola/sointu/tracker"
+	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
 type (
@@ -58,7 +60,86 @@ type (
 		Hint   string
 		Scroll bool
 	}
+
+	SwitchStyle struct {
+		Neutral struct {
+			Fg color.NRGBA
+			Bg color.NRGBA
+		}
+		Pos struct {
+			Fg color.NRGBA
+			Bg color.NRGBA
+		}
+		Neg struct {
+			Fg color.NRGBA
+			Bg color.NRGBA
+		}
+		Width   unit.Dp
+		Height  unit.Dp
+		Outline unit.Dp
+		Handle  unit.Dp
+		Icon    unit.Dp
+	}
+
+	SwitchWidget struct {
+		Theme  *Theme
+		Value  tracker.Parameter
+		State  *KnobState
+		Style  *SwitchStyle
+		Hint   string
+		Scroll bool
+	}
 )
+
+// KnobState
+
+func (s *KnobState) update(gtx C, param tracker.Parameter, scroll bool) {
+	for {
+		p, ok := s.drag.Update(gtx.Metric, gtx.Source, gesture.Both)
+		if !ok {
+			break
+		}
+		switch p.Kind {
+		case pointer.Press:
+			s.dragStartPt = p.Position
+			s.dragStartVal = param.Value()
+		case pointer.Drag:
+			// update the value based on the drag amount
+			m := param.Range()
+			d := p.Position.Sub(s.dragStartPt)
+			amount := float32(d.X-d.Y) / float32(gtx.Dp(128))
+			newValue := int(float32(s.dragStartVal) + amount*float32(m.Max-m.Min))
+			param.SetValue(newValue)
+			s.tipArea.Appear(gtx.Now)
+		}
+	}
+	for {
+		g, ok := s.click.Update(gtx.Source)
+		if !ok {
+			break
+		}
+		if g.Kind == gesture.KindClick && g.NumClicks > 1 {
+			param.Reset()
+		}
+	}
+	for scroll {
+		e, ok := gtx.Event(pointer.Filter{
+			Target:  s,
+			Kinds:   pointer.Scroll,
+			ScrollY: pointer.ScrollRange{Min: -1e6, Max: 1e6},
+		})
+		if !ok {
+			break
+		}
+		if ev, ok := e.(pointer.Event); ok && ev.Kind == pointer.Scroll {
+			delta := -int(math.Min(math.Max(float64(ev.Scroll.Y), -1), 1))
+			param.Add(delta, ev.Modifiers.Contain(key.ModShortcut))
+			s.tipArea.Appear(gtx.Now)
+		}
+	}
+}
+
+// Knob
 
 func Knob(v tracker.Parameter, th *Theme, state *KnobState, hint string, scroll bool) KnobWidget {
 	return KnobWidget{
@@ -72,7 +153,7 @@ func Knob(v tracker.Parameter, th *Theme, state *KnobState, hint string, scroll 
 }
 
 func (k *KnobWidget) Layout(gtx C) D {
-	k.update(gtx)
+	k.State.update(gtx, k.Value, k.Scroll)
 	knob := func(gtx C) D {
 		m := k.Value.Range()
 		amount := float32(k.Value.Value()-m.Min) / float32(m.Max-m.Min)
@@ -82,8 +163,21 @@ func (k *KnobWidget) Layout(gtx C) D {
 		event.Op(gtx.Ops, k.State)
 		k.State.drag.Add(gtx.Ops)
 		k.State.click.Add(gtx.Ops)
-		k.strokeKnobArc(gtx, k.Style.Pos.Bg, sw, d, amount, 1)
-		k.strokeKnobArc(gtx, k.Style.Pos.Color, sw, d, 0, amount)
+		middle := float32(k.Value.Neutral()-m.Min) / float32(m.Max-m.Min)
+		pos := max(amount, middle)
+		neg := min(amount, middle)
+		if middle > 0 {
+			k.strokeKnobArc(gtx, k.Style.Neg.Bg, sw, d, 0, neg)
+		}
+		if middle < 1 {
+			k.strokeKnobArc(gtx, k.Style.Pos.Bg, sw, d, pos, 1)
+		}
+		if pos > middle {
+			k.strokeKnobArc(gtx, k.Style.Pos.Color, sw, d, middle, pos)
+		}
+		if neg < middle {
+			k.strokeKnobArc(gtx, k.Style.Neg.Color, sw, d, neg, middle)
+		}
 		k.strokeIndicator(gtx, amount)
 		return D{Size: image.Pt(d, d)}
 	}
@@ -102,52 +196,6 @@ func (k *KnobWidget) Layout(gtx C) D {
 		})
 	}
 	return w(gtx)
-}
-
-func (k *KnobWidget) update(gtx C) {
-	for {
-		p, ok := k.State.drag.Update(gtx.Metric, gtx.Source, gesture.Both)
-		if !ok {
-			break
-		}
-		switch p.Kind {
-		case pointer.Press:
-			k.State.dragStartPt = p.Position
-			k.State.dragStartVal = k.Value.Value()
-		case pointer.Drag:
-			// update the value based on the drag amount
-			m := k.Value.Range()
-			d := p.Position.Sub(k.State.dragStartPt)
-			amount := float32(d.X-d.Y) / float32(gtx.Dp(k.Style.Diameter)) / 4
-			newValue := int(float32(k.State.dragStartVal) + amount*float32(m.Max-m.Min))
-			k.Value.SetValue(newValue)
-			k.State.tipArea.Appear(gtx.Now)
-		}
-	}
-	for {
-		g, ok := k.State.click.Update(gtx.Source)
-		if !ok {
-			break
-		}
-		if g.Kind == gesture.KindClick && g.NumClicks > 1 {
-			k.Value.Reset()
-		}
-	}
-	for k.Scroll {
-		e, ok := gtx.Event(pointer.Filter{
-			Target:  k.State,
-			Kinds:   pointer.Scroll,
-			ScrollY: pointer.ScrollRange{Min: -1e6, Max: 1e6},
-		})
-		if !ok {
-			break
-		}
-		if ev, ok := e.(pointer.Event); ok && ev.Kind == pointer.Scroll {
-			delta := -int(math.Min(math.Max(float64(ev.Scroll.Y), -1), 1))
-			k.Value.Add(delta, ev.Modifiers.Contain(key.ModShortcut))
-			k.State.tipArea.Appear(gtx.Now)
-		}
-	}
 }
 
 func (k *KnobWidget) strokeKnobArc(gtx C, color color.NRGBA, strokeWidth, diameter int, start, end float32) {
@@ -196,4 +244,78 @@ func (k *KnobWidget) strokeIndicator(gtx C, amount float32) {
 		Cap:   stroke.FlatCap,
 	}
 	paint.FillShape(gtx.Ops, k.Style.Indicator.Color, s.Op(gtx.Ops))
+}
+
+// Switch
+
+func Switch(v tracker.Parameter, th *Theme, state *KnobState, hint string, scroll bool) SwitchWidget {
+	return SwitchWidget{
+		Theme:  th,
+		Value:  v,
+		State:  state,
+		Style:  &th.Switch,
+		Hint:   hint,
+		Scroll: scroll,
+	}
+}
+
+func (s *SwitchWidget) Layout(gtx C) D {
+	s.State.update(gtx, s.Value, s.Scroll)
+	width := gtx.Dp(s.Style.Width)
+	height := gtx.Dp(s.Style.Height)
+	var fg, bg color.NRGBA
+	o := 0
+	switch {
+	case s.Value.Value() < 0:
+		fg = s.Style.Neg.Fg
+		bg = s.Style.Neg.Bg
+	case s.Value.Value() == 0:
+		fg = s.Style.Neutral.Fg
+		bg = s.Style.Neutral.Bg
+		o = gtx.Dp(s.Style.Outline)
+	case s.Value.Value() > 0:
+		fg = s.Style.Pos.Fg
+		bg = s.Style.Pos.Bg
+	}
+	r := min(width, height) / 2
+	fillRoundRect := func(ops *op.Ops, rect image.Rectangle, r int, c color.NRGBA) {
+		defer clip.UniformRRect(rect, r).Push(ops).Pop()
+		paint.ColorOp{Color: c}.Add(ops)
+		paint.PaintOp{}.Add(ops)
+	}
+	if o > 0 {
+		fillRoundRect(gtx.Ops, image.Rect(0, 0, width, height), r, fg)
+	}
+	fillRoundRect(gtx.Ops, image.Rect(o, o, width-o, height-o), r-o, bg)
+	a := r
+	b := width - r
+	p := a + (b-a)*(s.Value.Value()-s.Value.Range().Min)/(s.Value.Range().Max-s.Value.Range().Min)
+	circle := func(x, y, r int) clip.Op {
+		b := image.Rectangle{
+			Min: image.Pt(x-r, y-r),
+			Max: image.Pt(x+r, y+r),
+		}
+		return clip.Ellipse(b).Op(gtx.Ops)
+	}
+	paint.FillShape(gtx.Ops, fg, circle(p, height/2, gtx.Dp(s.Style.Handle)/2))
+	defer clip.Rect(image.Rectangle{Max: image.Pt(width, height)}).Push(gtx.Ops).Pop()
+	event.Op(gtx.Ops, s.State)
+	s.State.drag.Add(gtx.Ops)
+	s.State.click.Add(gtx.Ops)
+	icon := icons.NavigationClose
+	if s.Value.Range().Min < 0 {
+		if s.Value.Value() < 0 {
+			icon = icons.ImageExposureNeg1
+		} else if s.Value.Value() > 0 {
+			icon = icons.ImageExposurePlus1
+		}
+	} else if s.Value.Value() > 0 {
+		icon = icons.NavigationCheck
+	}
+	w := s.Theme.Icon(icon)
+	i := gtx.Dp(s.Style.Icon)
+	defer op.Offset(image.Pt(p-i/2, (height-i)/2)).Push(gtx.Ops).Pop()
+	gtx.Constraints = layout.Exact(image.Pt(i, i))
+	w.Layout(gtx, bg)
+	return D{Size: image.Pt(width, height)}
 }

@@ -51,7 +51,7 @@ units:
       parameters: {drive: 89, stereo: 0}
     - type: filter
       id: 5
-      parameters: {bandpass: 1, frequency: 46, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 46, stereo: 0}
+      parameters: {bandpass: 1, frequency: 46, highpass: -1, lowpass: 1, resonance: 46, stereo: 0}
     - type: pan
       id: 175
       parameters: {panning: 73, stereo: 0}

@@ -32,7 +32,7 @@ units:
       parameters: {}
     - type: filter
       id: 15
-      parameters: {bandpass: 1, frequency: 55, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 55, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: pan
       id: 5
       parameters: {panning: 64, stereo: 0}

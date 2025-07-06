@@ -97,7 +97,7 @@ var defaultUnits = map[string]sointu.Unit{
 	"clip":       {Type: "clip", Parameters: map[string]int{"stereo": 0}},
 	"hold":       {Type: "hold", Parameters: map[string]int{"stereo": 0, "holdfreq": 64}},
 	"distort":    {Type: "distort", Parameters: map[string]int{"stereo": 0, "drive": 64}},
-	"filter":     {Type: "filter", Parameters: map[string]int{"stereo": 0, "frequency": 64, "resonance": 64, "lowpass": 1, "bandpass": 0, "highpass": 0, "negbandpass": 0, "neghighpass": 0}},
+	"filter":     {Type: "filter", Parameters: map[string]int{"stereo": 0, "frequency": 64, "resonance": 64, "lowpass": 1, "bandpass": 0, "highpass": 0}},
 	"out":        {Type: "out", Parameters: map[string]int{"stereo": 1, "gain": 64}},
 	"outaux":     {Type: "outaux", Parameters: map[string]int{"stereo": 1, "outgain": 64, "auxgain": 64}},
 	"aux":        {Type: "aux", Parameters: map[string]int{"stereo": 1, "gain": 64, "channel": 2}},

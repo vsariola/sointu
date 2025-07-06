@@ -114,6 +114,7 @@ type Theme struct {
 	Split      SplitStyle
 	ScrollBar  ScrollBarStyle
 	Knob       KnobStyle
+	Switch     SwitchStyle
 	SignalRail SignalRailStyle
 	Port       PortStyle
 

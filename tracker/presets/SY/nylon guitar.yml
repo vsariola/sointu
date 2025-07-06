@@ -15,7 +15,7 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 5
-      parameters: {bandpass: 1, frequency: 48, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 48, highpass: 1, lowpass: 1, resonance: 128, stereo: 0}
     - type: delay
       id: 6
       parameters: {damp: 48, dry: 128, feedback: 126, notetracking: 1, pregain: 128, stereo: 0}
@@ -25,7 +25,7 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 88
-      parameters: {bandpass: 0, frequency: 96, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 96, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: pan
       id: 89
       parameters: {panning: 64, stereo: 0}

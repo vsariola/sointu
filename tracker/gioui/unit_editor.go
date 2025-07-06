@@ -11,14 +11,12 @@ import (
 	"gioui.org/f32"
 	"gioui.org/io/clipboard"
 	"gioui.org/io/key"
-	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/widget"
-	"gioui.org/widget/material"
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -103,12 +101,19 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 		e, ok := gtx.Event(
 			key.Filter{Focus: pe.searchList, Name: key.NameEnter},
 			key.Filter{Focus: pe.searchList, Name: key.NameReturn},
+			key.Filter{Focus: pe.searchList, Name: key.NameEscape},
 		)
 		if !ok {
 			break
 		}
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
-			pe.ChooseUnitType(t)
+			switch e.Name {
+			case key.NameEscape:
+				t.UnitSearching().SetValue(false)
+				pe.paramTable.RowTitleList.Focus()
+			case key.NameEnter, key.NameReturn:
+				pe.ChooseUnitType(t)
+			}
 		}
 	}
 	for {
@@ -135,12 +140,28 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 		}
 	}
 	for {
-		e, ok := gtx.Event(key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameLeftArrow})
+		e, ok := gtx.Event(
+			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameEnter},
+			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameReturn},
+			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameLeftArrow},
+		)
 		if !ok {
 			break
 		}
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
-			t.PatchPanel.unitList.dragList.Focus()
+			switch e.Name {
+			case key.NameLeftArrow:
+				t.PatchPanel.unitList.dragList.Focus()
+			case key.NameDeleteBackward:
+				t.UnitSearch().SetValue("")
+				t.UnitSearching().SetValue(true)
+				pe.searchList.Focus()
+			case key.NameEnter, key.NameReturn:
+				t.Model.AddUnit(e.Modifiers.Contain(key.ModCtrl)).Do()
+				t.UnitSearch().SetValue("")
+				t.UnitSearching().SetValue(true)
+				pe.searchList.Focus()
+			}
 		}
 	}
 }
@@ -148,7 +169,7 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 func (pe *UnitEditor) ChooseUnitType(t *Tracker) {
 	if ut, ok := t.SearchResults().Item(pe.searchList.TrackerList.Selected()); ok {
 		t.Units().SetSelectedType(ut)
-		t.PatchPanel.unitList.dragList.Focus()
+		pe.paramTable.RowTitleList.Focus()
 	}
 }
 
@@ -259,7 +280,7 @@ func (pe *UnitEditor) drawBackGround(gtx C) {
 func (pe *UnitEditor) drawRemoteSendSignal(gtx C, wire tracker.Wire, col, row int) {
 	sy := wire.From - row
 	t := TrackerFromContext(gtx)
-	defer op.Offset(image.Pt(0, (sy+1)*gtx.Dp(t.Theme.UnitEditor.Height)-gtx.Dp(16))).Push(gtx.Ops).Pop()
+	defer op.Offset(image.Pt(gtx.Dp(5), (sy+1)*gtx.Dp(t.Theme.UnitEditor.Height)-gtx.Dp(16))).Push(gtx.Ops).Pop()
 	Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
 }
 
@@ -300,7 +321,7 @@ func (pe *UnitEditor) drawSignal(gtx C, wire tracker.Wire, col, row int) {
 	c := float32(diam) / 2 / float32(math.Sqrt2)
 	width := float32(gtx.Dp(t.Theme.UnitEditor.Width))
 	height := float32(gtx.Dp(t.Theme.UnitEditor.Height))
-	from := f32.Pt(0, float32((sy+1)*gtx.Dp(t.Theme.UnitEditor.Height))-float32(gtx.Dp(t.Theme.SignalRail.SignalWidth)/2))
+	from := f32.Pt(0, float32((sy+1)*gtx.Dp(t.Theme.UnitEditor.Height))-float32(gtx.Dp(8)))
 	corner := f32.Pt(1, 1)
 	if ex > 0 {
 		corner.X = -corner.X
@@ -438,18 +459,8 @@ func (p ParameterStyle) Layout(gtx C) D {
 			k := Knob(p.Parameter, p.Theme, &p.State.knobState, p.Parameter.Hint().Label, p.Focus)
 			return k.Layout(gtx)
 		case tracker.BoolParameter:
-			ra := p.Parameter.Range()
-			p.State.boolWidget.Value = p.Parameter.Value() > ra.Min
-			boolStyle := material.Switch(&p.Theme.Material, &p.State.boolWidget, "Toggle boolean parameter")
-			boolStyle.Color.Disabled = p.Theme.Material.Fg
-			defer pointer.PassOp{}.Push(gtx.Ops).Pop()
-			dims := layout.Center.Layout(gtx, boolStyle.Layout)
-			if p.State.boolWidget.Value {
-				p.Parameter.SetValue(ra.Max)
-			} else {
-				p.Parameter.SetValue(ra.Min)
-			}
-			return dims
+			s := Switch(p.Parameter, p.Theme, &p.State.knobState, p.Parameter.Hint().Label, p.Focus)
+			return s.Layout(gtx)
 		case tracker.IDParameter:
 			btn := ActionBtn(t.ChooseSendSource(p.Parameter.UnitID()), t.Theme, &p.State.clickable, "Set", p.Parameter.Hint().Label)
 			return btn.Layout(gtx)

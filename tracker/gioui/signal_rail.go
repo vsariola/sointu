@@ -67,8 +67,9 @@ func (s SignalRailWidget) Layout(gtx C) D {
 	}
 	if s.Signal.Send {
 		for i := range min(len(s.Signal.StackUse.Inputs), maxSignalsDrawn-s.Signal.PassThrough) {
+			d := gtx.Dp(8)
 			from := f32.Pt(float32((i+s.Signal.PassThrough)*sw+center), float32(h/2))
-			to := f32.Pt(float32(gtx.Constraints.Max.X), float32(h)-float32(sw/2))
+			to := f32.Pt(float32(gtx.Constraints.Max.X), float32(h)-float32(d))
 			ctrl := f32.Pt(from.X, to.Y)
 			path.MoveTo(from)
 			path.QuadTo(ctrl, to)

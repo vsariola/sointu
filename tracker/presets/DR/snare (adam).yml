@@ -30,7 +30,7 @@ units:
     - type: mulp
       parameters: {stereo: 0}
     - type: filter
-      parameters: {bandpass: 0, frequency: 106, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 106, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
     - type: addp
       parameters: {stereo: 0}
     - parameters: {}

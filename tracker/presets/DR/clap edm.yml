@@ -13,7 +13,7 @@ units:
       parameters: {gain: 65, shape: 128, stereo: 0}
     - type: filter
       id: 39
-      parameters: {bandpass: 1, frequency: 55, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 66, stereo: 0}
+      parameters: {bandpass: 1, frequency: 55, highpass: 0, lowpass: 0, resonance: 66, stereo: 0}
     - type: mulp
       id: 17
       parameters: {stereo: 0}
@@ -29,7 +29,7 @@ units:
       parameters: {gain: 128, shape: 79, stereo: 0}
     - type: filter
       id: 23
-      parameters: {bandpass: 1, frequency: 43, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 43, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: mulp
       id: 21
       parameters: {stereo: 0}

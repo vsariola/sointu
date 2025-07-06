@@ -12,7 +12,7 @@ units:
       parameters: {holdfreq: 80, stereo: 1}
     - type: filter
       id: 201
-      parameters: {bandpass: 1, frequency: 52, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 1}
+      parameters: {bandpass: 1, frequency: 52, highpass: 1, lowpass: 0, resonance: 128, stereo: 1}
     - type: mulp
       id: 53
       parameters: {stereo: 1}
@@ -27,7 +27,7 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 219
-      parameters: {bandpass: 1, frequency: 90, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 117, stereo: 0}
+      parameters: {bandpass: 1, frequency: 90, highpass: 0, lowpass: 0, resonance: 117, stereo: 0}
     - type: addp
       id: 216
       parameters: {stereo: 0}
@@ -45,13 +45,13 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 218
-      parameters: {bandpass: 1, frequency: 91, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 91, highpass: 0, lowpass: 0, resonance: 128, stereo: 0}
     - type: addp
       id: 209
       parameters: {stereo: 0}
     - type: filter
       id: 220
-      parameters: {bandpass: 1, frequency: 77, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 1}
+      parameters: {bandpass: 1, frequency: 77, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
     - type: pan
       id: 55
       parameters: {panning: 73, stereo: 1}

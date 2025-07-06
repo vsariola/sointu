@@ -33,7 +33,7 @@ units:
       parameters: {gain: 5, shape: 64, stereo: 0}
     - type: filter
       id: 12
-      parameters: {bandpass: 1, frequency: 77, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 24, stereo: 0}
+      parameters: {bandpass: 1, frequency: 77, highpass: 0, lowpass: 0, resonance: 24, stereo: 0}
     - type: addp
       id: 13
       parameters: {stereo: 0}
@@ -42,13 +42,13 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 15
-      parameters: {bandpass: 1, frequency: 32, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 32, highpass: 0, lowpass: 0, resonance: 128, stereo: 0}
     - type: xch
       id: 16
       parameters: {stereo: 0}
     - type: filter
       id: 17
-      parameters: {bandpass: 1, frequency: 96, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 96, highpass: 0, lowpass: 0, resonance: 128, stereo: 0}
     - type: addp
       id: 18
       parameters: {stereo: 0}

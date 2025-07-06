@@ -104,6 +104,15 @@ func (p *Parameter) Range() IntRange {
 	}
 	return p.vtable.Range(p)
 }
+func (p *Parameter) Neutral() int {
+	if p.vtable == nil {
+		return 0
+	}
+	if p.up != nil {
+		return p.up.Neutral
+	}
+	return 0
+}
 func (p *Parameter) Type() ParameterType {
 	if p.vtable == nil {
 		return NoParameter
@@ -231,12 +240,15 @@ func (n *namedParameter) Type(p *Parameter) ParameterType {
 	if p.unit.Type == "send" && p.up.Name == "target" {
 		return IDParameter
 	}
-	if p.up.MinValue == 0 && p.up.MaxValue == 1 {
+	if p.up.MinValue >= -1 && p.up.MaxValue <= 1 {
 		return BoolParameter
 	}
 	return IntegerParameter
 }
 func (n *namedParameter) Name(p *Parameter) string {
+	if p.up.Name == "notetracking" {
+		return "tracking" // notetracking does not fit in the UI
+	}
 	return p.up.Name
 }
 func (n *namedParameter) Hint(p *Parameter) ParameterHint {
@@ -249,11 +261,10 @@ func (n *namedParameter) Hint(p *Parameter) ParameterHint {
 	return ParameterHint{label, true}
 }
 func (n *namedParameter) RoundToGrid(p *Parameter, val int, up bool) int {
-	grid := 16
 	if p.up.Name == "transpose" {
-		grid = 12
+		return roundToGrid(val-64, 12, up) + 64
 	}
-	return roundToGrid(val, grid, up)
+	return roundToGrid(val, 16, up)
 }
 func (n *namedParameter) Reset(p *Parameter) {
 	v, ok := defaultUnits[p.unit.Type].Parameters[p.up.Name]
@@ -315,8 +326,8 @@ func (g *gmDlsEntryParameter) Reset(p *Parameter) {}
 var delayNoteTrackGrid, delayBpmTrackGrid []int
 
 func init() {
-	for st := -48; st <= 48; st++ {
-		gridVal := int(math.Exp2(-float64(st)/12)*10787 + 0.5)
+	for st := -30; st <= 30; st++ {
+		gridVal := int(math.Exp2(float64(st)/12)*10787 + 0.5)
 		delayNoteTrackGrid = append(delayNoteTrackGrid, gridVal)
 	}
 	for i := 0; i < 16; i++ {

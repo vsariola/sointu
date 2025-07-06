@@ -39,7 +39,7 @@ units:
       parameters: {amount: 96, port: 0, sendpop: 1, target: 15}
     - type: filter
       id: 15
-      parameters: {bandpass: 0, frequency: 64, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 64, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: mulp
       id: 16
       parameters: {stereo: 0}

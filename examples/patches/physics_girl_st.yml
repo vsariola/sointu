@@ -49,7 +49,7 @@ patch:
           parameters: {stereo: 0}
         - type: filter
           id: 10
-          parameters: {bandpass: 0, frequency: 0, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 58, stereo: 0}
+          parameters: {bandpass: 0, frequency: 0, highpass: 0, lowpass: 1, resonance: 58, stereo: 0}
         - type: delay
           id: 4
           parameters: {damp: 0, dry: 128, feedback: 96, notetracking: 2, pregain: 40, stereo: 0}
@@ -87,7 +87,7 @@ patch:
           parameters: {color: 59, detune: 73, gain: 35, phase: 26, shape: 70, stereo: 0, transpose: 57, type: 2, unison: 3}
         - type: filter
           id: 31
-          parameters: {bandpass: 0, frequency: 37, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 60, stereo: 0}
+          parameters: {bandpass: 0, frequency: 37, highpass: 0, lowpass: 1, resonance: 60, stereo: 0}
         - type: mulp
           id: 24
           parameters: {stereo: 0}
@@ -198,7 +198,7 @@ patch:
           parameters: {panning: 64, stereo: 0}
         - type: filter
           id: 76
-          parameters: {bandpass: 0, frequency: 32, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 64, stereo: 1}
+          parameters: {bandpass: 0, frequency: 32, highpass: 0, lowpass: 1, resonance: 64, stereo: 1}
         - type: outaux
           id: 73
           parameters: {auxgain: 64, outgain: 64, stereo: 1}

@@ -41,10 +41,10 @@ units:
       parameters: {stereo: 1}
     - type: filter
       id: 217
-      parameters: {bandpass: 1, frequency: 40, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 65, stereo: 1}
+      parameters: {bandpass: 1, frequency: 40, highpass: 1, lowpass: 1, resonance: 65, stereo: 1}
     - type: filter
       id: 218
-      parameters: {bandpass: 1, frequency: 80, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 1, resonance: 86, stereo: 1}
+      parameters: {bandpass: 1, frequency: 80, highpass: -1, lowpass: 0, resonance: 86, stereo: 1}
     - type: pan
       id: 168
       parameters: {panning: 50, stereo: 1}

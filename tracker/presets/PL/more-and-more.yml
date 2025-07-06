@@ -33,10 +33,10 @@ units:
       parameters: {amount: 88, port: 0, sendpop: 1, target: 14}
     - type: filter
       id: 13
-      parameters: {bandpass: 0, frequency: 80, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 80, highpass: 1, lowpass: 1, resonance: 128, stereo: 0}
     - type: filter
       id: 14
-      parameters: {bandpass: 0, frequency: 80, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 80, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: mulp
       id: 15
       parameters: {stereo: 0}

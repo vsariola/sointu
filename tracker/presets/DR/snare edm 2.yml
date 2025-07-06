@@ -25,28 +25,28 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 201
-      parameters: {bandpass: 0, frequency: 97, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 97, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
     - type: filter
       id: 225
-      parameters: {bandpass: 0, frequency: 108, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 108, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
     - type: addp
       id: 226
       parameters: {stereo: 0}
     - type: filter
       id: 202
-      parameters: {bandpass: 0, frequency: 100, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 100, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
     - type: filter
       id: 227
-      parameters: {bandpass: 0, frequency: 19, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 98, stereo: 0}
+      parameters: {bandpass: 0, frequency: 19, highpass: 1, lowpass: 0, resonance: 98, stereo: 0}
     - type: filter
       id: 228
-      parameters: {bandpass: 0, frequency: 15, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 15, highpass: 1, lowpass: 1, resonance: 128, stereo: 0}
     - type: filter
       id: 229
-      parameters: {bandpass: 0, frequency: 40, highpass: 1, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 74, stereo: 0}
+      parameters: {bandpass: 0, frequency: 40, highpass: 1, lowpass: 1, resonance: 74, stereo: 0}
     - type: filter
       id: 230
-      parameters: {bandpass: 0, frequency: 23, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 42, stereo: 0}
+      parameters: {bandpass: 0, frequency: 23, highpass: 1, lowpass: 0, resonance: 42, stereo: 0}
     - type: distort
       id: 338
       parameters: {drive: 88, stereo: 0}

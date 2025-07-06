@@ -239,3 +239,18 @@ port:
   diameter: 36
   strokewidth: 4
   color: { r: 32, g: 55, b: 58, a: 255 }
+switch:
+  width: 36
+  height: 20
+  handle: 16
+  neutral:
+    fg: { r: 147, g: 143, b: 153, a: 255 }
+    bg: { r: 54, g: 52, b: 59, a: 255 }
+  pos:
+    fg: *white
+    bg: { r: 125, g: 87, b: 128, a: 255 }
+  neg:
+    fg: *white
+    bg: { r: 70, g: 128, b: 131, a: 255 }
+  icon: 10
+  outline: 1

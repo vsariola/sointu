@@ -18,10 +18,10 @@ units:
       parameters: {stereo: 0}
     - type: mulp
       id: 14
-      parameters: {bandpass: 0, frequency: 82, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 82, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: filter
       id: 15
-      parameters: {bandpass: 0, frequency: 101, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 94, stereo: 0}
+      parameters: {bandpass: 0, frequency: 101, highpass: -1, lowpass: 1, resonance: 94, stereo: 0}
     - id: 225
       parameters: {}
     - type: pan

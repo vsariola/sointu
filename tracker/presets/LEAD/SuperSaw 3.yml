@@ -44,7 +44,7 @@ units:
       varargs: [350]
     - type: filter
       id: 26
-      parameters: {bandpass: 0, frequency: 128, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 77, stereo: 1}
+      parameters: {bandpass: 0, frequency: 128, highpass: 0, lowpass: 1, resonance: 77, stereo: 1}
     - type: compressor
       id: 27
       parameters: {attack: 42, invgain: 91, ratio: 81, release: 63, stereo: 1, threshold: 55}

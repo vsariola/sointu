@@ -186,12 +186,12 @@
         (local.set $retval (f32.add (local.get $retval) (local.get $high)))
     ))
 {{- end}}
-{{- if .SupportsParamValue "filter" "negbandpass" 1}}
+{{- if .SupportsParamValue "filter" "bandpass" -1}}
     (if (i32.and (local.get $flags) (i32.const 0x08)) (then
         (local.set $retval (f32.sub (local.get $retval) (local.get $band)))
     ))
 {{- end}}
-{{- if .SupportsParamValue "filter" "neghighpass" 1}}
+{{- if .SupportsParamValue "filter" "highpass" -1}}
     (if (i32.and (local.get $flags) (i32.const 0x04)) (then
         (local.set $retval (f32.sub (local.get $retval) (local.get $high)))
     ))

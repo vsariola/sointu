@@ -17,7 +17,7 @@ patch:
         - type: mulp
           parameters: {stereo: 0}
         - type: filter
-          parameters: {bandpass: 0, frequency: 32, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 64, stereo: 0}
+          parameters: {bandpass: 0, frequency: 32, highpass: -1, lowpass: 1, resonance: 64, stereo: 0}
         - type: pan
           parameters: {panning: 64, stereo: 0}
         - type: out

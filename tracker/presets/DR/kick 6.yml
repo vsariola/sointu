@@ -24,7 +24,7 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 25
-      parameters: {bandpass: 0, frequency: 12, highpass: 1, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 36, stereo: 0}
+      parameters: {bandpass: 0, frequency: 12, highpass: 1, lowpass: 0, resonance: 36, stereo: 0}
     - id: 33
       parameters: {}
     - type: envelope
@@ -35,7 +35,7 @@ units:
       parameters: {gain: 125, shape: 51, stereo: 0}
     - type: filter
       id: 32
-      parameters: {bandpass: 1, frequency: 55, highpass: 0, lowpass: 0, negbandpass: 0, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 55, highpass: 0, lowpass: 0, resonance: 128, stereo: 0}
     - type: mulp
       id: 28
       parameters: {stereo: 0}

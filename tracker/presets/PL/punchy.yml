@@ -45,10 +45,10 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 19
-      parameters: {bandpass: 0, frequency: 46, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 94, stereo: 0}
+      parameters: {bandpass: 0, frequency: 46, highpass: 0, lowpass: 1, resonance: 94, stereo: 0}
     - type: filter
       id: 20
-      parameters: {bandpass: 0, frequency: 62, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 96, stereo: 0}
+      parameters: {bandpass: 0, frequency: 62, highpass: 0, lowpass: 1, resonance: 96, stereo: 0}
     - type: mulp
       id: 21
       parameters: {stereo: 0}

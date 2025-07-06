@@ -25,16 +25,16 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 201
-      parameters: {bandpass: 0, frequency: 80, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 98, stereo: 0}
+      parameters: {bandpass: 0, frequency: 80, highpass: -1, lowpass: 1, resonance: 98, stereo: 0}
     - type: filter
       id: 225
-      parameters: {bandpass: 0, frequency: 120, highpass: 0, lowpass: 1, negbandpass: 1, neghighpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: -1, frequency: 120, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: addp
       id: 226
       parameters: {stereo: 0}
     - type: filter
       id: 202
-      parameters: {bandpass: 0, frequency: 50, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 1, resonance: 95, stereo: 0}
+      parameters: {bandpass: 0, frequency: 50, highpass: -1, lowpass: 1, resonance: 95, stereo: 0}
     - type: distort
       id: 338
       parameters: {drive: 112, stereo: 0}
