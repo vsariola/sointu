@@ -159,13 +159,15 @@ func (pt *ParamVertList) Count() int             { return (*Params)(pt).Width() 
 func (m *Model) Params() *Params  { return (*Params)(m) }
 func (pt *Params) Table() Table   { return Table{pt} }
 func (pt *Params) Cursor() Point  { return Point{pt.d.ParamIndex, pt.d.UnitIndex} }
-func (pt *Params) Cursor2() Point { return pt.Cursor() }
+func (pt *Params) Cursor2() Point { return Point{pt.d.ParamIndex, pt.d.UnitIndex2} }
 func (pt *Params) SetCursor(p Point) {
 	pt.d.ParamIndex = max(min(p.X, pt.Width()-1), 0)
 	pt.d.UnitIndex = max(min(p.Y, pt.Height()-1), 0)
-	pt.d.UnitIndex2 = pt.d.UnitIndex
 }
-func (pt *Params) SetCursor2(p Point) {}
+func (pt *Params) SetCursor2(p Point) {
+	pt.d.ParamIndex = max(min(p.X, pt.Width()-1), 0)
+	pt.d.UnitIndex2 = max(min(p.Y, pt.Height()-1), 0)
+}
 func (pt *Params) Width() int {
 	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.derived.patch) {
 		return 0

@@ -294,7 +294,7 @@ func (m *Model) updateRails() {
 		m.derived.railError = RailError{
 			InstrIndex: scratch[0].instr,
 			UnitIndex:  scratch[0].unit,
-			Err:        fmt.Errorf("instrument %d / %s unit %d / %s leave %d signals on stack, but no more signals available", scratch[0].instr, patch[scratch[0].instr].Name, scratch[0].unit, patch[scratch[0].instr].Units[scratch[0].unit].Type, len(scratch)),
+			Err:        fmt.Errorf("instrument %d / %s unit %d / %s leaves a signal on stack", scratch[0].instr, patch[scratch[0].instr].Name, scratch[0].unit, patch[scratch[0].instr].Units[scratch[0].unit].Type),
 		}
 	}
 	if m.derived.railError.Err != nil {

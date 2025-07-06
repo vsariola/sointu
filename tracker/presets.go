@@ -157,6 +157,7 @@ func (m LoadPreset) Do() {
 		m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
 	}
 	newInstr := instrumentPresets[m.Index].Copy()
+	newInstr.NumVoices = clamp(m.d.Song.Patch[m.d.InstrIndex].NumVoices, 1, vm.MAX_VOICES)
 	m.Model.assignUnitIDs(newInstr.Units)
 	m.d.Song.Patch[m.d.InstrIndex] = newInstr
 }

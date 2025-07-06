@@ -2,9 +2,7 @@ package gioui
 
 import (
 	"bytes"
-	"fmt"
 	"image"
-	"image/color"
 	"io"
 	"math"
 
@@ -16,8 +14,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
-	"gioui.org/widget"
-	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"golang.org/x/text/cases"
@@ -128,14 +124,19 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 		}
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
 			params := t.Model.Params()
-			item := params.Item(params.Cursor())
+			doRange := func(f func(p tracker.Parameter)) {
+				for i := params.Table().Range().TopLeft.Y; i <= params.Table().Range().BottomRight.Y; i++ {
+					item := params.Item(tracker.Point{X: params.Table().Range().TopLeft.X, Y: i})
+					f(item)
+				}
+			}
 			switch e.Name {
 			case key.NameLeftArrow:
-				item.Add(-1, e.Modifiers.Contain(key.ModShortcut))
+				doRange(func(item tracker.Parameter) { item.Add(-1, e.Modifiers.Contain(key.ModShortcut)) })
 			case key.NameRightArrow:
-				item.Add(1, e.Modifiers.Contain(key.ModShortcut))
+				doRange(func(item tracker.Parameter) { item.Add(1, e.Modifiers.Contain(key.ModShortcut)) })
 			case key.NameDeleteBackward, key.NameDeleteForward:
-				item.Reset()
+				doRange(func(item tracker.Parameter) { item.Reset() })
 			}
 		}
 	}
@@ -222,12 +223,19 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 		if y < 0 || y >= len(pe.Parameters) || x < 0 || x >= len(pe.Parameters[y]) {
 			return D{}
 		}
-		if point == cursor {
-			c := t.Theme.Cursor.Inactive
+		selection := pe.paramTable.Table.Range()
+		if selection.Contains(point) {
+			color := t.Theme.Selection.Inactive
 			if gtx.Focused(pe.paramTable) {
-				c = t.Theme.Cursor.Active
+				color = t.Theme.Selection.Active
 			}
-			paint.FillShape(gtx.Ops, c, clip.Rect{Min: image.Pt(0, 0), Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
+			if point == cursor {
+				color = t.Theme.Cursor.Inactive
+				if gtx.Focused(pe.paramTable) {
+					color = t.Theme.Cursor.Active
+				}
+			}
+			paint.FillShape(gtx.Ops, color, clip.Rect{Min: image.Pt(0, 0), Max: image.Pt(gtx.Constraints.Min.X, gtx.Constraints.Min.Y)}.Op())
 		}
 
 		param := t.Model.Params().Item(point)
@@ -420,10 +428,9 @@ func (t *UnitEditor) Tags(level int, yield TagYieldFunc) bool {
 }
 
 type ParameterState struct {
-	knobState  KnobState
-	boolWidget widget.Bool
-	clickable  Clickable
-	portState  PortState
+	knobState KnobState
+	clickable Clickable
+	portState PortState
 }
 
 type ParameterStyle struct {
@@ -443,7 +450,6 @@ func (t *Tracker) ParamStyle(Parameter tracker.Parameter, th *Theme, paramWidget
 }
 
 func (p ParameterStyle) Layout(gtx C) D {
-	//_, _ := p.w.Parameter.Info()
 	title := Label(p.Theme, &p.Theme.UnitEditor.Name, p.Parameter.Name())
 	t := TrackerFromContext(gtx)
 	widget := func(gtx C) D {
@@ -464,46 +470,6 @@ func (p ParameterStyle) Layout(gtx C) D {
 		case tracker.IDParameter:
 			btn := ActionBtn(t.ChooseSendSource(p.Parameter.UnitID()), t.Theme, &p.State.clickable, "Set", p.Parameter.Hint().Label)
 			return btn.Layout(gtx)
-			/*instrItems := make([]ActionMenuItem, p.tracker.Instruments().Count())
-			for i := range instrItems {
-				i := i
-				name, _, _, _ := p.tracker.Instruments().Item(i)
-				instrItems[i].Text = name
-				instrItems[i].Icon = icons.NavigationChevronRight
-				instrItems[i].Action = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
-					if id, ok := p.tracker.Instruments().FirstID(i); ok {
-						p.w.Parameter.SetValue(id)
-					}
-				}))
-			}
-			var unitItems []ActionMenuItem
-			instrName := "<instr>"
-			unitName := "<unit>"
-			targetInstrName, units, targetUnitIndex, ok := p.tracker.UnitInfo(p.w.Parameter.Value())
-			if ok {
-				instrName = targetInstrName
-				unitName = buildUnitLabel(targetUnitIndex, units[targetUnitIndex])
-				unitItems = make([]ActionMenuItem, len(units))
-				for j, unit := range units {
-					id := unit.ID
-					unitItems[j].Text = buildUnitLabel(j, unit)
-					unitItems[j].Icon = icons.NavigationChevronRight
-					unitItems[j].Action = tracker.MakeEnabledAction((tracker.DoFunc)(func() {
-						p.w.Parameter.SetValue(id)
-					}))
-				}
-			}
-			defer pointer.PassOp{}.Push(gtx.Ops).Pop()
-			instrBtn := MenuBtn(p.tracker.Theme, &p.w.instrMenu, &p.w.instrBtn, instrName)
-			unitBtn := MenuBtn(p.tracker.Theme, &p.w.unitMenu, &p.w.unitBtn, unitName)
-			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(func(gtx C) D {
-					return instrBtn.Layout(gtx, instrItems...)
-				}),
-				layout.Rigid(func(gtx C) D {
-					return unitBtn.Layout(gtx, unitItems...)
-				}),
-			)*/
 		}
 		if _, ok := p.Parameter.Port(); ok {
 			k := Port(p.Theme, &p.State.portState)
@@ -514,34 +480,4 @@ func (p ParameterStyle) Layout(gtx C) D {
 	title.Layout(gtx)
 	layout.Center.Layout(gtx, widget)
 	return D{Size: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}
-	/*	layout.Rigid(func(gtx C) D {
-		if p.w.Parameter.Type() != tracker.IDParameter {
-			hint := p.w.Parameter.Hint()
-			label := Label(p.tracker.Theme, &p.tracker.Theme.UnitEditor.Hint, hint.Label)
-			label.Alignment = text.Middle
-			if !hint.Valid {
-				label.Color = p.tracker.Theme.UnitEditor.InvalidParam
-			}
-			if info == "" {
-				return label.Layout(gtx)
-			}
-			tooltip := component.PlatformTooltip(p.SendTargetTheme, info)
-			return p.w.tipArea.Layout(gtx, tooltip, label.Layout)
-		}
-		return D{}
-	}),*/
-}
-
-func drawCircle(gtx C, i int, nRGBA color.NRGBA) D {
-	defer clip.Ellipse(image.Rectangle{Max: image.Pt(i, i)}).Push(gtx.Ops).Pop()
-	paint.FillShape(gtx.Ops, nRGBA, clip.Ellipse{Max: image.Pt(i, i)}.Op(gtx.Ops))
-	return D{Size: image.Pt(i, i)}
-}
-
-func buildUnitLabel(index int, u sointu.Unit) string {
-	text := u.Type
-	if u.Comment != "" {
-		text = fmt.Sprintf("%s \"%s\"", text, u.Comment)
-	}
-	return fmt.Sprintf("%d: %s", index, text)
 }
