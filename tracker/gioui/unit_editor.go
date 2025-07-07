@@ -93,6 +93,12 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 	for pe.commentEditor.Update(gtx, t.UnitComment()) != EditorEventNone {
 		t.FocusPrev(gtx, false)
 	}
+	for pe.ClearUnitBtn.Clicked(gtx) {
+		t.ClearUnit().Do()
+		t.UnitSearch().SetValue("")
+		t.UnitSearching().SetValue(true)
+		pe.searchList.Focus()
+	}
 	for {
 		e, ok := gtx.Event(
 			key.Filter{Focus: pe.searchList, Name: key.NameEnter},
@@ -123,20 +129,13 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 			break
 		}
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
-			params := t.Model.Params()
-			doRange := func(f func(p tracker.Parameter)) {
-				for i := params.Table().Range().TopLeft.Y; i <= params.Table().Range().BottomRight.Y; i++ {
-					item := params.Item(tracker.Point{X: params.Table().Range().TopLeft.X, Y: i})
-					f(item)
-				}
-			}
 			switch e.Name {
 			case key.NameLeftArrow:
-				doRange(func(item tracker.Parameter) { item.Add(-1, e.Modifiers.Contain(key.ModShortcut)) })
+				t.Model.Params().Table().Add(-1, e.Modifiers.Contain(key.ModShortcut))
 			case key.NameRightArrow:
-				doRange(func(item tracker.Parameter) { item.Add(1, e.Modifiers.Contain(key.ModShortcut)) })
+				t.Model.Params().Table().Add(1, e.Modifiers.Contain(key.ModShortcut))
 			case key.NameDeleteBackward, key.NameDeleteForward:
-				doRange(func(item tracker.Parameter) { item.Reset() })
+				t.Model.Params().Table().Clear()
 			}
 		}
 	}
@@ -145,6 +144,7 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameEnter},
 			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameReturn},
 			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameLeftArrow},
+			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameDeleteBackward},
 		)
 		if !ok {
 			break
@@ -154,6 +154,7 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 			case key.NameLeftArrow:
 				t.PatchPanel.unitList.dragList.Focus()
 			case key.NameDeleteBackward:
+				t.ClearUnit().Do()
 				t.UnitSearch().SetValue("")
 				t.UnitSearching().SetValue(true)
 				pe.searchList.Focus()
@@ -369,29 +370,25 @@ func (pe *UnitEditor) layoutFooter(gtx C) D {
 	t := TrackerFromContext(gtx)
 	st := t.Units().SelectedType()
 	text := "Choose unit type"
-	if st != "" {
+	if !t.UnitSearching().Value() {
 		text = pe.caser.String(st)
 	}
 	hintText := Label(t.Theme, &t.Theme.UnitEditor.Hint, text)
 	deleteUnitBtn := ActionIconBtn(t.DeleteUnit(), t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
 	copyUnitBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
 	disableUnitBtn := ToggleIconBtn(t.UnitDisabled(), t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
-	w := layout.Spacer{Width: t.Theme.IconButton.Enabled.Size}.Layout
-	if st != "" {
-		clearUnitBtn := ActionIconBtn(t.ClearUnit(), t.Theme, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
-		w = clearUnitBtn.Layout
-	}
+	clearUnitBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(deleteUnitBtn.Layout),
 		layout.Rigid(copyUnitBtn.Layout),
 		layout.Rigid(disableUnitBtn.Layout),
-		layout.Rigid(w),
+		layout.Rigid(clearUnitBtn.Layout),
 		layout.Rigid(func(gtx C) D {
-			gtx.Constraints.Min.X = gtx.Dp(120)
+			gtx.Constraints.Min.X = gtx.Dp(130)
 			return hintText.Layout(gtx)
 		}),
 		layout.Flexed(1, func(gtx C) D {
-			return pe.commentEditor.Layout(gtx, t.UnitComment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "---")
+			return pe.commentEditor.Layout(gtx, t.UnitComment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "Comment")
 		}),
 	)
 }

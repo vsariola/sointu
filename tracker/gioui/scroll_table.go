@@ -62,7 +62,7 @@ func NewScrollTable(table tracker.Table, vertList, horizList tracker.List) *Scro
 	}
 	for k, a := range keyBindingMap {
 		switch a {
-		case "Copy", "Paste", "Cut", "Increase", "Decrease":
+		case "Copy", "Paste", "Cut", "Increase", "Decrease", "IncreaseMore", "DecreaseMore":
 			ret.eventFilters = append(ret.eventFilters, key.Filter{Focus: ret, Name: k.Name, Required: k.Modifiers})
 		}
 	}
@@ -305,11 +305,11 @@ func (s *ScrollTable) command(gtx C, e key.Event, p image.Point) {
 		case "Paste":
 			gtx.Execute(clipboard.ReadCmd{Tag: s})
 			return
-		case "Increase":
-			s.Table.Add(1)
+		case "Increase", "IncreaseMore":
+			s.Table.Add(1, a == "IncreaseMore")
 			return
-		case "Decrease":
-			s.Table.Add(-1)
+		case "Decrease", "DecreaseMore":
+			s.Table.Add(-1, a == "DecreaseMore")
 			return
 		}
 	}

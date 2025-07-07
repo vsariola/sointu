@@ -332,22 +332,22 @@ func (m *Redo) Do() {
 // AddSemiTone
 
 func (m *Model) AddSemitone() Action { return MakeEnabledAction((*AddSemitone)(m)) }
-func (m *AddSemitone) Do()           { Table{(*Notes)(m)}.Add(1) }
+func (m *AddSemitone) Do()           { Table{(*Notes)(m)}.Add(1, false) }
 
 // SubtractSemitone
 
 func (m *Model) SubtractSemitone() Action { return MakeEnabledAction((*SubtractSemitone)(m)) }
-func (m *SubtractSemitone) Do()           { Table{(*Notes)(m)}.Add(-1) }
+func (m *SubtractSemitone) Do()           { Table{(*Notes)(m)}.Add(-1, false) }
 
 // AddOctave
 
 func (m *Model) AddOctave() Action { return MakeEnabledAction((*AddOctave)(m)) }
-func (m *AddOctave) Do()           { Table{(*Notes)(m)}.Add(12) }
+func (m *AddOctave) Do()           { Table{(*Notes)(m)}.Add(1, true) }
 
 // SubtractOctave
 
 func (m *Model) SubtractOctave() Action { return MakeEnabledAction((*SubtractOctave)(m)) }
-func (m *SubtractOctave) Do()           { Table{(*Notes)(m)}.Add(-12) }
+func (m *SubtractOctave) Do()           { Table{(*Notes)(m)}.Add(-1, true) }
 
 // EditNoteOff
 

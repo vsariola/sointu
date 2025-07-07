@@ -8,6 +8,7 @@ import (
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -196,23 +197,68 @@ func (pt *Params) set(p Point, value int) {
 	q := pt.Item(p)
 	q.SetValue(value)
 }
-func (pt *Params) add(rect Rect, delta int) (ok bool) {
+func (pt *Params) add(rect Rect, delta int, largeStep bool) (ok bool) {
 	for y := rect.TopLeft.Y; y <= rect.BottomRight.Y; y++ {
 		for x := rect.TopLeft.X; x <= rect.BottomRight.X; x++ {
 			p := Point{x, y}
 			q := pt.Item(p)
-			if !q.SetValue(q.Value() + delta) {
+			if !q.Add(delta, largeStep) {
 				return false
 			}
 		}
 	}
 	return true
 }
-func (pt *Params) marshal(rect Rect) (data []byte, ok bool) {
-	panic("NOT IMPLEMENTED")
+
+type paramsTable struct {
+	Params [][]int `yaml:",flow"`
 }
-func (pt *Params) unmarshalAtCursor(data []byte) (ok bool) {
-	panic("NOT IMPLEMENTED")
+
+func (pt *Params) marshal(rect Rect) (data []byte, ok bool) {
+	width := rect.BottomRight.X - rect.TopLeft.X + 1
+	height := rect.BottomRight.Y - rect.TopLeft.Y + 1
+	var table = paramsTable{Params: make([][]int, 0, width)}
+	for x := 0; x < width; x++ {
+		table.Params = append(table.Params, make([]int, 0, rect.BottomRight.Y-rect.TopLeft.Y+1))
+		for y := 0; y < height; y++ {
+			p := pt.Item(Point{x + rect.TopLeft.X, y + rect.TopLeft.Y})
+			table.Params[x] = append(table.Params[x], p.Value())
+		}
+	}
+	ret, err := yaml.Marshal(table)
+	if err != nil {
+		return nil, false
+	}
+	return ret, true
+}
+func (pt *Params) unmarshal(data []byte) (paramsTable, bool) {
+	var table paramsTable
+	yaml.Unmarshal(data, &table)
+	if len(table.Params) == 0 {
+		return paramsTable{}, false
+	}
+	for i := 0; i < len(table.Params); i++ {
+		if len(table.Params[i]) > 0 {
+			return table, true
+		}
+	}
+	return paramsTable{}, false
+}
+
+func (pt *Params) unmarshalAtCursor(data []byte) (ret bool) {
+	table, ok := pt.unmarshal(data)
+	if !ok {
+		return false
+	}
+	for i := 0; i < len(table.Params); i++ {
+		for j, q := range table.Params[i] {
+			x := i + pt.Cursor().X
+			y := j + pt.Cursor().Y
+			p := pt.Item(Point{x, y})
+			ret = p.SetValue(q) || ret
+		}
+	}
+	return ret
 }
 func (pt *Params) unmarshalRange(rect Rect, data []byte) (ok bool) {
 	panic("NOT IMPLEMENTED")
