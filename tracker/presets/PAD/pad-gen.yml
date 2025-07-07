@@ -1,0 +1,58 @@
+name: pad-gen
+numvoices: 1
+units:
+    - id: 233
+      parameters: {}
+      comment: Main envelopes
+    - type: envelope
+      id: 163
+      parameters: {attack: 61, decay: 87, gain: 83, release: 76, stereo: 0, sustain: 79}
+    - type: envelope
+      id: 228
+      parameters: {attack: 25, decay: 91, gain: 127, release: 74, stereo: 0, sustain: 128}
+    - type: mulp
+      id: 229
+      parameters: {stereo: 0}
+    - id: 234
+      parameters: {}
+      comment: Main oscillators
+    - type: oscillator
+      id: 164
+      parameters: {color: 41, detune: 52, gain: 64, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 88, type: 1, unison: 3}
+    - type: add
+      id: 214
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 165
+      parameters: {color: 74, detune: 52, gain: 62, lfo: 0, phase: 0, shape: 58, stereo: 0, transpose: 76, type: 1, unison: 2}
+    - type: addp
+      id: 166
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 167
+      parameters: {stereo: 0}
+    - id: 235
+      parameters: {}
+      comment: Effects & output
+    - type: filter
+      id: 230
+      parameters: {bandpass: 1, frequency: 68, highpass: 1, lowpass: 0, resonance: 93, stereo: 0}
+    - type: pan
+      id: 168
+      parameters: {panning: 64, stereo: 0}
+    - type: delay
+      id: 169
+      parameters: {damp: 116, dry: 117, feedback: 23, notetracking: 0, pregain: 52, stereo: 1}
+      varargs: [12550, 24402, 21265, 32419]
+    - type: outaux
+      id: 172
+      parameters: {auxgain: 12, outgain: 16, stereo: 1}
+    - id: 236
+      parameters: {}
+      comment: Filter modulation
+    - type: loadnote
+      id: 231
+      parameters: {stereo: 0}
+    - type: send
+      id: 232
+      parameters: {amount: 94, port: 0, sendpop: 1, stereo: 0, target: 230, voice: 0}

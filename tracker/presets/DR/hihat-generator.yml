@@ -1,0 +1,52 @@
+name: hihat-generator
+comment: |
+    Closed hihat: Atk 8 + Dec 60
+    Open hihat: Atk8 + Dec75
+    Shaker: Atk55 + Dec60
+numvoices: 1
+units:
+    - id: 333
+      parameters: {}
+      comment: Main envelopes
+    - type: envelope
+      id: 1
+      parameters: {attack: 7, decay: 60, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: envelope
+      id: 13
+      parameters: {attack: 0, decay: 68, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: mulp
+      id: 332
+      parameters: {stereo: 0}
+    - id: 334
+      parameters: {}
+      comment: Noise
+    - type: noise
+      id: 2
+      parameters: {gain: 63, shape: 52, stereo: 0}
+    - type: mulp
+      id: 15
+      parameters: {stereo: 0}
+    - id: 335
+      parameters: {}
+      comment: Modulated filters
+    - type: noise
+      id: 10
+      parameters: {gain: 31, shape: 50, stereo: 0}
+    - type: send
+      id: 11
+      parameters: {amount: 51, port: 0, sendpop: 1, stereo: 0, target: 12, voice: 0}
+    - type: filter
+      id: 12
+      parameters: {bandpass: 0, frequency: 110, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
+    - type: filter
+      id: 331
+      parameters: {bandpass: -1, frequency: 94, highpass: 0, lowpass: 0, resonance: 128, stereo: 0}
+    - id: 336
+      parameters: {}
+      comment: Output
+    - type: pan
+      id: 5
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 6
+      parameters: {auxgain: 0, outgain: 59, stereo: 1}

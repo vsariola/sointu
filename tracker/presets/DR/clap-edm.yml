@@ -1,0 +1,51 @@
+name: clap-edm
+numvoices: 1
+units:
+    - type: envelope
+      id: 14
+      parameters: {attack: 0, decay: 66, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: delay
+      id: 15
+      parameters: {damp: 0, dry: 0, feedback: 66, notetracking: 0, pregain: 128, stereo: 0}
+      varargs: [1047, 693]
+    - type: noise
+      id: 16
+      parameters: {gain: 65, shape: 128, stereo: 0}
+    - type: filter
+      id: 39
+      parameters: {bandpass: 1, frequency: 55, highpass: 0, lowpass: 0, resonance: 66, stereo: 0}
+    - type: mulp
+      id: 17
+      parameters: {stereo: 0}
+    - type: envelope
+      id: 18
+      parameters: {attack: 0, decay: 54, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: delay
+      id: 19
+      parameters: {damp: 82, dry: 93, feedback: 0, notetracking: 0, pregain: 74, stereo: 0}
+      varargs: [1030, 1744]
+    - type: noise
+      id: 20
+      parameters: {gain: 128, shape: 79, stereo: 0}
+    - type: filter
+      id: 23
+      parameters: {bandpass: 1, frequency: 43, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+    - type: mulp
+      id: 21
+      parameters: {stereo: 0}
+    - type: addp
+      id: 22
+      parameters: {stereo: 0}
+    - type: distort
+      id: 25
+      parameters: {drive: 121, stereo: 0}
+    - type: pan
+      id: 36
+      parameters: {panning: 76, stereo: 0}
+    - type: delay
+      id: 40
+      parameters: {damp: 64, dry: 19, feedback: 0, notetracking: 0, pregain: 80, stereo: 1}
+      varargs: [350, 1]
+    - type: outaux
+      id: 37
+      parameters: {auxgain: 1, outgain: 56, stereo: 1}

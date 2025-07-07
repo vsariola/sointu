@@ -1,0 +1,60 @@
+name: slap-bass
+numvoices: 1
+units:
+    - id: 1066
+      parameters: {}
+      comment: Modulations
+    - type: envelope
+      id: 1059
+      parameters: {attack: 12, decay: 71, gain: 128, release: 74, stereo: 1, sustain: 40}
+    - type: send
+      id: 30
+      parameters: {amount: 37, port: 3, sendpop: 0, stereo: 1, target: 400, voice: 0}
+    - type: send
+      id: 200
+      parameters: {amount: 95, port: 0, sendpop: 1, stereo: 1, target: 170}
+    - id: 1065
+      parameters: {}
+      comment: Main oscillators
+    - type: oscillator
+      id: 400
+      parameters: {color: 116, detune: 64, gain: 128, lfo: 0, phase: 80, shape: 84, stereo: 0, transpose: 64, type: 0, unison: 2}
+    - type: oscillator
+      id: 1060
+      parameters: {color: 106, detune: 64, gain: 128, lfo: 0, phase: 63, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 1}
+    - type: addp
+      id: 1061
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1033
+      parameters: {color: 67, detune: 64, gain: 128, looplength: 905, loopstart: 6513, phase: 0, samplestart: 1252819, shape: 105, stereo: 0, transpose: 93, type: 4, unison: 0}
+    - type: filter
+      id: 1035
+      parameters: {bandpass: 0, frequency: 50, highpass: -1, lowpass: 1, resonance: 100, stereo: 0}
+    - type: addp
+      id: 1032
+      parameters: {stereo: 0}
+    - id: 1064
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 21
+      parameters: {attack: 40, decay: 65, gain: 74, release: 71, stereo: 0, sustain: 77}
+    - type: mulp
+      id: 22
+      parameters: {stereo: 0}
+    - id: 1063
+      parameters: {}
+      comment: Filters & output
+    - type: filter
+      id: 170
+      parameters: {bandpass: 0, frequency: 28, highpass: 0, lowpass: 1, resonance: 65, stereo: 0}
+    - type: filter
+      id: 1062
+      parameters: {bandpass: -1, frequency: 57, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
+    - type: pan
+      id: 18
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 19
+      parameters: {auxgain: 10, outgain: 65, stereo: 1}

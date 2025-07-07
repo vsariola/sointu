@@ -64,7 +64,6 @@ func NewUnitEditor(m *tracker.Model) *UnitEditor {
 func (pe *UnitEditor) Layout(gtx C) D {
 	t := TrackerFromContext(gtx)
 	pe.update(gtx, t)
-	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 	editorFunc := pe.layoutRack
 	if pe.showingChooser() {
 		editorFunc = pe.layoutUnitTypeChooser
@@ -183,6 +182,7 @@ func (pe *UnitEditor) ChooseUnitType(t *Tracker) {
 }
 
 func (pe *UnitEditor) layoutRack(gtx C) D {
+	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 	t := TrackerFromContext(gtx)
 	// create enough parameter widget to match the number of parameters
 	width := pe.paramTable.Table.Width()
