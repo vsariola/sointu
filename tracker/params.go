@@ -175,6 +175,12 @@ func (pt *Params) Width() int {
 	}
 	return pt.derived.patch[pt.d.InstrIndex].paramsWidth
 }
+func (pt *Params) RowWidth(y int) int {
+	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.derived.patch) || y < 0 || y >= len(pt.derived.patch[pt.d.InstrIndex].params) {
+		return 0
+	}
+	return len(pt.derived.patch[pt.d.InstrIndex].params[y])
+}
 func (pt *Params) Height() int { return (*Model)(pt).Units().Count() }
 func (pt *Params) MoveCursor(dx, dy int) (ok bool) {
 	p := pt.Cursor()
@@ -260,8 +266,29 @@ func (pt *Params) unmarshalAtCursor(data []byte) (ret bool) {
 	}
 	return ret
 }
-func (pt *Params) unmarshalRange(rect Rect, data []byte) (ok bool) {
-	panic("NOT IMPLEMENTED")
+func (pt *Params) unmarshalRange(rect Rect, data []byte) (ret bool) {
+	table, ok := pt.unmarshal(data)
+	if !ok {
+		return false
+	}
+	if len(table.Params) == 0 || len(table.Params[0]) == 0 {
+		return false
+	}
+	width := rect.BottomRight.X - rect.TopLeft.X + 1
+	height := rect.BottomRight.Y - rect.TopLeft.Y + 1
+	if len(table.Params) < width {
+		return false
+	}
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			if len(table.Params[0]) < height {
+				return false
+			}
+			p := pt.Item(Point{x + rect.TopLeft.X, y + rect.TopLeft.Y})
+			ret = p.SetValue(table.Params[x][y]) || ret
+		}
+	}
+	return ret
 }
 func (pt *Params) change(kind string, severity ChangeSeverity) func() {
 	return (*Model)(pt).change(kind, PatchChange, severity)

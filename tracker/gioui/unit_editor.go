@@ -5,6 +5,7 @@ import (
 	"image"
 	"io"
 	"math"
+	"time"
 
 	"gioui.org/f32"
 	"gioui.org/io/clipboard"
@@ -137,6 +138,12 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 			case key.NameDeleteBackward, key.NameDeleteForward:
 				t.Model.Params().Table().Clear()
 			}
+			c := t.Model.Params().Cursor()
+			if c.X >= 0 && c.Y >= 0 && c.Y < len(pe.Parameters) && c.X < len(pe.Parameters[c.Y]) {
+				ta := &pe.Parameters[c.Y][c.X].knobState.tipArea
+				ta.Appear(gtx.Now)
+				ta.Exit.SetTarget(gtx.Now.Add(ta.ExitDuration))
+			}
 		}
 	}
 	for {
@@ -191,7 +198,7 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 	columnTitleHeight := gtx.Dp(0)
 	for i := range pe.Parameters {
 		for len(pe.Parameters[i]) < width {
-			pe.Parameters[i] = append(pe.Parameters[i], &ParameterState{})
+			pe.Parameters[i] = append(pe.Parameters[i], &ParameterState{knobState: KnobState{tipArea: TipArea{ExitDuration: time.Second * 2}}})
 		}
 	}
 	coltitle := func(gtx C, x int) D {
@@ -242,6 +249,15 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 		param := t.Model.Params().Item(point)
 		paramStyle := t.ParamStyle(param, t.Theme, pe.Parameters[y][x], pe.paramTable.Table.Cursor() == point)
 		paramStyle.Layout(gtx)
+		comment := t.Units().Item(y).Comment
+		if comment != "" && x == t.Model.Params().RowWidth(y) {
+			label := Label(t.Theme, &t.Theme.UnitEditor.RackComment, comment)
+			return layout.W.Layout(gtx, func(gtx C) D {
+				gtx.Constraints.Max.X = 1e6
+				gtx.Constraints.Min.Y = 0
+				return label.Layout(gtx)
+			})
+		}
 		return D{Size: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}
 	}
 	table := FilledScrollTable(t.Theme, pe.paramTable)
@@ -368,10 +384,9 @@ func mulVec(a, b f32.Point) f32.Point {
 
 func (pe *UnitEditor) layoutFooter(gtx C) D {
 	t := TrackerFromContext(gtx)
-	st := t.Units().SelectedType()
 	text := "Choose unit type"
 	if !t.UnitSearching().Value() {
-		text = pe.caser.String(st)
+		text = pe.caser.String(t.Units().SelectedType())
 	}
 	hintText := Label(t.Theme, &t.Theme.UnitEditor.Hint, text)
 	deleteUnitBtn := ActionIconBtn(t.DeleteUnit(), t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")

@@ -85,14 +85,15 @@ type Theme struct {
 		}
 	}
 	UnitEditor struct {
-		Name      LabelStyle
-		Chooser   LabelStyle
-		Hint      LabelStyle
-		WireColor color.NRGBA
-		WireHint  LabelStyle
-		Width     unit.Dp
-		Height    unit.Dp
-		UnitList  struct {
+		Name        LabelStyle
+		Chooser     LabelStyle
+		Hint        LabelStyle
+		WireColor   color.NRGBA
+		WireHint    LabelStyle
+		Width       unit.Dp
+		Height      unit.Dp
+		RackComment LabelStyle
+		UnitList    struct {
 			LabelWidth unit.Dp
 			Name       LabelStyle
 			Disabled   LabelStyle
