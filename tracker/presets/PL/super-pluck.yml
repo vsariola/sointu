@@ -1,5 +1,5 @@
 name: super-pluck
-numvoices: 4
+numvoices: 1
 units:
     - id: 34
       parameters: {}

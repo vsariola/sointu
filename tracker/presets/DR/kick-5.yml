@@ -1,6 +1,6 @@
 name: kick-5
 comment: 'Suggested note: C-3'
-numvoices: 2
+numvoices: 1
 units:
     - id: 285
       parameters: {}

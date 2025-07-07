@@ -1,5 +1,5 @@
 name: super-saw
-numvoices: 4
+numvoices: 1
 units:
     - id: 231
       parameters: {}

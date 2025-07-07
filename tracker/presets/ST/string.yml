@@ -1,5 +1,5 @@
 name: string
-numvoices: 3
+numvoices: 1
 units:
     - id: 66
       parameters: {}

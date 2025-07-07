@@ -1,6 +1,6 @@
 name: super-saw-3
 comment: Automate filter frequency for the classic trance sound
-numvoices: 4
+numvoices: 1
 units:
     - id: 231
       parameters: {}

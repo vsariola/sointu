@@ -1,5 +1,5 @@
 name: guitar
-numvoices: 2
+numvoices: 1
 units:
     - id: 92
       parameters: {}

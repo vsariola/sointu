@@ -1,5 +1,5 @@
 name: rhodes
-numvoices: 8
+numvoices: 1
 units:
     - id: 183
       parameters: {}

@@ -1,5 +1,5 @@
 name: organ
-numvoices: 4
+numvoices: 1
 units:
     - type: envelope
       id: 228

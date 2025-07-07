@@ -1,6 +1,6 @@
 name: snare-edm-3
 comment: 'Suggested range: E-4'
-numvoices: 2
+numvoices: 1
 units:
     - id: 341
       parameters: {}

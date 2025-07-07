@@ -1,6 +1,6 @@
 name: brass
 comment: Brass sound use for short stabs at C1-C2 range
-numvoices: 4
+numvoices: 1
 units:
     - id: 225
       parameters: {}

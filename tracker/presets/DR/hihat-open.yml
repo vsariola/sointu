@@ -1,5 +1,5 @@
 name: hihat-open
-numvoices: 2
+numvoices: 1
 units:
     - id: 19
       parameters: {}
