@@ -262,8 +262,13 @@ func (k *KnobWidget) Layout(gtx C) D {
 			layout.Stacked(knob),
 			layout.Stacked(label.Layout))
 	}
+	if !k.Scroll {
+		defer pointer.PassOp{}.Push(gtx.Ops).Pop()
+	}
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
-	event.Op(gtx.Ops, k.State)
+	if k.Scroll {
+		event.Op(gtx.Ops, k.State)
+	}
 	k.State.drag.Add(gtx.Ops)
 	if k.Hint != "" {
 		c := gtx.Constraints
@@ -362,9 +367,11 @@ func (s *SwitchWidget) Layout(gtx C) D {
 			s.State.tipArea.Appear(gtx.Now)
 		}
 	}
-	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
-	event.Op(gtx.Ops, s.State)
-	s.State.drag.Add(gtx.Ops)
+	if s.Scroll {
+		defer pointer.PassOp{}.Push(gtx.Ops).Pop()
+		defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
+		event.Op(gtx.Ops, s.State)
+	}
 	return layout.Center.Layout(gtx, s.layoutSwitch)
 }
 
