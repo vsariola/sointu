@@ -104,10 +104,10 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "resolution", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(24 * float64(v) / 128), "bits" }}},
 	"gain": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB" }}},
 	"invgain": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "invgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "invgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(128/float64(v)), 'g', 3, 64), "dB" }}},
 	"dbgain": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "decibels", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(40 * (float64(v)/64 - 1)), "dB" }}},
@@ -135,23 +135,23 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
 		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
 		{Name: "invgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) {
-			return strconv.FormatFloat(20*math.Log10(128/float64(v)), 'f', 2, 64), "dB"
+			return strconv.FormatFloat(toDecibel(128/float64(v)), 'g', 3, 64), "dB"
 		}},
 		{Name: "threshold", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) {
-			return strconv.FormatFloat(20*math.Log10(float64(v)/128), 'f', 2, 64), "dB"
+			return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB"
 		}},
 		{Name: "ratio", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(1 - float64(v)/128), "" }}},
 	"speed": []UnitParameter{},
 	"out": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB" }}},
 	"outaux": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "outgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "auxgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "outgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB" }},
+		{Name: "auxgain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB" }}},
 	"aux": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB" }},
 		{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false, DisplayFunc: arrDispFunc(channelNames[:])}},
 	"send": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
@@ -164,13 +164,13 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "attack", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return engineeringTime(math.Pow(2, 24*float64(v)/128) / 44100) }},
 		{Name: "decay", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return engineeringTime(math.Pow(2, 24*float64(v)/128) / 44100) }},
-		{Name: "sustain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "sustain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB" }},
 		{Name: "release", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return engineeringTime(math.Pow(2, 24*float64(v)/128) / 44100) }},
-		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB" }}},
 	"noise": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "shape", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true}},
+		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB" }}},
 	"oscillator": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "transpose", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: oscillatorTransposeDispFunc},
@@ -178,7 +178,7 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "phase", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "color", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "shape", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true},
-		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB" }},
 		{Name: "frequency", MinValue: 0, MaxValue: -1, CanSet: false, CanModulate: true},
 		{Name: "type", MinValue: int(Sine), MaxValue: int(Sample), CanSet: true, CanModulate: false, DisplayFunc: arrDispFunc(oscTypes[:])},
 		{Name: "lfo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
@@ -289,6 +289,15 @@ func engineeringTime(sec float64) (string, string) {
 
 func formatFloat(f float64) string {
 	return strconv.FormatFloat(f, 'f', -1, 64)
+}
+
+func toDecibel(amplitude float64) float64 {
+	if amplitude <= 0 {
+		return math.Inf(-1)
+	}
+	// Decibels are defined as 20 * log10(amplitude)
+	// https://en.wikipedia.org/wiki/Decibel#Sound_pressure
+	return 20 * math.Log10(amplitude)
 }
 
 // When unit.Type = "oscillator", its unit.Parameter["Type"] tells the type of
