@@ -177,7 +177,11 @@ func (s *ParamState) update(gtx C, param tracker.Parameter, scroll bool) {
 			// update the value based on the drag amount
 			m := param.Range()
 			d := p.Position.Sub(s.dragStartPt)
-			amount := float32(d.X-d.Y) / float32(gtx.Dp(128))
+			speed := gtx.Dp(512)
+			if p.Modifiers.Contain(key.ModCtrl) {
+				speed = gtx.Dp(128)
+			}
+			amount := float32(d.X-d.Y) / float32(speed)
 			newValue := int(float32(s.dragStartVal) + amount*float32(m.Max-m.Min))
 			param.SetValue(newValue)
 			s.tipArea.Appear(gtx.Now)
