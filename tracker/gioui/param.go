@@ -337,6 +337,30 @@ func Switch(v tracker.Parameter, th *Theme, state *ParamState, hint string, scro
 
 func (s *SwitchWidget) Layout(gtx C) D {
 	s.State.update(gtx, s.Value, s.Scroll)
+	for s.Scroll {
+		ev, ok := gtx.Event(pointer.Filter{Target: s.State, Kinds: pointer.Press})
+		if !ok {
+			break
+		}
+		if pe, ok := ev.(pointer.Event); ok && pe.Kind == pointer.Press {
+			curVal := s.Value.Value()
+			if pe.Buttons == pointer.ButtonPrimary {
+				if curVal >= 1 {
+					s.Value.SetValue(0)
+				} else {
+					s.Value.SetValue(curVal + 1)
+				}
+			}
+			if pe.Buttons == pointer.ButtonSecondary {
+				if curVal <= -1 {
+					s.Value.SetValue(0)
+				} else {
+					s.Value.SetValue(curVal - 1)
+				}
+			}
+			s.State.tipArea.Appear(gtx.Now)
+		}
+	}
 	width := gtx.Dp(s.Style.Width)
 	height := gtx.Dp(s.Style.Height)
 	var fg, bg color.NRGBA
