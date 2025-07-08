@@ -118,7 +118,7 @@ type Theme struct {
 	Knob         KnobStyle
 	DisabledKnob KnobStyle
 	Switch       SwitchStyle
-	SignalRail   SignalRailStyle
+	SignalRail   RailStyle
 	Port         PortStyle
 
 	// iconCache is used to cache the icons created from iconvg data

@@ -15,7 +15,7 @@ import (
 const maxSignalsDrawn = 16
 
 type (
-	SignalRailStyle struct {
+	RailStyle struct {
 		Color        color.NRGBA
 		LineWidth    unit.Dp
 		SignalWidth  unit.Dp
@@ -23,22 +23,22 @@ type (
 		PortColor    color.NRGBA
 	}
 
-	SignalRailWidget struct {
-		Style  *SignalRailStyle
+	RailWidget struct {
+		Style  *RailStyle
 		Signal tracker.Rail
 		Height unit.Dp
 	}
 )
 
-func SignalRail(th *Theme, signal tracker.Rail) SignalRailWidget {
-	return SignalRailWidget{
+func Rail(th *Theme, signal tracker.Rail) RailWidget {
+	return RailWidget{
 		Style:  &th.SignalRail,
 		Signal: signal,
 		Height: th.UnitEditor.Height,
 	}
 }
 
-func (s SignalRailWidget) Layout(gtx C) D {
+func (s RailWidget) Layout(gtx C) D {
 	sw := gtx.Dp(s.Style.SignalWidth)
 	h := gtx.Dp(s.Height)
 	if s.Signal.PassThrough == 0 && len(s.Signal.StackUse.Inputs) == 0 && s.Signal.StackUse.NumOutputs == 0 {

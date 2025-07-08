@@ -22,12 +22,33 @@ import (
 )
 
 type (
-	KnobState struct {
-		click        gesture.Click
+	ParamState struct {
 		drag         gesture.Drag
 		dragStartPt  f32.Point // used to calculate the drag amount
 		dragStartVal int
 		tipArea      TipArea
+		click        gesture.Click
+		clickable    Clickable
+	}
+
+	ParamWidget struct {
+		Parameter tracker.Parameter
+		State     *ParamState
+		Theme     *Theme
+		Focus     bool
+		Disabled  bool
+	}
+
+	PortStyle struct {
+		Diameter    unit.Dp
+		StrokeWidth unit.Dp
+		Color       color.NRGBA
+	}
+
+	PortWidget struct {
+		Theme *Theme
+		Style *PortStyle
+		State *ParamState
 	}
 
 	KnobStyle struct {
@@ -55,7 +76,7 @@ type (
 	KnobWidget struct {
 		Theme  *Theme
 		Value  tracker.Parameter
-		State  *KnobState
+		State  *ParamState
 		Style  *KnobStyle
 		Hint   string
 		Scroll bool
@@ -84,7 +105,7 @@ type (
 	SwitchWidget struct {
 		Theme    *Theme
 		Value    tracker.Parameter
-		State    *KnobState
+		State    *ParamState
 		Style    *SwitchStyle
 		Hint     string
 		Scroll   bool
@@ -92,9 +113,58 @@ type (
 	}
 )
 
-// KnobState
+// ParamState
 
-func (s *KnobState) update(gtx C, param tracker.Parameter, scroll bool) {
+func Param(Parameter tracker.Parameter, th *Theme, paramWidget *ParamState, focus, disabled bool) ParamWidget {
+	return ParamWidget{
+		Theme:     th,
+		State:     paramWidget,
+		Parameter: Parameter,
+		Focus:     focus,
+		Disabled:  disabled,
+	}
+}
+
+func (p ParamWidget) Layout(gtx C) D {
+	title := Label(p.Theme, &p.Theme.UnitEditor.Name, p.Parameter.Name())
+	t := TrackerFromContext(gtx)
+	widget := func(gtx C) D {
+		if port, ok := p.Parameter.Port(); t.IsChoosingSendTarget() && ok {
+			for p.State.clickable.Clicked(gtx) {
+				t.ChooseSendTarget(p.Parameter.UnitID(), port).Do()
+			}
+			k := Port(p.Theme, p.State)
+			return k.Layout(gtx)
+		}
+		switch p.Parameter.Type() {
+		case tracker.IntegerParameter:
+			k := Knob(p.Parameter, p.Theme, p.State, p.Parameter.Hint().Label, p.Focus, p.Disabled)
+			return k.Layout(gtx)
+		case tracker.BoolParameter:
+			s := Switch(p.Parameter, p.Theme, p.State, p.Parameter.Hint().Label, p.Focus, p.Disabled)
+			return s.Layout(gtx)
+		case tracker.IDParameter:
+			for p.State.clickable.Clicked(gtx) {
+				t.ChooseSendSource(p.Parameter.UnitID()).Do()
+			}
+			btn := Btn(t.Theme, &t.Theme.Button.Text, &p.State.clickable, "Set", p.Parameter.Hint().Label)
+			if p.Disabled {
+				btn.Style = &t.Theme.Button.Disabled
+			}
+			return btn.Layout(gtx)
+		}
+		if _, ok := p.Parameter.Port(); ok {
+			k := Port(p.Theme, p.State)
+			return k.Layout(gtx)
+		}
+		return D{}
+	}
+	title.Layout(gtx)
+	layout.Center.Layout(gtx, widget)
+	return D{Size: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}
+}
+
+func (s *ParamState) update(gtx C, param tracker.Parameter, scroll bool) {
 	for {
 		p, ok := s.drag.Update(gtx.Metric, gtx.Source, gesture.Both)
 		if !ok {
@@ -140,9 +210,9 @@ func (s *KnobState) update(gtx C, param tracker.Parameter, scroll bool) {
 	}
 }
 
-// Knob
+// KnobWidget
 
-func Knob(v tracker.Parameter, th *Theme, state *KnobState, hint string, scroll, disabled bool) KnobWidget {
+func Knob(v tracker.Parameter, th *Theme, state *ParamState, hint string, scroll, disabled bool) KnobWidget {
 	ret := KnobWidget{
 		Theme:  th,
 		Value:  v,
@@ -251,9 +321,9 @@ func (k *KnobWidget) strokeIndicator(gtx C, amount float32) {
 	paint.FillShape(gtx.Ops, k.Style.Indicator.Color, s.Op(gtx.Ops))
 }
 
-// Switch
+// SwitchWidget
 
-func Switch(v tracker.Parameter, th *Theme, state *KnobState, hint string, scroll, disabled bool) SwitchWidget {
+func Switch(v tracker.Parameter, th *Theme, state *ParamState, hint string, scroll, disabled bool) SwitchWidget {
 	return SwitchWidget{
 		Theme:    th,
 		Value:    v,
@@ -324,4 +394,35 @@ func (s *SwitchWidget) Layout(gtx C) D {
 	gtx.Constraints = layout.Exact(image.Pt(i, i))
 	w.Layout(gtx, bg)
 	return D{Size: image.Pt(width, height)}
+}
+
+//
+
+func Port(t *Theme, p *ParamState) PortWidget {
+	return PortWidget{Theme: t, Style: &t.Port, State: p}
+}
+
+func (p *PortWidget) Layout(gtx C) D {
+	return p.State.clickable.layout(p.State, gtx, func(gtx C) D {
+		d := gtx.Dp(p.Style.Diameter)
+		defer clip.Rect(image.Rectangle{Max: image.Pt(d, d)}).Push(gtx.Ops).Pop()
+		p.strokeCircle(gtx)
+		return D{Size: image.Pt(d, d)}
+	})
+}
+
+func (p *PortWidget) strokeCircle(gtx C) {
+	sw := float32(gtx.Dp(p.Style.StrokeWidth))
+	d := float32(gtx.Dp(p.Style.Diameter))
+	rad := d / 2
+	center := f32.Point{X: rad, Y: rad}
+	var path clip.Path
+	path.Begin(gtx.Ops)
+	path.MoveTo(f32.Pt(sw/2, rad))
+	path.ArcTo(center, center, float32(math.Pi*2))
+	paint.FillShape(gtx.Ops, p.Style.Color,
+		clip.Stroke{
+			Path:  path.End(),
+			Width: sw,
+		}.Op())
 }

@@ -26,7 +26,7 @@ type (
 	UnitEditor struct {
 		paramTable     *ScrollTable
 		searchList     *DragList
-		Parameters     [][]*ParameterState
+		Parameters     [][]*ParamState
 		DeleteUnitBtn  *Clickable
 		CopyUnitBtn    *Clickable
 		ClearUnitBtn   *Clickable
@@ -140,7 +140,7 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 			}
 			c := t.Model.Params().Cursor()
 			if c.X >= 0 && c.Y >= 0 && c.Y < len(pe.Parameters) && c.X < len(pe.Parameters[c.Y]) {
-				ta := &pe.Parameters[c.Y][c.X].knobState.tipArea
+				ta := &pe.Parameters[c.Y][c.X].tipArea
 				ta.Appear(gtx.Now)
 				ta.Exit.SetTarget(gtx.Now.Add(ta.ExitDuration))
 			}
@@ -188,7 +188,7 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 	// create enough parameter widget to match the number of parameters
 	width := pe.paramTable.Table.Width()
 	for len(pe.Parameters) < pe.paramTable.Table.Height() {
-		pe.Parameters = append(pe.Parameters, make([]*ParameterState, 0))
+		pe.Parameters = append(pe.Parameters, make([]*ParamState, 0))
 	}
 	cellWidth := gtx.Dp(t.Theme.UnitEditor.Width)
 	cellHeight := gtx.Dp(t.Theme.UnitEditor.Height)
@@ -199,7 +199,7 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 	columnTitleHeight := gtx.Dp(0)
 	for i := range pe.Parameters {
 		for len(pe.Parameters[i]) < width {
-			pe.Parameters[i] = append(pe.Parameters[i], &ParameterState{knobState: KnobState{tipArea: TipArea{ExitDuration: time.Second * 2}}})
+			pe.Parameters[i] = append(pe.Parameters[i], &ParamState{tipArea: TipArea{ExitDuration: time.Second * 2}})
 		}
 	}
 	coltitle := func(gtx C, x int) D {
@@ -210,7 +210,7 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 			return D{}
 		}
 		item := t.Units().Item(y)
-		sr := SignalRail(t.Theme, item.Signals)
+		sr := Rail(t.Theme, item.Signals)
 		label := Label(t.Theme, &t.Theme.UnitEditor.UnitList.Name, item.Type)
 		switch {
 		case item.Disabled:
@@ -248,7 +248,7 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 		}
 
 		param := t.Model.Params().Item(point)
-		paramStyle := t.ParamStyle(param, t.Theme, pe.Parameters[y][x], pe.paramTable.Table.Cursor() == point, t.Units().Item(y).Disabled)
+		paramStyle := Param(param, t.Theme, pe.Parameters[y][x], pe.paramTable.Table.Cursor() == point, t.Units().Item(y).Disabled)
 		paramStyle.Layout(gtx)
 		comment := t.Units().Item(y).Comment
 		if comment != "" && x == t.Model.Params().RowWidth(y) {
@@ -442,67 +442,4 @@ func (t *UnitEditor) Tags(level int, yield TagYieldFunc) bool {
 		return yield(level, t.searchList) && yield(level+1, &t.commentEditor.widgetEditor)
 	}
 	return yield(level+1, t.paramTable.RowTitleList) && yield(level, t.paramTable) && yield(level+1, &t.commentEditor.widgetEditor)
-}
-
-type ParameterState struct {
-	knobState KnobState
-	clickable Clickable
-	portState PortState
-}
-
-type ParameterStyle struct {
-	Parameter tracker.Parameter
-	State     *ParameterState
-	Theme     *Theme
-	Focus     bool
-	Disabled  bool
-}
-
-func (t *Tracker) ParamStyle(Parameter tracker.Parameter, th *Theme, paramWidget *ParameterState, focus, disabled bool) ParameterStyle {
-	return ParameterStyle{
-		Theme:     th,
-		State:     paramWidget,
-		Parameter: Parameter,
-		Focus:     focus,
-		Disabled:  disabled,
-	}
-}
-
-func (p ParameterStyle) Layout(gtx C) D {
-	title := Label(p.Theme, &p.Theme.UnitEditor.Name, p.Parameter.Name())
-	t := TrackerFromContext(gtx)
-	widget := func(gtx C) D {
-		if port, ok := p.Parameter.Port(); t.IsChoosingSendTarget() && ok {
-			for p.State.portState.Clicked(gtx) {
-				t.ChooseSendTarget(p.Parameter.UnitID(), port).Do()
-			}
-			k := Port(p.Theme, &p.State.portState)
-			return k.Layout(gtx)
-		}
-		switch p.Parameter.Type() {
-		case tracker.IntegerParameter:
-			k := Knob(p.Parameter, p.Theme, &p.State.knobState, p.Parameter.Hint().Label, p.Focus, p.Disabled)
-			return k.Layout(gtx)
-		case tracker.BoolParameter:
-			s := Switch(p.Parameter, p.Theme, &p.State.knobState, p.Parameter.Hint().Label, p.Focus, p.Disabled)
-			return s.Layout(gtx)
-		case tracker.IDParameter:
-			for p.State.clickable.Clicked(gtx) {
-				t.ChooseSendSource(p.Parameter.UnitID()).Do()
-			}
-			btn := Btn(t.Theme, &t.Theme.Button.Text, &p.State.clickable, "Set", p.Parameter.Hint().Label)
-			if p.Disabled {
-				btn.Style = &t.Theme.Button.Disabled
-			}
-			return btn.Layout(gtx)
-		}
-		if _, ok := p.Parameter.Port(); ok {
-			k := Port(p.Theme, &p.State.portState)
-			return k.Layout(gtx)
-		}
-		return D{}
-	}
-	title.Layout(gtx)
-	layout.Center.Layout(gtx, widget)
-	return D{Size: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}
 }

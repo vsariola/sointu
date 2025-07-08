@@ -536,6 +536,10 @@ func (m *Model) ChooseSendSource(id int) Action {
 }
 func (s ChooseSendSource) Do() {
 	defer (*Model)(s.Model).change("ChooseSendSource", NoChange, MinorChange)()
+	if s.Model.d.SendSource == s.ID {
+		s.Model.d.SendSource = 0 // unselect
+		return
+	}
 	s.Model.d.SendSource = s.ID
 }
 
