@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/vsariola/sointu"
 )
@@ -300,7 +301,14 @@ func (m *Model) updateRails() {
 		}
 	}
 	if m.derived.railError.Err != nil {
-		m.Alerts().AddNamed("RailError", m.derived.railError.Error(), Error)
+		m.Alerts().AddAlert(Alert{
+			Name:     "RailError",
+			Message:  m.derived.railError.Error(),
+			Priority: Error,
+			Duration: time.Minute,
+		})
+	} else { // clear the alert if it was set
+		m.Alerts().AddAlert(Alert{Name: "RailError"})
 	}
 }
 
