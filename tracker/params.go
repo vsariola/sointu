@@ -173,7 +173,10 @@ func (pt *Params) Width() int {
 	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.derived.patch) {
 		return 0
 	}
-	return pt.derived.patch[pt.d.InstrIndex].paramsWidth
+	// TODO: we hack the +1 so that we always have one extra cell to draw the
+	// comments. Refactor the gioui side so that we can specify the width and
+	// height regardless of the underlying table size
+	return pt.derived.patch[pt.d.InstrIndex].paramsWidth + 1
 }
 func (pt *Params) RowWidth(y int) int {
 	if pt.d.InstrIndex < 0 || pt.d.InstrIndex >= len(pt.derived.patch) || y < 0 || y >= len(pt.derived.patch[pt.d.InstrIndex].params) {
