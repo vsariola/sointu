@@ -85,15 +85,16 @@ type Theme struct {
 		}
 	}
 	UnitEditor struct {
-		Name        LabelStyle
-		Chooser     LabelStyle
-		Hint        LabelStyle
-		WireColor   color.NRGBA
-		WireHint    LabelStyle
-		Width       unit.Dp
-		Height      unit.Dp
-		RackComment LabelStyle
-		UnitList    struct {
+		Name          LabelStyle
+		Chooser       LabelStyle
+		Hint          LabelStyle
+		WireColor     color.NRGBA
+		WireHint      LabelStyle
+		WireHighlight color.NRGBA
+		Width         unit.Dp
+		Height        unit.Dp
+		RackComment   LabelStyle
+		UnitList      struct {
 			LabelWidth unit.Dp
 			Name       LabelStyle
 			Disabled   LabelStyle
@@ -112,12 +113,13 @@ type Theme struct {
 		Menu   PopupStyle
 		Dialog PopupStyle
 	}
-	Split      SplitStyle
-	ScrollBar  ScrollBarStyle
-	Knob       KnobStyle
-	Switch     SwitchStyle
-	SignalRail SignalRailStyle
-	Port       PortStyle
+	Split        SplitStyle
+	ScrollBar    ScrollBarStyle
+	Knob         KnobStyle
+	DisabledKnob KnobStyle
+	Switch       SwitchStyle
+	SignalRail   SignalRailStyle
+	Port         PortStyle
 
 	// iconCache is used to cache the icons created from iconvg data
 	iconCache map[*byte]*widget.Icon

@@ -3,6 +3,7 @@ package gioui
 import (
 	"bytes"
 	"image"
+	"image/color"
 	"io"
 	"math"
 	"time"
@@ -247,7 +248,7 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 		}
 
 		param := t.Model.Params().Item(point)
-		paramStyle := t.ParamStyle(param, t.Theme, pe.Parameters[y][x], pe.paramTable.Table.Cursor() == point)
+		paramStyle := t.ParamStyle(param, t.Theme, pe.Parameters[y][x], pe.paramTable.Table.Cursor() == point, t.Units().Item(y).Disabled)
 		paramStyle.Layout(gtx)
 		comment := t.Units().Item(y).Comment
 		if comment != "" && x == t.Model.Params().RowWidth(y) {
@@ -281,13 +282,17 @@ func (pe *UnitEditor) drawSignals(gtx C, rowTitleWidth int) {
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
 	defer op.Offset(image.Pt(-colP.Offset, -rowP.Offset)).Push(gtx.Ops).Pop()
 	for wire := range t.Wires {
+		clr := t.Theme.UnitEditor.WireColor
+		if wire.Highlight {
+			clr = t.Theme.UnitEditor.WireHighlight
+		}
 		switch {
 		case wire.FromSet && !wire.ToSet:
 			pe.drawRemoteSendSignal(gtx, wire, colP.First, rowP.First)
 		case !wire.FromSet && wire.ToSet:
-			pe.drawRemoteReceiveSignal(gtx, wire, colP.First, rowP.First)
+			pe.drawRemoteReceiveSignal(gtx, wire, colP.First, rowP.First, clr)
 		case wire.FromSet && wire.ToSet:
-			pe.drawSignal(gtx, wire, colP.First, rowP.First)
+			pe.drawSignal(gtx, wire, colP.First, rowP.First, clr)
 		}
 	}
 }
@@ -309,7 +314,7 @@ func (pe *UnitEditor) drawRemoteSendSignal(gtx C, wire tracker.Wire, col, row in
 	Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
 }
 
-func (pe *UnitEditor) drawRemoteReceiveSignal(gtx C, wire tracker.Wire, col, row int) {
+func (pe *UnitEditor) drawRemoteReceiveSignal(gtx C, wire tracker.Wire, col, row int, clr color.NRGBA) {
 	ex := wire.To.X - col
 	ey := wire.To.Y - row
 	t := TrackerFromContext(gtx)
@@ -328,7 +333,7 @@ func (pe *UnitEditor) drawRemoteReceiveSignal(gtx C, wire tracker.Wire, col, row
 	path.Begin(gtx.Ops)
 	path.MoveTo(from)
 	path.CubeTo(c1, c2, to)
-	paint.FillShape(gtx.Ops, t.Theme.UnitEditor.WireColor,
+	paint.FillShape(gtx.Ops, clr,
 		clip.Stroke{
 			Path:  path.End(),
 			Width: float32(gtx.Dp(t.Theme.SignalRail.LineWidth)),
@@ -337,7 +342,7 @@ func (pe *UnitEditor) drawRemoteReceiveSignal(gtx C, wire tracker.Wire, col, row
 	Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
 }
 
-func (pe *UnitEditor) drawSignal(gtx C, wire tracker.Wire, col, row int) {
+func (pe *UnitEditor) drawSignal(gtx C, wire tracker.Wire, col, row int, clr color.NRGBA) {
 	sy := wire.From - row
 	ex := wire.To.X - col
 	ey := wire.To.Y - row
@@ -371,7 +376,7 @@ func (pe *UnitEditor) drawSignal(gtx C, wire tracker.Wire, col, row int) {
 	path.MoveTo(from)
 	path.CubeTo(from.Add(fromTan), p1.Sub(p1Tan), p1)
 	path.CubeTo(p1.Add(p1Tan), p2, to)
-	paint.FillShape(gtx.Ops, t.Theme.UnitEditor.WireColor,
+	paint.FillShape(gtx.Ops, clr,
 		clip.Stroke{
 			Path:  path.End(),
 			Width: float32(gtx.Dp(t.Theme.SignalRail.LineWidth)),
@@ -450,14 +455,16 @@ type ParameterStyle struct {
 	State     *ParameterState
 	Theme     *Theme
 	Focus     bool
+	Disabled  bool
 }
 
-func (t *Tracker) ParamStyle(Parameter tracker.Parameter, th *Theme, paramWidget *ParameterState, focus bool) ParameterStyle {
+func (t *Tracker) ParamStyle(Parameter tracker.Parameter, th *Theme, paramWidget *ParameterState, focus, disabled bool) ParameterStyle {
 	return ParameterStyle{
 		Theme:     th,
 		State:     paramWidget,
 		Parameter: Parameter,
 		Focus:     focus,
+		Disabled:  disabled,
 	}
 }
 
@@ -474,13 +481,19 @@ func (p ParameterStyle) Layout(gtx C) D {
 		}
 		switch p.Parameter.Type() {
 		case tracker.IntegerParameter:
-			k := Knob(p.Parameter, p.Theme, &p.State.knobState, p.Parameter.Hint().Label, p.Focus)
+			k := Knob(p.Parameter, p.Theme, &p.State.knobState, p.Parameter.Hint().Label, p.Focus, p.Disabled)
 			return k.Layout(gtx)
 		case tracker.BoolParameter:
-			s := Switch(p.Parameter, p.Theme, &p.State.knobState, p.Parameter.Hint().Label, p.Focus)
+			s := Switch(p.Parameter, p.Theme, &p.State.knobState, p.Parameter.Hint().Label, p.Focus, p.Disabled)
 			return s.Layout(gtx)
 		case tracker.IDParameter:
-			btn := ActionBtn(t.ChooseSendSource(p.Parameter.UnitID()), t.Theme, &p.State.clickable, "Set", p.Parameter.Hint().Label)
+			for p.State.clickable.Clicked(gtx) {
+				t.ChooseSendSource(p.Parameter.UnitID()).Do()
+			}
+			btn := Btn(t.Theme, &t.Theme.Button.Text, &p.State.clickable, "Set", p.Parameter.Hint().Label)
+			if p.Disabled {
+				btn.Style = &t.Theme.Button.Disabled
+			}
 			return btn.Layout(gtx)
 		}
 		if _, ok := p.Parameter.Port(); ok {

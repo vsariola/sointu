@@ -14,11 +14,12 @@ type (
 	}
 
 	Wire struct {
-		From    int
-		FromSet bool
-		To      Point
-		ToSet   bool
-		Hint    string
+		From      int
+		FromSet   bool
+		To        Point
+		ToSet     bool
+		Hint      string
+		Highlight bool
 	}
 
 	RailError struct {
@@ -68,6 +69,7 @@ func (m *Model) Wires(yield func(wire Wire) bool) {
 		return
 	}
 	for _, wire := range m.derived.patch[i].wires {
+		wire.Highlight = (wire.FromSet && m.d.UnitIndex == wire.From) || (wire.ToSet && m.d.UnitIndex == wire.To.Y && m.d.ParamIndex == wire.To.X)
 		if !yield(wire) {
 			return
 		}
@@ -258,7 +260,7 @@ func (m *Model) updateRails() {
 			m.derived.patch[i].rails[u] = Rail{
 				PassThrough: len(scratch),
 				StackUse:    stackUse,
-				Send:        unit.Type == "send",
+				Send:        !unit.Disabled && unit.Type == "send",
 			}
 			maxWidth = max(maxWidth, len(scratch)+max(len(stackUse.Inputs), stackUse.NumOutputs))
 			for range stackUse.NumOutputs {
@@ -308,7 +310,7 @@ func (m *Model) updateWires() {
 	}
 	for i, instr := range m.d.Song.Patch {
 		for u, unit := range instr.Units {
-			if unit.Type != "send" {
+			if unit.Disabled || unit.Type != "send" {
 				continue
 			}
 			tI, tU, err := m.d.Song.Patch.FindUnit(unit.Parameters["target"])

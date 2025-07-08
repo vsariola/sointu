@@ -82,12 +82,13 @@ type (
 	}
 
 	SwitchWidget struct {
-		Theme  *Theme
-		Value  tracker.Parameter
-		State  *KnobState
-		Style  *SwitchStyle
-		Hint   string
-		Scroll bool
+		Theme    *Theme
+		Value    tracker.Parameter
+		State    *KnobState
+		Style    *SwitchStyle
+		Hint     string
+		Scroll   bool
+		Disabled bool
 	}
 )
 
@@ -141,8 +142,8 @@ func (s *KnobState) update(gtx C, param tracker.Parameter, scroll bool) {
 
 // Knob
 
-func Knob(v tracker.Parameter, th *Theme, state *KnobState, hint string, scroll bool) KnobWidget {
-	return KnobWidget{
+func Knob(v tracker.Parameter, th *Theme, state *KnobState, hint string, scroll, disabled bool) KnobWidget {
+	ret := KnobWidget{
 		Theme:  th,
 		Value:  v,
 		State:  state,
@@ -150,6 +151,10 @@ func Knob(v tracker.Parameter, th *Theme, state *KnobState, hint string, scroll 
 		Hint:   hint,
 		Scroll: scroll,
 	}
+	if disabled {
+		ret.Style = &th.DisabledKnob
+	}
+	return ret
 }
 
 func (k *KnobWidget) Layout(gtx C) D {
@@ -248,14 +253,15 @@ func (k *KnobWidget) strokeIndicator(gtx C, amount float32) {
 
 // Switch
 
-func Switch(v tracker.Parameter, th *Theme, state *KnobState, hint string, scroll bool) SwitchWidget {
+func Switch(v tracker.Parameter, th *Theme, state *KnobState, hint string, scroll, disabled bool) SwitchWidget {
 	return SwitchWidget{
-		Theme:  th,
-		Value:  v,
-		State:  state,
-		Style:  &th.Switch,
-		Hint:   hint,
-		Scroll: scroll,
+		Theme:    th,
+		Value:    v,
+		State:    state,
+		Style:    &th.Switch,
+		Hint:     hint,
+		Scroll:   scroll,
+		Disabled: disabled,
 	}
 }
 
@@ -266,13 +272,13 @@ func (s *SwitchWidget) Layout(gtx C) D {
 	var fg, bg color.NRGBA
 	o := 0
 	switch {
-	case s.Value.Value() < 0:
-		fg = s.Style.Neg.Fg
-		bg = s.Style.Neg.Bg
-	case s.Value.Value() == 0:
+	case s.Disabled || s.Value.Value() == 0:
 		fg = s.Style.Neutral.Fg
 		bg = s.Style.Neutral.Bg
 		o = gtx.Dp(s.Style.Outline)
+	case s.Value.Value() < 0:
+		fg = s.Style.Neg.Fg
+		bg = s.Style.Neg.Bg
 	case s.Value.Value() > 0:
 		fg = s.Style.Pos.Fg
 		bg = s.Style.Pos.Bg
