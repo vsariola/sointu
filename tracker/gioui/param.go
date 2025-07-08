@@ -164,29 +164,6 @@ func (p ParamWidget) Layout(gtx C) D {
 }
 
 func (s *ParamState) update(gtx C, param tracker.Parameter, scroll bool) {
-	for {
-		p, ok := s.drag.Update(gtx.Metric, gtx.Source, gesture.Both)
-		if !ok {
-			break
-		}
-		switch p.Kind {
-		case pointer.Press:
-			s.dragStartPt = p.Position
-			s.dragStartVal = param.Value()
-		case pointer.Drag:
-			// update the value based on the drag amount
-			m := param.Range()
-			d := p.Position.Sub(s.dragStartPt)
-			speed := gtx.Dp(512)
-			if p.Modifiers.Contain(key.ModCtrl) {
-				speed = gtx.Dp(128)
-			}
-			amount := float32(d.X-d.Y) / float32(speed)
-			newValue := int(float32(s.dragStartVal) + amount*float32(m.Max-m.Min))
-			param.SetValue(newValue)
-			s.tipArea.Appear(gtx.Now)
-		}
-	}
 	for scroll {
 		e, ok := gtx.Event(pointer.Filter{
 			Target:  s,
@@ -223,6 +200,29 @@ func Knob(v tracker.Parameter, th *Theme, state *ParamState, hint string, scroll
 
 func (k *KnobWidget) Layout(gtx C) D {
 	k.State.update(gtx, k.Value, k.Scroll)
+	for {
+		p, ok := k.State.drag.Update(gtx.Metric, gtx.Source, gesture.Both)
+		if !ok {
+			break
+		}
+		switch p.Kind {
+		case pointer.Press:
+			k.State.dragStartPt = p.Position
+			k.State.dragStartVal = k.Value.Value()
+		case pointer.Drag:
+			// update the value based on the drag amount
+			m := k.Value.Range()
+			d := p.Position.Sub(k.State.dragStartPt)
+			speed := gtx.Dp(512)
+			if p.Modifiers.Contain(key.ModCtrl) {
+				speed = gtx.Dp(128)
+			}
+			amount := float32(d.X-d.Y) / float32(speed)
+			newValue := int(float32(k.State.dragStartVal) + amount*float32(m.Max-m.Min))
+			k.Value.SetValue(newValue)
+			k.State.tipArea.Appear(gtx.Now)
+		}
+	}
 	for k.Scroll {
 		ev, ok := gtx.Event(pointer.Filter{Target: k.State, Kinds: pointer.Press})
 		if !ok {
@@ -346,21 +346,19 @@ func (s *SwitchWidget) Layout(gtx C) D {
 			break
 		}
 		if pe, ok := ev.(pointer.Event); ok && pe.Kind == pointer.Press {
-			curVal := s.Value.Value()
+			delta := 0
 			if pe.Buttons == pointer.ButtonPrimary {
-				if curVal >= 1 {
-					s.Value.SetValue(0)
-				} else {
-					s.Value.SetValue(curVal + 1)
-				}
+				delta = 1
 			}
 			if pe.Buttons == pointer.ButtonSecondary {
-				if curVal <= -1 {
-					s.Value.SetValue(0)
-				} else {
-					s.Value.SetValue(curVal - 1)
-				}
+				delta = -1
 			}
+			r := s.Value.Range()
+			if r.Max < r.Min {
+				continue
+			}
+			newVal := mod(s.Value.Value()+delta-r.Min, r.Max-r.Min+1) + r.Min
+			s.Value.SetValue(newVal)
 			s.State.tipArea.Appear(gtx.Now)
 		}
 	}
