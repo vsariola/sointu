@@ -27,7 +27,6 @@ type (
 		dragStartPt  f32.Point // used to calculate the drag amount
 		dragStartVal int
 		tipArea      TipArea
-		click        gesture.Click
 		clickable    Clickable
 	}
 
@@ -184,15 +183,6 @@ func (s *ParamState) update(gtx C, param tracker.Parameter, scroll bool) {
 			s.tipArea.Appear(gtx.Now)
 		}
 	}
-	for {
-		g, ok := s.click.Update(gtx.Source)
-		if !ok {
-			break
-		}
-		if g.Kind == gesture.KindClick && g.NumClicks > 1 {
-			param.Reset()
-		}
-	}
 	for scroll {
 		e, ok := gtx.Event(pointer.Filter{
 			Target:  s,
@@ -229,6 +219,16 @@ func Knob(v tracker.Parameter, th *Theme, state *ParamState, hint string, scroll
 
 func (k *KnobWidget) Layout(gtx C) D {
 	k.State.update(gtx, k.Value, k.Scroll)
+	for k.Scroll {
+		ev, ok := gtx.Event(pointer.Filter{Target: k.State, Kinds: pointer.Press})
+		if !ok {
+			break
+		}
+		if pe, ok := ev.(pointer.Event); ok && pe.Kind == pointer.Press && pe.Buttons == pointer.ButtonSecondary {
+			k.Value.Reset()
+			k.State.tipArea.Appear(gtx.Now)
+		}
+	}
 	knob := func(gtx C) D {
 		m := k.Value.Range()
 		amount := float32(k.Value.Value()-m.Min) / float32(m.Max-m.Min)
@@ -237,7 +237,6 @@ func (k *KnobWidget) Layout(gtx C) D {
 		defer clip.Rect(image.Rectangle{Max: image.Pt(d, d)}).Push(gtx.Ops).Pop()
 		event.Op(gtx.Ops, k.State)
 		k.State.drag.Add(gtx.Ops)
-		k.State.click.Add(gtx.Ops)
 		middle := float32(k.Value.Neutral()-m.Min) / float32(m.Max-m.Min)
 		pos := max(amount, middle)
 		neg := min(amount, middle)
@@ -401,7 +400,6 @@ func (s *SwitchWidget) Layout(gtx C) D {
 	defer clip.Rect(image.Rectangle{Max: image.Pt(width, height)}).Push(gtx.Ops).Pop()
 	event.Op(gtx.Ops, s.State)
 	s.State.drag.Add(gtx.Ops)
-	s.State.click.Add(gtx.Ops)
 	icon := icons.NavigationClose
 	if s.Value.Range().Min < 0 {
 		if s.Value.Value() < 0 {
