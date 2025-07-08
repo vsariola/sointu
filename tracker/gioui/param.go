@@ -150,7 +150,7 @@ func (p ParamWidget) Layout(gtx C) D {
 			if p.Disabled {
 				btn.Style = &t.Theme.Button.Disabled
 			}
-			return btn.Layout(gtx)
+			return layout.Center.Layout(gtx, btn.Layout)
 		}
 		if _, ok := p.Parameter.Port(); ok {
 			k := Port(p.Theme, p.State)
@@ -159,7 +159,7 @@ func (p ParamWidget) Layout(gtx C) D {
 		return D{}
 	}
 	title.Layout(gtx)
-	layout.Center.Layout(gtx, widget)
+	widget(gtx)
 	return D{Size: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}
 }
 
@@ -233,14 +233,11 @@ func (k *KnobWidget) Layout(gtx C) D {
 			k.State.tipArea.Appear(gtx.Now)
 		}
 	}
+	d := gtx.Dp(k.Style.Diameter)
 	knob := func(gtx C) D {
 		m := k.Value.Range()
 		amount := float32(k.Value.Value()-m.Min) / float32(m.Max-m.Min)
 		sw := gtx.Dp(k.Style.StrokeWidth)
-		d := gtx.Dp(k.Style.Diameter)
-		defer clip.Rect(image.Rectangle{Max: image.Pt(d, d)}).Push(gtx.Ops).Pop()
-		event.Op(gtx.Ops, k.State)
-		k.State.drag.Add(gtx.Ops)
 		middle := float32(k.Value.Neutral()-m.Min) / float32(m.Max-m.Min)
 		pos := max(amount, middle)
 		neg := min(amount, middle)
@@ -265,15 +262,18 @@ func (k *KnobWidget) Layout(gtx C) D {
 			layout.Stacked(knob),
 			layout.Stacked(label.Layout))
 	}
+	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
+	event.Op(gtx.Ops, k.State)
+	k.State.drag.Add(gtx.Ops)
 	if k.Hint != "" {
 		c := gtx.Constraints
 		gtx.Constraints.Max = image.Pt(1e6, 1e6)
 		return k.State.tipArea.Layout(gtx, Tooltip(k.Theme, k.Hint), func(gtx C) D {
 			gtx.Constraints = c
-			return w(gtx)
+			return layout.Center.Layout(gtx, w)
 		})
 	}
-	return w(gtx)
+	return layout.Center.Layout(gtx, w)
 }
 
 func (k *KnobWidget) strokeKnobArc(gtx C, color color.NRGBA, strokeWidth, diameter int, start, end float32) {
@@ -362,6 +362,13 @@ func (s *SwitchWidget) Layout(gtx C) D {
 			s.State.tipArea.Appear(gtx.Now)
 		}
 	}
+	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
+	event.Op(gtx.Ops, s.State)
+	s.State.drag.Add(gtx.Ops)
+	return layout.Center.Layout(gtx, s.layoutSwitch)
+}
+
+func (s *SwitchWidget) layoutSwitch(gtx C) D {
 	width := gtx.Dp(s.Style.Width)
 	height := gtx.Dp(s.Style.Height)
 	var fg, bg color.NRGBA
@@ -399,9 +406,6 @@ func (s *SwitchWidget) Layout(gtx C) D {
 		return clip.Ellipse(b).Op(gtx.Ops)
 	}
 	paint.FillShape(gtx.Ops, fg, circle(p, height/2, gtx.Dp(s.Style.Handle)/2))
-	defer clip.Rect(image.Rectangle{Max: image.Pt(width, height)}).Push(gtx.Ops).Pop()
-	event.Op(gtx.Ops, s.State)
-	s.State.drag.Add(gtx.Ops)
 	icon := icons.NavigationClose
 	if s.Value.Range().Min < 0 {
 		if s.Value.Value() < 0 {
@@ -427,11 +431,15 @@ func Port(t *Theme, p *ParamState) PortWidget {
 }
 
 func (p *PortWidget) Layout(gtx C) D {
-	return p.State.clickable.layout(p.State, gtx, func(gtx C) D {
+	w := func(gtx C) D {
 		d := gtx.Dp(p.Style.Diameter)
 		defer clip.Rect(image.Rectangle{Max: image.Pt(d, d)}).Push(gtx.Ops).Pop()
 		p.strokeCircle(gtx)
 		return D{Size: image.Pt(d, d)}
+	}
+	return p.State.clickable.layout(p.State, gtx, func(gtx C) D {
+		layout.Center.Layout(gtx, w)
+		return D{Size: gtx.Constraints.Max}
 	})
 }
 
