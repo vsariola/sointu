@@ -342,7 +342,7 @@ func (n *namedParameter) RoundToGrid(p *Parameter, val int, up bool) int {
 	if p.up.Name == "transpose" {
 		return roundToGrid(val-64, 12, up) + 64
 	}
-	return roundToGrid(val, 16, up)
+	return roundToGrid(val, 8, up)
 }
 func (n *namedParameter) Reset(p *Parameter) {
 	v, ok := defaultUnits[p.unit.Type].Parameters[p.up.Name]
