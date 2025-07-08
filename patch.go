@@ -114,7 +114,9 @@ var UnitTypes = map[string]([]UnitParameter){
 	"filter": []UnitParameter{
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "frequency", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: filterFrequencyDispFunc},
-		{Name: "resonance", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "resonance", MinValue: 0, Neutral: 128, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) {
+			return strconv.FormatFloat(toDecibel(128/float64(v)), 'g', 3, 64), "Q dB"
+		}},
 		{Name: "lowpass", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "bandpass", MinValue: -1, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "highpass", MinValue: -1, MaxValue: 1, CanSet: true, CanModulate: false}},
