@@ -15,13 +15,19 @@ Windows, Mac, Linux (and related) + browser.
 Installation
 ------------
 
-You can either 1) download the latest build from the master branch from the
-[actions](https://github.com/vsariola/sointu/actions) (find workflow "Binaries"
-and scroll down for .zip files containing the artifacts); or 2) download the
-prebuilt release binaries from the
-[releases](https://github.com/vsariola/sointu/releases). Then just run one of
-the executables or, in the case of the VST plugins library files, copy them
-wherever you keep you VST2 plugins.
+You can either:
+
+  1) Download the latest build from the master branch from the
+     [actions](https://github.com/vsariola/sointu/actions) (find workflow
+     "Binaries" and scroll down for .zip files containing the artifacts.
+     **Note:** You have to be logged into Github to download artifacts!
+
+ or
+
+  2) Download the prebuilt release binaries from the
+     [releases](https://github.com/vsariola/sointu/releases). Then just run one
+     of the executables or, in the case of the VST plugins library files, copy
+     them wherever you keep you VST2 plugins.
 
 The pre 1.0 version tags are mostly for reference: no backwards
 compatibility will be guaranteed while upgrading to a newer version.
