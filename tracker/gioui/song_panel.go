@@ -21,9 +21,11 @@ type SongPanel struct {
 	ScopeExpander        *Expander
 	LoudnessExpander     *Expander
 	PeakExpander         *Expander
+	CPUExpander          *Expander
 
 	WeightingTypeBtn *Clickable
 	OversamplingBtn  *Clickable
+	SynthBtn         *Clickable
 
 	BPM            *NumericUpDownState
 	RowsPerPattern *NumericUpDownState
@@ -50,11 +52,13 @@ func NewSongPanel(tr *Tracker) *SongPanel {
 
 		WeightingTypeBtn: new(Clickable),
 		OversamplingBtn:  new(Clickable),
+		SynthBtn:         new(Clickable),
 
 		SongSettingsExpander: &Expander{Expanded: true},
 		ScopeExpander:        &Expander{},
 		LoudnessExpander:     &Expander{},
 		PeakExpander:         &Expander{},
+		CPUExpander:          &Expander{},
 	}
 	return ret
 }
@@ -65,6 +69,10 @@ func (s *SongPanel) Update(gtx C, t *Tracker) {
 	}
 	for s.OversamplingBtn.Clicked(gtx) {
 		t.Model.Oversampling().SetValue(!t.Oversampling().Value())
+	}
+	for s.SynthBtn.Clicked(gtx) {
+		r := t.Model.SyntherIndex().Range()
+		t.Model.SyntherIndex().SetValue((t.SyntherIndex().Value()+1)%(r.Max-r.Min+1) + r.Min)
 	}
 }
 
@@ -102,6 +110,14 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 	}
 	oversamplingBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.OversamplingBtn, oversamplingTxt, "")
 
+	cpuload := tr.Model.CPULoad()
+	cpuLabel := Label(tr.Theme, &tr.Theme.SongPanel.RowValue, fmt.Sprintf("%.0f %%", cpuload*100))
+	if cpuload >= 1 {
+		cpuLabel.Color = tr.Theme.SongPanel.ErrorColor
+	}
+
+	synthBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.SynthBtn, tr.Model.SyntherName(), "")
+
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			return t.SongSettingsExpander.Layout(gtx, tr.Theme, "Song",
@@ -130,16 +146,18 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 							step := NumUpDown(tr.Step(), tr.Theme, t.Step, "Cursor step")
 							return layoutSongOptionRow(gtx, tr.Theme, "Cursor step", step.Layout)
 						}),
-						layout.Rigid(func(gtx C) D {
-							cpuload := tr.Model.CPULoad()
-							label := Label(tr.Theme, &tr.Theme.SongPanel.RowValue, fmt.Sprintf("%.0f %%", cpuload*100))
-							if cpuload >= 1 {
-								label.Color = tr.Theme.SongPanel.ErrorColor
-							}
-							return layoutSongOptionRow(gtx, tr.Theme, "CPU load", label.Layout)
-						}),
 					)
 				})
+		}),
+		layout.Rigid(func(gtx C) D {
+			return t.CPUExpander.Layout(gtx, tr.Theme, "CPU", cpuLabel.Layout,
+				func(gtx C) D {
+					return layout.Flex{Axis: layout.Vertical, Alignment: layout.End}.Layout(gtx,
+						layout.Rigid(func(gtx C) D { return layoutSongOptionRow(gtx, tr.Theme, "Load", cpuLabel.Layout) }),
+						layout.Rigid(func(gtx C) D { return layoutSongOptionRow(gtx, tr.Theme, "Synth", synthBtn.Layout) }),
+					)
+				},
+			)
 		}),
 		layout.Rigid(func(gtx C) D {
 			return t.LoudnessExpander.Layout(gtx, tr.Theme, "Loudness",

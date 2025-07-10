@@ -109,6 +109,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   ([#156][i156])
 
 ### Changed
+- Native version of the tracker/VSTi was removed. Instead, you can change
+  between the two versions of the synth on the fly, by clicking on the "Synth"
+  option under the CPU group in the song panel ([#200][i200])
 - Send amount defaults to 64 = 0.0 ([#178][i178])
 - BREAKING CHANGE: the negbandpass and neghighpass parameters of the filter unit
   were removed. Setting bandpass or highpass to -1 achieves now the same end
@@ -360,3 +363,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i186]: https://github.com/vsariola/sointu/issues/186
 [i192]: https://github.com/vsariola/sointu/issues/192
 [i196]: https://github.com/vsariola/sointu/issues/196
+[i200]: https://github.com/vsariola/sointu/issues/200

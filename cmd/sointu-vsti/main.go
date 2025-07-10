@@ -46,8 +46,8 @@ func init() {
 			recoveryFile = filepath.Join(configDir, "sointu", "sointu-vsti-recovery-"+hex.EncodeToString(randBytes))
 		}
 		broker := tracker.NewBroker()
-		model := tracker.NewModel(broker, cmd.MainSynther, cmd.NewMidiContext(broker), recoveryFile)
-		player := tracker.NewPlayer(broker, cmd.MainSynther)
+		model := tracker.NewModel(broker, cmd.Synthers, cmd.NewMidiContext(broker), recoveryFile)
+		player := tracker.NewPlayer(broker, cmd.Synthers[0])
 		detector := tracker.NewDetector(broker)
 		go detector.Run()
 
@@ -63,11 +63,11 @@ func init() {
 		buf := make(sointu.AudioBuffer, 1024)
 		var totalFrames int64 = 0
 		return vst2.Plugin{
-				UniqueID:       PLUGIN_ID,
+				UniqueID:       [4]byte{'S', 'n', 't', 'u'},
 				Version:        version,
 				InputChannels:  0,
 				OutputChannels: 2,
-				Name:           PLUGIN_NAME,
+				Name:           "Sointu",
 				Vendor:         "vsariola/sointu",
 				Category:       vst2.PluginCategorySynth,
 				Flags:          vst2.PluginIsSynth,

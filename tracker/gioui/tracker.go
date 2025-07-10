@@ -113,7 +113,6 @@ func NewTracker(model *tracker.Model) *Tracker {
 			Duration: 10 * time.Second,
 		})
 	}
-	t.TrackEditor.scrollTable.Focus()
 	return t
 }
 

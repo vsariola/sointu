@@ -268,6 +268,10 @@ loop:
 					}
 					p.recording = Recording{} // reset recording
 				}
+			case sointu.Synther:
+				p.synther = m
+				p.synth = nil
+				p.compileOrUpdateSynth()
 			default:
 				// ignore unknown messages
 			}

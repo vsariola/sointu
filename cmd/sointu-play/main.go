@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/vsariola/sointu/cmd"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/vsariola/sointu/cmd"
 
 	"gopkg.in/yaml.v3"
 
@@ -29,11 +30,19 @@ func main() {
 	wavOut := flag.Bool("w", false, "Output the rendered song as .wav file. By default, saves stereo float32 buffer to disk.")
 	pcm := flag.Bool("c", false, "Convert audio to 16-bit signed PCM when outputting.")
 	versionFlag := flag.Bool("v", false, "Print version.")
+	syntherInt := flag.Int("synth", 0, "Select the synther to use. By default, uses the first one in the list of available synthers.")
 	flag.Usage = printUsage
 	flag.Parse()
 	if *versionFlag {
 		fmt.Println(version.VersionOrHash)
 		os.Exit(0)
+	}
+	if *syntherInt < 0 || *syntherInt >= len(cmd.Synthers) {
+		fmt.Fprintf(os.Stderr, "synth index %d is out of range; available synthers:\n", *syntherInt)
+		for i, s := range cmd.Synthers {
+			fmt.Fprintf(os.Stderr, "  %d: %s\n", i, s.Name())
+		}
+		os.Exit(1)
 	}
 	if flag.NArg() == 0 || *help {
 		flag.Usage()
@@ -93,7 +102,7 @@ func main() {
 				return fmt.Errorf("the song could not be parsed as .json (%v) or .yml (%v)", errJSON, errYaml)
 			}
 		}
-		buffer, err := sointu.Play(cmd.MainSynther, song, nil) // render the song to calculate its length
+		buffer, err := sointu.Play(cmd.Synthers[*syntherInt], song, nil) // render the song to calculate its length
 		if err != nil {
 			return fmt.Errorf("sointu.Play failed: %v", err)
 		}

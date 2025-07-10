@@ -4,4 +4,6 @@ package cmd
 
 import "github.com/vsariola/sointu/vm/compiler/bridge"
 
-var MainSynther = bridge.NativeSynther{}
+func init() {
+	Synthers = append(Synthers, bridge.NativeSynther{})
+}

@@ -75,9 +75,11 @@ type (
 		weightingType WeightingType
 		oversampling  bool
 
-		alerts  []Alert
-		dialog  Dialog
-		synther sointu.Synther // the synther used to create new synths
+		alerts []Alert
+		dialog Dialog
+
+		syntherIndex int              // the index of the synther used to create new synths
+		synthers     []sointu.Synther // the synther used to create new synths
 
 		broker *Broker
 
@@ -171,9 +173,9 @@ func (m *Model) Quitted() bool                { return m.quitted }
 func (m *Model) DetectorResult() DetectorResult { return m.detectorResult }
 
 // NewModelPlayer creates a new model and a player that communicates with it
-func NewModel(broker *Broker, synther sointu.Synther, midiContext MIDIContext, recoveryFilePath string) *Model {
+func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext, recoveryFilePath string) *Model {
 	m := new(Model)
-	m.synther = synther
+	m.synthers = synthers
 	m.MIDI = midiContext
 	m.broker = broker
 	m.d.Octave = 4

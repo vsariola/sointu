@@ -82,7 +82,7 @@ func (m *Model) WriteWav(w io.WriteCloser, pcm16 bool) {
 		b := make([]byte, 32+2)
 		rand.Read(b)
 		name := fmt.Sprintf("%x", b)[2 : 32+2]
-		data, err := sointu.Play(m.synther, song, func(p float32) {
+		data, err := sointu.Play(m.synthers[m.syntherIndex], song, func(p float32) {
 			txt := fmt.Sprintf("Exporting song: %.0f%%", p*100)
 			TrySend(m.broker.ToModel, MsgToModel{Data: Alert{Message: txt, Priority: Info, Name: name, Duration: defaultAlertDuration}})
 		}) // render the song to calculate its length

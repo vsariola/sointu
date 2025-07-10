@@ -7,6 +7,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/vm"
 )
@@ -251,10 +252,10 @@ func FuzzModel(f *testing.F) {
 	f.Add(seed)
 	f.Fuzz(func(t *testing.T, slice []byte) {
 		reader := bytes.NewReader(slice)
-		synther := vm.GoSynther{}
+		synthers := []sointu.Synther{vm.GoSynther{}}
 		broker := tracker.NewBroker()
-		model := tracker.NewModel(broker, synther, tracker.NullMIDIContext{}, "")
-		player := tracker.NewPlayer(broker, synther)
+		model := tracker.NewModel(broker, synthers, tracker.NullMIDIContext{}, "")
+		player := tracker.NewPlayer(broker, synthers[0])
 		buf := make([][2]float32, 2048)
 		closeChan := make(chan struct{})
 		go func() {

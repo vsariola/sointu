@@ -18,6 +18,8 @@ type NativeSynther struct {
 
 type NativeSynth C.Synth
 
+func (s NativeSynther) Name() string { return "Native" }
+
 func (s NativeSynther) Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	synth, err := Synth(patch, bpm)
 	return synth, err

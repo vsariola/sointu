@@ -93,6 +93,8 @@ success:
 	f.Read(su_sample_table[:])
 }
 
+func (s GoSynther) Name() string { return "Go" }
+
 func (s GoSynther) Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	bytecode, err := NewBytecode(patch, AllFeatures{}, bpm)
 	if err != nil {

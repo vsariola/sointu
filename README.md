@@ -82,7 +82,7 @@ for the audio, so the portability is currently limited by these.
 #### Prerequisites
 
 - [go](https://golang.org/)
-- If you want to use the x86 assembly written synthesizer, to test that the
+- If you want to also use the x86 assembly written synthesizer, to test that the
   patch also works once compiled:
    - Follow the instructions to build the [x86 native virtual machine](#native-virtual-machine)
      before building the tracker.
@@ -110,7 +110,7 @@ go build -o sointu-track.exe cmd/sointu-track/main.go
 On other platforms than Windows, replace `-o sointu-track.exe` with
 `-o sointu-track`.
 
-If you want to use the [x86 native virtual machine](#native-virtual-machine),
+If you want to include the [x86 native virtual machine](#native-virtual-machine),
 add `-tags=native` to all the commands e.g.
 
 ```
@@ -133,7 +133,7 @@ a dynamically linked library and ran inside a VST host.
   if it is not set and go fails to find the compiler, go just excludes
   all files with `import "C"` from the build, resulting in lots of
   errors about missing types.
-- If you want to use the x86 assembly written synthesizer:
+- If you want to build the VSTI with the native x86 assembly written synthesizer:
    - Follow the instructions to build the [x86 native virtual machine](#native-virtual-machine)
      before building the plugin itself
 
@@ -218,7 +218,9 @@ machine, through cgo, instead of using the Go written bytecode interpreter. With
 the latest Go compiler, the native virtual machine is actually slower than the
 Go-written one, but importantly, the native virtual machine allows you to test
 that the patch also works within the stack limits of the x87 virtual machine,
-which is the VM used in the compiled intros.
+which is the VM used in the compiled intros. In the tracker/VSTi, you can switch
+between the native synth and the Go synth under the CPU panel in the Song
+settings.
 
 Before you can actually run it, you need to build the bridge using CMake (thus,
 ***this will not work with go get***).

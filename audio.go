@@ -67,6 +67,7 @@ type (
 	// Synther compiles a given Patch into a Synth, throwing errors if the
 	// Patch is malformed.
 	Synther interface {
+		Name() string // Name of the synther, e.g. "Go" or "Native"
 		Synth(patch Patch, bpm int) (Synth, error)
 	}
 )

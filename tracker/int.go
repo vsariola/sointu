@@ -33,6 +33,7 @@ type (
 	Step              Model
 	Octave            Model
 	DetectorWeighting Model
+	SyntherIndex      Model
 )
 
 func MakeInt(value IntValue) Int {
@@ -81,6 +82,7 @@ func (m *Model) RowsPerBeat() Int       { return MakeInt((*RowsPerBeat)(m)) }
 func (m *Model) Step() Int              { return MakeInt((*Step)(m)) }
 func (m *Model) Octave() Int            { return MakeInt((*Octave)(m)) }
 func (m *Model) DetectorWeighting() Int { return MakeInt((*DetectorWeighting)(m)) }
+func (m *Model) SyntherIndex() Int      { return MakeInt((*SyntherIndex)(m)) }
 
 // BeatsPerMinuteInt
 
@@ -204,4 +206,18 @@ func (v *TrackVoices) Range() IntRange {
 		return IntRange{1, 1}
 	}
 	return IntRange{1, (*Model)(v).remainingVoices(v.linkInstrTrack, true) + v.d.Song.Score.Tracks[t].NumVoices}
+}
+
+// SyntherIndex
+
+func (v *SyntherIndex) Value() int      { return v.syntherIndex }
+func (v *SyntherIndex) Range() IntRange { return IntRange{0, len(v.synthers) - 1} }
+func (v *Model) SyntherName() string    { return v.synthers[v.syntherIndex].Name() }
+func (v *SyntherIndex) SetValue(value int) bool {
+	if value < 0 || value >= len(v.synthers) {
+		return false
+	}
+	v.syntherIndex = value
+	TrySend(v.broker.ToPlayer, any(v.synthers[value]))
+	return true
 }
