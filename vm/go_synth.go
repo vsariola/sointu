@@ -561,18 +561,18 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 				if stereo {
 					signalLevel += stack[l-2] * stack[l-2]
 				}
-				currentLevel := unit.state[0]
+				targetGain := float32(1)
+				if threshold2 := params[3] * params[3]; signalLevel > threshold2 {
+					targetGain = float32(math.Pow(float64(threshold2/signalLevel), float64(params[4]/2)))
+				}
+				gain := unit.state[0]
 				paramIndex := 0 // compressor attacking
-				if signalLevel < currentLevel {
+				if targetGain > gain {
 					paramIndex = 1 // compressor releasing
 				}
 				alpha := nonLinearMap(params[paramIndex]) // map attack or release to a smoothing coefficient
-				currentLevel += (signalLevel - currentLevel) * alpha
-				unit.state[0] = currentLevel
-				var gain float32 = 1
-				if threshold2 := params[3] * params[3]; currentLevel > threshold2 {
-					gain = float32(math.Pow(float64(threshold2/currentLevel), float64(params[4]/2)))
-				}
+				gain += (targetGain - gain) * alpha
+				unit.state[0] = gain
 				gain /= params[2] // apply inverse gain
 				stack = append(stack, gain)
 				if stereo {
