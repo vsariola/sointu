@@ -430,6 +430,8 @@ func (ul *UnitList) Layout(gtx C) D {
 func (ul *UnitList) update(gtx C, t *Tracker) {
 	for ul.addUnitBtn.Clicked(gtx) {
 		ul.addUnitAction.Do()
+		t.UnitSearching().SetValue(true)
+		ul.searchEditor.Focus()
 	}
 	for {
 		event, ok := gtx.Event(
