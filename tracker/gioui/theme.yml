@@ -173,7 +173,7 @@ instrumenteditor:
       color: *disabled
       hintcolor: *disabled
       font: { style: 1 }
-    comment: { textsize: 12, color: *disabled }
+    comment: { textsize: 12, color: *disabled, maxlines: 1}
     stack: { textsize: 12, color: *mediumemphasis, shadowcolor: *black }
     disabled: { textsize: 12, color: *disabled }
     warning: *warningcolor

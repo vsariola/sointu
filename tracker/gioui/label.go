@@ -18,6 +18,7 @@ type LabelStyle struct {
 	Alignment   text.Alignment
 	Font        font.Font
 	TextSize    unit.Sp
+	MaxLines    int
 }
 
 type LabelWidget struct {
@@ -32,6 +33,7 @@ func (l LabelWidget) Layout(gtx C) D {
 	textColor := textColorMacro.Stop()
 	t := widget.Label{
 		Alignment: l.Alignment,
+		MaxLines:  l.MaxLines,
 	}
 	if l.ShadowColor.A > 0 {
 		shadowColorMacro := op.Record(gtx.Ops)
