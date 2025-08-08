@@ -29,18 +29,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   RMS-weighting, and peak detection supports true peak or sample peak detection.
   The loudness and peak values are displayed in the song panel ([#186][i186])
 - Oscilloscope to visualize the outputted waveform ([#61][i61])
-- Toggle button to keep instruments and tracks linked, and buttons to to split
+- Toggle button to keep instruments and tracks linked, and buttons to split
   instruments and tracks with more than 1 voice into parallel ones
   ([#163][i163], [#157][i157])
 - Mute and solo toggles for instruments ([#168][i168])
-- Compressor displays threshold and invgain in dB
+- Many units (e.g. envelopes, oscillators and compressors) display values dB
 - Dragging mouse to select rectangles in the tables
 - The standalone tracker can open a MIDI port for receiving MIDI notes
   ([#166][i166])
 - The note editor has a button to allow entering notes by MIDI. ([#170][i170])
 - Units can have comments, to make it easier to distinguish between units of
-  same type within an instrument. These comments are also shown when choosing
-  the send target. ([#114][i114])
+  same type within an instrument and to use these as subsection titles.
+  ([#114][i114])
 - A toggle button for copying non-unique patterns before editing. When enabled
   and if the pattern is used in multiple places, the pattern is copied first.
   ([#77][i77])
@@ -55,11 +55,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Include version info in the binaries, as given be `git describe`. This version
   info is shown as a label in the tracker and can be checked with `-v` flag in
   the command line tools.
-- If a parameter is controlled by a `send`, the slider is now colored
-  differently and there's a tooltip over the value to see where it comes from
-  and its amount ([#176][i176])
-- If a parameter has an invalid value (for now only `port` of a `send`), value
-  is printed grey ([#176][i176])
 - Performance improvement: values needed by the UI that are derived from the
   score or patch are cached when score or patch changes, so they don't have to
   be computed every draw. ([#176][i176])
@@ -90,8 +85,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   ([#160][i160])
 - If units have useless parameters in their parameter maps, from bugs or from a
   malformed yaml file, they are removed and user is warned about it
-- Pressing a or 1 when editing note values in hex mode created a note off line
-  ([#162][i162])
+- Pressing `a` or `1` when editing note values in hex mode created a note off
+  line ([#162][i162])
 - Warn about plugin sample rate being different from 44100 only after
   ProcessFloatFunc has been called, so that host has time to set the sample rate
   after initialization.
@@ -102,7 +97,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Numeric updown widget calculated dp-to-px conversion incorrectly, resulting in
   wrong scaling ([#150][i150])
 - Empty patch should not crash the native synth ([#148][i148])
-- sointu-play does not default to the native synth yet, choose via `-tags=native`
+- sointu-play allows choosing between the synths, assuming it was compiled with
+  `-tags=native`
 - Most buttons never gain focus, so that clicking a button does not stop
   whatever the user was currently doing and so that the user does not
   accidentally trigger the buttons by having them focused and e.g. hitting space
@@ -360,6 +356,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i173]: https://github.com/vsariola/sointu/issues/173
 [i176]: https://github.com/vsariola/sointu/issues/176
 [i178]: https://github.com/vsariola/sointu/issues/178
+[i184]: https://github.com/vsariola/sointu/issues/184
 [i186]: https://github.com/vsariola/sointu/issues/186
 [i192]: https://github.com/vsariola/sointu/issues/192
 [i196]: https://github.com/vsariola/sointu/issues/196
