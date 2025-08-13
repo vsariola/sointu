@@ -189,7 +189,7 @@ WebAssembly example:
 
 ```
 sointu-compile -o . -arch=wasm tests/test_chords.yml
-wat2wasm --enable-bulk-memory test_chords.wat
+wat2wasm test_chords.wat
 ```
 
 If you are looking for an easy way to compile an executable from a Sointu song
