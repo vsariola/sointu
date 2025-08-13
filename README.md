@@ -181,14 +181,14 @@ The compiler can then be used to compile a .yml song into .asm and .h files. For
 example:
 
 ```
-sointu-compile -o . -arch=386 tests/test_chords.yml
+sointu-compile -arch=386 tests/test_chords.yml
 nasm -f win32 test_chords.asm
 ```
 
 WebAssembly example:
 
 ```
-sointu-compile -o . -arch=wasm tests/test_chords.yml
+sointu-compile -arch=wasm tests/test_chords.yml
 wat2wasm test_chords.wat
 ```
 
