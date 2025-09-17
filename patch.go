@@ -177,7 +177,9 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "transpose", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: oscillatorTransposeDispFunc},
 		{Name: "detune", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(float64(v-64) / 64), "st" }},
-		{Name: "phase", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
+		{Name: "phase", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) {
+			return strconv.FormatFloat(float64(v)/128*360, 'f', 1, 64), "°"
+		}},
 		{Name: "color", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "shape", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true},
 		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB" }},
