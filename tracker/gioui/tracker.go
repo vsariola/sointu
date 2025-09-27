@@ -329,6 +329,9 @@ func (t *Tracker) explorerChooseFile(success func(io.ReadCloser), extensions ...
 				success(file)
 			} else {
 				t.Cancel().Do()
+				if err != explorer.ErrUserDecline {
+					t.Alerts().Add(err.Error(), tracker.Error)
+				}
 			}
 		}}
 	}()
@@ -344,6 +347,9 @@ func (t *Tracker) explorerCreateFile(success func(io.WriteCloser), filename stri
 				success(file)
 			} else {
 				t.Cancel().Do()
+				if err != explorer.ErrUserDecline {
+					t.Alerts().Add(err.Error(), tracker.Error)
+				}
 			}
 		}}
 	}()
