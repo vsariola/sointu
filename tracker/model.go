@@ -521,19 +521,27 @@ func (m *Model) fixUnitParams() {
 	// loop over all instruments and units and check that unit parameter table
 	// only has the parameters that are defined in the unit type
 	fixed := false
-	for i, instr := range m.d.Song.Patch {
-		for j, unit := range instr.Units {
-			for paramName := range unit.Parameters {
-				if !validParameters[unit.Type][paramName] {
-					delete(m.d.Song.Patch[i].Units[j].Parameters, paramName)
-					fixed = true
-				}
-			}
-		}
+	for i := range m.d.Song.Patch {
+		fixed = RemoveUnusedUnitParameters(&m.d.Song.Patch[i]) || fixed
 	}
 	if fixed {
 		m.Alerts().AddNamed("InvalidUnitParameters", "Some units had invalid parameters, they were removed", Error)
 	}
+}
+
+// RemoveUnusedUnitParameters removes any parameters from the instrument that are not valid for the unit type.
+// It returns true if any parameters were removed.
+func RemoveUnusedUnitParameters(instr *sointu.Instrument) bool {
+	fixed := false
+	for _, unit := range instr.Units {
+		for paramName := range unit.Parameters {
+			if !validParameters[unit.Type][paramName] {
+				delete(unit.Parameters, paramName)
+				fixed = true
+			}
+		}
+	}
+	return fixed
 }
 
 func clamp(a, min, max int) int {

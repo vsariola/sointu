@@ -105,6 +105,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   ([#156][i156])
 
 ### Changed
+- When saving instrument to a file, the instrument name is not saved to the name
+  field, as Sointu will anyway use the filename as the instrument's name when it
+  is loaded.
 - Native version of the tracker/VSTi was removed. Instead, you can change
   between the two versions of the synth on the fly, by clicking on the "Synth"
   option under the CPU group in the song panel ([#200][i200])

@@ -114,13 +114,17 @@ func (m *Model) SaveInstrument(w io.WriteCloser) bool {
 	var extension = filepath.Ext(path)
 	var contents []byte
 	var err error
+	instr := m.d.Song.Patch[m.d.InstrIndex]
+	if _, ok := w.(*os.File); ok {
+		instr.Name = "" // don't save the instrument name to a file; we'll replace the instruments name with the filename when loading from a file
+	}
 	if extension == ".json" {
-		contents, err = json.Marshal(m.d.Song.Patch[m.d.InstrIndex])
+		contents, err = json.Marshal(instr)
 	} else {
-		contents, err = yaml.Marshal(m.d.Song.Patch[m.d.InstrIndex])
+		contents, err = yaml.Marshal(instr)
 	}
 	if err != nil {
-		m.Alerts().Add(fmt.Sprintf("Error marshaling a ínstrument file: %v", err), Error)
+		m.Alerts().Add(fmt.Sprintf("Error marshaling an instrument file: %v", err), Error)
 		return false
 	}
 	w.Write(contents)
@@ -163,7 +167,7 @@ func (m *Model) LoadInstrument(r io.ReadCloser) bool {
 success:
 	if f, ok := r.(*os.File); ok {
 		filename := f.Name()
-		// the 4klang instrument names are junk, replace them with the filename without extension
+		// the instrument names are generally junk, replace them with the filename without extension
 		instrument.Name = filepath.Base(filename[:len(filename)-len(filepath.Ext(filename))])
 	}
 	defer m.change("LoadInstrument", PatchChange, MajorChange)()

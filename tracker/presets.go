@@ -14,7 +14,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//go:generate go run generate/main.go
+//go:generate go run generate/gmdls_entries.go
+//go:generate go run generate/clean_presets.go
 
 type (
 	// GmDlsEntry is a single sample entry from the gm.dls file
