@@ -1,4 +1,3 @@
-name: clap-edm
 numvoices: 1
 units:
     - type: envelope

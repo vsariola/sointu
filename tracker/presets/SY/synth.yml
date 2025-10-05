@@ -1,4 +1,3 @@
-name: synth
 numvoices: 1
 units:
     - id: 75

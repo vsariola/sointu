@@ -1,63 +1,62 @@
-name: snare
-comment: 'suggested note: E-4'
+comment: 'suggested note: D-4'
 numvoices: 1
 units:
     - id: 334
       parameters: {}
       comment: Tom
     - type: envelope
-      id: 288
+      id: 1217
       parameters: {attack: 0, decay: 53, gain: 64, release: 0, stereo: 0, sustain: 0}
     - type: oscillator
-      id: 289
-      parameters: {color: 128, detune: 64, gain: 66, phase: 5, shape: 64, stereo: 0, transpose: 57, type: 0, unison: 0}
+      id: 1218
+      parameters: {color: 128, detune: 64, gain: 81, phase: 0, shape: 64, stereo: 0, transpose: 57, type: 0, unison: 0}
     - type: mulp
-      id: 305
+      id: 1219
       parameters: {stereo: 0}
     - type: delay
-      id: 309
-      parameters: {damp: 80, dry: 128, feedback: 86, notetracking: 0, pregain: 99, stereo: 0}
+      id: 1220
+      parameters: {damp: 74, dry: 128, feedback: 94, notetracking: 0, pregain: 96, stereo: 0}
       varargs: [229]
-    - id: 329
+    - id: 1221
       parameters: {}
       comment: Snare
     - type: envelope
-      id: 313
-      parameters: {attack: 0, decay: 70, gain: 63, release: 0, stereo: 0, sustain: 0}
+      id: 1222
+      parameters: {attack: 0, decay: 65, gain: 62, release: 0, stereo: 0, sustain: 0}
     - type: noise
-      id: 310
-      parameters: {gain: 110, shape: 42, stereo: 0}
+      id: 1223
+      parameters: {gain: 128, shape: 30, stereo: 0}
     - type: mulp
-      id: 314
+      id: 1224
       parameters: {stereo: 0}
     - type: distort
-      id: 326
+      id: 1225
       parameters: {drive: 11, stereo: 0}
     - type: filter
       id: 333
-      parameters: {bandpass: 1, frequency: 86, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 84, highpass: 1, lowpass: 0, resonance: 120, stereo: 0}
     - type: addp
-      id: 316
+      id: 1226
       parameters: {stereo: 0}
-    - id: 328
+    - id: 1227
       parameters: {}
       comment: Effects & output
     - type: pan
-      id: 292
+      id: 1228
       parameters: {panning: 64, stereo: 0}
     - type: distort
-      id: 323
-      parameters: {drive: 90, stereo: 1}
+      id: 1229
+      parameters: {drive: 91, stereo: 1}
     - type: delay
-      id: 322
-      parameters: {damp: 5, dry: 128, feedback: 80, notetracking: 0, pregain: 37, stereo: 1}
+      id: 1230
+      parameters: {damp: 5, dry: 128, feedback: 80, notetracking: 0, pregain: 48, stereo: 1}
       varargs: [1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618, 1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642]
     - type: compressor
-      id: 320
-      parameters: {attack: 49, invgain: 30, ratio: 76, release: 64, stereo: 1, threshold: 12}
+      id: 1231
+      parameters: {attack: 8, invgain: 20, ratio: 87, release: 7, stereo: 1, threshold: 53}
     - type: mulp
-      id: 321
+      id: 1232
       parameters: {stereo: 1}
     - type: outaux
-      id: 293
-      parameters: {auxgain: 0, outgain: 67, stereo: 1}
+      id: 1233
+      parameters: {auxgain: 0, outgain: 64, stereo: 1}

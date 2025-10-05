@@ -1,4 +1,3 @@
-name: sine-pluck
 numvoices: 3
 units:
     - type: envelope

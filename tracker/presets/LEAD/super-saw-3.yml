@@ -1,4 +1,3 @@
-name: super-saw-3
 comment: Automate filter frequency for the classic trance sound
 numvoices: 1
 units:
@@ -50,14 +49,14 @@ units:
       parameters: {bandpass: 0, frequency: 128, highpass: 0, lowpass: 1, resonance: 77, stereo: 1}
     - type: compressor
       id: 27
-      parameters: {attack: 42, invgain: 91, ratio: 81, release: 63, stereo: 1, threshold: 55}
+      parameters: {attack: 4, invgain: 85, ratio: 86, release: 15, stereo: 1, threshold: 61}
     - type: mulp
       id: 28
       parameters: {stereo: 1}
     - type: delay
       id: 29
-      parameters: {damp: 91, dry: 64, feedback: 36, notetracking: 2, pregain: 25, stereo: 1}
-      varargs: [40, 41]
+      parameters: {damp: 91, dry: 64, feedback: 36, notetracking: 2, pregain: 26, stereo: 1}
+      varargs: [36, 41]
     - type: outaux
       id: 30
-      parameters: {auxgain: 0, outgain: 29, stereo: 1}
+      parameters: {auxgain: 0, outgain: 30, stereo: 1}

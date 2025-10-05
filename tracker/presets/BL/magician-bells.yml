@@ -1,0 +1,55 @@
+numvoices: 2
+units:
+    - id: 1232
+      parameters: {}
+      comment: Oscillators
+    - type: oscillator
+      id: 1225
+      parameters: {color: 128, detune: 46, gain: 64, looplength: 62, loopstart: 81, phase: 0, samplestart: 355570, shape: 64, stereo: 0, transpose: 59, type: 4}
+      comment: Celesta 1
+    - type: oscillator
+      id: 1226
+      parameters: {color: 128, detune: 64, gain: 64, looplength: 252, loopstart: 292, phase: 0, samplestart: 354942, shape: 64, stereo: 0, transpose: 71, type: 4}
+      comment: Celesta 2
+    - type: delay
+      id: 1191
+      parameters: {damp: 0, dry: 128, feedback: 0, notetracking: 0, pregain: 128, stereo: 0}
+      varargs: [3412, 1]
+    - type: addp
+      id: 1227
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1189
+      parameters: {color: 64, detune: 90, gain: 126, looplength: 1, loopstart: 1538, phase: 0, samplestart: 202691, shape: 64, stereo: 0, transpose: 81, type: 4, unison: 0}
+    - type: delay
+      id: 1199
+      parameters: {damp: 0, dry: 128, feedback: 0, notetracking: 0, pregain: 128, stereo: 0}
+      varargs: [6228]
+    - type: addp
+      id: 1188
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1187
+      parameters: {color: 109, detune: 64, gain: 43, phase: 0, shape: 52, stereo: 0, transpose: 76, type: 0, unison: 2}
+      comment: Body sine
+    - type: addp
+      id: 1190
+      parameters: {stereo: 0}
+    - id: 1231
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1224
+      parameters: {attack: 23, decay: 69, gain: 84, release: 82, stereo: 0, sustain: 56}
+    - type: mulp
+      id: 1228
+      parameters: {stereo: 0}
+    - id: 1233
+      parameters: {}
+      comment: Pan & output
+    - type: pan
+      id: 1229
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 1230
+      parameters: {auxgain: 45, outgain: 48, stereo: 1}

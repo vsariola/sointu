@@ -1,0 +1,71 @@
+numvoices: 4
+units:
+    - id: 1235
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1224
+      parameters: {attack: 0, decay: 75, gain: 116, release: 72, stereo: 0, sustain: 77}
+    - type: envelope
+      id: 228
+      parameters: {attack: 0, decay: 71, gain: 64, release: 86, stereo: 0, sustain: 93}
+    - type: mulp
+      id: 229
+      parameters: {stereo: 0}
+    - id: 1236
+      parameters: {}
+      comment: Oscillators
+    - type: oscillator
+      id: 1225
+      parameters: {color: 46, detune: 65, gain: 41, lfo: 0, phase: 0, shape: 49, stereo: 0, transpose: 76, type: 1, unison: 1}
+    - type: add
+      id: 214
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1226
+      parameters: {color: 64, detune: 61, gain: 34, lfo: 0, phase: 0, shape: 57, stereo: 0, transpose: 76, type: 0, unison: 1}
+    - type: addp
+      id: 1227
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1002
+      parameters: {color: 64, detune: 67, gain: 128, looplength: 1645, loopstart: 3820, phase: 0, samplestart: 551786, shape: 64, stereo: 0, transpose: 71, type: 4, unison: 1}
+    - type: addp
+      id: 1004
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 1228
+      parameters: {stereo: 0}
+    - id: 1237
+      parameters: {}
+      comment: Effects
+    - type: loadnote
+      id: 1006
+      parameters: {stereo: 0}
+    - type: send
+      id: 1007
+      parameters: {amount: 86, port: 0, sendpop: 1, stereo: 0, target: 1005, voice: 0}
+    - type: filter
+      id: 1005
+      parameters: {bandpass: 0, frequency: 31, highpass: -1, lowpass: 0, resonance: 128, stereo: 0}
+    - type: compressor
+      id: 1233
+      parameters: {attack: 0, invgain: 119, ratio: 91, release: 28, stereo: 0, threshold: 38}
+    - type: mulp
+      id: 1234
+      parameters: {stereo: 0}
+    - id: 1238
+      parameters: {}
+      comment: Delay & output
+    - type: pan
+      id: 1229
+      parameters: {panning: 61, stereo: 0}
+    - type: delay
+      id: 1230
+      parameters: {damp: 12, dry: 91, feedback: 84, notetracking: 0, pregain: 63, stereo: 1}
+      varargs: [12550, 24402, 21265, 32419]
+    - type: outaux
+      id: 172
+      parameters: {auxgain: 41, outgain: 86, stereo: 1}
+    - id: 1008
+      parameters: {}

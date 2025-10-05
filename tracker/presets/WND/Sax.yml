@@ -1,0 +1,48 @@
+numvoices: 2
+units:
+    - id: 1156
+      parameters: {}
+      comment: Modulation
+    - type: envelope
+      id: 1144
+      parameters: {attack: 91, decay: 83, gain: 126, release: 22, stereo: 0, sustain: 56}
+    - type: oscillator
+      id: 1143
+      parameters: {color: 128, detune: 64, gain: 55, lfo: 1, phase: 64, shape: 64, stereo: 0, transpose: 81, type: 0, unison: 0}
+    - type: mulp
+      id: 1145
+      parameters: {stereo: 0}
+    - type: send
+      id: 1142
+      parameters: {amount: 95, port: 1, sendpop: 1, stereo: 0, target: 1137, voice: 0}
+    - id: 1155
+      parameters: {}
+      comment: Main oscillator
+    - type: oscillator
+      id: 1137
+      parameters: {color: 64, detune: 64, gain: 40, looplength: 180, loopstart: 1086, phase: 0, samplestart: 222817, shape: 64, stereo: 1, transpose: 77, type: 4}
+    - id: 1153
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1136
+      parameters: {attack: 36, decay: 67, gain: 64, release: 60, stereo: 1, sustain: 58}
+    - type: mulp
+      id: 1151
+      parameters: {stereo: 1}
+    - id: 1149
+      parameters: {}
+      comment: Effects & output
+    - type: distort
+      id: 1146
+      parameters: {drive: 114, stereo: 1}
+    - type: filter
+      id: 1154
+      parameters: {bandpass: -1, frequency: 108, highpass: -1, lowpass: 1, resonance: 128, stereo: 1}
+    - type: delay
+      id: 1139
+      parameters: {damp: 0, dry: 128, feedback: 42, notetracking: 2, pregain: 55, stereo: 1}
+      varargs: [48, 24]
+    - type: outaux
+      id: 1141
+      parameters: {auxgain: 23, outgain: 38, stereo: 1}
