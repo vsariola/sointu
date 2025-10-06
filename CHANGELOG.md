@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.5.0]
+
+### BREAKING CHANGES
+- BREAKING CHANGE: always first modulate delay time, then apply notetracking. In
+  a delay unit, modulation adds to the delay time, while note tracking
+  multiplies it with a multiplier dependent on the note. The order of these
+  operations was different in the Go VM vs. x86 VM & WebAssembly VM. In the Go
+  VM, it first modulated, and then applied the note tracking multiplication. In
+  the two assembly VMs, it first applied the note tracking and then modulated.
+  Of these two behaviours, the Go VM behaviour made more sense: if you make a
+  vibrato of +-50 cents for C4, you probably want a vibrato of +-50 cents for C6
+  also. Thus, first modulating and then applying the note tracking
+  multiplication is now the behaviour accross all VMs.
+- BREAKING CHANGE: the negbandpass and neghighpass parameters of the filter unit
+  were removed. Setting bandpass or highpass to -1 achieves now the same end
+  result. Setting both negbandpass and bandpass to 1 was previously a no-op. Old
+  patch and instrument files are converted to the new format when loaded, but
+  newer Sointu files should not be compiled with an old version of
+  sointu-compile.  
+
 ### Added
 - Signal rail that visualizes what happens in the stack, shown on the left side
   of each unit in the rack.
@@ -62,16 +81,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 - Tooltips will be hidden after certain amount of time has passed, to ensure
   that the tooltips don't stay around ([#141][i141])
-- BREAKING CHANGE: always first modulate delay time, then apply notetracking. In
-  a delay unit, modulation adds to the delay time, while note tracking
-  multiplies it with a multiplier dependent on the note. The order of these
-  operations was different in the Go VM vs. x86 VM & WebAssembly VM. In the Go
-  VM, it first modulated, and then applied the note tracking multiplication. In
-  the two assembly VMs, it first applied the note tracking and then modulated.
-  Of these two behaviours, the Go VM behaviour made more sense: if you make a
-  vibrato of +-50 cents for C4, you probably want a vibrato of +-50 cents for C6
-  also. Thus, first modulating and then applying the note tracking
-  multiplication is now the behaviour accross all VMs.
 - Loading instrument forgot to close the file (in model.ReadInstrument)
 - We try to honor the MIDI event time stamps, so that the timing between MIDI
   events (as reported to us by RTMIDI) will be correct.
@@ -112,12 +121,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   between the two versions of the synth on the fly, by clicking on the "Synth"
   option under the CPU group in the song panel ([#200][i200])
 - Send amount defaults to 64 = 0.0 ([#178][i178])
-- BREAKING CHANGE: the negbandpass and neghighpass parameters of the filter unit
-  were removed. Setting bandpass or highpass to -1 achieves now the same end
-  result. Setting both negbandpass and bandpass to 1 was previously a no-op. Old
-  patch and instrument files are converted to the new format when loaded, but
-  newer Sointu files should not be compiled with an old version of
-  sointu-compile.
 - The maximum number of delaylines in the native synth was increased to 128,
   with slight increase in memory usage ([#155][i155])
 - The numeric updown widget has a new appearance.
