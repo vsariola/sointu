@@ -3,8 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.5.0]
+## [Unreleased]
+### Added
+- Panic the synth if it outputs NaN or Inf, and handle these more gracefully in
+  the loudness and peak detector. ([#210][i210])
 
+## [0.5.0]
 ### BREAKING CHANGES
 - BREAKING CHANGE: always first modulate delay time, then apply notetracking. In
   a delay unit, modulation adds to the delay time, while note tracking
@@ -368,3 +372,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i192]: https://github.com/vsariola/sointu/issues/192
 [i196]: https://github.com/vsariola/sointu/issues/196
 [i200]: https://github.com/vsariola/sointu/issues/200
+[i210]: https://github.com/vsariola/sointu/issues/210

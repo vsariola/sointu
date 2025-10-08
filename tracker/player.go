@@ -128,7 +128,12 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 			rendered, timeAdvanced, err = p.synth.Render(buffer[:framesUntilEvent], timeUntilRowAdvance)
 			if err != nil {
 				p.synth = nil
-				p.send(Alert{Message: fmt.Sprintf("synth.Render: %s", err.Error()), Priority: Error, Name: "PlayerCrash"})
+				p.send(Alert{Message: fmt.Sprintf("synth.Render: %s", err.Error()), Priority: Error, Name: "PlayerCrash", Duration: defaultAlertDuration})
+			}
+			// for performance, we don't check for NaN of every sample, because typically NaNs propagate
+			if rendered > 0 && (isNaN(buffer[0][0]) || isNaN(buffer[0][1]) || isInf(buffer[0][0]) || isInf(buffer[0][1])) {
+				p.synth = nil
+				p.send(Alert{Message: "Inf or NaN detected in synth output", Priority: Error, Name: "PlayerCrash", Duration: defaultAlertDuration})
 			}
 		} else {
 			rendered = min(framesUntilEvent, timeUntilRowAdvance)
@@ -204,6 +209,14 @@ func (p *Player) advanceRow() {
 
 func (p NullPlayerProcessContext) BPM() (bpm float64, ok bool) {
 	return 0, false // no BPM available
+}
+
+func isNaN(f float32) bool {
+	return f != f
+}
+
+func isInf(f float32) bool {
+	return f > math.MaxFloat32 || f < -math.MaxFloat32
 }
 
 func (p *Player) processMessages(context PlayerProcessContext) {

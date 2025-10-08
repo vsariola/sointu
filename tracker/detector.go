@@ -74,6 +74,11 @@ const (
 )
 
 const MAX_INTEGRATED_DATA = 10 * 60 * 60 // 1 hour of samples at 10 Hz (100 ms per sample)
+// In the detector, we clamp the signal levels to +-MAX_SIGNAL_AMPLITUDE to
+// avoid Inf results. This is 240 dBFS. max float32 is about 3.4e38, so squaring
+// the amplitude values gives 1e24, and adding 4410 of those together (when
+// taking the mean) gives a value < 1e37, which is still < max float32.
+const MAX_SIGNAL_AMPLITUDE = 1e12
 
 const (
 	PeakMomentary PeakType = iota
@@ -232,7 +237,7 @@ func (d *loudnessDetector) update(chunk sointu.AudioBuffer) LoudnessResult {
 	for chn := range 2 {
 		// deinterleave the channels
 		for i := range chunk {
-			d.tmp[i] = chunk[i][chn]
+			d.tmp[i] = removeNaNsAndClamp(chunk[i][chn])
 		}
 		// filter the signal with the weighting filter
 		for k := range d.weighting {
@@ -285,6 +290,13 @@ func (d *loudnessDetector) reset() {
 	// reset the biquad states
 	d.states = [2][3]biquadState{}
 	d.integratedPower = 0
+}
+
+func removeNaNsAndClamp(s float32) float32 {
+	if s != s { // NaN
+		return 0
+	}
+	return min(max(s, -MAX_SIGNAL_AMPLITUDE), MAX_SIGNAL_AMPLITUDE)
 }
 
 func powerToDecibel(power float32) Decibel {
@@ -382,7 +394,7 @@ func (d *peakDetector) update(buf sointu.AudioBuffer) (ret PeakResult) {
 	for chn := range 2 {
 		// deinterleave the channels
 		for i := range buf {
-			d.tmp[i] = buf[i][chn]
+			d.tmp[i] = removeNaNsAndClamp(buf[i][chn])
 		}
 		// 4x oversample the signal
 		var o []float32
