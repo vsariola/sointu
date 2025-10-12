@@ -1,3 +1,4 @@
+name: pop-piano-2
 numvoices: 4
 units:
     - id: 1187
@@ -5,10 +6,10 @@ units:
       comment: Oscillators
     - type: oscillator
       id: 2
-      parameters: {color: 64, detune: 64, gain: 128, looplength: 1487, loopstart: 8309, phase: 0, samplestart: 972709, shape: 64, stereo: 0, transpose: 68, type: 4, unison: 0}
+      parameters: {color: 64, detune: 64, gain: 96, looplength: 1487, loopstart: 8309, phase: 0, samplestart: 972709, shape: 64, stereo: 0, transpose: 68, type: 4, unison: 0}
     - type: oscillator
-      id: 1174
-      parameters: {color: 64, detune: 67, gain: 128, looplength: 1339, loopstart: 9176, phase: 0, samplestart: 982589, shape: 64, stereo: 0, transpose: 72, type: 4}
+      id: 1241
+      parameters: {color: 64, detune: 67, gain: 96, looplength: 1339, loopstart: 9176, phase: 0, samplestart: 982589, shape: 64, stereo: 0, transpose: 72, type: 4}
     - type: addp
       id: 1185
       parameters: {stereo: 0}
@@ -29,4 +30,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 6
-      parameters: {auxgain: 54, outgain: 64, stereo: 1}
+      parameters: {auxgain: 45, outgain: 64, stereo: 1}

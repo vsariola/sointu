@@ -1,3 +1,4 @@
+name: synastasia
 numvoices: 1
 units:
     - id: 199
@@ -29,13 +30,13 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 13
-      parameters: {color: 0, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
+      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
     - type: oscillator
       id: 12
-      parameters: {color: 0, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
+      parameters: {color: 0, detune: 64, gain: 70, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
     - type: oscillator
       id: 14
-      parameters: {color: 0, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
+      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
     - type: addp
       id: 15
       parameters: {stereo: 0}
@@ -47,9 +48,9 @@ units:
       comment: Main envelope
     - type: envelope
       id: 1
-      parameters: {attack: 64, decay: 70, gain: 128, release: 88, stereo: 0, sustain: 70}
+      parameters: {attack: 64, decay: 70, gain: 64, release: 88, stereo: 0, sustain: 70}
     - type: mulp
-      id: 18
+      id: 1241
       parameters: {stereo: 0}
     - id: 196
       parameters: {}
@@ -58,16 +59,16 @@ units:
       id: 17
       parameters: {bandpass: 0, frequency: 104, highpass: 0, lowpass: 1, resonance: 96, stereo: 0}
     - type: delay
-      id: 19
+      id: 1242
       parameters: {damp: 0, dry: 64, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}
       varargs: [72]
     - type: pan
       id: 20
       parameters: {panning: 64, stereo: 0}
     - type: delay
-      id: 21
+      id: 1243
       parameters: {damp: 0, dry: 0, feedback: 0, notetracking: 0, pregain: 128, stereo: 0}
       varargs: [512]
     - type: outaux
-      id: 22
-      parameters: {auxgain: 64, outgain: 16, stereo: 1}
+      id: 1244
+      parameters: {auxgain: 35, outgain: 39, stereo: 1}

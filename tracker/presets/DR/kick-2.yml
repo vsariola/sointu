@@ -1,3 +1,4 @@
+name: kick-2
 comment: 'Suggested note: C-3'
 numvoices: 1
 units:
@@ -27,7 +28,7 @@ units:
       comment: Pitch drop
     - type: envelope
       id: 280
-      parameters: {attack: 39, decay: 64, gain: 99, release: 14, stereo: 0, sustain: 4}
+      parameters: {attack: 26, decay: 64, gain: 96, release: 17, stereo: 0, sustain: 4}
     - type: send
       id: 284
       parameters: {amount: 75, port: 0, sendpop: 1, stereo: 0, target: 277, voice: 0}
@@ -42,13 +43,13 @@ units:
       comment: Body & tail
     - type: oscillator
       id: 277
-      parameters: {color: 128, detune: 64, gain: 110, phase: 0, shape: 64, stereo: 0, transpose: 45, type: 0}
+      parameters: {color: 128, detune: 64, gain: 96, phase: 0, shape: 64, stereo: 0, transpose: 45, type: 0}
     - type: filter
       id: 283
       parameters: {bandpass: 0, frequency: 17, highpass: -1, lowpass: 1, resonance: 98, stereo: 0}
     - type: envelope
       id: 274
-      parameters: {attack: 39, decay: 69, gain: 60, release: 42, stereo: 0, sustain: 1}
+      parameters: {attack: 39, decay: 69, gain: 64, release: 42, stereo: 0, sustain: 1}
     - type: mulp
       id: 279
       parameters: {stereo: 0}
@@ -63,4 +64,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 266
-      parameters: {auxgain: 0, outgain: 123, stereo: 1}
+      parameters: {auxgain: 0, outgain: 45, stereo: 1}

@@ -1,3 +1,4 @@
+name: kick-3
 comment: 'Suggested note: C-3'
 numvoices: 1
 units:
@@ -6,13 +7,13 @@ units:
       comment: Tick
     - type: noise
       id: 269
-      parameters: {gain: 128, shape: 73, stereo: 0}
+      parameters: {gain: 128, shape: 64, stereo: 0}
     - type: filter
       id: 333
       parameters: {bandpass: 1, frequency: 59, highpass: 0, lowpass: 0, resonance: 128, stereo: 0}
     - type: envelope
       id: 261
-      parameters: {attack: 0, decay: 48, gain: 65, release: 0, stereo: 0, sustain: 0}
+      parameters: {attack: 0, decay: 48, gain: 95, release: 0, stereo: 0, sustain: 0}
     - type: mulp
       id: 263
       parameters: {stereo: 0}
@@ -48,7 +49,7 @@ units:
       parameters: {bandpass: 0, frequency: 10, highpass: 1, lowpass: 0, resonance: 54, stereo: 0}
     - type: envelope
       id: 274
-      parameters: {attack: 0, decay: 73, gain: 117, release: 0, stereo: 0, sustain: 0}
+      parameters: {attack: 0, decay: 73, gain: 79, release: 0, stereo: 0, sustain: 0}
     - type: mulp
       id: 279
       parameters: {stereo: 0}
@@ -63,4 +64,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 266
-      parameters: {auxgain: 0, outgain: 65, stereo: 1}
+      parameters: {auxgain: 0, outgain: 37, stereo: 1}

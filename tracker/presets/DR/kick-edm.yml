@@ -1,3 +1,4 @@
+name: kick-edm
 comment: A#2
 numvoices: 1
 units:
@@ -75,4 +76,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 118
-      parameters: {auxgain: 0, outgain: 78, stereo: 1}
+      parameters: {auxgain: 0, outgain: 22, stereo: 1}

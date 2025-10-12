@@ -1,3 +1,4 @@
+name: snare-edm-2
 comment: 'Suggested range: E-4'
 numvoices: 1
 units:
@@ -90,4 +91,4 @@ units:
       parameters: {panning: 59, stereo: 0}
     - type: outaux
       id: 232
-      parameters: {auxgain: 7, outgain: 60, stereo: 1}
+      parameters: {auxgain: 2, outgain: 34, stereo: 1}

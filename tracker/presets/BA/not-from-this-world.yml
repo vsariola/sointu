@@ -1,3 +1,4 @@
+name: not-from-this-world
 numvoices: 1
 units:
     - id: 208
@@ -58,18 +59,18 @@ units:
       id: 1
       parameters: {attack: 0, decay: 88, gain: 128, release: 6, stereo: 0, sustain: 128}
     - type: mulp
-      id: 18
+      id: 1241
       parameters: {stereo: 0}
     - id: 205
       parameters: {}
       comment: Effects & output
     - type: pan
-      id: 19
+      id: 1242
       parameters: {panning: 64, stereo: 0}
     - type: delay
       id: 20
-      parameters: {damp: 64, dry: 128, feedback: 64, notetracking: 2, pregain: 64, stereo: 1}
+      parameters: {damp: 64, dry: 64, feedback: 64, notetracking: 2, pregain: 64, stereo: 1}
       varargs: [24, 48]
     - type: outaux
       id: 24
-      parameters: {auxgain: 11, outgain: 42, stereo: 1}
+      parameters: {auxgain: 11, outgain: 27, stereo: 1}

@@ -1,80 +1,78 @@
+name: house-bass-organ
 numvoices: 1
 units:
-    - id: 231
+    - id: 235
       parameters: {}
       comment: Main oscillators & envelope
     - type: envelope
-      id: 207
+      id: 236
       parameters: {attack: 37, decay: 74, gain: 78, release: 44, stereo: 0, sustain: 49}
     - type: oscillator
-      id: 208
+      id: 237
       parameters: {color: 64, detune: 54, gain: 128, phase: 0, shape: 64, stereo: 0, transpose: 40, type: 1, unison: 3}
     - type: oscillator
-      id: 213
+      id: 238
       parameters: {color: 64, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 71, type: 2, unison: 0}
     - type: addp
-      id: 214
+      id: 239
       parameters: {stereo: 0}
     - type: mulp
-      id: 209
+      id: 240
       parameters: {stereo: 0}
-    - id: 232
+    - id: 1241
       parameters: {}
       comment: Effects
     - type: envelope
-      id: 220
+      id: 242
       parameters: {attack: 0, decay: 72, gain: 76, release: 45, stereo: 0, sustain: 47}
     - type: send
-      id: 217
-      parameters: {amount: 128, port: 0, sendpop: 1, stereo: 0, target: 218, voice: 0}
+      id: 243
+      parameters: {amount: 128, port: 0, sendpop: 1, stereo: 0, target: 244, voice: 0}
     - type: filter
-      id: 218
+      id: 244
       parameters: {bandpass: 0, frequency: 0, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: filter
-      id: 219
+      id: 245
       parameters: {bandpass: 0, frequency: 66, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: distort
-      id: 215
+      id: 246
       parameters: {drive: 86, stereo: 0}
-    - id: 233
+    - id: 247
       parameters: {}
       comment: Noise
     - type: envelope
-      id: 221
+      id: 248
       parameters: {attack: 32, decay: 53, gain: 64, release: 5, stereo: 0, sustain: 0}
     - type: noise
-      id: 222
-      parameters: {gain: 59, shape: 56, stereo: 0}
+      id: 249
+      parameters: {gain: 68, shape: 56, stereo: 0}
     - type: mulp
-      id: 223
+      id: 250
       parameters: {stereo: 0}
     - type: loadnote
       id: 226
       parameters: {stereo: 0}
     - type: send
       id: 227
-      parameters: {amount: 54, port: 0, sendpop: 1, stereo: 0, target: 225, voice: 0}
+      parameters: {amount: 72, port: 0, sendpop: 1, stereo: 0, target: 251, voice: 0}
     - type: filter
-      id: 225
-      parameters: {bandpass: -1, frequency: 71, highpass: 0, lowpass: 1, resonance: 81, stereo: 0}
+      id: 251
+      parameters: {bandpass: -1, frequency: 67, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: addp
-      id: 224
+      id: 252
       parameters: {stereo: 0}
-    - id: 234
+    - id: 253
       parameters: {}
       comment: Effects & output
-    - type: distort
-      id: 228
-      parameters: {drive: 67, stereo: 0}
     - type: compressor
-      id: 229
-      parameters: {attack: 37, invgain: 87, ratio: 97, release: 65, stereo: 0, threshold: 47}
+      id: 255
+      parameters: {attack: 16, invgain: 128, ratio: 70, release: 26, stereo: 0, threshold: 69}
     - type: mulp
-      id: 230
+      id: 256
       parameters: {stereo: 0}
     - type: pan
-      id: 211
+      id: 257
       parameters: {panning: 64, stereo: 0}
     - type: outaux
-      id: 212
-      parameters: {auxgain: 29, outgain: 69, stereo: 1}
+      id: 258
+      parameters: {auxgain: 9, outgain: 32, stereo: 1}

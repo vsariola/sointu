@@ -1,11 +1,12 @@
-numvoices: 1
+name: lullaby2
+numvoices: 2
 units:
     - type: envelope
       id: 1
-      parameters: {attack: 31, decay: 77, gain: 64, release: 68, stereo: 0, sustain: 38}
+      parameters: {attack: 37, decay: 77, gain: 95, release: 68, stereo: 0, sustain: 38}
     - type: oscillator
       id: 2
-      parameters: {color: 128, detune: 64, gain: 56, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 0, unison: 0}
+      parameters: {color: 128, detune: 64, gain: 79, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 0, unison: 0}
     - type: mulp
       id: 3
       parameters: {stereo: 0}
@@ -18,4 +19,4 @@ units:
       varargs: [48, 24]
     - type: outaux
       id: 174
-      parameters: {auxgain: 64, outgain: 64, stereo: 1}
+      parameters: {auxgain: 43, outgain: 64, stereo: 1}

@@ -1,3 +1,4 @@
+name: Sax
 numvoices: 2
 units:
     - id: 1156
@@ -5,7 +6,7 @@ units:
       comment: Modulation
     - type: envelope
       id: 1144
-      parameters: {attack: 91, decay: 83, gain: 126, release: 22, stereo: 0, sustain: 56}
+      parameters: {attack: 91, decay: 83, gain: 128, release: 22, stereo: 0, sustain: 56}
     - type: oscillator
       id: 1143
       parameters: {color: 128, detune: 64, gain: 55, lfo: 1, phase: 64, shape: 64, stereo: 0, transpose: 81, type: 0, unison: 0}
@@ -35,7 +36,7 @@ units:
       comment: Effects & output
     - type: distort
       id: 1146
-      parameters: {drive: 114, stereo: 1}
+      parameters: {drive: 105, stereo: 1}
     - type: filter
       id: 1154
       parameters: {bandpass: -1, frequency: 108, highpass: -1, lowpass: 1, resonance: 128, stereo: 1}
@@ -45,4 +46,4 @@ units:
       varargs: [48, 24]
     - type: outaux
       id: 1141
-      parameters: {auxgain: 23, outgain: 38, stereo: 1}
+      parameters: {auxgain: 25, outgain: 37, stereo: 1}

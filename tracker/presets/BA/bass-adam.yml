@@ -1,3 +1,4 @@
+name: bass-adam
 comment: |
     Author: pestis/bC!. Suggested note: F#1. Originally from: 4k intro Adam.
 
@@ -33,7 +34,7 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: out
       id: 223
-      parameters: {gain: 53, stereo: 1}
+      parameters: {gain: 25, stereo: 1}
     - id: 224
       parameters: {}
     - type: envelope

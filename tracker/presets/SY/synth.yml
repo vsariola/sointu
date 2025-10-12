@@ -1,3 +1,4 @@
+name: synth
 numvoices: 1
 units:
     - id: 75
@@ -20,7 +21,7 @@ units:
       comment: Main oscillator
     - type: oscillator
       id: 73
-      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 8, stereo: 0, transpose: 28, type: 0}
+      parameters: {color: 128, detune: 64, gain: 64, lfo: 1, phase: 0, shape: 8, stereo: 0, transpose: 28, type: 0}
     - type: filter
       id: 74
       parameters: {bandpass: 1, frequency: 32, highpass: 1, lowpass: 1, resonance: 32, stereo: 0}
@@ -29,7 +30,7 @@ units:
       comment: Main envelope
     - type: envelope
       id: 1
-      parameters: {attack: 64, decay: 64, gain: 128, release: 64, stereo: 0, sustain: 64}
+      parameters: {attack: 64, decay: 64, gain: 64, release: 64, stereo: 0, sustain: 64}
     - type: mulp
       id: 10
       parameters: {stereo: 0}
@@ -38,11 +39,11 @@ units:
       comment: Effects & output
     - type: delay
       id: 11
-      parameters: {damp: 64, dry: 128, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}
+      parameters: {damp: 64, dry: 72, feedback: 64, notetracking: 2, pregain: 56, stereo: 0}
       varargs: [24]
     - type: pan
       id: 12
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 13
-      parameters: {auxgain: 64, outgain: 64, stereo: 1}
+      parameters: {auxgain: 41, outgain: 53, stereo: 1}

@@ -1,3 +1,4 @@
+name: pan-flute
 numvoices: 2
 units:
     - id: 1209
@@ -35,4 +36,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 1208
-      parameters: {auxgain: 46, outgain: 65, stereo: 1}
+      parameters: {auxgain: 33, outgain: 40, stereo: 1}

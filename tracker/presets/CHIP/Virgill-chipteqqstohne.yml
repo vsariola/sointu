@@ -1,0 +1,42 @@
+name: Virgill-chipteqqstohne
+numvoices: 2
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 26, decay: 64, gain: 64, release: 64, stereo: 0, sustain: 54}
+    - type: oscillator
+      id: 2
+      parameters: {color: 64, detune: 59, gain: 64, lfo: 0, phase: 64, shape: 1, stereo: 0, transpose: 64, type: 2, unison: 1}
+    - type: mulp
+      id: 3
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 4
+      parameters: {color: 47, detune: 64, gain: 64, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 52, type: 2, unison: 0}
+    - type: mulp
+      id: 5
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 6
+      parameters: {color: 128, detune: 64, gain: 64, lfo: 1, phase: 30, shape: 64, stereo: 0, transpose: 52, type: 0, unison: 0}
+    - type: send
+      id: 10
+      parameters: {amount: 74, port: 3, sendpop: 0, target: 2}
+    - type: send
+      id: 11
+      parameters: {amount: 44, port: 3, sendpop: 0, target: 4}
+    - type: pop
+      id: 12
+      parameters: {stereo: 0}
+    - type: filter
+      id: 13
+      parameters: {bandpass: 0, frequency: 88, highpass: 1, lowpass: 1, resonance: 34, stereo: 0}
+    - type: send
+      id: 14
+      parameters: {amount: 27, port: 0, sendpop: 0, target: 15, voice: 0}
+    - type: pan
+      id: 15
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 16
+      parameters: {auxgain: 25, outgain: 90, stereo: 1}

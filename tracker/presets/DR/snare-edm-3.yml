@@ -1,5 +1,6 @@
+name: snare-edm-3
 comment: 'Suggested range: E-4'
-numvoices: 1
+numvoices: 2
 units:
     - id: 341
       parameters: {}
@@ -30,19 +31,19 @@ units:
       comment: Snare
     - type: envelope
       id: 222
-      parameters: {attack: 0, decay: 69, gain: 54, release: 0, stereo: 0, sustain: 0}
+      parameters: {attack: 0, decay: 66, gain: 52, release: 0, stereo: 0, sustain: 0}
     - type: noise
       id: 223
-      parameters: {gain: 22, shape: 14, stereo: 0}
+      parameters: {gain: 17, shape: 18, stereo: 0}
     - type: mulp
       id: 224
       parameters: {stereo: 0}
     - type: filter
       id: 201
-      parameters: {bandpass: 0, frequency: 80, highpass: -1, lowpass: 1, resonance: 98, stereo: 0}
+      parameters: {bandpass: 0, frequency: 93, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
     - type: filter
       id: 225
-      parameters: {bandpass: -1, frequency: 120, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 64, highpass: -1, lowpass: 1, resonance: 100, stereo: 0}
     - type: addp
       id: 226
       parameters: {stereo: 0}
@@ -51,28 +52,28 @@ units:
       comment: Modulations
     - type: envelope
       id: 235
-      parameters: {attack: 53, decay: 58, gain: 128, release: 0, stereo: 0, sustain: 0}
+      parameters: {attack: 59, decay: 0, gain: 128, release: 0, stereo: 0, sustain: 0}
     - type: send
       id: 236
       parameters: {amount: 0, port: 0, sendpop: 1, target: 201}
     - type: envelope
       id: 237
-      parameters: {attack: 53, decay: 73, gain: 128, release: 0, stereo: 0, sustain: 0}
+      parameters: {attack: 63, decay: 128, gain: 128, release: 0, stereo: 0, sustain: 0}
     - type: send
       id: 238
-      parameters: {amount: 32, port: 0, sendpop: 1, target: 202}
+      parameters: {amount: 34, port: 0, sendpop: 1, target: 202}
     - id: 344
       parameters: {}
       comment: Effects
     - type: filter
       id: 202
-      parameters: {bandpass: 0, frequency: 50, highpass: -1, lowpass: 1, resonance: 95, stereo: 0}
+      parameters: {bandpass: 1, frequency: 43, highpass: 1, lowpass: 0, resonance: 57, stereo: 0}
     - type: distort
       id: 338
-      parameters: {drive: 112, stereo: 0}
+      parameters: {drive: 108, stereo: 0}
     - type: compressor
       id: 339
-      parameters: {attack: 51, invgain: 58, ratio: 42, release: 63, stereo: 0, threshold: 15}
+      parameters: {attack: 17, invgain: 110, ratio: 87, release: 31, stereo: 0, threshold: 48}
     - type: mulp
       id: 340
       parameters: {stereo: 0}
@@ -84,4 +85,4 @@ units:
       parameters: {panning: 59, stereo: 0}
     - type: outaux
       id: 232
-      parameters: {auxgain: 0, outgain: 75, stereo: 1}
+      parameters: {auxgain: 1, outgain: 46, stereo: 1}

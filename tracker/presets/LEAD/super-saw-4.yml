@@ -1,3 +1,4 @@
+name: super-saw-4
 comment: Automate filter frequency for the classic trance sound
 numvoices: 5
 units:
@@ -11,13 +12,13 @@ units:
       id: 12
       parameters: {color: 128, detune: 77, gain: 80, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
     - type: addp
-      id: 13
+      id: 1180
       parameters: {stereo: 0}
     - type: envelope
       id: 1098
       parameters: {attack: 1, decay: 0, gain: 64, release: 64, stereo: 0, sustain: 85}
     - type: mulp
-      id: 16
+      id: 1181
       parameters: {stereo: 0}
     - id: 1158
       parameters: {}
@@ -32,7 +33,7 @@ units:
       id: 20
       parameters: {stereo: 0}
     - type: envelope
-      id: 17
+      id: 1182
       parameters: {attack: 18, decay: 67, gain: 64, release: 64, stereo: 0, sustain: 99}
     - type: mulp
       id: 23
@@ -55,11 +56,11 @@ units:
       parameters: {stereo: 1}
     - type: delay
       id: 29
-      parameters: {damp: 91, dry: 64, feedback: 36, notetracking: 2, pregain: 25, stereo: 1}
+      parameters: {damp: 91, dry: 43, feedback: 36, notetracking: 2, pregain: 25, stereo: 1}
       varargs: [36, 41]
     - id: 1159
       parameters: {}
       comment: Output
     - type: outaux
       id: 30
-      parameters: {auxgain: 0, outgain: 29, stereo: 1}
+      parameters: {auxgain: 0, outgain: 20, stereo: 1}

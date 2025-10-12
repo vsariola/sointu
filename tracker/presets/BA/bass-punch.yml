@@ -1,3 +1,4 @@
+name: bass-punch
 numvoices: 1
 units:
     - id: 216
@@ -5,10 +6,10 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 3
-      parameters: {color: 64, detune: 64, gain: 106, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 2}
+      parameters: {color: 64, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 2}
     - type: oscillator
       id: 4
-      parameters: {color: 0, detune: 64, gain: 122, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
+      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
     - type: addp
       id: 5
       parameters: {stereo: 0}
@@ -17,7 +18,7 @@ units:
       comment: Main envelope
     - type: envelope
       id: 1
-      parameters: {attack: 0, decay: 64, gain: 55, release: 76, stereo: 0, sustain: 64}
+      parameters: {attack: 0, decay: 64, gain: 53, release: 76, stereo: 0, sustain: 64}
     - type: send
       id: 2
       parameters: {amount: 112, port: 4, sendpop: 0, target: 1}
@@ -47,4 +48,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 15
-      parameters: {auxgain: 4, outgain: 62, stereo: 1}
+      parameters: {auxgain: 5, outgain: 24, stereo: 1}

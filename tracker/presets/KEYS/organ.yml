@@ -1,4 +1,5 @@
-numvoices: 1
+name: organ
+numvoices: 3
 units:
     - id: 248
       parameters: {}
@@ -8,19 +9,19 @@ units:
       parameters: {attack: 5, decay: 79, gain: 128, release: 37, stereo: 0, sustain: 79}
     - type: oscillator
       id: 208
-      parameters: {color: 64, detune: 64, gain: 128, phase: 114, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+      parameters: {color: 50, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 0, unison: 0}
     - type: mul
       id: 229
       parameters: {stereo: 0}
     - type: oscillator
       id: 213
-      parameters: {color: 113, detune: 61, gain: 28, lfo: 0, phase: 0, shape: 65, stereo: 0, transpose: 83, type: 0, unison: 0}
+      parameters: {color: 64, detune: 66, gain: 64, lfo: 0, phase: 0, shape: 39, stereo: 0, transpose: 83, type: 1, unison: 1}
     - type: addp
       id: 230
       parameters: {stereo: 0}
     - type: oscillator
       id: 214
-      parameters: {color: 128, detune: 64, gain: 10, phase: 0, shape: 64, stereo: 0, transpose: 95, type: 0}
+      parameters: {color: 64, detune: 60, gain: 29, phase: 0, shape: 39, stereo: 0, transpose: 95, type: 1, unison: 2}
     - type: addp
       id: 231
       parameters: {stereo: 0}
@@ -32,28 +33,25 @@ units:
       comment: Snap
     - type: envelope
       id: 234
-      parameters: {attack: 37, decay: 79, gain: 128, release: 63, stereo: 0, sustain: 79}
+      parameters: {attack: 10, decay: 51, gain: 128, release: 63, stereo: 0, sustain: 78}
     - type: oscillator
       id: 235
-      parameters: {color: 128, detune: 64, gain: 128, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 0, unison: 0}
+      parameters: {color: 128, detune: 63, gain: 34, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 0, unison: 1}
     - type: mul
       id: 236
       parameters: {stereo: 0}
     - type: oscillator
       id: 237
-      parameters: {color: 128, detune: 64, gain: 48, lfo: 0, phase: 0, shape: 63, stereo: 0, transpose: 102, type: 0, unison: 0}
+      parameters: {color: 128, detune: 64, gain: 42, lfo: 0, phase: 0, shape: 63, stereo: 0, transpose: 95, type: 0, unison: 0}
     - type: addp
       id: 238
       parameters: {stereo: 0}
     - type: oscillator
       id: 239
-      parameters: {color: 128, detune: 64, gain: 29, phase: 0, shape: 65, stereo: 0, transpose: 119, type: 0}
+      parameters: {color: 128, detune: 64, gain: 23, phase: 0, shape: 64, stereo: 0, transpose: 119, type: 0, unison: 1}
     - type: addp
       id: 240
       parameters: {stereo: 0}
-    - type: gain
-      id: 241
-      parameters: {gain: 21, stereo: 0}
     - type: mulp
       id: 242
       parameters: {stereo: 0}
@@ -65,19 +63,19 @@ units:
       comment: Filter & output
     - type: filter
       id: 245
-      parameters: {bandpass: 1, frequency: 0, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: -1, frequency: 0, highpass: 0, lowpass: 1, resonance: 125, stereo: 0}
     - type: pan
       id: 211
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 212
-      parameters: {auxgain: 9, outgain: 25, stereo: 1}
+      parameters: {auxgain: 9, outgain: 17, stereo: 1}
     - id: 249
       parameters: {}
       comment: Filter modulation
     - type: envelope
       id: 246
-      parameters: {attack: 0, decay: 76, gain: 83, release: 54, stereo: 0, sustain: 47}
+      parameters: {attack: 0, decay: 79, gain: 62, release: 65, stereo: 0, sustain: 64}
     - type: send
       id: 247
-      parameters: {amount: 128, port: 0, sendpop: 1, stereo: 0, target: 245, voice: 0}
+      parameters: {amount: 112, port: 0, sendpop: 1, stereo: 0, target: 245, voice: 0}

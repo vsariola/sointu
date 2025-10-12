@@ -1,3 +1,4 @@
+name: guitar
 numvoices: 1
 units:
     - id: 92
@@ -21,7 +22,7 @@ units:
       comment: Main envelope
     - type: envelope
       id: 1
-      parameters: {attack: 27, decay: 80, gain: 112, release: 82, stereo: 0, sustain: 95}
+      parameters: {attack: 27, decay: 80, gain: 128, release: 82, stereo: 0, sustain: 95}
     - type: mulp
       id: 87
       parameters: {stereo: 0}
@@ -36,4 +37,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 10
-      parameters: {auxgain: 16, outgain: 64, stereo: 1}
+      parameters: {auxgain: 7, outgain: 33, stereo: 1}

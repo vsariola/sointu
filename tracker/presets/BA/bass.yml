@@ -1,3 +1,4 @@
+name: bass
 numvoices: 1
 units:
     - id: 218
@@ -17,10 +18,10 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 3
-      parameters: {color: 80, detune: 64, gain: 128, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 64, type: 2}
+      parameters: {color: 80, detune: 64, gain: 64, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 64, type: 2}
     - type: oscillator
       id: 4
-      parameters: {color: 96, detune: 72, gain: 128, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 64, type: 1}
+      parameters: {color: 96, detune: 72, gain: 64, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 64, type: 1}
     - type: addp
       id: 40
       parameters: {stereo: 0}
@@ -29,7 +30,7 @@ units:
       comment: Main envelope
     - type: envelope
       id: 1
-      parameters: {attack: 32, decay: 64, gain: 64, release: 64, stereo: 0, sustain: 64}
+      parameters: {attack: 32, decay: 64, gain: 95, release: 64, stereo: 0, sustain: 64}
     - type: send
       id: 2
       parameters: {amount: 120, port: 4, sendpop: 0, target: 1}
@@ -47,14 +48,14 @@ units:
       parameters: {bandpass: 0, frequency: 32, highpass: 0, lowpass: 1, resonance: 48, stereo: 0}
     - type: distort
       id: 13
-      parameters: {drive: 88, stereo: 0}
+      parameters: {drive: 86, stereo: 0}
     - type: pan
       id: 15
       parameters: {panning: 64, stereo: 0}
     - type: delay
       id: 16
-      parameters: {damp: 102, dry: 74, feedback: 63, notetracking: 2, pregain: 43, stereo: 1}
+      parameters: {damp: 102, dry: 56, feedback: 63, notetracking: 2, pregain: 43, stereo: 1}
       varargs: [24, 48]
     - type: outaux
       id: 20
-      parameters: {auxgain: 0, outgain: 39, stereo: 1}
+      parameters: {auxgain: 0, outgain: 27, stereo: 1}

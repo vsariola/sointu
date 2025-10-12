@@ -1,3 +1,4 @@
+name: nylon-guitar
 numvoices: 1
 units:
     - id: 90
@@ -24,7 +25,7 @@ units:
       comment: Main envelope
     - type: envelope
       id: 1
-      parameters: {attack: 0, decay: 0, gain: 128, release: 64, stereo: 0, sustain: 128}
+      parameters: {attack: 0, decay: 0, gain: 64, release: 64, stereo: 0, sustain: 128}
     - type: mulp
       id: 87
       parameters: {stereo: 0}
@@ -39,4 +40,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 10
-      parameters: {auxgain: 16, outgain: 64, stereo: 1}
+      parameters: {auxgain: 5, outgain: 27, stereo: 1}

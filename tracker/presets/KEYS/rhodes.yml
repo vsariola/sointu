@@ -1,4 +1,5 @@
-numvoices: 1
+name: rhodes
+numvoices: 2
 units:
     - id: 183
       parameters: {}
@@ -14,13 +15,13 @@ units:
       comment: Envelope & osc
     - type: envelope
       id: 1
-      parameters: {attack: 23, decay: 84, gain: 63, release: 64, stereo: 0, sustain: 58}
+      parameters: {attack: 23, decay: 84, gain: 64, release: 64, stereo: 0, sustain: 58}
     - type: send
       id: 182
       parameters: {amount: 87, port: 0, sendpop: 0, stereo: 0, target: 175, voice: 0}
     - type: oscillator
       id: 5
-      parameters: {color: 128, detune: 64, gain: 78, lfo: 0, phase: 92, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+      parameters: {color: 128, detune: 64, gain: 64, lfo: 0, phase: 92, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
     - type: mulp
       id: 6
       parameters: {stereo: 0}
@@ -35,7 +36,7 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 177
-      parameters: {auxgain: 0, outgain: 63, stereo: 1}
+      parameters: {auxgain: 15, outgain: 64, stereo: 1}
     - id: 186
       parameters: {}
       comment: Panning modulation

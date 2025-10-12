@@ -1,3 +1,4 @@
+name: snare-2
 comment: 'suggested note: E-4'
 numvoices: 1
 units:
@@ -6,32 +7,32 @@ units:
       comment: Tom
     - type: envelope
       id: 288
-      parameters: {attack: 0, decay: 53, gain: 128, release: 0, stereo: 0, sustain: 0}
+      parameters: {attack: 0, decay: 53, gain: 93, release: 0, stereo: 0, sustain: 0}
     - type: oscillator
       id: 289
-      parameters: {color: 90, detune: 64, gain: 128, phase: 0, shape: 64, stereo: 0, transpose: 54, type: 0, unison: 0}
+      parameters: {color: 90, detune: 64, gain: 90, phase: 0, shape: 64, stereo: 0, transpose: 54, type: 0, unison: 0}
     - type: mulp
       id: 305
       parameters: {stereo: 0}
     - type: delay
       id: 309
-      parameters: {damp: 59, dry: 128, feedback: 90, notetracking: 0, pregain: 91, stereo: 0}
+      parameters: {damp: 64, dry: 128, feedback: 90, notetracking: 0, pregain: 100, stereo: 0}
       varargs: [235]
     - id: 329
       parameters: {}
       comment: Snare
     - type: envelope
       id: 313
-      parameters: {attack: 0, decay: 68, gain: 85, release: 0, stereo: 0, sustain: 0}
+      parameters: {attack: 0, decay: 68, gain: 64, release: 0, stereo: 0, sustain: 0}
     - type: noise
       id: 310
-      parameters: {gain: 92, shape: 36, stereo: 0}
+      parameters: {gain: 85, shape: 34, stereo: 0}
     - type: mulp
       id: 314
       parameters: {stereo: 0}
     - type: distort
       id: 326
-      parameters: {drive: 13, stereo: 0}
+      parameters: {drive: 14, stereo: 0}
     - type: filter
       id: 339
       parameters: {bandpass: 0, frequency: 60, highpass: -1, lowpass: 0, resonance: 128, stereo: 0}
@@ -46,17 +47,17 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: distort
       id: 323
-      parameters: {drive: 108, stereo: 1}
+      parameters: {drive: 97, stereo: 1}
     - type: delay
       id: 322
       parameters: {damp: 5, dry: 128, feedback: 80, notetracking: 0, pregain: 46, stereo: 1}
       varargs: [1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618, 1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642]
     - type: compressor
       id: 320
-      parameters: {attack: 10, invgain: 28, ratio: 91, release: 7, stereo: 1, threshold: 29}
+      parameters: {attack: 19, invgain: 64, ratio: 96, release: 22, stereo: 1, threshold: 28}
     - type: mulp
       id: 321
       parameters: {stereo: 1}
     - type: outaux
       id: 293
-      parameters: {auxgain: 0, outgain: 45, stereo: 1}
+      parameters: {auxgain: 4, outgain: 31, stereo: 1}

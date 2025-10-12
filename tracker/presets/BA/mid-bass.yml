@@ -1,3 +1,4 @@
+name: mid-bass
 numvoices: 1
 units:
     - id: 68
@@ -20,10 +21,10 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 10
-      parameters: {color: 64, detune: 62, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2}
+      parameters: {color: 64, detune: 62, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2}
     - type: oscillator
       id: 11
-      parameters: {color: 16, detune: 74, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2}
+      parameters: {color: 16, detune: 74, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2}
     - type: addp
       id: 12
       parameters: {stereo: 0}
@@ -56,11 +57,11 @@ units:
       comment: Effects & output
     - type: delay
       id: 16
-      parameters: {damp: 64, dry: 128, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}
+      parameters: {damp: 64, dry: 64, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}
       varargs: [32]
     - type: pan
       id: 17
       parameters: {panning: 64, stereo: 0}
     - type: outaux
-      id: 18
-      parameters: {auxgain: 16, outgain: 128, stereo: 1}
+      id: 1241
+      parameters: {auxgain: 14, outgain: 48, stereo: 1}

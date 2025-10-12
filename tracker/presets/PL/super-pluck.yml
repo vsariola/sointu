@@ -1,3 +1,4 @@
+name: super-pluck
 numvoices: 1
 units:
     - id: 34
@@ -8,10 +9,10 @@ units:
       parameters: {attack: 11, decay: 67, gain: 64, release: 64, stereo: 0, sustain: 36}
     - type: oscillator
       id: 2
-      parameters: {color: 128, detune: 100, gain: 128, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+      parameters: {color: 128, detune: 100, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
     - type: oscillator
       id: 10
-      parameters: {color: 128, detune: 27, gain: 102, lfo: 0, phase: 71, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+      parameters: {color: 128, detune: 27, gain: 63, lfo: 0, phase: 71, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
     - type: addp
       id: 11
       parameters: {stereo: 0}
@@ -24,7 +25,7 @@ units:
     - type: mulp
       id: 17
       parameters: {stereo: 0}
-    - id: 18
+    - id: 1241
       parameters: {}
       comment: Right
     - type: envelope
@@ -32,10 +33,10 @@ units:
       parameters: {attack: 18, decay: 67, gain: 64, release: 64, stereo: 0, sustain: 35}
     - type: oscillator
       id: 13
-      parameters: {color: 128, detune: 31, gain: 128, phase: 78, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+      parameters: {color: 128, detune: 31, gain: 64, phase: 78, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
     - type: oscillator
       id: 14
-      parameters: {color: 128, detune: 96, gain: 128, lfo: 0, phase: 54, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+      parameters: {color: 128, detune: 96, gain: 64, lfo: 0, phase: 54, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
     - type: addp
       id: 28
       parameters: {stereo: 0}
@@ -56,14 +57,14 @@ units:
       parameters: {damp: 0, dry: 0, feedback: 0, notetracking: 0, pregain: 128, stereo: 0}
       varargs: [69]
     - type: pan
-      id: 30
+      id: 1242
       parameters: {panning: 60, stereo: 1}
     - type: filter
-      id: 19
+      id: 1243
       parameters: {bandpass: 0, frequency: 96, highpass: 0, lowpass: 1, resonance: 104, stereo: 1}
     - type: outaux
       id: 6
-      parameters: {auxgain: 14, outgain: 35, stereo: 1}
+      parameters: {auxgain: 9, outgain: 30, stereo: 1}
     - id: 36
       parameters: {}
       comment: Modulation
@@ -71,5 +72,5 @@ units:
       id: 20
       parameters: {attack: 66, decay: 0, gain: 128, release: 74, stereo: 0, sustain: 128}
     - type: send
-      id: 21
-      parameters: {amount: 29, port: 0, sendpop: 1, stereo: 0, target: 19, voice: 0}
+      id: 1244
+      parameters: {amount: 29, port: 0, sendpop: 1, stereo: 0, target: 1243, voice: 0}
