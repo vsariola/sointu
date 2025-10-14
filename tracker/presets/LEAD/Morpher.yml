@@ -5,7 +5,7 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 231
-      parameters: {color: 69, detune: 74, gain: 57, lfo: 0, phase: 0, shape: 128, stereo: 0, transpose: 64, type: 2, unison: 3}
+      parameters: {color: 69, detune: 74, gain: 57, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2, unison: 3}
     - type: oscillator
       id: 232
       parameters: {color: 128, detune: 64, gain: 47, lfo: 0, phase: 0, shape: 75, stereo: 0, transpose: 64, type: 1, unison: 1}

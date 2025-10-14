@@ -1,4 +1,3 @@
-name: Popper
 numvoices: 1
 units:
     - id: 197
@@ -36,7 +35,7 @@ units:
       parameters: {color: 128, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 63, stereo: 0, transpose: 76, type: 2, unison: 0}
     - type: oscillator
       id: 16
-      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 18, shape: 128, stereo: 0, transpose: 76, type: 1, unison: 2}
+      parameters: {color: 64, detune: 64, gain: 64, lfo: 0, phase: 18, shape: 64, stereo: 0, transpose: 76, type: 2, unison: 2}
     - type: oscillator
       id: 15
       parameters: {color: 40, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 61, stereo: 0, transpose: 76, type: 2, unison: 0}

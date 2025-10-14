@@ -2,10 +2,10 @@ numvoices: 1
 units:
     - type: oscillator
       id: 3
-      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 128, stereo: 1, transpose: 64, type: 1, unison: 0}
+      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 1, transpose: 64, type: 2, unison: 0}
     - type: oscillator
       id: 4
-      parameters: {color: 82, detune: 71, gain: 64, lfo: 0, phase: 0, shape: 128, stereo: 1, transpose: 52, type: 1, unison: 3}
+      parameters: {color: 47, detune: 71, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 1, transpose: 52, type: 2, unison: 3}
     - type: addp
       id: 1084
       parameters: {stereo: 1}
