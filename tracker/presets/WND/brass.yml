@@ -1,4 +1,3 @@
-name: brass
 comment: Brass sound use for short stabs at C1-C2 range
 numvoices: 1
 units:
@@ -44,9 +43,6 @@ units:
     - type: mulp
       id: 223
       parameters: {stereo: 0}
-    - type: dbgain
-      id: 1241
-      parameters: {decibels: 48, stereo: 0}
     - type: filter
       id: 217
       parameters: {bandpass: 1, frequency: 54, highpass: 1, lowpass: 1, resonance: 24, stereo: 0}
@@ -58,7 +54,7 @@ units:
       parameters: {panning: 61, stereo: 0}
     - type: outaux
       id: 172
-      parameters: {auxgain: 27, outgain: 34, stereo: 1}
+      parameters: {auxgain: 10, outgain: 12, stereo: 1}
     - id: 224
       parameters: {}
       comment: Filter modulation
