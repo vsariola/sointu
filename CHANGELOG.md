@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Panic the synth if it outputs NaN or Inf, and handle these more gracefully in
   the loudness and peak detector. ([#210][i210])
+- More presets from Reaby, and all new and existing presets were normalized
+  roughly to -12 dBFS true peak. ([#211][i211])
 
 ## [0.5.0]
 ### BREAKING CHANGES
@@ -373,3 +375,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i196]: https://github.com/vsariola/sointu/issues/196
 [i200]: https://github.com/vsariola/sointu/issues/200
 [i210]: https://github.com/vsariola/sointu/issues/210
+[i211]: https://github.com/vsariola/sointu/issues/211
