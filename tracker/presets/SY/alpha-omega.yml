@@ -1,3 +1,4 @@
+name: alpha-omega
 numvoices: 1
 units:
     - id: 212
@@ -20,13 +21,13 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 205
-      parameters: {color: 0, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 1}
+      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 1}
     - type: oscillator
       id: 206
-      parameters: {color: 0, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 1}
+      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 1}
     - type: oscillator
       id: 207
-      parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
+      parameters: {color: 64, detune: 64, gain: 59, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
     - type: addp
       id: 10
       parameters: {stereo: 0}
@@ -59,15 +60,15 @@ units:
       comment: Delays & output
     - type: delay
       id: 17
-      parameters: {damp: 64, dry: 128, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}
+      parameters: {damp: 64, dry: 64, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}
       varargs: [36]
     - type: pan
-      id: 18
+      id: 1241
       parameters: {panning: 64, stereo: 0}
     - type: delay
-      id: 19
+      id: 1242
       parameters: {damp: 0, dry: 0, feedback: 0, notetracking: 0, pregain: 128, stereo: 0}
       varargs: [512]
     - type: outaux
       id: 20
-      parameters: {auxgain: 32, outgain: 64, stereo: 1}
+      parameters: {auxgain: 27, outgain: 36, stereo: 1}

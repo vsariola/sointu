@@ -1,0 +1,46 @@
+name: Virgill_WhistleSynth
+numvoices: 4
+units:
+    - type: envelope
+      id: 52
+      parameters: {attack: 75, decay: 0, gain: 64, release: 90, stereo: 1, sustain: 128}
+    - type: oscillator
+      id: 53
+      parameters: {color: 65, detune: 68, gain: 64, lfo: 0, phase: 0, shape: 116, stereo: 1, transpose: 76, type: 0, unison: 0}
+    - type: mulp
+      id: 54
+      parameters: {stereo: 1}
+    - type: delay
+      id: 58
+      parameters: {damp: 26, dry: 128, feedback: 64, notetracking: 2, pregain: 64, stereo: 1}
+      varargs: [48, 1]
+    - type: pan
+      id: 59
+      parameters: {panning: 64, stereo: 1}
+    - type: outaux
+      id: 60
+      parameters: {auxgain: 19, outgain: 53, stereo: 1}
+    - id: 154
+      parameters: {}
+      comment: Effects
+    - type: noise
+      id: 55
+      parameters: {gain: 128, shape: 65, stereo: 0}
+    - type: send
+      id: 56
+      parameters: {amount: 66, sendpop: 1, target: 53}
+    - id: 151
+      parameters: {}
+      comment: Vibrato
+    - type: envelope
+      id: 149
+      parameters: {attack: 89, decay: 106, gain: 128, release: 26, stereo: 0, sustain: 64}
+    - type: oscillator
+      id: 148
+      parameters: {color: 128, detune: 64, gain: 71, lfo: 1, phase: 64, shape: 64, stereo: 0, transpose: 81, type: 0}
+    - type: mulp
+      id: 153
+      parameters: {stereo: 0}
+    - type: send
+      id: 147
+      parameters: {amount: 79, port: 1, sendpop: 1, stereo: 0, target: 53, voice: 0}

@@ -1,11 +1,12 @@
+name: tomtom
 numvoices: 2
 units:
     - type: envelope
       id: 1217
-      parameters: {attack: 0, decay: 77, gain: 128, release: 0, stereo: 0, sustain: 0}
+      parameters: {attack: 0, decay: 128, gain: 96, release: 74, stereo: 0, sustain: 0}
     - type: oscillator
       id: 1218
-      parameters: {color: 64, detune: 64, gain: 128, looplength: 1003, loopstart: 5463, phase: 0, samplestart: 1598649, shape: 64, stereo: 0, transpose: 73, type: 4, unison: 0}
+      parameters: {color: 64, detune: 64, gain: 96, looplength: 1003, loopstart: 5463, phase: 0, samplestart: 1598649, shape: 64, stereo: 0, transpose: 73, type: 4, unison: 0}
     - type: mulp
       id: 1221
       parameters: {stereo: 0}
@@ -14,4 +15,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 1223
-      parameters: {auxgain: 29, outgain: 64, stereo: 1}
+      parameters: {auxgain: 8, outgain: 64, stereo: 1}

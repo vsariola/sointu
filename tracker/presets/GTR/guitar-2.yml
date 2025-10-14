@@ -1,3 +1,4 @@
+name: guitar-2
 numvoices: 1
 units:
     - id: 87
@@ -5,7 +6,7 @@ units:
       comment: Karplus-Strong
     - type: envelope
       id: 2
-      parameters: {attack: 0, decay: 58, gain: 69, release: 0, stereo: 0, sustain: 0}
+      parameters: {attack: 0, decay: 58, gain: 83, release: 0, stereo: 0, sustain: 0}
     - type: noise
       id: 3
       parameters: {gain: 64, shape: 127, stereo: 0}
@@ -21,7 +22,7 @@ units:
       comment: Main envelope
     - type: envelope
       id: 1
-      parameters: {attack: 0, decay: 0, gain: 70, release: 72, stereo: 0, sustain: 128}
+      parameters: {attack: 0, decay: 0, gain: 64, release: 72, stereo: 0, sustain: 128}
     - type: mulp
       id: 85
       parameters: {stereo: 0}
@@ -33,4 +34,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 10
-      parameters: {auxgain: 24, outgain: 36, stereo: 1}
+      parameters: {auxgain: 16, outgain: 36, stereo: 1}

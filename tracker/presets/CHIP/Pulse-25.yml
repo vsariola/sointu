@@ -1,0 +1,17 @@
+numvoices: 2
+units:
+    - type: envelope
+      id: 1
+      parameters: {attack: 25, decay: 64, gain: 96, release: 54, stereo: 0, sustain: 128}
+    - type: oscillator
+      id: 2
+      parameters: {color: 32, detune: 64, gain: 96, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2}
+    - type: mulp
+      id: 3
+      parameters: {stereo: 0}
+    - type: pan
+      id: 5
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 6
+      parameters: {auxgain: 1, outgain: 64, stereo: 1}

@@ -1,0 +1,47 @@
+numvoices: 2
+units:
+    - type: envelope
+      id: 23
+      parameters: {attack: 36, decay: 64, gain: 64, release: 54, stereo: 0, sustain: 116}
+    - type: oscillator
+      id: 24
+      parameters: {color: 96, detune: 64, gain: 48, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 2}
+    - type: delay
+      id: 20
+      parameters: {damp: 0, dry: 0, feedback: 0, notetracking: 0, pregain: 128, stereo: 0}
+      varargs: [712]
+    - type: oscillator
+      id: 25
+      parameters: {color: 64, detune: 64, gain: 64, phase: 43, shape: 64, stereo: 0, transpose: 64, type: 2, unison: 0}
+    - type: addp
+      id: 26
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 27
+      parameters: {stereo: 0}
+    - type: envelope
+      id: 28
+      parameters: {attack: 18, decay: 86, gain: 64, release: 54, stereo: 0, sustain: 84}
+    - type: oscillator
+      id: 29
+      parameters: {color: 92, detune: 64, gain: 64, phase: 8, shape: 64, stereo: 0, transpose: 76, type: 2}
+    - type: oscillator
+      id: 30
+      parameters: {color: 96, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2}
+    - type: delay
+      id: 31
+      parameters: {damp: 0, dry: 0, feedback: 0, notetracking: 0, pregain: 128, stereo: 0}
+      varargs: [512]
+    - type: addp
+      id: 32
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 33
+      parameters: {stereo: 0}
+    - type: delay
+      id: 16
+      parameters: {damp: 0, dry: 0, feedback: 0, notetracking: 0, pregain: 128, stereo: 1}
+      varargs: [32, 512]
+    - type: outaux
+      id: 34
+      parameters: {auxgain: 13, outgain: 21, stereo: 1}

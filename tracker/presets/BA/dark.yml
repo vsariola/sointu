@@ -1,3 +1,4 @@
+name: dark
 numvoices: 1
 units:
     - id: 184
@@ -41,8 +42,8 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: delay
       id: 11
-      parameters: {damp: 64, dry: 128, feedback: 64, notetracking: 0, pregain: 0, stereo: 1}
+      parameters: {damp: 64, dry: 63, feedback: 64, notetracking: 0, pregain: 0, stereo: 1}
       varargs: [1024, 1024]
     - type: outaux
       id: 15
-      parameters: {auxgain: 8, outgain: 39, stereo: 1}
+      parameters: {auxgain: 8, outgain: 31, stereo: 1}

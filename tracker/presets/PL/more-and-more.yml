@@ -1,3 +1,4 @@
+name: more-and-more
 numvoices: 1
 units:
     - id: 233
@@ -17,10 +18,10 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 6
-      parameters: {color: 0, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
+      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
     - type: oscillator
       id: 226
-      parameters: {color: 0, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
+      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
     - type: addp
       id: 227
       parameters: {stereo: 0}
@@ -47,7 +48,7 @@ units:
       comment: Main envelope
     - type: envelope
       id: 1
-      parameters: {attack: 0, decay: 63, gain: 128, release: 32, stereo: 0, sustain: 0}
+      parameters: {attack: 0, decay: 61, gain: 64, release: 54, stereo: 0, sustain: 0}
     - type: mulp
       id: 15
       parameters: {stereo: 0}
@@ -56,11 +57,11 @@ units:
       comment: Delay & output
     - type: delay
       id: 16
-      parameters: {damp: 64, dry: 128, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}
+      parameters: {damp: 33, dry: 128, feedback: 80, notetracking: 2, pregain: 54, stereo: 0}
       varargs: [48]
     - type: pan
       id: 17
       parameters: {panning: 64, stereo: 0}
     - type: outaux
-      id: 18
-      parameters: {auxgain: 32, outgain: 64, stereo: 1}
+      id: 1241
+      parameters: {auxgain: 26, outgain: 40, stereo: 1}

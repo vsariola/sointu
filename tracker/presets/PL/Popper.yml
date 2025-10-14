@@ -1,3 +1,4 @@
+name: Popper
 numvoices: 1
 units:
     - id: 197
@@ -8,7 +9,7 @@ units:
       parameters: {attack: 5, decay: 55, gain: 128, release: 80, stereo: 0, sustain: 0}
     - type: send
       id: 3
-      parameters: {amount: 87, port: 0, sendpop: 0, target: 19}
+      parameters: {amount: 87, port: 0, sendpop: 0, target: 1242}
     - type: send
       id: 4
       parameters: {amount: 89, port: 0, sendpop: 0, target: 20}
@@ -43,7 +44,7 @@ units:
       id: 17
       parameters: {stereo: 0}
     - type: addp
-      id: 18
+      id: 1241
       parameters: {stereo: 0}
     - id: 193
       parameters: {}
@@ -52,7 +53,7 @@ units:
       id: 20
       parameters: {bandpass: -1, frequency: 71, highpass: 1, lowpass: 1, resonance: 96, stereo: 0}
     - type: filter
-      id: 19
+      id: 1242
       parameters: {bandpass: -1, frequency: 50, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - id: 194
       parameters: {}
@@ -61,22 +62,22 @@ units:
       id: 1
       parameters: {attack: 0, decay: 65, gain: 128, release: 70, stereo: 0, sustain: 0}
     - type: mulp
-      id: 21
+      id: 1243
       parameters: {stereo: 0}
     - id: 195
       parameters: {}
       comment: Delays & output
     - type: delay
-      id: 22
-      parameters: {damp: 63, dry: 128, feedback: 61, notetracking: 2, pregain: 46, stereo: 0}
+      id: 1244
+      parameters: {damp: 63, dry: 63, feedback: 61, notetracking: 2, pregain: 46, stereo: 0}
       varargs: [48]
     - type: pan
       id: 23
       parameters: {panning: 52, stereo: 0}
     - type: delay
       id: 24
-      parameters: {damp: 0, dry: 76, feedback: 18, notetracking: 0, pregain: 94, stereo: 0}
+      parameters: {damp: 0, dry: 64, feedback: 18, notetracking: 0, pregain: 80, stereo: 0}
       varargs: [1008]
     - type: outaux
       id: 25
-      parameters: {auxgain: 27, outgain: 37, stereo: 1}
+      parameters: {auxgain: 23, outgain: 29, stereo: 1}

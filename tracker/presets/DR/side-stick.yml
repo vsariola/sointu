@@ -1,11 +1,12 @@
+name: side-stick
 numvoices: 2
 units:
     - type: envelope
       id: 1217
-      parameters: {attack: 0, decay: 60, gain: 128, release: 0, stereo: 0, sustain: 0}
+      parameters: {attack: 0, decay: 60, gain: 95, release: 0, stereo: 0, sustain: 0}
     - type: oscillator
       id: 1218
-      parameters: {color: 128, detune: 64, gain: 128, looplength: 1, loopstart: 1199, phase: 0, samplestart: 1244152, shape: 64, stereo: 0, transpose: 67, type: 4, unison: 0}
+      parameters: {color: 128, detune: 64, gain: 96, looplength: 1, loopstart: 1199, phase: 0, samplestart: 1244152, shape: 64, stereo: 0, transpose: 67, type: 4, unison: 0}
     - type: mulp
       id: 1221
       parameters: {stereo: 0}
@@ -14,4 +15,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 1223
-      parameters: {auxgain: 53, outgain: 64, stereo: 1}
+      parameters: {auxgain: 4, outgain: 64, stereo: 1}

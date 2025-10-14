@@ -1,3 +1,4 @@
+name: snare-adam
 comment: |
     Author: pestis/bC!. Suggested note: F#3. Originally from: 4k intro Adam.
 
@@ -22,7 +23,7 @@ units:
       id: 29
       parameters: {drive: 5, stereo: 0}
     - type: send
-      id: 30
+      id: 1215
       parameters: {amount: 90, port: 0, sendpop: 1, stereo: 0, target: 1, voice: 0}
     - id: 32
       parameters: {}
@@ -55,20 +56,20 @@ units:
       id: 17
       parameters: {bandpass: 0, frequency: 106, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
     - type: addp
-      id: 18
+      id: 1216
       parameters: {stereo: 0}
-    - id: 19
+    - id: 1217
       parameters: {}
       comment: Effects
     - type: distort
       id: 20
       parameters: {drive: 112, stereo: 0}
     - type: delay
-      id: 21
+      id: 1218
       parameters: {damp: 0, dry: 128, feedback: 40, notetracking: 0, pregain: 24, stereo: 0}
       varargs: [1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618]
     - type: compressor
-      id: 22
+      id: 1219
       parameters: {attack: 51, invgain: 64, ratio: 112, release: 49, stereo: 0, threshold: 64}
     - type: mulp
       id: 23
@@ -81,4 +82,4 @@ units:
       parameters: {panning: 68, stereo: 0}
     - type: outaux
       id: 26
-      parameters: {auxgain: 0, outgain: 64, stereo: 1}
+      parameters: {auxgain: 0, outgain: 26, stereo: 1}

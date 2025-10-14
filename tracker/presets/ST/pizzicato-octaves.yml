@@ -1,3 +1,4 @@
+name: pizzicato-octaves
 numvoices: 1
 units:
     - id: 226
@@ -32,8 +33,8 @@ units:
       parameters: {panning: 65, stereo: 0}
     - type: delay
       id: 49
-      parameters: {damp: 72, dry: 116, feedback: 22, notetracking: 0, pregain: 86, stereo: 1}
+      parameters: {damp: 46, dry: 77, feedback: 41, notetracking: 0, pregain: 65, stereo: 1}
       varargs: [3835, 4184]
     - type: outaux
       id: 6
-      parameters: {auxgain: 22, outgain: 57, stereo: 1}
+      parameters: {auxgain: 18, outgain: 48, stereo: 1}

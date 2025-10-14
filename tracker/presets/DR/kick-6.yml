@@ -1,3 +1,4 @@
+name: kick-6
 numvoices: 1
 units:
     - id: 33
@@ -22,13 +23,13 @@ units:
       id: 24
       parameters: {color: 0, detune: 64, gain: 59, lfo: 1, phase: 0, shape: 88, stereo: 0, transpose: 64, type: 1, unison: 1}
     - type: send
-      id: 22
+      id: 1215
       parameters: {amount: 89, port: 4, sendpop: 1, stereo: 0, target: 12, voice: 0}
     - type: oscillator
       id: 2
       parameters: {color: 0, detune: 64, gain: 80, lfo: 1, phase: 0, shape: 35, stereo: 0, transpose: 72, type: 1, unison: 1}
     - type: send
-      id: 21
+      id: 1216
       parameters: {amount: 78, port: 0, sendpop: 1, stereo: 0, target: 12, voice: 0}
     - id: 36
       parameters: {}
@@ -44,9 +45,9 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 25
-      parameters: {bandpass: 0, frequency: 12, highpass: 1, lowpass: 0, resonance: 36, stereo: 0}
+      parameters: {bandpass: 0, frequency: 11, highpass: 1, lowpass: 0, resonance: 30, stereo: 0}
     - type: addp
-      id: 30
+      id: 1217
       parameters: {stereo: 0}
     - id: 34
       parameters: {}
@@ -56,4 +57,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 6
-      parameters: {auxgain: 0, outgain: 64, stereo: 1}
+      parameters: {auxgain: 0, outgain: 30, stereo: 1}

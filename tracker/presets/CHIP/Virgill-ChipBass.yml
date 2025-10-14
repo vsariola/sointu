@@ -1,0 +1,39 @@
+name: Virgill-ChipBass
+numvoices: 2
+units:
+    - type: envelope
+      id: 81
+      parameters: {attack: 20, decay: 73, gain: 64, release: 67, stereo: 0, sustain: 64}
+    - type: push
+      id: 82
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 83
+      parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 87, stereo: 0, transpose: 52, type: 1, unison: 0}
+    - type: addp
+      id: 84
+      parameters: {stereo: 0}
+    - type: distort
+      id: 85
+      parameters: {drive: 113, stereo: 0}
+    - type: hold
+      id: 86
+      parameters: {holdfreq: 32, stereo: 0}
+    - type: distort
+      id: 87
+      parameters: {drive: 100, stereo: 0}
+    - type: hold
+      id: 88
+      parameters: {holdfreq: 80, stereo: 0}
+    - type: mulp
+      id: 89
+      parameters: {stereo: 0}
+    - type: send
+      id: 90
+      parameters: {amount: 22, port: 0, sendpop: 0, target: 91}
+    - type: pan
+      id: 91
+      parameters: {panning: 62, stereo: 0}
+    - type: outaux
+      id: 92
+      parameters: {auxgain: 0, outgain: 34, stereo: 1}

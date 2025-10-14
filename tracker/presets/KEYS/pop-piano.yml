@@ -1,17 +1,18 @@
+name: pop-piano
 numvoices: 3
 units:
     - type: envelope
-      id: 1209
-      parameters: {attack: 0, decay: 79, gain: 64, release: 71, stereo: 1, sustain: 33}
+      id: 1241
+      parameters: {attack: 0, decay: 79, gain: 96, release: 71, stereo: 1, sustain: 33}
     - type: oscillator
-      id: 1210
-      parameters: {color: 64, detune: 63, gain: 128, looplength: 1487, loopstart: 8309, phase: 0, samplestart: 972709, shape: 64, stereo: 1, transpose: 68, type: 4, unison: 0}
+      id: 1242
+      parameters: {color: 64, detune: 63, gain: 96, looplength: 1487, loopstart: 8309, phase: 0, samplestart: 972709, shape: 64, stereo: 1, transpose: 68, type: 4, unison: 0}
     - type: mulp
-      id: 1211
+      id: 1243
       parameters: {stereo: 1}
     - type: pan
-      id: 1213
+      id: 1244
       parameters: {panning: 64, stereo: 1}
     - type: outaux
-      id: 1214
+      id: 1245
       parameters: {auxgain: 19, outgain: 64, stereo: 1}

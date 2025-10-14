@@ -1,3 +1,4 @@
+name: kick-5
 comment: 'Suggested note: C-3'
 numvoices: 1
 units:
@@ -69,4 +70,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 266
-      parameters: {auxgain: 0, outgain: 90, stereo: 1}
+      parameters: {auxgain: 0, outgain: 37, stereo: 1}

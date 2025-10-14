@@ -1,3 +1,4 @@
+name: deepness
 numvoices: 1
 units:
     - id: 217
@@ -53,11 +54,11 @@ units:
       parameters: {bandpass: 0, frequency: 48, highpass: 0, lowpass: 1, resonance: 88, stereo: 0}
     - type: delay
       id: 16
-      parameters: {damp: 64, dry: 128, feedback: 64, notetracking: 2, pregain: 64, stereo: 0}
+      parameters: {damp: 64, dry: 62, feedback: 64, notetracking: 2, pregain: 46, stereo: 0}
       varargs: [32]
     - type: pan
       id: 15
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 20
-      parameters: {auxgain: 22, outgain: 21, stereo: 1}
+      parameters: {auxgain: 9, outgain: 20, stereo: 1}

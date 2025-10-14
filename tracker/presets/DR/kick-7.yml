@@ -1,11 +1,12 @@
+name: kick-7
 numvoices: 2
 units:
     - type: envelope
       id: 1217
-      parameters: {attack: 0, decay: 128, gain: 128, release: 0, stereo: 0, sustain: 128}
+      parameters: {attack: 0, decay: 0, gain: 64, release: 0, stereo: 0, sustain: 128}
     - type: oscillator
       id: 1218
-      parameters: {color: 64, detune: 64, gain: 128, looplength: 1, loopstart: 2464, phase: 0, samplestart: 1268200, shape: 64, stereo: 0, transpose: 64, type: 4, unison: 1}
+      parameters: {color: 64, detune: 64, gain: 64, looplength: 1, loopstart: 2464, phase: 0, samplestart: 1268200, shape: 64, stereo: 0, transpose: 64, type: 4, unison: 1}
     - type: mulp
       id: 1221
       parameters: {stereo: 0}

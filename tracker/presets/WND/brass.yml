@@ -1,3 +1,4 @@
+name: brass
 comment: Brass sound use for short stabs at C1-C2 range
 numvoices: 1
 units:
@@ -6,10 +7,10 @@ units:
       comment: Main envelopes
     - type: envelope
       id: 163
-      parameters: {attack: 24, decay: 128, gain: 59, release: 89, stereo: 0, sustain: 128}
+      parameters: {attack: 24, decay: 128, gain: 64, release: 89, stereo: 0, sustain: 128}
     - type: envelope
       id: 215
-      parameters: {attack: 0, decay: 69, gain: 127, release: 66, stereo: 0, sustain: 0}
+      parameters: {attack: 0, decay: 69, gain: 64, release: 66, stereo: 0, sustain: 0}
     - type: mulp
       id: 216
       parameters: {stereo: 0}
@@ -24,7 +25,7 @@ units:
       parameters: {stereo: 0}
     - type: oscillator
       id: 165
-      parameters: {color: 74, detune: 57, gain: 128, lfo: 0, phase: 0, shape: 58, stereo: 0, transpose: 76, type: 1, unison: 3}
+      parameters: {color: 78, detune: 57, gain: 128, lfo: 0, phase: 0, shape: 58, stereo: 0, transpose: 76, type: 1, unison: 2}
     - type: addp
       id: 166
       parameters: {stereo: 0}
@@ -39,22 +40,25 @@ units:
       comment: Effects & output
     - type: compressor
       id: 222
-      parameters: {attack: 14, invgain: 97, ratio: 38, release: 61, stereo: 0, threshold: 27}
+      parameters: {attack: 41, invgain: 128, ratio: 93, release: 54, stereo: 0, threshold: 46}
     - type: mulp
       id: 223
       parameters: {stereo: 0}
+    - type: dbgain
+      id: 1241
+      parameters: {decibels: 48, stereo: 0}
     - type: filter
       id: 217
-      parameters: {bandpass: 1, frequency: 57, highpass: 1, lowpass: 1, resonance: 26, stereo: 0}
+      parameters: {bandpass: 1, frequency: 54, highpass: 1, lowpass: 1, resonance: 24, stereo: 0}
     - type: filter
       id: 218
-      parameters: {bandpass: 1, frequency: 85, highpass: -1, lowpass: 0, resonance: 33, stereo: 0}
+      parameters: {bandpass: 0, frequency: 59, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
     - type: pan
       id: 168
       parameters: {panning: 61, stereo: 0}
     - type: outaux
       id: 172
-      parameters: {auxgain: 31, outgain: 67, stereo: 1}
+      parameters: {auxgain: 27, outgain: 34, stereo: 1}
     - id: 224
       parameters: {}
       comment: Filter modulation

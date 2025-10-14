@@ -1,3 +1,4 @@
+name: Mighty
 numvoices: 1
 units:
     - id: 220
@@ -14,7 +15,7 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 217
-      parameters: {color: 128, detune: 62, gain: 32, lfo: 0, phase: 48, shape: 32, stereo: 0, transpose: 88, type: 0}
+      parameters: {color: 128, detune: 62, gain: 41, lfo: 0, phase: 48, shape: 32, stereo: 0, transpose: 88, type: 0}
     - type: oscillator
       id: 5
       parameters: {color: 64, detune: 68, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
@@ -41,7 +42,7 @@ units:
       comment: Main envelope
     - type: envelope
       id: 1
-      parameters: {attack: 0, decay: 64, gain: 128, release: 64, stereo: 0, sustain: 64}
+      parameters: {attack: 0, decay: 64, gain: 64, release: 64, stereo: 0, sustain: 64}
     - type: mulp
       id: 13
       parameters: {stereo: 0}
@@ -50,11 +51,11 @@ units:
       comment: Delay & output
     - type: delay
       id: 15
-      parameters: {damp: 64, dry: 96, feedback: 64, notetracking: 0, pregain: 96, stereo: 0}
+      parameters: {damp: 64, dry: 95, feedback: 64, notetracking: 0, pregain: 96, stereo: 0}
       varargs: [224]
     - type: pan
       id: 14
       parameters: {panning: 64, stereo: 0}
     - type: outaux
-      id: 19
-      parameters: {auxgain: 64, outgain: 64, stereo: 1}
+      id: 1241
+      parameters: {auxgain: 19, outgain: 21, stereo: 1}

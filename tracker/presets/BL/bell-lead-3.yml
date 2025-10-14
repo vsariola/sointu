@@ -1,3 +1,4 @@
+name: bell-lead-3
 numvoices: 1
 units:
     - id: 1011
@@ -5,10 +6,10 @@ units:
       comment: Main envelope
     - type: envelope
       id: 163
-      parameters: {attack: 34, decay: 102, gain: 68, release: 78, stereo: 0, sustain: 47}
+      parameters: {attack: 34, decay: 102, gain: 64, release: 78, stereo: 0, sustain: 47}
     - type: envelope
       id: 228
-      parameters: {attack: 0, decay: 84, gain: 127, release: 84, stereo: 0, sustain: 25}
+      parameters: {attack: 0, decay: 84, gain: 64, release: 84, stereo: 0, sustain: 25}
     - type: mulp
       id: 229
       parameters: {stereo: 0}
@@ -56,8 +57,8 @@ units:
       parameters: {panning: 61, stereo: 0}
     - type: delay
       id: 169
-      parameters: {damp: 42, dry: 95, feedback: 91, notetracking: 0, pregain: 61, stereo: 1}
+      parameters: {damp: 42, dry: 63, feedback: 91, notetracking: 0, pregain: 61, stereo: 1}
       varargs: [12550, 24402, 21265, 32419]
     - type: outaux
       id: 172
-      parameters: {auxgain: 41, outgain: 86, stereo: 1}
+      parameters: {auxgain: 36, outgain: 64, stereo: 1}

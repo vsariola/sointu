@@ -1,14 +1,15 @@
+name: voxlead
 numvoices: 4
 units:
     - type: envelope
-      id: 1
-      parameters: {attack: 0, decay: 85, gain: 64, release: 47, stereo: 0, sustain: 39}
+      id: 1180
+      parameters: {attack: 24, decay: 75, gain: 64, release: 64, stereo: 0, sustain: 58}
     - type: oscillator
-      id: 2
-      parameters: {color: 128, detune: 100, gain: 128, looplength: 1750, loopstart: 918, phase: 0, samplestart: 1067219, shape: 64, stereo: 0, transpose: 54, type: 4, unison: 0}
+      id: 1181
+      parameters: {color: 128, detune: 100, gain: 75, looplength: 1750, loopstart: 918, phase: 0, samplestart: 1067219, shape: 64, stereo: 0, transpose: 54, type: 4, unison: 0}
     - type: oscillator
-      id: 1174
-      parameters: {color: 128, detune: 70, gain: 39, looplength: 1945, loopstart: 1315, phase: 0, samplestart: 1069972, shape: 64, stereo: 0, transpose: 57, type: 4}
+      id: 1241
+      parameters: {color: 128, detune: 70, gain: 42, looplength: 1945, loopstart: 1315, phase: 0, samplestart: 1069972, shape: 64, stereo: 0, transpose: 57, type: 4}
     - type: addp
       id: 1185
       parameters: {stereo: 0}
@@ -16,8 +17,8 @@ units:
       id: 1186
       parameters: {stereo: 0}
     - type: pan
-      id: 5
+      id: 1242
       parameters: {panning: 64, stereo: 0}
     - type: outaux
-      id: 6
-      parameters: {auxgain: 38, outgain: 64, stereo: 1}
+      id: 1243
+      parameters: {auxgain: 29, outgain: 43, stereo: 1}

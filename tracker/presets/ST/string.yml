@@ -1,4 +1,5 @@
-numvoices: 1
+name: string
+numvoices: 2
 units:
     - id: 66
       parameters: {}
@@ -41,4 +42,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 11
-      parameters: {auxgain: 32, outgain: 33, stereo: 1}
+      parameters: {auxgain: 35, outgain: 31, stereo: 1}

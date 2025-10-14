@@ -1,3 +1,4 @@
+name: brass-2
 numvoices: 1
 units:
     - id: 228
@@ -5,10 +6,10 @@ units:
       comment: Main envelopes
     - type: envelope
       id: 163
-      parameters: {attack: 24, decay: 128, gain: 59, release: 57, stereo: 1, sustain: 114}
+      parameters: {attack: 24, decay: 128, gain: 64, release: 57, stereo: 1, sustain: 114}
     - type: envelope
       id: 215
-      parameters: {attack: 0, decay: 69, gain: 127, release: 66, stereo: 1, sustain: 42}
+      parameters: {attack: 0, decay: 69, gain: 64, release: 66, stereo: 1, sustain: 42}
     - type: mulp
       id: 216
       parameters: {stereo: 1}
@@ -50,16 +51,16 @@ units:
       parameters: {stereo: 1}
     - type: filter
       id: 225
-      parameters: {bandpass: 1, frequency: 40, highpass: 1, lowpass: 1, resonance: 65, stereo: 1}
+      parameters: {bandpass: 1, frequency: 37, highpass: 1, lowpass: 1, resonance: 55, stereo: 1}
     - type: filter
       id: 218
-      parameters: {bandpass: 1, frequency: 80, highpass: -1, lowpass: 0, resonance: 86, stereo: 1}
+      parameters: {bandpass: 1, frequency: 80, highpass: -1, lowpass: 1, resonance: 99, stereo: 1}
     - type: pan
       id: 168
       parameters: {panning: 50, stereo: 1}
     - type: outaux
       id: 172
-      parameters: {auxgain: 31, outgain: 67, stereo: 1}
+      parameters: {auxgain: 24, outgain: 27, stereo: 1}
     - id: 226
       parameters: {}
       comment: Filter modulation

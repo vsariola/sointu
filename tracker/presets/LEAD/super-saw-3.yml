@@ -1,3 +1,4 @@
+name: super-saw-3
 comment: Automate filter frequency for the classic trance sound
 numvoices: 1
 units:
@@ -11,7 +12,7 @@ units:
       id: 12
       parameters: {color: 128, detune: 27, gain: 64, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
     - type: addp
-      id: 13
+      id: 1209
       parameters: {stereo: 0}
     - type: envelope
       id: 228
@@ -23,16 +24,16 @@ units:
       parameters: {}
       comment: Left
     - type: oscillator
-      id: 18
+      id: 1241
       parameters: {color: 128, detune: 31, gain: 64, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
     - type: oscillator
-      id: 19
+      id: 1242
       parameters: {color: 128, detune: 96, gain: 64, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
     - type: addp
       id: 20
       parameters: {stereo: 0}
     - type: envelope
-      id: 17
+      id: 1243
       parameters: {attack: 18, decay: 67, gain: 64, release: 64, stereo: 0, sustain: 99}
     - type: mulp
       id: 23
@@ -49,14 +50,14 @@ units:
       parameters: {bandpass: 0, frequency: 128, highpass: 0, lowpass: 1, resonance: 77, stereo: 1}
     - type: compressor
       id: 27
-      parameters: {attack: 4, invgain: 85, ratio: 86, release: 15, stereo: 1, threshold: 61}
+      parameters: {attack: 9, invgain: 128, ratio: 86, release: 59, stereo: 1, threshold: 47}
     - type: mulp
       id: 28
       parameters: {stereo: 1}
     - type: delay
-      id: 29
-      parameters: {damp: 91, dry: 64, feedback: 36, notetracking: 2, pregain: 26, stereo: 1}
+      id: 1244
+      parameters: {damp: 91, dry: 64, feedback: 36, notetracking: 2, pregain: 25, stereo: 1}
       varargs: [36, 41]
     - type: outaux
-      id: 30
-      parameters: {auxgain: 0, outgain: 30, stereo: 1}
+      id: 1245
+      parameters: {auxgain: 5, outgain: 16, stereo: 1}

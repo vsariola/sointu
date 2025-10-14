@@ -1,3 +1,4 @@
+name: Strings
 numvoices: 1
 units:
     - id: 224
@@ -10,38 +11,38 @@ units:
       id: 44
       parameters: {amount: 74, port: 1, sendpop: 0, stereo: 0, target: 24, voice: 0}
     - type: send
-      id: 30
+      id: 1241
       parameters: {amount: 48, port: 1, sendpop: 1, stereo: 0, target: 37, voice: 0}
     - id: 225
       parameters: {}
       comment: Left
     - type: envelope
       id: 33
-      parameters: {attack: 57, decay: 93, gain: 74, release: 71, stereo: 0, sustain: 64}
+      parameters: {attack: 57, decay: 93, gain: 64, release: 71, stereo: 0, sustain: 64}
     - type: oscillator
       id: 24
-      parameters: {color: 69, detune: 64, gain: 78, looplength: 10741, loopstart: 284, phase: 0, samplestart: 1351767, shape: 64, stereo: 0, transpose: 67, type: 4, unison: 1}
+      parameters: {color: 69, detune: 64, gain: 64, looplength: 10741, loopstart: 284, phase: 0, samplestart: 1351767, shape: 64, stereo: 0, transpose: 67, type: 4, unison: 1}
     - type: oscillator
-      id: 19
-      parameters: {color: 69, detune: 64, gain: 65, looplength: 11272, loopstart: 147, phase: 0, samplestart: 1458843, shape: 64, stereo: 0, transpose: 65, type: 4, unison: 0}
+      id: 1242
+      parameters: {color: 69, detune: 64, gain: 64, looplength: 11272, loopstart: 147, phase: 0, samplestart: 1458843, shape: 64, stereo: 0, transpose: 65, type: 4, unison: 0}
     - type: addp
       id: 20
       parameters: {stereo: 0}
     - type: mulp
-      id: 221
+      id: 1243
       parameters: {stereo: 0}
     - id: 226
       parameters: {}
       comment: Right
     - type: envelope
       id: 46
-      parameters: {attack: 57, decay: 93, gain: 78, release: 71, stereo: 0, sustain: 64}
+      parameters: {attack: 57, decay: 93, gain: 64, release: 71, stereo: 0, sustain: 64}
     - type: oscillator
       id: 37
       parameters: {color: 64, detune: 64, gain: 64, looplength: 9710, loopstart: 251, phase: 0, samplestart: 1448797, shape: 64, stereo: 0, transpose: 79, type: 4, unison: 1}
     - type: oscillator
       id: 38
-      parameters: {color: 128, detune: 58, gain: 68, looplength: 10741, loopstart: 284, phase: 0, samplestart: 1351767, shape: 80, stereo: 0, transpose: 67, type: 4, unison: 0}
+      parameters: {color: 128, detune: 58, gain: 58, looplength: 10741, loopstart: 284, phase: 0, samplestart: 1351767, shape: 80, stereo: 0, transpose: 67, type: 4, unison: 0}
     - type: addp
       id: 39
       parameters: {stereo: 0}
@@ -56,7 +57,7 @@ units:
       parameters: {holdfreq: 75, stereo: 1}
     - type: filter
       id: 45
-      parameters: {bandpass: 1, frequency: 114, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
+      parameters: {bandpass: 1, frequency: 112, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
     - type: outaux
       id: 23
-      parameters: {auxgain: 15, outgain: 27, stereo: 1}
+      parameters: {auxgain: 15, outgain: 19, stereo: 1}

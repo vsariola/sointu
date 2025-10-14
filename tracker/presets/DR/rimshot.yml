@@ -1,3 +1,4 @@
+name: rimshot
 numvoices: 1
 units:
     - id: 3021
@@ -8,10 +9,10 @@ units:
       parameters: {attack: 0, decay: 48, gain: 128, release: 0, stereo: 0, sustain: 0}
     - type: send
       id: 3003
-      parameters: {amount: 107, port: 0, sendpop: 0, target: 3005}
+      parameters: {amount: 111, port: 0, sendpop: 0, target: 3005}
     - type: send
       id: 3004
-      parameters: {amount: 80, port: 0, sendpop: 1, target: 3006}
+      parameters: {amount: 88, port: 0, sendpop: 1, target: 3006}
     - id: 3022
       parameters: {}
       comment: Main oscillators
@@ -59,10 +60,10 @@ units:
       comment: Effects
     - type: dbgain
       id: 3014
-      parameters: {decibels: 37, stereo: 0}
+      parameters: {decibels: 27, stereo: 0}
     - type: compressor
       id: 3015
-      parameters: {attack: 46, invgain: 114, ratio: 110, release: 49, stereo: 0, threshold: 64}
+      parameters: {attack: 32, invgain: 128, ratio: 109, release: 47, stereo: 0, threshold: 63}
     - type: mulp
       id: 3016
       parameters: {stereo: 0}
@@ -80,4 +81,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 3020
-      parameters: {auxgain: 0, outgain: 48, stereo: 1}
+      parameters: {auxgain: 0, outgain: 64, stereo: 1}

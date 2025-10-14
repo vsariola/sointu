@@ -1,4 +1,5 @@
-numvoices: 1
+name: pad
+numvoices: 2
 units:
     - id: 83
       parameters: {}
@@ -59,8 +60,8 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: delay
       id: 16
-      parameters: {damp: 64, dry: 128, feedback: 96, notetracking: 2, pregain: 96, stereo: 1}
+      parameters: {damp: 64, dry: 64, feedback: 96, notetracking: 2, pregain: 63, stereo: 1}
       varargs: [24, 48]
     - type: outaux
       id: 20
-      parameters: {auxgain: 32, outgain: 0, stereo: 1}
+      parameters: {auxgain: 20, outgain: 0, stereo: 1}
