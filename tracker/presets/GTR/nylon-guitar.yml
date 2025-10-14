@@ -1,4 +1,3 @@
-name: nylon-guitar
 numvoices: 1
 units:
     - id: 90

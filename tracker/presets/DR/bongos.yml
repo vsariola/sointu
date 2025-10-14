@@ -1,4 +1,3 @@
-name: bongos
 numvoices: 1
 units:
     - type: envelope

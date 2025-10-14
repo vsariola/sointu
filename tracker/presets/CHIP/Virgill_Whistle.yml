@@ -1,4 +1,3 @@
-name: Virgill_WhistleSynth
 numvoices: 4
 units:
     - type: envelope

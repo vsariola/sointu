@@ -1,4 +1,3 @@
-name: pop-piano
 numvoices: 3
 units:
     - type: envelope

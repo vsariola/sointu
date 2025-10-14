@@ -1,4 +1,3 @@
-name: clap-sample
 numvoices: 1
 units:
     - type: envelope

@@ -1,4 +1,3 @@
-name: tomtom
 numvoices: 2
 units:
     - type: envelope

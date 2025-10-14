@@ -1,4 +1,3 @@
-name: clavi
 numvoices: 1
 units:
     - type: envelope

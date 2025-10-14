@@ -1,4 +1,3 @@
-name: muted-guitar
 numvoices: 3
 units:
     - type: envelope

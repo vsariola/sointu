@@ -1,4 +1,3 @@
-name: voxlead
 numvoices: 4
 units:
     - type: envelope
