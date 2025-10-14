@@ -162,7 +162,8 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 		layout.Rigid(func(gtx C) D {
 			return t.LoudnessExpander.Layout(gtx, tr.Theme, "Loudness",
 				func(gtx C) D {
-					return Label(tr.Theme, &tr.Theme.SongPanel.RowHeader, fmt.Sprintf("%.1f dB", tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm])).Layout(gtx)
+					loudness := tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm]
+					return dbLabel(tr.Theme, loudness).Layout(gtx)
 				},
 				func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical, Alignment: layout.End}.Layout(gtx,
