@@ -73,6 +73,13 @@ type (
 		Button
 	}
 
+	// TabButton is a button used in a tab bar.
+	TabButton struct {
+		IndicatorHeight unit.Dp
+		IndicatorColor  color.NRGBA
+		ToggleButton
+	}
+
 	// IconButton is a button with an icon.
 	IconButton struct {
 		Theme     *Theme
@@ -123,6 +130,19 @@ func ToggleBtn(b tracker.Bool, th *Theme, c *Clickable, text string, tip string)
 		DisabledStyle: &th.Button.Disabled,
 		OffStyle:      &th.Button.Text,
 		Button:        Btn(th, &th.Button.Filled, c, text, tip),
+	}
+}
+
+func TabBtn(b tracker.Bool, th *Theme, c *Clickable, text string, tip string) TabButton {
+	return TabButton{
+		IndicatorHeight: th.Button.Tab.IndicatorHeight,
+		IndicatorColor:  th.Button.Tab.IndicatorColor,
+		ToggleButton: ToggleButton{
+			Bool:          b,
+			DisabledStyle: &th.Button.Disabled,
+			OffStyle:      &th.Button.Tab.Inactive,
+			Button:        Btn(th, &th.Button.Tab.Active, c, text, tip),
+		},
 	}
 }
 
@@ -286,6 +306,26 @@ func (b *ToggleIconButton) Layout(gtx C) D {
 		b.Tip = b.OffTip
 	}
 	return b.IconButton.Layout(gtx)
+}
+
+func (b *TabButton) Layout(gtx C) D {
+	return layout.Stack{Alignment: layout.S}.Layout(gtx,
+		layout.Stacked(b.ToggleButton.Layout),
+		layout.Expanded(func(gtx C) D {
+			if !b.ToggleButton.Bool.Value() {
+				return D{}
+			}
+			w := gtx.Constraints.Min.X
+			h := gtx.Dp(b.IndicatorHeight)
+			r := clip.RRect{
+				Rect: image.Rect(0, 0, w, h),
+				NE:   h, NW: h, SE: 0, SW: 0,
+			}
+			defer r.Push(gtx.Ops).Pop()
+			paint.Fill(gtx.Ops, b.IndicatorColor)
+			return layout.Dimensions{Size: image.Pt(w, h)}
+		}),
+	)
 }
 
 // Click executes a simple programmatic click.

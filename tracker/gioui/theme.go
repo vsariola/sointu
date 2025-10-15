@@ -19,6 +19,12 @@ type Theme struct {
 		Text     ButtonStyle
 		Disabled ButtonStyle
 		Menu     ButtonStyle
+		Tab      struct {
+			Active          ButtonStyle
+			Inactive        ButtonStyle
+			IndicatorHeight unit.Dp
+			IndicatorColor  color.NRGBA
+		}
 	}
 	IconButton struct {
 		Enabled  IconButtonStyle

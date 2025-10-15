@@ -11,22 +11,24 @@ type (
 		SetValue(bool)
 	}
 
-	Panic           Model
-	IsRecording     Model
-	Playing         Model
-	InstrEnlarged   Model
-	Effect          Model
-	TrackMidiIn     Model
-	CommentExpanded Model
-	Follow          Model
-	UnitSearching   Model
-	UnitDisabled    Model
-	LoopToggle      Model
-	UniquePatterns  Model
-	Mute            Model
-	Solo            Model
-	LinkInstrTrack  Model
-	Oversampling    Model
+	Panic          Model
+	IsRecording    Model
+	Playing        Model
+	InstrEnlarged  Model
+	Effect         Model
+	TrackMidiIn    Model
+	Follow         Model
+	UnitSearching  Model
+	UnitDisabled   Model
+	LoopToggle     Model
+	UniquePatterns Model
+	Mute           Model
+	Solo           Model
+	LinkInstrTrack Model
+	Oversampling   Model
+	InstrEditor    Model
+	InstrPresets   Model
+	InstrComment   Model
 )
 
 func MakeBool(valueEnabler interface {
@@ -101,11 +103,31 @@ func (m *Model) InstrEnlarged() Bool       { return MakeEnabledBool((*InstrEnlar
 func (m *InstrEnlarged) Value() bool       { return m.instrEnlarged }
 func (m *InstrEnlarged) SetValue(val bool) { m.instrEnlarged = val }
 
-// CommentExpanded methods
+// InstrEditor methods
 
-func (m *Model) CommentExpanded() Bool       { return MakeEnabledBool((*CommentExpanded)(m)) }
-func (m *CommentExpanded) Value() bool       { return m.commentExpanded }
-func (m *CommentExpanded) SetValue(val bool) { m.commentExpanded = val }
+func (m *Model) InstrEditor() Bool { return MakeEnabledBool((*InstrEditor)(m)) }
+func (m *InstrEditor) Value() bool { return m.d.InstrumentTab == InstrumentEditorTab }
+func (m *InstrEditor) SetValue(val bool) {
+	if val {
+		m.d.InstrumentTab = InstrumentEditorTab
+	}
+}
+
+func (m *Model) InstrComment() Bool { return MakeEnabledBool((*InstrComment)(m)) }
+func (m *InstrComment) Value() bool { return m.d.InstrumentTab == InstrumentCommentTab }
+func (m *InstrComment) SetValue(val bool) {
+	if val {
+		m.d.InstrumentTab = InstrumentCommentTab
+	}
+}
+
+func (m *Model) InstrPresets() Bool { return MakeEnabledBool((*InstrPresets)(m)) }
+func (m *InstrPresets) Value() bool { return m.d.InstrumentTab == InstrumentPresetsTab }
+func (m *InstrPresets) SetValue(val bool) {
+	if val {
+		m.d.InstrumentTab = InstrumentPresetsTab
+	}
+}
 
 // Follow methods
 

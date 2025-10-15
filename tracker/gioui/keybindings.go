@@ -208,8 +208,6 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		t.InstrEnlarged().Toggle()
 	case "LinkInstrTrackToggle":
 		t.LinkInstrTrack().Toggle()
-	case "CommentExpandedToggle":
-		t.CommentExpanded().Toggle()
 	case "FollowToggle":
 		t.Follow().Toggle()
 	case "UnitDisabledToggle":

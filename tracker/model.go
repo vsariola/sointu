@@ -36,14 +36,14 @@ type (
 		RecoveryFilePath        string
 		ChangedSinceRecovery    bool
 		SendSource              int
+		InstrumentTab           InstrumentTab
 	}
 
 	Model struct {
 		d       modelData
 		derived derivedModelData
 
-		instrEnlarged   bool
-		commentExpanded bool
+		instrEnlarged bool
 
 		prevUndoKind    string
 		undoSkipCounter int
@@ -129,6 +129,8 @@ type (
 		String() string
 		Open() error
 	}
+
+	InstrumentTab int
 )
 
 const (
@@ -159,6 +161,12 @@ const (
 	QuitChanges
 	QuitSaveExplorer
 	License
+)
+
+const (
+	InstrumentEditorTab InstrumentTab = iota
+	InstrumentPresetsTab
+	InstrumentCommentTab
 )
 
 const maxUndo = 64

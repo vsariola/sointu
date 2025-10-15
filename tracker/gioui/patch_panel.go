@@ -6,17 +6,14 @@ import (
 	"image/color"
 	"io"
 	"strconv"
-	"strings"
 
 	"gioui.org/io/clipboard"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/layout"
-	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/text"
 	"gioui.org/unit"
-	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
@@ -46,6 +43,10 @@ type (
 	}
 
 	InstrumentTools struct {
+		EditorTab  *Clickable
+		PresetsTab *Clickable
+		CommentTab *Clickable
+
 		Voices              *NumericUpDownState
 		splitInstrumentBtn  *Clickable
 		commentExpandBtn    *Clickable
@@ -60,21 +61,12 @@ type (
 		copyInstrumentBtn   *Clickable
 		deleteInstrumentBtn *Clickable
 
-		commentExpanded tracker.Bool
-
 		muteHint, unmuteHint string
 		soloHint, unsoloHint string
 		expandCommentHint    string
 		collapseCommentHint  string
 		splitInstrumentHint  string
 		deleteInstrumentHint string
-	}
-
-	UnitList struct {
-		dragList      *DragList
-		searchEditor  *Editor
-		addUnitBtn    *Clickable
-		addUnitAction tracker.Action
 	}
 )
 
@@ -119,6 +111,9 @@ func (pp *PatchPanel) TreeFocused(gtx C) bool {
 
 func MakeInstrumentTools(m *tracker.Model) InstrumentTools {
 	ret := InstrumentTools{
+		EditorTab:            new(Clickable),
+		PresetsTab:           new(Clickable),
+		CommentTab:           new(Clickable),
 		Voices:               NewNumericUpDownState(),
 		deleteInstrumentBtn:  new(Clickable),
 		splitInstrumentBtn:   new(Clickable),
@@ -131,7 +126,6 @@ func MakeInstrumentTools(m *tracker.Model) InstrumentTools {
 		muteBtn:              new(Clickable),
 		presetMenuItems:      []ActionMenuItem{},
 		commentEditor:        NewEditor(false, false, text.Start),
-		commentExpanded:      m.CommentExpanded(),
 		expandCommentHint:    makeHint("Expand comment", " (%s)", "CommentExpandedToggle"),
 		collapseCommentHint:  makeHint("Collapse comment", " (%s)", "CommentExpandedToggle"),
 		deleteInstrumentHint: makeHint("Delete\ninstrument", "\n(%s)", "DeleteInstrument"),
@@ -151,27 +145,33 @@ func (it *InstrumentTools) Layout(gtx C) D {
 	t := TrackerFromContext(gtx)
 	it.update(gtx, t)
 	voicesLabel := Label(t.Theme, &t.Theme.InstrumentEditor.Voices, "Voices")
+
+	editorBtn := TabBtn(t.Model.InstrEditor(), t.Theme, it.EditorTab, "Editor", "")
+	presetsBtn := TabBtn(t.Model.InstrPresets(), t.Theme, it.PresetsTab, "Presets", "")
+	commentBtn := TabBtn(t.Model.InstrComment(), t.Theme, it.CommentTab, "Comment", "")
+
 	splitInstrumentBtn := ActionIconBtn(t.SplitInstrument(), t.Theme, it.splitInstrumentBtn, icons.CommunicationCallSplit, it.splitInstrumentHint)
-	commentExpandedBtn := ToggleIconBtn(t.CommentExpanded(), t.Theme, it.commentExpandBtn, icons.NavigationExpandMore, icons.NavigationExpandLess, it.expandCommentHint, it.collapseCommentHint)
 	soloBtn := ToggleIconBtn(t.Solo(), t.Theme, it.soloBtn, icons.SocialGroup, icons.SocialPerson, it.soloHint, it.unsoloHint)
 	muteBtn := ToggleIconBtn(t.Mute(), t.Theme, it.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, it.muteHint, it.unmuteHint)
-	saveInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.saveInstrumentBtn, icons.ContentSave, "Save instrument")
-	loadInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
+	//	saveInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.saveInstrumentBtn, icons.ContentSave, "Save instrument")
+	//	loadInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
 	copyInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
 	deleteInstrumentBtn := ActionIconBtn(t.DeleteInstrument(), t.Theme, it.deleteInstrumentBtn, icons.ActionDelete, it.deleteInstrumentHint)
 	instrumentVoices := NumUpDown(t.Model.InstrumentVoices(), t.Theme, it.Voices, "Number of voices for this instrument")
 	btns := func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(layout.Spacer{Width: 6}.Layout),
+			layout.Rigid(editorBtn.Layout),
+			layout.Rigid(presetsBtn.Layout),
+			layout.Rigid(commentBtn.Layout),
+			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(voicesLabel.Layout),
 			layout.Rigid(layout.Spacer{Width: 4}.Layout),
 			layout.Rigid(instrumentVoices.Layout),
 			layout.Rigid(splitInstrumentBtn.Layout),
-			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
-			layout.Rigid(commentExpandedBtn.Layout),
 			layout.Rigid(soloBtn.Layout),
 			layout.Rigid(muteBtn.Layout),
-			layout.Rigid(func(gtx C) D {
+			/*layout.Rigid(func(gtx C) D {
 				presetBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.presetMenuBtn, icons.NavigationMenu, "Load preset")
 				dims := presetBtn.Layout(gtx)
 				op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
@@ -179,26 +179,21 @@ func (it *InstrumentTools) Layout(gtx C) D {
 				m.Style = &t.Theme.Menu.Preset
 				m.Layout(gtx, it.presetMenuItems...)
 				return dims
-			}),
-			layout.Rigid(saveInstrumentBtn.Layout),
-			layout.Rigid(loadInstrumentBtn.Layout),
+			}),*/
+			//			layout.Rigid(saveInstrumentBtn.Layout),
+			//			layout.Rigid(loadInstrumentBtn.Layout),
 			layout.Rigid(copyInstrumentBtn.Layout),
 			layout.Rigid(deleteInstrumentBtn.Layout),
 		)
 	}
-	comment := func(gtx C) D {
+	/*comment := func(gtx C) D {
 		defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 		ret := layout.UniformInset(unit.Dp(6)).Layout(gtx, func(gtx C) D {
 			return it.commentEditor.Layout(gtx, t.InstrumentComment(), t.Theme, &t.Theme.InstrumentEditor.InstrumentComment, "Comment")
 		})
 		return ret
-	}
-	return Surface{Gray: 37, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
-		if t.CommentExpanded().Value() {
-			return layout.Flex{Axis: layout.Vertical}.Layout(gtx, layout.Rigid(btns), layout.Rigid(comment))
-		}
-		return btns(gtx)
-	})
+	}*/
+	return Surface{Gray: 37, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, btns)
 }
 
 func (it *InstrumentTools) update(gtx C, tr *Tracker) {
@@ -231,9 +226,6 @@ func (it *InstrumentTools) update(gtx C, tr *Tracker) {
 }
 
 func (it *InstrumentTools) Tags(level int, yield TagYieldFunc) bool {
-	if it.commentExpanded.Value() {
-		return yield(level+1, &it.commentEditor.widgetEditor)
-	}
 	return true
 }
 
@@ -350,133 +342,4 @@ func (il *InstrumentList) update(gtx C, t *Tracker) {
 
 func (il *InstrumentList) Tags(level int, yield TagYieldFunc) bool {
 	return yield(level, il.instrumentDragList)
-}
-
-// UnitList methods
-
-func MakeUnitList(m *tracker.Model) UnitList {
-	ret := UnitList{
-		dragList:     NewDragList(m.Units().List(), layout.Vertical),
-		addUnitBtn:   new(Clickable),
-		searchEditor: NewEditor(true, true, text.Start),
-	}
-	ret.addUnitAction = tracker.MakeEnabledAction(tracker.DoFunc(func() {
-		m.AddUnit(false).Do()
-		ret.searchEditor.Focus()
-	}))
-	return ret
-}
-
-func (ul *UnitList) Layout(gtx C) D {
-	t := TrackerFromContext(gtx)
-	ul.update(gtx, t)
-	element := func(gtx C, i int) D {
-		gtx.Constraints.Max.Y = gtx.Dp(20)
-		gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
-		u := t.Units().Item(i)
-		editorStyle := t.Theme.InstrumentEditor.UnitList.Name
-		signalError := t.RailError()
-		switch {
-		case u.Disabled:
-			editorStyle = t.Theme.InstrumentEditor.UnitList.NameDisabled
-		case signalError.Err != nil && signalError.UnitIndex == i:
-			editorStyle.Color = t.Theme.InstrumentEditor.UnitList.Error
-		}
-		unitName := func(gtx C) D {
-			if i == ul.dragList.TrackerList.Selected() {
-				defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-				return ul.searchEditor.Layout(gtx, t.Model.UnitSearch(), t.Theme, &editorStyle, "---")
-			} else {
-				text := u.Type
-				if text == "" {
-					text = "---"
-				}
-				l := editorStyle.AsLabelStyle()
-				return Label(t.Theme, &l, text).Layout(gtx)
-			}
-		}
-		stackText := strconv.FormatInt(int64(u.Signals.StackAfter()), 10)
-		commentLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Comment, u.Comment)
-		stackLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Stack, stackText)
-		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-			layout.Rigid(unitName),
-			layout.Rigid(layout.Spacer{Width: 5}.Layout),
-			layout.Flexed(1, commentLabel.Layout),
-			layout.Rigid(stackLabel.Layout),
-			layout.Rigid(layout.Spacer{Width: 10}.Layout),
-		)
-	}
-	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
-	unitList := FilledDragList(t.Theme, ul.dragList)
-	surface := func(gtx C) D {
-		return layout.Stack{Alignment: layout.SE}.Layout(gtx,
-			layout.Expanded(func(gtx C) D {
-				defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-				gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(140), gtx.Constraints.Max.Y))
-				dims := unitList.Layout(gtx, element, nil)
-				unitList.LayoutScrollBar(gtx)
-				return dims
-			}),
-			layout.Stacked(func(gtx C) D {
-				margin := layout.Inset{Right: unit.Dp(20), Bottom: unit.Dp(1)}
-				addUnitBtn := IconBtn(t.Theme, &t.Theme.IconButton.Emphasis, ul.addUnitBtn, icons.ContentAdd, "Add unit (Enter)")
-				return margin.Layout(gtx, addUnitBtn.Layout)
-			}),
-		)
-	}
-	return Surface{Gray: 30, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, surface)
-}
-
-func (ul *UnitList) update(gtx C, t *Tracker) {
-	for ul.addUnitBtn.Clicked(gtx) {
-		ul.addUnitAction.Do()
-		t.UnitSearching().SetValue(true)
-		ul.searchEditor.Focus()
-	}
-	for {
-		event, ok := gtx.Event(
-			key.Filter{Focus: ul.dragList, Name: key.NameRightArrow},
-			key.Filter{Focus: ul.dragList, Name: key.NameEnter, Optional: key.ModCtrl},
-			key.Filter{Focus: ul.dragList, Name: key.NameReturn, Optional: key.ModCtrl},
-			key.Filter{Focus: ul.dragList, Name: key.NameDeleteBackward},
-		)
-		if !ok {
-			break
-		}
-		if e, ok := event.(key.Event); ok && e.State == key.Press {
-			switch e.Name {
-			case key.NameRightArrow:
-				t.PatchPanel.unitEditor.paramTable.RowTitleList.Focus()
-			case key.NameDeleteBackward:
-				t.Units().SetSelectedType("")
-				t.UnitSearching().SetValue(true)
-				ul.searchEditor.Focus()
-			case key.NameEnter, key.NameReturn:
-				t.Model.AddUnit(e.Modifiers.Contain(key.ModCtrl)).Do()
-				t.UnitSearching().SetValue(true)
-				ul.searchEditor.Focus()
-			}
-		}
-	}
-	str := t.Model.UnitSearch()
-	for ev := ul.searchEditor.Update(gtx, str); ev != EditorEventNone; ev = ul.searchEditor.Update(gtx, str) {
-		if ev == EditorEventSubmit {
-			if str.Value() != "" {
-				for _, n := range sointu.UnitNames {
-					if strings.HasPrefix(n, str.Value()) {
-						t.Units().SetSelectedType(n)
-						break
-					}
-				}
-			} else {
-				t.Units().SetSelectedType("")
-			}
-		}
-		ul.dragList.Focus()
-		t.UnitSearching().SetValue(false)
-	}
-}
-
-func (ul *UnitList) Tags(curLevel int, yield TagYieldFunc) bool {
-	return yield(curLevel, ul.dragList) && yield(curLevel+1, &ul.searchEditor.widgetEditor)
 }

@@ -54,6 +54,17 @@ button:
     cornerradius: 0
     height: *buttonheight
     inset: *buttoninset
+  tab:
+    active: *textbutton
+    inactive: 
+      background: *transparentcolor
+      color: *highemphasis
+      textsize: *buttontextsize
+      cornerradius: *buttoncornerradius
+      height: *buttonheight
+      inset: *buttoninset
+    indicatorheight: 2
+    indicatorcolor: *primarycolor
 iconbutton:
   enabled:
     color: *primarycolor
