@@ -5,7 +5,7 @@ go 1.23.8
 toolchain go1.24.0
 
 require (
-	gioui.org v0.8.1-0.20250624114559-c3ce484b5e80
+	gioui.org v0.9.0
 	gioui.org/x v0.8.1
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/ebitengine/oto/v3 v3.3.0
