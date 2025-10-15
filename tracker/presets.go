@@ -32,7 +32,140 @@ type (
 		Index int
 		*Model
 	}
+
+	PresetSearchString   Model
+	NoGmDlsFilter        Model
+	BuiltinPresetsFilter Model
+	UserPresetsFilter    Model
+	PresetDirectory      Model
+	PresetKind           Model
+
+	derivedPresetSearch struct {
+		directory string
+		noGmDls   bool
+		kind      PresetKindEnum
+	}
+
+	PresetKindEnum int
 )
+
+const (
+	BuiltinPresets PresetKindEnum = -1
+	AllPresets     PresetKindEnum = 0
+	UserPresets    PresetKindEnum = 1
+)
+
+func (m *Model) updateDerivedPresetSearch() {
+	// parse filters from the search string. in: dir, gmdls: yes/no, kind: builtin/user/all
+	search := strings.TrimSpace(m.d.PresetSearchString)
+	lower := strings.ToLower(search)
+	parts := strings.Fields(lower)
+	// parse parts to see if they contain :
+	m.derived.presetSearch.noGmDls = false
+	m.derived.presetSearch.directory = ""
+	m.derived.presetSearch.kind = AllPresets
+	for _, part := range parts {
+		if strings.HasPrefix(part, "in:") && len(part) > 3 {
+			m.derived.presetSearch.directory = strings.TrimSpace(part[3:])
+		} else if strings.HasPrefix(part, "gmdls:") && len(part) > 6 {
+			val := strings.TrimSpace(part[6:])
+			m.derived.presetSearch.noGmDls = val == "no"
+		} else if strings.HasPrefix(part, "kind:") && len(part) > 5 {
+			val := strings.TrimSpace(part[5:])
+			switch val {
+			case "builtin":
+				m.derived.presetSearch.kind = BuiltinPresets
+			case "user":
+				m.derived.presetSearch.kind = UserPresets
+			default:
+				m.derived.presetSearch.kind = AllPresets
+			}
+		}
+	}
+}
+
+func (m *Model) PresetSearchString() String { return MakeString((*PresetSearchString)(m)) }
+func (m *PresetSearchString) Value() string { return m.d.PresetSearchString }
+func (m *PresetSearchString) SetValue(value string) bool {
+	if m.d.PresetSearchString == value {
+		return false
+	}
+	m.d.PresetSearchString = value
+	(*Model)(m).updateDerivedPresetSearch()
+	return true
+}
+
+func (m *Model) NoGmDls() Bool       { return MakeBool((*NoGmDlsFilter)(m)) }
+func (m *NoGmDlsFilter) Value() bool { return m.derived.presetSearch.noGmDls }
+func (m *NoGmDlsFilter) SetValue(val bool) {
+	if m.derived.presetSearch.noGmDls == val {
+		return
+	}
+	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "gmdls:")
+	if val {
+		m.d.PresetSearchString = "gmdls:no " + m.d.PresetSearchString
+	}
+	(*Model)(m).updateDerivedPresetSearch()
+}
+func (m *NoGmDlsFilter) Enabled() bool { return true }
+
+func (m *Model) UserPresetFilter() Bool  { return MakeBool((*UserPresetsFilter)(m)) }
+func (m *UserPresetsFilter) Value() bool { return m.derived.presetSearch.kind == UserPresets }
+func (m *UserPresetsFilter) SetValue(val bool) {
+	if (m.derived.presetSearch.kind == UserPresets) == val {
+		return
+	}
+	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "kind:")
+	if val {
+		m.d.PresetSearchString = "kind:user " + m.d.PresetSearchString
+	}
+	(*Model)(m).updateDerivedPresetSearch()
+}
+func (m *UserPresetsFilter) Enabled() bool { return true }
+
+func (m *Model) BuiltinPresetsFilter() Bool { return MakeBool((*BuiltinPresetsFilter)(m)) }
+func (m *BuiltinPresetsFilter) Value() bool { return m.derived.presetSearch.kind == BuiltinPresets }
+func (m *BuiltinPresetsFilter) SetValue(val bool) {
+	if (m.derived.presetSearch.kind == BuiltinPresets) == val {
+		return
+	}
+	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "kind:")
+	if val {
+		m.d.PresetSearchString = "kind:builtin " + m.d.PresetSearchString
+	}
+	(*Model)(m).updateDerivedPresetSearch()
+}
+func (m *BuiltinPresetsFilter) Enabled() bool { return true }
+
+func (m *Model) PresetKind() Int { return MakeInt((*PresetKind)(m)) }
+func (m *PresetKind) Value() int { return int(m.derived.presetSearch.kind) }
+func (m *PresetKind) SetValue(val int) bool {
+	if int(m.derived.presetSearch.kind) == val {
+		return false
+	}
+	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "kind:")
+	switch PresetKindEnum(val) {
+	case BuiltinPresets:
+		m.d.PresetSearchString = "kind:builtin " + m.d.PresetSearchString
+	case UserPresets:
+		m.d.PresetSearchString = "kind:user " + m.d.PresetSearchString
+	}
+	(*Model)(m).updateDerivedPresetSearch()
+	return true
+}
+func (m *PresetKind) Enabled() bool   { return true }
+func (m *PresetKind) Range() IntRange { return IntRange{Min: -1, Max: 1} }
+
+func removeFilters(str string, prefix string) string {
+	parts := strings.Fields(str)
+	newParts := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if !strings.HasPrefix(strings.ToLower(part), prefix) {
+			newParts = append(newParts, part)
+		}
+	}
+	return strings.Join(newParts, " ")
+}
 
 // gmDlsEntryMap is a reverse map, to find the index of the GmDlsEntry in the
 // GmDlsEntries list based on the sample offset. Do not modify during runtime.

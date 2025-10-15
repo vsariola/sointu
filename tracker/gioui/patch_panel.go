@@ -20,11 +20,12 @@ import (
 
 type (
 	PatchPanel struct {
-		instrList  InstrumentList
-		tools      InstrumentTools
-		unitList   UnitList
-		unitEditor UnitEditor
-		instrProps InstrumentProperties
+		instrList    InstrumentList
+		tools        InstrumentTools
+		unitList     UnitList
+		unitEditor   UnitEditor
+		instrProps   InstrumentProperties
+		instrPresets InstrumentPresets
 	}
 
 	InstrumentList struct {
@@ -66,11 +67,12 @@ type (
 
 func NewPatchPanel(model *tracker.Model) *PatchPanel {
 	return &PatchPanel{
-		instrList:  MakeInstrList(model),
-		tools:      MakeInstrumentTools(model),
-		unitList:   MakeUnitList(model),
-		unitEditor: *NewUnitEditor(model),
-		instrProps: *NewInstrumentProperties(),
+		instrList:    MakeInstrList(model),
+		tools:        MakeInstrumentTools(model),
+		unitList:     MakeUnitList(model),
+		unitEditor:   *NewUnitEditor(model),
+		instrProps:   *NewInstrumentProperties(),
+		instrPresets: *NewInstrumentPresets(model),
 	}
 }
 
@@ -81,7 +83,7 @@ func (pp *PatchPanel) Layout(gtx C) D {
 		case tr.InstrComment().Value():
 			return pp.instrProps.layout(gtx)
 		case tr.InstrPresets().Value():
-			return pp.instrProps.layout(gtx)
+			return pp.instrPresets.layout(gtx)
 		default: // editor
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 				layout.Rigid(pp.unitList.Layout),

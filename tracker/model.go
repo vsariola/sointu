@@ -37,6 +37,7 @@ type (
 		ChangedSinceRecovery    bool
 		SendSource              int
 		InstrumentTab           InstrumentTab
+		PresetSearchString      string
 	}
 
 	Model struct {
