@@ -70,8 +70,10 @@ type Theme struct {
 		Preset MenuStyle
 	}
 	InstrumentEditor struct {
-		Octave            LabelStyle
-		Voices            LabelStyle
+		Octave     LabelStyle
+		Properties struct {
+			Label LabelStyle
+		}
 		InstrumentComment EditorStyle
 		UnitComment       EditorStyle
 		InstrumentList    struct {

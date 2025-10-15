@@ -164,7 +164,8 @@ menu:
     height: 300
 instrumenteditor:
   octave: { textsize: 14, color: *disabled }
-  voices: { textsize: 14, color: *disabled }
+  properties: 
+    label: { textsize: 14, color: *highemphasis }
   instrumentcomment:
     { textsize: 14, color: *highemphasis, hintcolor: *disabled }
   unitcomment: { textsize: 14, color: *highemphasis, hintcolor: *disabled }

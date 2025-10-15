@@ -24,11 +24,26 @@ type (
 		tools      InstrumentTools
 		unitList   UnitList
 		unitEditor UnitEditor
+		instrProps InstrumentProperties
 	}
 
 	InstrumentList struct {
 		instrumentDragList *DragList
 		nameEditor         *Editor
+	}
+
+	InstrumentTools struct {
+		EditorTab  *Clickable
+		PresetsTab *Clickable
+		CommentTab *Clickable
+
+		presetMenuBtn       *Clickable
+		presetMenu          MenuState
+		presetMenuItems     []ActionMenuItem
+		saveInstrumentBtn   *Clickable
+		loadInstrumentBtn   *Clickable
+		copyInstrumentBtn   *Clickable
+		deleteInstrumentBtn *Clickable
 
 		octave            *NumericUpDownState
 		enlargeBtn        *Clickable
@@ -40,32 +55,9 @@ type (
 		linkEnabledHint         string
 		enlargeHint, shrinkHint string
 		addInstrumentHint       string
-	}
 
-	InstrumentTools struct {
-		EditorTab  *Clickable
-		PresetsTab *Clickable
-		CommentTab *Clickable
-
-		Voices              *NumericUpDownState
-		splitInstrumentBtn  *Clickable
-		commentExpandBtn    *Clickable
-		commentEditor       *Editor
-		soloBtn             *Clickable
-		muteBtn             *Clickable
-		presetMenuBtn       *Clickable
-		presetMenu          MenuState
-		presetMenuItems     []ActionMenuItem
-		saveInstrumentBtn   *Clickable
-		loadInstrumentBtn   *Clickable
-		copyInstrumentBtn   *Clickable
-		deleteInstrumentBtn *Clickable
-
-		muteHint, unmuteHint string
-		soloHint, unsoloHint string
 		expandCommentHint    string
 		collapseCommentHint  string
-		splitInstrumentHint  string
 		deleteInstrumentHint string
 	}
 )
@@ -78,19 +70,30 @@ func NewPatchPanel(model *tracker.Model) *PatchPanel {
 		tools:      MakeInstrumentTools(model),
 		unitList:   MakeUnitList(model),
 		unitEditor: *NewUnitEditor(model),
+		instrProps: *NewInstrumentProperties(),
 	}
 }
 
 func (pp *PatchPanel) Layout(gtx C) D {
-	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(pp.instrList.Layout),
-		layout.Rigid(pp.tools.Layout),
-		layout.Flexed(1, func(gtx C) D {
+	tr := TrackerFromContext(gtx)
+	bottom := func(gtx C) D {
+		switch {
+		case tr.InstrComment().Value():
+			return pp.instrProps.layout(gtx)
+		case tr.InstrPresets().Value():
+			return pp.instrProps.layout(gtx)
+		default: // editor
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 				layout.Rigid(pp.unitList.Layout),
 				layout.Flexed(1, pp.unitEditor.Layout),
 			)
-		}))
+		}
+	}
+	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+		layout.Rigid(pp.instrList.Layout),
+		layout.Rigid(pp.tools.Layout),
+		layout.Flexed(1, bottom),
+	)
 }
 
 func (pp *PatchPanel) Tags(level int, yield TagYieldFunc) bool {
@@ -114,26 +117,24 @@ func MakeInstrumentTools(m *tracker.Model) InstrumentTools {
 		EditorTab:            new(Clickable),
 		PresetsTab:           new(Clickable),
 		CommentTab:           new(Clickable),
-		Voices:               NewNumericUpDownState(),
 		deleteInstrumentBtn:  new(Clickable),
-		splitInstrumentBtn:   new(Clickable),
 		copyInstrumentBtn:    new(Clickable),
 		saveInstrumentBtn:    new(Clickable),
 		loadInstrumentBtn:    new(Clickable),
-		commentExpandBtn:     new(Clickable),
 		presetMenuBtn:        new(Clickable),
-		soloBtn:              new(Clickable),
-		muteBtn:              new(Clickable),
 		presetMenuItems:      []ActionMenuItem{},
-		commentEditor:        NewEditor(false, false, text.Start),
 		expandCommentHint:    makeHint("Expand comment", " (%s)", "CommentExpandedToggle"),
-		collapseCommentHint:  makeHint("Collapse comment", " (%s)", "CommentExpandedToggle"),
 		deleteInstrumentHint: makeHint("Delete\ninstrument", "\n(%s)", "DeleteInstrument"),
-		muteHint:             makeHint("Mute", " (%s)", "MuteToggle"),
-		unmuteHint:           makeHint("Unmute", " (%s)", "MuteToggle"),
-		soloHint:             makeHint("Solo", " (%s)", "SoloToggle"),
-		unsoloHint:           makeHint("Unsolo", " (%s)", "SoloToggle"),
-		splitInstrumentHint:  makeHint("Split instrument", " (%s)", "SplitInstrument"),
+		octave:               NewNumericUpDownState(),
+		enlargeBtn:           new(Clickable),
+		linkInstrTrackBtn:    new(Clickable),
+		newInstrumentBtn:     new(Clickable),
+		octaveHint:           makeHint("Octave down", " (%s)", "OctaveNumberInputSubtract") + makeHint(" or up", " (%s)", "OctaveNumberInputAdd"),
+		linkDisabledHint:     makeHint("Instrument-Track\nlinking disabled", "\n(%s)", "LinkInstrTrackToggle"),
+		linkEnabledHint:      makeHint("Instrument-Track\nlinking enabled", "\n(%s)", "LinkInstrTrackToggle"),
+		enlargeHint:          makeHint("Enlarge", " (%s)", "InstrEnlargedToggle"),
+		shrinkHint:           makeHint("Shrink", " (%s)", "InstrEnlargedToggle"),
+		addInstrumentHint:    makeHint("Add\ninstrument", "\n(%s)", "AddInstrument"),
 	}
 	for index, name := range m.IterateInstrumentPresets {
 		ret.presetMenuItems = append(ret.presetMenuItems, MenuItem(m.LoadPreset(index), name, "", icons.ImageAudiotrack))
@@ -144,20 +145,18 @@ func MakeInstrumentTools(m *tracker.Model) InstrumentTools {
 func (it *InstrumentTools) Layout(gtx C) D {
 	t := TrackerFromContext(gtx)
 	it.update(gtx, t)
-	voicesLabel := Label(t.Theme, &t.Theme.InstrumentEditor.Voices, "Voices")
-
 	editorBtn := TabBtn(t.Model.InstrEditor(), t.Theme, it.EditorTab, "Editor", "")
 	presetsBtn := TabBtn(t.Model.InstrPresets(), t.Theme, it.PresetsTab, "Presets", "")
-	commentBtn := TabBtn(t.Model.InstrComment(), t.Theme, it.CommentTab, "Comment", "")
+	commentBtn := TabBtn(t.Model.InstrComment(), t.Theme, it.CommentTab, "Properties", "")
+	octave := NumUpDown(t.Model.Octave(), t.Theme, t.OctaveNumberInput, "Octave")
+	linkInstrTrackBtn := ToggleIconBtn(t.Model.LinkInstrTrack(), t.Theme, it.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, it.linkDisabledHint, it.linkEnabledHint)
+	instrEnlargedBtn := ToggleIconBtn(t.Model.InstrEnlarged(), t.Theme, it.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, it.enlargeHint, it.shrinkHint)
+	addInstrumentBtn := ActionIconBtn(t.Model.AddInstrument(), t.Theme, it.newInstrumentBtn, icons.ContentAdd, it.addInstrumentHint)
 
-	splitInstrumentBtn := ActionIconBtn(t.SplitInstrument(), t.Theme, it.splitInstrumentBtn, icons.CommunicationCallSplit, it.splitInstrumentHint)
-	soloBtn := ToggleIconBtn(t.Solo(), t.Theme, it.soloBtn, icons.SocialGroup, icons.SocialPerson, it.soloHint, it.unsoloHint)
-	muteBtn := ToggleIconBtn(t.Mute(), t.Theme, it.muteBtn, icons.AVVolumeUp, icons.AVVolumeOff, it.muteHint, it.unmuteHint)
 	//	saveInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.saveInstrumentBtn, icons.ContentSave, "Save instrument")
 	//	loadInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
 	copyInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
 	deleteInstrumentBtn := ActionIconBtn(t.DeleteInstrument(), t.Theme, it.deleteInstrumentBtn, icons.ActionDelete, it.deleteInstrumentHint)
-	instrumentVoices := NumUpDown(t.Model.InstrumentVoices(), t.Theme, it.Voices, "Number of voices for this instrument")
 	btns := func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(layout.Spacer{Width: 6}.Layout),
@@ -165,12 +164,7 @@ func (it *InstrumentTools) Layout(gtx C) D {
 			layout.Rigid(presetsBtn.Layout),
 			layout.Rigid(commentBtn.Layout),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
-			layout.Rigid(voicesLabel.Layout),
 			layout.Rigid(layout.Spacer{Width: 4}.Layout),
-			layout.Rigid(instrumentVoices.Layout),
-			layout.Rigid(splitInstrumentBtn.Layout),
-			layout.Rigid(soloBtn.Layout),
-			layout.Rigid(muteBtn.Layout),
 			/*layout.Rigid(func(gtx C) D {
 				presetBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.presetMenuBtn, icons.NavigationMenu, "Load preset")
 				dims := presetBtn.Layout(gtx)
@@ -182,8 +176,13 @@ func (it *InstrumentTools) Layout(gtx C) D {
 			}),*/
 			//			layout.Rigid(saveInstrumentBtn.Layout),
 			//			layout.Rigid(loadInstrumentBtn.Layout),
+			layout.Rigid(Label(t.Theme, &t.Theme.InstrumentEditor.Octave, "Octave").Layout),
+			layout.Rigid(octave.Layout),
+			layout.Rigid(linkInstrTrackBtn.Layout),
+			layout.Rigid(instrEnlargedBtn.Layout),
 			layout.Rigid(copyInstrumentBtn.Layout),
 			layout.Rigid(deleteInstrumentBtn.Layout),
+			layout.Rigid(addInstrumentBtn.Layout),
 		)
 	}
 	/*comment := func(gtx C) D {
@@ -220,9 +219,6 @@ func (it *InstrumentTools) update(gtx C, tr *Tracker) {
 	for it.presetMenuBtn.Clicked(gtx) {
 		it.presetMenu.visible = true
 	}
-	for it.commentEditor.Update(gtx, tr.InstrumentComment()) != EditorEventNone {
-		tr.PatchPanel.instrList.instrumentDragList.Focus()
-	}
 }
 
 func (it *InstrumentTools) Tags(level int, yield TagYieldFunc) bool {
@@ -235,41 +231,12 @@ func MakeInstrList(model *tracker.Model) InstrumentList {
 	return InstrumentList{
 		instrumentDragList: NewDragList(model.Instruments().List(), layout.Horizontal),
 		nameEditor:         NewEditor(true, true, text.Middle),
-		octave:             NewNumericUpDownState(),
-		enlargeBtn:         new(Clickable),
-		linkInstrTrackBtn:  new(Clickable),
-		newInstrumentBtn:   new(Clickable),
-		octaveHint:         makeHint("Octave down", " (%s)", "OctaveNumberInputSubtract") + makeHint(" or up", " (%s)", "OctaveNumberInputAdd"),
-		linkDisabledHint:   makeHint("Instrument-Track\nlinking disabled", "\n(%s)", "LinkInstrTrackToggle"),
-		linkEnabledHint:    makeHint("Instrument-Track\nlinking enabled", "\n(%s)", "LinkInstrTrackToggle"),
-		enlargeHint:        makeHint("Enlarge", " (%s)", "InstrEnlargedToggle"),
-		shrinkHint:         makeHint("Shrink", " (%s)", "InstrEnlargedToggle"),
-		addInstrumentHint:  makeHint("Add\ninstrument", "\n(%s)", "AddInstrument"),
 	}
 }
 
 func (il *InstrumentList) Layout(gtx C) D {
 	t := TrackerFromContext(gtx)
 	il.update(gtx, t)
-	octave := NumUpDown(t.Model.Octave(), t.Theme, t.OctaveNumberInput, "Octave")
-	linkInstrTrackBtn := ToggleIconBtn(t.Model.LinkInstrTrack(), t.Theme, il.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, il.linkDisabledHint, il.linkEnabledHint)
-	instrEnlargedBtn := ToggleIconBtn(t.Model.InstrEnlarged(), t.Theme, il.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, il.enlargeHint, il.shrinkHint)
-	addInstrumentBtn := ActionIconBtn(t.Model.AddInstrument(), t.Theme, il.newInstrumentBtn, icons.ContentAdd, il.addInstrumentHint)
-	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(
-		gtx,
-		layout.Flexed(1, il.actualLayout),
-		layout.Rigid(layout.Spacer{Width: 10}.Layout),
-		layout.Rigid(Label(t.Theme, &t.Theme.InstrumentEditor.Octave, "Octave").Layout),
-		layout.Rigid(layout.Spacer{Width: 4}.Layout),
-		layout.Rigid(octave.Layout),
-		layout.Rigid(linkInstrTrackBtn.Layout),
-		layout.Rigid(instrEnlargedBtn.Layout),
-		layout.Rigid(addInstrumentBtn.Layout),
-	)
-}
-
-func (il *InstrumentList) actualLayout(gtx C) D {
-	t := TrackerFromContext(gtx)
 	gtx.Constraints.Max.Y = gtx.Dp(36)
 	gtx.Constraints.Min.Y = gtx.Dp(36)
 	element := func(gtx C, i int) D {
