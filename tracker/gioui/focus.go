@@ -8,6 +8,9 @@ import (
 )
 
 type TagYieldFunc func(level int, tag event.Tag) bool
+type Tagged interface {
+	Tags(level int, yield TagYieldFunc) bool
+}
 
 // FocusNext navigates to the next focusable tag in the tracker. If stepInto is
 // true, it will focus the next tag regardless of its depth; otherwise it will
@@ -76,4 +79,13 @@ func (t *Tracker) findFocusedLevel(gtx C) (level int, ok bool) {
 		return true // continue searching
 	})
 	return level, ok
+}
+
+func firstTag(t Tagged) (tag event.Tag, ok bool) {
+	t.Tags(0, func(level int, t event.Tag) bool {
+		tag = t
+		ok = true
+		return false
+	})
+	return tag, ok
 }

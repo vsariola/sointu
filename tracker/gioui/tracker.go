@@ -316,6 +316,18 @@ func (t *Tracker) showDialog(gtx C) {
 			DialogBtn("Close", t.Cancel()),
 		)
 		dialog.Layout(gtx)
+	case tracker.DeleteUserPresetDialog:
+		dialog := MakeDialog(t.Theme, t.DialogState, "Delete user preset?", "Are you sure you want to delete the selected user preset?\nThis action cannot be undone.",
+			DialogBtn("Delete", t.DeleteUserPreset()),
+			DialogBtn("Cancel", t.Cancel()),
+		)
+		dialog.Layout(gtx)
+	case tracker.OverwriteUserPresetDialog:
+		dialog := MakeDialog(t.Theme, t.DialogState, "Overwrite user preset?", "Are you sure you want to overwrite the existing user preset with the same name?",
+			DialogBtn("Save", t.OverwriteUserPreset()),
+			DialogBtn("Cancel", t.Cancel()),
+		)
+		dialog.Layout(gtx)
 	}
 }
 

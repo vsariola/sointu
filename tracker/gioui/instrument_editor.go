@@ -6,6 +6,8 @@ import (
 	"image/color"
 	"io"
 	"math"
+	"strconv"
+	"strings"
 	"time"
 
 	"gioui.org/f32"
@@ -16,6 +18,8 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
+	"gioui.org/unit"
+	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"golang.org/x/text/cases"
@@ -23,6 +27,18 @@ import (
 )
 
 type (
+	InstrumentEditor struct {
+		unitList   UnitList
+		unitEditor UnitEditor
+	}
+
+	UnitList struct {
+		dragList      *DragList
+		searchEditor  *Editor
+		addUnitBtn    *Clickable
+		addUnitAction tracker.Action
+	}
+
 	UnitEditor struct {
 		paramTable     *ScrollTable
 		searchList     *DragList
@@ -42,6 +58,154 @@ type (
 		searching tracker.Bool
 	}
 )
+
+func MakeInstrumentEditor(model *tracker.Model) InstrumentEditor {
+	return InstrumentEditor{
+		unitList:   MakeUnitList(model),
+		unitEditor: *NewUnitEditor(model),
+	}
+}
+
+func (ie *InstrumentEditor) layout(gtx C) D {
+	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+		layout.Rigid(ie.unitList.Layout),
+		layout.Flexed(1, ie.unitEditor.Layout),
+	)
+}
+
+func (ie *InstrumentEditor) Tags(level int, yield TagYieldFunc) bool {
+	return ie.unitList.Tags(level, yield) &&
+		ie.unitEditor.Tags(level, yield)
+}
+
+// UnitList methods
+
+func MakeUnitList(m *tracker.Model) UnitList {
+	ret := UnitList{
+		dragList:     NewDragList(m.Units().List(), layout.Vertical),
+		addUnitBtn:   new(Clickable),
+		searchEditor: NewEditor(true, true, text.Start),
+	}
+	ret.addUnitAction = tracker.MakeEnabledAction(tracker.DoFunc(func() {
+		m.AddUnit(false).Do()
+		ret.searchEditor.Focus()
+	}))
+	return ret
+}
+
+func (ul *UnitList) Layout(gtx C) D {
+	t := TrackerFromContext(gtx)
+	ul.update(gtx, t)
+	element := func(gtx C, i int) D {
+		gtx.Constraints.Max.Y = gtx.Dp(20)
+		gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
+		u := t.Units().Item(i)
+		editorStyle := t.Theme.InstrumentEditor.UnitList.Name
+		signalError := t.RailError()
+		switch {
+		case u.Disabled:
+			editorStyle = t.Theme.InstrumentEditor.UnitList.NameDisabled
+		case signalError.Err != nil && signalError.UnitIndex == i:
+			editorStyle.Color = t.Theme.InstrumentEditor.UnitList.Error
+		}
+		unitName := func(gtx C) D {
+			if i == ul.dragList.TrackerList.Selected() {
+				defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
+				return ul.searchEditor.Layout(gtx, t.Model.UnitSearch(), t.Theme, &editorStyle, "---")
+			} else {
+				text := u.Type
+				if text == "" {
+					text = "---"
+				}
+				l := editorStyle.AsLabelStyle()
+				return Label(t.Theme, &l, text).Layout(gtx)
+			}
+		}
+		stackText := strconv.FormatInt(int64(u.Signals.StackAfter()), 10)
+		commentLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Comment, u.Comment)
+		stackLabel := Label(t.Theme, &t.Theme.InstrumentEditor.UnitList.Stack, stackText)
+		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+			layout.Rigid(unitName),
+			layout.Rigid(layout.Spacer{Width: 5}.Layout),
+			layout.Flexed(1, commentLabel.Layout),
+			layout.Rigid(stackLabel.Layout),
+			layout.Rigid(layout.Spacer{Width: 10}.Layout),
+		)
+	}
+	defer op.Offset(image.Point{}).Push(gtx.Ops).Pop()
+	unitList := FilledDragList(t.Theme, ul.dragList)
+	surface := func(gtx C) D {
+		return layout.Stack{Alignment: layout.SE}.Layout(gtx,
+			layout.Expanded(func(gtx C) D {
+				defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
+				gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(140), gtx.Constraints.Max.Y))
+				dims := unitList.Layout(gtx, element, nil)
+				unitList.LayoutScrollBar(gtx)
+				return dims
+			}),
+			layout.Stacked(func(gtx C) D {
+				margin := layout.Inset{Right: unit.Dp(20), Bottom: unit.Dp(1)}
+				addUnitBtn := IconBtn(t.Theme, &t.Theme.IconButton.Emphasis, ul.addUnitBtn, icons.ContentAdd, "Add unit (Enter)")
+				return margin.Layout(gtx, addUnitBtn.Layout)
+			}),
+		)
+	}
+	return Surface{Gray: 30, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, surface)
+}
+
+func (ul *UnitList) update(gtx C, t *Tracker) {
+	for ul.addUnitBtn.Clicked(gtx) {
+		ul.addUnitAction.Do()
+		t.UnitSearching().SetValue(true)
+		ul.searchEditor.Focus()
+	}
+	for {
+		event, ok := gtx.Event(
+			key.Filter{Focus: ul.dragList, Name: key.NameRightArrow},
+			key.Filter{Focus: ul.dragList, Name: key.NameEnter, Optional: key.ModCtrl},
+			key.Filter{Focus: ul.dragList, Name: key.NameReturn, Optional: key.ModCtrl},
+			key.Filter{Focus: ul.dragList, Name: key.NameDeleteBackward},
+		)
+		if !ok {
+			break
+		}
+		if e, ok := event.(key.Event); ok && e.State == key.Press {
+			switch e.Name {
+			case key.NameRightArrow:
+				t.PatchPanel.instrEditor.unitEditor.paramTable.RowTitleList.Focus()
+			case key.NameDeleteBackward:
+				t.Units().SetSelectedType("")
+				t.UnitSearching().SetValue(true)
+				ul.searchEditor.Focus()
+			case key.NameEnter, key.NameReturn:
+				t.Model.AddUnit(e.Modifiers.Contain(key.ModCtrl)).Do()
+				t.UnitSearching().SetValue(true)
+				ul.searchEditor.Focus()
+			}
+		}
+	}
+	str := t.Model.UnitSearch()
+	for ev := ul.searchEditor.Update(gtx, str); ev != EditorEventNone; ev = ul.searchEditor.Update(gtx, str) {
+		if ev == EditorEventSubmit {
+			if str.Value() != "" {
+				for _, n := range sointu.UnitNames {
+					if strings.HasPrefix(n, str.Value()) {
+						t.Units().SetSelectedType(n)
+						break
+					}
+				}
+			} else {
+				t.Units().SetSelectedType("")
+			}
+		}
+		ul.dragList.Focus()
+		t.UnitSearching().SetValue(false)
+	}
+}
+
+func (ul *UnitList) Tags(curLevel int, yield TagYieldFunc) bool {
+	return yield(curLevel, ul.dragList) && yield(curLevel+1, &ul.searchEditor.widgetEditor)
+}
 
 func NewUnitEditor(m *tracker.Model) *UnitEditor {
 	ret := &UnitEditor{
@@ -159,7 +323,7 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
 			switch e.Name {
 			case key.NameLeftArrow:
-				t.PatchPanel.unitList.dragList.Focus()
+				t.PatchPanel.instrEditor.unitList.dragList.Focus()
 			case key.NameDeleteBackward:
 				t.ClearUnit().Do()
 				t.UnitSearch().SetValue("")

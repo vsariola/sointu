@@ -36,14 +36,15 @@ type (
 		RecoveryFilePath        string
 		ChangedSinceRecovery    bool
 		SendSource              int
+		InstrumentTab           InstrumentTab
+		PresetSearchString      string
 	}
 
 	Model struct {
 		d       modelData
 		derived derivedModelData
 
-		instrEnlarged   bool
-		commentExpanded bool
+		instrEnlarged bool
 
 		prevUndoKind    string
 		undoSkipCounter int
@@ -84,6 +85,9 @@ type (
 		broker *Broker
 
 		MIDI MIDIContext
+
+		presets     Presets
+		presetIndex int
 	}
 
 	// Cursor identifies a row and a track in a song score.
@@ -129,6 +133,8 @@ type (
 		String() string
 		Open() error
 	}
+
+	InstrumentTab int
 )
 
 const (
@@ -159,6 +165,14 @@ const (
 	QuitChanges
 	QuitSaveExplorer
 	License
+	DeleteUserPresetDialog
+	OverwriteUserPresetDialog
+)
+
+const (
+	InstrumentEditorTab InstrumentTab = iota
+	InstrumentPresetsTab
+	InstrumentCommentTab
 )
 
 const maxUndo = 64
@@ -193,6 +207,8 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 	TrySend(broker.ToPlayer, any(m.d.Song.Copy())) // we should be non-blocking in the constructor
 	m.signalAnalyzer = NewScopeModel(broker, m.d.Song.BPM)
 	m.updateDeriveData(SongChange)
+	m.presets.load()
+	m.updateDerivedPresetSearch()
 	return m
 }
 

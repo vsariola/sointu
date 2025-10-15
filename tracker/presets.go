@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -17,6 +18,9 @@ import (
 //go:generate go run generate/gmdls_entries.go
 //go:generate go run generate/clean_presets.go
 
+//go:embed presets/*
+var instrumentPresetFS embed.FS
+
 type (
 	// GmDlsEntry is a single sample entry from the gm.dls file
 	GmDlsEntry struct {
@@ -27,12 +31,389 @@ type (
 		Name               string // sample Name
 	}
 
+	Preset struct {
+		Directory  string
+		User       bool
+		NeedsGmDls bool
+		Instr      sointu.Instrument
+	}
+
+	Presets struct {
+		Presets []Preset
+		Dirs    []string
+	}
+
 	InstrumentPresetYieldFunc func(index int, item string) (ok bool)
 	LoadPreset                struct {
 		Index int
 		*Model
 	}
+
+	PresetSearchString   Model
+	NoGmDlsFilter        Model
+	BuiltinPresetsFilter Model
+	UserPresetsFilter    Model
+	PresetDirectory      Model
+	PresetKind           Model
+	ClearPresetSearch    Model
+	PresetDirList        Model
+	PresetResultList     Model
+	SaveUserPreset       Model
+	TryDeleteUserPreset  Model
+	DeleteUserPreset     Model
+
+	ConfirmDeleteUserPresetAction Model
+	OverwriteUserPreset           Model
+
+	derivedPresetSearch struct {
+		dir           string
+		dirIndex      int
+		noGmDls       bool
+		kind          PresetKindEnum
+		searchStrings []string
+		results       []Preset
+	}
+
+	PresetKindEnum int
 )
+
+const (
+	BuiltinPresets PresetKindEnum = -1
+	AllPresets     PresetKindEnum = 0
+	UserPresets    PresetKindEnum = 1
+)
+
+func (m *Model) updateDerivedPresetSearch() {
+	// reset derived data, keeping the
+	str := m.derived.presetSearch.searchStrings[:0]
+	m.derived.presetSearch = derivedPresetSearch{searchStrings: str, dirIndex: -1}
+	// parse filters from the search string. in: dir, gmdls: yes/no, kind: builtin/user/all
+	search := strings.TrimSpace(m.d.PresetSearchString)
+	parts := strings.Fields(search)
+	// parse parts to see if they contain :
+	for _, part := range parts {
+		if strings.HasPrefix(part, "d:") && len(part) > 2 {
+			dir := strings.TrimSpace(part[2:])
+			m.derived.presetSearch.dir = dir
+			ind := slices.IndexFunc(m.presets.Dirs, func(c string) bool { return c == dir })
+			m.derived.presetSearch.dirIndex = ind
+		} else if strings.HasPrefix(part, "g:n") {
+			m.derived.presetSearch.noGmDls = true
+		} else if strings.HasPrefix(part, "t:") && len(part) > 2 {
+			val := strings.TrimSpace(part[2:3])
+			switch val {
+			case "b":
+				m.derived.presetSearch.kind = BuiltinPresets
+			case "u":
+				m.derived.presetSearch.kind = UserPresets
+			}
+		} else {
+			m.derived.presetSearch.searchStrings = append(m.derived.presetSearch.searchStrings, strings.ToLower(part))
+		}
+	}
+	// update results
+	m.derived.presetSearch.results = m.derived.presetSearch.results[:0]
+	for _, p := range m.presets.Presets {
+		if m.derived.presetSearch.kind == BuiltinPresets && p.User {
+			continue
+		}
+		if m.derived.presetSearch.kind == UserPresets && !p.User {
+			continue
+		}
+		if m.derived.presetSearch.dir != "" && p.Directory != m.derived.presetSearch.dir {
+			continue
+		}
+		if m.derived.presetSearch.noGmDls && p.NeedsGmDls {
+			continue
+		}
+		if len(m.derived.presetSearch.searchStrings) == 0 {
+			goto found
+		}
+		for _, s := range m.derived.presetSearch.searchStrings {
+			if strings.Contains(strings.ToLower(p.Instr.Name), s) {
+				goto found
+			}
+		}
+		continue
+	found:
+		m.derived.presetSearch.results = append(m.derived.presetSearch.results, p)
+	}
+}
+
+func (m *Presets) load() {
+	*m = Presets{}
+	seenDir := make(map[string]bool)
+	m.loadPresetsFromFs(instrumentPresetFS, false, seenDir)
+	if configDir, err := os.UserConfigDir(); err == nil {
+		userPresets := filepath.Join(configDir, "sointu")
+		m.loadPresetsFromFs(os.DirFS(userPresets), true, seenDir)
+	}
+	sort.Sort(m)
+	m.Dirs = make([]string, 0, len(seenDir))
+	for k := range seenDir {
+		m.Dirs = append(m.Dirs, k)
+	}
+	sort.Strings(m.Dirs)
+}
+
+func (m *Presets) loadPresetsFromFs(fsys fs.FS, userDefined bool, seenDir map[string]bool) {
+	fs.WalkDir(fsys, "presets", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		data, err := fs.ReadFile(fsys, path)
+		if err != nil {
+			return nil
+		}
+		var instr sointu.Instrument
+		if yaml.UnmarshalStrict(data, &instr) == nil {
+			noExt := path[:len(path)-len(filepath.Ext(path))]
+			splitted := splitPath(noExt)
+			splitted = splitted[1:] // remove "presets" from the path
+			instr.Name = filenameToInstrumentName(splitted[len(splitted)-1])
+			dir := strings.Join(splitted[:len(splitted)-1], "/")
+			preset := Preset{
+				Directory:  dir,
+				User:       userDefined,
+				Instr:      instr,
+				NeedsGmDls: checkNeedsGmDls(instr),
+			}
+			if dir != "" {
+				seenDir[dir] = true
+			}
+			m.Presets = append(m.Presets, preset)
+		}
+		return nil
+	})
+}
+
+func filenameToInstrumentName(filename string) string {
+	return strings.ReplaceAll(filename, "_", " ")
+}
+
+func instrumentNameToFilename(name string) string {
+	// remove all special characters
+	reg, _ := regexp.Compile("[^a-zA-Z0-9 _]+")
+	name = reg.ReplaceAllString(name, "")
+	name = strings.ReplaceAll(name, " ", "_")
+	return name
+}
+
+func checkNeedsGmDls(instr sointu.Instrument) bool {
+	for _, u := range instr.Units {
+		if u.Type == "oscillator" {
+			if u.Parameters["type"] == sointu.Sample {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (m *Model) PresetSearchString() String { return MakeString((*PresetSearchString)(m)) }
+func (m *PresetSearchString) Value() string { return m.d.PresetSearchString }
+func (m *PresetSearchString) SetValue(value string) bool {
+	if m.d.PresetSearchString == value {
+		return false
+	}
+	m.d.PresetSearchString = value
+	(*Model)(m).updateDerivedPresetSearch()
+	return true
+}
+
+func (m *Model) NoGmDls() Bool       { return MakeBool((*NoGmDlsFilter)(m)) }
+func (m *NoGmDlsFilter) Value() bool { return m.derived.presetSearch.noGmDls }
+func (m *NoGmDlsFilter) SetValue(val bool) {
+	if m.derived.presetSearch.noGmDls == val {
+		return
+	}
+	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "g:")
+	if val {
+		m.d.PresetSearchString = "g:n " + m.d.PresetSearchString
+	}
+	(*Model)(m).updateDerivedPresetSearch()
+}
+func (m *NoGmDlsFilter) Enabled() bool { return true }
+
+func (m *Model) UserPresetFilter() Bool  { return MakeBool((*UserPresetsFilter)(m)) }
+func (m *UserPresetsFilter) Value() bool { return m.derived.presetSearch.kind == UserPresets }
+func (m *UserPresetsFilter) SetValue(val bool) {
+	if (m.derived.presetSearch.kind == UserPresets) == val {
+		return
+	}
+	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "t:")
+	if val {
+		m.d.PresetSearchString = "t:u " + m.d.PresetSearchString
+	}
+	(*Model)(m).updateDerivedPresetSearch()
+}
+func (m *UserPresetsFilter) Enabled() bool { return true }
+
+func (m *Model) BuiltinPresetsFilter() Bool { return MakeBool((*BuiltinPresetsFilter)(m)) }
+func (m *BuiltinPresetsFilter) Value() bool { return m.derived.presetSearch.kind == BuiltinPresets }
+func (m *BuiltinPresetsFilter) SetValue(val bool) {
+	if (m.derived.presetSearch.kind == BuiltinPresets) == val {
+		return
+	}
+	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "t:")
+	if val {
+		m.d.PresetSearchString = "t:b " + m.d.PresetSearchString
+	}
+	(*Model)(m).updateDerivedPresetSearch()
+}
+func (m *BuiltinPresetsFilter) Enabled() bool { return true }
+
+func (m *Model) ClearPresetSearch() Action { return MakeAction((*ClearPresetSearch)(m)) }
+func (m *ClearPresetSearch) Enabled() bool { return len(m.d.PresetSearchString) > 0 }
+func (m *ClearPresetSearch) Do() {
+	m.d.PresetSearchString = ""
+	(*Model)(m).updateDerivedPresetSearch()
+}
+
+func (m *Model) PresetDirList() *PresetDirList { return (*PresetDirList)(m) }
+func (v *PresetDirList) List() List            { return List{v} }
+func (m *PresetDirList) Count() int            { return len(m.presets.Dirs) + 1 }
+func (m *PresetDirList) Selected() int         { return m.derived.presetSearch.dirIndex + 1 }
+func (m *PresetDirList) Selected2() int        { return m.derived.presetSearch.dirIndex + 1 }
+func (m *PresetDirList) SetSelected2(i int)    {}
+func (m *PresetDirList) Value(i int) string {
+	if i < 1 || i > len(m.presets.Dirs) {
+		return "---"
+	}
+	return m.presets.Dirs[i-1]
+}
+func (m *PresetDirList) SetSelected(i int) {
+	i = min(max(i, 0), len(m.presets.Dirs))
+	if i < 0 || i > len(m.presets.Dirs) {
+		return
+	}
+	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "d:")
+	if i > 0 {
+		m.d.PresetSearchString = "d:" + m.presets.Dirs[i-1] + " " + m.d.PresetSearchString
+	}
+	(*Model)(m).updateDerivedPresetSearch()
+}
+
+func (m *Model) PresetResultList() *PresetResultList { return (*PresetResultList)(m) }
+func (v *PresetResultList) List() List               { return List{v} }
+func (m *PresetResultList) Count() int               { return len(m.derived.presetSearch.results) }
+func (m *PresetResultList) Selected() int {
+	return min(max(m.presetIndex, 0), len(m.derived.presetSearch.results)-1)
+}
+func (m *PresetResultList) Selected2() int     { return m.Selected() }
+func (m *PresetResultList) SetSelected2(i int) {}
+func (m *PresetResultList) Value(i int) (name string, dir string, user bool) {
+	if i < 0 || i >= len(m.derived.presetSearch.results) {
+		return "", "", false
+	}
+	p := m.derived.presetSearch.results[i]
+	return p.Instr.Name, p.Directory, p.User
+}
+func (m *PresetResultList) SetSelected(i int) {
+	i = min(max(i, 0), len(m.derived.presetSearch.results)-1)
+	if i < 0 || i >= len(m.derived.presetSearch.results) {
+		return
+	}
+	m.presetIndex = i
+	defer (*Model)(m).change("LoadPreset", PatchChange, MinorChange)()
+	if m.d.InstrIndex < 0 {
+		m.d.InstrIndex = 0
+	}
+	m.d.InstrIndex2 = m.d.InstrIndex
+	for m.d.InstrIndex >= len(m.d.Song.Patch) {
+		m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
+	}
+	newInstr := m.derived.presetSearch.results[i].Instr.Copy()
+	newInstr.NumVoices = clamp(m.d.Song.Patch[m.d.InstrIndex].NumVoices, 1, vm.MAX_VOICES)
+	(*Model)(m).assignUnitIDs(newInstr.Units)
+	m.d.Song.Patch[m.d.InstrIndex] = newInstr
+}
+
+func removeFilters(str string, prefix string) string {
+	parts := strings.Split(str, " ")
+	newParts := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if !strings.HasPrefix(strings.ToLower(part), prefix) {
+			newParts = append(newParts, part)
+		}
+	}
+	return strings.Join(newParts, " ")
+}
+
+func (m *Model) SaveAsUserPreset() Action { return MakeAction((*SaveUserPreset)(m)) }
+func (m *SaveUserPreset) Enabled() bool {
+	return m.d.InstrIndex >= 0 && m.d.InstrIndex < len(m.d.Song.Patch)
+}
+func (m *SaveUserPreset) Do() {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return
+	}
+	userPresetsDir := filepath.Join(configDir, "sointu", "presets", m.derived.presetSearch.dir)
+	instr := m.d.Song.Patch[m.d.InstrIndex]
+	name := instrumentNameToFilename(instr.Name)
+	fileName := filepath.Join(userPresetsDir, name+".yml")
+	// if exists, do not overwrite
+	if _, err := os.Stat(fileName); err == nil {
+		m.dialog = OverwriteUserPresetDialog
+		return
+	}
+	(*Model)(m).OverwriteUserPreset().Do()
+}
+
+func (m *Model) OverwriteUserPreset() Action { return MakeAction((*OverwriteUserPreset)(m)) }
+func (m *OverwriteUserPreset) Enabled() bool { return true }
+func (m *OverwriteUserPreset) Do() {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return
+	}
+	userPresetsDir := filepath.Join(configDir, "sointu", "presets", m.derived.presetSearch.dir)
+	instr := m.d.Song.Patch[m.d.InstrIndex]
+	name := instrumentNameToFilename(instr.Name)
+	fileName := filepath.Join(userPresetsDir, name+".yml")
+	os.MkdirAll(userPresetsDir, 0755)
+	data, err := yaml.Marshal(&instr)
+	if err != nil {
+		return
+	}
+	os.WriteFile(fileName, data, 0644)
+	m.dialog = NoDialog
+	(*Model)(m).presets.load()
+	(*Model)(m).updateDerivedPresetSearch()
+}
+
+func (m *Model) TryDeleteUserPreset() Action { return MakeAction((*TryDeleteUserPreset)(m)) }
+func (m *TryDeleteUserPreset) Do()           { m.dialog = DeleteUserPresetDialog }
+func (m *TryDeleteUserPreset) Enabled() bool {
+	if m.presetIndex < 0 || m.presetIndex >= len(m.derived.presetSearch.results) {
+		return false
+	}
+	return m.derived.presetSearch.results[m.presetIndex].User
+}
+
+func (m *Model) DeleteUserPreset() Action { return MakeAction((*DeleteUserPreset)(m)) }
+func (m *DeleteUserPreset) Enabled() bool { return (*Model)(m).TryDeleteUserPreset().Enabled() }
+func (m *DeleteUserPreset) Do() {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return
+	}
+	p := m.derived.presetSearch.results[m.presetIndex]
+	userPresetsDir := filepath.Join(configDir, "sointu", "presets")
+	if p.Directory != "" {
+		userPresetsDir = filepath.Join(userPresetsDir, p.Directory)
+	}
+	name := instrumentNameToFilename(p.Instr.Name)
+	fileName := filepath.Join(userPresetsDir, name+".yml")
+	os.Remove(fileName)
+	m.dialog = NoDialog
+	(*Model)(m).presets.load()
+	(*Model)(m).updateDerivedPresetSearch()
+}
 
 // gmDlsEntryMap is a reverse map, to find the index of the GmDlsEntry in the
 // GmDlsEntries list based on the sample offset. Do not modify during runtime.
@@ -130,97 +511,6 @@ type delayPreset struct {
 	varArgs []int
 }
 
-func (m *Model) IterateInstrumentPresets(yield InstrumentPresetYieldFunc) {
-	for index, instr := range instrumentPresets {
-		if !yield(index, instr.Name) {
-			return
-		}
-	}
-}
-
-func NumPresets() int {
-	return len(instrumentPresets)
-}
-
-// LoadPreset loads a preset from the list of instrument presets. The index
-// should be within the range of 0 to NumPresets()-1.
-
-func (m *Model) LoadPreset(index int) Action {
-	return MakeEnabledAction(LoadPreset{Index: index, Model: m})
-}
-func (m LoadPreset) Do() {
-	defer m.change("LoadPreset", PatchChange, MajorChange)()
-	if m.d.InstrIndex < 0 {
-		m.d.InstrIndex = 0
-	}
-	m.d.InstrIndex2 = m.d.InstrIndex
-	for m.d.InstrIndex >= len(m.d.Song.Patch) {
-		m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
-	}
-	newInstr := instrumentPresets[m.Index].Copy()
-	newInstr.NumVoices = clamp(m.d.Song.Patch[m.d.InstrIndex].NumVoices, 1, vm.MAX_VOICES)
-	m.Model.assignUnitIDs(newInstr.Units)
-	m.d.Song.Patch[m.d.InstrIndex] = newInstr
-}
-
-type instrumentPresetsSlice []sointu.Instrument
-
-//go:embed presets/*
-var instrumentPresetFS embed.FS
-var instrumentPresets instrumentPresetsSlice
-
-func init() {
-	fs.WalkDir(instrumentPresetFS, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		data, err := fs.ReadFile(instrumentPresetFS, path)
-		if err != nil {
-			return nil
-		}
-		var instr sointu.Instrument
-		if yaml.UnmarshalStrict(data, &instr) == nil {
-			noExt := path[:len(path)-len(filepath.Ext(path))]
-			splitted := splitPath(noExt)
-			splitted = splitted[1:] // remove "presets" from the path
-			instr.Name = strings.Join(splitted, " ")
-			instrumentPresets = append(instrumentPresets, instr)
-		}
-		return nil
-	})
-	if configDir, err := os.UserConfigDir(); err == nil {
-		userPresets := filepath.Join(configDir, "sointu", "presets")
-		filepath.WalkDir(userPresets, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if d.IsDir() {
-				return nil
-			}
-			data, err := os.ReadFile(path)
-			if err != nil {
-				return nil
-			}
-			var instr sointu.Instrument
-			if yaml.Unmarshal(data, &instr) == nil {
-				if len(userPresets)+1 > len(path) {
-					return nil
-				}
-				subPath := path[len(userPresets)+1:]
-				noExt := subPath[:len(subPath)-len(filepath.Ext(subPath))]
-				splitted := splitPath(noExt)
-				instr.Name = strings.Join(splitted, " ")
-				instrumentPresets = append(instrumentPresets, instr)
-			}
-			return nil
-		})
-	}
-	sort.Sort(instrumentPresets)
-}
-
 func splitPath(path string) []string {
 	subPath := path
 	var result []string
@@ -246,6 +536,11 @@ func splitPath(path string) []string {
 	return result
 }
 
-func (p instrumentPresetsSlice) Len() int           { return len(p) }
-func (p instrumentPresetsSlice) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p instrumentPresetsSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p Presets) Len() int { return len(p.Presets) }
+func (p Presets) Less(i, j int) bool {
+	if p.Presets[i].Instr.Name == p.Presets[j].Instr.Name {
+		return p.Presets[i].User && !p.Presets[j].User
+	}
+	return p.Presets[i].Instr.Name < p.Presets[j].Instr.Name
+}
+func (p Presets) Swap(i, j int) { p.Presets[i], p.Presets[j] = p.Presets[j], p.Presets[i] }

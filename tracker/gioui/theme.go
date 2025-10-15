@@ -19,6 +19,12 @@ type Theme struct {
 		Text     ButtonStyle
 		Disabled ButtonStyle
 		Menu     ButtonStyle
+		Tab      struct {
+			Active          ButtonStyle
+			Inactive        ButtonStyle
+			IndicatorHeight unit.Dp
+			IndicatorColor  color.NRGBA
+		}
 	}
 	IconButton struct {
 		Enabled  IconButtonStyle
@@ -64,8 +70,10 @@ type Theme struct {
 		Preset MenuStyle
 	}
 	InstrumentEditor struct {
-		Octave            LabelStyle
-		Voices            LabelStyle
+		Octave     LabelStyle
+		Properties struct {
+			Label LabelStyle
+		}
 		InstrumentComment EditorStyle
 		UnitComment       EditorStyle
 		InstrumentList    struct {
@@ -82,6 +90,15 @@ type Theme struct {
 			Disabled     LabelStyle
 			Warning      color.NRGBA
 			Error        color.NRGBA
+		}
+		Presets struct {
+			SearchBg  color.NRGBA
+			Directory LabelStyle
+			Results   struct {
+				Builtin LabelStyle
+				User    LabelStyle
+				UserDir LabelStyle
+			}
 		}
 	}
 	UnitEditor struct {

@@ -55,7 +55,6 @@ type (
 	OrderRows     Model // OrderRows is a list of all the order rows, implementing ListData & MutableListData interfaces
 	NoteRows      Model // NoteRows is a list of all the note rows, implementing ListData & MutableListData interfaces
 	SearchResults Model // SearchResults is a unmutable list of all the search results, implementing ListData interface
-	Presets       Model // Presets is a unmutable list of all the presets, implementing ListData interface
 )
 
 // Model methods

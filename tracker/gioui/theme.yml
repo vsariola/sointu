@@ -54,6 +54,17 @@ button:
     cornerradius: 0
     height: *buttonheight
     inset: *buttoninset
+  tab:
+    active: *textbutton
+    inactive: 
+      background: *transparentcolor
+      color: *highemphasis
+      textsize: *buttontextsize
+      cornerradius: *buttoncornerradius
+      height: *buttonheight
+      inset: *buttoninset
+    indicatorheight: 2
+    indicatorcolor: *primarycolor
 iconbutton:
   enabled:
     color: *primarycolor
@@ -153,7 +164,8 @@ menu:
     height: 300
 instrumenteditor:
   octave: { textsize: 14, color: *disabled }
-  voices: { textsize: 14, color: *disabled }
+  properties: 
+    label: { textsize: 14, color: *highemphasis }
   instrumentcomment:
     { textsize: 14, color: *highemphasis, hintcolor: *disabled }
   unitcomment: { textsize: 14, color: *highemphasis, hintcolor: *disabled }
@@ -178,6 +190,13 @@ instrumenteditor:
     disabled: { textsize: 12, color: *disabled }
     warning: *warningcolor
     error: *errorcolor
+  presets:
+    searchbg: { r: 255, g: 255, b: 255, a: 6 }
+    directory: { textsize: 12, color: *white, maxlines: 1 }      
+    results:
+      builtin: { textsize: 12, color: *white, maxlines: 1 }
+      user: { textsize: 12, color: *secondarycolor, maxlines: 1 }
+      userdir: { textsize: 12, color: *mediumemphasis, maxlines: 1 }
 cursor:
   active: { r: 100, g: 140, b: 255, a: 48 }
   activealt: { r: 255, g: 100, b: 140, a: 48 }

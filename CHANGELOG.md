@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Preset explorer, whichs allows 1) searching the presets by name; 2) filtering
+  them by category (directory); 3) filtering them by being builtin vs. user;
+  4) filtering them if they need gm.dls (for Linux/Mac users, who don't have
+  it); and 5) saving and deleting user presets.
 - Panic the synth if it outputs NaN or Inf, and handle these more gracefully in
   the loudness and peak detector. ([#210][i210])
 - More presets from Reaby, and all new and existing presets were normalized

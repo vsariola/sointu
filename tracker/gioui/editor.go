@@ -67,6 +67,8 @@ func (e *Editor) Layout(gtx C, str tracker.String, th *Theme, style *EditorStyle
 	}
 	if e.widgetEditor.Text() != str.Value() {
 		e.widgetEditor.SetText(str.Value())
+		l := len(e.widgetEditor.Text())
+		e.widgetEditor.SetCaret(l, l)
 	}
 	me := material.Editor(&th.Material, &e.widgetEditor, hint)
 	me.Font = style.Font

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"gioui.org/io/clipboard"
+	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"github.com/vsariola/sointu/tracker"
 	"gopkg.in/yaml.v2"
@@ -208,8 +209,6 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		t.InstrEnlarged().Toggle()
 	case "LinkInstrTrackToggle":
 		t.LinkInstrTrack().Toggle()
-	case "CommentExpandedToggle":
-		t.CommentExpanded().Toggle()
 	case "FollowToggle":
 		t.Follow().Toggle()
 	case "UnitDisabledToggle":
@@ -259,13 +258,20 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 	case "Paste":
 		gtx.Execute(clipboard.ReadCmd{Tag: t})
 	case "OrderEditorFocus":
+		t.InstrEnlarged().SetValue(false)
 		gtx.Execute(key.FocusCmd{Tag: t.OrderEditor.scrollTable})
 	case "TrackEditorFocus":
+		t.InstrEnlarged().SetValue(false)
 		gtx.Execute(key.FocusCmd{Tag: t.TrackEditor.scrollTable})
 	case "InstrumentListFocus":
 		gtx.Execute(key.FocusCmd{Tag: t.PatchPanel.instrList.instrumentDragList})
 	case "UnitListFocus":
-		gtx.Execute(key.FocusCmd{Tag: t.PatchPanel.unitList.dragList})
+		var tag event.Tag
+		t.PatchPanel.BottomTags(0, func(level int, t event.Tag) bool {
+			tag = t
+			return false
+		})
+		gtx.Execute(key.FocusCmd{Tag: tag})
 	case "FocusPrev":
 		t.FocusPrev(gtx, false)
 	case "FocusPrevInto":
