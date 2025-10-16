@@ -3,6 +3,7 @@ package gioui
 import (
 	"image"
 
+	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
@@ -38,7 +39,39 @@ func NewInstrumentPresets(m *tracker.Model) *InstrumentPresets {
 	}
 }
 
+func (ip *InstrumentPresets) update(gtx C) {
+	for {
+		event, ok := gtx.Event(
+			key.Filter{Focus: ip.resultList, Name: key.NameLeftArrow},
+		)
+		if !ok {
+			break
+		}
+		if e, ok := event.(key.Event); ok && e.State == key.Press {
+			switch e.Name {
+			case key.NameLeftArrow:
+				ip.dirList.Focus()
+			}
+		}
+	}
+	for {
+		event, ok := gtx.Event(
+			key.Filter{Focus: ip.dirList, Name: key.NameRightArrow},
+		)
+		if !ok {
+			break
+		}
+		if e, ok := event.(key.Event); ok && e.State == key.Press {
+			switch e.Name {
+			case key.NameRightArrow:
+				ip.resultList.Focus()
+			}
+		}
+	}
+}
+
 func (ip *InstrumentPresets) layout(gtx C) D {
+	ip.update(gtx)
 	// get tracker from values
 	tr := TrackerFromContext(gtx)
 	gmDlsBtn := ToggleBtn(tr.NoGmDls(), tr.Theme, ip.gmDlsBtn, "No gm.dls", "Exclude presets using gm.dls")
