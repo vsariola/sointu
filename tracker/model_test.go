@@ -50,6 +50,9 @@ func (s *modelFuzzState) Iterate(yield func(string, func(p string, t *testing.T)
 	s.IterateList("OrderRows", s.model.OrderRows().List(), yield, seed)
 	s.IterateList("NoteRows", s.model.NoteRows().List(), yield, seed)
 	s.IterateList("UnitSearchResults", s.model.SearchResults().List(), yield, seed)
+	s.IterateList("PresetDirs", s.model.PresetDirList().List(), yield, seed)
+	s.IterateList("PresetResults", s.model.PresetResultList().List(), yield, seed)
+	// Bools
 	s.IterateBool("Panic", s.model.Panic(), yield, seed)
 	s.IterateBool("Recording", s.model.IsRecording(), yield, seed)
 	s.IterateBool("Playing", s.model.Playing(), yield, seed)
@@ -87,8 +90,6 @@ func (s *modelFuzzState) Iterate(yield func(string, func(p string, t *testing.T)
 	s.IterateAction("DeleteOrderRowBackward", s.model.DeleteOrderRow(true), yield, seed)
 	s.IterateAction("SplitInstrument", s.model.SplitInstrument(), yield, seed)
 	s.IterateAction("SplitTrack", s.model.SplitTrack(), yield, seed)
-	// just test loading one of the presets
-	s.IterateAction("LoadPreset", s.model.LoadPreset(seed%tracker.NumPresets()), yield, seed)
 	// Tables
 	s.IterateTable("Order", s.model.Order().Table(), yield, seed)
 	s.IterateTable("Notes", s.model.Notes().Table(), yield, seed)

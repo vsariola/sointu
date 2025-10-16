@@ -138,9 +138,6 @@ func MakeInstrumentTools(m *tracker.Model) InstrumentTools {
 		shrinkHint:           makeHint("Shrink", " (%s)", "InstrEnlargedToggle"),
 		addInstrumentHint:    makeHint("Add\ninstrument", "\n(%s)", "AddInstrument"),
 	}
-	for index, name := range m.IterateInstrumentPresets {
-		ret.presetMenuItems = append(ret.presetMenuItems, MenuItem(m.LoadPreset(index), name, "", icons.ImageAudiotrack))
-	}
 	return ret
 }
 

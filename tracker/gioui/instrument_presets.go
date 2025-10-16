@@ -34,7 +34,7 @@ func NewInstrumentPresets(m *tracker.Model) *InstrumentPresets {
 		builtinPresetsBtn: new(Clickable),
 		dirBtn:            new(Clickable),
 		dirList:           NewDragList(m.PresetDirList().List(), layout.Vertical),
-		resultList:        NewDragList(m.PresetDirList().List(), layout.Vertical),
+		resultList:        NewDragList(m.PresetResultList().List(), layout.Vertical),
 	}
 }
 
@@ -48,12 +48,25 @@ func (ip *InstrumentPresets) layout(gtx C) D {
 		return Label(tr.Theme, &tr.Theme.Dialog.Text, tr.Model.PresetDirList().Value(i)).Layout(gtx)
 	}
 	dirs := func(gtx C) D {
-		return FilledDragList(tr.Theme, ip.dirList).Layout(gtx, dirElem, nil)
+		gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(140), gtx.Constraints.Max.Y))
+		style := FilledDragList(tr.Theme, ip.dirList)
+		dims := style.Layout(gtx, dirElem, nil)
+		style.LayoutScrollBar(gtx)
+		return dims
+	}
+	dirSurface := func(gtx C) D {
+		return Surface{Gray: 30, Focus: tr.PatchPanel.TreeFocused(gtx)}.Layout(gtx, dirs)
+	}
+	resultElem := func(gtx C, i int) D {
+		return Label(tr.Theme, &tr.Theme.Dialog.Text, tr.Model.PresetResultList().Value(i)).Layout(gtx)
+	}
+	results := func(gtx C) D {
+		return FilledDragList(tr.Theme, ip.resultList).Layout(gtx, resultElem, nil)
 	}
 	bottom := func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-			layout.Rigid(dirs),
-			layout.Rigid(dirs),
+			layout.Rigid(dirSurface),
+			layout.Flexed(1, results),
 		)
 	}
 	// layout

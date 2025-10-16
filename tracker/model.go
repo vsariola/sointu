@@ -85,6 +85,9 @@ type (
 		broker *Broker
 
 		MIDI MIDIContext
+
+		presets     PresetSlice
+		presetIndex int
 	}
 
 	// Cursor identifies a row and a track in a song score.
@@ -202,6 +205,8 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 	TrySend(broker.ToPlayer, any(m.d.Song.Copy())) // we should be non-blocking in the constructor
 	m.signalAnalyzer = NewScopeModel(broker, m.d.Song.BPM)
 	m.updateDeriveData(SongChange)
+	m.updateDerivedPresetSearch()
+	m.loadPresets()
 	return m
 }
 
