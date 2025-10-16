@@ -66,13 +66,9 @@ func (e *Editor) Layout(gtx C, str tracker.String, th *Theme, style *EditorStyle
 		// just consume all events if the user did not consume them
 	}
 	if e.widgetEditor.Text() != str.Value() {
-		line, col := e.widgetEditor.CaretPos()
-		// if the user has moved the caret, put it in the end
 		e.widgetEditor.SetText(str.Value())
-		if line > 0 || col > 0 {
-			l := len(e.widgetEditor.Text())
-			e.widgetEditor.SetCaret(l, l)
-		}
+		l := len(e.widgetEditor.Text())
+		e.widgetEditor.SetCaret(l, l)
 	}
 	me := material.Editor(&th.Material, &e.widgetEditor, hint)
 	me.Font = style.Font

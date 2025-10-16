@@ -39,11 +39,15 @@ type (
 	UserPresetsFilter    Model
 	PresetDirectory      Model
 	PresetKind           Model
+	ClearPresetSearch    Model
+	PresetDirList        Model
 
 	derivedPresetSearch struct {
-		directory string
-		noGmDls   bool
-		kind      PresetKindEnum
+		dirIndex int
+		noGmDls  bool
+		kind     PresetKindEnum
+		dirs     []string
+		results  []int
 	}
 
 	PresetKindEnum int
@@ -61,24 +65,23 @@ func (m *Model) updateDerivedPresetSearch() {
 	lower := strings.ToLower(search)
 	parts := strings.Fields(lower)
 	// parse parts to see if they contain :
+	m.derived.presetSearch.dirs = []string{"All"}
 	m.derived.presetSearch.noGmDls = false
-	m.derived.presetSearch.directory = ""
 	m.derived.presetSearch.kind = AllPresets
 	for _, part := range parts {
-		if strings.HasPrefix(part, "in:") && len(part) > 3 {
-			m.derived.presetSearch.directory = strings.TrimSpace(part[3:])
-		} else if strings.HasPrefix(part, "gmdls:") && len(part) > 6 {
-			val := strings.TrimSpace(part[6:])
-			m.derived.presetSearch.noGmDls = val == "no"
-		} else if strings.HasPrefix(part, "kind:") && len(part) > 5 {
-			val := strings.TrimSpace(part[5:])
+		if strings.HasPrefix(part, "d:") && len(part) > 3 {
+			dir := strings.TrimSpace(part[3:])
+			ind := slices.IndexFunc(m.derived.presetSearch.dirs, func(c string) bool { return c == dir })
+			m.derived.presetSearch.dirIndex = max(ind, 0)
+		} else if strings.HasPrefix(part, "g:n") {
+			m.derived.presetSearch.noGmDls = true
+		} else if strings.HasPrefix(part, "t:") && len(part) > 2 {
+			val := strings.TrimSpace(part[2:3])
 			switch val {
-			case "builtin":
+			case "b":
 				m.derived.presetSearch.kind = BuiltinPresets
-			case "user":
+			case "u":
 				m.derived.presetSearch.kind = UserPresets
-			default:
-				m.derived.presetSearch.kind = AllPresets
 			}
 		}
 	}
@@ -101,9 +104,9 @@ func (m *NoGmDlsFilter) SetValue(val bool) {
 	if m.derived.presetSearch.noGmDls == val {
 		return
 	}
-	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "gmdls:")
+	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "g:")
 	if val {
-		m.d.PresetSearchString = "gmdls:no " + m.d.PresetSearchString
+		m.d.PresetSearchString = "g:n " + m.d.PresetSearchString
 	}
 	(*Model)(m).updateDerivedPresetSearch()
 }
@@ -115,9 +118,9 @@ func (m *UserPresetsFilter) SetValue(val bool) {
 	if (m.derived.presetSearch.kind == UserPresets) == val {
 		return
 	}
-	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "kind:")
+	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "t:")
 	if val {
-		m.d.PresetSearchString = "kind:user " + m.d.PresetSearchString
+		m.d.PresetSearchString = "t:u " + m.d.PresetSearchString
 	}
 	(*Model)(m).updateDerivedPresetSearch()
 }
@@ -129,9 +132,9 @@ func (m *BuiltinPresetsFilter) SetValue(val bool) {
 	if (m.derived.presetSearch.kind == BuiltinPresets) == val {
 		return
 	}
-	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "kind:")
+	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "t:")
 	if val {
-		m.d.PresetSearchString = "kind:builtin " + m.d.PresetSearchString
+		m.d.PresetSearchString = "t:b " + m.d.PresetSearchString
 	}
 	(*Model)(m).updateDerivedPresetSearch()
 }
@@ -155,6 +158,37 @@ func (m *PresetKind) SetValue(val int) bool {
 }
 func (m *PresetKind) Enabled() bool   { return true }
 func (m *PresetKind) Range() IntRange { return IntRange{Min: -1, Max: 1} }
+
+func (m *Model) ClearPresetSearch() Action { return MakeAction((*ClearPresetSearch)(m)) }
+func (m *ClearPresetSearch) Enabled() bool { return len(m.d.PresetSearchString) > 0 }
+func (m *ClearPresetSearch) Do() {
+	m.d.PresetSearchString = ""
+	(*Model)(m).updateDerivedPresetSearch()
+}
+
+func (m *Model) PresetDirList() *PresetDirList { return (*PresetDirList)(m) }
+func (v *PresetDirList) List() List            { return List{v} }
+func (m *PresetDirList) Count() int            { return len(m.derived.presetSearch.dirs) }
+func (m *PresetDirList) Selected() int         { return m.derived.presetSearch.dirIndex }
+func (m *PresetDirList) Selected2() int        { return m.derived.presetSearch.dirIndex }
+func (m *PresetDirList) SetSelected2(i int)    {}
+func (m *PresetDirList) Value(i int) string {
+	if i < 0 || i >= len(m.derived.presetSearch.dirs) {
+		return ""
+	}
+	return m.derived.presetSearch.dirs[i]
+}
+func (m *PresetDirList) SetSelected(i int) {
+	i = min(max(i, 0), len(m.derived.presetSearch.dirs)-1)
+	if i < 0 || i >= len(m.derived.presetSearch.dirs) {
+		return
+	}
+	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "d:")
+	if i > 0 {
+		m.d.PresetSearchString = "d: " + m.derived.presetSearch.dirs[i] + " " + m.d.PresetSearchString
+	}
+	(*Model)(m).updateDerivedPresetSearch()
+}
 
 func removeFilters(str string, prefix string) string {
 	parts := strings.Fields(str)
