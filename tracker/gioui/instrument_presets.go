@@ -20,7 +20,6 @@ type (
 		userPresetsBtn    *Clickable
 		builtinPresetsBtn *Clickable
 		clearSearchBtn    *Clickable
-		dirBtn            *Clickable
 		dirList           *DragList
 		resultList        *DragList
 	}
@@ -33,10 +32,19 @@ func NewInstrumentPresets(m *tracker.Model) *InstrumentPresets {
 		clearSearchBtn:    new(Clickable),
 		userPresetsBtn:    new(Clickable),
 		builtinPresetsBtn: new(Clickable),
-		dirBtn:            new(Clickable),
 		dirList:           NewDragList(m.PresetDirList().List(), layout.Vertical),
 		resultList:        NewDragList(m.PresetResultList().List(), layout.Vertical),
 	}
+}
+
+func (ip *InstrumentPresets) Tags(level int, yield TagYieldFunc) bool {
+	return yield(level, &ip.searchEditor.widgetEditor) &&
+		yield(level+1, ip.clearSearchBtn) &&
+		yield(level+1, ip.builtinPresetsBtn) &&
+		yield(level+1, ip.userPresetsBtn) &&
+		yield(level+1, ip.gmDlsBtn) &&
+		yield(level, ip.dirList) &&
+		yield(level, ip.resultList)
 }
 
 func (ip *InstrumentPresets) update(gtx C) {
@@ -78,23 +86,27 @@ func (ip *InstrumentPresets) layout(gtx C) D {
 	userPresetsFilterBtn := ToggleBtn(tr.UserPresetFilter(), tr.Theme, ip.userPresetsBtn, "User", "Show only user presets")
 	builtinPresetsFilterBtn := ToggleBtn(tr.BuiltinPresetsFilter(), tr.Theme, ip.builtinPresetsBtn, "Builtin", "Show only builtin presets")
 	dirElem := func(gtx C, i int) D {
-		return Label(tr.Theme, &tr.Theme.Dialog.Text, tr.Model.PresetDirList().Value(i)).Layout(gtx)
+		return Label(tr.Theme, &tr.Theme.InstrumentEditor.Presets.Directory, tr.Model.PresetDirList().Value(i)).Layout(gtx)
 	}
 	dirs := func(gtx C) D {
 		gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(140), gtx.Constraints.Max.Y))
-		style := FilledDragList(tr.Theme, ip.dirList)
-		dims := style.Layout(gtx, dirElem, nil)
-		style.LayoutScrollBar(gtx)
+		fdl := FilledDragList(tr.Theme, ip.dirList)
+		dims := fdl.Layout(gtx, dirElem, nil)
+		fdl.LayoutScrollBar(gtx)
 		return dims
 	}
 	dirSurface := func(gtx C) D {
 		return Surface{Gray: 30, Focus: tr.PatchPanel.TreeFocused(gtx)}.Layout(gtx, dirs)
 	}
 	resultElem := func(gtx C, i int) D {
-		return Label(tr.Theme, &tr.Theme.Dialog.Text, tr.Model.PresetResultList().Value(i)).Layout(gtx)
+		return Label(tr.Theme, &tr.Theme.InstrumentEditor.Presets.Result, tr.Model.PresetResultList().Value(i)).Layout(gtx)
 	}
 	results := func(gtx C) D {
-		return FilledDragList(tr.Theme, ip.resultList).Layout(gtx, resultElem, nil)
+		gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
+		fdl := FilledDragList(tr.Theme, ip.resultList)
+		dims := fdl.Layout(gtx, resultElem, nil)
+		fdl.LayoutScrollBar(gtx)
+		return dims
 	}
 	bottom := func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,

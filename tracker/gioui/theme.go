@@ -91,6 +91,10 @@ type Theme struct {
 			Warning      color.NRGBA
 			Error        color.NRGBA
 		}
+		Presets struct {
+			Directory LabelStyle
+			Result    LabelStyle
+		}
 	}
 	UnitEditor struct {
 		Name          LabelStyle

@@ -27,6 +27,11 @@ import (
 )
 
 type (
+	InstrumentEditor struct {
+		unitList   UnitList
+		unitEditor UnitEditor
+	}
+
 	UnitList struct {
 		dragList      *DragList
 		searchEditor  *Editor
@@ -53,6 +58,25 @@ type (
 		searching tracker.Bool
 	}
 )
+
+func MakeInstrumentEditor(model *tracker.Model) InstrumentEditor {
+	return InstrumentEditor{
+		unitList:   MakeUnitList(model),
+		unitEditor: *NewUnitEditor(model),
+	}
+}
+
+func (ie *InstrumentEditor) layout(gtx C) D {
+	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+		layout.Rigid(ie.unitList.Layout),
+		layout.Flexed(1, ie.unitEditor.Layout),
+	)
+}
+
+func (ie *InstrumentEditor) Tags(level int, yield TagYieldFunc) bool {
+	return ie.unitList.Tags(level, yield) &&
+		ie.unitEditor.Tags(level, yield)
+}
 
 // UnitList methods
 
@@ -148,7 +172,7 @@ func (ul *UnitList) update(gtx C, t *Tracker) {
 		if e, ok := event.(key.Event); ok && e.State == key.Press {
 			switch e.Name {
 			case key.NameRightArrow:
-				t.PatchPanel.unitEditor.paramTable.RowTitleList.Focus()
+				t.PatchPanel.instrEditor.unitEditor.paramTable.RowTitleList.Focus()
 			case key.NameDeleteBackward:
 				t.Units().SetSelectedType("")
 				t.UnitSearching().SetValue(true)
@@ -299,7 +323,7 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
 			switch e.Name {
 			case key.NameLeftArrow:
-				t.PatchPanel.unitList.dragList.Focus()
+				t.PatchPanel.instrEditor.unitList.dragList.Focus()
 			case key.NameDeleteBackward:
 				t.ClearUnit().Do()
 				t.UnitSearch().SetValue("")

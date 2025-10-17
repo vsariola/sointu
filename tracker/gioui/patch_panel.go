@@ -22,10 +22,10 @@ type (
 	PatchPanel struct {
 		instrList    InstrumentList
 		tools        InstrumentTools
-		unitList     UnitList
-		unitEditor   UnitEditor
 		instrProps   InstrumentProperties
 		instrPresets InstrumentPresets
+		instrEditor  InstrumentEditor
+		*tracker.Model
 	}
 
 	InstrumentList struct {
@@ -38,9 +38,6 @@ type (
 		PresetsTab *Clickable
 		CommentTab *Clickable
 
-		presetMenuBtn       *Clickable
-		presetMenu          MenuState
-		presetMenuItems     []ActionMenuItem
 		saveInstrumentBtn   *Clickable
 		loadInstrumentBtn   *Clickable
 		copyInstrumentBtn   *Clickable
@@ -57,8 +54,6 @@ type (
 		enlargeHint, shrinkHint string
 		addInstrumentHint       string
 
-		expandCommentHint    string
-		collapseCommentHint  string
 		deleteInstrumentHint string
 	}
 )
@@ -67,12 +62,12 @@ type (
 
 func NewPatchPanel(model *tracker.Model) *PatchPanel {
 	return &PatchPanel{
+		instrEditor:  MakeInstrumentEditor(model),
 		instrList:    MakeInstrList(model),
 		tools:        MakeInstrumentTools(model),
-		unitList:     MakeUnitList(model),
-		unitEditor:   *NewUnitEditor(model),
 		instrProps:   *NewInstrumentProperties(),
 		instrPresets: *NewInstrumentPresets(model),
+		Model:        model,
 	}
 }
 
@@ -85,10 +80,7 @@ func (pp *PatchPanel) Layout(gtx C) D {
 		case tr.InstrPresets().Value():
 			return pp.instrPresets.layout(gtx)
 		default: // editor
-			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-				layout.Rigid(pp.unitList.Layout),
-				layout.Flexed(1, pp.unitEditor.Layout),
-			)
+			return pp.instrEditor.layout(gtx)
 		}
 	}
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -98,11 +90,21 @@ func (pp *PatchPanel) Layout(gtx C) D {
 	)
 }
 
+func (pp *PatchPanel) BottomTags(level int, yield TagYieldFunc) bool {
+	switch {
+	case pp.InstrComment().Value():
+		return pp.instrProps.Tags(level, yield)
+	case pp.InstrPresets().Value():
+		return pp.instrPresets.Tags(level, yield)
+	default: // editor
+		return pp.instrEditor.Tags(level, yield)
+	}
+}
+
 func (pp *PatchPanel) Tags(level int, yield TagYieldFunc) bool {
 	return pp.instrList.Tags(level, yield) &&
 		pp.tools.Tags(level, yield) &&
-		pp.unitList.Tags(level, yield) &&
-		pp.unitEditor.Tags(level, yield)
+		pp.BottomTags(level, yield)
 }
 
 // TreeFocused returns true if any of the tags in the patch panel is focused
@@ -123,9 +125,6 @@ func MakeInstrumentTools(m *tracker.Model) InstrumentTools {
 		copyInstrumentBtn:    new(Clickable),
 		saveInstrumentBtn:    new(Clickable),
 		loadInstrumentBtn:    new(Clickable),
-		presetMenuBtn:        new(Clickable),
-		presetMenuItems:      []ActionMenuItem{},
-		expandCommentHint:    makeHint("Expand comment", " (%s)", "CommentExpandedToggle"),
 		deleteInstrumentHint: makeHint("Delete\ninstrument", "\n(%s)", "DeleteInstrument"),
 		octave:               NewNumericUpDownState(),
 		enlargeBtn:           new(Clickable),
@@ -152,8 +151,8 @@ func (it *InstrumentTools) Layout(gtx C) D {
 	instrEnlargedBtn := ToggleIconBtn(t.Model.InstrEnlarged(), t.Theme, it.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, it.enlargeHint, it.shrinkHint)
 	addInstrumentBtn := ActionIconBtn(t.Model.AddInstrument(), t.Theme, it.newInstrumentBtn, icons.ContentAdd, it.addInstrumentHint)
 
-	//	saveInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.saveInstrumentBtn, icons.ContentSave, "Save instrument")
-	//	loadInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
+	saveInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.saveInstrumentBtn, icons.ContentSave, "Save instrument")
+	loadInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
 	copyInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
 	deleteInstrumentBtn := ActionIconBtn(t.DeleteInstrument(), t.Theme, it.deleteInstrumentBtn, icons.ActionDelete, it.deleteInstrumentHint)
 	btns := func(gtx C) D {
@@ -164,33 +163,17 @@ func (it *InstrumentTools) Layout(gtx C) D {
 			layout.Rigid(commentBtn.Layout),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(layout.Spacer{Width: 4}.Layout),
-			/*layout.Rigid(func(gtx C) D {
-				presetBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.presetMenuBtn, icons.NavigationMenu, "Load preset")
-				dims := presetBtn.Layout(gtx)
-				op.Offset(image.Pt(0, dims.Size.Y)).Add(gtx.Ops)
-				m := Menu(t.Theme, &it.presetMenu)
-				m.Style = &t.Theme.Menu.Preset
-				m.Layout(gtx, it.presetMenuItems...)
-				return dims
-			}),*/
-			//			layout.Rigid(saveInstrumentBtn.Layout),
-			//			layout.Rigid(loadInstrumentBtn.Layout),
 			layout.Rigid(Label(t.Theme, &t.Theme.InstrumentEditor.Octave, "Octave").Layout),
 			layout.Rigid(octave.Layout),
 			layout.Rigid(linkInstrTrackBtn.Layout),
 			layout.Rigid(instrEnlargedBtn.Layout),
 			layout.Rigid(copyInstrumentBtn.Layout),
+			layout.Rigid(saveInstrumentBtn.Layout),
+			layout.Rigid(loadInstrumentBtn.Layout),
 			layout.Rigid(deleteInstrumentBtn.Layout),
 			layout.Rigid(addInstrumentBtn.Layout),
 		)
 	}
-	/*comment := func(gtx C) D {
-		defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-		ret := layout.UniformInset(unit.Dp(6)).Layout(gtx, func(gtx C) D {
-			return it.commentEditor.Layout(gtx, t.InstrumentComment(), t.Theme, &t.Theme.InstrumentEditor.InstrumentComment, "Comment")
-		})
-		return ret
-	}*/
 	return Surface{Gray: 37, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, btns)
 }
 
@@ -214,9 +197,6 @@ func (it *InstrumentTools) update(gtx C, tr *Tracker) {
 			continue
 		}
 		tr.LoadInstrument(reader)
-	}
-	for it.presetMenuBtn.Clicked(gtx) {
-		it.presetMenu.visible = true
 	}
 }
 
@@ -298,7 +278,18 @@ func (il *InstrumentList) update(gtx C, t *Tracker) {
 		if e, ok := event.(key.Event); ok && e.State == key.Press {
 			switch e.Name {
 			case key.NameDownArrow:
-				t.PatchPanel.unitList.dragList.Focus()
+				var tagged Tagged
+				switch {
+				case t.InstrComment().Value():
+					tagged = &t.PatchPanel.instrProps
+				case t.InstrPresets().Value():
+					tagged = &t.PatchPanel.instrPresets
+				default: // editor
+					tagged = &t.PatchPanel.instrEditor
+				}
+				if tag, ok := firstTag(tagged); ok {
+					gtx.Execute(key.FocusCmd{Tag: tag})
+				}
 			case key.NameReturn, key.NameEnter:
 				il.nameEditor.Focus()
 			}
