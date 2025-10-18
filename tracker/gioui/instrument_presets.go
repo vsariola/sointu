@@ -20,6 +20,8 @@ type (
 		userPresetsBtn    *Clickable
 		builtinPresetsBtn *Clickable
 		clearSearchBtn    *Clickable
+		saveUserPreset    *Clickable
+		deleteUserPreset  *Clickable
 		dirList           *DragList
 		resultList        *DragList
 	}
@@ -32,6 +34,8 @@ func NewInstrumentPresets(m *tracker.Model) *InstrumentPresets {
 		clearSearchBtn:    new(Clickable),
 		userPresetsBtn:    new(Clickable),
 		builtinPresetsBtn: new(Clickable),
+		saveUserPreset:    new(Clickable),
+		deleteUserPreset:  new(Clickable),
 		dirList:           NewDragList(m.PresetDirList().List(), layout.Vertical),
 		resultList:        NewDragList(m.PresetResultList().List(), layout.Vertical),
 	}
@@ -44,7 +48,9 @@ func (ip *InstrumentPresets) Tags(level int, yield TagYieldFunc) bool {
 		yield(level+1, ip.userPresetsBtn) &&
 		yield(level+1, ip.gmDlsBtn) &&
 		yield(level, ip.dirList) &&
-		yield(level, ip.resultList)
+		yield(level, ip.resultList) &&
+		yield(level+1, ip.saveUserPreset) &&
+		yield(level+1, ip.deleteUserPreset)
 }
 
 func (ip *InstrumentPresets) update(gtx C) {
@@ -85,6 +91,8 @@ func (ip *InstrumentPresets) layout(gtx C) D {
 	gmDlsBtn := ToggleBtn(tr.NoGmDls(), tr.Theme, ip.gmDlsBtn, "No gm.dls", "Exclude presets using gm.dls")
 	userPresetsFilterBtn := ToggleBtn(tr.UserPresetFilter(), tr.Theme, ip.userPresetsBtn, "User", "Show only user presets")
 	builtinPresetsFilterBtn := ToggleBtn(tr.BuiltinPresetsFilter(), tr.Theme, ip.builtinPresetsBtn, "Builtin", "Show only builtin presets")
+	saveUserPresetBtn := ActionIconBtn(tr.SaveAsUserPreset(), tr.Theme, ip.saveUserPreset, icons.ContentSave, "Save instrument as user preset")
+	deleteUserPresetBtn := ActionIconBtn(tr.TryDeleteUserPreset(), tr.Theme, ip.deleteUserPreset, icons.ActionDelete, "Delete user preset")
 	dirElem := func(gtx C, i int) D {
 		return Label(tr.Theme, &tr.Theme.InstrumentEditor.Presets.Directory, tr.Model.PresetDirList().Value(i)).Layout(gtx)
 	}
@@ -96,38 +104,72 @@ func (ip *InstrumentPresets) layout(gtx C) D {
 		return dims
 	}
 	dirSurface := func(gtx C) D {
-		return Surface{Gray: 30, Focus: tr.PatchPanel.TreeFocused(gtx)}.Layout(gtx, dirs)
+		return Surface{Gray: 36, Focus: tr.PatchPanel.TreeFocused(gtx)}.Layout(gtx, dirs)
 	}
 	resultElem := func(gtx C, i int) D {
-		return Label(tr.Theme, &tr.Theme.InstrumentEditor.Presets.Result, tr.Model.PresetResultList().Value(i)).Layout(gtx)
+		gtx.Constraints.Min.X = gtx.Constraints.Max.X
+		n, d, u := tr.Model.PresetResultList().Value(i)
+		if u {
+			ln := Label(tr.Theme, &tr.Theme.InstrumentEditor.Presets.Results.User, n)
+			ld := Label(tr.Theme, &tr.Theme.InstrumentEditor.Presets.Results.UserDir, d)
+			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+				layout.Rigid(ln.Layout),
+				layout.Rigid(layout.Spacer{Width: 6}.Layout),
+				layout.Rigid(ld.Layout),
+			)
+		}
+		return Label(tr.Theme, &tr.Theme.InstrumentEditor.Presets.Results.Builtin, n).Layout(gtx)
+	}
+	floatButtons := func(gtx C) D {
+		if tr.Model.DeleteUserPreset().Enabled() {
+			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+				layout.Rigid(deleteUserPresetBtn.Layout),
+				layout.Rigid(saveUserPresetBtn.Layout),
+				layout.Rigid(layout.Spacer{Width: 10}.Layout),
+			)
+		}
+		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+			layout.Rigid(saveUserPresetBtn.Layout),
+			layout.Rigid(layout.Spacer{Width: 10}.Layout),
+		)
 	}
 	results := func(gtx C) D {
 		gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
 		fdl := FilledDragList(tr.Theme, ip.resultList)
 		dims := fdl.Layout(gtx, resultElem, nil)
+		layout.SE.Layout(gtx, floatButtons)
 		fdl.LayoutScrollBar(gtx)
 		return dims
+	}
+	resultSurface := func(gtx C) D {
+		return Surface{Gray: 30, Focus: tr.PatchPanel.TreeFocused(gtx)}.Layout(gtx, results)
 	}
 	bottom := func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 			layout.Rigid(dirSurface),
-			layout.Flexed(1, results),
+			layout.Flexed(1, resultSurface),
 		)
 	}
 	// layout
-	return layout.Flex{Axis: layout.Vertical, Alignment: layout.Start, Spacing: 6}.Layout(gtx,
-		layout.Rigid(ip.layoutSearch),
-		layout.Rigid(func(gtx C) D {
-			return layout.UniformInset(unit.Dp(4)).Layout(gtx, func(gtx C) D {
-				return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-					layout.Rigid(userPresetsFilterBtn.Layout),
-					layout.Rigid(builtinPresetsFilterBtn.Layout),
-					layout.Rigid(gmDlsBtn.Layout),
-				)
-			})
-		}),
-		layout.Rigid(bottom),
-	)
+	f := func(gtx C) D {
+		m := gtx.Constraints.Max
+		gtx.Constraints.Max.X = min(gtx.Dp(360), gtx.Constraints.Max.X)
+		layout.Flex{Axis: layout.Vertical, Alignment: layout.Start}.Layout(gtx,
+			layout.Rigid(ip.layoutSearch),
+			layout.Rigid(func(gtx C) D {
+				return layout.UniformInset(unit.Dp(4)).Layout(gtx, func(gtx C) D {
+					return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+						layout.Rigid(userPresetsFilterBtn.Layout),
+						layout.Rigid(builtinPresetsFilterBtn.Layout),
+						layout.Rigid(gmDlsBtn.Layout),
+					)
+				})
+			}),
+			layout.Rigid(bottom),
+		)
+		return D{Size: m}
+	}
+	return Surface{Gray: 24, Focus: tr.PatchPanel.TreeFocused(gtx)}.Layout(gtx, f)
 }
 
 func (ip *InstrumentPresets) layoutSearch(gtx C) D {
@@ -137,7 +179,7 @@ func (ip *InstrumentPresets) layoutSearch(gtx C) D {
 	bg := func(gtx C) D {
 		rr := gtx.Dp(18)
 		defer clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, rr).Push(gtx.Ops).Pop()
-		paint.Fill(gtx.Ops, tr.Theme.Material.ContrastFg)
+		paint.Fill(gtx.Ops, tr.Theme.InstrumentEditor.Presets.SearchBg)
 		return D{Size: gtx.Constraints.Min}
 	}
 	// icon, search editor, clear button
@@ -154,15 +196,16 @@ func (ip *InstrumentPresets) layoutSearch(gtx C) D {
 		return btn.Layout(gtx)
 	}
 	w := func(gtx C) D {
-		gtx.Constraints.Max.X = min(gtx.Dp(360), gtx.Constraints.Max.X)
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(icon),
 			layout.Flexed(1, ed),
 			layout.Rigid(clr),
 		)
 	}
-	return layout.Stack{}.Layout(gtx,
-		layout.Expanded(bg),
-		layout.Stacked(w),
-	)
+	return layout.UniformInset(unit.Dp(4)).Layout(gtx, func(gtx C) D {
+		return layout.Stack{}.Layout(gtx,
+			layout.Expanded(bg),
+			layout.Stacked(w),
+		)
+	})
 }

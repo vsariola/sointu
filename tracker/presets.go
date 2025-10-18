@@ -37,7 +37,10 @@ type (
 		Instr      sointu.Instrument
 	}
 
-	PresetSlice []Preset
+	Presets struct {
+		Presets []Preset
+		Dirs    []string
+	}
 
 	InstrumentPresetYieldFunc func(index int, item string) (ok bool)
 	LoadPreset                struct {
@@ -54,13 +57,19 @@ type (
 	ClearPresetSearch    Model
 	PresetDirList        Model
 	PresetResultList     Model
+	SaveUserPreset       Model
+	TryDeleteUserPreset  Model
+	DeleteUserPreset     Model
+
+	ConfirmDeleteUserPresetAction Model
+	OverwriteUserPreset           Model
 
 	derivedPresetSearch struct {
+		dir           string
 		dirIndex      int
 		noGmDls       bool
 		kind          PresetKindEnum
 		searchStrings []string
-		dirs          []string
 		results       []Preset
 	}
 
@@ -74,19 +83,19 @@ const (
 )
 
 func (m *Model) updateDerivedPresetSearch() {
+	// reset derived data, keeping the
+	str := m.derived.presetSearch.searchStrings[:0]
+	m.derived.presetSearch = derivedPresetSearch{searchStrings: str, dirIndex: -1}
 	// parse filters from the search string. in: dir, gmdls: yes/no, kind: builtin/user/all
 	search := strings.TrimSpace(m.d.PresetSearchString)
 	parts := strings.Fields(search)
 	// parse parts to see if they contain :
-	m.derived.presetSearch.dirIndex = 0
-	m.derived.presetSearch.noGmDls = false
-	m.derived.presetSearch.kind = AllPresets
-	m.derived.presetSearch.searchStrings = m.derived.presetSearch.searchStrings[:0]
 	for _, part := range parts {
 		if strings.HasPrefix(part, "d:") && len(part) > 2 {
 			dir := strings.TrimSpace(part[2:])
-			ind := slices.IndexFunc(m.derived.presetSearch.dirs, func(c string) bool { return c == dir })
-			m.derived.presetSearch.dirIndex = max(ind, 0)
+			m.derived.presetSearch.dir = dir
+			ind := slices.IndexFunc(m.presets.Dirs, func(c string) bool { return c == dir })
+			m.derived.presetSearch.dirIndex = ind
 		} else if strings.HasPrefix(part, "g:n") {
 			m.derived.presetSearch.noGmDls = true
 		} else if strings.HasPrefix(part, "t:") && len(part) > 2 {
@@ -103,14 +112,14 @@ func (m *Model) updateDerivedPresetSearch() {
 	}
 	// update results
 	m.derived.presetSearch.results = m.derived.presetSearch.results[:0]
-	for _, p := range m.presets {
+	for _, p := range m.presets.Presets {
 		if m.derived.presetSearch.kind == BuiltinPresets && p.User {
 			continue
 		}
 		if m.derived.presetSearch.kind == UserPresets && !p.User {
 			continue
 		}
-		if m.derived.presetSearch.dirIndex > 0 && m.derived.presetSearch.dirIndex < len(m.derived.presetSearch.dirs) && p.Directory != m.derived.presetSearch.dirs[m.derived.presetSearch.dirIndex] {
+		if m.derived.presetSearch.dir != "" && p.Directory != m.derived.presetSearch.dir {
 			continue
 		}
 		if m.derived.presetSearch.noGmDls && p.NeedsGmDls {
@@ -130,37 +139,31 @@ func (m *Model) updateDerivedPresetSearch() {
 	}
 }
 
-func (m *Model) loadPresets() {
-	m.presets = nil
-	m.loadPresetsFromFs(instrumentPresetFS, false)
-	if configDir, err := os.UserConfigDir(); err == nil {
-		userPresets := filepath.Join(configDir, "sointu", "presets")
-		m.loadPresetsFromFs(os.DirFS(userPresets), true)
-	}
-	sort.Sort(m.presets)
+func (m *Presets) load() {
+	*m = Presets{}
 	seenDir := make(map[string]bool)
-	for _, p := range m.presets {
-		seenDir[p.Directory] = true
+	m.loadPresetsFromFs(instrumentPresetFS, false, seenDir)
+	if configDir, err := os.UserConfigDir(); err == nil {
+		userPresets := filepath.Join(configDir, "sointu")
+		m.loadPresetsFromFs(os.DirFS(userPresets), true, seenDir)
 	}
-	dirs := make([]string, 0, len(seenDir))
+	sort.Sort(m)
+	m.Dirs = make([]string, 0, len(seenDir))
 	for k := range seenDir {
-		dirs = append(dirs, k)
+		m.Dirs = append(m.Dirs, k)
 	}
-	sort.Strings(dirs)
-	m.derived.presetSearch.dirs = make([]string, 0, len(dirs)+1)
-	m.derived.presetSearch.dirs = append(m.derived.presetSearch.dirs, "---")
-	m.derived.presetSearch.dirs = append(m.derived.presetSearch.dirs, dirs...)
+	sort.Strings(m.Dirs)
 }
 
-func (m *Model) loadPresetsFromFs(fsys fs.FS, userDefined bool) {
-	fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+func (m *Presets) loadPresetsFromFs(fsys fs.FS, userDefined bool, seenDir map[string]bool) {
+	fs.WalkDir(fsys, "presets", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if d.IsDir() {
 			return nil
 		}
-		data, err := fs.ReadFile(instrumentPresetFS, path)
+		data, err := fs.ReadFile(fsys, path)
 		if err != nil {
 			return nil
 		}
@@ -170,13 +173,17 @@ func (m *Model) loadPresetsFromFs(fsys fs.FS, userDefined bool) {
 			splitted := splitPath(noExt)
 			splitted = splitted[1:] // remove "presets" from the path
 			instr.Name = splitted[len(splitted)-1]
+			dir := strings.Join(splitted[:len(splitted)-1], "/")
 			preset := Preset{
-				Directory:  strings.Join(splitted[:len(splitted)-1], "/"),
+				Directory:  dir,
 				User:       userDefined,
 				Instr:      instr,
 				NeedsGmDls: checkNeedsGmDls(instr),
 			}
-			m.presets = append(m.presets, preset)
+			if dir != "" {
+				seenDir[dir] = true
+			}
+			m.Presets = append(m.Presets, preset)
 		}
 		return nil
 	})
@@ -246,25 +253,6 @@ func (m *BuiltinPresetsFilter) SetValue(val bool) {
 }
 func (m *BuiltinPresetsFilter) Enabled() bool { return true }
 
-func (m *Model) PresetKind() Int { return MakeInt((*PresetKind)(m)) }
-func (m *PresetKind) Value() int { return int(m.derived.presetSearch.kind) }
-func (m *PresetKind) SetValue(val int) bool {
-	if int(m.derived.presetSearch.kind) == val {
-		return false
-	}
-	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "kind:")
-	switch PresetKindEnum(val) {
-	case BuiltinPresets:
-		m.d.PresetSearchString = "kind:builtin " + m.d.PresetSearchString
-	case UserPresets:
-		m.d.PresetSearchString = "kind:user " + m.d.PresetSearchString
-	}
-	(*Model)(m).updateDerivedPresetSearch()
-	return true
-}
-func (m *PresetKind) Enabled() bool   { return true }
-func (m *PresetKind) Range() IntRange { return IntRange{Min: -1, Max: 1} }
-
 func (m *Model) ClearPresetSearch() Action { return MakeAction((*ClearPresetSearch)(m)) }
 func (m *ClearPresetSearch) Enabled() bool { return len(m.d.PresetSearchString) > 0 }
 func (m *ClearPresetSearch) Do() {
@@ -274,24 +262,24 @@ func (m *ClearPresetSearch) Do() {
 
 func (m *Model) PresetDirList() *PresetDirList { return (*PresetDirList)(m) }
 func (v *PresetDirList) List() List            { return List{v} }
-func (m *PresetDirList) Count() int            { return len(m.derived.presetSearch.dirs) }
-func (m *PresetDirList) Selected() int         { return m.derived.presetSearch.dirIndex }
-func (m *PresetDirList) Selected2() int        { return m.derived.presetSearch.dirIndex }
+func (m *PresetDirList) Count() int            { return len(m.presets.Dirs) + 1 }
+func (m *PresetDirList) Selected() int         { return m.derived.presetSearch.dirIndex + 1 }
+func (m *PresetDirList) Selected2() int        { return m.derived.presetSearch.dirIndex + 1 }
 func (m *PresetDirList) SetSelected2(i int)    {}
 func (m *PresetDirList) Value(i int) string {
-	if i < 0 || i >= len(m.derived.presetSearch.dirs) {
-		return ""
+	if i < 1 || i > len(m.presets.Dirs) {
+		return "---"
 	}
-	return m.derived.presetSearch.dirs[i]
+	return m.presets.Dirs[i-1]
 }
 func (m *PresetDirList) SetSelected(i int) {
-	i = min(max(i, 0), len(m.derived.presetSearch.dirs)-1)
-	if i < 0 || i >= len(m.derived.presetSearch.dirs) {
+	i = min(max(i, 0), len(m.presets.Dirs))
+	if i < 0 || i > len(m.presets.Dirs) {
 		return
 	}
 	m.d.PresetSearchString = removeFilters(m.d.PresetSearchString, "d:")
 	if i > 0 {
-		m.d.PresetSearchString = "d:" + m.derived.presetSearch.dirs[i] + " " + m.d.PresetSearchString
+		m.d.PresetSearchString = "d:" + m.presets.Dirs[i-1] + " " + m.d.PresetSearchString
 	}
 	(*Model)(m).updateDerivedPresetSearch()
 }
@@ -304,11 +292,12 @@ func (m *PresetResultList) Selected() int {
 }
 func (m *PresetResultList) Selected2() int     { return m.Selected() }
 func (m *PresetResultList) SetSelected2(i int) {}
-func (m *PresetResultList) Value(i int) string {
+func (m *PresetResultList) Value(i int) (name string, dir string, user bool) {
 	if i < 0 || i >= len(m.derived.presetSearch.results) {
-		return ""
+		return "", "", false
 	}
-	return m.derived.presetSearch.results[i].Instr.Name
+	p := m.derived.presetSearch.results[i]
+	return p.Instr.Name, p.Directory, p.User
 }
 func (m *PresetResultList) SetSelected(i int) {
 	i = min(max(i, 0), len(m.derived.presetSearch.results)-1)
@@ -331,7 +320,7 @@ func (m *PresetResultList) SetSelected(i int) {
 }
 
 func removeFilters(str string, prefix string) string {
-	parts := strings.Fields(str)
+	parts := strings.Split(str, " ")
 	newParts := make([]string, 0, len(parts))
 	for _, part := range parts {
 		if !strings.HasPrefix(strings.ToLower(part), prefix) {
@@ -339,6 +328,75 @@ func removeFilters(str string, prefix string) string {
 		}
 	}
 	return strings.Join(newParts, " ")
+}
+
+func (m *Model) SaveAsUserPreset() Action { return MakeAction((*SaveUserPreset)(m)) }
+func (m *SaveUserPreset) Enabled() bool {
+	return m.d.InstrIndex >= 0 && m.d.InstrIndex < len(m.d.Song.Patch)
+}
+func (m *SaveUserPreset) Do() {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return
+	}
+	userPresetsDir := filepath.Join(configDir, "sointu", "presets", m.derived.presetSearch.dir)
+	instr := m.d.Song.Patch[m.d.InstrIndex]
+	fileName := filepath.Join(userPresetsDir, instr.Name+".yaml")
+	// if exists, do not overwrite
+	if _, err := os.Stat(fileName); err == nil {
+		m.dialog = OverwriteUserPresetDialog
+		return
+	}
+	(*Model)(m).OverwriteUserPreset().Do()
+}
+
+func (m *Model) OverwriteUserPreset() Action { return MakeAction((*OverwriteUserPreset)(m)) }
+func (m *OverwriteUserPreset) Enabled() bool { return true }
+func (m *OverwriteUserPreset) Do() {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return
+	}
+	userPresetsDir := filepath.Join(configDir, "sointu", "presets", m.derived.presetSearch.dir)
+	instr := m.d.Song.Patch[m.d.InstrIndex]
+	fileName := filepath.Join(userPresetsDir, instr.Name+".yaml")
+	os.MkdirAll(userPresetsDir, 0755)
+	data, err := yaml.Marshal(&instr)
+	if err != nil {
+		return
+	}
+	os.WriteFile(fileName, data, 0644)
+	m.dialog = NoDialog
+	(*Model)(m).presets.load()
+	(*Model)(m).updateDerivedPresetSearch()
+}
+
+func (m *Model) TryDeleteUserPreset() Action { return MakeAction((*TryDeleteUserPreset)(m)) }
+func (m *TryDeleteUserPreset) Do()           { m.dialog = DeleteUserPresetDialog }
+func (m *TryDeleteUserPreset) Enabled() bool {
+	if m.presetIndex < 0 || m.presetIndex >= len(m.derived.presetSearch.results) {
+		return false
+	}
+	return m.derived.presetSearch.results[m.presetIndex].User
+}
+
+func (m *Model) DeleteUserPreset() Action { return MakeAction((*DeleteUserPreset)(m)) }
+func (m *DeleteUserPreset) Enabled() bool { return (*Model)(m).TryDeleteUserPreset().Enabled() }
+func (m *DeleteUserPreset) Do() {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return
+	}
+	p := m.derived.presetSearch.results[m.presetIndex]
+	userPresetsDir := filepath.Join(configDir, "sointu", "presets")
+	if p.Directory != "" {
+		userPresetsDir = filepath.Join(userPresetsDir, p.Directory)
+	}
+	fileName := filepath.Join(userPresetsDir, p.Instr.Name+".yaml")
+	os.Remove(fileName)
+	m.dialog = NoDialog
+	(*Model)(m).presets.load()
+	(*Model)(m).updateDerivedPresetSearch()
 }
 
 // gmDlsEntryMap is a reverse map, to find the index of the GmDlsEntry in the
@@ -462,14 +520,14 @@ func splitPath(path string) []string {
 	return result
 }
 
-func (p PresetSlice) Len() int { return len(p) }
-func (p PresetSlice) Less(i, j int) bool {
-	if p[i].Directory == p[j].Directory {
-		if p[i].Instr.Name == p[j].Instr.Name {
-			return p[i].User && !p[j].User
+func (p Presets) Len() int { return len(p.Presets) }
+func (p Presets) Less(i, j int) bool {
+	if p.Presets[i].Directory == p.Presets[j].Directory {
+		if p.Presets[i].Instr.Name == p.Presets[j].Instr.Name {
+			return p.Presets[i].User && !p.Presets[j].User
 		}
-		return p[i].Instr.Name < p[j].Instr.Name
+		return p.Presets[i].Instr.Name < p.Presets[j].Instr.Name
 	}
-	return p[i].Directory < p[j].Directory
+	return p.Presets[i].Directory < p.Presets[j].Directory
 }
-func (p PresetSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p Presets) Swap(i, j int) { p.Presets[i], p.Presets[j] = p.Presets[j], p.Presets[i] }

@@ -86,7 +86,7 @@ type (
 
 		MIDI MIDIContext
 
-		presets     PresetSlice
+		presets     Presets
 		presetIndex int
 	}
 
@@ -165,6 +165,8 @@ const (
 	QuitChanges
 	QuitSaveExplorer
 	License
+	DeleteUserPresetDialog
+	OverwriteUserPresetDialog
 )
 
 const (
@@ -205,8 +207,8 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 	TrySend(broker.ToPlayer, any(m.d.Song.Copy())) // we should be non-blocking in the constructor
 	m.signalAnalyzer = NewScopeModel(broker, m.d.Song.BPM)
 	m.updateDeriveData(SongChange)
+	m.presets.load()
 	m.updateDerivedPresetSearch()
-	m.loadPresets()
 	return m
 }
 

@@ -92,8 +92,13 @@ type Theme struct {
 			Error        color.NRGBA
 		}
 		Presets struct {
+			SearchBg  color.NRGBA
 			Directory LabelStyle
-			Result    LabelStyle
+			Results   struct {
+				Builtin LabelStyle
+				User    LabelStyle
+				UserDir LabelStyle
+			}
 		}
 	}
 	UnitEditor struct {
