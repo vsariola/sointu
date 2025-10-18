@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -172,7 +173,7 @@ func (m *Presets) loadPresetsFromFs(fsys fs.FS, userDefined bool, seenDir map[st
 			noExt := path[:len(path)-len(filepath.Ext(path))]
 			splitted := splitPath(noExt)
 			splitted = splitted[1:] // remove "presets" from the path
-			instr.Name = splitted[len(splitted)-1]
+			instr.Name = filenameToInstrumentName(splitted[len(splitted)-1])
 			dir := strings.Join(splitted[:len(splitted)-1], "/")
 			preset := Preset{
 				Directory:  dir,
@@ -187,6 +188,18 @@ func (m *Presets) loadPresetsFromFs(fsys fs.FS, userDefined bool, seenDir map[st
 		}
 		return nil
 	})
+}
+
+func filenameToInstrumentName(filename string) string {
+	return strings.ReplaceAll(filename, "_", " ")
+}
+
+func instrumentNameToFilename(name string) string {
+	// remove all special characters
+	reg, _ := regexp.Compile("[^a-zA-Z0-9 _]+")
+	name = reg.ReplaceAllString(name, "")
+	name = strings.ReplaceAll(name, " ", "_")
+	return name
 }
 
 func checkNeedsGmDls(instr sointu.Instrument) bool {
@@ -341,7 +354,8 @@ func (m *SaveUserPreset) Do() {
 	}
 	userPresetsDir := filepath.Join(configDir, "sointu", "presets", m.derived.presetSearch.dir)
 	instr := m.d.Song.Patch[m.d.InstrIndex]
-	fileName := filepath.Join(userPresetsDir, instr.Name+".yaml")
+	name := instrumentNameToFilename(instr.Name)
+	fileName := filepath.Join(userPresetsDir, name+".yml")
 	// if exists, do not overwrite
 	if _, err := os.Stat(fileName); err == nil {
 		m.dialog = OverwriteUserPresetDialog
@@ -359,7 +373,8 @@ func (m *OverwriteUserPreset) Do() {
 	}
 	userPresetsDir := filepath.Join(configDir, "sointu", "presets", m.derived.presetSearch.dir)
 	instr := m.d.Song.Patch[m.d.InstrIndex]
-	fileName := filepath.Join(userPresetsDir, instr.Name+".yaml")
+	name := instrumentNameToFilename(instr.Name)
+	fileName := filepath.Join(userPresetsDir, name+".yml")
 	os.MkdirAll(userPresetsDir, 0755)
 	data, err := yaml.Marshal(&instr)
 	if err != nil {
@@ -392,7 +407,8 @@ func (m *DeleteUserPreset) Do() {
 	if p.Directory != "" {
 		userPresetsDir = filepath.Join(userPresetsDir, p.Directory)
 	}
-	fileName := filepath.Join(userPresetsDir, p.Instr.Name+".yaml")
+	name := instrumentNameToFilename(p.Instr.Name)
+	fileName := filepath.Join(userPresetsDir, name+".yml")
 	os.Remove(fileName)
 	m.dialog = NoDialog
 	(*Model)(m).presets.load()
@@ -522,12 +538,9 @@ func splitPath(path string) []string {
 
 func (p Presets) Len() int { return len(p.Presets) }
 func (p Presets) Less(i, j int) bool {
-	if p.Presets[i].Directory == p.Presets[j].Directory {
-		if p.Presets[i].Instr.Name == p.Presets[j].Instr.Name {
-			return p.Presets[i].User && !p.Presets[j].User
-		}
-		return p.Presets[i].Instr.Name < p.Presets[j].Instr.Name
+	if p.Presets[i].Instr.Name == p.Presets[j].Instr.Name {
+		return p.Presets[i].User && !p.Presets[j].User
 	}
-	return p.Presets[i].Directory < p.Presets[j].Directory
+	return p.Presets[i].Instr.Name < p.Presets[j].Instr.Name
 }
 func (p Presets) Swap(i, j int) { p.Presets[i], p.Presets[j] = p.Presets[j], p.Presets[i] }
