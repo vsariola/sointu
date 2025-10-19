@@ -1,0 +1,72 @@
+numvoices: 1
+units:
+    - id: 1545
+      parameters: {}
+      comment: Main oscillators
+    - type: oscillator
+      id: 1504
+      parameters: {color: 128, detune: 40, gain: 87, phase: 0, shape: 60, stereo: 0, transpose: 64, type: 1, unison: 1}
+    - type: oscillator
+      id: 1505
+      parameters: {color: 128, detune: 102, gain: 84, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 0, unison: 2}
+    - type: addp
+      id: 1506
+      parameters: {stereo: 0}
+    - type: push
+      id: 1507
+      parameters: {stereo: 0}
+    - id: 1508
+      parameters: {}
+      comment: Bass
+    - type: filter
+      id: 1509
+      parameters: {bandpass: 0, frequency: 45, highpass: 0, lowpass: 1, resonance: 64, stereo: 0}
+    - type: filter
+      id: 1510
+      parameters: {bandpass: 1, frequency: 12, highpass: 1, lowpass: 1, resonance: 64, stereo: 0}
+    - type: xch
+      id: 1511
+      parameters: {stereo: 0}
+    - id: 1512
+      parameters: {}
+      comment: Crunch
+    - type: distort
+      id: 1513
+      parameters: {drive: 30, stereo: 0}
+    - type: filter
+      id: 1514
+      parameters: {bandpass: 0, frequency: 50, highpass: 0, lowpass: 1, resonance: 70, stereo: 0}
+    - type: distort
+      id: 1515
+      parameters: {drive: 120, stereo: 0}
+    - type: distort
+      id: 1516
+      parameters: {drive: 120, stereo: 0}
+    - type: filter
+      id: 1517
+      parameters: {bandpass: -1, frequency: 39, highpass: 1, lowpass: 0, resonance: 47, stereo: 0}
+    - type: push
+      id: 1518
+      parameters: {stereo: 1}
+    - type: delay
+      id: 1519
+      parameters: {damp: 0, dry: 0, feedback: 0, notetracking: 0, pregain: 128, stereo: 0}
+      varargs: [1024]
+    - type: xch
+      id: 1520
+      parameters: {stereo: 0}
+    - type: addp
+      id: 1521
+      parameters: {stereo: 1}
+    - id: 1548
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1522
+      parameters: {attack: 17, decay: 0, gain: 11, release: 64, stereo: 1, sustain: 128}
+    - type: mulp
+      id: 1523
+      parameters: {stereo: 1}
+    - type: outaux
+      id: 1525
+      parameters: {auxgain: 19, outgain: 33, stereo: 1}
