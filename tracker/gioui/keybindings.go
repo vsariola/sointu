@@ -281,7 +281,7 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 	case "FocusNextInto":
 		t.FocusNext(gtx, true)
 	default:
-		if action[:4] == "Note" {
+		if len(action) > 4 && action[:4] == "Note" {
 			val, err := strconv.Atoi(string(action[4:]))
 			if err != nil {
 				break
