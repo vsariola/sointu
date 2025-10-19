@@ -1,0 +1,67 @@
+comment: |-
+    Modified version sourced from Prismbeings 4k intro "Whitespace", https://www.pouet.net/prod.php?which=67433
+
+    Source: https://github.com/armak/pbr-whitespace
+
+    Relicensed under MIT with permission from noby
+numvoices: 1
+units:
+    - type: envelope
+      id: 166
+      parameters: {attack: 0, decay: 84, gain: 128, release: 96, stereo: 0, sustain: 32}
+    - type: oscillator
+      id: 167
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
+    - type: mulp
+      id: 168
+      parameters: {stereo: 0}
+    - type: filter
+      id: 169
+      parameters: {bandpass: 0, frequency: 36, highpass: 0, lowpass: 1, resonance: 24, stereo: 0}
+    - type: delay
+      id: 170
+      parameters: {damp: 0, dry: 0, feedback: 64, notetracking: 0, pregain: 64, stereo: 0}
+      varargs: [1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642]
+    - type: envelope
+      id: 171
+      parameters: {attack: 32, decay: 85, gain: 128, release: 85, stereo: 0, sustain: 0}
+    - type: send
+      id: 172
+      parameters: {amount: 80, port: 0, sendpop: 1, target: 175}
+    - type: filter
+      id: 175
+      parameters: {bandpass: 0, frequency: 24, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+    - type: filter
+      id: 174
+      parameters: {bandpass: 1, frequency: 64, highpass: 1, lowpass: 1, resonance: 30, stereo: 0}
+    - type: filter
+      id: 176
+      parameters: {bandpass: 0, frequency: 96, highpass: -1, lowpass: 1, resonance: 48, stereo: 0}
+    - id: 177
+      parameters: {}
+    - type: filter
+      id: 178
+      parameters: {bandpass: 0, frequency: 16, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
+    - type: filter
+      id: 179
+      parameters: {bandpass: 0, frequency: 52, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+    - type: filter
+      id: 180
+      parameters: {bandpass: 0, frequency: 35, highpass: 1, lowpass: 1, resonance: 48, stereo: 0}
+    - type: filter
+      id: 181
+      parameters: {bandpass: 0, frequency: 37, highpass: 1, lowpass: 1, resonance: 2, stereo: 0}
+    - type: distort
+      id: 182
+      parameters: {drive: 67, stereo: 0}
+    - type: hold
+      id: 183
+      parameters: {holdfreq: 128, stereo: 0}
+    - id: 184
+      parameters: {}
+    - type: pan
+      id: 185
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 186
+      parameters: {auxgain: 40, outgain: 128, stereo: 1}
