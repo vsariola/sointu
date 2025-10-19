@@ -1,6 +1,7 @@
 package gioui
 
 import (
+	"bytes"
 	_ "embed"
 	"fmt"
 	"strconv"
@@ -10,7 +11,7 @@ import (
 	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"github.com/vsariola/sointu/tracker"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -31,7 +32,9 @@ var defaultKeyBindings []byte
 
 func init() {
 	var keyBindings, userKeybindings []KeyBinding
-	if err := yaml.UnmarshalStrict(defaultKeyBindings, &keyBindings); err != nil {
+	dec := yaml.NewDecoder(bytes.NewReader(defaultKeyBindings))
+	dec.KnownFields(true)
+	if err := dec.Decode(&keyBindings); err != nil {
 		panic(fmt.Errorf("failed to unmarshal default keybindings: %w", err))
 	}
 	if err := ReadCustomConfig("keybindings.yml", &userKeybindings); err == nil {

@@ -15,7 +15,7 @@ import (
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm/compiler/bridge"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	// TODO: test the song using a mocks instead
 )
 

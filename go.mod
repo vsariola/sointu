@@ -12,8 +12,7 @@ require (
 	github.com/viterin/vek v0.4.2
 	gitlab.com/gomidi/midi/v2 v2.2.10
 	golang.org/x/exp/shiny v0.0.0-20250408133849-7e4ce0ab07d0
-	golang.org/x/text v0.24.0
-	gopkg.in/yaml.v2 v2.3.0
+	golang.org/x/text v0.24.0	
 	gopkg.in/yaml.v3 v3.0.1
 	pipelined.dev/audio/vst2 v0.10.1-0.20240223162706-41e9b65fb5c2
 )

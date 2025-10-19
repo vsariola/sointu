@@ -16,7 +16,7 @@ import (
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 const errorThreshold = 1e-2

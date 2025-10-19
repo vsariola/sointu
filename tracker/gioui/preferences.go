@@ -1,12 +1,13 @@
 package gioui
 
 import (
+	"bytes"
 	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"gioui.org/unit"
 )
@@ -53,7 +54,9 @@ func ReadCustomConfig(filename string, target any) error {
 // return at least the default config, and the warning will just tell if there
 // was a problem parsing the custom config.
 func ReadConfig(defaultConfig []byte, path string, target any) (warn error) {
-	if err := yaml.UnmarshalStrict(defaultConfig, target); err != nil {
+	dec := yaml.NewDecoder(bytes.NewReader(defaultConfig))
+	dec.KnownFields(true)
+	if err := dec.Decode(target); err != nil {
 		panic(fmt.Errorf("ReadConfig %v failed to unmarshal the embedded default config: %w", path, err))
 	}
 	return ReadCustomConfig(path, target)

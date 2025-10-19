@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"bytes"
 	"embed"
 	"io/fs"
 	"os"
@@ -12,7 +13,7 @@ import (
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 //go:generate go run generate/gmdls_entries.go
@@ -169,7 +170,10 @@ func (m *Presets) loadPresetsFromFs(fsys fs.FS, userDefined bool, seenDir map[st
 			return nil
 		}
 		var instr sointu.Instrument
-		if yaml.UnmarshalStrict(data, &instr) == nil {
+
+		dec := yaml.NewDecoder(bytes.NewReader(data))
+		dec.KnownFields(true)
+		if dec.Decode(&instr) == nil {
 			noExt := path[:len(path)-len(filepath.Ext(path))]
 			splitted := splitPath(noExt)
 			splitted = splitted[1:] // remove "presets" from the path
