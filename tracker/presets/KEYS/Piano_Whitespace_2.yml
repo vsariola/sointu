@@ -8,7 +8,7 @@ numvoices: 1
 units:
     - type: envelope
       id: 166
-      parameters: {attack: 0, decay: 84, gain: 54, release: 96, stereo: 0, sustain: 32}
+      parameters: {attack: 28, decay: 76, gain: 128, release: 64, stereo: 0, sustain: 28}
     - type: oscillator
       id: 167
       parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
@@ -17,7 +17,7 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 169
-      parameters: {bandpass: 0, frequency: 36, highpass: 0, lowpass: 1, resonance: 24, stereo: 0}
+      parameters: {bandpass: 0, frequency: 36, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: delay
       id: 170
       parameters: {damp: 0, dry: 0, feedback: 64, notetracking: 0, pregain: 64, stereo: 0}
@@ -41,22 +41,13 @@ units:
       parameters: {}
     - type: filter
       id: 178
-      parameters: {bandpass: 0, frequency: 16, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
-    - type: filter
-      id: 179
-      parameters: {bandpass: 0, frequency: 52, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 19, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
     - type: filter
       id: 180
-      parameters: {bandpass: 0, frequency: 35, highpass: 1, lowpass: 1, resonance: 48, stereo: 0}
-    - type: filter
-      id: 181
-      parameters: {bandpass: 0, frequency: 37, highpass: 1, lowpass: 1, resonance: 2, stereo: 0}
-    - type: distort
-      id: 182
-      parameters: {drive: 67, stereo: 0}
+      parameters: {bandpass: 0, frequency: 38, highpass: 1, lowpass: 1, resonance: 128, stereo: 0}
     - type: hold
       id: 183
-      parameters: {holdfreq: 128, stereo: 0}
+      parameters: {holdfreq: 101, stereo: 0}
     - id: 184
       parameters: {}
     - type: pan
@@ -64,4 +55,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 186
-      parameters: {auxgain: 40, outgain: 128, stereo: 1}
+      parameters: {auxgain: 43, outgain: 84, stereo: 1}
