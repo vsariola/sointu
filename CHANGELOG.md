@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Preset explorer, whichs allows 1) searching the presets by name; 2) filtering
   them by category (directory); 3) filtering them by being builtin vs. user;
   4) filtering them if they need gm.dls (for Linux/Mac users, who don't have
-  it); and 5) saving and deleting user presets.
+  it); and 5) saving and deleting user presets. ([#91][i91])
 - Panic the synth if it outputs NaN or Inf, and handle these more gracefully in
   the loudness and peak detector. ([#210][i210])
 - More presets from Reaby, and all new and existing presets were normalized
@@ -336,6 +336,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i65]: https://github.com/vsariola/sointu/issues/65
 [i68]: https://github.com/vsariola/sointu/issues/68
 [i77]: https://github.com/vsariola/sointu/issues/77
+[i91]: https://github.com/vsariola/sointu/issues/91
 [i94]: https://github.com/vsariola/sointu/issues/94
 [i112]: https://github.com/vsariola/sointu/issues/112
 [i114]: https://github.com/vsariola/sointu/issues/114
