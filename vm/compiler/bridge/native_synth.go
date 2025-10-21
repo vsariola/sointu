@@ -18,7 +18,8 @@ type NativeSynther struct {
 
 type NativeSynth C.Synth
 
-func (s NativeSynther) Name() string { return "Native" }
+func (s NativeSynther) Name() string              { return "Native" }
+func (s NativeSynther) SupportsParallelism() bool { return false }
 
 func (s NativeSynther) Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	synth, err := Synth(patch, bpm)
@@ -66,6 +67,8 @@ func Synth(patch sointu.Patch, bpm int) (*NativeSynth, error) {
 	s.RandSeed = 1
 	return (*NativeSynth)(s), nil
 }
+
+func (s *NativeSynth) Close() {}
 
 // Render renders until the buffer is full or the modulated time is reached, whichever
 // happens first.

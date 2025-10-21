@@ -16,11 +16,12 @@ type (
 
 	// Instrument includes a list of units consisting of the instrument, and the number of polyphonic voices for this instrument
 	Instrument struct {
-		Name      string `yaml:",omitempty"`
-		Comment   string `yaml:",omitempty"`
-		NumVoices int
-		Units     []Unit
-		Mute      bool `yaml:",omitempty"` // Mute is only used in the tracker for soloing/muting instruments; the compiled player ignores this field
+		Name        string `yaml:",omitempty"`
+		Comment     string `yaml:",omitempty"`
+		NumVoices   int
+		Units       []Unit
+		Mute        bool `yaml:",omitempty"` // Mute is only used in the tracker for soloing/muting instruments; the compiled player ignores this field
+		CoreBitMask uint `yaml:",omitempty"` // CoreBitMask tells which cores this instrument can run on; 0 means all cores
 	}
 
 	// Unit is e.g. a filter, oscillator, envelope and its parameters
@@ -347,13 +348,14 @@ func init() {
 
 // Copy makes a deep copy of a unit.
 func (u *Unit) Copy() Unit {
-	parameters := make(map[string]int)
+	ret := *u
+	ret.Parameters = make(map[string]int, len(u.Parameters))
 	for k, v := range u.Parameters {
-		parameters[k] = v
+		ret.Parameters[k] = v
 	}
-	varArgs := make([]int, len(u.VarArgs))
-	copy(varArgs, u.VarArgs)
-	return Unit{Type: u.Type, Parameters: parameters, VarArgs: varArgs, ID: u.ID, Disabled: u.Disabled, Comment: u.Comment}
+	ret.VarArgs = make([]int, len(u.VarArgs))
+	copy(ret.VarArgs, u.VarArgs)
+	return ret
 }
 
 var stackUseSource = [2]StackUse{
@@ -473,11 +475,12 @@ func (u *Unit) StackNeed() int {
 
 // Copy makes a deep copy of an Instrument
 func (instr *Instrument) Copy() Instrument {
-	units := make([]Unit, len(instr.Units))
+	ret := *instr
+	ret.Units = make([]Unit, len(instr.Units))
 	for i, u := range instr.Units {
-		units[i] = u.Copy()
+		ret.Units[i] = u.Copy()
 	}
-	return Instrument{Name: instr.Name, Comment: instr.Comment, NumVoices: instr.NumVoices, Units: units, Mute: instr.Mute}
+	return ret
 }
 
 // Implement the counter interface

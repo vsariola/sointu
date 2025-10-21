@@ -7,4 +7,5 @@ import (
 
 var Synthers = []sointu.Synther{
 	vm.GoSynther{},
+	vm.MakeParallelSynther(vm.GoSynther{}),
 }
