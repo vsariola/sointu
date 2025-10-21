@@ -86,6 +86,7 @@ func TestRenderSamples(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
+	defer synth.Close()
 	synth.Trigger(0, 64)
 	buffer := make(sointu.AudioBuffer, su_max_samples)
 	err = buffer[:len(buffer)/2].Fill(synth)
@@ -162,6 +163,7 @@ func TestStackUnderflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
+	defer synth.Close()
 	buffer := make(sointu.AudioBuffer, 1)
 	err = buffer.Fill(synth)
 	if err == nil {
@@ -178,6 +180,7 @@ func TestStackBalancing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
+	defer synth.Close()
 	buffer := make(sointu.AudioBuffer, 1)
 	err = buffer.Fill(synth)
 	if err == nil {
@@ -211,6 +214,7 @@ func TestStackOverflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
+	defer synth.Close()
 	buffer := make(sointu.AudioBuffer, 1)
 	err = buffer.Fill(synth)
 	if err == nil {
@@ -228,6 +232,7 @@ func TestDivideByZero(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
+	defer synth.Close()
 	buffer := make(sointu.AudioBuffer, 1)
 	err = buffer.Fill(synth)
 	if err == nil {

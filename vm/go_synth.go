@@ -93,7 +93,8 @@ success:
 	f.Read(su_sample_table[:])
 }
 
-func (s GoSynther) Name() string { return "Go" }
+func (s GoSynther) Name() string              { return "Go" }
+func (s GoSynther) SupportsParallelism() bool { return false }
 
 func (s GoSynther) Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	bytecode, err := NewBytecode(patch, AllFeatures{}, bpm)
@@ -114,6 +115,8 @@ func (s *GoSynth) Trigger(voiceIndex int, note byte) {
 func (s *GoSynth) Release(voiceIndex int) {
 	s.state.voices[voiceIndex].sustain = false
 }
+
+func (s *GoSynth) Close() {}
 
 func (s *GoSynth) Update(patch sointu.Patch, bpm int) error {
 	bytecode, err := NewBytecode(patch, AllFeatures{}, bpm)

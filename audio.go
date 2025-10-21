@@ -62,6 +62,9 @@ type (
 		// Release releases the currently playing note for a given voice. Called
 		// between synth.Renders.
 		Release(voice int)
+
+		// Close disposes the synth, freeing any resources. No other functions should be called after Close.
+		Close()
 	}
 
 	// Synther compiles a given Patch into a Synth, throwing errors if the
@@ -69,6 +72,7 @@ type (
 	Synther interface {
 		Name() string // Name of the synther, e.g. "Go" or "Native"
 		Synth(patch Patch, bpm int) (Synth, error)
+		SupportsParallelism() bool
 	}
 )
 
@@ -83,6 +87,7 @@ func Play(synther Synther, song Song, progress func(float32)) (AudioBuffer, erro
 	if err != nil {
 		return nil, fmt.Errorf("sointu.Play failed: %v", err)
 	}
+	defer synth.Close()
 	curVoices := make([]int, len(song.Score.Tracks))
 	for i := range curVoices {
 		curVoices[i] = song.Score.FirstVoiceForTrack(i)

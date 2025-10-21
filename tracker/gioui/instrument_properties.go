@@ -19,6 +19,7 @@ type (
 		list                *layout.List
 		soloBtn             *Clickable
 		muteBtn             *Clickable
+		coreBtns            [4]*Clickable
 		soloHint            string
 		unsoloHint          string
 		muteHint            string
@@ -38,6 +39,7 @@ func NewInstrumentProperties() *InstrumentProperties {
 		muteBtn:            new(Clickable),
 		voices:             NewNumericUpDownState(),
 		splitInstrumentBtn: new(Clickable),
+		coreBtns:           [4]*Clickable{new(Clickable), new(Clickable), new(Clickable), new(Clickable)},
 	}
 	ret.soloHint = makeHint("Solo", " (%s)", "SoloToggle")
 	ret.unsoloHint = makeHint("Unsolo", " (%s)", "SoloToggle")
@@ -66,7 +68,21 @@ func (ip *InstrumentProperties) layout(gtx C) D {
 		)
 	}
 
-	return ip.list.Layout(gtx, 9, func(gtx C, index int) D {
+	core1btn := ToggleIconBtn(tr.Core1(), tr.Theme, ip.coreBtns[0], icons.ImageCropSquare, icons.ImageFilter1, "Do not render instrument on core 1", "Render instrument on core 1")
+	core2btn := ToggleIconBtn(tr.Core2(), tr.Theme, ip.coreBtns[1], icons.ImageCropSquare, icons.ImageFilter2, "Do not render instrument on core 2", "Render instrument on core 2")
+	core3btn := ToggleIconBtn(tr.Core3(), tr.Theme, ip.coreBtns[2], icons.ImageCropSquare, icons.ImageFilter3, "Do not render instrument on core 3", "Render instrument on core 3")
+	core4btn := ToggleIconBtn(tr.Core4(), tr.Theme, ip.coreBtns[3], icons.ImageCropSquare, icons.ImageFilter4, "Do not render instrument on core 4", "Render instrument on core 4")
+
+	corebtnline := func(gtx C) D {
+		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+			layout.Rigid(core1btn.Layout),
+			layout.Rigid(core2btn.Layout),
+			layout.Rigid(core3btn.Layout),
+			layout.Rigid(core4btn.Layout),
+		)
+	}
+
+	return ip.list.Layout(gtx, 11, func(gtx C, index int) D {
 		switch index {
 		case 0:
 			return layoutInstrumentPropertyLine(gtx, "Name", func(gtx C) D {
@@ -81,6 +97,8 @@ func (ip *InstrumentProperties) layout(gtx C) D {
 			soloBtn := ToggleIconBtn(tr.Solo(), tr.Theme, ip.soloBtn, icons.ToggleCheckBoxOutlineBlank, icons.ToggleCheckBox, ip.soloHint, ip.unsoloHint)
 			return layoutInstrumentPropertyLine(gtx, "Solo", soloBtn.Layout)
 		case 8:
+			return layoutInstrumentPropertyLine(gtx, "Cores", corebtnline)
+		case 10:
 			return layout.UniformInset(unit.Dp(6)).Layout(gtx, func(gtx C) D {
 				return ip.commentEditor.Layout(gtx, tr.InstrumentComment(), tr.Theme, &tr.Theme.InstrumentEditor.InstrumentComment, "Comment")
 			})

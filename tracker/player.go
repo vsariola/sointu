@@ -127,12 +127,12 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		if p.synth != nil {
 			rendered, timeAdvanced, err = p.synth.Render(buffer[:framesUntilEvent], timeUntilRowAdvance)
 			if err != nil {
-				p.synth = nil
+				p.destroySynth()
 				p.send(Alert{Message: fmt.Sprintf("synth.Render: %s", err.Error()), Priority: Error, Name: "PlayerCrash", Duration: defaultAlertDuration})
 			}
 			// for performance, we don't check for NaN of every sample, because typically NaNs propagate
 			if rendered > 0 && (isNaN(buffer[0][0]) || isNaN(buffer[0][1]) || isInf(buffer[0][0]) || isInf(buffer[0][1])) {
-				p.synth = nil
+				p.destroySynth()
 				p.send(Alert{Message: "Inf or NaN detected in synth output", Priority: Error, Name: "PlayerCrash", Duration: defaultAlertDuration})
 			}
 		} else {
@@ -170,9 +170,16 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		}
 	}
 	// we were not able to fill the buffer with NUM_RENDER_TRIES attempts, destroy synth and throw an error
-	p.synth = nil
+	p.destroySynth()
 	p.events = p.events[:0] // clear events, so we don't try to process them again
 	p.SendAlert("PlayerCrash", fmt.Sprintf("synth did not fill the audio buffer even with %d render calls", numRenderTries), Error)
+}
+
+func (p *Player) destroySynth() {
+	if p.synth != nil {
+		p.synth.Close()
+		p.synth = nil
+	}
 }
 
 func (p *Player) advanceRow() {
@@ -227,7 +234,7 @@ loop:
 			switch m := msg.(type) {
 			case PanicMsg:
 				if m.bool {
-					p.synth = nil
+					p.destroySynth()
 				} else {
 					p.compileOrUpdateSynth()
 				}
@@ -283,7 +290,7 @@ loop:
 				}
 			case sointu.Synther:
 				p.synther = m
-				p.synth = nil
+				p.destroySynth()
 				p.compileOrUpdateSynth()
 			default:
 				// ignore unknown messages
@@ -355,7 +362,7 @@ func (p *Player) compileOrUpdateSynth() {
 	if p.synth != nil {
 		err := p.synth.Update(p.song.Patch, p.song.BPM)
 		if err != nil {
-			p.synth = nil
+			p.destroySynth()
 			p.SendAlert("PlayerCrash", fmt.Sprintf("synth.Update: %v", err), Error)
 			return
 		}
@@ -363,7 +370,7 @@ func (p *Player) compileOrUpdateSynth() {
 		var err error
 		p.synth, err = p.synther.Synth(p.song.Patch, p.song.BPM)
 		if err != nil {
-			p.synth = nil
+			p.destroySynth()
 			p.SendAlert("PlayerCrash", fmt.Sprintf("synther.Synth: %v", err), Error)
 			return
 		}

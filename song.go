@@ -293,7 +293,10 @@ func (l Score) LengthInRows() int {
 
 // Copy makes a deep copy of a Score.
 func (s *Song) Copy() Song {
-	return Song{BPM: s.BPM, RowsPerBeat: s.RowsPerBeat, Score: s.Score.Copy(), Patch: s.Patch.Copy()}
+	ret := *s
+	ret.Score = s.Score.Copy()
+	ret.Patch = s.Patch.Copy()
+	return ret
 }
 
 // Assuming 44100 Hz playback speed, return the number of samples of each row of
