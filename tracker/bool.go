@@ -1,5 +1,7 @@
 package tracker
 
+import "fmt"
+
 type (
 	Bool struct {
 		value   BoolValue
@@ -76,7 +78,8 @@ func (m *Model) getCoresBit(bit int) bool {
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return false
 	}
-	return m.d.Song.Patch[m.d.InstrIndex].CoreBitMask&(1<<bit) != 0
+	mask := m.d.Song.Patch[m.d.InstrIndex].CoreMaskM1 + 1
+	return mask&(1<<bit) != 0
 }
 
 func (m *Model) setCoresBit(bit int, value bool) {
@@ -84,10 +87,34 @@ func (m *Model) setCoresBit(bit int, value bool) {
 		return
 	}
 	defer (*Model)(m).change("CoreBitMask", PatchChange, MinorChange)()
+	mask := m.d.Song.Patch[m.d.InstrIndex].CoreMaskM1 + 1
 	if value {
-		m.d.Song.Patch[m.d.InstrIndex].CoreBitMask |= (1 << bit)
+		mask |= (1 << bit)
 	} else {
-		m.d.Song.Patch[m.d.InstrIndex].CoreBitMask &^= (1 << bit)
+		mask &^= (1 << bit)
+	}
+	m.d.Song.Patch[m.d.InstrIndex].CoreMaskM1 = max(mask-1, 0) // -1 would have all cores disabled, so make that 0 i.e. use core 1 only
+	m.warnAboutCrossCoreSends()
+}
+
+func (m *Model) warnAboutCrossCoreSends() {
+	for i, instr := range m.d.Song.Patch {
+		for _, unit := range instr.Units {
+			if unit.Type == "send" {
+				targetID, ok := unit.Parameters["target"]
+				if !ok {
+					continue
+				}
+				it, _, err := m.d.Song.Patch.FindUnit(targetID)
+				if err != nil {
+					continue
+				}
+				if instr.CoreMaskM1 != m.d.Song.Patch[it].CoreMaskM1 {
+					m.Alerts().AddNamed("CrossCoreSend", fmt.Sprintf("Instrument %d '%s' has a send to instrument %d '%s' but they are not on the same cores, which may cause issues", i+1, instr.Name, it+1, m.d.Song.Patch[it].Name), Warning)
+					return
+				}
+			}
+		}
 	}
 }
 

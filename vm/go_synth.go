@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/vsariola/sointu"
 )
@@ -27,6 +28,7 @@ type (
 		stack      []float32
 		state      synthState
 		delaylines []delayline
+		cpuLoad    sointu.CPULoad
 	}
 
 	// GoSynther is a Synther implementation that can converts patches into
@@ -118,6 +120,14 @@ func (s *GoSynth) Release(voiceIndex int) {
 
 func (s *GoSynth) Close() {}
 
+func (s *GoSynth) NumCores() int { return 1 }
+func (s *GoSynth) CPULoad(loads []sointu.CPULoad) {
+	if len(loads) < 1 {
+		return
+	}
+	loads[0] = s.cpuLoad
+}
+
 func (s *GoSynth) Update(patch sointu.Patch, bpm int) error {
 	bytecode, err := NewBytecode(patch, AllFeatures{}, bpm)
 	if err != nil {
@@ -146,7 +156,10 @@ func (s *GoSynth) Update(patch sointu.Patch, bpm int) error {
 	return nil
 }
 
-func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, time int, renderError error) {
+func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, renderTime int, renderError error) {
+	startTime := time.Now()
+	defer func() { s.cpuLoad.Update(time.Since(startTime), int64(samples)) }()
+
 	defer func() {
 		if err := recover(); err != nil {
 			renderError = fmt.Errorf("render panicced: %v", err)
@@ -156,7 +169,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 	stack := s.stack[:]
 	stack = append(stack, []float32{0, 0, 0, 0}...)
 	synth := &s.state
-	for time < maxtime && len(buffer) > 0 {
+	for renderTime < maxtime && len(buffer) > 0 {
 		opcodesInstr := s.bytecode.Opcodes
 		operandsInstr := s.bytecode.Operands
 		opcodes, operands := opcodesInstr, operandsInstr
@@ -185,7 +198,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 			}
 			tcount := transformCounts[opNoStereo-1]
 			if len(operands) < tcount {
-				return samples, time, errors.New("operand stream ended prematurely")
+				return samples, renderTime, errors.New("operand stream ended prematurely")
 			}
 			voice := &voices[0]
 			unit := &units[0]
@@ -292,7 +305,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 				r := unit.state[0] + float32(math.Exp2(float64(stack[l-1]*2.206896551724138))-1)
 				w := int(r+1.5) - 1
 				unit.state[0] = r - float32(w)
-				time += w
+				renderTime += w
 				stack = stack[:l-1]
 			case opIn:
 				var channel byte
@@ -584,26 +597,26 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 			case opSync:
 				break
 			default:
-				return samples, time, errors.New("invalid / unimplemented opcode")
+				return samples, renderTime, errors.New("invalid / unimplemented opcode")
 			}
 			units = units[1:]
 		}
 		if len(stack) < 4 {
-			return samples, time, errors.New("stack underflow")
+			return samples, renderTime, errors.New("stack underflow")
 		}
 		if len(stack) > 4 {
-			return samples, time, errors.New("stack not empty")
+			return samples, renderTime, errors.New("stack not empty")
 		}
 		buffer[0][0], buffer[0][1] = synth.outputs[0], synth.outputs[1]
 		synth.outputs[0] = 0
 		synth.outputs[1] = 0
 		buffer = buffer[1:]
 		samples++
-		time++
+		renderTime++
 		s.state.globalTime++
 	}
 	s.stack = stack[:0]
-	return samples, time, nil
+	return samples, renderTime, nil
 }
 
 func (s *synthState) rand() float32 {

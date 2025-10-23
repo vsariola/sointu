@@ -397,7 +397,8 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 	}
 }
 
-func (m *Model) CPULoad() float64 { return m.playerStatus.CPULoad }
+func (m *Model) NumCores() int                { return m.playerStatus.NumCores }
+func (m *Model) CPULoad(buf []sointu.CPULoad) { copy(buf, m.playerStatus.CPULoad[:]) }
 
 func (m *Model) SignalAnalyzer() *ScopeModel { return m.signalAnalyzer }
 func (m *Model) Broker() *Broker             { return m.broker }

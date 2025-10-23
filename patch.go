@@ -16,12 +16,12 @@ type (
 
 	// Instrument includes a list of units consisting of the instrument, and the number of polyphonic voices for this instrument
 	Instrument struct {
-		Name        string `yaml:",omitempty"`
-		Comment     string `yaml:",omitempty"`
-		NumVoices   int
-		Units       []Unit
-		Mute        bool `yaml:",omitempty"` // Mute is only used in the tracker for soloing/muting instruments; the compiled player ignores this field
-		CoreBitMask uint `yaml:",omitempty"` // CoreBitMask tells which cores this instrument can run on; 0 means all cores
+		Name       string `yaml:",omitempty"`
+		Comment    string `yaml:",omitempty"`
+		NumVoices  int
+		Units      []Unit
+		Mute       bool `yaml:",omitempty"` // Mute is only used in the tracker for soloing/muting instruments; the compiled player ignores this field
+		CoreMaskM1 int  `yaml:",omitempty"` // CoreMaskM1 is a bit mask of which cores are used, minus 1. Minus 1 is done so that the default value 0 means bit mask 0b0001 i.e. only core 1 is rendering the instrument.
 	}
 
 	// Unit is e.g. a filter, oscillator, envelope and its parameters

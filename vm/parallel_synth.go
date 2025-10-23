@@ -11,7 +11,7 @@ import (
 
 type (
 	ParallelSynth struct {
-		voiceMapping [][]int
+		voiceMapping voiceMapping
 		synths       []sointu.Synth
 		commands     chan<- parallelSynthCommand // maxtime
 		results      <-chan parallelSynthResult  // rendered buffer
@@ -23,6 +23,8 @@ type (
 		synther sointu.Synther
 		name    string
 	}
+
+	voiceMapping [MAX_CORES][MAX_VOICES]int
 
 	parallelSynthCommand struct {
 		core    int
@@ -37,6 +39,8 @@ type (
 		renderError error
 	}
 )
+
+const MAX_CORES = 4
 
 func MakeParallelSynther(synther sointu.Synther) ParallelSynther {
 	return ParallelSynther{synther: synther, name: "Parallel " + synther.Name()}
@@ -67,16 +71,21 @@ func (s ParallelSynther) Synth(patch sointu.Patch, bpm int) (sointu.Synth, error
 
 func (s *ParallelSynth) Update(patch sointu.Patch, bpm int) error {
 	patches, voiceMapping := splitPatchByCores(patch)
-	s.voiceMapping = voiceMapping
+	if s.voiceMapping != voiceMapping {
+		s.voiceMapping = voiceMapping
+		s.closeSynths()
+	}
 	for i, p := range patches {
 		if len(s.synths) <= i {
 			synth, err := s.synther.Synth(p, bpm)
 			if err != nil {
+				s.closeSynths()
 				return err
 			}
 			s.synths = append(s.synths, synth)
 		} else {
 			if err := s.synths[i].Update(p, bpm); err != nil {
+				s.closeSynths()
 				return err
 			}
 		}
@@ -104,9 +113,14 @@ func (s *ParallelSynth) startProcesses() {
 
 func (s *ParallelSynth) Close() {
 	close(s.commands)
+	s.closeSynths()
+}
+
+func (s *ParallelSynth) closeSynths() {
 	for _, synth := range s.synths {
 		synth.Close()
 	}
+	s.synths = s.synths[:0]
 }
 
 func (s *ParallelSynth) Trigger(voiceIndex int, note byte) {
@@ -125,6 +139,23 @@ func (s *ParallelSynth) Release(voiceIndex int) {
 	}
 }
 
+func (s *ParallelSynth) NumCores() (coreCount int) {
+	for i := range s.synths {
+		coreCount += s.synths[i].NumCores()
+	}
+	return
+}
+
+func (s *ParallelSynth) CPULoad(loads []sointu.CPULoad) {
+	for _, synth := range s.synths {
+		synth.CPULoad(loads)
+		if len(loads) <= synth.NumCores() {
+			return
+		}
+		loads = loads[synth.NumCores():]
+	}
+}
+
 func (s *ParallelSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, time int, renderError error) {
 	count := len(s.synths)
 	for i := 0; i < count; i++ {
@@ -134,6 +165,9 @@ func (s *ParallelSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples 
 	samples = math.MaxInt
 	time = math.MaxInt
 	for i := 0; i < count; i++ {
+		// We mix the results as they come, but the order doesn't matter. This
+		// leads to slight indeterminism in the results, because the order of
+		// floating point additions can change the least significant bits.
 		result := <-s.results
 		if result.renderError != nil && renderError == nil {
 			renderError = result.renderError
@@ -150,28 +184,34 @@ func (s *ParallelSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples 
 	return
 }
 
-func splitPatchByCores(patch sointu.Patch) ([]sointu.Patch, [][]int) {
-	maxCores := 1
+func splitPatchByCores(patch sointu.Patch) ([]sointu.Patch, voiceMapping) {
+	cores := 1
 	for _, instr := range patch {
-		maxCores = max(bits.Len(instr.CoreBitMask), maxCores)
+		cores = max(bits.Len((uint)(instr.CoreMaskM1+1)), cores)
 	}
-	ret := make([]sointu.Patch, maxCores)
-	for core := 0; core < maxCores; core++ {
-		ret[core] = make(sointu.Patch, 0, len(patch))
+	cores = min(cores, MAX_CORES)
+	ret := make([]sointu.Patch, cores)
+	for c := 0; c < cores; c++ {
+		ret[c] = make(sointu.Patch, 0, len(patch))
 	}
-	voicemapping := make([][]int, maxCores)
-	for core := range maxCores {
-		voicemapping[core] = make([]int, patch.NumVoices())
-		for j := range voicemapping[core] {
-			voicemapping[core][j] = -1
+	var voicemapping [MAX_CORES][MAX_VOICES]int
+	for c := 0; c < MAX_CORES; c++ {
+		for j := 0; j < MAX_VOICES; j++ {
+			voicemapping[c][j] = -1
 		}
+	}
+	for c := range cores {
 		coreVoice := 0
 		curVoice := 0
 		for _, instr := range patch {
-			if instr.CoreBitMask == 0 || (instr.CoreBitMask&(1<<core)) != 0 {
-				ret[core] = append(ret[core], instr)
+			mask := instr.CoreMaskM1 + 1
+			if mask&(1<<c) != 0 {
+				ret[c] = append(ret[c], instr)
 				for j := 0; j < instr.NumVoices; j++ {
-					voicemapping[core][curVoice+j] = coreVoice + j
+					if coreVoice+j >= MAX_VOICES {
+						break
+					}
+					voicemapping[c][curVoice+j] = coreVoice + j
 				}
 				coreVoice += instr.NumVoices
 			}
