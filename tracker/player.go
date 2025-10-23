@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"slices"
-	"time"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
@@ -42,7 +41,8 @@ type (
 	PlayerStatus struct {
 		SongPos     sointu.SongPos         // the current position in the score
 		VoiceLevels [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
-		CPULoad     float64                // current CPU load of the player, used to adjust the render rate
+		NumCores    int
+		CPULoad     [vm.MAX_CORES]sointu.CPULoad // current CPU load of the player, used to adjust the render rate
 	}
 
 	// PlayerProcessContext is the context given to the player when processing
@@ -97,9 +97,6 @@ func NewPlayer(broker *Broker, synther sointu.Synther) *Player {
 // buffer. It is used to trigger and release notes during processing. The
 // context is also used to get the current BPM from the host.
 func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext) {
-	startTime := time.Now()
-	startFrame := p.frame
-
 	p.processMessages(context)
 	p.events.adjustTimes(p.frameDeltas, p.frame, p.frame+int64(len(buffer)))
 
@@ -164,7 +161,10 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		}
 		// when the buffer is full, return
 		if len(buffer) == 0 {
-			p.updateCPULoad(time.Since(startTime), p.frame-startFrame)
+			if p.synth != nil {
+				p.status.NumCores = p.synth.NumCores()
+				p.synth.CPULoad(p.status.CPULoad[:])
+			}
 			p.send(nil)
 			return
 		}
@@ -447,15 +447,4 @@ func (p *Player) processNoteEvent(ev NoteEvent) {
 	p.status.VoiceLevels[oldestVoice] = 1.0
 	p.synth.Trigger(oldestVoice, ev.Note)
 	TrySend(p.broker.ToModel, MsgToModel{TriggerChannel: instrIndex + 1})
-}
-
-func (p *Player) updateCPULoad(duration time.Duration, frames int64) {
-	if frames <= 0 {
-		return // no frames rendered, so cannot compute CPU load
-	}
-	realtime := float64(duration) / 1e9
-	songtime := float64(frames) / 44100
-	newload := realtime / songtime
-	alpha := math.Exp(-songtime) // smoothing factor, time constant of 1 second
-	p.status.CPULoad = float64(p.status.CPULoad)*alpha + newload*(1-alpha)
 }

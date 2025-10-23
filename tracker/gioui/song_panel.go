@@ -5,14 +5,17 @@ import (
 	"image"
 	"image/color"
 	"strconv"
+	"strings"
 
 	"gioui.org/gesture"
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
+	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/version"
+	"github.com/vsariola/sointu/vm"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
@@ -110,9 +113,24 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 	}
 	oversamplingBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.OversamplingBtn, oversamplingTxt, "")
 
-	cpuload := tr.Model.CPULoad()
-	cpuLabel := Label(tr.Theme, &tr.Theme.SongPanel.RowValue, fmt.Sprintf("%.0f %%", cpuload*100))
-	if cpuload >= 1 {
+	var sb strings.Builder
+	var loadArr [vm.MAX_CORES]sointu.CPULoad
+	tr.Model.CPULoad(loadArr[:])
+	c := min(vm.MAX_CORES, tr.Model.NumCores())
+	high := false
+	for i := range c {
+		if i > 0 {
+			// unless this is the first item, add the separator before it.
+			fmt.Fprint(&sb, ", ")
+		}
+		cpuLoad := loadArr[i]
+		fmt.Fprintf(&sb, "%.0f %%", cpuLoad*100)
+		if cpuLoad >= 1 {
+			high = true
+		}
+	}
+	cpuLabel := Label(tr.Theme, &tr.Theme.SongPanel.RowValue, sb.String())
+	if high {
 		cpuLabel.Color = tr.Theme.SongPanel.ErrorColor
 	}
 

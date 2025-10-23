@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"time"
 )
 
 type (
@@ -65,6 +66,12 @@ type (
 
 		// Close disposes the synth, freeing any resources. No other functions should be called after Close.
 		Close()
+
+		// Returns the number of cores the synth is using
+		NumCores() int
+
+		// Populates the given array with the current CPU load of each core
+		CPULoad([]CPULoad)
 	}
 
 	// Synther compiles a given Patch into a Synth, throwing errors if the
@@ -74,6 +81,8 @@ type (
 		Synth(patch Patch, bpm int) (Synth, error)
 		SupportsParallelism() bool
 	}
+
+	CPULoad float32
 )
 
 // Play plays the Song by first compiling the patch with the given Synther,
@@ -207,6 +216,17 @@ func (buffer AudioBuffer) Raw(pcm16 bool) ([]byte, error) {
 		return nil, fmt.Errorf("Raw failed: %v", err)
 	}
 	return buf.Bytes(), nil
+}
+
+func (p *CPULoad) Update(duration time.Duration, frames int64) {
+	if frames <= 0 {
+		return // no frames rendered, so cannot compute CPU load
+	}
+	realtime := float64(duration) / 1e9
+	songtime := float64(frames) / 44100
+	newload := realtime / songtime
+	alpha := math.Exp(-songtime) // smoothing factor, time constant of 1 second
+	*p = CPULoad(float64(*p)*alpha + newload*(1-alpha))
 }
 
 func (data AudioBuffer) rawToBuffer(pcm16 bool, buf *bytes.Buffer) error {
