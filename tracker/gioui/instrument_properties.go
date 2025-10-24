@@ -19,7 +19,7 @@ type (
 		list                *layout.List
 		soloBtn             *Clickable
 		muteBtn             *Clickable
-		coreBtns            [4]*Clickable
+		threadBtns          [4]*Clickable
 		soloHint            string
 		unsoloHint          string
 		muteHint            string
@@ -39,7 +39,7 @@ func NewInstrumentProperties() *InstrumentProperties {
 		muteBtn:            new(Clickable),
 		voices:             NewNumericUpDownState(),
 		splitInstrumentBtn: new(Clickable),
-		coreBtns:           [4]*Clickable{new(Clickable), new(Clickable), new(Clickable), new(Clickable)},
+		threadBtns:         [4]*Clickable{new(Clickable), new(Clickable), new(Clickable), new(Clickable)},
 	}
 	ret.soloHint = makeHint("Solo", " (%s)", "SoloToggle")
 	ret.unsoloHint = makeHint("Unsolo", " (%s)", "SoloToggle")
@@ -68,17 +68,17 @@ func (ip *InstrumentProperties) layout(gtx C) D {
 		)
 	}
 
-	core1btn := ToggleIconBtn(tr.Core1(), tr.Theme, ip.coreBtns[0], icons.ImageCropSquare, icons.ImageFilter1, "Do not render instrument on core 1", "Render instrument on core 1")
-	core2btn := ToggleIconBtn(tr.Core2(), tr.Theme, ip.coreBtns[1], icons.ImageCropSquare, icons.ImageFilter2, "Do not render instrument on core 2", "Render instrument on core 2")
-	core3btn := ToggleIconBtn(tr.Core3(), tr.Theme, ip.coreBtns[2], icons.ImageCropSquare, icons.ImageFilter3, "Do not render instrument on core 3", "Render instrument on core 3")
-	core4btn := ToggleIconBtn(tr.Core4(), tr.Theme, ip.coreBtns[3], icons.ImageCropSquare, icons.ImageFilter4, "Do not render instrument on core 4", "Render instrument on core 4")
+	thread1btn := ToggleIconBtn(tr.Thread1(), tr.Theme, ip.threadBtns[0], icons.ImageCropSquare, icons.ImageFilter1, "Do not render instrument on thread 1", "Render instrument on thread 1")
+	thread2btn := ToggleIconBtn(tr.Thread2(), tr.Theme, ip.threadBtns[1], icons.ImageCropSquare, icons.ImageFilter2, "Do not render instrument on thread 2", "Render instrument on thread 2")
+	thread3btn := ToggleIconBtn(tr.Thread3(), tr.Theme, ip.threadBtns[2], icons.ImageCropSquare, icons.ImageFilter3, "Do not render instrument on thread 3", "Render instrument on thread 3")
+	thread4btn := ToggleIconBtn(tr.Thread4(), tr.Theme, ip.threadBtns[3], icons.ImageCropSquare, icons.ImageFilter4, "Do not render instrument on thread 4", "Render instrument on thread 4")
 
-	corebtnline := func(gtx C) D {
+	threadbtnline := func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-			layout.Rigid(core1btn.Layout),
-			layout.Rigid(core2btn.Layout),
-			layout.Rigid(core3btn.Layout),
-			layout.Rigid(core4btn.Layout),
+			layout.Rigid(thread1btn.Layout),
+			layout.Rigid(thread2btn.Layout),
+			layout.Rigid(thread3btn.Layout),
+			layout.Rigid(thread4btn.Layout),
 		)
 	}
 
@@ -97,7 +97,7 @@ func (ip *InstrumentProperties) layout(gtx C) D {
 			soloBtn := ToggleIconBtn(tr.Solo(), tr.Theme, ip.soloBtn, icons.ToggleCheckBoxOutlineBlank, icons.ToggleCheckBox, ip.soloHint, ip.unsoloHint)
 			return layoutInstrumentPropertyLine(gtx, "Solo", soloBtn.Layout)
 		case 8:
-			return layoutInstrumentPropertyLine(gtx, "Cores", corebtnline)
+			return layoutInstrumentPropertyLine(gtx, "Thread", threadbtnline)
 		case 10:
 			return layout.UniformInset(unit.Dp(6)).Layout(gtx, func(gtx C) D {
 				return ip.commentEditor.Layout(gtx, tr.InstrumentComment(), tr.Theme, &tr.Theme.InstrumentEditor.InstrumentComment, "Comment")
@@ -112,7 +112,7 @@ func (ip *InstrumentProperties) layout(gtx C) D {
 
 func layoutInstrumentPropertyLine(gtx C, text string, content layout.Widget) D {
 	tr := TrackerFromContext(gtx)
-	gtx.Constraints.Max.X = min(gtx.Dp(unit.Dp(200)), gtx.Constraints.Max.X)
+	gtx.Constraints.Max.X = min(gtx.Dp(300), gtx.Constraints.Max.X)
 	label := Label(tr.Theme, &tr.Theme.InstrumentEditor.Properties.Label, text)
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(layout.Spacer{Width: 6, Height: 36}.Layout),

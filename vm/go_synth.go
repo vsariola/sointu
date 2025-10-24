@@ -95,8 +95,8 @@ success:
 	f.Read(su_sample_table[:])
 }
 
-func (s GoSynther) Name() string              { return "Go" }
-func (s GoSynther) SupportsParallelism() bool { return false }
+func (s GoSynther) Name() string                 { return "Go" }
+func (s GoSynther) SupportsMultithreading() bool { return false }
 
 func (s GoSynther) Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	bytecode, err := NewBytecode(patch, AllFeatures{}, bpm)
@@ -120,12 +120,12 @@ func (s *GoSynth) Release(voiceIndex int) {
 
 func (s *GoSynth) Close() {}
 
-func (s *GoSynth) NumCores() int { return 1 }
-func (s *GoSynth) CPULoad(loads []sointu.CPULoad) {
+func (s *GoSynth) CPULoad(loads []sointu.CPULoad) int {
 	if len(loads) < 1 {
-		return
+		return 0
 	}
 	loads[0] = s.cpuLoad
+	return 1
 }
 
 func (s *GoSynth) Update(patch sointu.Patch, bpm int) error {

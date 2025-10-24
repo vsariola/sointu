@@ -41,8 +41,8 @@ type (
 	PlayerStatus struct {
 		SongPos     sointu.SongPos         // the current position in the score
 		VoiceLevels [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
-		NumCores    int
-		CPULoad     [vm.MAX_CORES]sointu.CPULoad // current CPU load of the player, used to adjust the render rate
+		NumThreads  int
+		CPULoad     [vm.MAX_THREADS]sointu.CPULoad // current CPU load of the player, used to adjust the render rate
 	}
 
 	// PlayerProcessContext is the context given to the player when processing
@@ -162,8 +162,7 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		// when the buffer is full, return
 		if len(buffer) == 0 {
 			if p.synth != nil {
-				p.status.NumCores = p.synth.NumCores()
-				p.synth.CPULoad(p.status.CPULoad[:])
+				p.status.NumThreads = p.synth.CPULoad(p.status.CPULoad[:])
 			}
 			p.send(nil)
 			return
