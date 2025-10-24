@@ -9,5 +9,5 @@ import (
 
 func init() {
 	Synthers = append(Synthers, bridge.NativeSynther{})
-	Synthers = append(Synthers, vm.MakeParallelSynther(bridge.NativeSynther{}))
+	Synthers = append(Synthers, vm.MakeMultithreadSynther(bridge.NativeSynther{}))
 }

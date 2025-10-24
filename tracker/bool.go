@@ -1,6 +1,8 @@
 package tracker
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type (
 	Bool struct {
@@ -31,10 +33,10 @@ type (
 	InstrEditor    Model
 	InstrPresets   Model
 	InstrComment   Model
-	Core1          Model
-	Core2          Model
-	Core3          Model
-	Core4          Model
+	Thread1        Model
+	Thread2        Model
+	Thread3        Model
+	Thread4        Model
 )
 
 func MakeBool(valueEnabler interface {
@@ -72,32 +74,33 @@ func (v Bool) Enabled() bool {
 	return v.enabler.Enabled()
 }
 
-// Core methods
+// Thread methods
 
-func (m *Model) getCoresBit(bit int) bool {
+func (m *Model) getThreadsBit(bit int) bool {
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return false
 	}
-	mask := m.d.Song.Patch[m.d.InstrIndex].CoreMaskM1 + 1
+	mask := m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 + 1
 	return mask&(1<<bit) != 0
 }
 
-func (m *Model) setCoresBit(bit int, value bool) {
+func (m *Model) setThreadsBit(bit int, value bool) {
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return
 	}
-	defer (*Model)(m).change("CoreBitMask", PatchChange, MinorChange)()
-	mask := m.d.Song.Patch[m.d.InstrIndex].CoreMaskM1 + 1
+	defer (*Model)(m).change("ThreadBitMask", PatchChange, MinorChange)()
+	mask := m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 + 1
 	if value {
 		mask |= (1 << bit)
 	} else {
 		mask &^= (1 << bit)
 	}
-	m.d.Song.Patch[m.d.InstrIndex].CoreMaskM1 = max(mask-1, 0) // -1 would have all cores disabled, so make that 0 i.e. use core 1 only
-	m.warnAboutCrossCoreSends()
+	m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 = max(mask-1, 0) // -1 would have all cores disabled, so make that 0 i.e. use core 1 only
+	m.warnAboutCrossThreadSends()
+	m.warnNoMultithreadSupport()
 }
 
-func (m *Model) warnAboutCrossCoreSends() {
+func (m *Model) warnAboutCrossThreadSends() {
 	for i, instr := range m.d.Song.Patch {
 		for _, unit := range instr.Units {
 			if unit.Type == "send" {
@@ -109,8 +112,8 @@ func (m *Model) warnAboutCrossCoreSends() {
 				if err != nil {
 					continue
 				}
-				if instr.CoreMaskM1 != m.d.Song.Patch[it].CoreMaskM1 {
-					m.Alerts().AddNamed("CrossCoreSend", fmt.Sprintf("Instrument %d '%s' has a send to instrument %d '%s' but they are not on the same cores, which may cause issues", i+1, instr.Name, it+1, m.d.Song.Patch[it].Name), Warning)
+				if instr.ThreadMaskM1 != m.d.Song.Patch[it].ThreadMaskM1 {
+					m.Alerts().AddNamed("CrossThreadSend", fmt.Sprintf("Instrument %d '%s' has a send to instrument %d '%s' but they are not on the same threads, which may cause issues", i+1, instr.Name, it+1, m.d.Song.Patch[it].Name), Warning)
 					return
 				}
 			}
@@ -118,21 +121,30 @@ func (m *Model) warnAboutCrossCoreSends() {
 	}
 }
 
-func (m *Model) Core1() Bool       { return MakeEnabledBool((*Core1)(m)) }
-func (m *Core1) Value() bool       { return (*Model)(m).getCoresBit(0) }
-func (m *Core1) SetValue(val bool) { (*Model)(m).setCoresBit(0, val) }
+func (m *Model) warnNoMultithreadSupport() {
+	for _, instr := range m.d.Song.Patch {
+		if instr.ThreadMaskM1 > 0 && !m.synthers[m.syntherIndex].SupportsMultithreading() {
+			m.Alerts().AddNamed("NoMultithreadSupport", "The current synth does not support multithreading and the patch was configured to use more than one thread", Warning)
+			return
+		}
+	}
+}
 
-func (m *Model) Core2() Bool       { return MakeEnabledBool((*Core2)(m)) }
-func (m *Core2) Value() bool       { return (*Model)(m).getCoresBit(1) }
-func (m *Core2) SetValue(val bool) { (*Model)(m).setCoresBit(1, val) }
+func (m *Model) Thread1() Bool       { return MakeEnabledBool((*Thread1)(m)) }
+func (m *Thread1) Value() bool       { return (*Model)(m).getThreadsBit(0) }
+func (m *Thread1) SetValue(val bool) { (*Model)(m).setThreadsBit(0, val) }
 
-func (m *Model) Core3() Bool       { return MakeEnabledBool((*Core3)(m)) }
-func (m *Core3) Value() bool       { return (*Model)(m).getCoresBit(2) }
-func (m *Core3) SetValue(val bool) { (*Model)(m).setCoresBit(2, val) }
+func (m *Model) Thread2() Bool       { return MakeEnabledBool((*Thread2)(m)) }
+func (m *Thread2) Value() bool       { return (*Model)(m).getThreadsBit(1) }
+func (m *Thread2) SetValue(val bool) { (*Model)(m).setThreadsBit(1, val) }
 
-func (m *Model) Core4() Bool       { return MakeEnabledBool((*Core4)(m)) }
-func (m *Core4) Value() bool       { return (*Model)(m).getCoresBit(3) }
-func (m *Core4) SetValue(val bool) { (*Model)(m).setCoresBit(3, val) }
+func (m *Model) Thread3() Bool       { return MakeEnabledBool((*Thread3)(m)) }
+func (m *Thread3) Value() bool       { return (*Model)(m).getThreadsBit(2) }
+func (m *Thread3) SetValue(val bool) { (*Model)(m).setThreadsBit(2, val) }
+
+func (m *Model) Thread4() Bool       { return MakeEnabledBool((*Thread4)(m)) }
+func (m *Thread4) Value() bool       { return (*Model)(m).getThreadsBit(3) }
+func (m *Thread4) SetValue(val bool) { (*Model)(m).setThreadsBit(3, val) }
 
 // Panic methods
 

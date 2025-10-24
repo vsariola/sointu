@@ -22,8 +22,8 @@ type NativeSynth struct {
 	cpuLoad sointu.CPULoad
 }
 
-func (s NativeSynther) Name() string              { return "Native" }
-func (s NativeSynther) SupportsParallelism() bool { return false }
+func (s NativeSynther) Name() string                 { return "Native" }
+func (s NativeSynther) SupportsMultithreading() bool { return false }
 
 func (s NativeSynther) Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	synth, err := Synth(patch, bpm)
@@ -74,12 +74,12 @@ func Synth(patch sointu.Patch, bpm int) (*NativeSynth, error) {
 
 func (s *NativeSynth) Close() {}
 
-func (s *NativeSynth) NumCores() int { return 1 }
-func (s *NativeSynth) CPULoad(loads []sointu.CPULoad) {
+func (s *NativeSynth) CPULoad(loads []sointu.CPULoad) int {
 	if len(loads) < 1 {
-		return
+		return 0
 	}
 	loads[0] = s.cpuLoad
+	return 1
 }
 
 // Render renders until the buffer is full or the modulated time is reached, whichever

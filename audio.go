@@ -67,11 +67,9 @@ type (
 		// Close disposes the synth, freeing any resources. No other functions should be called after Close.
 		Close()
 
-		// Returns the number of cores the synth is using
-		NumCores() int
-
-		// Populates the given array with the current CPU load of each core
-		CPULoad([]CPULoad)
+		// Populates the given array with the current CPU load of each thread,
+		// returning the number of threads / elements populated
+		CPULoad([]CPULoad) int
 	}
 
 	// Synther compiles a given Patch into a Synth, throwing errors if the
@@ -79,7 +77,7 @@ type (
 	Synther interface {
 		Name() string // Name of the synther, e.g. "Go" or "Native"
 		Synth(patch Patch, bpm int) (Synth, error)
-		SupportsParallelism() bool
+		SupportsMultithreading() bool
 	}
 
 	CPULoad float32
