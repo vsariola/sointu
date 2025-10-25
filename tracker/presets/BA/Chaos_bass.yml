@@ -69,4 +69,4 @@ units:
       parameters: {stereo: 1}
     - type: outaux
       id: 1525
-      parameters: {auxgain: 19, outgain: 33, stereo: 1}
+      parameters: {auxgain: 0, outgain: 33, stereo: 1}

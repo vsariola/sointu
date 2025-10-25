@@ -41,10 +41,7 @@ units:
       comment: Effects & output
     - type: filter
       id: 1262
-      parameters: {bandpass: 0, frequency: 76, highpass: 0, lowpass: 1, resonance: 52, stereo: 0}
-    - type: hold
-      id: 1263
-      parameters: {holdfreq: 55, stereo: 0}
+      parameters: {bandpass: -1, frequency: 85, highpass: 0, lowpass: 1, resonance: 102, stereo: 0}
     - type: pan
       id: 1264
       parameters: {panning: 64, stereo: 0}

@@ -17,19 +17,19 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 1246
-      parameters: {color: 116, detune: 64, gain: 64, lfo: 0, phase: 80, shape: 84, stereo: 0, transpose: 64, type: 0, unison: 2}
+      parameters: {color: 83, detune: 64, gain: 64, lfo: 0, phase: 64, shape: 84, stereo: 0, transpose: 64, type: 0, unison: 1}
     - type: oscillator
       id: 1247
-      parameters: {color: 106, detune: 64, gain: 64, lfo: 0, phase: 63, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 1}
+      parameters: {color: 100, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 26, stereo: 0, transpose: 64, type: 1, unison: 2}
     - type: addp
       id: 1248
       parameters: {stereo: 0}
     - type: oscillator
       id: 1249
-      parameters: {color: 67, detune: 64, gain: 59, looplength: 905, loopstart: 6513, phase: 0, samplestart: 1252819, shape: 105, stereo: 0, transpose: 93, type: 4, unison: 0}
+      parameters: {color: 67, detune: 64, gain: 59, looplength: 905, loopstart: 6513, phase: 0, samplestart: 1252819, shape: 101, stereo: 0, transpose: 93, type: 4, unison: 0}
     - type: filter
       id: 1250
-      parameters: {bandpass: 0, frequency: 56, highpass: -1, lowpass: 1, resonance: 94, stereo: 0}
+      parameters: {bandpass: -1, frequency: 55, highpass: -1, lowpass: 1, resonance: 64, stereo: 0}
     - type: addp
       id: 1251
       parameters: {stereo: 0}
@@ -47,10 +47,13 @@ units:
       comment: Filters & output
     - type: filter
       id: 1256
-      parameters: {bandpass: 0, frequency: 28, highpass: 0, lowpass: 1, resonance: 64, stereo: 0}
+      parameters: {bandpass: 0, frequency: 29, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: filter
       id: 1257
-      parameters: {bandpass: -1, frequency: 57, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 57, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+    - type: hold
+      id: 1698
+      parameters: {holdfreq: 64, stereo: 0}
     - type: pan
       id: 1258
       parameters: {panning: 64, stereo: 0}

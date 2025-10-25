@@ -20,46 +20,46 @@ units:
       comment: Main oscillator
     - type: oscillator
       id: 57
-      parameters: {color: 72, detune: 64, gain: 128, looplength: 80, loopstart: 1948, phase: 0, samplestart: 577066, shape: 54, stereo: 1, transpose: 63, type: 4, unison: 0}
-    - type: hold
-      id: 205
-      parameters: {holdfreq: 68, stereo: 1}
+      parameters: {color: 72, detune: 64, gain: 128, looplength: 80, loopstart: 1948, phase: 0, samplestart: 577066, shape: 54, stereo: 0, transpose: 63, type: 4, unison: 0}
     - type: filter
       id: 201
-      parameters: {bandpass: 1, frequency: 55, highpass: 1, lowpass: 0, resonance: 102, stereo: 1}
+      parameters: {bandpass: -1, frequency: 51, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
+    - type: hold
+      id: 205
+      parameters: {holdfreq: 88, stereo: 0}
     - id: 223
       parameters: {}
       comment: Main envelope
     - type: envelope
       id: 51
-      parameters: {attack: 25, decay: 57, gain: 91, release: 62, stereo: 1, sustain: 48}
+      parameters: {attack: 25, decay: 57, gain: 91, release: 62, stereo: 0, sustain: 48}
     - type: mulp
       id: 53
-      parameters: {stereo: 1}
+      parameters: {stereo: 0}
     - id: 224
       parameters: {}
       comment: Noise
     - type: envelope
       id: 206
-      parameters: {attack: 40, decay: 64, gain: 64, release: 64, stereo: 1, sustain: 64}
+      parameters: {attack: 40, decay: 64, gain: 64, release: 64, stereo: 0, sustain: 64}
     - type: noise
       id: 207
-      parameters: {gain: 17, shape: 14, stereo: 1}
+      parameters: {gain: 17, shape: 14, stereo: 0}
     - type: mulp
       id: 208
-      parameters: {stereo: 1}
+      parameters: {stereo: 0}
     - type: filter
       id: 219
-      parameters: {bandpass: 1, frequency: 98, highpass: -1, lowpass: 0, resonance: 128, stereo: 1}
+      parameters: {bandpass: 1, frequency: 98, highpass: -1, lowpass: 0, resonance: 128, stereo: 0}
     - type: addp
       id: 216
-      parameters: {stereo: 1}
+      parameters: {stereo: 0}
     - type: filter
       id: 220
-      parameters: {bandpass: 0, frequency: 67, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
+      parameters: {bandpass: 0, frequency: 67, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: pan
       id: 55
-      parameters: {panning: 75, stereo: 1}
+      parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 56
       parameters: {auxgain: 64, outgain: 64, stereo: 1}

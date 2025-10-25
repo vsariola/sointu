@@ -47,13 +47,7 @@ units:
       parameters: {amount: 86, port: 0, sendpop: 1, stereo: 0, target: 1005, voice: 0}
     - type: filter
       id: 1005
-      parameters: {bandpass: 0, frequency: 31, highpass: -1, lowpass: 0, resonance: 128, stereo: 0}
-    - type: compressor
-      id: 1233
-      parameters: {attack: 0, invgain: 119, ratio: 91, release: 28, stereo: 0, threshold: 38}
-    - type: mulp
-      id: 1234
-      parameters: {stereo: 0}
+      parameters: {bandpass: 1, frequency: 39, highpass: -1, lowpass: 0, resonance: 128, stereo: 0}
     - id: 1238
       parameters: {}
       comment: Delay & output

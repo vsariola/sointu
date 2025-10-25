@@ -1,4 +1,4 @@
-numvoices: 1
+numvoices: 2
 units:
     - id: 216
       parameters: {}
@@ -8,7 +8,7 @@ units:
       parameters: {color: 64, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 2}
     - type: oscillator
       id: 4
-      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1}
+      parameters: {color: 0, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 0}
     - type: addp
       id: 5
       parameters: {stereo: 0}
@@ -17,10 +17,10 @@ units:
       comment: Main envelope
     - type: envelope
       id: 1
-      parameters: {attack: 0, decay: 64, gain: 53, release: 76, stereo: 0, sustain: 64}
+      parameters: {attack: 0, decay: 71, gain: 46, release: 75, stereo: 0, sustain: 64}
     - type: send
       id: 2
-      parameters: {amount: 112, port: 4, sendpop: 0, target: 1}
+      parameters: {amount: 113, port: 4, sendpop: 0, target: 1}
     - type: mulp
       id: 12
       parameters: {stereo: 0}
@@ -29,22 +29,22 @@ units:
       comment: Effects & output
     - type: envelope
       id: 6
-      parameters: {attack: 0, decay: 70, gain: 128, release: 70, stereo: 0, sustain: 18}
+      parameters: {attack: 6, decay: 70, gain: 128, release: 64, stereo: 0, sustain: 0}
     - type: send
       id: 214
-      parameters: {amount: 96, port: 0, sendpop: 0, target: 10}
+      parameters: {amount: 75, port: 0, sendpop: 0, target: 10}
     - type: send
       id: 215
-      parameters: {amount: 96, port: 0, sendpop: 1, target: 11}
+      parameters: {amount: 75, port: 0, sendpop: 1, target: 11}
     - type: filter
       id: 10
-      parameters: {bandpass: 0, frequency: 39, highpass: 0, lowpass: 1, resonance: 74, stereo: 0}
+      parameters: {bandpass: -1, frequency: 24, highpass: 0, lowpass: 1, resonance: 75, stereo: 0}
     - type: filter
       id: 11
-      parameters: {bandpass: 0, frequency: 11, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 35, highpass: 0, lowpass: 1, resonance: 90, stereo: 0}
     - type: pan
       id: 14
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 15
-      parameters: {auxgain: 5, outgain: 24, stereo: 1}
+      parameters: {auxgain: 3, outgain: 29, stereo: 1}

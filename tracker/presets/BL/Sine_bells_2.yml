@@ -7,7 +7,7 @@ units:
       id: 1234
       parameters: {attack: 0, decay: 97, gain: 77, release: 92, stereo: 0, sustain: 30}
     - type: send
-      id: 1235
+      id: 1713
       parameters: {amount: 69, port: 0, sendpop: 1, stereo: 0, target: 1233, voice: 0}
     - type: oscillator
       id: 1231
@@ -20,12 +20,12 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 2
-      parameters: {color: 128, detune: 64, gain: 18, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 0}
+      parameters: {color: 128, detune: 64, gain: 24, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0}
     - type: oscillator
-      id: 1236
-      parameters: {color: 80, detune: 72, gain: 64, phase: 0, shape: 25, stereo: 0, transpose: 64, type: 0, unison: 2}
+      id: 1714
+      parameters: {color: 80, detune: 64, gain: 79, phase: 0, shape: 25, stereo: 0, transpose: 64, type: 0, unison: 1}
     - type: addp
-      id: 1237
+      id: 1715
       parameters: {stereo: 0}
     - id: 1278
       parameters: {}
@@ -40,14 +40,14 @@ units:
       parameters: {}
       comment: Effects & output
     - type: filter
-      id: 1238
-      parameters: {bandpass: 0, frequency: 88, highpass: 0, lowpass: 1, resonance: 81, stereo: 0}
+      id: 1716
+      parameters: {bandpass: 0, frequency: 71, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: hold
       id: 1240
-      parameters: {holdfreq: 60, stereo: 0}
+      parameters: {holdfreq: 66, stereo: 0}
     - type: filter
       id: 1241
-      parameters: {bandpass: 0, frequency: 30, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 50, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
     - type: pan
       id: 5
       parameters: {panning: 64, stereo: 0}
@@ -57,4 +57,4 @@ units:
       varargs: [32, 1, 1, 32]
     - type: outaux
       id: 6
-      parameters: {auxgain: 39, outgain: 34, stereo: 1}
+      parameters: {auxgain: 37, outgain: 33, stereo: 1}

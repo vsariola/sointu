@@ -1,4 +1,4 @@
-numvoices: 1
+numvoices: 2
 units:
     - id: 226
       parameters: {}
@@ -21,12 +21,15 @@ units:
     - type: mulp
       id: 14
       parameters: {stereo: 0}
-    - id: 228
+    - id: 1741
       parameters: {}
       comment: Effects & output
     - type: filter
       id: 15
-      parameters: {bandpass: 0, frequency: 101, highpass: -1, lowpass: 1, resonance: 94, stereo: 0}
+      parameters: {bandpass: 0, frequency: 88, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+    - type: hold
+      id: 1742
+      parameters: {holdfreq: 100, stereo: 0}
     - type: pan
       id: 5
       parameters: {panning: 65, stereo: 0}

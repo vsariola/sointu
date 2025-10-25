@@ -2,10 +2,16 @@ numvoices: 3
 units:
     - type: envelope
       id: 1241
-      parameters: {attack: 22, decay: 72, gain: 96, release: 74, stereo: 0, sustain: 0}
+      parameters: {attack: 22, decay: 73, gain: 96, release: 81, stereo: 0, sustain: 64}
     - type: oscillator
       id: 1242
       parameters: {color: 64, detune: 58, gain: 92, looplength: 74, loopstart: 1528, phase: 0, samplestart: 802728, shape: 64, stereo: 0, transpose: 62, type: 4, unison: 0}
+    - type: filter
+      id: 1714
+      parameters: {bandpass: 0, frequency: 64, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+    - type: hold
+      id: 1713
+      parameters: {holdfreq: 64, stereo: 0}
     - type: mulp
       id: 1243
       parameters: {stereo: 0}

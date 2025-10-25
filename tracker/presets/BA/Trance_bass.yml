@@ -1,0 +1,52 @@
+numvoices: 2
+units:
+    - id: 1351
+      parameters: {}
+      comment: Modulations
+    - type: envelope
+      id: 173
+      parameters: {attack: 0, decay: 70, gain: 128, release: 53, stereo: 0, sustain: 64}
+    - type: send
+      id: 174
+      parameters: {amount: 81, port: 0, sendpop: 0, target: 181}
+    - type: send
+      id: 175
+      parameters: {amount: 103, port: 3, sendpop: 1, target: 179}
+    - id: 1350
+      parameters: {}
+      comment: Main body
+    - type: envelope
+      id: 176
+      parameters: {attack: 0, decay: 0, gain: 64, release: 45, stereo: 0, sustain: 64}
+    - type: oscillator
+      id: 177
+      parameters: {color: 100, detune: 69, gain: 64, lfo: 0, phase: 0, shape: 75, stereo: 0, transpose: 64, type: 0, unison: 1}
+    - type: oscillator
+      id: 179
+      parameters: {color: 65, detune: 54, gain: 64, lfo: 0, phase: 64, shape: 79, stereo: 0, transpose: 76, type: 1, unison: 1}
+    - type: addp
+      id: 178
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 185
+      parameters: {stereo: 0}
+    - type: filter
+      id: 181
+      parameters: {bandpass: 0, frequency: 47, highpass: 0, lowpass: 1, resonance: 95, stereo: 0}
+    - type: filter
+      id: 1698
+      parameters: {bandpass: -1, frequency: 11, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
+    - type: pan
+      id: 183
+      parameters: {panning: 64, stereo: 0}
+    - id: 1344
+      parameters: {}
+    - type: compressor
+      id: 186
+      parameters: {attack: 45, invgain: 64, ratio: 93, release: 50, stereo: 1, threshold: 64}
+    - type: mulp
+      id: 187
+      parameters: {stereo: 1}
+    - type: outaux
+      id: 184
+      parameters: {auxgain: 6, outgain: 36, stereo: 1}
