@@ -426,7 +426,7 @@ var stackUseMonoStereo = map[string][2]StackUse{
 		{},
 	},
 	"sync": {
-		{Inputs: [][]int{{0}}, Modifies: []bool{false}, NumOutputs: 0},
+		{Inputs: [][]int{{0}}, Modifies: []bool{false}, NumOutputs: 1},
 		{},
 	},
 }
