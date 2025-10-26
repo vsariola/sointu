@@ -1,7 +1,7 @@
 comment: |-
     Generic pluck generator
     Use oscillator type, color and shape to alter the sound properties
-numvoices: 2
+numvoices: 1
 units:
     - id: 1713
       parameters: {}
