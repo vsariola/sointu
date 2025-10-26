@@ -1,0 +1,45 @@
+numvoices: 1
+units:
+    - id: 1752
+      parameters: {}
+      comment: Body
+    - type: envelope
+      id: 1741
+      parameters: {attack: 64, decay: 0, gain: 64, release: 64, stereo: 0, sustain: 0}
+    - type: oscillator
+      id: 1742
+      parameters: {color: 128, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 0}
+    - type: mulp
+      id: 1743
+      parameters: {stereo: 0}
+    - id: 1753
+      parameters: {}
+      comment: Output
+    - type: filter
+      id: 1755
+      parameters: {bandpass: -1, frequency: 15, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
+    - type: pan
+      id: 1745
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 1746
+      parameters: {auxgain: 0, outgain: 64, stereo: 1}
+    - id: 1754
+      parameters: {}
+      comment: Modulations
+    - type: loadval
+      id: 1749
+      parameters: {stereo: 0, value: 76}
+      comment: Set to automate boom duration
+    - type: send
+      id: 1750
+      parameters: {amount: 128, port: 0, sendpop: 0, stereo: 0, target: 1741, voice: 0}
+    - type: send
+      id: 1751
+      parameters: {amount: 128, port: 0, sendpop: 1, stereo: 0, target: 1747, voice: 0}
+    - type: envelope
+      id: 1747
+      parameters: {attack: 64, decay: 128, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: send
+      id: 1748
+      parameters: {amount: 39, port: 0, sendpop: 1, stereo: 0, target: 1742, voice: 0}

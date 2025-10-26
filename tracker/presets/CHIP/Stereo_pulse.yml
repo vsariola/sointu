@@ -44,4 +44,4 @@ units:
       varargs: [32, 512]
     - type: outaux
       id: 34
-      parameters: {auxgain: 13, outgain: 21, stereo: 1}
+      parameters: {auxgain: 4, outgain: 21, stereo: 1}

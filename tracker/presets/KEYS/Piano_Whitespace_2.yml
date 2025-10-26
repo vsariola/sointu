@@ -4,7 +4,7 @@ comment: |-
     Source: https://github.com/armak/pbr-whitespace
 
     Relicensed under MIT with permission from noby
-numvoices: 1
+numvoices: 3
 units:
     - type: envelope
       id: 166
@@ -41,13 +41,10 @@ units:
       parameters: {}
     - type: filter
       id: 178
-      parameters: {bandpass: 0, frequency: 19, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 33, highpass: 1, lowpass: 0, resonance: 128, stereo: 0}
     - type: filter
       id: 180
-      parameters: {bandpass: 0, frequency: 38, highpass: 1, lowpass: 1, resonance: 128, stereo: 0}
-    - type: hold
-      id: 183
-      parameters: {holdfreq: 101, stereo: 0}
+      parameters: {bandpass: 1, frequency: 94, highpass: 1, lowpass: 1, resonance: 68, stereo: 0}
     - id: 184
       parameters: {}
     - type: pan
@@ -55,4 +52,4 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 186
-      parameters: {auxgain: 43, outgain: 84, stereo: 1}
+      parameters: {auxgain: 10, outgain: 64, stereo: 1}

@@ -1,57 +1,57 @@
-numvoices: 1
+numvoices: 2
 units:
-    - id: 1274
+    - id: 1280
       parameters: {}
       comment: Modulations
     - type: envelope
-      id: 1269
+      id: 1281
       parameters: {attack: 0, decay: 90, gain: 77, release: 92, stereo: 0, sustain: 30}
     - type: send
-      id: 1270
-      parameters: {amount: 75, port: 0, sendpop: 1, stereo: 0, target: 1268, voice: 0}
+      id: 1282
+      parameters: {amount: 75, port: 0, sendpop: 1, stereo: 0, target: 1284, voice: 0}
     - type: oscillator
-      id: 1267
-      parameters: {color: 128, detune: 64, gain: 84, phase: 0, shape: 64, stereo: 0, transpose: 92, type: 0}
+      id: 1283
+      parameters: {color: 128, detune: 64, gain: 64, phase: 0, shape: 43, stereo: 0, transpose: 83, type: 0}
     - type: send
-      id: 1268
-      parameters: {amount: 72, port: 6, sendpop: 1, stereo: 0, target: 1258, voice: 0}
-    - id: 1272
+      id: 1284
+      parameters: {amount: 70, port: 6, sendpop: 1, stereo: 0, target: 1286, voice: 0}
+    - id: 1285
       parameters: {}
       comment: Main oscillators
     - type: oscillator
-      id: 1258
-      parameters: {color: 128, detune: 64, gain: 23, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0}
+      id: 1286
+      parameters: {color: 64, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
     - type: oscillator
-      id: 1259
-      parameters: {color: 128, detune: 56, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 0, unison: 2}
+      id: 1287
+      parameters: {color: 45, detune: 62, gain: 81, phase: 0, shape: 86, stereo: 0, transpose: 76, type: 0, unison: 2}
     - type: addp
-      id: 1260
+      id: 1288
       parameters: {stereo: 0}
-    - id: 1273
+    - id: 1289
       parameters: {}
       comment: Main envelope
     - type: envelope
-      id: 1257
-      parameters: {attack: 22, decay: 74, gain: 46, release: 87, stereo: 0, sustain: 41}
+      id: 1290
+      parameters: {attack: 14, decay: 77, gain: 46, release: 87, stereo: 0, sustain: 39}
     - type: mulp
-      id: 1261
+      id: 1291
       parameters: {stereo: 0}
-    - id: 1275
+    - id: 1292
       parameters: {}
       comment: Effects & output
     - type: filter
-      id: 1262
-      parameters: {bandpass: 0, frequency: 76, highpass: 0, lowpass: 1, resonance: 52, stereo: 0}
+      id: 1293
+      parameters: {bandpass: 1, frequency: 64, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: hold
-      id: 1263
-      parameters: {holdfreq: 55, stereo: 0}
+      id: 1297
+      parameters: {holdfreq: 100, stereo: 0}
     - type: pan
-      id: 1264
+      id: 1294
       parameters: {panning: 64, stereo: 0}
     - type: delay
-      id: 1265
-      parameters: {damp: 0, dry: 128, feedback: 70, notetracking: 2, pregain: 40, stereo: 1}
-      varargs: [32, 1, 1, 32]
+      id: 1295
+      parameters: {damp: 0, dry: 64, feedback: 65, notetracking: 2, pregain: 65, stereo: 1}
+      varargs: [32, 1, 36, 24]
     - type: outaux
-      id: 1266
-      parameters: {auxgain: 39, outgain: 34, stereo: 1}
+      id: 1296
+      parameters: {auxgain: 41, outgain: 65, stereo: 1}

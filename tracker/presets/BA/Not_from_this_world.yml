@@ -5,71 +5,77 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 6
-      parameters: {color: 56, detune: 67, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 40, type: 1}
+      parameters: {color: 64, detune: 85, gain: 128, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 40, type: 1}
     - type: send
       id: 202
-      parameters: {amount: 112, port: 2, sendpop: 0, target: 203}
+      parameters: {amount: 106, port: 2, sendpop: 0, target: 203}
     - type: oscillator
       id: 203
-      parameters: {color: 128, detune: 77, gain: 128, lfo: 0, phase: 0, shape: 124, stereo: 0, transpose: 68, type: 0}
+      parameters: {color: 64, detune: 70, gain: 128, lfo: 0, phase: 0, shape: 114, stereo: 0, transpose: 68, type: 0}
     - type: oscillator
       id: 204
-      parameters: {color: 128, detune: 72, gain: 128, lfo: 0, phase: 0, shape: 124, stereo: 0, transpose: 64, type: 0}
+      parameters: {color: 128, detune: 75, gain: 128, lfo: 0, phase: 0, shape: 119, stereo: 0, transpose: 76, type: 0}
     - type: mulp
-      id: 10
+      id: 1242
       parameters: {stereo: 0}
     - type: mulp
-      id: 11
+      id: 1243
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1254
+      parameters: {color: 128, detune: 64, gain: 48, phase: 0, shape: 87, stereo: 0, transpose: 52, type: 0, unison: 1}
+    - type: addp
+      id: 1255
       parameters: {stereo: 0}
     - id: 207
       parameters: {}
       comment: Modulated filters
     - type: oscillator
-      id: 2
-      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 88, shape: 64, stereo: 0, transpose: 17, type: 0}
+      id: 1244
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 85, shape: 64, stereo: 0, transpose: 16, type: 0}
     - type: send
       id: 3
-      parameters: {amount: 72, port: 0, sendpop: 0, target: 13}
+      parameters: {amount: 72, port: 0, sendpop: 0, target: 1246}
     - type: send
       id: 4
-      parameters: {amount: 48, port: 0, sendpop: 1, target: 15}
+      parameters: {amount: 38, port: 0, sendpop: 1, target: 1248}
     - type: push
-      id: 12
+      id: 1245
       parameters: {stereo: 0}
     - type: filter
-      id: 13
-      parameters: {bandpass: 1, frequency: 32, highpass: 0, lowpass: 0, resonance: 64, stereo: 0}
+      id: 1246
+      parameters: {bandpass: 1, frequency: 52, highpass: 0, lowpass: 1, resonance: 48, stereo: 0}
     - type: xch
-      id: 14
+      id: 1247
       parameters: {stereo: 0}
     - type: filter
-      id: 15
-      parameters: {bandpass: 1, frequency: 96, highpass: 0, lowpass: 0, resonance: 79, stereo: 0}
+      id: 1248
+      parameters: {bandpass: -1, frequency: 64, highpass: 0, lowpass: 1, resonance: 44, stereo: 0}
     - type: addp
-      id: 16
+      id: 1249
       parameters: {stereo: 0}
     - type: filter
-      id: 17
-      parameters: {bandpass: 0, frequency: 19, highpass: 1, lowpass: 0, resonance: 37, stereo: 0}
+      id: 1250
+      parameters: {bandpass: -1, frequency: 10, highpass: -1, lowpass: 1, resonance: 59, stereo: 0}
     - id: 206
       parameters: {}
       comment: Main envelope
     - type: envelope
-      id: 1
+      id: 1251
       parameters: {attack: 0, decay: 88, gain: 128, release: 6, stereo: 0, sustain: 128}
     - type: mulp
-      id: 1241
+      id: 1252
       parameters: {stereo: 0}
     - id: 205
       parameters: {}
       comment: Effects & output
     - type: pan
-      id: 1242
+      id: 1253
       parameters: {panning: 64, stereo: 0}
     - type: delay
       id: 20
-      parameters: {damp: 64, dry: 64, feedback: 64, notetracking: 2, pregain: 64, stereo: 1}
+      parameters: {damp: 64, dry: 65, feedback: 64, notetracking: 2, pregain: 66, stereo: 1}
       varargs: [24, 48]
     - type: outaux
       id: 24
-      parameters: {auxgain: 11, outgain: 27, stereo: 1}
+      parameters: {auxgain: 13, outgain: 13, stereo: 1}

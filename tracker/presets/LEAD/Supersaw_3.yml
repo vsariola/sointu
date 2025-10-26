@@ -1,62 +1,69 @@
-comment: Automate filter frequency for the classic trance sound
-numvoices: 1
+comment: Try lower octaves for epic sound
+numvoices: 3
 units:
     - id: 231
       parameters: {}
+      comment: Modulations
+    - id: 232
+      parameters: {}
       comment: Right
     - type: oscillator
-      id: 229
-      parameters: {color: 128, detune: 100, gain: 64, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+      id: 2
+      parameters: {color: 128, detune: 30, gain: 64, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
     - type: oscillator
-      id: 12
-      parameters: {color: 128, detune: 27, gain: 64, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+      id: 1741
+      parameters: {color: 128, detune: 80, gain: 64, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
     - type: addp
-      id: 1209
+      id: 1742
       parameters: {stereo: 0}
     - type: envelope
-      id: 228
-      parameters: {attack: 1, decay: 0, gain: 64, release: 64, stereo: 0, sustain: 85}
+      id: 1
+      parameters: {attack: 27, decay: 64, gain: 64, release: 64, stereo: 0, sustain: 128}
     - type: mulp
-      id: 16
+      id: 17
       parameters: {stereo: 0}
-    - id: 230
+    - id: 18
       parameters: {}
       comment: Left
     - type: oscillator
-      id: 1241
-      parameters: {color: 128, detune: 31, gain: 64, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+      id: 14
+      parameters: {color: 128, detune: 110, gain: 64, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
     - type: oscillator
-      id: 1242
-      parameters: {color: 128, detune: 96, gain: 64, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+      id: 13
+      parameters: {color: 128, detune: 29, gain: 64, phase: 32, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
     - type: addp
-      id: 20
+      id: 28
       parameters: {stereo: 0}
     - type: envelope
-      id: 1243
-      parameters: {attack: 18, decay: 67, gain: 64, release: 64, stereo: 0, sustain: 99}
+      id: 12
+      parameters: {attack: 27, decay: 64, gain: 64, release: 64, stereo: 0, sustain: 128}
     - type: mulp
-      id: 23
+      id: 26
       parameters: {stereo: 0}
-    - id: 31
+    - id: 233
       parameters: {}
       comment: Effects & output
-    - type: delay
-      id: 24
-      parameters: {damp: 0, dry: 0, feedback: 0, notetracking: 0, pregain: 128, stereo: 0}
-      varargs: [350]
     - type: filter
-      id: 26
-      parameters: {bandpass: 0, frequency: 128, highpass: 0, lowpass: 1, resonance: 77, stereo: 1}
-    - type: compressor
-      id: 27
-      parameters: {attack: 9, invgain: 128, ratio: 86, release: 59, stereo: 1, threshold: 47}
-    - type: mulp
-      id: 28
-      parameters: {stereo: 1}
+      id: 19
+      parameters: {bandpass: 0, frequency: 128, highpass: 0, lowpass: 1, resonance: 100, stereo: 1}
+    - type: pan
+      id: 50
+      parameters: {panning: 64, stereo: 1}
     - type: delay
-      id: 1244
-      parameters: {damp: 91, dry: 64, feedback: 36, notetracking: 2, pregain: 25, stereo: 1}
+      id: 51
+      parameters: {damp: 91, dry: 128, feedback: 96, notetracking: 2, pregain: 65, stereo: 1}
       varargs: [36, 41]
     - type: outaux
-      id: 1245
-      parameters: {auxgain: 5, outgain: 16, stereo: 1}
+      id: 6
+      parameters: {auxgain: 0, outgain: 26, stereo: 1}
+    - id: 230
+      parameters: {}
+      comment: Filter modulation
+    - type: envelope
+      id: 20
+      parameters: {attack: 71, decay: 85, gain: 64, release: 64, stereo: 0, sustain: 0}
+    - type: send
+      id: 21
+      parameters: {amount: 7, port: 0, sendpop: 1, stereo: 0, target: 19, voice: 0}
+    - id: 29
+      parameters: {}

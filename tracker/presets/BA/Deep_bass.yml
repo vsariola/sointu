@@ -2,31 +2,28 @@ numvoices: 2
 units:
     - type: envelope
       id: 160
-      parameters: {attack: 32, decay: 0, gain: 80, release: 64, stereo: 0, sustain: 128}
+      parameters: {attack: 34, decay: 0, gain: 82, release: 64, stereo: 0, sustain: 128}
     - type: push
       id: 161
       parameters: {stereo: 0}
     - type: oscillator
       id: 162
-      parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 32, shape: 42, stereo: 0, transpose: 52, type: 1, unison: 0}
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 8, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
     - type: addp
       id: 163
       parameters: {stereo: 0}
     - type: oscillator
       id: 164
-      parameters: {color: 128, detune: 69, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 0, unison: 0}
+      parameters: {color: 128, detune: 54, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
     - type: addp
       id: 165
       parameters: {stereo: 0}
     - type: mulp
       id: 166
       parameters: {stereo: 0}
-    - type: send
-      id: 167
-      parameters: {amount: 48, port: 0, sendpop: 0, target: 168}
     - type: pan
       id: 168
-      parameters: {panning: 80, stereo: 0}
+      parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 169
-      parameters: {auxgain: 4, outgain: 28, stereo: 1}
+      parameters: {auxgain: 0, outgain: 36, stereo: 1}

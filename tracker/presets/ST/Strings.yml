@@ -1,4 +1,4 @@
-numvoices: 1
+numvoices: 3
 units:
     - id: 224
       parameters: {}
@@ -51,12 +51,9 @@ units:
     - id: 227
       parameters: {}
       comment: Effects & output
-    - type: hold
-      id: 223
-      parameters: {holdfreq: 75, stereo: 1}
     - type: filter
       id: 45
-      parameters: {bandpass: 1, frequency: 112, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
+      parameters: {bandpass: 1, frequency: 100, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
     - type: outaux
       id: 23
       parameters: {auxgain: 15, outgain: 19, stereo: 1}

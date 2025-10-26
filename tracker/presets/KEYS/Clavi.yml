@@ -1,20 +1,20 @@
 numvoices: 1
 units:
     - type: envelope
-      id: 1224
+      id: 1741
       parameters: {attack: 0, decay: 64, gain: 70, release: 46, stereo: 1, sustain: 38}
     - type: oscillator
-      id: 1225
+      id: 1742
       parameters: {color: 64, detune: 68, gain: 78, looplength: 84, loopstart: 290, phase: 0, samplestart: 401297, shape: 82, stereo: 1, transpose: 76, type: 4, unison: 1}
     - type: mulp
-      id: 1226
+      id: 1743
       parameters: {stereo: 1}
     - type: pan
-      id: 1227
+      id: 1744
       parameters: {panning: 64, stereo: 1}
     - type: filter
       id: 1058
-      parameters: {bandpass: 0, frequency: 87, highpass: -1, lowpass: 1, resonance: 93, stereo: 1}
+      parameters: {bandpass: -1, frequency: 50, highpass: -1, lowpass: 1, resonance: 69, stereo: 1}
     - type: outaux
-      id: 1228
+      id: 1745
       parameters: {auxgain: 8, outgain: 64, stereo: 1}

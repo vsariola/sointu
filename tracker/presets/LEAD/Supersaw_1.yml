@@ -1,15 +1,15 @@
 comment: Automate filter frequency for the classic trance sound
 numvoices: 5
 units:
-    - id: 1157
+    - id: 1741
       parameters: {}
       comment: Right
     - type: oscillator
       id: 1099
-      parameters: {color: 128, detune: 96, gain: 64, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+      parameters: {color: 128, detune: 80, gain: 64, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
     - type: oscillator
       id: 12
-      parameters: {color: 128, detune: 77, gain: 80, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+      parameters: {color: 128, detune: 98, gain: 64, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
     - type: addp
       id: 1180
       parameters: {stereo: 0}
@@ -19,15 +19,15 @@ units:
     - type: mulp
       id: 1181
       parameters: {stereo: 0}
-    - id: 1158
+    - id: 1742
       parameters: {}
       comment: Left
     - type: oscillator
       id: 18
-      parameters: {color: 128, detune: 46, gain: 81, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+      parameters: {color: 128, detune: 40, gain: 64, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
     - type: oscillator
       id: 19
-      parameters: {color: 128, detune: 38, gain: 76, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+      parameters: {color: 128, detune: 26, gain: 64, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
     - type: addp
       id: 20
       parameters: {stereo: 0}
@@ -46,16 +46,16 @@ units:
       varargs: [420]
     - type: filter
       id: 26
-      parameters: {bandpass: 0, frequency: 115, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
+      parameters: {bandpass: 0, frequency: 128, highpass: 0, lowpass: 1, resonance: 100, stereo: 1}
     - type: compressor
       id: 27
-      parameters: {attack: 15, invgain: 70, ratio: 79, release: 5, stereo: 1, threshold: 39}
+      parameters: {attack: 15, invgain: 63, ratio: 79, release: 23, stereo: 1, threshold: 59}
     - type: mulp
       id: 28
       parameters: {stereo: 1}
     - type: delay
       id: 29
-      parameters: {damp: 91, dry: 43, feedback: 36, notetracking: 2, pregain: 25, stereo: 1}
+      parameters: {damp: 91, dry: 64, feedback: 22, notetracking: 2, pregain: 33, stereo: 1}
       varargs: [36, 41]
     - id: 1159
       parameters: {}

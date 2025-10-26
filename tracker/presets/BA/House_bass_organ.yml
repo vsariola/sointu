@@ -1,19 +1,28 @@
-numvoices: 1
+numvoices: 2
 units:
     - id: 235
       parameters: {}
       comment: Main oscillators & envelope
     - type: envelope
       id: 236
-      parameters: {attack: 37, decay: 74, gain: 78, release: 44, stereo: 0, sustain: 49}
+      parameters: {attack: 11, decay: 70, gain: 37, release: 64, stereo: 0, sustain: 64}
+    - type: send
+      id: 1700
+      parameters: {amount: 93, port: 4, sendpop: 0, stereo: 0, target: 236, voice: 0}
     - type: oscillator
       id: 237
-      parameters: {color: 64, detune: 54, gain: 128, phase: 0, shape: 64, stereo: 0, transpose: 40, type: 1, unison: 3}
+      parameters: {color: 100, detune: 64, gain: 100, phase: 64, shape: 64, stereo: 0, transpose: 40, type: 0, unison: 2}
     - type: oscillator
       id: 238
-      parameters: {color: 64, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 71, type: 2, unison: 0}
+      parameters: {color: 64, detune: 64, gain: 90, phase: 0, shape: 64, stereo: 0, transpose: 71, type: 2, unison: 0}
     - type: addp
       id: 239
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1701
+      parameters: {color: 76, detune: 64, gain: 80, phase: 32, shape: 64, stereo: 0, transpose: 64, type: 2, unison: 0}
+    - type: addp
+      id: 1702
       parameters: {stereo: 0}
     - type: mulp
       id: 240
@@ -23,43 +32,22 @@ units:
       comment: Effects
     - type: envelope
       id: 242
-      parameters: {attack: 0, decay: 72, gain: 76, release: 45, stereo: 0, sustain: 47}
+      parameters: {attack: 33, decay: 74, gain: 105, release: 64, stereo: 0, sustain: 46}
     - type: send
       id: 243
-      parameters: {amount: 128, port: 0, sendpop: 1, stereo: 0, target: 244, voice: 0}
+      parameters: {amount: 104, port: 0, sendpop: 1, stereo: 0, target: 244, voice: 0}
     - type: filter
       id: 244
-      parameters: {bandpass: 0, frequency: 0, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
-    - type: filter
-      id: 245
-      parameters: {bandpass: 0, frequency: 66, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: 0, frequency: 5, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: distort
       id: 246
-      parameters: {drive: 86, stereo: 0}
+      parameters: {drive: 75, stereo: 0}
+    - type: filter
+      id: 245
+      parameters: {bandpass: -1, frequency: 11, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
     - id: 247
       parameters: {}
       comment: Noise
-    - type: envelope
-      id: 248
-      parameters: {attack: 32, decay: 53, gain: 64, release: 5, stereo: 0, sustain: 0}
-    - type: noise
-      id: 249
-      parameters: {gain: 68, shape: 56, stereo: 0}
-    - type: mulp
-      id: 250
-      parameters: {stereo: 0}
-    - type: loadnote
-      id: 226
-      parameters: {stereo: 0}
-    - type: send
-      id: 227
-      parameters: {amount: 72, port: 0, sendpop: 1, stereo: 0, target: 251, voice: 0}
-    - type: filter
-      id: 251
-      parameters: {bandpass: -1, frequency: 67, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
-    - type: addp
-      id: 252
-      parameters: {stereo: 0}
     - id: 253
       parameters: {}
       comment: Effects & output

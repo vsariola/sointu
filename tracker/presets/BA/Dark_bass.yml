@@ -1,11 +1,11 @@
-numvoices: 1
+numvoices: 2
 units:
     - id: 184
       parameters: {}
       comment: Modulations
     - type: oscillator
       id: 3
-      parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 0}
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 20, stereo: 0, transpose: 52, type: 0, unison: 0}
     - type: send
       id: 4
       parameters: {amount: 96, port: 3, sendpop: 1, target: 6}
@@ -14,10 +14,10 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 6
-      parameters: {color: 64, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 127, stereo: 0, transpose: 40, type: 1}
+      parameters: {color: 64, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 127, stereo: 0, transpose: 50, type: 1}
     - type: oscillator
       id: 2
-      parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2}
+      parameters: {color: 66, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 2}
     - type: mulp
       id: 181
       parameters: {stereo: 0}
@@ -26,7 +26,7 @@ units:
       comment: Main envelope
     - type: envelope
       id: 1
-      parameters: {attack: 0, decay: 64, gain: 128, release: 64, stereo: 0, sustain: 64}
+      parameters: {attack: 25, decay: 64, gain: 128, release: 64, stereo: 0, sustain: 92}
     - type: mulp
       id: 183
       parameters: {stereo: 0}
@@ -35,14 +35,18 @@ units:
       comment: Effects & output
     - type: filter
       id: 182
-      parameters: {bandpass: 0, frequency: 48, highpass: 0, lowpass: 1, resonance: 48, stereo: 0}
+      parameters: {bandpass: 0, frequency: 20, highpass: 0, lowpass: 1, resonance: 127, stereo: 0}
+      comment: Try opening filter for more highs
+    - type: hold
+      id: 1698
+      parameters: {holdfreq: 64, stereo: 0}
     - type: pan
       id: 10
       parameters: {panning: 64, stereo: 0}
     - type: delay
       id: 11
-      parameters: {damp: 64, dry: 63, feedback: 64, notetracking: 0, pregain: 0, stereo: 1}
-      varargs: [1024, 1024]
+      parameters: {damp: 0, dry: 0, feedback: 0, notetracking: 0, pregain: 128, stereo: 1}
+      varargs: [1, 879]
     - type: outaux
       id: 15
-      parameters: {auxgain: 8, outgain: 31, stereo: 1}
+      parameters: {auxgain: 0, outgain: 28, stereo: 1}

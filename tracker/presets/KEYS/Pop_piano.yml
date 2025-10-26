@@ -9,6 +9,12 @@ units:
     - type: mulp
       id: 1243
       parameters: {stereo: 1}
+    - type: filter
+      id: 1741
+      parameters: {bandpass: 0, frequency: 93, highpass: 0, lowpass: 1, resonance: 113, stereo: 1}
+    - type: hold
+      id: 1742
+      parameters: {holdfreq: 91, stereo: 1}
     - type: pan
       id: 1244
       parameters: {panning: 64, stereo: 1}
