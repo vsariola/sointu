@@ -17,13 +17,13 @@ units:
       comment: Main envelope
     - type: envelope
       id: 163
-      parameters: {attack: 22, decay: 44, gain: 64, release: 78, stereo: 0, sustain: 88}
+      parameters: {attack: 22, decay: 64, gain: 64, release: 84, stereo: 0, sustain: 88}
     - type: mulp
       id: 167
       parameters: {stereo: 0}
     - type: filter
       id: 1714
-      parameters: {bandpass: -1, frequency: 71, highpass: 1, lowpass: 1, resonance: 98, stereo: 0}
+      parameters: {bandpass: -1, frequency: 128, highpass: 1, lowpass: 1, resonance: 128, stereo: 0}
     - type: hold
       id: 1713
       parameters: {holdfreq: 110, stereo: 0}

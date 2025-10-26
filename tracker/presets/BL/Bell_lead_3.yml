@@ -1,17 +1,11 @@
-numvoices: 1
+numvoices: 2
 units:
     - id: 1011
       parameters: {}
       comment: Main envelope
     - type: envelope
       id: 163
-      parameters: {attack: 34, decay: 102, gain: 64, release: 78, stereo: 0, sustain: 47}
-    - type: envelope
-      id: 228
-      parameters: {attack: 0, decay: 84, gain: 64, release: 84, stereo: 0, sustain: 25}
-    - type: mulp
-      id: 229
-      parameters: {stereo: 0}
+      parameters: {attack: 28, decay: 89, gain: 64, release: 85, stereo: 0, sustain: 64}
     - id: 1012
       parameters: {}
       comment: Main oscillators

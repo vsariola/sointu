@@ -1,11 +1,11 @@
-numvoices: 1
+numvoices: 2
 units:
     - id: 1005
       parameters: {}
       comment: Main oscillators
     - type: oscillator
       id: 165
-      parameters: {color: 97, detune: 70, gain: 31, lfo: 0, phase: 0, shape: 86, stereo: 0, transpose: 76, type: 2, unison: 2}
+      parameters: {color: 46, detune: 70, gain: 31, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 2, unison: 2}
     - type: oscillator
       id: 1002
       parameters: {color: 72, detune: 69, gain: 64, looplength: 821, loopstart: 2374, phase: 0, samplestart: 557335, shape: 103, stereo: 0, transpose: 67, type: 4, unison: 1}
@@ -17,7 +17,7 @@ units:
       comment: Main envelope
     - type: envelope
       id: 163
-      parameters: {attack: 34, decay: 81, gain: 68, release: 78, stereo: 0, sustain: 103}
+      parameters: {attack: 0, decay: 81, gain: 64, release: 82, stereo: 0, sustain: 103}
     - type: mulp
       id: 167
       parameters: {stereo: 0}
@@ -26,7 +26,7 @@ units:
       comment: Delay & output
     - type: pan
       id: 168
-      parameters: {panning: 59, stereo: 0}
+      parameters: {panning: 64, stereo: 0}
     - type: delay
       id: 169
       parameters: {damp: 12, dry: 103, feedback: 84, notetracking: 0, pregain: 69, stereo: 1}

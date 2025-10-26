@@ -74,8 +74,8 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: delay
       id: 20
-      parameters: {damp: 64, dry: 64, feedback: 64, notetracking: 2, pregain: 64, stereo: 1}
+      parameters: {damp: 64, dry: 65, feedback: 64, notetracking: 2, pregain: 66, stereo: 1}
       varargs: [24, 48]
     - type: outaux
       id: 24
-      parameters: {auxgain: 11, outgain: 27, stereo: 1}
+      parameters: {auxgain: 13, outgain: 13, stereo: 1}
