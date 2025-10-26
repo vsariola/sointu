@@ -13,6 +13,7 @@
 #define SU_LENGTH_IN_PATTERNS   {{.Song.Score.Length}}
 #define SU_LENGTH_IN_ROWS       (SU_LENGTH_IN_PATTERNS*SU_PATTERN_SIZE)
 #define SU_SAMPLES_PER_ROW      (SU_SAMPLE_RATE*60/(SU_BPM*SU_ROWS_PER_BEAT))
+#define SU_NUMTHREADS           {{.Song.Patch.NumThreads}}
 
 {{- if or .RowSync (.HasOp "sync")}}
 {{- if .RowSync}}
@@ -54,7 +55,9 @@ extern "C" {
 {{- if or .RowSync (.HasOp "sync")}}
 #define SU_SYNC
 {{- end}}
-void SU_CALLCONV su_render_song(SUsample *buffer);
+{{- range $index := .Song.Patch.NumThreads}}
+void SU_CALLCONV su_render_song{{if gt $index 0}}{{add1 $index}}{{end}}(SUsample *buffer);
+{{- end}}
 
 {{- if gt (.SampleOffsets | len) 0}}
 void SU_CALLCONV su_load_gmdls();

@@ -13,18 +13,19 @@ import (
 )
 
 type Compiler struct {
-	Template    *template.Template
-	OS          string
-	Arch        string
-	Output16Bit bool
-	RowSync     bool
+	Template          *template.Template
+	OS                string
+	Arch              string
+	Output16Bit       bool
+	RowSync           bool
+	ForceSingleThread bool
 }
 
 //go:embed templates/amd64-386/* templates/wasm/*
 var templateFS embed.FS
 
 // New returns a new compiler using the default .asm templates
-func New(os string, arch string, output16Bit bool, rowsync bool) (*Compiler, error) {
+func New(os string, arch string, output16Bit, rowsync, forceSingleThread bool) (*Compiler, error) {
 	var subdir string
 	if arch == "386" || arch == "amd64" {
 		subdir = "amd64-386"
@@ -37,16 +38,16 @@ func New(os string, arch string, output16Bit bool, rowsync bool) (*Compiler, err
 	if err != nil {
 		return nil, fmt.Errorf(`could not create templates: %v`, err)
 	}
-	return &Compiler{Template: tmpl, OS: os, Arch: arch, RowSync: rowsync, Output16Bit: output16Bit}, nil
+	return &Compiler{Template: tmpl, OS: os, Arch: arch, RowSync: rowsync, Output16Bit: output16Bit, ForceSingleThread: forceSingleThread}, nil
 }
 
-func NewFromTemplates(os string, arch string, output16Bit bool, rowsync bool, templateDirectory string) (*Compiler, error) {
+func NewFromTemplates(os string, arch string, output16Bit, rowsync, forceSingleThread bool, templateDirectory string) (*Compiler, error) {
 	globPtrn := filepath.Join(templateDirectory, "*.*")
 	tmpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).ParseGlob(globPtrn)
 	if err != nil {
 		return nil, fmt.Errorf(`could not create template based on directory "%v": %v`, templateDirectory, err)
 	}
-	return &Compiler{Template: tmpl, OS: os, Arch: arch, RowSync: rowsync, Output16Bit: output16Bit}, nil
+	return &Compiler{Template: tmpl, OS: os, Arch: arch, RowSync: rowsync, Output16Bit: output16Bit, ForceSingleThread: forceSingleThread}, nil
 }
 
 func (com *Compiler) Library() (map[string]string, error) {
@@ -75,13 +76,23 @@ func (com *Compiler) Library() (map[string]string, error) {
 	return retmap, nil
 }
 
-func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
+func (com *Compiler) Song(song sointu.Song) (map[string]string, error) {
 	if com.Arch != "386" && com.Arch != "amd64" && com.Arch != "wasm" {
 		return nil, fmt.Errorf(`compiling a song player is supported only on 386, amd64 and wasm architectures (targeted architecture was %v)`, com.Arch)
 	}
+	if com.ForceSingleThread {
+		song = song.Copy()
+		for i := range song.Patch {
+			song.Patch[i].ThreadMaskM1 = 0 // clear all ThreadMaskM1 to indicate that all instruments are on Thread 1 i.e. force single threaded rendering
+		}
+	}
 	var templates []string
 	if com.Arch == "386" || com.Arch == "amd64" {
-		templates = []string{"player.asm", "player.h", "player.inc"}
+		if song.Patch.NumThreads() > 1 {
+			templates = []string{"multithread_player.asm", "player.h", "player.inc"}
+		} else {
+			templates = []string{"player.asm", "player.h", "player.inc"}
+		}
 	} else if com.Arch == "wasm" {
 		templates = []string{"player.wat"}
 	}
@@ -91,14 +102,14 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf(`could not encode patch: %v`, err)
 	}
-	patterns, sequences, err := ConstructPatterns(song)
+	patterns, sequences, err := ConstructPatterns(&song)
 	if err != nil {
 		return nil, fmt.Errorf(`could not encode song: %v`, err)
 	}
 	for _, templateName := range templates {
 		compilerMacros := *NewCompilerMacros(*com)
 		featureSetMacros := FeatureSetMacros{features}
-		songMacros := *NewSongMacros(song)
+		songMacros := *NewSongMacros(&song)
 		var populatedTemplate, extension string
 		var err error
 		if com.Arch == "386" || com.Arch == "amd64" {

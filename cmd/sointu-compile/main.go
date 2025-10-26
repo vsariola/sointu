@@ -45,6 +45,7 @@ func main() {
 	output16bit := flag.Bool("i", false, "Compiled song should output 16-bit integers, instead of floats.")
 	targetOs := flag.String("os", runtime.GOOS, "Target OS. Defaults to current OS. Possible values: windows, darwin, linux. Anything else is assumed linuxy. Ignored when targeting wasm.")
 	versionFlag := flag.Bool("v", false, "Print version.")
+	forceSingleThread := flag.Bool("f", false, "Force single threaded rendering, even if patch if configured to use multiple threads.")
 	flag.Usage = printUsage
 	flag.Parse()
 	if *versionFlag {
@@ -60,9 +61,9 @@ func main() {
 	if compile || *library {
 		var err error
 		if *tmplDir != "" {
-			comp, err = compiler.NewFromTemplates(*targetOs, *targetArch, *output16bit, *rowsync, *tmplDir)
+			comp, err = compiler.NewFromTemplates(*targetOs, *targetArch, *output16bit, *rowsync, *forceSingleThread, *tmplDir)
 		} else {
-			comp, err = compiler.New(*targetOs, *targetArch, *output16bit, *rowsync)
+			comp, err = compiler.New(*targetOs, *targetArch, *output16bit, *rowsync, *forceSingleThread)
 		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, `error creating compiler: %v`, err)
@@ -143,7 +144,7 @@ func main() {
 		var compiledPlayer map[string]string
 		if compile {
 			var err error
-			compiledPlayer, err = comp.Song(&song)
+			compiledPlayer, err = comp.Song(song)
 			if err != nil {
 				return fmt.Errorf("compiling player failed: %v", err)
 			}

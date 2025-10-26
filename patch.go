@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/bits"
 	"sort"
 	"strconv"
 
@@ -16,12 +17,15 @@ type (
 
 	// Instrument includes a list of units consisting of the instrument, and the number of polyphonic voices for this instrument
 	Instrument struct {
-		Name         string `yaml:",omitempty"`
-		Comment      string `yaml:",omitempty"`
-		NumVoices    int
-		Units        []Unit
-		Mute         bool `yaml:",omitempty"` // Mute is only used in the tracker for soloing/muting instruments; the compiled player ignores this field
-		ThreadMaskM1 int  `yaml:",omitempty"` // ThreadMaskM1 is a bit mask of which cores are used, minus 1. Minus 1 is done so that the default value 0 means bit mask 0b0001 i.e. only core 1 is rendering the instrument.
+		Name      string `yaml:",omitempty"`
+		Comment   string `yaml:",omitempty"`
+		NumVoices int
+		Units     []Unit
+		Mute      bool `yaml:",omitempty"` // Mute is only used in the tracker for soloing/muting instruments; the compiled player ignores this field
+		// ThreadMaskM1 is a bit mask of which threads are used, minus 1. Minus
+		// 1 is done so that the default value 0 means bit mask 0b0001 i.e. only
+		// thread 1 is rendering the instrument.
+		ThreadMaskM1 int `yaml:",omitempty"`
 	}
 
 	// Unit is e.g. a filter, oscillator, envelope and its parameters
@@ -537,6 +541,16 @@ func (p Patch) NumSyncs() int {
 		}
 	}
 	return total
+}
+
+func (p Patch) NumThreads() int {
+	numThreads := 1
+	for _, instr := range p {
+		if l := bits.Len((uint)(instr.ThreadMaskM1 + 1)); l > numThreads {
+			numThreads = l
+		}
+	}
+	return numThreads
 }
 
 // FirstVoiceForInstrument returns the index of the first voice of given

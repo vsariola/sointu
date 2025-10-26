@@ -27,7 +27,7 @@ type (
 	voiceMapping [MAX_THREADS][MAX_VOICES]int
 
 	multithreadSynthCommand struct {
-		core    int
+		thread  int
 		samples int
 		time    int
 	}
@@ -104,7 +104,7 @@ func (s *MultithreadSynth) startProcesses() {
 			for cmd := range commandCh {
 				buffer := s.pool.Get().(*sointu.AudioBuffer)
 				*buffer = append(*buffer, make(sointu.AudioBuffer, cmd.samples)...)
-				samples, time, renderError := s.synths[cmd.core].Render(*buffer, cmd.time)
+				samples, time, renderError := s.synths[cmd.thread].Render(*buffer, cmd.time)
 				resultCh <- multithreadSynthResult{buffer: buffer, samples: samples, time: time, renderError: renderError}
 			}
 		}(cmdChan, resultsChan)
@@ -124,16 +124,16 @@ func (s *MultithreadSynth) closeSynths() {
 }
 
 func (s *MultithreadSynth) Trigger(voiceIndex int, note byte) {
-	for core, synth := range s.synths {
-		if ind := s.voiceMapping[core][voiceIndex]; ind >= 0 {
+	for i, synth := range s.synths {
+		if ind := s.voiceMapping[i][voiceIndex]; ind >= 0 {
 			synth.Trigger(ind, note)
 		}
 	}
 }
 
 func (s *MultithreadSynth) Release(voiceIndex int) {
-	for core, synth := range s.synths {
-		if ind := s.voiceMapping[core][voiceIndex]; ind >= 0 {
+	for i, synth := range s.synths {
+		if ind := s.voiceMapping[i][voiceIndex]; ind >= 0 {
 			synth.Release(ind)
 		}
 	}
@@ -154,7 +154,7 @@ func (s *MultithreadSynth) CPULoad(loads []sointu.CPULoad) (elems int) {
 func (s *MultithreadSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, time int, renderError error) {
 	count := len(s.synths)
 	for i := 0; i < count; i++ {
-		s.commands <- multithreadSynthCommand{core: i, samples: len(buffer), time: maxtime}
+		s.commands <- multithreadSynthCommand{thread: i, samples: len(buffer), time: maxtime}
 	}
 	clear(buffer)
 	samples = math.MaxInt

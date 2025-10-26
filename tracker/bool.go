@@ -95,7 +95,7 @@ func (m *Model) setThreadsBit(bit int, value bool) {
 	} else {
 		mask &^= (1 << bit)
 	}
-	m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 = max(mask-1, 0) // -1 would have all cores disabled, so make that 0 i.e. use core 1 only
+	m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 = max(mask-1, 0) // -1 would have all threads disabled, so make that 0 i.e. use at least thread 1
 	m.warnAboutCrossThreadSends()
 	m.warnNoMultithreadSupport()
 }
