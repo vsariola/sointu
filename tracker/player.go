@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"slices"
-	"time"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
@@ -42,7 +41,8 @@ type (
 	PlayerStatus struct {
 		SongPos     sointu.SongPos         // the current position in the score
 		VoiceLevels [vm.MAX_VOICES]float32 // a level that can be used to visualize the volume of each voice
-		CPULoad     float64                // current CPU load of the player, used to adjust the render rate
+		NumThreads  int
+		CPULoad     [vm.MAX_THREADS]sointu.CPULoad // current CPU load of the player, used to adjust the render rate
 	}
 
 	// PlayerProcessContext is the context given to the player when processing
@@ -97,9 +97,6 @@ func NewPlayer(broker *Broker, synther sointu.Synther) *Player {
 // buffer. It is used to trigger and release notes during processing. The
 // context is also used to get the current BPM from the host.
 func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext) {
-	startTime := time.Now()
-	startFrame := p.frame
-
 	p.processMessages(context)
 	p.events.adjustTimes(p.frameDeltas, p.frame, p.frame+int64(len(buffer)))
 
@@ -127,12 +124,12 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		if p.synth != nil {
 			rendered, timeAdvanced, err = p.synth.Render(buffer[:framesUntilEvent], timeUntilRowAdvance)
 			if err != nil {
-				p.synth = nil
+				p.destroySynth()
 				p.send(Alert{Message: fmt.Sprintf("synth.Render: %s", err.Error()), Priority: Error, Name: "PlayerCrash", Duration: defaultAlertDuration})
 			}
 			// for performance, we don't check for NaN of every sample, because typically NaNs propagate
 			if rendered > 0 && (isNaN(buffer[0][0]) || isNaN(buffer[0][1]) || isInf(buffer[0][0]) || isInf(buffer[0][1])) {
-				p.synth = nil
+				p.destroySynth()
 				p.send(Alert{Message: "Inf or NaN detected in synth output", Priority: Error, Name: "PlayerCrash", Duration: defaultAlertDuration})
 			}
 		} else {
@@ -164,15 +161,24 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 		}
 		// when the buffer is full, return
 		if len(buffer) == 0 {
-			p.updateCPULoad(time.Since(startTime), p.frame-startFrame)
+			if p.synth != nil {
+				p.status.NumThreads = p.synth.CPULoad(p.status.CPULoad[:])
+			}
 			p.send(nil)
 			return
 		}
 	}
 	// we were not able to fill the buffer with NUM_RENDER_TRIES attempts, destroy synth and throw an error
-	p.synth = nil
+	p.destroySynth()
 	p.events = p.events[:0] // clear events, so we don't try to process them again
 	p.SendAlert("PlayerCrash", fmt.Sprintf("synth did not fill the audio buffer even with %d render calls", numRenderTries), Error)
+}
+
+func (p *Player) destroySynth() {
+	if p.synth != nil {
+		p.synth.Close()
+		p.synth = nil
+	}
 }
 
 func (p *Player) advanceRow() {
@@ -227,7 +233,7 @@ loop:
 			switch m := msg.(type) {
 			case PanicMsg:
 				if m.bool {
-					p.synth = nil
+					p.destroySynth()
 				} else {
 					p.compileOrUpdateSynth()
 				}
@@ -283,7 +289,7 @@ loop:
 				}
 			case sointu.Synther:
 				p.synther = m
-				p.synth = nil
+				p.destroySynth()
 				p.compileOrUpdateSynth()
 			default:
 				// ignore unknown messages
@@ -355,7 +361,7 @@ func (p *Player) compileOrUpdateSynth() {
 	if p.synth != nil {
 		err := p.synth.Update(p.song.Patch, p.song.BPM)
 		if err != nil {
-			p.synth = nil
+			p.destroySynth()
 			p.SendAlert("PlayerCrash", fmt.Sprintf("synth.Update: %v", err), Error)
 			return
 		}
@@ -363,7 +369,7 @@ func (p *Player) compileOrUpdateSynth() {
 		var err error
 		p.synth, err = p.synther.Synth(p.song.Patch, p.song.BPM)
 		if err != nil {
-			p.synth = nil
+			p.destroySynth()
 			p.SendAlert("PlayerCrash", fmt.Sprintf("synther.Synth: %v", err), Error)
 			return
 		}
@@ -440,15 +446,4 @@ func (p *Player) processNoteEvent(ev NoteEvent) {
 	p.status.VoiceLevels[oldestVoice] = 1.0
 	p.synth.Trigger(oldestVoice, ev.Note)
 	TrySend(p.broker.ToModel, MsgToModel{TriggerChannel: instrIndex + 1})
-}
-
-func (p *Player) updateCPULoad(duration time.Duration, frames int64) {
-	if frames <= 0 {
-		return // no frames rendered, so cannot compute CPU load
-	}
-	realtime := float64(duration) / 1e9
-	songtime := float64(frames) / 44100
-	newload := realtime / songtime
-	alpha := math.Exp(-songtime) // smoothing factor, time constant of 1 second
-	p.status.CPULoad = float64(p.status.CPULoad)*alpha + newload*(1-alpha)
 }

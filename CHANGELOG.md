@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Multithreaded synths: the user can split the patch up to four threads.
+  Selecting the thread can be done on the instrument properties pane.
+  Multithreading works only on the multithreaded synths, selectable from the CPU
+  panel. Currently the multithreaded rendering has not yet been implemented in
+  the compiled player and the thread information is disregarded while compiling
+  the song. ([#199][i199])
 - Preset explorer, whichs allows 1) searching the presets by name; 2) filtering
   them by category (directory); 3) filtering them by being builtin vs. user;
   4) filtering them if they need gm.dls (for Linux/Mac users, who don't have
@@ -382,6 +388,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i186]: https://github.com/vsariola/sointu/issues/186
 [i192]: https://github.com/vsariola/sointu/issues/192
 [i196]: https://github.com/vsariola/sointu/issues/196
+[i199]: https://github.com/vsariola/sointu/issues/199
 [i200]: https://github.com/vsariola/sointu/issues/200
 [i210]: https://github.com/vsariola/sointu/issues/210
 [i211]: https://github.com/vsariola/sointu/issues/211

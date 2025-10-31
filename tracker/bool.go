@@ -1,5 +1,9 @@
 package tracker
 
+import (
+	"fmt"
+)
+
 type (
 	Bool struct {
 		value   BoolValue
@@ -29,6 +33,10 @@ type (
 	InstrEditor    Model
 	InstrPresets   Model
 	InstrComment   Model
+	Thread1        Model
+	Thread2        Model
+	Thread3        Model
+	Thread4        Model
 )
 
 func MakeBool(valueEnabler interface {
@@ -65,6 +73,78 @@ func (v Bool) Enabled() bool {
 	}
 	return v.enabler.Enabled()
 }
+
+// Thread methods
+
+func (m *Model) getThreadsBit(bit int) bool {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
+		return false
+	}
+	mask := m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 + 1
+	return mask&(1<<bit) != 0
+}
+
+func (m *Model) setThreadsBit(bit int, value bool) {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
+		return
+	}
+	defer (*Model)(m).change("ThreadBitMask", PatchChange, MinorChange)()
+	mask := m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 + 1
+	if value {
+		mask |= (1 << bit)
+	} else {
+		mask &^= (1 << bit)
+	}
+	m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 = max(mask-1, 0) // -1 would have all threads disabled, so make that 0 i.e. use at least thread 1
+	m.warnAboutCrossThreadSends()
+	m.warnNoMultithreadSupport()
+}
+
+func (m *Model) warnAboutCrossThreadSends() {
+	for i, instr := range m.d.Song.Patch {
+		for _, unit := range instr.Units {
+			if unit.Type == "send" {
+				targetID, ok := unit.Parameters["target"]
+				if !ok {
+					continue
+				}
+				it, _, err := m.d.Song.Patch.FindUnit(targetID)
+				if err != nil {
+					continue
+				}
+				if instr.ThreadMaskM1 != m.d.Song.Patch[it].ThreadMaskM1 {
+					m.Alerts().AddNamed("CrossThreadSend", fmt.Sprintf("Instrument %d '%s' has a send to instrument %d '%s' but they are not on the same threads, which may cause issues", i+1, instr.Name, it+1, m.d.Song.Patch[it].Name), Warning)
+					return
+				}
+			}
+		}
+	}
+}
+
+func (m *Model) warnNoMultithreadSupport() {
+	for _, instr := range m.d.Song.Patch {
+		if instr.ThreadMaskM1 > 0 && !m.synthers[m.syntherIndex].SupportsMultithreading() {
+			m.Alerts().AddNamed("NoMultithreadSupport", "The current synth does not support multithreading and the patch was configured to use more than one thread", Warning)
+			return
+		}
+	}
+}
+
+func (m *Model) Thread1() Bool       { return MakeEnabledBool((*Thread1)(m)) }
+func (m *Thread1) Value() bool       { return (*Model)(m).getThreadsBit(0) }
+func (m *Thread1) SetValue(val bool) { (*Model)(m).setThreadsBit(0, val) }
+
+func (m *Model) Thread2() Bool       { return MakeEnabledBool((*Thread2)(m)) }
+func (m *Thread2) Value() bool       { return (*Model)(m).getThreadsBit(1) }
+func (m *Thread2) SetValue(val bool) { (*Model)(m).setThreadsBit(1, val) }
+
+func (m *Model) Thread3() Bool       { return MakeEnabledBool((*Thread3)(m)) }
+func (m *Thread3) Value() bool       { return (*Model)(m).getThreadsBit(2) }
+func (m *Thread3) SetValue(val bool) { (*Model)(m).setThreadsBit(2, val) }
+
+func (m *Model) Thread4() Bool       { return MakeEnabledBool((*Thread4)(m)) }
+func (m *Thread4) Value() bool       { return (*Model)(m).getThreadsBit(3) }
+func (m *Thread4) SetValue(val bool) { (*Model)(m).setThreadsBit(3, val) }
 
 // Panic methods
 

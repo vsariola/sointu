@@ -197,6 +197,7 @@ func TestStackUnderflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
+	defer synth.Close()
 	buffer := make(sointu.AudioBuffer, 1)
 	err = buffer.Fill(synth)
 	if err == nil {
@@ -213,6 +214,7 @@ func TestStackBalancing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bridge compile error: %v", err)
 	}
+	defer synth.Close()
 	buffer := make(sointu.AudioBuffer, 1)
 	err = buffer.Fill(synth)
 	if err == nil {
