@@ -306,7 +306,7 @@ func (m *Model) updateRails() {
 			Name:     "RailError",
 			Message:  m.derived.railError.Error(),
 			Priority: Error,
-			Duration: time.Minute,
+			Duration: time.Second * 10,
 		})
 	} else { // clear the alert if it was set
 		m.Alerts().AddAlert(Alert{Name: "RailError"})
