@@ -290,9 +290,12 @@ func (m *ClearUnit) Enabled() bool {
 }
 func (m *ClearUnit) Do() {
 	defer (*Model)(m).change("DeleteUnitAction", PatchChange, MajorChange)()
-	m.d.UnitIndex = max(min(m.d.UnitIndex, len(m.d.Song.Patch[m.d.InstrIndex].Units)-1), 0)
-	m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex] = sointu.Unit{}
-	m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].ID = (*Model)(m).maxID() + 1
+	l := ((*Model)(m)).Units().List()
+	r := l.listRange()
+	for i := r.Start; i < r.End; i++ {
+		m.d.Song.Patch[m.d.InstrIndex].Units[i] = sointu.Unit{}
+		m.d.Song.Patch[m.d.InstrIndex].Units[i].ID = (*Model)(m).maxID() + 1
+	}
 }
 
 // Undo
