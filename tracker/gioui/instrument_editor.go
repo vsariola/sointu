@@ -90,7 +90,7 @@ func (ie *InstrumentEditor) layout(gtx C) D {
 func (ie *InstrumentEditor) Tags(level int, yield TagYieldFunc) bool {
 	ret := yield(level, ie.dragList) && yield(level+1, &ie.searchEditor.widgetEditor)
 	if ie.searching.Value() {
-		ret = ret && yield(level, ie.searchList) && yield(level+1, &ie.commentEditor.widgetEditor)
+		return ret && yield(level, ie.searchList)
 	}
 	return ret && yield(level+1, ie.paramTable.RowTitleList) && yield(level, ie.paramTable) && yield(level+1, &ie.commentEditor.widgetEditor)
 }
@@ -214,9 +214,6 @@ func (ul *InstrumentEditor) update(gtx C) {
 	}
 	for ul.SelectTypeBtn.Clicked(gtx) {
 		ul.ChooseUnitType(t)
-	}
-	for ul.commentEditor.Update(gtx, t.UnitComment()) != EditorEventNone {
-		t.FocusPrev(gtx, false)
 	}
 	for ul.ClearUnitBtn.Clicked(gtx) {
 		t.ClearUnit().Do()
@@ -370,16 +367,31 @@ func (pe *InstrumentEditor) layoutRack(gtx C) D {
 		param := t.Model.Params().Item(point)
 		paramStyle := Param(param, t.Theme, pe.Parameters[y][x], pe.paramTable.Table.Cursor() == point, t.Units().Item(y).Disabled)
 		paramStyle.Layout(gtx)
-		comment := t.Units().Item(y).Comment
-		if comment != "" && x == t.Model.Params().RowWidth(y) {
-			label := Label(t.Theme, &t.Theme.UnitEditor.RackComment, comment)
-			return layout.W.Layout(gtx, func(gtx C) D {
-				gtx.Constraints.Max.X = 1e6
-				gtx.Constraints.Min.Y = 0
-				return label.Layout(gtx)
-			})
+		if x == t.Model.Params().RowWidth(y) {
+			if y == cursor.Y {
+				return layout.W.Layout(gtx, func(gtx C) D {
+					for pe.commentEditor.Update(gtx, t.UnitComment()) != EditorEventNone {
+						t.FocusPrev(gtx, false)
+					}
+					gtx.Constraints.Max.X = 1e6
+					gtx.Constraints.Min.Y = 0
+					return pe.commentEditor.Layout(gtx, t.UnitComment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "---")
+				})
+			} else {
+				comment := t.Units().Item(y).Comment
+				if comment != "" {
+					style := t.Theme.InstrumentEditor.UnitComment.AsLabelStyle()
+					label := Label(t.Theme, &style, comment)
+					return layout.W.Layout(gtx, func(gtx C) D {
+						gtx.Constraints.Max.X = 1e6
+						gtx.Constraints.Min.Y = 0
+						return label.Layout(gtx)
+					})
+				}
+			}
 		}
 		return D{Size: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}
+
 	}
 	table := FilledScrollTable(t.Theme, pe.paramTable)
 	table.RowTitleWidth = gtx.Metric.PxToDp(rowTitleWidth)
@@ -509,27 +521,15 @@ func mulVec(a, b f32.Point) f32.Point {
 
 func (pe *InstrumentEditor) layoutFooter(gtx C) D {
 	t := TrackerFromContext(gtx)
-	text := "Choose unit type"
-	if !t.UnitSearching().Value() {
-		text = pe.caser.String(t.Units().SelectedType())
-	}
-	hintText := Label(t.Theme, &t.Theme.UnitEditor.Hint, text)
 	deleteUnitBtn := ActionIconBtn(t.DeleteUnit(), t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
 	copyUnitBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
 	disableUnitBtn := ToggleIconBtn(t.UnitDisabled(), t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
 	clearUnitBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(deleteUnitBtn.Layout),
-		layout.Rigid(copyUnitBtn.Layout),
-		layout.Rigid(disableUnitBtn.Layout),
 		layout.Rigid(clearUnitBtn.Layout),
-		layout.Rigid(func(gtx C) D {
-			gtx.Constraints.Min.X = gtx.Dp(130)
-			return hintText.Layout(gtx)
-		}),
-		layout.Flexed(1, func(gtx C) D {
-			return pe.commentEditor.Layout(gtx, t.UnitComment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "Comment")
-		}),
+		layout.Rigid(disableUnitBtn.Layout),
+		layout.Rigid(copyUnitBtn.Layout),
 	)
 }
 
