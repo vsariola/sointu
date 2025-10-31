@@ -117,6 +117,9 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 	cpuSmallLabel := func(gtx C) D {
 		var a [vm.MAX_THREADS]sointu.CPULoad
 		c := tr.Model.CPULoad(a[:])
+		if c < 1 {
+			return D{}
+		}
 		load := slices.Max(a[:c])
 		cpuLabel := Label(tr.Theme, &tr.Theme.SongPanel.RowValue, fmt.Sprintf("%d%%", int(load*100+0.5)))
 		if load >= 1 {
