@@ -28,18 +28,11 @@ import (
 
 type (
 	InstrumentEditor struct {
-		unitList   UnitList
-		unitEditor UnitEditor
-	}
-
-	UnitList struct {
 		dragList      *DragList
 		searchEditor  *Editor
 		addUnitBtn    *Clickable
 		addUnitAction tracker.Action
-	}
 
-	UnitEditor struct {
 		paramTable     *ScrollTable
 		searchList     *DragList
 		Parameters     [][]*ParamState
@@ -59,43 +52,51 @@ type (
 	}
 )
 
-func MakeInstrumentEditor(model *tracker.Model) InstrumentEditor {
-	return InstrumentEditor{
-		unitList:   MakeUnitList(model),
-		unitEditor: *NewUnitEditor(model),
-	}
-}
-
-func (ie *InstrumentEditor) layout(gtx C) D {
-	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-		layout.Rigid(ie.unitList.Layout),
-		layout.Flexed(1, ie.unitEditor.Layout),
-	)
-}
-
-func (ie *InstrumentEditor) Tags(level int, yield TagYieldFunc) bool {
-	return ie.unitList.Tags(level, yield) &&
-		ie.unitEditor.Tags(level, yield)
-}
-
-// UnitList methods
-
-func MakeUnitList(m *tracker.Model) UnitList {
-	ret := UnitList{
-		dragList:     NewDragList(m.Units().List(), layout.Vertical),
-		addUnitBtn:   new(Clickable),
-		searchEditor: NewEditor(true, true, text.Start),
+func NewInstrumentEditor(m *tracker.Model) *InstrumentEditor {
+	ret := &InstrumentEditor{
+		dragList:       NewDragList(m.Units().List(), layout.Vertical),
+		addUnitBtn:     new(Clickable),
+		searchEditor:   NewEditor(true, true, text.Start),
+		DeleteUnitBtn:  new(Clickable),
+		ClearUnitBtn:   new(Clickable),
+		DisableUnitBtn: new(Clickable),
+		CopyUnitBtn:    new(Clickable),
+		SelectTypeBtn:  new(Clickable),
+		commentEditor:  NewEditor(true, true, text.Start),
+		paramTable:     NewScrollTable(m.Params().Table(), m.ParamVertList().List(), m.Units().List()),
+		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
+		searching:      m.UnitSearching(),
 	}
 	ret.addUnitAction = tracker.MakeEnabledAction(tracker.DoFunc(func() {
 		m.AddUnit(false).Do()
 		ret.searchEditor.Focus()
 	}))
+	ret.caser = cases.Title(language.English)
+	ret.copyHint = makeHint("Copy unit", " (%s)", "Copy")
+	ret.disableUnitHint = makeHint("Disable unit", " (%s)", "UnitDisabledToggle")
+	ret.enableUnitHint = makeHint("Enable unit", " (%s)", "UnitDisabledToggle")
 	return ret
+
 }
 
-func (ul *UnitList) Layout(gtx C) D {
+func (ie *InstrumentEditor) layout(gtx C) D {
+	ie.update(gtx)
+	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+		layout.Rigid(ie.layoutList),
+		layout.Flexed(1, ie.layoutTable),
+	)
+}
+
+func (ie *InstrumentEditor) Tags(level int, yield TagYieldFunc) bool {
+	ret := yield(level, ie.dragList) && yield(level+1, &ie.searchEditor.widgetEditor)
+	if ie.searching.Value() {
+		ret = ret && yield(level, ie.searchList) && yield(level+1, &ie.commentEditor.widgetEditor)
+	}
+	return ret && yield(level+1, ie.paramTable.RowTitleList) && yield(level, ie.paramTable) && yield(level+1, &ie.commentEditor.widgetEditor)
+}
+
+func (ul *InstrumentEditor) layoutList(gtx C) D {
 	t := TrackerFromContext(gtx)
-	ul.update(gtx, t)
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Max.Y = gtx.Dp(20)
 		gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
@@ -153,18 +154,17 @@ func (ul *UnitList) Layout(gtx C) D {
 	return Surface{Gray: 30, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, surface)
 }
 
-func (ul *UnitList) update(gtx C, t *Tracker) {
-	for ul.addUnitBtn.Clicked(gtx) {
-		ul.addUnitAction.Do()
-		t.UnitSearching().SetValue(true)
-		ul.searchEditor.Focus()
-	}
+func (ul *InstrumentEditor) update(gtx C) {
+	t := TrackerFromContext(gtx)
 	for {
 		event, ok := gtx.Event(
 			key.Filter{Focus: ul.dragList, Name: key.NameRightArrow},
 			key.Filter{Focus: ul.dragList, Name: key.NameEnter, Optional: key.ModCtrl},
 			key.Filter{Focus: ul.dragList, Name: key.NameReturn, Optional: key.ModCtrl},
 			key.Filter{Focus: ul.dragList, Name: key.NameDeleteBackward},
+			key.Filter{Focus: ul.paramTable.RowTitleList, Name: key.NameEnter, Optional: key.ModCtrl},
+			key.Filter{Focus: ul.paramTable.RowTitleList, Name: key.NameReturn, Optional: key.ModCtrl},
+			key.Filter{Focus: ul.paramTable.RowTitleList, Name: key.NameDeleteBackward},
 		)
 		if !ok {
 			break
@@ -172,7 +172,7 @@ func (ul *UnitList) update(gtx C, t *Tracker) {
 		if e, ok := event.(key.Event); ok && e.State == key.Press {
 			switch e.Name {
 			case key.NameRightArrow:
-				t.PatchPanel.instrEditor.unitEditor.paramTable.RowTitleList.Focus()
+				t.PatchPanel.instrEditor.paramTable.RowTitleList.Focus()
 			case key.NameDeleteBackward:
 				t.Units().SetSelectedType("")
 				t.UnitSearching().SetValue(true)
@@ -201,74 +201,34 @@ func (ul *UnitList) update(gtx C, t *Tracker) {
 		ul.dragList.Focus()
 		t.UnitSearching().SetValue(false)
 	}
-}
-
-func (ul *UnitList) Tags(curLevel int, yield TagYieldFunc) bool {
-	return yield(curLevel, ul.dragList) && yield(curLevel+1, &ul.searchEditor.widgetEditor)
-}
-
-func NewUnitEditor(m *tracker.Model) *UnitEditor {
-	ret := &UnitEditor{
-		DeleteUnitBtn:  new(Clickable),
-		ClearUnitBtn:   new(Clickable),
-		DisableUnitBtn: new(Clickable),
-		CopyUnitBtn:    new(Clickable),
-		SelectTypeBtn:  new(Clickable),
-		commentEditor:  NewEditor(true, true, text.Start),
-		paramTable:     NewScrollTable(m.Params().Table(), m.ParamVertList().List(), m.Units().List()),
-		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
-		searching:      m.UnitSearching(),
+	for ul.addUnitBtn.Clicked(gtx) {
+		ul.addUnitAction.Do()
+		t.UnitSearching().SetValue(true)
+		ul.searchEditor.Focus()
 	}
-	ret.caser = cases.Title(language.English)
-	ret.copyHint = makeHint("Copy unit", " (%s)", "Copy")
-	ret.disableUnitHint = makeHint("Disable unit", " (%s)", "UnitDisabledToggle")
-	ret.enableUnitHint = makeHint("Enable unit", " (%s)", "UnitDisabledToggle")
-	return ret
-}
-
-func (pe *UnitEditor) Layout(gtx C) D {
-	t := TrackerFromContext(gtx)
-	pe.update(gtx, t)
-	editorFunc := pe.layoutRack
-	if pe.showingChooser() {
-		editorFunc = pe.layoutUnitTypeChooser
-	}
-	return Surface{Gray: 24, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
-		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-			layout.Flexed(1, editorFunc),
-			layout.Rigid(pe.layoutFooter),
-		)
-	})
-}
-
-func (pe *UnitEditor) showingChooser() bool {
-	return pe.searching.Value()
-}
-
-func (pe *UnitEditor) update(gtx C, t *Tracker) {
-	for pe.CopyUnitBtn.Clicked(gtx) {
+	for ul.CopyUnitBtn.Clicked(gtx) {
 		if contents, ok := t.Units().List().CopyElements(); ok {
 			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
 			t.Alerts().Add("Unit(s) copied to clipboard", tracker.Info)
 		}
 	}
-	for pe.SelectTypeBtn.Clicked(gtx) {
-		pe.ChooseUnitType(t)
+	for ul.SelectTypeBtn.Clicked(gtx) {
+		ul.ChooseUnitType(t)
 	}
-	for pe.commentEditor.Update(gtx, t.UnitComment()) != EditorEventNone {
+	for ul.commentEditor.Update(gtx, t.UnitComment()) != EditorEventNone {
 		t.FocusPrev(gtx, false)
 	}
-	for pe.ClearUnitBtn.Clicked(gtx) {
+	for ul.ClearUnitBtn.Clicked(gtx) {
 		t.ClearUnit().Do()
 		t.UnitSearch().SetValue("")
 		t.UnitSearching().SetValue(true)
-		pe.searchList.Focus()
+		ul.searchList.Focus()
 	}
 	for {
 		e, ok := gtx.Event(
-			key.Filter{Focus: pe.searchList, Name: key.NameEnter},
-			key.Filter{Focus: pe.searchList, Name: key.NameReturn},
-			key.Filter{Focus: pe.searchList, Name: key.NameEscape},
+			key.Filter{Focus: ul.searchList, Name: key.NameEnter},
+			key.Filter{Focus: ul.searchList, Name: key.NameReturn},
+			key.Filter{Focus: ul.searchList, Name: key.NameEscape},
 		)
 		if !ok {
 			break
@@ -277,18 +237,18 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 			switch e.Name {
 			case key.NameEscape:
 				t.UnitSearching().SetValue(false)
-				pe.paramTable.RowTitleList.Focus()
+				ul.paramTable.RowTitleList.Focus()
 			case key.NameEnter, key.NameReturn:
-				pe.ChooseUnitType(t)
+				ul.ChooseUnitType(t)
 			}
 		}
 	}
 	for {
 		e, ok := gtx.Event(
-			key.Filter{Focus: pe.paramTable, Name: key.NameLeftArrow, Required: key.ModShift, Optional: key.ModShortcut},
-			key.Filter{Focus: pe.paramTable, Name: key.NameRightArrow, Required: key.ModShift, Optional: key.ModShortcut},
-			key.Filter{Focus: pe.paramTable, Name: key.NameDeleteBackward},
-			key.Filter{Focus: pe.paramTable, Name: key.NameDeleteForward},
+			key.Filter{Focus: ul.paramTable, Name: key.NameLeftArrow, Required: key.ModShift, Optional: key.ModShortcut},
+			key.Filter{Focus: ul.paramTable, Name: key.NameRightArrow, Required: key.ModShift, Optional: key.ModShortcut},
+			key.Filter{Focus: ul.paramTable, Name: key.NameDeleteBackward},
+			key.Filter{Focus: ul.paramTable, Name: key.NameDeleteForward},
 		)
 		if !ok {
 			break
@@ -303,50 +263,46 @@ func (pe *UnitEditor) update(gtx C, t *Tracker) {
 				t.Model.Params().Table().Clear()
 			}
 			c := t.Model.Params().Cursor()
-			if c.X >= 0 && c.Y >= 0 && c.Y < len(pe.Parameters) && c.X < len(pe.Parameters[c.Y]) {
-				ta := &pe.Parameters[c.Y][c.X].tipArea
+			if c.X >= 0 && c.Y >= 0 && c.Y < len(ul.Parameters) && c.X < len(ul.Parameters[c.Y]) {
+				ta := &ul.Parameters[c.Y][c.X].tipArea
 				ta.Appear(gtx.Now)
 				ta.Exit.SetTarget(gtx.Now.Add(ta.ExitDuration))
 			}
 		}
 	}
 	for {
-		e, ok := gtx.Event(
-			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameEnter},
-			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameReturn},
-			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameLeftArrow},
-			key.Filter{Focus: pe.paramTable.RowTitleList, Name: key.NameDeleteBackward},
-		)
+		e, ok := gtx.Event(key.Filter{Focus: ul.paramTable.RowTitleList, Name: key.NameLeftArrow})
 		if !ok {
 			break
 		}
-		if e, ok := e.(key.Event); ok && e.State == key.Press {
-			switch e.Name {
-			case key.NameLeftArrow:
-				t.PatchPanel.instrEditor.unitList.dragList.Focus()
-			case key.NameDeleteBackward:
-				t.ClearUnit().Do()
-				t.UnitSearch().SetValue("")
-				t.UnitSearching().SetValue(true)
-				pe.searchList.Focus()
-			case key.NameEnter, key.NameReturn:
-				t.Model.AddUnit(e.Modifiers.Contain(key.ModCtrl)).Do()
-				t.UnitSearch().SetValue("")
-				t.UnitSearching().SetValue(true)
-				pe.searchList.Focus()
-			}
+		if e, ok := e.(key.Event); ok && e.State == key.Press && e.Name == key.NameLeftArrow {
+			t.PatchPanel.instrEditor.dragList.Focus()
 		}
 	}
 }
 
-func (pe *UnitEditor) ChooseUnitType(t *Tracker) {
+func (pe *InstrumentEditor) layoutTable(gtx C) D {
+	t := TrackerFromContext(gtx)
+	editorFunc := pe.layoutRack
+	if pe.searching.Value() {
+		editorFunc = pe.layoutUnitTypeChooser
+	}
+	return Surface{Gray: 24, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
+		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+			layout.Flexed(1, editorFunc),
+			layout.Rigid(pe.layoutFooter),
+		)
+	})
+}
+
+func (pe *InstrumentEditor) ChooseUnitType(t *Tracker) {
 	if ut, ok := t.SearchResults().Item(pe.searchList.TrackerList.Selected()); ok {
 		t.Units().SetSelectedType(ut)
 		pe.paramTable.RowTitleList.Focus()
 	}
 }
 
-func (pe *UnitEditor) layoutRack(gtx C) D {
+func (pe *InstrumentEditor) layoutRack(gtx C) D {
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 	t := TrackerFromContext(gtx)
 	// create enough parameter widget to match the number of parameters
@@ -436,7 +392,7 @@ func (pe *UnitEditor) layoutRack(gtx C) D {
 	return dims
 }
 
-func (pe *UnitEditor) drawSignals(gtx C, rowTitleWidth int) {
+func (pe *InstrumentEditor) drawSignals(gtx C, rowTitleWidth int) {
 	t := TrackerFromContext(gtx)
 	colP := pe.paramTable.ColTitleList.List.Position
 	rowP := pe.paramTable.RowTitleList.List.Position
@@ -461,7 +417,7 @@ func (pe *UnitEditor) drawSignals(gtx C, rowTitleWidth int) {
 	}
 }
 
-func (pe *UnitEditor) drawBackGround(gtx C) {
+func (pe *InstrumentEditor) drawBackGround(gtx C) {
 	t := TrackerFromContext(gtx)
 	rowP := pe.paramTable.RowTitleList.List.Position
 	defer op.Offset(image.Pt(0, -rowP.Offset)).Push(gtx.Ops).Pop()
@@ -471,14 +427,14 @@ func (pe *UnitEditor) drawBackGround(gtx C) {
 	}
 }
 
-func (pe *UnitEditor) drawRemoteSendSignal(gtx C, wire tracker.Wire, col, row int) {
+func (pe *InstrumentEditor) drawRemoteSendSignal(gtx C, wire tracker.Wire, col, row int) {
 	sy := wire.From - row
 	t := TrackerFromContext(gtx)
 	defer op.Offset(image.Pt(gtx.Dp(5), (sy+1)*gtx.Dp(t.Theme.UnitEditor.Height)-gtx.Dp(16))).Push(gtx.Ops).Pop()
 	Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
 }
 
-func (pe *UnitEditor) drawRemoteReceiveSignal(gtx C, wire tracker.Wire, col, row int, clr color.NRGBA) {
+func (pe *InstrumentEditor) drawRemoteReceiveSignal(gtx C, wire tracker.Wire, col, row int, clr color.NRGBA) {
 	ex := wire.To.X - col
 	ey := wire.To.Y - row
 	t := TrackerFromContext(gtx)
@@ -506,7 +462,7 @@ func (pe *UnitEditor) drawRemoteReceiveSignal(gtx C, wire tracker.Wire, col, row
 	Label(t.Theme, &t.Theme.UnitEditor.WireHint, wire.Hint).Layout(gtx)
 }
 
-func (pe *UnitEditor) drawSignal(gtx C, wire tracker.Wire, col, row int, clr color.NRGBA) {
+func (pe *InstrumentEditor) drawSignal(gtx C, wire tracker.Wire, col, row int, clr color.NRGBA) {
 	sy := wire.From - row
 	ex := wire.To.X - col
 	ey := wire.To.Y - row
@@ -551,7 +507,7 @@ func mulVec(a, b f32.Point) f32.Point {
 	return f32.Pt(a.X*b.X, a.Y*b.Y)
 }
 
-func (pe *UnitEditor) layoutFooter(gtx C) D {
+func (pe *InstrumentEditor) layoutFooter(gtx C) D {
 	t := TrackerFromContext(gtx)
 	text := "Choose unit type"
 	if !t.UnitSearching().Value() {
@@ -577,7 +533,7 @@ func (pe *UnitEditor) layoutFooter(gtx C) D {
 	)
 }
 
-func (pe *UnitEditor) layoutUnitTypeChooser(gtx C) D {
+func (pe *InstrumentEditor) layoutUnitTypeChooser(gtx C) D {
 	t := TrackerFromContext(gtx)
 	var namesArray [256]string
 	names := namesArray[:0]
@@ -599,11 +555,4 @@ func (pe *UnitEditor) layoutUnitTypeChooser(gtx C) D {
 	gtx.Constraints = layout.Exact(dims.Size)
 	fdl.LayoutScrollBar(gtx)
 	return dims
-}
-
-func (t *UnitEditor) Tags(level int, yield TagYieldFunc) bool {
-	if t.showingChooser() {
-		return yield(level, t.searchList) && yield(level+1, &t.commentEditor.widgetEditor)
-	}
-	return yield(level+1, t.paramTable.RowTitleList) && yield(level, t.paramTable) && yield(level+1, &t.commentEditor.widgetEditor)
 }

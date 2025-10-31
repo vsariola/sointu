@@ -62,7 +62,7 @@ type (
 
 func NewPatchPanel(model *tracker.Model) *PatchPanel {
 	return &PatchPanel{
-		instrEditor:  MakeInstrumentEditor(model),
+		instrEditor:  *NewInstrumentEditor(model),
 		instrList:    MakeInstrList(model),
 		tools:        MakeInstrumentTools(model),
 		instrProps:   *NewInstrumentProperties(),
