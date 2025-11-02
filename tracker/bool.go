@@ -96,9 +96,10 @@ func (m *Model) setThreadsBit(bit int, value bool) {
 	} else {
 		mask &^= (1 << bit)
 	}
-	m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 = max(mask-1, 0) // -1 would have all threads disabled, so make that 0 i.e. use at least thread 1
+	m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 = max(mask-1, -1) // -1 has all threads disabled, we warn about that
 	m.warnAboutCrossThreadSends()
 	m.warnNoMultithreadSupport()
+	m.warnNoThread()
 }
 
 func (m *Model) warnAboutCrossThreadSends() {
@@ -120,6 +121,7 @@ func (m *Model) warnAboutCrossThreadSends() {
 			}
 		}
 	}
+	m.Alerts().ClearNamed("CrossThreadSend")
 }
 
 func (m *Model) warnNoMultithreadSupport() {
@@ -129,6 +131,18 @@ func (m *Model) warnNoMultithreadSupport() {
 			return
 		}
 	}
+	m.Alerts().ClearNamed("NoMultithreadSupport")
+}
+
+func (m *Model) warnNoThread() {
+	for i, instr := range m.d.Song.Patch {
+		if instr.ThreadMaskM1 == -1 {
+			m.Alerts().AddNamed("NoThread", fmt.Sprintf("Instrument %d '%s' is not rendered on any thread", i+1, instr.Name), Warning)
+			return
+		}
+	}
+	m.Alerts().ClearNamed("NoThread")
+
 }
 
 func (m *Model) Thread1() Bool       { return MakeEnabledBool((*Thread1)(m)) }
