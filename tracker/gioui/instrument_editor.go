@@ -337,8 +337,8 @@ func (pe *InstrumentEditor) layoutRack(gtx C) D {
 		label.Layout(gtx)
 		return D{Size: image.Pt(rowTitleWidth, cellHeight)}
 	}
-	cursor := t.Model.Params().Cursor()
 	cell := func(gtx C, x, y int) D {
+		cursor := t.Model.Params().Cursor()
 		gtx.Constraints = layout.Exact(image.Pt(cellWidth, cellHeight))
 		point := tracker.Point{X: x, Y: y}
 		if y < 0 || y >= len(pe.Parameters) || x < 0 || x >= len(pe.Parameters[y]) {
