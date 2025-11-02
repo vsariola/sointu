@@ -415,7 +415,7 @@ func (pe *InstrumentEditor) drawSignals(gtx C, rowTitleWidth int) {
 		}
 		switch {
 		case wire.FromSet && !wire.ToSet:
-			pe.drawRemoteSendSignal(gtx, wire, colP.First, rowP.First)
+			pe.drawRemoteSendSignal(gtx, wire, rowP.First)
 		case !wire.FromSet && wire.ToSet:
 			pe.drawRemoteReceiveSignal(gtx, wire, colP.First, rowP.First, clr)
 		case wire.FromSet && wire.ToSet:
@@ -434,7 +434,7 @@ func (pe *InstrumentEditor) drawBackGround(gtx C) {
 	}
 }
 
-func (pe *InstrumentEditor) drawRemoteSendSignal(gtx C, wire tracker.Wire, col, row int) {
+func (pe *InstrumentEditor) drawRemoteSendSignal(gtx C, wire tracker.Wire, row int) {
 	sy := wire.From - row
 	t := TrackerFromContext(gtx)
 	defer op.Offset(image.Pt(gtx.Dp(5), (sy+1)*gtx.Dp(t.Theme.UnitEditor.Height)-gtx.Dp(16))).Push(gtx.Ops).Pop()
