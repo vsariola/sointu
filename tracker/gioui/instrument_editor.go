@@ -28,10 +28,9 @@ import (
 
 type (
 	InstrumentEditor struct {
-		dragList      *DragList
-		searchEditor  *Editor
-		addUnitBtn    *Clickable
-		addUnitAction tracker.Action
+		dragList     *DragList
+		searchEditor *Editor
+		addUnitBtn   *Clickable
 
 		paramTable     *ScrollTable
 		searchList     *DragList
@@ -67,10 +66,6 @@ func NewInstrumentEditor(m *tracker.Model) *InstrumentEditor {
 		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
 		searching:      m.UnitSearching(),
 	}
-	ret.addUnitAction = tracker.MakeEnabledAction(tracker.DoFunc(func() {
-		m.AddUnit(false).Do()
-		ret.searchEditor.Focus()
-	}))
 	ret.caser = cases.Title(language.English)
 	ret.copyHint = makeHint("Copy unit", " (%s)", "Copy")
 	ret.disableUnitHint = makeHint("Disable unit", " (%s)", "UnitDisabledToggle")
@@ -202,7 +197,7 @@ func (ul *InstrumentEditor) update(gtx C) {
 		t.UnitSearching().SetValue(false)
 	}
 	for ul.addUnitBtn.Clicked(gtx) {
-		ul.addUnitAction.Do()
+		t.AddUnit(false).Do()
 		t.UnitSearching().SetValue(true)
 		ul.searchEditor.Focus()
 	}
