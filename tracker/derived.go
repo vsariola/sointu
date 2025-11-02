@@ -309,7 +309,7 @@ func (m *Model) updateRails() {
 			Duration: time.Second * 10,
 		})
 	} else { // clear the alert if it was set
-		m.Alerts().AddAlert(Alert{Name: "RailError"})
+		m.Alerts().ClearNamed("RailError")
 	}
 }
 
