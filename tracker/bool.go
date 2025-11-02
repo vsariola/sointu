@@ -15,28 +15,26 @@ type (
 		SetValue(bool)
 	}
 
-	Panic          Model
-	IsRecording    Model
-	Playing        Model
-	InstrEnlarged  Model
-	Effect         Model
-	TrackMidiIn    Model
-	Follow         Model
-	UnitSearching  Model
-	UnitDisabled   Model
-	LoopToggle     Model
-	UniquePatterns Model
-	Mute           Model
-	Solo           Model
-	LinkInstrTrack Model
-	Oversampling   Model
-	InstrEditor    Model
-	InstrPresets   Model
-	InstrComment   Model
-	Thread1        Model
-	Thread2        Model
-	Thread3        Model
-	Thread4        Model
+	Panic         Model
+	IsRecording   Model
+	Playing       Model
+	Effect        Model
+	TrackMidiIn   Model
+	UnitSearching Model
+	UnitDisabled  Model
+	LoopToggle    Model
+	Mute          Model
+	Solo          Model
+	Oversampling  Model
+	InstrEditor   Model
+	InstrPresets  Model
+	InstrComment  Model
+	Thread1       Model
+	Thread2       Model
+	Thread3       Model
+	Thread4       Model
+
+	simpleBool bool
 )
 
 func MakeBool(valueEnabler interface {
@@ -73,6 +71,9 @@ func (v Bool) Enabled() bool {
 	}
 	return v.enabler.Enabled()
 }
+
+func (v *simpleBool) Value() bool         { return bool(*v) }
+func (v *simpleBool) SetValue(value bool) { *v = simpleBool(value) }
 
 // Thread methods
 
@@ -179,9 +180,7 @@ func (m *Playing) Enabled() bool { return m.playing || !m.instrEnlarged }
 
 // InstrEnlarged methods
 
-func (m *Model) InstrEnlarged() Bool       { return MakeEnabledBool((*InstrEnlarged)(m)) }
-func (m *InstrEnlarged) Value() bool       { return m.instrEnlarged }
-func (m *InstrEnlarged) SetValue(val bool) { m.instrEnlarged = val }
+func (m *Model) InstrEnlarged() Bool { return MakeEnabledBool((*simpleBool)(&m.instrEnlarged)) }
 
 // InstrEditor methods
 
@@ -211,9 +210,7 @@ func (m *InstrPresets) SetValue(val bool) {
 
 // Follow methods
 
-func (m *Model) Follow() Bool       { return MakeEnabledBool((*Follow)(m)) }
-func (m *Follow) Value() bool       { return m.follow }
-func (m *Follow) SetValue(val bool) { m.follow = val }
+func (m *Model) Follow() Bool { return MakeEnabledBool((*simpleBool)(&m.follow)) }
 
 // TrackMidiIn (Midi Input for notes in the tracks)
 
@@ -313,9 +310,7 @@ func (t *LoopToggle) SetValue(val bool) {
 
 // UniquePatterns methods
 
-func (m *Model) UniquePatterns() Bool       { return MakeEnabledBool((*UniquePatterns)(m)) }
-func (m *UniquePatterns) Value() bool       { return m.uniquePatterns }
-func (m *UniquePatterns) SetValue(val bool) { m.uniquePatterns = val }
+func (m *Model) UniquePatterns() Bool { return MakeEnabledBool((*simpleBool)(&m.uniquePatterns)) }
 
 // Mute methods
 func (m *Model) Mute() Bool { return MakeBool((*Mute)(m)) }
@@ -369,6 +364,4 @@ func (m *Solo) Enabled() bool { return m.d.InstrIndex >= 0 && m.d.InstrIndex < l
 
 // LinkInstrTrack methods
 
-func (m *Model) LinkInstrTrack() Bool       { return MakeEnabledBool((*LinkInstrTrack)(m)) }
-func (m *LinkInstrTrack) Value() bool       { return m.linkInstrTrack }
-func (m *LinkInstrTrack) SetValue(val bool) { m.linkInstrTrack = val }
+func (m *Model) LinkInstrTrack() Bool { return MakeEnabledBool((*simpleBool)(&m.linkInstrTrack)) }
