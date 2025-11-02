@@ -467,7 +467,7 @@ func (pb *PlayBar) Layout(gtx C) D {
 	followBtn := ToggleIconBtn(tr.Follow(), tr.Theme, pb.FollowBtn, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, pb.followOffHint, pb.followOnHint)
 	loopBtn := ToggleIconBtn(tr.LoopToggle(), tr.Theme, pb.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, pb.loopOffHint, pb.loopOnHint)
 
-	return Surface{Gray: 37}.Layout(gtx, func(gtx C) D {
+	return Surface{Height: 4}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Flexed(1, playBtn.Layout),
 			layout.Rigid(rewindBtn.Layout),

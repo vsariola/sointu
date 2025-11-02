@@ -56,6 +56,8 @@ type (
 		preferences Preferences
 
 		*tracker.Model
+
+		surfaceHeight int
 	}
 
 	ShowManual Tracker

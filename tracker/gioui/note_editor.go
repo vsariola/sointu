@@ -149,7 +149,7 @@ func (te *NoteEditor) Layout(gtx layout.Context) layout.Dimensions {
 
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
 
-	return Surface{Gray: 24, Focus: te.scrollTable.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
+	return Surface{Height: 3, Focus: te.scrollTable.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
 				return te.layoutButtons(gtx, t)
@@ -162,7 +162,7 @@ func (te *NoteEditor) Layout(gtx layout.Context) layout.Dimensions {
 }
 
 func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
-	return Surface{Gray: 37, Focus: te.scrollTable.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
+	return Surface{Height: 4, Focus: te.scrollTable.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
 		addSemitoneBtn := ActionBtn(t.AddSemitone(), t.Theme, te.AddSemitoneBtn, "+1", "Add semitone")
 		subtractSemitoneBtn := ActionBtn(t.SubtractSemitone(), t.Theme, te.SubtractSemitoneBtn, "-1", "Subtract semitone")
 		addOctaveBtn := ActionBtn(t.AddOctave(), t.Theme, te.AddOctaveBtn, "+12", "Add octave")

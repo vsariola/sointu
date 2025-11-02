@@ -174,7 +174,7 @@ func (it *InstrumentTools) Layout(gtx C) D {
 			layout.Rigid(addInstrumentBtn.Layout),
 		)
 	}
-	return Surface{Gray: 37, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, btns)
+	return Surface{Height: 4, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, btns)
 }
 
 func (it *InstrumentTools) update(gtx C, tr *Tracker) {

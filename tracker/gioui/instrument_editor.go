@@ -146,7 +146,7 @@ func (ul *InstrumentEditor) layoutList(gtx C) D {
 			}),
 		)
 	}
-	return Surface{Gray: 30, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, surface)
+	return Surface{Height: 4, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, surface)
 }
 
 func (ul *InstrumentEditor) update(gtx C) {
@@ -279,7 +279,7 @@ func (pe *InstrumentEditor) layoutTable(gtx C) D {
 	if pe.searching.Value() {
 		editorFunc = pe.layoutUnitTypeChooser
 	}
-	return Surface{Gray: 24, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
+	return Surface{Height: 3, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 			layout.Flexed(1, editorFunc),
 			layout.Rigid(pe.layoutFooter),
