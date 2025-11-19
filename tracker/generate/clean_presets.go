@@ -33,6 +33,7 @@ func main() {
 		}
 		tracker.RemoveUnusedUnitParameters(&instr) // remove invalid parameters
 		instr.Name = ""                            // we don't need the names in the preset files as they are derived from the file path
+		instr.NumVoices = 1
 		outData, err := yaml.Marshal(instr)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "could not marshal the preset file %v: %v\n", path, err)

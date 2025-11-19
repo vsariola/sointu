@@ -62,7 +62,7 @@ type (
 
 func NewPatchPanel(model *tracker.Model) *PatchPanel {
 	return &PatchPanel{
-		instrEditor:  MakeInstrumentEditor(model),
+		instrEditor:  *NewInstrumentEditor(model),
 		instrList:    MakeInstrList(model),
 		tools:        MakeInstrumentTools(model),
 		instrProps:   *NewInstrumentProperties(),
@@ -174,7 +174,7 @@ func (it *InstrumentTools) Layout(gtx C) D {
 			layout.Rigid(addInstrumentBtn.Layout),
 		)
 	}
-	return Surface{Gray: 37, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, btns)
+	return Surface{Height: 4, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, btns)
 }
 
 func (it *InstrumentTools) update(gtx C, tr *Tracker) {

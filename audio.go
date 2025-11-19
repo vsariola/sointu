@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"time"
 )
 
 type (
@@ -62,6 +63,13 @@ type (
 		// Release releases the currently playing note for a given voice. Called
 		// between synth.Renders.
 		Release(voice int)
+
+		// Close disposes the synth, freeing any resources. No other functions should be called after Close.
+		Close()
+
+		// Populates the given array with the current CPU load of each thread,
+		// returning the number of threads / elements populated
+		CPULoad([]CPULoad) int
 	}
 
 	// Synther compiles a given Patch into a Synth, throwing errors if the
@@ -69,7 +77,10 @@ type (
 	Synther interface {
 		Name() string // Name of the synther, e.g. "Go" or "Native"
 		Synth(patch Patch, bpm int) (Synth, error)
+		SupportsMultithreading() bool
 	}
+
+	CPULoad float32
 )
 
 // Play plays the Song by first compiling the patch with the given Synther,
@@ -83,6 +94,7 @@ func Play(synther Synther, song Song, progress func(float32)) (AudioBuffer, erro
 	if err != nil {
 		return nil, fmt.Errorf("sointu.Play failed: %v", err)
 	}
+	defer synth.Close()
 	curVoices := make([]int, len(song.Score.Tracks))
 	for i := range curVoices {
 		curVoices[i] = song.Score.FirstVoiceForTrack(i)
@@ -202,6 +214,17 @@ func (buffer AudioBuffer) Raw(pcm16 bool) ([]byte, error) {
 		return nil, fmt.Errorf("Raw failed: %v", err)
 	}
 	return buf.Bytes(), nil
+}
+
+func (p *CPULoad) Update(duration time.Duration, frames int64) {
+	if frames <= 0 {
+		return // no frames rendered, so cannot compute CPU load
+	}
+	realtime := float64(duration) / 1e9
+	songtime := float64(frames) / 44100
+	newload := realtime / songtime
+	alpha := math.Exp(-songtime) // smoothing factor, time constant of 1 second
+	*p = CPULoad(float64(*p)*alpha + newload*(1-alpha))
 }
 
 func (data AudioBuffer) rawToBuffer(pcm16 bool, buf *bytes.Buffer) error {

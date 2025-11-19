@@ -4,15 +4,19 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"slices"
 	"strconv"
+	"strings"
 
 	"gioui.org/gesture"
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
+	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/tracker"
 	"github.com/vsariola/sointu/version"
+	"github.com/vsariola/sointu/vm"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
@@ -110,10 +114,40 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 	}
 	oversamplingBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.OversamplingBtn, oversamplingTxt, "")
 
-	cpuload := tr.Model.CPULoad()
-	cpuLabel := Label(tr.Theme, &tr.Theme.SongPanel.RowValue, fmt.Sprintf("%.0f %%", cpuload*100))
-	if cpuload >= 1 {
-		cpuLabel.Color = tr.Theme.SongPanel.ErrorColor
+	cpuSmallLabel := func(gtx C) D {
+		var a [vm.MAX_THREADS]sointu.CPULoad
+		c := tr.Model.CPULoad(a[:])
+		if c < 1 {
+			return D{}
+		}
+		load := slices.Max(a[:c])
+		cpuLabel := Label(tr.Theme, &tr.Theme.SongPanel.RowValue, fmt.Sprintf("%d%%", int(load*100+0.5)))
+		if load >= 1 {
+			cpuLabel.Color = tr.Theme.SongPanel.ErrorColor
+		}
+		return cpuLabel.Layout(gtx)
+	}
+
+	cpuEnlargedWidget := func(gtx C) D {
+		var sb strings.Builder
+		var a [vm.MAX_THREADS]sointu.CPULoad
+		c := tr.Model.CPULoad(a[:])
+		high := false
+		for i := range c {
+			if i > 0 {
+				fmt.Fprint(&sb, ", ")
+			}
+			cpuLoad := a[i]
+			fmt.Fprintf(&sb, "%d%%", int(cpuLoad*100+0.5))
+			if cpuLoad >= 1 {
+				high = true
+			}
+		}
+		cpuLabel := Label(tr.Theme, &tr.Theme.SongPanel.RowValue, sb.String())
+		if high {
+			cpuLabel.Color = tr.Theme.SongPanel.ErrorColor
+		}
+		return cpuLabel.Layout(gtx)
 	}
 
 	synthBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.SynthBtn, tr.Model.SyntherName(), "")
@@ -150,10 +184,10 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 				})
 		}),
 		layout.Rigid(func(gtx C) D {
-			return t.CPUExpander.Layout(gtx, tr.Theme, "CPU", cpuLabel.Layout,
+			return t.CPUExpander.Layout(gtx, tr.Theme, "CPU", cpuSmallLabel,
 				func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical, Alignment: layout.End}.Layout(gtx,
-						layout.Rigid(func(gtx C) D { return layoutSongOptionRow(gtx, tr.Theme, "Load", cpuLabel.Layout) }),
+						layout.Rigid(func(gtx C) D { return layoutSongOptionRow(gtx, tr.Theme, "Load", cpuEnlargedWidget) }),
 						layout.Rigid(func(gtx C) D { return layoutSongOptionRow(gtx, tr.Theme, "Synth", synthBtn.Layout) }),
 					)
 				},
@@ -433,7 +467,7 @@ func (pb *PlayBar) Layout(gtx C) D {
 	followBtn := ToggleIconBtn(tr.Follow(), tr.Theme, pb.FollowBtn, icons.ActionSpeakerNotesOff, icons.ActionSpeakerNotes, pb.followOffHint, pb.followOnHint)
 	loopBtn := ToggleIconBtn(tr.LoopToggle(), tr.Theme, pb.LoopBtn, icons.NavigationArrowForward, icons.AVLoop, pb.loopOffHint, pb.loopOnHint)
 
-	return Surface{Gray: 37}.Layout(gtx, func(gtx C) D {
+	return Surface{Height: 4}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Flexed(1, playBtn.Layout),
 			layout.Rigid(rewindBtn.Layout),

@@ -104,7 +104,7 @@ func (ip *InstrumentPresets) layout(gtx C) D {
 		return dims
 	}
 	dirSurface := func(gtx C) D {
-		return Surface{Gray: 36, Focus: tr.PatchPanel.TreeFocused(gtx)}.Layout(gtx, dirs)
+		return Surface{Height: 5, Focus: tr.PatchPanel.TreeFocused(gtx)}.Layout(gtx, dirs)
 	}
 	resultElem := func(gtx C, i int) D {
 		gtx.Constraints.Min.X = gtx.Constraints.Max.X
@@ -142,7 +142,7 @@ func (ip *InstrumentPresets) layout(gtx C) D {
 		return dims
 	}
 	resultSurface := func(gtx C) D {
-		return Surface{Gray: 30, Focus: tr.PatchPanel.TreeFocused(gtx)}.Layout(gtx, results)
+		return Surface{Height: 4, Focus: tr.PatchPanel.TreeFocused(gtx)}.Layout(gtx, results)
 	}
 	bottom := func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
@@ -169,7 +169,7 @@ func (ip *InstrumentPresets) layout(gtx C) D {
 		)
 		return D{Size: m}
 	}
-	return Surface{Gray: 24, Focus: tr.PatchPanel.TreeFocused(gtx)}.Layout(gtx, f)
+	return Surface{Height: 3, Focus: tr.PatchPanel.TreeFocused(gtx)}.Layout(gtx, f)
 }
 
 func (ip *InstrumentPresets) layoutSearch(gtx C) D {

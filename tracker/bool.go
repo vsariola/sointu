@@ -1,5 +1,9 @@
 package tracker
 
+import (
+	"fmt"
+)
+
 type (
 	Bool struct {
 		value   BoolValue
@@ -11,24 +15,26 @@ type (
 		SetValue(bool)
 	}
 
-	Panic          Model
-	IsRecording    Model
-	Playing        Model
-	InstrEnlarged  Model
-	Effect         Model
-	TrackMidiIn    Model
-	Follow         Model
-	UnitSearching  Model
-	UnitDisabled   Model
-	LoopToggle     Model
-	UniquePatterns Model
-	Mute           Model
-	Solo           Model
-	LinkInstrTrack Model
-	Oversampling   Model
-	InstrEditor    Model
-	InstrPresets   Model
-	InstrComment   Model
+	Panic         Model
+	IsRecording   Model
+	Playing       Model
+	Effect        Model
+	TrackMidiIn   Model
+	UnitSearching Model
+	UnitDisabled  Model
+	LoopToggle    Model
+	Mute          Model
+	Solo          Model
+	Oversampling  Model
+	InstrEditor   Model
+	InstrPresets  Model
+	InstrComment  Model
+	Thread1       Model
+	Thread2       Model
+	Thread3       Model
+	Thread4       Model
+
+	simpleBool bool
 )
 
 func MakeBool(valueEnabler interface {
@@ -66,6 +72,95 @@ func (v Bool) Enabled() bool {
 	return v.enabler.Enabled()
 }
 
+func (v *simpleBool) Value() bool         { return bool(*v) }
+func (v *simpleBool) SetValue(value bool) { *v = simpleBool(value) }
+
+// Thread methods
+
+func (m *Model) getThreadsBit(bit int) bool {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
+		return false
+	}
+	mask := m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 + 1
+	return mask&(1<<bit) != 0
+}
+
+func (m *Model) setThreadsBit(bit int, value bool) {
+	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
+		return
+	}
+	defer (*Model)(m).change("ThreadBitMask", PatchChange, MinorChange)()
+	mask := m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 + 1
+	if value {
+		mask |= (1 << bit)
+	} else {
+		mask &^= (1 << bit)
+	}
+	m.d.Song.Patch[m.d.InstrIndex].ThreadMaskM1 = max(mask-1, -1) // -1 has all threads disabled, we warn about that
+	m.warnAboutCrossThreadSends()
+	m.warnNoMultithreadSupport()
+	m.warnNoThread()
+}
+
+func (m *Model) warnAboutCrossThreadSends() {
+	for i, instr := range m.d.Song.Patch {
+		for _, unit := range instr.Units {
+			if unit.Type == "send" {
+				targetID, ok := unit.Parameters["target"]
+				if !ok {
+					continue
+				}
+				it, _, err := m.d.Song.Patch.FindUnit(targetID)
+				if err != nil {
+					continue
+				}
+				if instr.ThreadMaskM1 != m.d.Song.Patch[it].ThreadMaskM1 {
+					m.Alerts().AddNamed("CrossThreadSend", fmt.Sprintf("Instrument %d '%s' has a send to instrument %d '%s' but they are not on the same threads, which may cause issues", i+1, instr.Name, it+1, m.d.Song.Patch[it].Name), Warning)
+					return
+				}
+			}
+		}
+	}
+	m.Alerts().ClearNamed("CrossThreadSend")
+}
+
+func (m *Model) warnNoMultithreadSupport() {
+	for _, instr := range m.d.Song.Patch {
+		if instr.ThreadMaskM1 > 0 && !m.synthers[m.syntherIndex].SupportsMultithreading() {
+			m.Alerts().AddNamed("NoMultithreadSupport", "The current synth does not support multithreading and the patch was configured to use more than one thread", Warning)
+			return
+		}
+	}
+	m.Alerts().ClearNamed("NoMultithreadSupport")
+}
+
+func (m *Model) warnNoThread() {
+	for i, instr := range m.d.Song.Patch {
+		if instr.ThreadMaskM1 == -1 {
+			m.Alerts().AddNamed("NoThread", fmt.Sprintf("Instrument %d '%s' is not rendered on any thread", i+1, instr.Name), Warning)
+			return
+		}
+	}
+	m.Alerts().ClearNamed("NoThread")
+
+}
+
+func (m *Model) Thread1() Bool       { return MakeEnabledBool((*Thread1)(m)) }
+func (m *Thread1) Value() bool       { return (*Model)(m).getThreadsBit(0) }
+func (m *Thread1) SetValue(val bool) { (*Model)(m).setThreadsBit(0, val) }
+
+func (m *Model) Thread2() Bool       { return MakeEnabledBool((*Thread2)(m)) }
+func (m *Thread2) Value() bool       { return (*Model)(m).getThreadsBit(1) }
+func (m *Thread2) SetValue(val bool) { (*Model)(m).setThreadsBit(1, val) }
+
+func (m *Model) Thread3() Bool       { return MakeEnabledBool((*Thread3)(m)) }
+func (m *Thread3) Value() bool       { return (*Model)(m).getThreadsBit(2) }
+func (m *Thread3) SetValue(val bool) { (*Model)(m).setThreadsBit(2, val) }
+
+func (m *Model) Thread4() Bool       { return MakeEnabledBool((*Thread4)(m)) }
+func (m *Thread4) Value() bool       { return (*Model)(m).getThreadsBit(3) }
+func (m *Thread4) SetValue(val bool) { (*Model)(m).setThreadsBit(3, val) }
+
 // Panic methods
 
 func (m *Model) Panic() Bool       { return MakeEnabledBool((*Panic)(m)) }
@@ -99,9 +194,7 @@ func (m *Playing) Enabled() bool { return m.playing || !m.instrEnlarged }
 
 // InstrEnlarged methods
 
-func (m *Model) InstrEnlarged() Bool       { return MakeEnabledBool((*InstrEnlarged)(m)) }
-func (m *InstrEnlarged) Value() bool       { return m.instrEnlarged }
-func (m *InstrEnlarged) SetValue(val bool) { m.instrEnlarged = val }
+func (m *Model) InstrEnlarged() Bool { return MakeEnabledBool((*simpleBool)(&m.instrEnlarged)) }
 
 // InstrEditor methods
 
@@ -131,9 +224,7 @@ func (m *InstrPresets) SetValue(val bool) {
 
 // Follow methods
 
-func (m *Model) Follow() Bool       { return MakeEnabledBool((*Follow)(m)) }
-func (m *Follow) Value() bool       { return m.follow }
-func (m *Follow) SetValue(val bool) { m.follow = val }
+func (m *Model) Follow() Bool { return MakeEnabledBool((*simpleBool)(&m.follow)) }
 
 // TrackMidiIn (Midi Input for notes in the tracks)
 
@@ -233,9 +324,7 @@ func (t *LoopToggle) SetValue(val bool) {
 
 // UniquePatterns methods
 
-func (m *Model) UniquePatterns() Bool       { return MakeEnabledBool((*UniquePatterns)(m)) }
-func (m *UniquePatterns) Value() bool       { return m.uniquePatterns }
-func (m *UniquePatterns) SetValue(val bool) { m.uniquePatterns = val }
+func (m *Model) UniquePatterns() Bool { return MakeEnabledBool((*simpleBool)(&m.uniquePatterns)) }
 
 // Mute methods
 func (m *Model) Mute() Bool { return MakeBool((*Mute)(m)) }
@@ -289,6 +378,4 @@ func (m *Solo) Enabled() bool { return m.d.InstrIndex >= 0 && m.d.InstrIndex < l
 
 // LinkInstrTrack methods
 
-func (m *Model) LinkInstrTrack() Bool       { return MakeEnabledBool((*LinkInstrTrack)(m)) }
-func (m *LinkInstrTrack) Value() bool       { return m.linkInstrTrack }
-func (m *LinkInstrTrack) SetValue(val bool) { m.linkInstrTrack = val }
+func (m *Model) LinkInstrTrack() Bool { return MakeEnabledBool((*simpleBool)(&m.linkInstrTrack)) }

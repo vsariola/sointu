@@ -56,6 +56,8 @@ type (
 		preferences Preferences
 
 		*tracker.Model
+
+		surfaceHeight int
 	}
 
 	ShowManual Tracker
@@ -175,7 +177,7 @@ func (t *Tracker) Main() {
 					}
 					gtx := app.NewContext(&ops, e)
 					gtx.Values = globals
-					t.Layout(gtx, w)
+					t.Layout(gtx)
 					e.Frame(gtx.Ops)
 					if t.Quitted() {
 						w.Perform(system.ActionClose)
@@ -216,7 +218,7 @@ func titleFromPath(path string) string {
 	return fmt.Sprintf("Sointu Tracker - %s", path)
 }
 
-func (t *Tracker) Layout(gtx layout.Context, w *app.Window) {
+func (t *Tracker) Layout(gtx layout.Context) {
 	zoomFactor := ZoomFactors[t.Zoom]
 	gtx.Metric.PxPerDp *= zoomFactor
 	gtx.Metric.PxPerSp *= zoomFactor

@@ -22,6 +22,11 @@ WAVEFORMATEX wave_format = {
 	SU_SAMPLE_SIZE*8,
 	0
 };
+// If you want to loop the song:
+//   1) Change WHDR_PREPARED -> WHDR_BEGINLOOP | WHDR_ENDLOOP | WHDR_PREPARED
+//   2) The next field should then contain the number of loops (for example, 4)
+//   3) Remember also change the exit condition for main, e.g. if you plan to loop 4 times:
+//        mmtime.u.sample != SU_LENGTH_IN_SAMPLES -> mmtime.u.sample != 4 * SU_LENGTH_IN_SAMPLES
 WAVEHDR wave_header = {
 	(LPSTR)sound_buffer, 
 	SU_LENGTH_IN_SAMPLES * SU_SAMPLE_SIZE * SU_CHANNEL_COUNT,

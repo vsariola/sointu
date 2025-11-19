@@ -165,10 +165,10 @@ menu:
 instrumenteditor:
   octave: { textsize: 14, color: *disabled }
   properties: 
-    label: { textsize: 14, color: *highemphasis }
+    label: { textsize: 14, color: *highemphasis }  
   instrumentcomment:
     { textsize: 14, color: *highemphasis, hintcolor: *disabled }
-  unitcomment: { textsize: 14, color: *highemphasis, hintcolor: *disabled }
+  unitcomment: { textsize: 14, color: *mediumemphasis, hintcolor: *disabled }
   instrumentlist:
     number: { textsize: 10, color: *mediumemphasis }
     name: { textsize: 12, color: *white, hintcolor: *disabled }

@@ -83,6 +83,15 @@ func (m *Alerts) AddNamed(name, message string, priority AlertPriority) {
 	})
 }
 
+func (m *Alerts) ClearNamed(name string) {
+	for i := range m.alerts {
+		if n := m.alerts[i].Name; n != "" && n == name {
+			m.alerts[i].Duration = 0
+			return
+		}
+	}
+}
+
 func (m *Alerts) AddAlert(a Alert) {
 	for i := range m.alerts {
 		if n := m.alerts[i].Name; n != "" && n == a.Name {

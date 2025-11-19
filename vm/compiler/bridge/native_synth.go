@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
@@ -16,9 +17,13 @@ import (
 type NativeSynther struct {
 }
 
-type NativeSynth C.Synth
+type NativeSynth struct {
+	csynth  C.Synth
+	cpuLoad sointu.CPULoad
+}
 
-func (s NativeSynther) Name() string { return "Native" }
+func (s NativeSynther) Name() string                 { return "Native" }
+func (s NativeSynther) SupportsMultithreading() bool { return false }
 
 func (s NativeSynther) Synth(patch sointu.Patch, bpm int) (sointu.Synth, error) {
 	synth, err := Synth(patch, bpm)
@@ -45,7 +50,7 @@ func Synth(patch sointu.Patch, bpm int) (*NativeSynth, error) {
 		s.Opcodes[0] = 0
 		s.NumVoices = 1
 		s.Polyphony = 0
-		return (*NativeSynth)(s), nil
+		return &NativeSynth{csynth: *s}, nil
 	}
 	for i, v := range comPatch.Opcodes {
 		s.Opcodes[i] = (C.uchar)(v)
@@ -64,7 +69,17 @@ func Synth(patch sointu.Patch, bpm int) (*NativeSynth, error) {
 	s.NumVoices = C.uint(comPatch.NumVoices)
 	s.Polyphony = C.uint(comPatch.PolyphonyBitmask)
 	s.RandSeed = 1
-	return (*NativeSynth)(s), nil
+	return &NativeSynth{csynth: *s}, nil
+}
+
+func (s *NativeSynth) Close() {}
+
+func (s *NativeSynth) CPULoad(loads []sointu.CPULoad) int {
+	if len(loads) < 1 {
+		return 0
+	}
+	loads[0] = s.cpuLoad
+	return 1
 }
 
 // Render renders until the buffer is full or the modulated time is reached, whichever
@@ -89,12 +104,14 @@ func Synth(patch sointu.Patch, bpm int) (*NativeSynth, error) {
 // exit condition would fire when the time is already past maxtime.
 // Under no conditions, nsamples >= len(buffer)/2 i.e. guaranteed to never overwrite the buffer.
 func (bridgesynth *NativeSynth) Render(buffer sointu.AudioBuffer, maxtime int) (int, int, error) {
-	synth := (*C.Synth)(bridgesynth)
+	synth := &bridgesynth.csynth
 	// TODO: syncBuffer is not getting passed to cgo; do we want to even try to support the syncing with the native bridge
 	if len(buffer)%1 == 1 {
 		return -1, -1, errors.New("RenderTime writes stereo signals, so buffer should have even length")
 	}
 	samples := C.int(len(buffer))
+	startTime := time.Now()
+	defer func() { bridgesynth.cpuLoad.Update(time.Since(startTime), int64(samples)) }()
 	time := C.int(maxtime)
 	errcode := int(C.su_render(synth, (*C.float)(&buffer[0][0]), &samples, &time))
 	if errcode > 0 {
@@ -105,7 +122,7 @@ func (bridgesynth *NativeSynth) Render(buffer sointu.AudioBuffer, maxtime int) (
 
 // Trigger is part of C.Synths' implementation of sointu.Synth interface
 func (bridgesynth *NativeSynth) Trigger(voice int, note byte) {
-	s := (*C.Synth)(bridgesynth)
+	s := &bridgesynth.csynth
 	if voice < 0 || voice >= len(s.SynthWrk.Voices) {
 		return
 	}
@@ -116,7 +133,7 @@ func (bridgesynth *NativeSynth) Trigger(voice int, note byte) {
 
 // Release is part of C.Synths' implementation of sointu.Synth interface
 func (bridgesynth *NativeSynth) Release(voice int) {
-	s := (*C.Synth)(bridgesynth)
+	s := &bridgesynth.csynth
 	if voice < 0 || voice >= len(s.SynthWrk.Voices) {
 		return
 	}
@@ -125,7 +142,7 @@ func (bridgesynth *NativeSynth) Release(voice int) {
 
 // Update
 func (bridgesynth *NativeSynth) Update(patch sointu.Patch, bpm int) error {
-	s := (*C.Synth)(bridgesynth)
+	s := &bridgesynth.csynth
 	if n := patch.NumDelayLines(); n > 128 {
 		return fmt.Errorf("native bridge has currently a hard limit of 128 delaylines; patch uses %v", n)
 	}
