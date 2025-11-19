@@ -201,6 +201,11 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false, DisplayFunc: arrDispFunc(channelNames[:])}},
 	"sync": []UnitParameter{},
+	"eq": []UnitParameter{
+		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+		{Name: "frequency", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return eqFrequencyDispFunc(v) }},
+		{Name: "q", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return eqQdisplayFunc(v) }},
+		{Name: "gain", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return eqGainDisplayFunc(v) }}},
 }
 
 // compile errors if interface is not implemented.
@@ -261,6 +266,19 @@ func filterFrequencyDispFunc(v int) (string, string) {
 	return strconv.FormatFloat(f, 'f', 0, 64), "Hz"
 }
 
+func eqQdisplayFunc(v int) (string, string) {
+	q := 0.1 + 9.9*(float64(v)/128.)
+	return strconv.FormatFloat(q, 'f', 2, 64), "Q"
+}
+
+func eqFrequencyDispFunc(v int) (string, string) {
+	freq := 32.0 * math.Pow(16000./32., float64(v)/128.)
+	return strconv.FormatFloat(freq, 'f', 1, 64), "Hz"
+}
+func eqGainDisplayFunc(v int) (string, string) {
+	gain := 12. * (float64(v)/64. - 1.)
+	return strconv.FormatFloat(gain, 'f', 2, 64), "dB"
+}
 func compressorTimeDispFunc(v int) (string, string) {
 	alpha := math.Pow(2, -24*float64(v)/128) // alpha is the "smoothing factor" of first order low pass iir
 	sec := -1 / (44100 * math.Log(1-alpha))  // from smoothing factor to time constant, https://en.wikipedia.org/wiki/Exponential_smoothing
@@ -429,6 +447,7 @@ var stackUseMonoStereo = map[string][2]StackUse{
 		{Inputs: [][]int{{0}}, Modifies: []bool{false}, NumOutputs: 1},
 		{},
 	},
+	"eq": stackUseEffect,
 }
 var stackUseSendNoPop = [2]StackUse{
 	{Inputs: [][]int{{0}}, Modifies: []bool{true}, NumOutputs: 1},

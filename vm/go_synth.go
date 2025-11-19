@@ -578,6 +578,26 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, t
 				if stereo {
 					stack = append(stack, gain)
 				}
+			case opEq:
+				for i := 0; i < channels; i++ {
+					inputSample := stack[l-1-i]
+					freq := 32.0 * math.Pow(16000./32., float64(params[0])) // map 0..1 to 32..16000 Hz
+					omega := float64(2. * math.Pi * freq / 44100.0)
+					alpha := float32(math.Sin(omega) / (2.0 * (float64(params[1]*9.9) + 0.1))) // map 0..1 to 0.1..10 Q
+					gain := float64((params[2] * 24.) - 12.)                                   // normalize 0..1 to -12..+12 dB
+					A := float32(math.Pow(10, gain/20.))
+					den := 1 + alpha/A
+
+					b0 := (1 + alpha*A) / den
+					b1 := (-2 * float32(math.Cos(omega))) / den
+					b2 := (1 - alpha*A) / den
+					a2 := (1 - alpha/A) / den
+
+					output := b0*inputSample + unit.state[i]
+					unit.state[i] = b1*inputSample - b1*output + unit.state[2+i]
+					unit.state[2+i] = b2*inputSample - a2*output
+					stack[l-1-i] = output
+				}
 			case opSync:
 				break
 			default:

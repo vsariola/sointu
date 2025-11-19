@@ -109,6 +109,7 @@ var defaultUnits = map[string]sointu.Unit{
 	"compressor": {Type: "compressor", Parameters: map[string]int{"stereo": 0, "attack": 64, "release": 64, "invgain": 64, "threshold": 64, "ratio": 64}},
 	"send":       {Type: "send", Parameters: map[string]int{"stereo": 0, "amount": 128, "voice": 0, "unit": 0, "port": 0, "sendpop": 1}},
 	"sync":       {Type: "sync", Parameters: map[string]int{}},
+	"eq":         {Type: "eq", Parameters: map[string]int{"stereo": 0, "freq": 1000, "q": 10, "gain": 64}},
 }
 
 var defaultInstrument = sointu.Instrument{
