@@ -594,6 +594,25 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, r
 				if stereo {
 					stack = append(stack, gain)
 				}
+			case opBelleq:
+				// Bell-shaped peaking filter equations based on https://shepazu.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html:
+				//   alpha = sin(omega0)/(2*Q) where omega0 determines the angular frequency of the peak and Q is the Q-factor
+				//   A = sqrt(10^(dBgain/20)) = 10^(dBgain/40) where dbGain determines the gain at the peak
+				//   b0 = 1 + alpha*A, b1 = -2*cos(omega0), b2 = 1 - alpha*A,
+				//   a0 = 1 + alpha/A, a1 = -2*cos(omega0), a2 = 1 - alpha/A are the biquad filter coefficients
+				omega0 := 2 * params[0] * params[0]                                // square the omega to have a bit more values mapping to bass frequencies
+				alpha := float32(math.Sin(float64(omega0))) * 2 * params[1]        // Q=1/(4*(p/128)) gives a range of Q = 0.25 ... 32
+				A := float32(math.Pow(2, float64(params[2]-.5)*6.643856189774724)) // +-40 dB, reusing same constant as dbgain unit
+				u, v := alpha*A, alpha/A
+				b0, b1, b2 := 1+u, -2*float32(math.Cos(float64(omega0))), 1-u
+				a0, a1, a2 := 1+v, b1, 1-v
+				for i := range channels { // biquad filter in transposed direct from II (https://en.wikipedia.org/wiki/Digital_biquad_filter)
+					x := stack[l-1-i]
+					y := (b0*x + unit.state[i]) / a0 // the biquad was not in normalized form, so we need to divide by a0
+					unit.state[i] = b1*x - a1*y + unit.state[2+i]
+					unit.state[2+i] = b2*x - a2*y
+					stack[l-1-i] = y
+				}
 			case opSync:
 				break
 			default:

@@ -206,6 +206,11 @@ var UnitTypes = map[string]([]UnitParameter){
 		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 		{Name: "channel", MinValue: 0, MaxValue: 6, CanSet: true, CanModulate: false, DisplayFunc: arrDispFunc(channelNames[:])}},
 	"sync": []UnitParameter{},
+	"belleq": []UnitParameter{
+		{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+		{Name: "frequency", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return belleqFrequencyDisplay(v) }},
+		{Name: "bandwidth", MinValue: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return belleqBandwidthDisplay(v) }},
+		{Name: "gain", MinValue: 0, Neutral: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return belleqGainDisplay(v) }}},
 }
 
 // compile errors if interface is not implemented.
@@ -264,6 +269,23 @@ func filterFrequencyDispFunc(v int) (string, string) {
 	p := freq * freq
 	f := 44100 * p / math.Pi / 2
 	return strconv.FormatFloat(f, 'f', 0, 64), "Hz"
+}
+
+func belleqFrequencyDisplay(v int) (string, string) {
+	freq := float64(v) / 128
+	p := 2 * freq * freq
+	f := 44100 * p / math.Pi / 2
+	return strconv.FormatFloat(f, 'f', 0, 64), "Hz"
+}
+
+func belleqBandwidthDisplay(v int) (string, string) {
+	p := float64(v) / 128
+	Q := 1 / (4 * p)
+	return strconv.FormatFloat(Q, 'f', 2, 64), "Q"
+}
+
+func belleqGainDisplay(v int) (string, string) {
+	return strconv.FormatFloat(40*(float64(v)/64-1), 'f', 2, 64), "dB"
 }
 
 func compressorTimeDispFunc(v int) (string, string) {
@@ -435,6 +457,7 @@ var stackUseMonoStereo = map[string][2]StackUse{
 		{Inputs: [][]int{{0}}, Modifies: []bool{false}, NumOutputs: 1},
 		{},
 	},
+	"belleq": stackUseEffect,
 }
 var stackUseSendNoPop = [2]StackUse{
 	{Inputs: [][]int{{0}}, Modifies: []bool{true}, NumOutputs: 1},

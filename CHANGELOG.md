@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- belleq unit: a bell-shaped second-order filter for equalization. Belleq unit
+  takes the center frequency, bandwidth (inverse of Q-factor) and gain (+-40
+  dB). Useful for boosting or reducing specific frequency ranges. Kudos to Reaby
+  for the initial implementation!
 - Multithreaded synths: the user can split the patch up to four threads.
   Selecting the thread can be done on the instrument properties pane.
   Multithreading works only on the multithreaded synths, selectable from the CPU

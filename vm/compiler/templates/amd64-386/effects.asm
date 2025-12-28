@@ -198,6 +198,68 @@ su_op_filter_skipneghighpass:
 {{end}}
 
 
+{{- if .HasOp "belleq"}}
+;-------------------------------------------------------------------------------
+;   BELLEQ opcode: perform second order bell eq filtering on the signal
+;-------------------------------------------------------------------------------
+;   Mono:   x   ->  eq(x)
+;   Stereo: l r ->  eq(l) eq(r)
+;-------------------------------------------------------------------------------
+{{.Func "su_op_belleq" "Opcode"}}
+{{- if .Stereo "belleq"}}
+    {{.Call "su_effects_stereohelper"}}
+{{- end}}
+    ; Note: we calculate the gain first because su_power needs temp stack and everything here was crafted to stay altogether below max 4 temp stack
+    ; The cost of staying at max 4 stack was a few extra instructions because of stack juggling.
+    ; The bell filter biquad coefficients (see go_synth.go):
+    ;   b0, b1, b2 = 1+u, -2*cos(w), 1-u
+	;   a0, a1, a2 = 1+v, b1, 1-v
+    ; where w=freq*freq, u=alpha*A, v=alpha/A, alpha=sin(w)*2*bandwidth, A=gain. The filter is implemented as:
+    ;  y = (b0*x+s1)/a0 = ((1+u)*x + s1) / (1+v) = (x+u*x+s1)/(1+v)
+    ;  s1' = b1*x - a1*y + s2 = b1*(x-y)+s2 = 2*cos(w)*(y-x)+s2
+	;  s2' = b2*x - a2*y = (1-u)*x-(1-v)*y = x-y-u*x+v*y
+    fld     dword [{{.Input "belleq" "gain"}}]        ; g x
+	{{- .Float 0.5 | .Prepare | indent 4}}
+    fsub    dword [{{.Float 0.5 | .Use}}]           ; g-0.5 x
+    {{- .Float 6.643856189774724 | .Prepare | indent 4}}
+    fmul    dword [{{.Use (.Float 6.643856189774724)}}]   ; (g-0.5)*6.643856189774724 x
+    {{.Call "su_power"}}                            ; A=2^((g-0.5)*6.643856189774724) x
+    fld     dword [{{.Input "belleq" "frequency"}}] ; f A x
+    fmul    st0, st0                                ; f*f A x
+    fadd    st0, st0                                ; w=2*f*f
+    fsincos                                         ; cos(w) sin(w) A x
+    fadd    st0, st0                                ; r=2*cos(w) sin(w) A x
+    fld     dword [{{.Input "belleq" "bandwidth"}}]   ; b r sin(w) A x
+    fadd    st0, st0                                ; 2*b r sin(w) A x
+    fmulp   st2, st0                                ; r alpha=sin(w)*2*b A x
+	fxch    st0, st1                                ; alpha r A x
+    fdivr   st2, st0                                ; alpha r v=alpha/A x
+	fmul    st0, st0                                ; alpha*alpha r v x
+    fdiv    st0, st2                                ; u=alpha*A r v x
+    fld1                                            ; 1 u r v x
+    faddp   st3, st0                                ; u r v+1 x
+    fmul    st0, st3                                ; u*x r v+1 x
+    fld     dword [{{.WRK}}]                        ; s1 u*x r v+1 x
+    fadd    st0, st1                                ; s1+u*x u*x r v+1 x
+    fadd    st0, st4                                ; s1+u*x+x u*x r v+1 x
+    fdiv    st0, st3                                ; y=(s1+u*x+x)/(v+1) u*x r v+1 x
+    {{- .Float 0.5 | .Prepare | indent 4}}
+    fadd    dword [{{.Float 0.5 | .Use}}]           ; add and sub small offset to prevent denormalization
+    fsub    dword [{{.Float 0.5 | .Use}}]           ; See for example: https://stackoverflow.com/questions/36781881/why-denormalized-floats-are-so-much-slower-than-other-floats-from-hardware-arch
+    fmul    st3, st0                                ; y u*x r v*y+y x
+    fsub    st3, st0                                ; y u*x r v*y x
+    fxch    st4, st0                                ; x u*x r v*y y
+    fsubr   st0, st4                                ; y-x u*x r v*y y
+    fmul    st2, st0                                ; y-x u*x r*(y-x) v*y y
+    fsubp   st3, st0                                ; u*x r*(y-x) x-y+v*y y
+    fsubp   st2, st0                                ; r*(y-x) x-y+v*y-u*x y
+    fadd    dword [{{.WRK}}+4]                      ; s2+r*(y-x) x-y+v*y-u*x y
+    fstp    dword [{{.WRK}}]                        ; x-y+v*y-u*x y
+    fstp    dword [{{.WRK}}+4]                      ; y
+    ret
+{{end}}
+
+
 {{- if .HasOp "clip"}}
 ;-------------------------------------------------------------------------------
 ;   CLIP opcode: clips the signal into [-1,1] range

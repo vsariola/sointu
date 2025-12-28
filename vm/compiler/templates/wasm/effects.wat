@@ -203,6 +203,62 @@
 {{end}}
 
 
+{{- if .HasOp "belleq"}}
+;;-------------------------------------------------------------------------------
+;;   BELLEQ opcode: perform second order bell eq filtering on the signal
+;;-------------------------------------------------------------------------------
+;;   Mono:   x   ->  eq(x)
+;;   Stereo: l r ->  eq(l) eq(r)
+;;-------------------------------------------------------------------------------
+(func $su_op_belleq (param $stereo i32) (local $sinw f32) (local $A f32) (local $u f32) (local $v f32) (local $x f32) (local $y f32) (local $d f32) (local $alpha f32)
+{{- if .Stereo "belleq"}}
+    (call $stereoHelper (local.get $stereo) (i32.const {{div (.GetOp "belleq") 2}}))
+{{- end}}
+    (global.get $WRK)
+    (local.tee $x (call $pop))                              ;; x WRK
+    (f32.mul
+        (call $input (i32.const {{.InputNumber "belleq" "frequency"}}))
+        (call $input (i32.const {{.InputNumber "belleq" "frequency"}}))
+    )
+    (f32.mul (f32.const 2))
+    (local.tee $sinw (call $sin))                           ;; sinw x WRK
+    (call $input (i32.const {{.InputNumber "belleq" "bandwidth"}})) ;; b sinw x WRK
+    (f32.mul (f32.const 2))                                 ;; 2*b sinw x WRK
+    (local.tee $alpha (f32.mul))                            ;; alpha=sinw*2*b x WRK
+    (f32.sub (call $input (i32.const {{.InputNumber "belleq" "gain"}})) (f32.const 0.5)) ;; g-0.5 alpha x WRK
+    (f32.mul (f32.const 6.643856189774724))
+    (local.tee $A (call $pow2))                             ;; A=2^((g-0.5)*6.643856189774724) alpha x WRK
+    (local.tee $u (f32.mul))                                ;; u=A*alpha x WRK
+    ;; Computing (y=x+u*x+s1)/(1+v)
+    (f32.mul (local.get $x))                                ;; u*x x WRK
+    (f32.add)                                               ;; ux+x WRK
+    (f32.load (global.get $WRK))                            ;; s1 ux+x WRK
+    (f32.add)                                               ;; ux+x+s1 WRK
+    ;; Compute v=alpha/A
+    (local.tee $v (f32.div (local.get $alpha) (local.get $A))) ;; v ux+x+s1 WRK
+    (f32.add (f32.const 1))                                 ;; 1+v ux+x+s1 WRK
+    (local.tee $y (f32.div))                                ;; y WRK
+    ;; s1' = 2*cos(w)*(y-x)+s2
+    (f32.sub (local.get $x))                                ;; y-x WRK
+    ;; need to compute cos(w) as sqrt(1-sin(w)^2)
+    (f32.sqrt (f32.sub (f32.const 1) (f32.mul (local.get $sinw) (local.get $sinw)))) ;; cos(w) y-x WRK
+    (f32.mul)                                               ;; cos(w)*(y-x) WRK
+    (f32.mul (f32.const 2))                                 ;; 2*cos(w)*(y-x) WRK
+    (f32.add (f32.load offset=4 (global.get $WRK)))         ;; s2+2*cos(w)*(y-x) WRK
+    (f32.store)                                             ;; s1'=s2+2*cos(w)*(y-x)
+    ;; s2' = x-y+v*y-u*x
+    (global.get $WRK)
+    (f32.sub (local.get $x) (local.get $y))                 ;; x-y WRK
+    (f32.mul (local.get $v) (local.get $y))
+    (f32.mul (local.get $u) (local.get $x))
+    (f32.sub)                                               ;; v*y-u*x x-y WRK
+    (f32.add)                                               ;; v*y-u*x+x-y WRK
+    (f32.store offset=4)
+    (call $push (local.get $y))
+)
+{{end}}
+
+
 {{- if .HasOp "clip"}}
 ;;-------------------------------------------------------------------------------
 ;;   CLIP opcode: clips the signal into [-1,1] range

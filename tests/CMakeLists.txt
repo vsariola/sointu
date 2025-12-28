@@ -155,6 +155,9 @@ regression_test(test_filter_stereo "VCO_SINE;ENVELOPE;FOP_MULP")
 regression_test(test_filter_freqmod "VCO_SINE;ENVELOPE;FOP_MULP;SEND")
 regression_test(test_filter_resmod "VCO_SINE;ENVELOPE;FOP_MULP;SEND")
 
+regression_test(test_belleq "VCO_SINE;ENVELOPE;FOP_MULP")
+regression_test(test_belleq_stereo "VCO_SINE;ENVELOPE;FOP_MULP")
+
 regression_test(test_delay "ENVELOPE;FOP_MULP;PANNING;VCO_SINE")
 regression_test(test_delay_stereo "ENVELOPE;FOP_MULP;PANNING;VCO_SINE")
 regression_test(test_delay_notetracking "ENVELOPE;FOP_MULP;PANNING;NOISE")
