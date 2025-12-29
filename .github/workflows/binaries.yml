@@ -71,16 +71,15 @@ jobs:
             asmnasm: /Users/runner/nasm/nasm
             output: sointu-compile
             params: cmd/sointu-compile/main.go
-          - os: macos-13
+          - os: macos-latest
             asmnasm: /Users/runner/nasm/nasm
             output: sointu-track
-            params: -tags=native cmd/sointu-track/main.go
-          - os: macos-13
+            params: cmd/sointu-track/main.go
+          - os: macos-latest
             asmnasm: /Users/runner/nasm/nasm
             output: sointu-vsti.a
-            bundleoutput: sointu-vsti
-            MACOSX_DEPLOYMENT_TARGET: 11
-            params: -buildmode=c-archive -tags="plugin,native" ./cmd/sointu-vsti/
+            bundleoutput: sointu-vsti            
+            params: -buildmode=c-archive -tags="plugin" ./cmd/sointu-vsti/
             bundle: true
     steps:
     - uses: benjlevesque/short-sha@v3.0
@@ -102,16 +101,13 @@ jobs:
       if: runner.os == 'Linux'
     - name: Build library
       env:
-        ASM_NASM: ${{ matrix.config.asmnasm }}
-        MACOSX_DEPLOYMENT_TARGET: ${{ matrix.config.MACOSX_DEPLOYMENT_TARGET }}
+        ASM_NASM: ${{ matrix.config.asmnasm }}        
       run: |
         mkdir build
         cd build
         cmake -GNinja ..
         ninja sointu
-    - name: Build binary
-      env:
-        MACOSX_DEPLOYMENT_TARGET: ${{ matrix.config.MACOSX_DEPLOYMENT_TARGET }}
+    - name: Build binary      
       run: |
         go build -ldflags "-X github.com/vsariola/sointu/version.Version=$(git describe) ${{ matrix.config.ldflags}}" -o ${{ matrix.config.output }} ${{ matrix.config.params }}
     - name: Upload binary
@@ -121,9 +117,7 @@ jobs:
         name: ${{ runner.os }}-${{ steps.short-sha.outputs.sha }}-${{ matrix.config.output }}
         path: ${{ matrix.config.output }}
     - name: Bundle VST
-      if: matrix.config.bundle
-      env:
-        MACOSX_DEPLOYMENT_TARGET: ${{ matrix.config.MACOSX_DEPLOYMENT_TARGET }}
+      if: matrix.config.bundle      
       run: | # following https://github.com/RustAudio/vst-rs/blob/master/osx_vst_bundler.sh
         mkdir -p "bundle/${{ matrix.config.bundleoutput }}.vst/Contents/MacOS"
         clang++ -D__MACOSX_CORE__ -framework CoreServices -framework CoreAudio -framework CoreMIDI -framework CoreFoundation -L./build/ -lsointu -bundle -o bundle/${{ matrix.config.bundleoutput }} -all_load ${{ matrix.config.output }}

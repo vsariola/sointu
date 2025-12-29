@@ -20,14 +20,17 @@ jobs:
           - os: ubuntu-latest
             asmnasm: /home/runner/nasm/nasm
             gotests: yes
+            gotestcases: ./vm ./vm/compiler/bridge ./vm/compiler            
             cgo_ldflags:
           - os: windows-latest
             asmnasm: C:\Users\runneradmin\nasm\nasm
             gotests: yes
+            gotestcases: ./vm ./vm/compiler/bridge ./vm/compiler            
             cgo_ldflags:
-          - os: macos-13
+          - os: macos-latest
             asmnasm: /Users/runner/nasm/nasm
             gotests: yes
+            gotestcases: ./vm ./vm/compiler
             cgo_ldflags: # -Wl,-no_pie
             # ld on mac is complaining about position dependent code so this would take the errors away, BUT
             # suddenly this causes an error, even though worked last week. Let's accept the warnings rather
@@ -44,7 +47,7 @@ jobs:
         go-version: '>=1.21.0'
     - uses: actions/setup-node@v4
       with:
-        node-version: '15'
+        node-version: '22'
     - uses: ilammy/setup-nasm@v1.5.1
     - name: Run ctest
       env:
@@ -60,4 +63,4 @@ jobs:
       env:
         CGO_LDFLAGS: ${{ matrix.config.cgo_ldflags }}
       run: |
-        go test ./vm ./vm/compiler/bridge ./vm/compiler
+        go test ${{ matrix.config.gotestcases }}

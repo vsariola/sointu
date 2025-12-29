@@ -24,6 +24,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - The tracker thought that "sync" unit pops the value from stack, even if the VM
   did not, resulting it claiming errors in patches that worked once compiled.
 
+### Changed
+- The provided MacOS executables are now arm64, which means the x86 native
+  synths are not compiled in.
+
 ## [0.5.0]
 ### BREAKING CHANGES
 - BREAKING CHANGE: always first modulate delay time, then apply notetracking. In
