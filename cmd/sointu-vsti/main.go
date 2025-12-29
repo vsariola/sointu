@@ -49,7 +49,9 @@ func init() {
 		model := tracker.NewModel(broker, cmd.Synthers, cmd.NewMidiContext(broker), recoveryFile)
 		player := tracker.NewPlayer(broker, cmd.Synthers[0])
 		detector := tracker.NewDetector(broker)
+		specan := tracker.NewSpecAnalyzer(broker)
 		go detector.Run()
+		go specan.Run()
 
 		t := gioui.NewTracker(model)
 		model.InstrEnlarged().SetValue(true)
@@ -112,8 +114,10 @@ func init() {
 				CloseFunc: func() {
 					tracker.TrySend(broker.CloseDetector, struct{}{})
 					tracker.TrySend(broker.CloseGUI, struct{}{})
+					tracker.TrySend(broker.CloseSpecAn, struct{}{})
 					tracker.TimeoutReceive(broker.FinishedDetector, 3*time.Second)
 					tracker.TimeoutReceive(broker.FinishedGUI, 3*time.Second)
+					tracker.TimeoutReceive(broker.FinishedSpecAn, 3*time.Second)
 				},
 				GetChunkFunc: func(isPreset bool) []byte {
 					retChn := make(chan []byte)

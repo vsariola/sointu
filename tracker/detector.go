@@ -12,7 +12,7 @@ type (
 		broker           *Broker
 		loudnessDetector loudnessDetector
 		peakDetector     peakDetector
-		chunkHistory     sointu.AudioBuffer
+		chunker          chunker
 	}
 
 	WeightingType int
@@ -61,6 +61,10 @@ type (
 	oversamplerState struct {
 		history   [11]float32
 		tmp, tmp2 []float32
+	}
+
+	chunker struct {
+		buffer sointu.AudioBuffer
 	}
 )
 
@@ -132,26 +136,7 @@ func (s *Detector) handleMsg(msg MsgToDetector) {
 	switch data := msg.Data.(type) {
 	case *sointu.AudioBuffer:
 		buf := *data
-		for {
-			var chunk sointu.AudioBuffer
-			if len(s.chunkHistory) > 0 && len(s.chunkHistory) < 4410 {
-				l := min(len(buf), 4410-len(s.chunkHistory))
-				s.chunkHistory = append(s.chunkHistory, buf[:l]...)
-				if len(s.chunkHistory) < 4410 {
-					break
-				}
-				chunk = s.chunkHistory
-				buf = buf[l:]
-			} else {
-				if len(buf) >= 4410 {
-					chunk = buf[:4410]
-					buf = buf[4410:]
-				} else {
-					s.chunkHistory = s.chunkHistory[:0]
-					s.chunkHistory = append(s.chunkHistory, buf...)
-					break
-				}
-			}
+		s.chunker.Process(buf, 4410, 0, func(chunk sointu.AudioBuffer) {
 			TrySend(s.broker.ToModel, MsgToModel{
 				HasDetectorResult: true,
 				DetectorResult: DetectorResult{
@@ -159,7 +144,8 @@ func (s *Detector) handleMsg(msg MsgToDetector) {
 					Peaks:    s.peakDetector.update(chunk),
 				},
 			})
-		}
+		})
+		s.broker.PutAudioBuffer(data)
 	}
 }
 
@@ -431,4 +417,15 @@ func (d *peakDetector) reset() {
 		}
 		d.maxPower[chn] = 0
 	}
+}
+
+func (c *chunker) Process(input sointu.AudioBuffer, windowLen, overlap int, cb func(sointu.AudioBuffer)) {
+	c.buffer = append(c.buffer, input...)
+	b := c.buffer
+	for len(b) >= windowLen {
+		cb(b[:windowLen])
+		b = b[windowLen-overlap:]
+	}
+	copy(c.buffer, b)
+	c.buffer = c.buffer[:len(b)]
 }

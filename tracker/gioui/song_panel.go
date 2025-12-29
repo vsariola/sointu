@@ -8,7 +8,10 @@ import (
 	"strconv"
 	"strings"
 
+	"gioui.org/f32"
 	"gioui.org/gesture"
+	"gioui.org/io/event"
+	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
@@ -26,6 +29,7 @@ type SongPanel struct {
 	LoudnessExpander     *Expander
 	PeakExpander         *Expander
 	CPUExpander          *Expander
+	SpectrumExpander     *Expander
 
 	WeightingTypeBtn *Clickable
 	OversamplingBtn  *Clickable
@@ -37,7 +41,14 @@ type SongPanel struct {
 	Step           *NumericUpDownState
 	SongLength     *NumericUpDownState
 
-	Scope *OscilloscopeState
+	List      *layout.List
+	ScrollBar *ScrollBar
+
+	Scope         *OscilloscopeState
+	ScopeScaleBar *ScaleBar
+
+	SpectrumState    *SpectrumState
+	SpectrumScaleBar *ScaleBar
 
 	MenuBar *MenuBar
 	PlayBar *PlayBar
@@ -63,6 +74,14 @@ func NewSongPanel(tr *Tracker) *SongPanel {
 		LoudnessExpander:     &Expander{},
 		PeakExpander:         &Expander{},
 		CPUExpander:          &Expander{},
+		SpectrumExpander:     &Expander{},
+
+		List:      &layout.List{Axis: layout.Vertical},
+		ScrollBar: &ScrollBar{Axis: layout.Vertical},
+
+		SpectrumState:    NewSpectrumState(),
+		SpectrumScaleBar: &ScaleBar{Axis: layout.Vertical, BarSize: 10, Size: 300},
+		ScopeScaleBar:    &ScaleBar{Axis: layout.Vertical, BarSize: 10, Size: 300},
 	}
 	return ret
 }
@@ -152,8 +171,9 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 
 	synthBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.SynthBtn, tr.Model.SyntherName(), "")
 
-	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(func(gtx C) D {
+	listItem := func(gtx C, index int) D {
+		switch index {
+		case 0:
 			return t.SongSettingsExpander.Layout(gtx, tr.Theme, "Song",
 				func(gtx C) D {
 					return Label(tr.Theme, &tr.Theme.SongPanel.RowHeader, strconv.Itoa(tr.BPM().Value())+" BPM").Layout(gtx)
@@ -182,8 +202,7 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 						}),
 					)
 				})
-		}),
-		layout.Rigid(func(gtx C) D {
+		case 1:
 			return t.CPUExpander.Layout(gtx, tr.Theme, "CPU", cpuSmallLabel,
 				func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical, Alignment: layout.End}.Layout(gtx,
@@ -192,8 +211,7 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 					)
 				},
 			)
-		}),
-		layout.Rigid(func(gtx C) D {
+		case 2:
 			return t.LoudnessExpander.Layout(gtx, tr.Theme, "Loudness",
 				func(gtx C) D {
 					loudness := tr.Model.DetectorResult().Loudness[tracker.LoudnessShortTerm]
@@ -223,8 +241,7 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 					)
 				},
 			)
-		}),
-		layout.Rigid(func(gtx C) D {
+		case 3:
 			return t.PeakExpander.Layout(gtx, tr.Theme, "Peaks",
 				func(gtx C) D {
 					maxPeak := max(tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][0], tr.Model.DetectorResult().Peaks[tracker.PeakShortTerm][1])
@@ -252,13 +269,28 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 					)
 				},
 			)
-		}),
-		layout.Flexed(1, func(gtx C) D {
+		case 4:
 			scope := Scope(tr.Theme, tr.Model.SignalAnalyzer(), t.Scope)
-			return t.ScopeExpander.Layout(gtx, tr.Theme, "Oscilloscope", func(gtx C) D { return D{} }, scope.Layout)
-		}),
-		layout.Rigid(Label(tr.Theme, &tr.Theme.SongPanel.Version, version.VersionOrHash).Layout),
-	)
+			scopeScaleBar := func(gtx C) D {
+				return t.ScopeScaleBar.Layout(gtx, scope.Layout)
+			}
+			return t.ScopeExpander.Layout(gtx, tr.Theme, "Oscilloscope", func(gtx C) D { return D{} }, scopeScaleBar)
+		case 5:
+			spectrumScaleBar := func(gtx C) D {
+				return t.SpectrumScaleBar.Layout(gtx, t.SpectrumState.Layout)
+			}
+			return t.SpectrumExpander.Layout(gtx, tr.Theme, "Spectrum", func(gtx C) D { return D{} }, spectrumScaleBar)
+		case 6:
+			return Label(tr.Theme, &tr.Theme.SongPanel.Version, version.VersionOrHash).Layout(gtx)
+		default:
+			return D{}
+		}
+	}
+	gtx.Constraints.Min = gtx.Constraints.Max
+	dims := t.List.Layout(gtx, 7, listItem)
+	t.ScrollBar.Layout(gtx, &tr.Theme.SongPanel.ScrollBar, 7, &t.List.Position)
+	tr.SpecAnEnabled().SetValue(t.SpectrumExpander.Expanded)
+	return dims
 }
 
 func dbLabel(th *Theme, value tracker.Decibel) LabelWidget {
@@ -280,6 +312,87 @@ func layoutSongOptionRow(gtx C, th *Theme, label string, widget layout.Widget) D
 		layout.Rigid(widget),
 		layout.Rigid(rightSpacer),
 	)
+}
+
+type ScaleBar struct {
+	Size, BarSize unit.Dp
+	Axis          layout.Axis
+
+	drag      bool
+	dragID    pointer.ID
+	dragStart f32.Point
+}
+
+func (s *ScaleBar) Layout(gtx C, w layout.Widget) D {
+	s.Update(gtx)
+	pxBar := gtx.Dp(s.BarSize)
+	pxTot := gtx.Dp(s.Size) + pxBar
+	var rect image.Rectangle
+	var size image.Point
+	if s.Axis == layout.Horizontal {
+		pxTot = min(max(gtx.Constraints.Min.X, pxTot), gtx.Constraints.Max.X)
+		px := pxTot - pxBar
+		rect = image.Rect(px, 0, pxTot, gtx.Constraints.Max.Y)
+		size = image.Pt(pxTot, gtx.Constraints.Max.Y)
+		gtx.Constraints.Max.X = px
+		gtx.Constraints.Min.X = min(gtx.Constraints.Min.X, px)
+	} else {
+		pxTot = min(max(gtx.Constraints.Min.Y, pxTot), gtx.Constraints.Max.Y)
+		px := pxTot - pxBar
+		rect = image.Rect(0, px, gtx.Constraints.Max.X, pxTot)
+		size = image.Pt(gtx.Constraints.Max.X, pxTot)
+		gtx.Constraints.Max.Y = px
+		gtx.Constraints.Min.Y = min(gtx.Constraints.Min.Y, px)
+	}
+	area := clip.Rect(rect).Push(gtx.Ops)
+	event.Op(gtx.Ops, s)
+	if s.Axis == layout.Horizontal {
+		pointer.CursorColResize.Add(gtx.Ops)
+	} else {
+		pointer.CursorRowResize.Add(gtx.Ops)
+	}
+	area.Pop()
+	w(gtx)
+	return D{Size: size}
+}
+
+func (s *ScaleBar) Update(gtx C) {
+	for {
+		ev, ok := gtx.Event(pointer.Filter{
+			Target: s,
+			Kinds:  pointer.Press | pointer.Drag | pointer.Release,
+		})
+		if !ok {
+			break
+		}
+		e, ok := ev.(pointer.Event)
+		if !ok {
+			continue
+		}
+
+		switch e.Kind {
+		case pointer.Press:
+			if s.drag {
+				break
+			}
+			s.dragID = e.PointerID
+			s.dragStart = e.Position
+			s.drag = true
+		case pointer.Drag:
+			if s.dragID != e.PointerID {
+				break
+			}
+			if s.Axis == layout.Horizontal {
+				s.Size += gtx.Metric.PxToDp(int(e.Position.X - s.dragStart.X))
+			} else {
+				s.Size += gtx.Metric.PxToDp(int(e.Position.Y - s.dragStart.Y))
+			}
+			s.Size = max(s.Size, unit.Dp(50))
+			s.dragStart = e.Position
+		case pointer.Release, pointer.Cancel:
+			s.drag = false
+		}
+	}
 }
 
 type Expander struct {

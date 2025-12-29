@@ -37,19 +37,23 @@ type (
 		ToPlayer   chan any // TODO: consider using a sum type here, for a bit more type safety. See: https://www.jerf.org/iri/post/2917/
 		ToDetector chan MsgToDetector
 		ToGUI      chan any
+		ToSpecAn   chan MsgToSpecAn
 
 		CloseDetector chan struct{}
 		CloseGUI      chan struct{}
+		CloseSpecAn   chan struct{}
 
 		FinishedGUI      chan struct{}
 		FinishedDetector chan struct{}
+		FinishedSpecAn   chan struct{}
 
 		// mIDIEventsToGUI is true if all MIDI events should be sent to the GUI,
 		// for inputting notes to tracks. If false, they should be sent to the
 		// player instead.
 		mIDIEventsToGUI atomic.Bool
 
-		bufferPool sync.Pool
+		bufferPool   sync.Pool
+		spectrumPool sync.Pool
 	}
 
 	// MsgToModel is a message sent to the model. The most often sent data
@@ -93,6 +97,12 @@ type (
 		Param int
 	}
 
+	MsgToSpecAn struct {
+		SpecSettings SpecAnSettings
+		HasSettings  bool
+		Data         any
+	}
+
 	GUIMessageKind int
 )
 
@@ -108,11 +118,15 @@ func NewBroker() *Broker {
 		ToModel:          make(chan MsgToModel, 1024),
 		ToDetector:       make(chan MsgToDetector, 1024),
 		ToGUI:            make(chan any, 1024),
+		ToSpecAn:         make(chan MsgToSpecAn, 1024),
 		CloseDetector:    make(chan struct{}, 1),
 		CloseGUI:         make(chan struct{}, 1),
+		CloseSpecAn:      make(chan struct{}, 1),
 		FinishedGUI:      make(chan struct{}),
 		FinishedDetector: make(chan struct{}),
+		FinishedSpecAn:   make(chan struct{}),
 		bufferPool:       sync.Pool{New: func() any { return &sointu.AudioBuffer{} }},
+		spectrumPool:     sync.Pool{New: func() any { return &Spectrum{} }},
 	}
 }
 
@@ -138,6 +152,20 @@ func (b *Broker) PutAudioBuffer(buf *sointu.AudioBuffer) {
 		*buf = (*buf)[:0]
 	}
 	b.bufferPool.Put(buf)
+}
+
+func (b *Broker) GetSpectrum() *Spectrum {
+	return b.spectrumPool.Get().(*Spectrum)
+}
+
+func (b *Broker) PutSpectrum(s *Spectrum) {
+	if len((*s)[0]) > 0 {
+		(*s)[0] = (*s)[0][:0]
+	}
+	if len((*s)[1]) > 0 {
+		(*s)[1] = (*s)[1][:0]
+	}
+	b.spectrumPool.Put(s)
 }
 
 // TrySend is a helper function to send a value to a channel if it is not full.

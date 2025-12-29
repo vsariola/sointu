@@ -34,6 +34,9 @@ type (
 	Octave            Model
 	DetectorWeighting Model
 	SyntherIndex      Model
+	SpecAnSpeed       Model
+	SpecAnResolution  Model
+	SpecAnChannelsInt Model
 )
 
 func MakeInt(value IntValue) Int {
@@ -83,6 +86,9 @@ func (m *Model) Step() Int              { return MakeInt((*Step)(m)) }
 func (m *Model) Octave() Int            { return MakeInt((*Octave)(m)) }
 func (m *Model) DetectorWeighting() Int { return MakeInt((*DetectorWeighting)(m)) }
 func (m *Model) SyntherIndex() Int      { return MakeInt((*SyntherIndex)(m)) }
+func (m *Model) SpecAnSpeed() Int       { return MakeInt((*SpecAnSpeed)(m)) }
+func (m *Model) SpecAnResolution() Int  { return MakeInt((*SpecAnResolution)(m)) }
+func (m *Model) SpecAnChannelsInt() Int { return MakeInt((*SpecAnChannelsInt)(m)) }
 
 // BeatsPerMinuteInt
 
@@ -149,6 +155,32 @@ func (v *DetectorWeighting) SetValue(value int) bool {
 	return true
 }
 func (v *DetectorWeighting) Range() IntRange { return IntRange{0, int(NumLoudnessTypes) - 1} }
+
+// SpecAn stuff
+
+func (v *SpecAnSpeed) Value() int { return int(v.specAnSettings.Smooth) }
+func (v *SpecAnSpeed) SetValue(value int) bool {
+	v.specAnSettings.Smooth = value
+	TrySend(v.broker.ToSpecAn, MsgToSpecAn{HasSettings: true, SpecSettings: v.specAnSettings})
+	return true
+}
+func (v *SpecAnSpeed) Range() IntRange { return IntRange{SpecSpeedMin, SpecSpeedMax} }
+
+func (v *SpecAnResolution) Value() int { return v.specAnSettings.Resolution }
+func (v *SpecAnResolution) SetValue(value int) bool {
+	v.specAnSettings.Resolution = value
+	TrySend(v.broker.ToSpecAn, MsgToSpecAn{HasSettings: true, SpecSettings: v.specAnSettings})
+	return true
+}
+func (v *SpecAnResolution) Range() IntRange { return IntRange{SpecResolutionMin, SpecResolutionMax} }
+
+func (v *SpecAnChannelsInt) Value() int { return int(v.specAnSettings.ChnMode) }
+func (v *SpecAnChannelsInt) SetValue(value int) bool {
+	v.specAnSettings.ChnMode = SpecChnMode(value)
+	TrySend(v.broker.ToSpecAn, MsgToSpecAn{HasSettings: true, SpecSettings: v.specAnSettings})
+	return true
+}
+func (v *SpecAnChannelsInt) Range() IntRange { return IntRange{0, int(NumSpecChnModes) - 1} }
 
 // InstrumentVoicesInt
 

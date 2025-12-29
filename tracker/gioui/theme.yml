@@ -83,10 +83,12 @@ iconbutton:
     color: *errorcolor
     size: 24
     inset: { top: 6, bottom: 6, left: 6, right: 6 }
-oscilloscope:
-  curvecolors: [*primarycolor, *secondarycolor]
+plot:
+  curvecolors: [*primarycolor, *secondarycolor,*disabled]
   limitcolor: { r: 255, g: 255, b: 255, a: 8 }
   cursorcolor: { r: 252, g: 186, b: 3, a: 255 }
+  ticks: { textsize: 12, color: *disabled, maxlines: 1}  
+  dppertick: 50
 numericupdown:
   bgcolor: { r: 255, g: 255, b: 255, a: 3 }
   textcolor: *fg
@@ -111,6 +113,7 @@ songpanel:
   version:
     textsize: 12
     color: *mediumemphasis
+  scrollbar: { width: 6, color: *scrollbarcolor }    
 alert:
   error:
     bg: *errorcolor

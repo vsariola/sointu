@@ -73,8 +73,13 @@ type (
 		signalAnalyzer *ScopeModel
 		detectorResult DetectorResult
 
+		spectrum *Spectrum
+
 		weightingType WeightingType
 		oversampling  bool
+
+		specAnSettings SpecAnSettings
+		specAnEnabled  bool
 
 		alerts []Alert
 		dialog Dialog
@@ -185,6 +190,7 @@ func (m *Model) Dialog() Dialog               { return m.dialog }
 func (m *Model) Quitted() bool                { return m.quitted }
 
 func (m *Model) DetectorResult() DetectorResult { return m.detectorResult }
+func (m *Model) Spectrum() Spectrum             { return *m.spectrum }
 
 // NewModelPlayer creates a new model and a player that communicates with it
 func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext, recoveryFilePath string) *Model {
@@ -195,6 +201,7 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 	m.d.Octave = 4
 	m.linkInstrTrack = true
 	m.d.RecoveryFilePath = recoveryFilePath
+	m.spectrum = broker.GetSpectrum()
 	m.resetSong()
 	if recoveryFilePath != "" {
 		if bytes2, err := os.ReadFile(m.d.RecoveryFilePath); err == nil {
@@ -205,7 +212,7 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 		}
 	}
 	TrySend(broker.ToPlayer, any(m.d.Song.Copy())) // we should be non-blocking in the constructor
-	m.signalAnalyzer = NewScopeModel(broker, m.d.Song.BPM)
+	m.signalAnalyzer = NewScopeModel(m.d.Song.BPM)
 	m.updateDeriveData(SongChange)
 	m.presets.load()
 	m.updateDerivedPresetSearch()
@@ -372,6 +379,7 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 	}
 	if msg.Reset {
 		m.signalAnalyzer.Reset()
+		TrySend(m.broker.ToDetector, MsgToDetector{Reset: true}) // chain the messages: when the signal analyzer is reset, also reset the detector
 	}
 	switch e := msg.Data.(type) {
 	case func():
@@ -394,6 +402,20 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 		m.playing = e.bool
 	case *sointu.AudioBuffer:
 		m.signalAnalyzer.ProcessAudioBuffer(e)
+		// chain the messages: when we have a new audio buffer, send them to the detector and the spectrum analyzer
+		if m.specAnEnabled { // send buffers to spectrum analyzer only if it's enabled
+			clone := m.broker.GetAudioBuffer()
+			*clone = append(*clone, *e...)
+			if !TrySend(m.broker.ToSpecAn, MsgToSpecAn{Data: clone}) {
+				m.broker.PutAudioBuffer(clone)
+			}
+		}
+		if !TrySend(m.broker.ToDetector, MsgToDetector{Data: e}) {
+			m.broker.PutAudioBuffer(e)
+		}
+	case *Spectrum:
+		m.broker.PutSpectrum(m.spectrum)
+		m.spectrum = e
 	}
 }
 

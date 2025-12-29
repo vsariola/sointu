@@ -52,7 +52,9 @@ func main() {
 	model := tracker.NewModel(broker, cmd.Synthers, midiContext, recoveryFile)
 	player := tracker.NewPlayer(broker, cmd.Synthers[0])
 	detector := tracker.NewDetector(broker)
+	specan := tracker.NewSpecAnalyzer(broker)
 	go detector.Run()
+	go specan.Run()
 
 	if a := flag.Args(); len(a) > 0 {
 		f, err := os.Open(a[0])
@@ -72,7 +74,9 @@ func main() {
 		trackerUi.Main()
 		audioCloser.Close()
 		tracker.TrySend(broker.CloseDetector, struct{}{})
+		tracker.TrySend(broker.CloseSpecAn, struct{}{})
 		tracker.TimeoutReceive(broker.FinishedDetector, 3*time.Second)
+		tracker.TimeoutReceive(broker.FinishedSpecAn, 3*time.Second)
 		if *cpuprofile != "" {
 			pprof.StopCPUProfile()
 			f.Close()

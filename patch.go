@@ -251,23 +251,12 @@ func arrDispFunc(arr []string) UnitParameterDisplayFunc {
 }
 
 func filterFrequencyDispFunc(v int) (string, string) {
-	// Matlab was used to find the frequency for the singularity when r = 0:
-	// % p is the frequency parameter squared, p = freq * freq
-	// % We assume the singular case r = 0.
-	// syms p z s T
-	// A = [1 p;-p 1-p*p]; % discrete state-space matrix x(k+1)=A*x(k) + ...
-	// pol = det(z*eye(2)-A) % characteristic discrete polynomial
-	// spol = simplify(subs(pol,z,(1+s*T/2)/(1-s*T/2))) % Tustin approximation
-	// % where T = 1/(44100 Hz) is the sample period
-	// % spol is of the form N(s)/D(s), where N(s)=(-T^2*p^2*s^2+4*T^2*s^2+4*p^2)
-	// % We are interested in the roots i.e. when spol == 0 <=> N(s)==0
-	// simplify(solve((-T^2*p^2*s^2+4*T^2*s^2+4*p^2)==0,s))
-	// % Answer: s=±2*p/(T*(p^2-4)^(1/2)). For small p, this simplifies to:
-	// % s=±p*j/T. Thus, s=j*omega=j*2*pi*f => f=±p/(2*pi*T).
-	// So the singularity is when f = p / (2*pi*T) Hz.
+	// In https://www.musicdsp.org/en/latest/Filters/23-state-variable.html,
+	// they call it "cutoff" but it's actually the location of the resonance
+	// peak
 	freq := float64(v) / 128
 	p := freq * freq
-	f := 44100 * p / math.Pi / 2
+	f := math.Asin(p/2) / math.Pi * 44100
 	return strconv.FormatFloat(f, 'f', 0, 64), "Hz"
 }
 

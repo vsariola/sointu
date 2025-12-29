@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Spectrum analyzer showing the spectrum. When the user has a filter or belleq
+  unit selected, it's frequency response is plotted on top. ([#67][i67])
 - belleq unit: a bell-shaped second-order filter for equalization. Belleq unit
   takes the center frequency, bandwidth (inverse of Q-factor) and gain (+-40
   dB). Useful for boosting or reducing specific frequency ranges. Kudos to Reaby
@@ -29,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   did not, resulting it claiming errors in patches that worked once compiled.
 
 ### Changed
+- The song panel can scroll if all the widgets don't fit into it
 - The provided MacOS executables are now arm64, which means the x86 native
   synths are not compiled in.
 
@@ -352,6 +355,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [0.1.0]: https://github.com/vsariola/sointu/compare/4klang-3.11...v0.1.0
 [i61]: https://github.com/vsariola/sointu/issues/61
 [i65]: https://github.com/vsariola/sointu/issues/65
+[i67]: https://github.com/vsariola/sointu/issues/67
 [i68]: https://github.com/vsariola/sointu/issues/68
 [i77]: https://github.com/vsariola/sointu/issues/77
 [i91]: https://github.com/vsariola/sointu/issues/91
