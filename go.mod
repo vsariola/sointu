@@ -1,18 +1,16 @@
 module github.com/vsariola/sointu
 
-go 1.23.8
-
-toolchain go1.24.0
+go 1.24.0
 
 require (
 	gioui.org v0.9.0
 	gioui.org/x v0.8.1
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/ebitengine/oto/v3 v3.3.0
+	github.com/ebitengine/oto/v3 v3.5.0-alpha.0.20260119133252-bae718d5ff43
 	github.com/viterin/vek v0.4.2
 	gitlab.com/gomidi/midi/v2 v2.2.10
 	golang.org/x/exp/shiny v0.0.0-20250408133849-7e4ce0ab07d0
-	golang.org/x/text v0.24.0	
+	golang.org/x/text v0.24.0
 	gopkg.in/yaml.v3 v3.0.1
 	pipelined.dev/audio/vst2 v0.10.1-0.20240223162706-41e9b65fb5c2
 )
@@ -24,7 +22,7 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/andybalholm/stroke v0.0.0-20221221101821-bd29b49d73f0 // indirect
 	github.com/chewxy/math32 v1.11.1 // indirect
-	github.com/ebitengine/purego v0.8.0 // indirect
+	github.com/ebitengine/purego v0.9.1 // indirect
 	github.com/go-text/typesetting v0.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/google/uuid v1.1.2 // indirect
@@ -37,7 +35,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	golang.org/x/image v0.26.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/sys v0.40.0 // indirect
 	pipelined.dev/pipe v0.11.0 // indirect
 	pipelined.dev/signal v0.10.0 // indirect
 )
