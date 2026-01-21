@@ -58,7 +58,7 @@ const (
 	NumSpecChnModes
 )
 
-func (m *Model) SpecAnEnabled() Bool { return MakeBool((*simpleBool)(&m.specAnEnabled)) }
+func (m *Model) SpecAnEnabled() Bool { return MakeBoolFromPtr(&m.specAnEnabled) }
 
 func NewSpecAnalyzer(broker *Broker) *SpecAnalyzer {
 	ret := &SpecAnalyzer{broker: broker}

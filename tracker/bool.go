@@ -40,6 +40,10 @@ func MakeBool(value BoolValue) Bool {
 	return Bool{value: value}
 }
 
+func MakeBoolFromPtr(value *bool) Bool {
+	return Bool{value: (*simpleBool)(value)}
+}
+
 func (v Bool) Toggle() {
 	v.SetValue(!v.Value())
 }
@@ -190,7 +194,7 @@ func (m *Playing) Enabled() bool { return m.playing || !m.instrEnlarged }
 
 // InstrEnlarged methods
 
-func (m *Model) InstrEnlarged() Bool { return MakeBool((*simpleBool)(&m.instrEnlarged)) }
+func (m *Model) InstrEnlarged() Bool { return MakeBoolFromPtr(&m.instrEnlarged) }
 
 // InstrEditor methods
 
@@ -220,7 +224,7 @@ func (m *InstrPresets) SetValue(val bool) {
 
 // Follow methods
 
-func (m *Model) Follow() Bool { return MakeBool((*simpleBool)(&m.follow)) }
+func (m *Model) Follow() Bool { return MakeBoolFromPtr(&m.follow) }
 
 // TrackMidiIn (Midi Input for notes in the tracks)
 
@@ -320,7 +324,7 @@ func (t *LoopToggle) SetValue(val bool) {
 
 // UniquePatterns methods
 
-func (m *Model) UniquePatterns() Bool { return MakeBool((*simpleBool)(&m.uniquePatterns)) }
+func (m *Model) UniquePatterns() Bool { return MakeBoolFromPtr(&m.uniquePatterns) }
 
 // Mute methods
 func (m *Model) Mute() Bool { return MakeBool((*Mute)(m)) }
@@ -374,4 +378,4 @@ func (m *Solo) Enabled() bool { return m.d.InstrIndex >= 0 && m.d.InstrIndex < l
 
 // LinkInstrTrack methods
 
-func (m *Model) LinkInstrTrack() Bool { return MakeBool((*simpleBool)(&m.linkInstrTrack)) }
+func (m *Model) LinkInstrTrack() Bool { return MakeBoolFromPtr(&m.linkInstrTrack) }
