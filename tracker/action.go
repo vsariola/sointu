@@ -33,8 +33,6 @@ type (
 		Enabled() bool
 	}
 
-	DoFunc func()
-
 	AddTrack         Model
 	DeleteTrack      Model
 	SplitTrack       Model
@@ -129,10 +127,6 @@ func (a Action) Enabled() bool {
 	}
 	return e.Enabled()
 }
-
-// DoFunc
-
-func (d DoFunc) Do() { d() }
 
 // AddTrack
 
