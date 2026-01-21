@@ -14,13 +14,11 @@ type (
 	// can be initiated by calling the Do() method. It is usually initiated by a
 	// button press or a menu item. Action advertises whether it is enabled, so
 	// UI can e.g. gray out buttons when the underlying action is not allowed.
-	// Action also implements the Doer and Enabler interfaces, but guarding that
-	// the underlying doer will never get called if enabler return false. That's
-	// why the doer and enabler are private fields, so that they cannot be
-	// called directly from outside, circumventing the Enabled() check.
+	// The underlying Doer can optionally implement the Enabler interface to
+	// decide if the action is enabled or not; if it does not implement the
+	// Enabler interface, the action is always allowed.
 	Action struct {
-		doer    Doer
-		enabler Enabler
+		doer Doer
 	}
 
 	// Doer is an interface that defines a single Do() method, which is called
@@ -107,25 +105,13 @@ type (
 
 // Action methods
 
-// simple version for when both doer and enabler are the same
-func MakeAction(doerEnabler interface {
-	Doer
-	Enabler
-}) Action {
-	return Action{doer: doerEnabler, enabler: doerEnabler}
-}
-
-// a version for cases where doer and enabler are different
-func MakeAction2(doer Doer, enabler Enabler) Action {
-	return Action{doer: doer, enabler: enabler}
-}
-
-func MakeEnabledAction(doer Doer) Action {
-	return Action{doer: doer, enabler: nil}
+func MakeAction(doer Doer) Action {
+	return Action{doer: doer}
 }
 
 func (a Action) Do() {
-	if a.enabler != nil && !a.enabler.Enabled() {
+	e, ok := a.doer.(Enabler)
+	if ok && !e.Enabled() {
 		return
 	}
 	if a.doer != nil {
@@ -137,10 +123,11 @@ func (a Action) Enabled() bool {
 	if a.doer == nil {
 		return false // no doer, not allowed
 	}
-	if a.enabler == nil {
-		return true // no enabler, always allowed
+	e, ok := a.doer.(Enabler)
+	if !ok {
+		return true // not enabler, always allowed
 	}
-	return a.enabler.Enabled()
+	return e.Enabled()
 }
 
 // DoFunc
@@ -242,7 +229,7 @@ func (m *SplitInstrument) Do() {
 // AddUnit
 
 func (m *Model) AddUnit(before bool) Action {
-	return MakeEnabledAction(AddUnit{Before: before, Model: m})
+	return MakeAction(AddUnit{Before: before, Model: m})
 }
 func (a AddUnit) Do() {
 	m := (*Model)(a.Model)
@@ -334,32 +321,32 @@ func (m *Redo) Do() {
 
 // AddSemiTone
 
-func (m *Model) AddSemitone() Action { return MakeEnabledAction((*AddSemitone)(m)) }
+func (m *Model) AddSemitone() Action { return MakeAction((*AddSemitone)(m)) }
 func (m *AddSemitone) Do()           { Table{(*Notes)(m)}.Add(1, false) }
 
 // SubtractSemitone
 
-func (m *Model) SubtractSemitone() Action { return MakeEnabledAction((*SubtractSemitone)(m)) }
+func (m *Model) SubtractSemitone() Action { return MakeAction((*SubtractSemitone)(m)) }
 func (m *SubtractSemitone) Do()           { Table{(*Notes)(m)}.Add(-1, false) }
 
 // AddOctave
 
-func (m *Model) AddOctave() Action { return MakeEnabledAction((*AddOctave)(m)) }
+func (m *Model) AddOctave() Action { return MakeAction((*AddOctave)(m)) }
 func (m *AddOctave) Do()           { Table{(*Notes)(m)}.Add(1, true) }
 
 // SubtractOctave
 
-func (m *Model) SubtractOctave() Action { return MakeEnabledAction((*SubtractOctave)(m)) }
+func (m *Model) SubtractOctave() Action { return MakeAction((*SubtractOctave)(m)) }
 func (m *SubtractOctave) Do()           { Table{(*Notes)(m)}.Add(-1, true) }
 
 // EditNoteOff
 
-func (m *Model) EditNoteOff() Action { return MakeEnabledAction((*EditNoteOff)(m)) }
+func (m *Model) EditNoteOff() Action { return MakeAction((*EditNoteOff)(m)) }
 func (m *EditNoteOff) Do()           { Table{(*Notes)(m)}.Fill(0) }
 
 // RemoveUnused
 
-func (m *Model) RemoveUnused() Action { return MakeEnabledAction((*RemoveUnused)(m)) }
+func (m *Model) RemoveUnused() Action { return MakeAction((*RemoveUnused)(m)) }
 func (m *RemoveUnused) Do() {
 	defer (*Model)(m).change("RemoveUnusedAction", ScoreChange, MajorChange)()
 	for trkIndex, trk := range m.d.Song.Score.Tracks {
@@ -468,7 +455,7 @@ func (m *PlayFromLoopStart) Do() {
 
 // StopPlaying
 
-func (m *Model) StopPlaying() Action { return MakeEnabledAction((*StopPlaying)(m)) }
+func (m *Model) StopPlaying() Action { return MakeAction((*StopPlaying)(m)) }
 func (m *StopPlaying) Do() {
 	if !m.playing {
 		(*Model)(m).setPanic(true)
@@ -482,7 +469,7 @@ func (m *StopPlaying) Do() {
 // AddOrderRow
 
 func (m *Model) AddOrderRow(before bool) Action {
-	return MakeEnabledAction(AddOrderRow{Before: before, Model: m})
+	return MakeAction(AddOrderRow{Before: before, Model: m})
 }
 func (a AddOrderRow) Do() {
 	m := a.Model
@@ -506,7 +493,7 @@ func (a AddOrderRow) Do() {
 // DeleteOrderRow
 
 func (m *Model) DeleteOrderRow(backwards bool) Action {
-	return MakeEnabledAction(DeleteOrderRow{Backwards: backwards, Model: m})
+	return MakeAction(DeleteOrderRow{Backwards: backwards, Model: m})
 }
 func (d DeleteOrderRow) Do() {
 	m := d.Model
@@ -535,7 +522,7 @@ func (m *Model) IsChoosingSendTarget() bool {
 }
 
 func (m *Model) ChooseSendSource(id int) Action {
-	return MakeEnabledAction(ChooseSendSource{ID: id, Model: m})
+	return MakeAction(ChooseSendSource{ID: id, Model: m})
 }
 func (s ChooseSendSource) Do() {
 	defer (*Model)(s.Model).change("ChooseSendSource", NoChange, MinorChange)()
@@ -549,7 +536,7 @@ func (s ChooseSendSource) Do() {
 // ChooseSendTarget
 
 func (m *Model) ChooseSendTarget(id int, port int) Action {
-	return MakeEnabledAction(ChooseSendTarget{ID: id, Port: port, Model: m})
+	return MakeAction(ChooseSendTarget{ID: id, Port: port, Model: m})
 }
 func (s ChooseSendTarget) Do() {
 	defer (*Model)(s.Model).change("ChooseSendTarget", SongChange, MinorChange)()
@@ -568,7 +555,7 @@ func (s ChooseSendTarget) Do() {
 
 // NewSong
 
-func (m *Model) NewSong() Action { return MakeEnabledAction((*NewSong)(m)) }
+func (m *Model) NewSong() Action { return MakeAction((*NewSong)(m)) }
 func (m *NewSong) Do() {
 	m.dialog = NewSongChanges
 	(*Model)(m).completeAction(true)
@@ -576,7 +563,7 @@ func (m *NewSong) Do() {
 
 // OpenSong
 
-func (m *Model) OpenSong() Action { return MakeEnabledAction((*OpenSong)(m)) }
+func (m *Model) OpenSong() Action { return MakeAction((*OpenSong)(m)) }
 func (m *OpenSong) Do() {
 	m.dialog = OpenSongChanges
 	(*Model)(m).completeAction(true)
@@ -584,7 +571,7 @@ func (m *OpenSong) Do() {
 
 // RequestQuit
 
-func (m *Model) RequestQuit() Action { return MakeEnabledAction((*RequestQuit)(m)) }
+func (m *Model) RequestQuit() Action { return MakeAction((*RequestQuit)(m)) }
 func (m *RequestQuit) Do() {
 	if !m.quitted {
 		m.dialog = QuitChanges
@@ -594,12 +581,12 @@ func (m *RequestQuit) Do() {
 
 // ForceQuit
 
-func (m *Model) ForceQuit() Action { return MakeEnabledAction((*ForceQuit)(m)) }
+func (m *Model) ForceQuit() Action { return MakeAction((*ForceQuit)(m)) }
 func (m *ForceQuit) Do()           { m.quitted = true }
 
 // SaveSong
 
-func (m *Model) SaveSong() Action { return MakeEnabledAction((*SaveSong)(m)) }
+func (m *Model) SaveSong() Action { return MakeAction((*SaveSong)(m)) }
 func (m *SaveSong) Do() {
 	if m.d.FilePath == "" {
 		switch m.dialog {
@@ -623,29 +610,29 @@ func (m *SaveSong) Do() {
 	m.d.ChangedSinceSave = false
 }
 
-func (m *Model) DiscardSong() Action { return MakeEnabledAction((*DiscardSong)(m)) }
+func (m *Model) DiscardSong() Action { return MakeAction((*DiscardSong)(m)) }
 func (m *DiscardSong) Do()           { (*Model)(m).completeAction(false) }
 
-func (m *Model) SaveSongAs() Action { return MakeEnabledAction((*SaveSongAs)(m)) }
+func (m *Model) SaveSongAs() Action { return MakeAction((*SaveSongAs)(m)) }
 func (m *SaveSongAs) Do()           { m.dialog = SaveAsExplorer }
 
-func (m *Model) Cancel() Action { return MakeEnabledAction((*Cancel)(m)) }
+func (m *Model) Cancel() Action { return MakeAction((*Cancel)(m)) }
 func (m *Cancel) Do()           { m.dialog = NoDialog }
 
-func (m *Model) Export() Action { return MakeEnabledAction((*ExportAction)(m)) }
+func (m *Model) Export() Action { return MakeAction((*ExportAction)(m)) }
 func (m *ExportAction) Do()     { m.dialog = Export }
 
-func (m *Model) ExportFloat() Action { return MakeEnabledAction((*ExportFloat)(m)) }
+func (m *Model) ExportFloat() Action { return MakeAction((*ExportFloat)(m)) }
 func (m *ExportFloat) Do()           { m.dialog = ExportFloatExplorer }
 
-func (m *Model) ExportInt16() Action { return MakeEnabledAction((*ExportInt16)(m)) }
+func (m *Model) ExportInt16() Action { return MakeAction((*ExportInt16)(m)) }
 func (m *ExportInt16) Do()           { m.dialog = ExportInt16Explorer }
 
-func (m *Model) ShowLicense() Action { return MakeEnabledAction((*ShowLicense)(m)) }
+func (m *Model) ShowLicense() Action { return MakeAction((*ShowLicense)(m)) }
 func (m *ShowLicense) Do()           { m.dialog = License }
 
 func (m *Model) SelectMidiInput(item MIDIDevice) Action {
-	return MakeEnabledAction(SelectMidiInput{Item: item, Model: m})
+	return MakeAction(SelectMidiInput{Item: item, Model: m})
 }
 func (s SelectMidiInput) Do() {
 	m := s.Model

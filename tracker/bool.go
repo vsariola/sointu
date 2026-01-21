@@ -6,8 +6,7 @@ import (
 
 type (
 	Bool struct {
-		value   BoolValue
-		enabler Enabler
+		value BoolValue
 	}
 
 	BoolValue interface {
@@ -37,15 +36,8 @@ type (
 	simpleBool bool
 )
 
-func MakeBool(valueEnabler interface {
-	BoolValue
-	Enabler
-}) Bool {
-	return Bool{value: valueEnabler, enabler: valueEnabler}
-}
-
-func MakeEnabledBool(value BoolValue) Bool {
-	return Bool{value: value, enabler: nil}
+func MakeBool(value BoolValue) Bool {
+	return Bool{value: value}
 }
 
 func (v Bool) Toggle() {
@@ -66,10 +58,14 @@ func (v Bool) Value() bool {
 }
 
 func (v Bool) Enabled() bool {
-	if v.enabler == nil {
+	if v.value == nil {
+		return false
+	}
+	e, ok := v.value.(Enabler)
+	if !ok {
 		return true
 	}
-	return v.enabler.Enabled()
+	return e.Enabled()
 }
 
 func (v *simpleBool) Value() bool         { return bool(*v) }
@@ -145,31 +141,31 @@ func (m *Model) warnNoThread() {
 
 }
 
-func (m *Model) Thread1() Bool       { return MakeEnabledBool((*Thread1)(m)) }
+func (m *Model) Thread1() Bool       { return MakeBool((*Thread1)(m)) }
 func (m *Thread1) Value() bool       { return (*Model)(m).getThreadsBit(0) }
 func (m *Thread1) SetValue(val bool) { (*Model)(m).setThreadsBit(0, val) }
 
-func (m *Model) Thread2() Bool       { return MakeEnabledBool((*Thread2)(m)) }
+func (m *Model) Thread2() Bool       { return MakeBool((*Thread2)(m)) }
 func (m *Thread2) Value() bool       { return (*Model)(m).getThreadsBit(1) }
 func (m *Thread2) SetValue(val bool) { (*Model)(m).setThreadsBit(1, val) }
 
-func (m *Model) Thread3() Bool       { return MakeEnabledBool((*Thread3)(m)) }
+func (m *Model) Thread3() Bool       { return MakeBool((*Thread3)(m)) }
 func (m *Thread3) Value() bool       { return (*Model)(m).getThreadsBit(2) }
 func (m *Thread3) SetValue(val bool) { (*Model)(m).setThreadsBit(2, val) }
 
-func (m *Model) Thread4() Bool       { return MakeEnabledBool((*Thread4)(m)) }
+func (m *Model) Thread4() Bool       { return MakeBool((*Thread4)(m)) }
 func (m *Thread4) Value() bool       { return (*Model)(m).getThreadsBit(3) }
 func (m *Thread4) SetValue(val bool) { (*Model)(m).setThreadsBit(3, val) }
 
 // Panic methods
 
-func (m *Model) Panic() Bool       { return MakeEnabledBool((*Panic)(m)) }
+func (m *Model) Panic() Bool       { return MakeBool((*Panic)(m)) }
 func (m *Panic) Value() bool       { return m.panic }
 func (m *Panic) SetValue(val bool) { (*Model)(m).setPanic(val) }
 
 // IsRecording methods
 
-func (m *Model) IsRecording() Bool { return MakeEnabledBool((*IsRecording)(m)) }
+func (m *Model) IsRecording() Bool { return MakeBool((*IsRecording)(m)) }
 func (m *IsRecording) Value() bool { return (*Model)(m).recording }
 func (m *IsRecording) SetValue(val bool) {
 	m.recording = val
@@ -194,11 +190,11 @@ func (m *Playing) Enabled() bool { return m.playing || !m.instrEnlarged }
 
 // InstrEnlarged methods
 
-func (m *Model) InstrEnlarged() Bool { return MakeEnabledBool((*simpleBool)(&m.instrEnlarged)) }
+func (m *Model) InstrEnlarged() Bool { return MakeBool((*simpleBool)(&m.instrEnlarged)) }
 
 // InstrEditor methods
 
-func (m *Model) InstrEditor() Bool { return MakeEnabledBool((*InstrEditor)(m)) }
+func (m *Model) InstrEditor() Bool { return MakeBool((*InstrEditor)(m)) }
 func (m *InstrEditor) Value() bool { return m.d.InstrumentTab == InstrumentEditorTab }
 func (m *InstrEditor) SetValue(val bool) {
 	if val {
@@ -206,7 +202,7 @@ func (m *InstrEditor) SetValue(val bool) {
 	}
 }
 
-func (m *Model) InstrComment() Bool { return MakeEnabledBool((*InstrComment)(m)) }
+func (m *Model) InstrComment() Bool { return MakeBool((*InstrComment)(m)) }
 func (m *InstrComment) Value() bool { return m.d.InstrumentTab == InstrumentCommentTab }
 func (m *InstrComment) SetValue(val bool) {
 	if val {
@@ -214,7 +210,7 @@ func (m *InstrComment) SetValue(val bool) {
 	}
 }
 
-func (m *Model) InstrPresets() Bool { return MakeEnabledBool((*InstrPresets)(m)) }
+func (m *Model) InstrPresets() Bool { return MakeBool((*InstrPresets)(m)) }
 func (m *InstrPresets) Value() bool { return m.d.InstrumentTab == InstrumentPresetsTab }
 func (m *InstrPresets) SetValue(val bool) {
 	if val {
@@ -224,17 +220,17 @@ func (m *InstrPresets) SetValue(val bool) {
 
 // Follow methods
 
-func (m *Model) Follow() Bool { return MakeEnabledBool((*simpleBool)(&m.follow)) }
+func (m *Model) Follow() Bool { return MakeBool((*simpleBool)(&m.follow)) }
 
 // TrackMidiIn (Midi Input for notes in the tracks)
 
-func (m *Model) TrackMidiIn() Bool       { return MakeEnabledBool((*TrackMidiIn)(m)) }
+func (m *Model) TrackMidiIn() Bool       { return MakeBool((*TrackMidiIn)(m)) }
 func (m *TrackMidiIn) Value() bool       { return m.broker.mIDIEventsToGUI.Load() }
 func (m *TrackMidiIn) SetValue(val bool) { m.broker.mIDIEventsToGUI.Store(val) }
 
 // Effect methods
 
-func (m *Model) Effect() Bool { return MakeEnabledBool((*Effect)(m)) }
+func (m *Model) Effect() Bool { return MakeBool((*Effect)(m)) }
 func (m *Effect) Value() bool {
 	if m.d.Cursor.Track < 0 || m.d.Cursor.Track >= len(m.d.Song.Score.Tracks) {
 		return false
@@ -250,7 +246,7 @@ func (m *Effect) SetValue(val bool) {
 
 // Oversampling methods
 
-func (m *Model) Oversampling() Bool { return MakeEnabledBool((*Oversampling)(m)) }
+func (m *Model) Oversampling() Bool { return MakeBool((*Oversampling)(m)) }
 func (m *Oversampling) Value() bool { return m.oversampling }
 func (m *Oversampling) SetValue(val bool) {
 	m.oversampling = val
@@ -259,7 +255,7 @@ func (m *Oversampling) SetValue(val bool) {
 
 // UnitSearching methods
 
-func (m *Model) UnitSearching() Bool { return MakeEnabledBool((*UnitSearching)(m)) }
+func (m *Model) UnitSearching() Bool { return MakeBool((*UnitSearching)(m)) }
 func (m *UnitSearching) Value() bool { return m.d.UnitSearching }
 func (m *UnitSearching) SetValue(val bool) {
 	m.d.UnitSearching = val
@@ -309,7 +305,7 @@ func (m *UnitDisabled) Enabled() bool {
 
 // LoopToggle methods
 
-func (m *Model) LoopToggle() Bool { return MakeEnabledBool((*LoopToggle)(m)) }
+func (m *Model) LoopToggle() Bool { return MakeBool((*LoopToggle)(m)) }
 func (m *LoopToggle) Value() bool { return m.loop.Length > 0 }
 func (t *LoopToggle) SetValue(val bool) {
 	m := (*Model)(t)
@@ -324,7 +320,7 @@ func (t *LoopToggle) SetValue(val bool) {
 
 // UniquePatterns methods
 
-func (m *Model) UniquePatterns() Bool { return MakeEnabledBool((*simpleBool)(&m.uniquePatterns)) }
+func (m *Model) UniquePatterns() Bool { return MakeBool((*simpleBool)(&m.uniquePatterns)) }
 
 // Mute methods
 func (m *Model) Mute() Bool { return MakeBool((*Mute)(m)) }
@@ -378,4 +374,4 @@ func (m *Solo) Enabled() bool { return m.d.InstrIndex >= 0 && m.d.InstrIndex < l
 
 // LinkInstrTrack methods
 
-func (m *Model) LinkInstrTrack() Bool { return MakeEnabledBool((*simpleBool)(&m.linkInstrTrack)) }
+func (m *Model) LinkInstrTrack() Bool { return MakeBool((*simpleBool)(&m.linkInstrTrack)) }

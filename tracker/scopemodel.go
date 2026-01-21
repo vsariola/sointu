@@ -64,8 +64,8 @@ func NewScopeModel(bpm int) *ScopeModel {
 
 func (s *ScopeModel) Waveform() RingBuffer[[2]float32] { return s.waveForm }
 
-func (s *ScopeModel) Once() Bool          { return MakeEnabledBool((*SignalOnce)(s)) }
-func (s *ScopeModel) Wrap() Bool          { return MakeEnabledBool((*SignalWrap)(s)) }
+func (s *ScopeModel) Once() Bool          { return MakeBool((*SignalOnce)(s)) }
+func (s *ScopeModel) Wrap() Bool          { return MakeBool((*SignalWrap)(s)) }
 func (s *ScopeModel) LengthInBeats() Int  { return MakeInt((*SignalLengthInBeats)(s)) }
 func (s *ScopeModel) TriggerChannel() Int { return MakeInt((*TriggerChannel)(s)) }
 

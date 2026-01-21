@@ -385,15 +385,15 @@ func (t *Tracker) layoutTop(gtx layout.Context) layout.Dimensions {
 	)
 }
 
-func (t *Tracker) ShowManual() tracker.Action { return tracker.MakeEnabledAction((*ShowManual)(t)) }
+func (t *Tracker) ShowManual() tracker.Action { return tracker.MakeAction((*ShowManual)(t)) }
 func (t *ShowManual) Do()                     { (*Tracker)(t).openUrl("https://github.com/vsariola/sointu/wiki") }
 
-func (t *Tracker) AskHelp() tracker.Action { return tracker.MakeEnabledAction((*AskHelp)(t)) }
+func (t *Tracker) AskHelp() tracker.Action { return tracker.MakeAction((*AskHelp)(t)) }
 func (t *AskHelp) Do() {
 	(*Tracker)(t).openUrl("https://github.com/vsariola/sointu/discussions/categories/help-needed")
 }
 
-func (t *Tracker) ReportBug() tracker.Action { return tracker.MakeEnabledAction((*ReportBug)(t)) }
+func (t *Tracker) ReportBug() tracker.Action { return tracker.MakeAction((*ReportBug)(t)) }
 func (t *ReportBug) Do()                     { (*Tracker)(t).openUrl("https://github.com/vsariola/sointu/issues") }
 
 func (t *Tracker) openUrl(url string) {
