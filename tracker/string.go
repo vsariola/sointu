@@ -15,12 +15,6 @@ type (
 		Value() string
 		SetValue(string) bool
 	}
-
-	FilePath          Model
-	InstrumentName    Model
-	InstrumentComment Model
-	UnitSearch        Model
-	UnitComment       Model
 )
 
 func MakeString(value StringValue) String {
@@ -41,22 +35,18 @@ func (v String) Value() string {
 	return v.value.Value()
 }
 
-// Model methods
-
-func (m *Model) FilePath() String          { return MakeString((*FilePath)(m)) }
-func (m *Model) InstrumentName() String    { return MakeString((*InstrumentName)(m)) }
-func (m *Model) InstrumentComment() String { return MakeString((*InstrumentComment)(m)) }
-func (m *Model) UnitSearch() String        { return MakeString((*UnitSearch)(m)) }
-func (m *Model) UnitComment() String       { return MakeString((*UnitComment)(m)) }
-
 // FilePathString
+type filePath Model
 
-func (v *FilePath) Value() string              { return v.d.FilePath }
-func (v *FilePath) SetValue(value string) bool { v.d.FilePath = value; return true }
+func (m *Model) FilePath() String              { return MakeString((*filePath)(m)) }
+func (v *filePath) Value() string              { return v.d.FilePath }
+func (v *filePath) SetValue(value string) bool { v.d.FilePath = value; return true }
 
 // UnitSearchString
+type unitSearch Model
 
-func (v *UnitSearch) Value() string {
+func (m *Model) UnitSearch() String { return MakeString((*unitSearch)(m)) }
+func (v *unitSearch) Value() string {
 	// return current unit type string if not searching
 	if !v.d.UnitSearching {
 		if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
@@ -70,7 +60,7 @@ func (v *UnitSearch) Value() string {
 		return v.d.UnitSearchString
 	}
 }
-func (v *UnitSearch) SetValue(value string) bool {
+func (v *unitSearch) SetValue(value string) bool {
 	v.d.UnitSearchString = value
 	v.d.UnitSearching = true
 	(*Model)(v).updateDerivedUnitSearch()
@@ -87,15 +77,16 @@ func (v *Model) updateDerivedUnitSearch() {
 }
 
 // InstrumentNameString
+type instrumentName Model
 
-func (v *InstrumentName) Value() string {
+func (m *Model) InstrumentName() String { return MakeString((*instrumentName)(m)) }
+func (v *instrumentName) Value() string {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
 		return ""
 	}
 	return v.d.Song.Patch[v.d.InstrIndex].Name
 }
-
-func (v *InstrumentName) SetValue(value string) bool {
+func (v *instrumentName) SetValue(value string) bool {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
 		return false
 	}
@@ -105,15 +96,16 @@ func (v *InstrumentName) SetValue(value string) bool {
 }
 
 // InstrumentComment
+type instrumentComment Model
 
-func (v *InstrumentComment) Value() string {
+func (m *Model) InstrumentComment() String { return MakeString((*instrumentComment)(m)) }
+func (v *instrumentComment) Value() string {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
 		return ""
 	}
 	return v.d.Song.Patch[v.d.InstrIndex].Comment
 }
-
-func (v *InstrumentComment) SetValue(value string) bool {
+func (v *instrumentComment) SetValue(value string) bool {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
 		return false
 	}
@@ -123,16 +115,17 @@ func (v *InstrumentComment) SetValue(value string) bool {
 }
 
 // UnitComment
+type unitComment Model
 
-func (v *UnitComment) Value() string {
+func (m *Model) UnitComment() String { return MakeString((*unitComment)(m)) }
+func (v *unitComment) Value() string {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) ||
 		v.d.UnitIndex < 0 || v.d.UnitIndex >= len(v.d.Song.Patch[v.d.InstrIndex].Units) {
 		return ""
 	}
 	return v.d.Song.Patch[v.d.InstrIndex].Units[v.d.UnitIndex].Comment
 }
-
-func (v *UnitComment) SetValue(value string) bool {
+func (v *unitComment) SetValue(value string) bool {
 	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) ||
 		v.d.UnitIndex < 0 || v.d.UnitIndex >= len(v.d.Song.Patch[v.d.InstrIndex].Units) {
 		return false
