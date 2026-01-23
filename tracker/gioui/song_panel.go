@@ -480,7 +480,7 @@ func NewMenuBar(tr *Tracker) *MenuBar {
 	}
 	for input := range tr.MIDI.InputDevices {
 		ret.midiMenuItems = append(ret.midiMenuItems,
-			MenuItem(tr.SelectMidiInput(input), input.String(), "", icons.ImageControlPoint),
+			MenuItem(tr.SelectMidiInput(input), input, "", icons.ImageControlPoint),
 		)
 	}
 	return ret

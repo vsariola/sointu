@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/vsariola/sointu"
 )
@@ -126,18 +127,13 @@ type (
 	Dialog int
 
 	MIDIContext interface {
-		InputDevices(yield func(MIDIDevice) bool)
+		InputDevices(yield func(string) bool)
+		Open(name string) error
 		Close()
-		HasDeviceOpen() bool
-		TryToOpenBy(name string, first bool)
+		IsOpen() bool
 	}
 
 	NullMIDIContext struct{}
-
-	MIDIDevice interface {
-		String() string
-		Open() error
-	}
 
 	InstrumentTab int
 )
@@ -219,6 +215,15 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 	m.derived.searchResults = make([]string, 0, len(sointu.UnitNames))
 	m.updateDerivedUnitSearch()
 	return m
+}
+
+func FindMIDIDeviceByPrefix(c MIDIContext, prefix string) (input string, ok bool) {
+	for input := range c.InputDevices {
+		if strings.HasPrefix(input, prefix) {
+			return input, true
+		}
+	}
+	return "", false
 }
 
 func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func() {
@@ -434,10 +439,10 @@ func (d *modelData) Copy() modelData {
 	return ret
 }
 
-func (m NullMIDIContext) InputDevices(yield func(MIDIDevice) bool) {}
-func (m NullMIDIContext) Close()                                   {}
-func (m NullMIDIContext) HasDeviceOpen() bool                      { return false }
-func (m NullMIDIContext) TryToOpenBy(name string, first bool)      {}
+func (m NullMIDIContext) InputDevices(yield func(string) bool) {}
+func (m NullMIDIContext) Open(name string) error               { return nil }
+func (m NullMIDIContext) Close()                               {}
+func (m NullMIDIContext) IsOpen() bool                         { return false }
 
 func (m *Model) resetSong() {
 	m.d.Song = defaultSong.Copy()

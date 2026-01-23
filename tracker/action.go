@@ -620,16 +620,16 @@ func (m *Model) ShowLicense() Action { return MakeAction((*showLicense)(m)) }
 func (m *showLicense) Do()           { m.dialog = License }
 
 type selectMidiInput struct {
-	Item MIDIDevice
+	Item string
 	*Model
 }
 
-func (m *Model) SelectMidiInput(item MIDIDevice) Action {
+func (m *Model) SelectMidiInput(item string) Action {
 	return MakeAction(selectMidiInput{Item: item, Model: m})
 }
 func (s selectMidiInput) Do() {
 	m := s.Model
-	if err := s.Item.Open(); err == nil {
+	if err := s.Model.MIDI.Open(s.Item); err == nil {
 		message := fmt.Sprintf("Opened MIDI device: %s", s.Item)
 		m.Alerts().Add(message, Info)
 	} else {

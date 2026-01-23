@@ -20,8 +20,7 @@ import (
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
-var defaultMidiInput = flag.String("midi-input", "", "connect MIDI input to matching device name")
-var firstMidiInput = flag.Bool("first-midi-input", false, "connect MIDI input to first device found")
+var defaultMidiInput = flag.String("midi-input", "", "connect MIDI input to matching device name prefix")
 
 func main() {
 	flag.Parse()
@@ -48,7 +47,17 @@ func main() {
 	broker := tracker.NewBroker()
 	midiContext := cmd.NewMidiContext(broker)
 	defer midiContext.Close()
-	midiContext.TryToOpenBy(*defaultMidiInput, *firstMidiInput)
+	if isFlagPassed("midi-input") {
+		input, ok := tracker.FindMIDIDeviceByPrefix(midiContext, *defaultMidiInput)
+		if ok {
+			err := midiContext.Open(input)
+			if err != nil {
+				log.Printf("failed to open MIDI input '%s': %v", input, err)
+			}
+		} else {
+			log.Printf("no MIDI input device found with prefix '%s'", *defaultMidiInput)
+		}
+	}
 	model := tracker.NewModel(broker, cmd.Synthers, midiContext, recoveryFile)
 	player := tracker.NewPlayer(broker, cmd.Synthers[0])
 	detector := tracker.NewDetector(broker)
@@ -95,4 +104,14 @@ func main() {
 		os.Exit(0)
 	}()
 	app.Main()
+}
+
+func isFlagPassed(name string) bool {
+	found := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
 }
