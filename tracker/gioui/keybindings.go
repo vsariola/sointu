@@ -289,7 +289,7 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 			if err != nil {
 				break
 			}
-			instr := t.Model.Instruments().List().Selected()
+			instr := t.Model.Instruments().Selected()
 			n := noteAsValue(t.Model.Octave().Value(), val-12)
 			t.KeyNoteMap.Press(e.Name, tracker.NoteEvent{Channel: instr, Note: n})
 		}

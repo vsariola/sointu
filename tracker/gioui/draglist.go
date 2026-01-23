@@ -128,7 +128,7 @@ func (s FilledDragListStyle) Layout(gtx C, element, bg func(gtx C, i int) D) D {
 		gtx.Execute(op.InvalidateCmd{})
 	}
 
-	_, isMutable := s.dragList.TrackerList.ListData.(tracker.MutableListData)
+	isMutable := s.dragList.TrackerList.Mutable()
 
 	listElem := func(gtx C, index int) D {
 		for len(s.dragList.tags) <= index {

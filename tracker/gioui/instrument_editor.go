@@ -53,7 +53,7 @@ type (
 
 func NewInstrumentEditor(m *tracker.Model) *InstrumentEditor {
 	ret := &InstrumentEditor{
-		dragList:       NewDragList(m.Units().List(), layout.Vertical),
+		dragList:       NewDragList(m.Units(), layout.Vertical),
 		addUnitBtn:     new(Clickable),
 		searchEditor:   NewEditor(true, true, text.Start),
 		DeleteUnitBtn:  new(Clickable),
@@ -62,8 +62,8 @@ func NewInstrumentEditor(m *tracker.Model) *InstrumentEditor {
 		CopyUnitBtn:    new(Clickable),
 		SelectTypeBtn:  new(Clickable),
 		commentEditor:  NewEditor(true, true, text.Start),
-		paramTable:     NewScrollTable(m.Params().Table(), m.ParamVertList().List(), m.Units().List()),
-		searchList:     NewDragList(m.SearchResults().List(), layout.Vertical),
+		paramTable:     NewScrollTable(m.Params().Table(), m.ParamVertList().List(), m.Units()),
+		searchList:     NewDragList(m.SearchResults(), layout.Vertical),
 		searching:      m.UnitSearching(),
 	}
 	ret.caser = cases.Title(language.English)
@@ -95,7 +95,7 @@ func (ul *InstrumentEditor) layoutList(gtx C) D {
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Max.Y = gtx.Dp(20)
 		gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
-		u := t.Units().Item(i)
+		u := t.Unit(i)
 		editorStyle := t.Theme.InstrumentEditor.UnitList.Name
 		signalError := t.RailError()
 		switch {
@@ -169,7 +169,7 @@ func (ul *InstrumentEditor) update(gtx C) {
 			case key.NameRightArrow:
 				t.PatchPanel.instrEditor.paramTable.RowTitleList.Focus()
 			case key.NameDeleteBackward:
-				t.Units().SetSelectedType("")
+				t.SetSelectedUnitType("")
 				t.UnitSearching().SetValue(true)
 				ul.searchEditor.Focus()
 			case key.NameEnter, key.NameReturn:
@@ -185,12 +185,12 @@ func (ul *InstrumentEditor) update(gtx C) {
 			if str.Value() != "" {
 				for _, n := range sointu.UnitNames {
 					if strings.HasPrefix(n, str.Value()) {
-						t.Units().SetSelectedType(n)
+						t.SetSelectedUnitType(n)
 						break
 					}
 				}
 			} else {
-				t.Units().SetSelectedType("")
+				t.SetSelectedUnitType("")
 			}
 		}
 		ul.dragList.Focus()
@@ -202,7 +202,7 @@ func (ul *InstrumentEditor) update(gtx C) {
 		ul.searchEditor.Focus()
 	}
 	for ul.CopyUnitBtn.Clicked(gtx) {
-		if contents, ok := t.Units().List().CopyElements(); ok {
+		if contents, ok := t.Units().CopyElements(); ok {
 			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
 			t.Alerts().Add("Unit(s) copied to clipboard", tracker.Info)
 		}
@@ -288,8 +288,8 @@ func (pe *InstrumentEditor) layoutTable(gtx C) D {
 }
 
 func (pe *InstrumentEditor) ChooseUnitType(t *Tracker) {
-	if ut, ok := t.SearchResults().Item(pe.searchList.TrackerList.Selected()); ok {
-		t.Units().SetSelectedType(ut)
+	if ut, ok := t.SearchResult(pe.searchList.TrackerList.Selected()); ok {
+		t.SetSelectedUnitType(ut)
 		pe.paramTable.RowTitleList.Focus()
 	}
 }
@@ -321,7 +321,7 @@ func (pe *InstrumentEditor) layoutRack(gtx C) D {
 		if y < 0 || y >= len(pe.Parameters) {
 			return D{}
 		}
-		item := t.Units().Item(y)
+		item := t.Unit(y)
 		sr := Rail(t.Theme, item.Signals)
 		label := Label(t.Theme, &t.Theme.UnitEditor.UnitList.Name, item.Type)
 		switch {
@@ -360,7 +360,7 @@ func (pe *InstrumentEditor) layoutRack(gtx C) D {
 		}
 
 		param := t.Model.Params().Item(point)
-		paramStyle := Param(param, t.Theme, pe.Parameters[y][x], pe.paramTable.Table.Cursor() == point, t.Units().Item(y).Disabled)
+		paramStyle := Param(param, t.Theme, pe.Parameters[y][x], pe.paramTable.Table.Cursor() == point, t.Unit(y).Disabled)
 		paramStyle.Layout(gtx)
 		if x == t.Model.Params().RowWidth(y) {
 			if y == cursor.Y {
@@ -373,7 +373,7 @@ func (pe *InstrumentEditor) layoutRack(gtx C) D {
 					return pe.commentEditor.Layout(gtx, t.UnitComment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "---")
 				})
 			} else {
-				comment := t.Units().Item(y).Comment
+				comment := t.Unit(y).Comment
 				if comment != "" {
 					style := t.Theme.InstrumentEditor.UnitComment.AsLabelStyle()
 					label := Label(t.Theme, &style, comment)
@@ -530,16 +530,9 @@ func (pe *InstrumentEditor) layoutFooter(gtx C) D {
 
 func (pe *InstrumentEditor) layoutUnitTypeChooser(gtx C) D {
 	t := TrackerFromContext(gtx)
-	var namesArray [256]string
-	names := namesArray[:0]
-	for _, item := range t.Model.SearchResults().Iterate {
-		names = append(names, item)
-	}
 	element := func(gtx C, i int) D {
-		if i < 0 || i >= len(names) {
-			return D{}
-		}
-		w := Label(t.Theme, &t.Theme.UnitEditor.Chooser, names[i])
+		name, _ := t.SearchResult(i)
+		w := Label(t.Theme, &t.Theme.UnitEditor.Chooser, name)
 		if i == pe.searchList.TrackerList.Selected() {
 			return pe.SelectTypeBtn.Layout(gtx, w.Layout)
 		}

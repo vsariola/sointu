@@ -216,6 +216,8 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 	m.updateDeriveData(SongChange)
 	m.presets.load()
 	m.updateDerivedPresetSearch()
+	m.derived.searchResults = make([]string, 0, len(sointu.UnitNames))
+	m.updateDerivedUnitSearch()
 	return m
 }
 

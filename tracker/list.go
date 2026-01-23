@@ -6,7 +6,6 @@ import (
 	"iter"
 	"math"
 	"math/bits"
-	"strings"
 
 	"github.com/vsariola/sointu"
 	"github.com/vsariola/sointu/vm"
@@ -15,7 +14,7 @@ import (
 
 type (
 	List struct {
-		ListData
+		data ListData
 	}
 
 	ListData interface {
@@ -27,49 +26,32 @@ type (
 	}
 
 	MutableListData interface {
-		change(kind string, severity ChangeSeverity) func()
-		cancel()
-		move(r Range, delta int) (ok bool)
-		delete(r Range) (ok bool)
-		marshal(r Range) ([]byte, error)
-		unmarshal([]byte) (r Range, err error)
-	}
-
-	UnitListItem struct {
-		Type, Comment string
-		Disabled      bool
-		Signals       Rail
+		Change(kind string, severity ChangeSeverity) func()
+		Cancel()
+		Move(r Range, delta int) (ok bool)
+		Delete(r Range) (ok bool)
+		Marshal(r Range) ([]byte, error)
+		Unmarshal([]byte) (r Range, err error)
 	}
 
 	// Range is used to represent a range [Start,End) of integers
 	Range struct {
 		Start, End int
 	}
-
-	UnitYieldFunc       func(index int, item UnitListItem) (ok bool)
-	UnitSearchYieldFunc func(index int, item string) (ok bool)
-
-	Instruments   Model // Instruments is a list of instruments, implementing ListData & MutableListData interfaces
-	Units         Model // Units is a list of all the units in the selected instrument, implementing ListData & MutableListData interfaces
-	Tracks        Model // Tracks is a list of all the tracks, implementing ListData & MutableListData interfaces
-	OrderRows     Model // OrderRows is a list of all the order rows, implementing ListData & MutableListData interfaces
-	NoteRows      Model // NoteRows is a list of all the note rows, implementing ListData & MutableListData interfaces
-	SearchResults Model // SearchResults is a unmutable list of all the search results, implementing ListData interface
 )
 
-// Model methods
+func MakeList(data ListData) List { return List{data} }
 
-func (m *Model) Instruments() *Instruments     { return (*Instruments)(m) }
-func (m *Model) Units() *Units                 { return (*Units)(m) }
-func (m *Model) Tracks() *Tracks               { return (*Tracks)(m) }
-func (m *Model) OrderRows() *OrderRows         { return (*OrderRows)(m) }
-func (m *Model) NoteRows() *NoteRows           { return (*NoteRows)(m) }
-func (m *Model) SearchResults() *SearchResults { return (*SearchResults)(m) }
+func (l List) Selected() int          { return max(min(l.data.Selected(), l.data.Count()-1), 0) }
+func (l List) Selected2() int         { return max(min(l.data.Selected2(), l.data.Count()-1), 0) }
+func (l List) SetSelected(value int)  { l.data.SetSelected(max(min(value, l.data.Count()-1), 0)) }
+func (l List) SetSelected2(value int) { l.data.SetSelected2(max(min(value, l.data.Count()-1), 0)) }
+func (l List) Count() int             { return l.data.Count() }
 
 // MoveElements moves the selected elements in a list by delta. The list must
 // implement the MutableListData interface.
 func (v List) MoveElements(delta int) bool {
-	s, ok := v.ListData.(MutableListData)
+	s, ok := v.data.(MutableListData)
 	if !ok {
 		return false
 	}
@@ -77,9 +59,9 @@ func (v List) MoveElements(delta int) bool {
 	if delta == 0 || r.Start+delta < 0 || r.End+delta > v.Count() {
 		return false
 	}
-	defer s.change("MoveElements", MajorChange)()
-	if !s.move(r, delta) {
-		s.cancel()
+	defer s.Change("MoveElements", MajorChange)()
+	if !s.Move(r, delta) {
+		s.Cancel()
 		return false
 	}
 	v.SetSelected(v.Selected() + delta)
@@ -90,7 +72,7 @@ func (v List) MoveElements(delta int) bool {
 // DeleteElements deletes the selected elements in a list. The list must
 // implement the MutableListData interface.
 func (v List) DeleteElements(backwards bool) bool {
-	d, ok := v.ListData.(MutableListData)
+	d, ok := v.data.(MutableListData)
 	if !ok {
 		return false
 	}
@@ -98,9 +80,9 @@ func (v List) DeleteElements(backwards bool) bool {
 	if r.Len() == 0 {
 		return false
 	}
-	defer d.change("DeleteElements", MajorChange)()
-	if !d.delete(r) {
-		d.cancel()
+	defer d.Change("DeleteElements", MajorChange)()
+	if !d.Delete(r) {
+		d.Cancel()
 		return false
 	}
 	if backwards && r.Start > 0 {
@@ -115,7 +97,7 @@ func (v List) DeleteElements(backwards bool) bool {
 // the MutableListData interface. Returns the copied data, marshaled into byte
 // slice, and true if successful.
 func (v List) CopyElements() ([]byte, bool) {
-	m, ok := v.ListData.(MutableListData)
+	m, ok := v.data.(MutableListData)
 	if !ok {
 		return nil, false
 	}
@@ -123,7 +105,7 @@ func (v List) CopyElements() ([]byte, bool) {
 	if r.Len() == 0 {
 		return nil, false
 	}
-	ret, err := m.marshal(r)
+	ret, err := m.Marshal(r)
 	if err != nil {
 		return nil, false
 	}
@@ -134,19 +116,24 @@ func (v List) CopyElements() ([]byte, bool) {
 // byte slice. The list must implement the MutableListData interface. Returns
 // true if successful.
 func (v List) PasteElements(data []byte) (ok bool) {
-	m, ok := v.ListData.(MutableListData)
+	m, ok := v.data.(MutableListData)
 	if !ok {
 		return false
 	}
-	defer m.change("PasteElements", MajorChange)()
-	r, err := m.unmarshal(data)
+	defer m.Change("PasteElements", MajorChange)()
+	r, err := m.Unmarshal(data)
 	if err != nil {
-		m.cancel()
+		m.Cancel()
 		return false
 	}
 	v.SetSelected(r.Start)
 	v.SetSelected2(r.End - 1)
 	return true
+}
+
+func (v List) Mutable() bool {
+	_, ok := v.data.(MutableListData)
+	return ok
 }
 
 func (v *List) listRange() (r Range) {
@@ -155,13 +142,12 @@ func (v *List) listRange() (r Range) {
 	return
 }
 
-// Instruments methods
+// instruments is a list of instruments, implementing ListData & MutableListData interfaces
+type instruments Model
 
-func (v *Instruments) List() List {
-	return List{v}
-}
+func (m *Model) Instruments() List { return List{(*instruments)(m)} }
 
-func (v *Instruments) Item(i int) (name string, maxLevel float32, mute bool, ok bool) {
+func (v *Model) Instrument(i int) (name string, maxLevel float32, mute bool, ok bool) {
 	if i < 0 || i >= len(v.d.Song.Patch) {
 		return "", 0, false, false
 	}
@@ -182,37 +168,20 @@ func (v *Instruments) Item(i int) (name string, maxLevel float32, mute bool, ok 
 	ok = true
 	return
 }
-func (v *Instruments) FirstID(i int) (id int, ok bool) {
-	if i < 0 || i >= len(v.d.Song.Patch) {
-		return 0, false
-	}
-	if len(v.d.Song.Patch[i].Units) == 0 {
-		return 0, false
-	}
-	return v.d.Song.Patch[i].Units[0].ID, true
-}
 
-func (v *Instruments) Selected() int {
-	return max(min(v.d.InstrIndex, v.Count()-1), 0)
-}
-
-func (v *Instruments) Selected2() int {
-	return max(min(v.d.InstrIndex2, v.Count()-1), 0)
-}
-
-func (v *Instruments) SetSelected(value int) {
-	v.d.InstrIndex = max(min(value, v.Count()-1), 0)
+func (v *instruments) Count() int             { return len(v.d.Song.Patch) }
+func (v *instruments) Selected() int          { return v.d.InstrIndex }
+func (v *instruments) Selected2() int         { return v.d.InstrIndex2 }
+func (v *instruments) SetSelected2(value int) { v.d.InstrIndex2 = value }
+func (v *instruments) SetSelected(value int) {
+	v.d.InstrIndex = value
 	v.d.UnitIndex = 0
 	v.d.UnitIndex2 = 0
 	v.d.UnitSearching = false
 	v.d.UnitSearchString = ""
 }
 
-func (v *Instruments) SetSelected2(value int) {
-	v.d.InstrIndex2 = max(min(value, v.Count()-1), 0)
-}
-
-func (v *Instruments) move(r Range, delta int) (ok bool) {
+func (v *instruments) Move(r Range, delta int) (ok bool) {
 	voiceDelta := 0
 	if delta < 0 {
 		voiceDelta = -VoiceRange(v.d.Song.Patch, Range{r.Start + delta, r.Start}).Len()
@@ -226,28 +195,24 @@ func (v *Instruments) move(r Range, delta int) (ok bool) {
 	return (*Model)(v).sliceInstrumentsTracks(true, v.linkInstrTrack, ranges[:]...)
 }
 
-func (v *Instruments) delete(r Range) (ok bool) {
+func (v *instruments) Delete(r Range) (ok bool) {
 	ranges := Complement(VoiceRange(v.d.Song.Patch, r))
 	return (*Model)(v).sliceInstrumentsTracks(true, v.linkInstrTrack, ranges[:]...)
 }
 
-func (v *Instruments) change(n string, severity ChangeSeverity) func() {
+func (v *instruments) Change(n string, severity ChangeSeverity) func() {
 	return (*Model)(v).change("Instruments."+n, SongChange, severity)
 }
 
-func (v *Instruments) cancel() {
+func (v *instruments) Cancel() {
 	v.changeCancel = true
 }
 
-func (v *Instruments) Count() int {
-	return len(v.d.Song.Patch)
-}
-
-func (v *Instruments) marshal(r Range) ([]byte, error) {
+func (v *instruments) Marshal(r Range) ([]byte, error) {
 	return (*Model)(v).marshalVoices(VoiceRange(v.d.Song.Patch, r))
 }
 
-func (m *Instruments) unmarshal(data []byte) (r Range, err error) {
+func (m *instruments) Unmarshal(data []byte) (r Range, err error) {
 	voiceIndex := m.d.Song.Patch.FirstVoiceForInstrument(m.d.InstrIndex)
 	r, _, ok := (*Model)(m).unmarshalVoices(voiceIndex, data, true, m.linkInstrTrack)
 	if !ok {
@@ -256,13 +221,37 @@ func (m *Instruments) unmarshal(data []byte) (r Range, err error) {
 	return r, nil
 }
 
-// Units methods
+// units is a list of all the units in the selected instrument, implementing ListData & MutableListData interfaces
+type (
+	units        Model
+	UnitListItem struct {
+		Type, Comment string
+		Disabled      bool
+		Signals       Rail
+	}
+)
 
-func (v *Units) List() List {
-	return List{v}
+func (m *Model) Units() List { return List{(*units)(m)} }
+
+func (v *Model) Unit(index int) UnitListItem {
+	i := v.d.InstrIndex
+	if i < 0 || i >= len(v.d.Song.Patch) || index < 0 || index >= (*units)(v).Count() {
+		return UnitListItem{}
+	}
+	unit := v.d.Song.Patch[v.d.InstrIndex].Units[index]
+	signals := Rail{}
+	if i >= 0 && i < len(v.derived.patch) && index >= 0 && index < len(v.derived.patch[i].rails) {
+		signals = v.derived.patch[i].rails[index]
+	}
+	return UnitListItem{
+		Type:     unit.Type,
+		Comment:  unit.Comment,
+		Disabled: unit.Disabled,
+		Signals:  signals,
+	}
 }
 
-func (m *Units) SelectedType() string {
+func (m *Model) SelectedUnitType() string {
 	if m.d.InstrIndex < 0 ||
 		m.d.InstrIndex >= len(m.d.Song.Patch) ||
 		m.d.UnitIndex < 0 ||
@@ -272,7 +261,7 @@ func (m *Units) SelectedType() string {
 	return m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].Type
 }
 
-func (m *Units) SetSelectedType(t string) {
+func (m *Model) SetSelectedUnitType(t string) {
 	if m.d.InstrIndex < 0 ||
 		m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return
@@ -293,58 +282,28 @@ func (m *Units) SetSelectedType(t string) {
 	if oldUnit.Type == unit.Type {
 		return
 	}
-	defer m.change("SetSelectedType", MajorChange)()
+	defer (*units)(m).Change("SetSelectedType", MajorChange)()
 	m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex] = unit
 	m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].ID = oldUnit.ID // keep the ID of the replaced unit
 }
 
-func (v *Units) Item(index int) UnitListItem {
-	i := v.d.InstrIndex
-	if i < 0 || i >= len(v.d.Song.Patch) || index < 0 || index >= v.Count() {
-		return UnitListItem{}
-	}
-	unit := v.d.Song.Patch[v.d.InstrIndex].Units[index]
-	signals := Rail{}
-	if i >= 0 && i < len(v.derived.patch) && index >= 0 && index < len(v.derived.patch[i].rails) {
-		signals = v.derived.patch[i].rails[index]
-	}
-	return UnitListItem{
-		Type:     unit.Type,
-		Comment:  unit.Comment,
-		Disabled: unit.Disabled,
-		Signals:  signals,
-	}
-}
-
-func (v *Units) Selected() int {
-	return max(min(v.d.UnitIndex, v.Count()-1), 0)
-}
-
-func (v *Units) Selected2() int {
-	return max(min(v.d.UnitIndex2, v.Count()-1), 0)
-}
-
-func (v *Units) SetSelected(value int) {
-	m := (*Model)(v)
-	m.d.UnitIndex = max(min(value, v.Count()-1), 0)
+func (v *units) Selected() int          { return v.d.UnitIndex }
+func (v *units) Selected2() int         { return v.d.UnitIndex2 }
+func (v *units) SetSelected2(value int) { v.d.UnitIndex2 = value }
+func (m *units) SetSelected(value int) {
+	m.d.UnitIndex = value
 	m.d.ParamIndex = 0
 	m.d.UnitSearching = false
 	m.d.UnitSearchString = ""
 }
-
-func (v *Units) SetSelected2(value int) {
-	(*Model)(v).d.UnitIndex2 = max(min(value, v.Count()-1), 0)
-}
-
-func (v *Units) Count() int {
-	m := (*Model)(v)
-	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
+func (v *units) Count() int {
+	if v.d.InstrIndex < 0 || v.d.InstrIndex >= len(v.d.Song.Patch) {
 		return 0
 	}
-	return len(m.d.Song.Patch[(*Model)(v).d.InstrIndex].Units)
+	return len(v.d.Song.Patch[v.d.InstrIndex].Units)
 }
 
-func (v *Units) move(r Range, delta int) (ok bool) {
+func (v *units) Move(r Range, delta int) (ok bool) {
 	m := (*Model)(v)
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return false
@@ -356,7 +315,7 @@ func (v *Units) move(r Range, delta int) (ok bool) {
 	return true
 }
 
-func (v *Units) delete(r Range) (ok bool) {
+func (v *units) Delete(r Range) (ok bool) {
 	m := (*Model)(v)
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return false
@@ -366,15 +325,15 @@ func (v *Units) delete(r Range) (ok bool) {
 	return true
 }
 
-func (v *Units) change(n string, severity ChangeSeverity) func() {
+func (v *units) Change(n string, severity ChangeSeverity) func() {
 	return (*Model)(v).change("UnitListView."+n, PatchChange, severity)
 }
 
-func (v *Units) cancel() {
+func (v *units) Cancel() {
 	(*Model)(v).changeCancel = true
 }
 
-func (v *Units) marshal(r Range) ([]byte, error) {
+func (v *units) Marshal(r Range) ([]byte, error) {
 	m := (*Model)(v)
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return nil, errors.New("UnitListView.marshal: no instruments")
@@ -387,7 +346,7 @@ func (v *Units) marshal(r Range) ([]byte, error) {
 	return ret, nil
 }
 
-func (v *Units) unmarshal(data []byte) (r Range, err error) {
+func (v *units) Unmarshal(data []byte) (r Range, err error) {
 	m := (*Model)(v)
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return Range{}, errors.New("UnitListView.unmarshal: no instruments")
@@ -409,29 +368,18 @@ func (v *Units) unmarshal(data []byte) (r Range, err error) {
 	return Range{sel, sel + len(pastedUnits.Units)}, nil
 }
 
-// Tracks methods
+// tracks is a list of all the tracks, implementing ListData & MutableListData interfaces
+type tracks Model
 
-func (v *Tracks) List() List {
-	return List{v}
-}
+func (m *Model) Tracks() List { return List{(*tracks)(m)} }
 
-func (v *Tracks) Selected() int {
-	return max(min(v.d.Cursor.Track, v.Count()-1), 0)
-}
+func (v *tracks) Selected() int          { return v.d.Cursor.Track }
+func (v *tracks) Selected2() int         { return v.d.Cursor2.Track }
+func (v *tracks) SetSelected(value int)  { v.d.Cursor.Track = value }
+func (v *tracks) SetSelected2(value int) { v.d.Cursor2.Track = value }
+func (v *tracks) Count() int             { return len((*Model)(v).d.Song.Score.Tracks) }
 
-func (v *Tracks) Selected2() int {
-	return max(min(v.d.Cursor2.Track, v.Count()-1), 0)
-}
-
-func (v *Tracks) SetSelected(value int) {
-	v.d.Cursor.Track = max(min(value, v.Count()-1), 0)
-}
-
-func (v *Tracks) SetSelected2(value int) {
-	v.d.Cursor2.Track = max(min(value, v.Count()-1), 0)
-}
-
-func (v *Tracks) move(r Range, delta int) (ok bool) {
+func (v *tracks) Move(r Range, delta int) (ok bool) {
 	voiceDelta := 0
 	if delta < 0 {
 		voiceDelta = -VoiceRange(v.d.Song.Score.Tracks, Range{r.Start + delta, r.Start}).Len()
@@ -445,28 +393,24 @@ func (v *Tracks) move(r Range, delta int) (ok bool) {
 	return (*Model)(v).sliceInstrumentsTracks(v.linkInstrTrack, true, ranges[:]...)
 }
 
-func (v *Tracks) delete(r Range) (ok bool) {
+func (v *tracks) Delete(r Range) (ok bool) {
 	ranges := Complement(VoiceRange(v.d.Song.Score.Tracks, r))
 	return (*Model)(v).sliceInstrumentsTracks(v.linkInstrTrack, true, ranges[:]...)
 }
 
-func (v *Tracks) change(n string, severity ChangeSeverity) func() {
+func (v *tracks) Change(n string, severity ChangeSeverity) func() {
 	return (*Model)(v).change("TrackList."+n, SongChange, severity)
 }
 
-func (v *Tracks) cancel() {
+func (v *tracks) Cancel() {
 	v.changeCancel = true
 }
 
-func (v *Tracks) Count() int {
-	return len((*Model)(v).d.Song.Score.Tracks)
-}
-
-func (v *Tracks) marshal(r Range) ([]byte, error) {
+func (v *tracks) Marshal(r Range) ([]byte, error) {
 	return (*Model)(v).marshalVoices(VoiceRange(v.d.Song.Score.Tracks, r))
 }
 
-func (m *Tracks) unmarshal(data []byte) (r Range, err error) {
+func (m *tracks) Unmarshal(data []byte) (r Range, err error) {
 	voiceIndex := m.d.Song.Score.FirstVoiceForTrack(m.d.Cursor.Track)
 	_, r, ok := (*Model)(m).unmarshalVoices(voiceIndex, data, m.linkInstrTrack, true)
 	if !ok {
@@ -475,37 +419,23 @@ func (m *Tracks) unmarshal(data []byte) (r Range, err error) {
 	return r, nil
 }
 
-// OrderRows methods
+// orderRows is a list of all the order rows, implementing ListData & MutableListData interfaces
+type orderRows Model
 
-func (v *OrderRows) List() List {
-	return List{v}
-}
+func (m *Model) OrderRows() List { return List{(*orderRows)(m)} }
 
-func (v *OrderRows) Selected() int {
-	p := v.d.Cursor.OrderRow
-	p = max(min(p, v.Count()-1), 0)
-	return p
-}
-
-func (v *OrderRows) Selected2() int {
-	p := v.d.Cursor2.OrderRow
-	p = max(min(p, v.Count()-1), 0)
-	return p
-}
-
-func (v *OrderRows) SetSelected(value int) {
-	y := max(min(value, v.Count()-1), 0)
-	if y != v.d.Cursor.OrderRow {
+func (v *orderRows) Count() int             { return v.d.Song.Score.Length }
+func (v *orderRows) Selected() int          { return v.d.Cursor.OrderRow }
+func (v *orderRows) Selected2() int         { return v.d.Cursor2.OrderRow }
+func (v *orderRows) SetSelected2(value int) { v.d.Cursor2.OrderRow = value }
+func (v *orderRows) SetSelected(value int) {
+	if value != v.d.Cursor.OrderRow {
 		v.follow = false
 	}
-	v.d.Cursor.OrderRow = y
+	v.d.Cursor.OrderRow = value
 }
 
-func (v *OrderRows) SetSelected2(value int) {
-	v.d.Cursor2.OrderRow = max(min(value, v.Count()-1), 0)
-}
-
-func (v *OrderRows) move(r Range, delta int) (ok bool) {
+func (v *orderRows) Move(r Range, delta int) (ok bool) {
 	swaps := r.Swaps(delta)
 	for i, t := range v.d.Song.Score.Tracks {
 		for a, b := range swaps {
@@ -517,7 +447,7 @@ func (v *OrderRows) move(r Range, delta int) (ok bool) {
 	return true
 }
 
-func (v *OrderRows) delete(r Range) (ok bool) {
+func (v *orderRows) Delete(r Range) (ok bool) {
 	for i, t := range v.d.Song.Score.Tracks {
 		r2 := r.Intersect(Range{0, len(t.Order)})
 		v.d.Song.Score.Tracks[i].Order = append(t.Order[:r2.Start], t.Order[r2.End:]...)
@@ -525,23 +455,19 @@ func (v *OrderRows) delete(r Range) (ok bool) {
 	return true
 }
 
-func (v *OrderRows) change(n string, severity ChangeSeverity) func() {
+func (v *orderRows) Change(n string, severity ChangeSeverity) func() {
 	return (*Model)(v).change("OrderRowList."+n, ScoreChange, severity)
 }
 
-func (v *OrderRows) cancel() {
+func (v *orderRows) Cancel() {
 	v.changeCancel = true
-}
-
-func (v *OrderRows) Count() int {
-	return v.d.Song.Score.Length
 }
 
 type marshalOrderRows struct {
 	Columns [][]int `yaml:",flow"`
 }
 
-func (v *OrderRows) marshal(r Range) ([]byte, error) {
+func (v *orderRows) Marshal(r Range) ([]byte, error) {
 	var table marshalOrderRows
 	for i := range v.d.Song.Score.Tracks {
 		table.Columns = append(table.Columns, make([]int, r.Len()))
@@ -552,7 +478,7 @@ func (v *OrderRows) marshal(r Range) ([]byte, error) {
 	return yaml.Marshal(table)
 }
 
-func (v *OrderRows) unmarshal(data []byte) (r Range, err error) {
+func (v *orderRows) Unmarshal(data []byte) (r Range, err error) {
 	var table marshalOrderRows
 	err = yaml.Unmarshal(data, &table)
 	if err != nil {
@@ -581,33 +507,23 @@ func (v *OrderRows) unmarshal(data []byte) (r Range, err error) {
 	return
 }
 
-// NoteRows methods
+// noteRows is a list of all the note rows, implementing ListData & MutableListData interfaces
+type noteRows Model
 
-func (v *NoteRows) List() List {
-	return List{v}
-}
+func (m *Model) NoteRows() List { return List{(*noteRows)(m)} }
 
-func (v *NoteRows) Selected() int {
-	return v.d.Song.Score.SongRow(v.d.Song.Score.Clamp(v.d.Cursor.SongPos))
-}
-
-func (v *NoteRows) Selected2() int {
-	return v.d.Song.Score.SongRow(v.d.Song.Score.Clamp(v.d.Cursor2.SongPos))
-}
-
-func (v *NoteRows) SetSelected(value int) {
-	if value != v.d.Song.Score.SongRow(v.d.Cursor.SongPos) {
-		v.follow = false
+func (n *noteRows) Count() int         { return n.d.Song.Score.Length * n.d.Song.Score.RowsPerPattern }
+func (n *noteRows) Selected() int      { return n.d.Song.Score.SongRow(n.d.Cursor.SongPos) }
+func (n *noteRows) Selected2() int     { return n.d.Song.Score.SongRow(n.d.Cursor2.SongPos) }
+func (n *noteRows) SetSelected2(v int) { n.d.Cursor2.SongPos = n.d.Song.Score.SongPos(v) }
+func (n *noteRows) SetSelected(value int) {
+	if value != n.d.Song.Score.SongRow(n.d.Cursor.SongPos) {
+		n.follow = false
 	}
-	v.d.Cursor.SongPos = v.d.Song.Score.Clamp(v.d.Song.Score.SongPos(value))
+	n.d.Cursor.SongPos = n.d.Song.Score.Clamp(n.d.Song.Score.SongPos(value))
 }
 
-func (v *NoteRows) SetSelected2(value int) {
-	v.d.Cursor2.SongPos = v.d.Song.Score.Clamp(v.d.Song.Score.SongPos(value))
-
-}
-
-func (v *NoteRows) move(r Range, delta int) (ok bool) {
+func (v *noteRows) Move(r Range, delta int) (ok bool) {
 	for a, b := range r.Swaps(delta) {
 		apos := v.d.Song.Score.SongPos(a)
 		bpos := v.d.Song.Score.SongPos(b)
@@ -621,7 +537,7 @@ func (v *NoteRows) move(r Range, delta int) (ok bool) {
 	return true
 }
 
-func (v *NoteRows) delete(r Range) (ok bool) {
+func (v *noteRows) Delete(r Range) (ok bool) {
 	for _, track := range v.d.Song.Score.Tracks {
 		for i := r.Start; i < r.End; i++ {
 			pos := v.d.Song.Score.SongPos(i)
@@ -631,23 +547,19 @@ func (v *NoteRows) delete(r Range) (ok bool) {
 	return true
 }
 
-func (v *NoteRows) change(n string, severity ChangeSeverity) func() {
+func (v *noteRows) Change(n string, severity ChangeSeverity) func() {
 	return (*Model)(v).change("NoteRowList."+n, ScoreChange, severity)
 }
 
-func (v *NoteRows) cancel() {
+func (v *noteRows) Cancel() {
 	(*Model)(v).changeCancel = true
-}
-
-func (v *NoteRows) Count() int {
-	return (*Model)(v).d.Song.Score.Length * v.d.Song.Score.RowsPerPattern
 }
 
 type marshalNoteRows struct {
 	NoteRows [][]byte `yaml:",flow"`
 }
 
-func (v *NoteRows) marshal(r Range) ([]byte, error) {
+func (v *noteRows) Marshal(r Range) ([]byte, error) {
 	var table marshalNoteRows
 	for i, track := range v.d.Song.Score.Tracks {
 		table.NoteRows = append(table.NoteRows, make([]byte, r.Len()))
@@ -660,7 +572,7 @@ func (v *NoteRows) marshal(r Range) ([]byte, error) {
 	return yaml.Marshal(table)
 }
 
-func (v *NoteRows) unmarshal(data []byte) (r Range, err error) {
+func (v *noteRows) Unmarshal(data []byte) (r Range, err error) {
 	var table marshalNoteRows
 	if err := yaml.Unmarshal(data, &table); err != nil {
 		return Range{}, fmt.Errorf("NoteRowList.unmarshal: %v", err)
@@ -683,57 +595,25 @@ func (v *NoteRows) unmarshal(data []byte) (r Range, err error) {
 	return
 }
 
-// SearchResults
+// searchResults is a unmutable list of all the search results, implementing ListData interface
+type (
+	searchResults       Model
+	UnitSearchYieldFunc func(index int, item string) (ok bool)
+)
 
-func (v *SearchResults) List() List {
-	return List{v}
-}
-
-func (l *SearchResults) Iterate(yield UnitSearchYieldFunc) {
-	index := 0
-	for _, name := range sointu.UnitNames {
-		if !strings.HasPrefix(name, l.d.UnitSearchString) {
-			continue
-		}
-		if !yield(index, name) {
-			break
-		}
-		index++
+func (m *Model) SearchResults() List { return List{(*searchResults)(m)} }
+func (l *Model) SearchResult(i int) (name string, ok bool) {
+	if i < 0 || i >= len(l.derived.searchResults) {
+		return "", false
 	}
+	return l.derived.searchResults[i], true
 }
 
-func (l *SearchResults) Item(index int) (name string, ok bool) {
-	for i, n := range l.Iterate {
-		if i == index {
-			return n, true
-		}
-	}
-	return "", false
-}
-
-func (l *SearchResults) Selected() int {
-	return max(min(l.d.UnitSearchIndex, l.Count()-1), 0)
-}
-
-func (l *SearchResults) Selected2() int {
-	return max(min(l.d.UnitSearchIndex, l.Count()-1), 0)
-}
-
-func (l *SearchResults) SetSelected(value int) {
-	l.d.UnitSearchIndex = max(min(value, l.Count()-1), 0)
-}
-
-func (l *SearchResults) SetSelected2(value int) {
-}
-
-func (l *SearchResults) Count() (count int) {
-	for _, n := range sointu.UnitNames {
-		if strings.HasPrefix(n, l.d.UnitSearchString) {
-			count++
-		}
-	}
-	return
-}
+func (l *searchResults) Selected() int          { return l.d.UnitSearchIndex }
+func (l *searchResults) Selected2() int         { return l.d.UnitSearchIndex }
+func (l *searchResults) SetSelected(value int)  { l.d.UnitSearchIndex = value }
+func (l *searchResults) SetSelected2(value int) {}
+func (l *searchResults) Count() (count int)     { return len(l.derived.searchResults) }
 
 func (r Range) Len() int { return r.End - r.Start }
 

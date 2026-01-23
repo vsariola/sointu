@@ -272,6 +272,7 @@ func (m *UnitSearching) SetValue(val bool) {
 		return
 	}
 	m.d.UnitSearchString = m.d.Song.Patch[m.d.InstrIndex].Units[m.d.UnitIndex].Type
+	(*Model)(m).updateDerivedUnitSearch()
 }
 
 // UnitDisabled methods
@@ -290,7 +291,7 @@ func (m *UnitDisabled) SetValue(val bool) {
 	if m.d.InstrIndex < 0 || m.d.InstrIndex >= len(m.d.Song.Patch) {
 		return
 	}
-	l := ((*Model)(m)).Units().List()
+	l := ((*Model)(m)).Units()
 	r := l.listRange()
 	defer (*Model)(m).change("UnitDisabledSet", PatchChange, MajorChange)()
 	for i := r.Start; i < r.End; i++ {
@@ -315,7 +316,7 @@ func (t *LoopToggle) SetValue(val bool) {
 	m := (*Model)(t)
 	newLoop := Loop{}
 	if val {
-		l := m.OrderRows().List()
+		l := m.OrderRows()
 		r := l.listRange()
 		newLoop = Loop{r.Start, r.End - r.Start}
 	}

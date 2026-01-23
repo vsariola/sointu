@@ -145,7 +145,7 @@ func (m *AddTrack) Do() {
 
 func (m *Model) DeleteTrack() Action { return MakeAction((*DeleteTrack)(m)) }
 func (m *DeleteTrack) Enabled() bool { return len(m.d.Song.Score.Tracks) > 0 }
-func (m *DeleteTrack) Do()           { (*Model)(m).Tracks().List().DeleteElements(false) }
+func (m *DeleteTrack) Do()           { (*Model)(m).Tracks().DeleteElements(false) }
 
 // AddInstrument
 
@@ -164,7 +164,7 @@ func (m *AddInstrument) Do() {
 
 func (m *Model) DeleteInstrument() Action { return MakeAction((*DeleteInstrument)(m)) }
 func (m *DeleteInstrument) Enabled() bool { return len((*Model)(m).d.Song.Patch) > 0 }
-func (m *DeleteInstrument) Do()           { (*Model)(m).Instruments().List().DeleteElements(false) }
+func (m *DeleteInstrument) Do()           { (*Model)(m).Instruments().DeleteElements(false) }
 
 // SplitTrack
 
@@ -259,7 +259,7 @@ func (m *DeleteUnit) Enabled() bool {
 }
 func (m *DeleteUnit) Do() {
 	defer (*Model)(m).change("DeleteUnitAction", PatchChange, MajorChange)()
-	(*Model)(m).Units().List().DeleteElements(true)
+	(*Model)(m).Units().DeleteElements(true)
 }
 
 // ClearUnit
@@ -271,7 +271,7 @@ func (m *ClearUnit) Enabled() bool {
 }
 func (m *ClearUnit) Do() {
 	defer (*Model)(m).change("DeleteUnitAction", PatchChange, MajorChange)()
-	l := ((*Model)(m)).Units().List()
+	l := ((*Model)(m)).Units()
 	r := l.listRange()
 	for i := r.Start; i < r.End; i++ {
 		m.d.Song.Patch[m.d.InstrIndex].Units[i] = sointu.Unit{}
@@ -426,7 +426,7 @@ func (m *PlaySelected) Enabled() bool { return !m.instrEnlarged }
 func (m *PlaySelected) Do() {
 	(*Model)(m).setPanic(false)
 	m.playing = true
-	l := (*Model)(m).OrderRows().List()
+	l := (*Model)(m).OrderRows()
 	r := l.listRange()
 	newLoop := Loop{r.Start, r.End - r.Start}
 	(*Model)(m).setLoop(newLoop)

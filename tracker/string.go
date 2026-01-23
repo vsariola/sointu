@@ -1,5 +1,11 @@
 package tracker
 
+import (
+	"strings"
+
+	"github.com/vsariola/sointu"
+)
+
 type (
 	String struct {
 		value StringValue
@@ -67,7 +73,17 @@ func (v *UnitSearch) Value() string {
 func (v *UnitSearch) SetValue(value string) bool {
 	v.d.UnitSearchString = value
 	v.d.UnitSearching = true
+	(*Model)(v).updateDerivedUnitSearch()
 	return true
+}
+func (v *Model) updateDerivedUnitSearch() {
+	// update search results based on current search string
+	v.derived.searchResults = v.derived.searchResults[:0]
+	for _, name := range sointu.UnitNames {
+		if strings.HasPrefix(name, v.UnitSearch().Value()) {
+			v.derived.searchResults = append(v.derived.searchResults, name)
+		}
+	}
 }
 
 // InstrumentNameString

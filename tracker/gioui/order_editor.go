@@ -42,8 +42,8 @@ func NewOrderEditor(m *tracker.Model) *OrderEditor {
 	return &OrderEditor{
 		scrollTable: NewScrollTable(
 			m.Order().Table(),
-			m.Tracks().List(),
-			m.OrderRows().List(),
+			m.Tracks(),
+			m.OrderRows(),
 		),
 	}
 }

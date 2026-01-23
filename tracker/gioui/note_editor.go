@@ -93,8 +93,8 @@ func NewNoteEditor(model *tracker.Model) *NoteEditor {
 		TrackMidiInBtn:      new(Clickable),
 		scrollTable: NewScrollTable(
 			model.Notes().Table(),
-			model.Tracks().List(),
-			model.NoteRows().List(),
+			model.Tracks(),
+			model.NoteRows(),
 		),
 	}
 	for k, a := range keyBindingMap {

@@ -179,7 +179,7 @@ func (it *InstrumentTools) Layout(gtx C) D {
 
 func (it *InstrumentTools) update(gtx C, tr *Tracker) {
 	for it.copyInstrumentBtn.Clicked(gtx) {
-		if contents, ok := tr.Instruments().List().CopyElements(); ok {
+		if contents, ok := tr.Instruments().CopyElements(); ok {
 			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
 			tr.Alerts().Add("Instrument copied to clipboard", tracker.Info)
 		}
@@ -208,7 +208,7 @@ func (it *InstrumentTools) Tags(level int, yield TagYieldFunc) bool {
 
 func MakeInstrList(model *tracker.Model) InstrumentList {
 	return InstrumentList{
-		instrumentDragList: NewDragList(model.Instruments().List(), layout.Horizontal),
+		instrumentDragList: NewDragList(model.Instruments(), layout.Horizontal),
 		nameEditor:         NewEditor(true, true, text.Middle),
 	}
 }
@@ -221,7 +221,7 @@ func (il *InstrumentList) Layout(gtx C) D {
 	element := func(gtx C, i int) D {
 		grabhandle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentList.Number, strconv.Itoa(i+1))
 		label := func(gtx C) D {
-			name, level, mute, ok := (*tracker.Instruments)(t.Model).Item(i)
+			name, level, mute, ok := t.Instrument(i)
 			if !ok {
 				labelStyle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentList.Number, "")
 				return layout.Center.Layout(gtx, labelStyle.Layout)

@@ -33,10 +33,11 @@ type (
 	// corresponding part of the model changes.
 	derivedModelData struct {
 		// map Unit by ID, other entities by their respective index
-		patch        []derivedInstrument
-		tracks       []derivedTrack
-		railError    RailError
-		presetSearch derivedPresetSearch
+		patch         []derivedInstrument
+		tracks        []derivedTrack
+		railError     RailError
+		presetSearch  derivedPresetSearch
+		searchResults []string
 	}
 
 	derivedInstrument struct {
