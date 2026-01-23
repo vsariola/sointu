@@ -32,73 +32,6 @@ type (
 	Enabler interface {
 		Enabled() bool
 	}
-
-	AddTrack         Model
-	DeleteTrack      Model
-	SplitTrack       Model
-	AddSemitone      Model
-	SubtractSemitone Model
-	AddOctave        Model
-	SubtractOctave   Model
-	EditNoteOff      Model
-
-	AddInstrument    Model
-	DeleteInstrument Model
-	SplitInstrument  Model
-
-	AddUnit struct {
-		Before bool
-		*Model
-	}
-	DeleteUnit Model
-	ClearUnit  Model
-
-	Undo         Model
-	Redo         Model
-	RemoveUnused Model
-
-	PlayCurrentPos    Model
-	PlaySongStart     Model
-	PlaySelected      Model
-	PlayFromLoopStart Model
-	StopPlaying       Model
-
-	AddOrderRow struct {
-		Before bool
-		*Model
-	}
-	DeleteOrderRow struct {
-		Backwards bool
-		*Model
-	}
-
-	NewSong     Model
-	OpenSong    Model
-	SaveSong    Model
-	RequestQuit Model
-	ForceQuit   Model
-	Cancel      Model
-
-	DiscardSong     Model
-	SaveSongAs      Model
-	ExportAction    Model
-	ExportFloat     Model
-	ExportInt16     Model
-	SelectMidiInput struct {
-		Item MIDIDevice
-		*Model
-	}
-	ShowLicense Model
-
-	ChooseSendSource struct {
-		ID int
-		*Model
-	}
-	ChooseSendTarget struct {
-		ID   int
-		Port int
-		*Model
-	}
 )
 
 // Action methods
@@ -128,11 +61,12 @@ func (a Action) Enabled() bool {
 	return e.Enabled()
 }
 
-// AddTrack
+// addTrack
+type addTrack Model
 
-func (m *Model) AddTrack() Action { return MakeAction((*AddTrack)(m)) }
-func (m *AddTrack) Enabled() bool { return m.d.Song.Score.NumVoices() < vm.MAX_VOICES }
-func (m *AddTrack) Do() {
+func (m *Model) AddTrack() Action { return MakeAction((*addTrack)(m)) }
+func (m *addTrack) Enabled() bool { return m.d.Song.Score.NumVoices() < vm.MAX_VOICES }
+func (m *addTrack) Do() {
 	defer (*Model)(m).change("AddTrack", SongChange, MajorChange)()
 	voiceIndex := m.d.Song.Score.FirstVoiceForTrack(m.d.Cursor.Track)
 	p := sointu.Patch{defaultInstrument.Copy()}
@@ -141,17 +75,19 @@ func (m *AddTrack) Do() {
 	m.changeCancel = !ok
 }
 
-// DeleteTrack
+// deleteTrack
+type deleteTrack Model
 
-func (m *Model) DeleteTrack() Action { return MakeAction((*DeleteTrack)(m)) }
-func (m *DeleteTrack) Enabled() bool { return len(m.d.Song.Score.Tracks) > 0 }
-func (m *DeleteTrack) Do()           { (*Model)(m).Tracks().DeleteElements(false) }
+func (m *Model) DeleteTrack() Action { return MakeAction((*deleteTrack)(m)) }
+func (m *deleteTrack) Enabled() bool { return len(m.d.Song.Score.Tracks) > 0 }
+func (m *deleteTrack) Do()           { (*Model)(m).Tracks().DeleteElements(false) }
 
-// AddInstrument
+// addInstrument
+type addInstrument Model
 
-func (m *Model) AddInstrument() Action { return MakeAction((*AddInstrument)(m)) }
-func (m *AddInstrument) Enabled() bool { return (*Model)(m).d.Song.Patch.NumVoices() < vm.MAX_VOICES }
-func (m *AddInstrument) Do() {
+func (m *Model) AddInstrument() Action { return MakeAction((*addInstrument)(m)) }
+func (m *addInstrument) Enabled() bool { return (*Model)(m).d.Song.Patch.NumVoices() < vm.MAX_VOICES }
+func (m *addInstrument) Do() {
 	defer (*Model)(m).change("AddInstrument", SongChange, MajorChange)()
 	voiceIndex := m.d.Song.Patch.FirstVoiceForInstrument(m.d.InstrIndex)
 	p := sointu.Patch{defaultInstrument.Copy()}
@@ -160,19 +96,21 @@ func (m *AddInstrument) Do() {
 	m.changeCancel = !ok
 }
 
-// DeleteInstrument
+// deleteInstrument
+type deleteInstrument Model
 
-func (m *Model) DeleteInstrument() Action { return MakeAction((*DeleteInstrument)(m)) }
-func (m *DeleteInstrument) Enabled() bool { return len((*Model)(m).d.Song.Patch) > 0 }
-func (m *DeleteInstrument) Do()           { (*Model)(m).Instruments().DeleteElements(false) }
+func (m *Model) DeleteInstrument() Action { return MakeAction((*deleteInstrument)(m)) }
+func (m *deleteInstrument) Enabled() bool { return len((*Model)(m).d.Song.Patch) > 0 }
+func (m *deleteInstrument) Do()           { (*Model)(m).Instruments().DeleteElements(false) }
 
-// SplitTrack
+// splitTrack
+type splitTrack Model
 
-func (m *Model) SplitTrack() Action { return MakeAction((*SplitTrack)(m)) }
-func (m *SplitTrack) Enabled() bool {
+func (m *Model) SplitTrack() Action { return MakeAction((*splitTrack)(m)) }
+func (m *splitTrack) Enabled() bool {
 	return m.d.Cursor.Track >= 0 && m.d.Cursor.Track < len(m.d.Song.Score.Tracks) && m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices > 1
 }
-func (m *SplitTrack) Do() {
+func (m *splitTrack) Do() {
 	defer (*Model)(m).change("SplitTrack", SongChange, MajorChange)()
 	voiceIndex := m.d.Song.Score.FirstVoiceForTrack(m.d.Cursor.Track)
 	middle := voiceIndex + (m.d.Song.Score.Tracks[m.d.Cursor.Track].NumVoices+1)/2
@@ -192,13 +130,14 @@ func (m *SplitTrack) Do() {
 	m.d.Song.Score.Tracks = append(m.d.Song.Score.Tracks, right...)
 }
 
-// SplitInstrument
+// splitInstrument
+type splitInstrument Model
 
-func (m *Model) SplitInstrument() Action { return MakeAction((*SplitInstrument)(m)) }
-func (m *SplitInstrument) Enabled() bool {
+func (m *Model) SplitInstrument() Action { return MakeAction((*splitInstrument)(m)) }
+func (m *splitInstrument) Enabled() bool {
 	return m.d.InstrIndex >= 0 && m.d.InstrIndex < len(m.d.Song.Patch) && m.d.Song.Patch[m.d.InstrIndex].NumVoices > 1
 }
-func (m *SplitInstrument) Do() {
+func (m *splitInstrument) Do() {
 	defer (*Model)(m).change("SplitInstrument", SongChange, MajorChange)()
 	voiceIndex := m.d.Song.Patch.Copy().FirstVoiceForInstrument(m.d.InstrIndex)
 	middle := voiceIndex + (m.d.Song.Patch[m.d.InstrIndex].NumVoices+1)/2
@@ -220,12 +159,16 @@ func (m *SplitInstrument) Do() {
 	m.d.Song.Patch = append(m.d.Song.Patch, right...)
 }
 
-// AddUnit
+// addUnit
+type addUnit struct {
+	Before bool
+	*Model
+}
 
 func (m *Model) AddUnit(before bool) Action {
-	return MakeAction(AddUnit{Before: before, Model: m})
+	return MakeAction(addUnit{Before: before, Model: m})
 }
-func (a AddUnit) Do() {
+func (a addUnit) Do() {
 	m := (*Model)(a.Model)
 	defer m.change("AddUnitAction", PatchChange, MajorChange)()
 	if len(m.d.Song.Patch) == 0 { // no instruments, add one
@@ -250,26 +193,28 @@ func (a AddUnit) Do() {
 	m.d.ParamIndex = 0
 }
 
-// DeleteUnit
+// deleteUnit
+type deleteUnit Model
 
-func (m *Model) DeleteUnit() Action { return MakeAction((*DeleteUnit)(m)) }
-func (m *DeleteUnit) Enabled() bool {
+func (m *Model) DeleteUnit() Action { return MakeAction((*deleteUnit)(m)) }
+func (m *deleteUnit) Enabled() bool {
 	i := (*Model)(m).d.InstrIndex
 	return i >= 0 && i < len((*Model)(m).d.Song.Patch) && len((*Model)(m).d.Song.Patch[i].Units) > 1
 }
-func (m *DeleteUnit) Do() {
+func (m *deleteUnit) Do() {
 	defer (*Model)(m).change("DeleteUnitAction", PatchChange, MajorChange)()
 	(*Model)(m).Units().DeleteElements(true)
 }
 
-// ClearUnit
+// clearUnit
+type clearUnit Model
 
-func (m *Model) ClearUnit() Action { return MakeAction((*ClearUnit)(m)) }
-func (m *ClearUnit) Enabled() bool {
+func (m *Model) ClearUnit() Action { return MakeAction((*clearUnit)(m)) }
+func (m *clearUnit) Enabled() bool {
 	i := (*Model)(m).d.InstrIndex
 	return i >= 0 && i < len(m.d.Song.Patch) && len(m.d.Song.Patch[i].Units) > 0
 }
-func (m *ClearUnit) Do() {
+func (m *clearUnit) Do() {
 	defer (*Model)(m).change("DeleteUnitAction", PatchChange, MajorChange)()
 	l := ((*Model)(m)).Units()
 	r := l.listRange()
@@ -279,11 +224,12 @@ func (m *ClearUnit) Do() {
 	}
 }
 
-// Undo
+// undo
+type undo Model
 
-func (m *Model) Undo() Action { return MakeAction((*Undo)(m)) }
-func (m *Undo) Enabled() bool { return len((*Model)(m).undoStack) > 0 }
-func (m *Undo) Do() {
+func (m *Model) Undo() Action { return MakeAction((*undo)(m)) }
+func (m *undo) Enabled() bool { return len((*Model)(m).undoStack) > 0 }
+func (m *undo) Do() {
 	m.redoStack = append(m.redoStack, m.d.Copy())
 	if len(m.redoStack) >= maxUndo {
 		copy(m.redoStack, m.redoStack[len(m.redoStack)-maxUndo:])
@@ -296,11 +242,12 @@ func (m *Undo) Do() {
 	TrySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
 }
 
-// Redo
+// redo
+type redo Model
 
-func (m *Model) Redo() Action { return MakeAction((*Redo)(m)) }
-func (m *Redo) Enabled() bool { return len((*Model)(m).redoStack) > 0 }
-func (m *Redo) Do() {
+func (m *Model) Redo() Action { return MakeAction((*redo)(m)) }
+func (m *redo) Enabled() bool { return len((*Model)(m).redoStack) > 0 }
+func (m *redo) Do() {
 	m.undoStack = append(m.undoStack, m.d.Copy())
 	if len(m.undoStack) >= maxUndo {
 		copy(m.undoStack, m.undoStack[len(m.undoStack)-maxUndo:])
@@ -314,34 +261,40 @@ func (m *Redo) Do() {
 }
 
 // AddSemiTone
+type addSemitone Model
 
-func (m *Model) AddSemitone() Action { return MakeAction((*AddSemitone)(m)) }
-func (m *AddSemitone) Do()           { Table{(*Notes)(m)}.Add(1, false) }
+func (m *Model) AddSemitone() Action { return MakeAction((*addSemitone)(m)) }
+func (m *addSemitone) Do()           { Table{(*Notes)(m)}.Add(1, false) }
 
-// SubtractSemitone
+// subtractSemitone
+type subtractSemitone Model
 
-func (m *Model) SubtractSemitone() Action { return MakeAction((*SubtractSemitone)(m)) }
-func (m *SubtractSemitone) Do()           { Table{(*Notes)(m)}.Add(-1, false) }
+func (m *Model) SubtractSemitone() Action { return MakeAction((*subtractSemitone)(m)) }
+func (m *subtractSemitone) Do()           { Table{(*Notes)(m)}.Add(-1, false) }
 
-// AddOctave
+// addOctave
+type addOctave Model
 
-func (m *Model) AddOctave() Action { return MakeAction((*AddOctave)(m)) }
-func (m *AddOctave) Do()           { Table{(*Notes)(m)}.Add(1, true) }
+func (m *Model) AddOctave() Action { return MakeAction((*addOctave)(m)) }
+func (m *addOctave) Do()           { Table{(*Notes)(m)}.Add(1, true) }
 
-// SubtractOctave
+// subtractOctave
+type subtractOctave Model
 
-func (m *Model) SubtractOctave() Action { return MakeAction((*SubtractOctave)(m)) }
-func (m *SubtractOctave) Do()           { Table{(*Notes)(m)}.Add(-1, true) }
+func (m *Model) SubtractOctave() Action { return MakeAction((*subtractOctave)(m)) }
+func (m *subtractOctave) Do()           { Table{(*Notes)(m)}.Add(-1, true) }
 
-// EditNoteOff
+// editNoteOff
+type editNoteOff Model
 
-func (m *Model) EditNoteOff() Action { return MakeAction((*EditNoteOff)(m)) }
-func (m *EditNoteOff) Do()           { Table{(*Notes)(m)}.Fill(0) }
+func (m *Model) EditNoteOff() Action { return MakeAction((*editNoteOff)(m)) }
+func (m *editNoteOff) Do()           { Table{(*Notes)(m)}.Fill(0) }
 
-// RemoveUnused
+// removeUnused
+type removeUnused Model
 
-func (m *Model) RemoveUnused() Action { return MakeAction((*RemoveUnused)(m)) }
-func (m *RemoveUnused) Do() {
+func (m *Model) RemoveUnused() Action { return MakeAction((*removeUnused)(m)) }
+func (m *removeUnused) Do() {
 	defer (*Model)(m).change("RemoveUnusedAction", ScoreChange, MajorChange)()
 	for trkIndex, trk := range m.d.Song.Score.Tracks {
 		// assign new indices to patterns
@@ -397,33 +350,36 @@ func (m *RemoveUnused) Do() {
 	}
 }
 
-// PlayCurrentPos
+// playCurrentPos
+type playCurrentPos Model
 
-func (m *Model) PlayCurrentPos() Action { return MakeAction((*PlayCurrentPos)(m)) }
-func (m *PlayCurrentPos) Enabled() bool { return !m.instrEnlarged }
-func (m *PlayCurrentPos) Do() {
+func (m *Model) PlayCurrentPos() Action { return MakeAction((*playCurrentPos)(m)) }
+func (m *playCurrentPos) Enabled() bool { return !m.instrEnlarged }
+func (m *playCurrentPos) Do() {
 	(*Model)(m).setPanic(false)
 	(*Model)(m).setLoop(Loop{})
 	m.playing = true
 	TrySend(m.broker.ToPlayer, any(StartPlayMsg{m.d.Cursor.SongPos}))
 }
 
-// PlaySongStart
+// playSongStart
+type playSongStart Model
 
-func (m *Model) PlaySongStart() Action { return MakeAction((*PlaySongStart)(m)) }
-func (m *PlaySongStart) Enabled() bool { return !m.instrEnlarged }
-func (m *PlaySongStart) Do() {
+func (m *Model) PlaySongStart() Action { return MakeAction((*playSongStart)(m)) }
+func (m *playSongStart) Enabled() bool { return !m.instrEnlarged }
+func (m *playSongStart) Do() {
 	(*Model)(m).setPanic(false)
 	(*Model)(m).setLoop(Loop{})
 	m.playing = true
 	TrySend(m.broker.ToPlayer, any(StartPlayMsg{}))
 }
 
-// PlaySelected
+// playSelected
+type playSelected Model
 
-func (m *Model) PlaySelected() Action { return MakeAction((*PlaySelected)(m)) }
-func (m *PlaySelected) Enabled() bool { return !m.instrEnlarged }
-func (m *PlaySelected) Do() {
+func (m *Model) PlaySelected() Action { return MakeAction((*playSelected)(m)) }
+func (m *playSelected) Enabled() bool { return !m.instrEnlarged }
+func (m *playSelected) Do() {
 	(*Model)(m).setPanic(false)
 	m.playing = true
 	l := (*Model)(m).OrderRows()
@@ -433,11 +389,12 @@ func (m *PlaySelected) Do() {
 	TrySend(m.broker.ToPlayer, any(StartPlayMsg{sointu.SongPos{OrderRow: r.Start, PatternRow: 0}}))
 }
 
-// PlayFromLoopStart
+// playFromLoopStart
+type playFromLoopStart Model
 
-func (m *Model) PlayFromLoopStart() Action { return MakeAction((*PlayFromLoopStart)(m)) }
-func (m *PlayFromLoopStart) Enabled() bool { return !m.instrEnlarged }
-func (m *PlayFromLoopStart) Do() {
+func (m *Model) PlayFromLoopStart() Action { return MakeAction((*playFromLoopStart)(m)) }
+func (m *playFromLoopStart) Enabled() bool { return !m.instrEnlarged }
+func (m *playFromLoopStart) Do() {
 	(*Model)(m).setPanic(false)
 	if m.loop == (Loop{}) {
 		(*Model)(m).PlaySelected().Do()
@@ -447,10 +404,11 @@ func (m *PlayFromLoopStart) Do() {
 	TrySend(m.broker.ToPlayer, any(StartPlayMsg{sointu.SongPos{OrderRow: m.loop.Start, PatternRow: 0}}))
 }
 
-// StopPlaying
+// stopPlaying
+type stopPlaying Model
 
-func (m *Model) StopPlaying() Action { return MakeAction((*StopPlaying)(m)) }
-func (m *StopPlaying) Do() {
+func (m *Model) StopPlaying() Action { return MakeAction((*stopPlaying)(m)) }
+func (m *stopPlaying) Do() {
 	if !m.playing {
 		(*Model)(m).setPanic(true)
 		(*Model)(m).setLoop(Loop{})
@@ -460,12 +418,16 @@ func (m *StopPlaying) Do() {
 	TrySend(m.broker.ToPlayer, any(IsPlayingMsg{false}))
 }
 
-// AddOrderRow
+// addOrderRow
+type addOrderRow struct {
+	Before bool
+	*Model
+}
 
 func (m *Model) AddOrderRow(before bool) Action {
-	return MakeAction(AddOrderRow{Before: before, Model: m})
+	return MakeAction(addOrderRow{Before: before, Model: m})
 }
-func (a AddOrderRow) Do() {
+func (a addOrderRow) Do() {
 	m := a.Model
 	defer m.change("AddOrderRowAction", ScoreChange, MinorChange)()
 	if !a.Before {
@@ -484,12 +446,16 @@ func (a AddOrderRow) Do() {
 	}
 }
 
-// DeleteOrderRow
+// deleteOrderRow
+type deleteOrderRow struct {
+	Backwards bool
+	*Model
+}
 
 func (m *Model) DeleteOrderRow(backwards bool) Action {
-	return MakeAction(DeleteOrderRow{Backwards: backwards, Model: m})
+	return MakeAction(deleteOrderRow{Backwards: backwards, Model: m})
 }
-func (d DeleteOrderRow) Do() {
+func (d deleteOrderRow) Do() {
 	m := d.Model
 	defer m.change("AddOrderRowAction", ScoreChange, MinorChange)()
 	from := m.d.Cursor.OrderRow
@@ -509,16 +475,20 @@ func (d DeleteOrderRow) Do() {
 	m.d.Cursor2.OrderRow = m.d.Cursor.OrderRow
 }
 
-// ChooseSendSource
+// chooseSendSource
+type chooseSendSource struct {
+	ID int
+	*Model
+}
 
 func (m *Model) IsChoosingSendTarget() bool {
 	return m.d.SendSource > 0
 }
 
 func (m *Model) ChooseSendSource(id int) Action {
-	return MakeAction(ChooseSendSource{ID: id, Model: m})
+	return MakeAction(chooseSendSource{ID: id, Model: m})
 }
-func (s ChooseSendSource) Do() {
+func (s chooseSendSource) Do() {
 	defer (*Model)(s.Model).change("ChooseSendSource", NoChange, MinorChange)()
 	if s.Model.d.SendSource == s.ID {
 		s.Model.d.SendSource = 0 // unselect
@@ -527,12 +497,17 @@ func (s ChooseSendSource) Do() {
 	s.Model.d.SendSource = s.ID
 }
 
-// ChooseSendTarget
+// chooseSendTarget
+type chooseSendTarget struct {
+	ID   int
+	Port int
+	*Model
+}
 
 func (m *Model) ChooseSendTarget(id int, port int) Action {
-	return MakeAction(ChooseSendTarget{ID: id, Port: port, Model: m})
+	return MakeAction(chooseSendTarget{ID: id, Port: port, Model: m})
 }
-func (s ChooseSendTarget) Do() {
+func (s chooseSendTarget) Do() {
 	defer (*Model)(s.Model).change("ChooseSendTarget", SongChange, MinorChange)()
 	sourceID := (*Model)(s.Model).d.SendSource
 	s.d.SendSource = 0
@@ -547,41 +522,46 @@ func (s ChooseSendTarget) Do() {
 	s.d.Song.Patch[si].Units[su].Parameters["port"] = s.Port
 }
 
-// NewSong
+// newSong
+type newSong Model
 
-func (m *Model) NewSong() Action { return MakeAction((*NewSong)(m)) }
-func (m *NewSong) Do() {
+func (m *Model) NewSong() Action { return MakeAction((*newSong)(m)) }
+func (m *newSong) Do() {
 	m.dialog = NewSongChanges
 	(*Model)(m).completeAction(true)
 }
 
-// OpenSong
+// openSong
+type openSong Model
 
-func (m *Model) OpenSong() Action { return MakeAction((*OpenSong)(m)) }
-func (m *OpenSong) Do() {
+func (m *Model) OpenSong() Action { return MakeAction((*openSong)(m)) }
+func (m *openSong) Do() {
 	m.dialog = OpenSongChanges
 	(*Model)(m).completeAction(true)
 }
 
-// RequestQuit
+// requestQuit
+type requestQuit Model
 
-func (m *Model) RequestQuit() Action { return MakeAction((*RequestQuit)(m)) }
-func (m *RequestQuit) Do() {
+func (m *Model) RequestQuit() Action { return MakeAction((*requestQuit)(m)) }
+func (m *requestQuit) Do() {
 	if !m.quitted {
 		m.dialog = QuitChanges
 		(*Model)(m).completeAction(true)
 	}
 }
 
-// ForceQuit
+// forceQuit
+type forceQuit Model
 
-func (m *Model) ForceQuit() Action { return MakeAction((*ForceQuit)(m)) }
-func (m *ForceQuit) Do()           { m.quitted = true }
+func (m *Model) ForceQuit() Action { return MakeAction((*forceQuit)(m)) }
+func (m *forceQuit) Do()           { m.quitted = true }
 
-// SaveSong
+// saveSong
+type saveSong Model
 
-func (m *Model) SaveSong() Action { return MakeAction((*SaveSong)(m)) }
-func (m *SaveSong) Do() {
+func (m *Model) SaveSong() Action { return MakeAction((*saveSong)(m)) }
+func (m *saveSong) Do() {
 	if m.d.FilePath == "" {
 		switch m.dialog {
 		case NoDialog:
@@ -604,31 +584,50 @@ func (m *SaveSong) Do() {
 	m.d.ChangedSinceSave = false
 }
 
-func (m *Model) DiscardSong() Action { return MakeAction((*DiscardSong)(m)) }
-func (m *DiscardSong) Do()           { (*Model)(m).completeAction(false) }
+type discardSong Model
 
-func (m *Model) SaveSongAs() Action { return MakeAction((*SaveSongAs)(m)) }
-func (m *SaveSongAs) Do()           { m.dialog = SaveAsExplorer }
+func (m *Model) DiscardSong() Action { return MakeAction((*discardSong)(m)) }
+func (m *discardSong) Do()           { (*Model)(m).completeAction(false) }
 
-func (m *Model) Cancel() Action { return MakeAction((*Cancel)(m)) }
-func (m *Cancel) Do()           { m.dialog = NoDialog }
+type saveSongAs Model
 
-func (m *Model) Export() Action { return MakeAction((*ExportAction)(m)) }
-func (m *ExportAction) Do()     { m.dialog = Export }
+func (m *Model) SaveSongAs() Action { return MakeAction((*saveSongAs)(m)) }
+func (m *saveSongAs) Do()           { m.dialog = SaveAsExplorer }
 
-func (m *Model) ExportFloat() Action { return MakeAction((*ExportFloat)(m)) }
-func (m *ExportFloat) Do()           { m.dialog = ExportFloatExplorer }
+type cancel Model
+
+func (m *Model) Cancel() Action { return MakeAction((*cancel)(m)) }
+func (m *cancel) Do()           { m.dialog = NoDialog }
+
+type exportAction Model
+
+func (m *Model) Export() Action { return MakeAction((*exportAction)(m)) }
+func (m *exportAction) Do()     { m.dialog = Export }
+
+type exportFloat Model
+
+func (m *Model) ExportFloat() Action { return MakeAction((*exportFloat)(m)) }
+func (m *exportFloat) Do()           { m.dialog = ExportFloatExplorer }
+
+type ExportInt16 Model
 
 func (m *Model) ExportInt16() Action { return MakeAction((*ExportInt16)(m)) }
 func (m *ExportInt16) Do()           { m.dialog = ExportInt16Explorer }
 
-func (m *Model) ShowLicense() Action { return MakeAction((*ShowLicense)(m)) }
-func (m *ShowLicense) Do()           { m.dialog = License }
+type showLicense Model
+
+func (m *Model) ShowLicense() Action { return MakeAction((*showLicense)(m)) }
+func (m *showLicense) Do()           { m.dialog = License }
+
+type selectMidiInput struct {
+	Item MIDIDevice
+	*Model
+}
 
 func (m *Model) SelectMidiInput(item MIDIDevice) Action {
-	return MakeAction(SelectMidiInput{Item: item, Model: m})
+	return MakeAction(selectMidiInput{Item: item, Model: m})
 }
-func (s SelectMidiInput) Do() {
+func (s selectMidiInput) Do() {
 	m := s.Model
 	if err := s.Item.Open(); err == nil {
 		message := fmt.Sprintf("Opened MIDI device: %s", s.Item)
