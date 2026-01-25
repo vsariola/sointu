@@ -48,18 +48,14 @@ func init() {
 		broker := tracker.NewBroker()
 		model := tracker.NewModel(broker, cmd.Synthers, cmd.NewMidiContext(broker), recoveryFile)
 		player := tracker.NewPlayer(broker, cmd.Synthers[0])
-		detector := tracker.NewDetector(broker)
-		specan := tracker.NewSpecAnalyzer(broker)
-		go detector.Run()
-		go specan.Run()
 
 		t := gioui.NewTracker(model)
-		model.InstrEnlarged().SetValue(true)
+		model.Play().TrackerHidden().SetValue(true)
 		// since the VST is usually working without any regard for the tracks
 		// until recording, disable the Instrument-Track linking by default
 		// because it might just confuse the user why instrument cannot be
 		// swapped/added etc.
-		model.LinkInstrTrack().SetValue(false)
+		model.Track().LinkInstrument().SetValue(false)
 		go t.Main()
 		context := &VSTIProcessContext{host: h}
 		buf := make(sointu.AudioBuffer, 1024)
@@ -112,24 +108,21 @@ func init() {
 					}
 				},
 				CloseFunc: func() {
-					tracker.TrySend(broker.CloseDetector, struct{}{})
 					tracker.TrySend(broker.CloseGUI, struct{}{})
-					tracker.TrySend(broker.CloseSpecAn, struct{}{})
-					tracker.TimeoutReceive(broker.FinishedDetector, 3*time.Second)
+					model.Close()
 					tracker.TimeoutReceive(broker.FinishedGUI, 3*time.Second)
-					tracker.TimeoutReceive(broker.FinishedSpecAn, 3*time.Second)
 				},
 				GetChunkFunc: func(isPreset bool) []byte {
 					retChn := make(chan []byte)
 
-					if !tracker.TrySend(broker.ToModel, tracker.MsgToModel{Data: func() { retChn <- t.MarshalRecovery() }}) {
+					if !tracker.TrySend(broker.ToModel, tracker.MsgToModel{Data: func() { retChn <- t.History().MarshalRecovery() }}) {
 						return nil
 					}
 					ret, _ := tracker.TimeoutReceive(retChn, 5*time.Second) // ret will be nil if timeout or channel closed
 					return ret
 				},
 				SetChunkFunc: func(data []byte, isPreset bool) {
-					tracker.TrySend(broker.ToModel, tracker.MsgToModel{Data: func() { t.UnmarshalRecovery(data) }})
+					tracker.TrySend(broker.ToModel, tracker.MsgToModel{Data: func() { t.History().UnmarshalRecovery(data) }})
 				},
 			}
 

@@ -8,49 +8,71 @@ import (
 	"github.com/vsariola/sointu"
 )
 
-type (
-	SpecAnalyzer struct {
-		settings SpecAnSettings
-		broker   *Broker
-		chunker  chunker
-		temp     specTemp
-	}
+// Spectrum returns a SpectrumModel to access spectrum analyzer data and
+// settings.
+func (m *Model) Spectrum() *SpectrumModel { return (*SpectrumModel)(m) }
 
-	SpecAnSettings struct {
-		ChnMode    SpecChnMode
-		Smooth     int
-		Resolution int
-	}
+type SpectrumModel Model
 
-	SpecChnMode int
-	Spectrum    [2][]float32
+// Result returns the latest spectrum analyzer result.
+func (m *SpectrumModel) Result() Spectrum { return *m.spectrum }
 
-	specTemp struct {
-		power      [2][]float32
-		window     []float32    // window weighting function
-		normFactor float32      // normalization factor, to account for the windowing
-		bitPerm    []int        // bit-reversal permutation table
-		tmpC       []complex128 // temporary buffer for FFT
-		tmp1, tmp2 []float32    // temporary buffers for processing
-	}
+type Spectrum [2][]float32
 
-	BiquadCoeffs struct {
-		b0, b1, b2 float32
-		a0, a1, a2 float32
-	}
+// Speed returns an Int to adjust the smoothing speed of the spectrum analyzer.
+func (m *SpectrumModel) Speed() Int { return MakeInt((*spectrumSpeed)(m)) }
 
-	SpecAnEnabled Model
+type spectrumSpeed Model
+
+func (v *spectrumSpeed) Value() int { return int(v.specAnSettings.Smooth) }
+func (v *spectrumSpeed) SetValue(value int) bool {
+	v.specAnSettings.Smooth = value
+	TrySend(v.broker.ToSpecAn, MsgToSpecAn{HasSettings: true, SpecSettings: v.specAnSettings})
+	return true
+}
+func (v *spectrumSpeed) Range() RangeInclusive { return RangeInclusive{-3, 3} }
+
+const (
+	SpecSpeedMin = -3
+	SpecSpeedMax = 3
 )
+
+// Resolution returns an Int to adjust the resolution of the spectrum analyzer.
+func (m *SpectrumModel) Resolution() Int { return MakeInt((*spectrumResolution)(m)) }
+
+type spectrumResolution Model
+
+func (v *spectrumResolution) Value() int { return v.specAnSettings.Resolution }
+func (v *spectrumResolution) SetValue(value int) bool {
+	v.specAnSettings.Resolution = value
+	TrySend(v.broker.ToSpecAn, MsgToSpecAn{HasSettings: true, SpecSettings: v.specAnSettings})
+	return true
+}
+func (v *spectrumResolution) Range() RangeInclusive {
+	return RangeInclusive{SpecResolutionMin, SpecResolutionMax}
+}
 
 const (
 	SpecResolutionMin = -3
 	SpecResolutionMax = 3
 )
 
-const (
-	SpecSpeedMin = -3
-	SpecSpeedMax = 3
-)
+// Channels returns an Int to adjust the channel mode of the spectrum analyzer.
+func (m *SpectrumModel) Channels() Int { return MakeInt((*spectrumChannels)(m)) }
+
+type spectrumChannels Model
+
+func (v *spectrumChannels) Value() int { return int(v.specAnSettings.ChnMode) }
+func (v *spectrumChannels) SetValue(value int) bool {
+	v.specAnSettings.ChnMode = SpecChnMode(value)
+	TrySend(v.broker.ToSpecAn, MsgToSpecAn{HasSettings: true, SpecSettings: v.specAnSettings})
+	return true
+}
+func (v *spectrumChannels) Range() RangeInclusive {
+	return RangeInclusive{0, int(NumSpecChnModes) - 1}
+}
+
+type SpecChnMode int
 
 const (
 	SpecChnModeSum      SpecChnMode = iota // calculate a single combined spectrum for both channels
@@ -58,15 +80,14 @@ const (
 	NumSpecChnModes
 )
 
-func (m *Model) SpecAnEnabled() Bool { return MakeBoolFromPtr(&m.specAnEnabled) }
+// Enabled returns a Bool to toggle whether the spectrum analyzer is enabled or
+// not. If it is disabled, it will not process any audio data, saving CPU
+// resources.
+func (m *SpectrumModel) Enabled() Bool { return MakeBoolFromPtr(&m.specAnEnabled) }
 
-func NewSpecAnalyzer(broker *Broker) *SpecAnalyzer {
-	ret := &SpecAnalyzer{broker: broker}
-	ret.init(SpecAnSettings{})
-	return ret
-}
-
-func (m *Model) BiquadCoeffs() (coeffs BiquadCoeffs, ok bool) {
+// BiquadCoeffs returns the biquad filter coefficients of the currently selected
+// filter or belleq, to plot its frequency response on top of the spectrum.
+func (m *SpectrumModel) BiquadCoeffs() (coeffs BiquadCoeffs, ok bool) {
 	i := m.d.InstrIndex
 	u := m.d.UnitIndex
 	if i < 0 || i >= len(m.d.Song.Patch) || u < 0 || u >= len(m.d.Song.Patch[i].Units) {
@@ -128,13 +149,44 @@ func (m *Model) BiquadCoeffs() (coeffs BiquadCoeffs, ok bool) {
 	}
 }
 
+type BiquadCoeffs struct {
+	b0, b1, b2 float32
+	a0, a1, a2 float32
+}
+
 func (c *BiquadCoeffs) Gain(omega float32) float32 {
 	e := cmplx.Rect(1, -float64(omega))
 	return float32(cmplx.Abs((complex(float64(c.b0), 0) + complex(float64(c.b1), 0)*e + complex(float64(c.b2), 0)*(e*e)) /
 		(complex(float64(c.a0), 0) + complex(float64(c.a1), 0)*e + complex(float64(c.a2), 0)*e*e)))
 }
 
-func (s *SpecAnalyzer) Run() {
+type (
+	specAnalyzer struct {
+		settings specAnSettings
+		broker   *Broker
+		chunker  chunker
+		temp     specTemp
+	}
+
+	specAnSettings struct {
+		ChnMode    SpecChnMode
+		Smooth     int
+		Resolution int
+	}
+
+	specTemp struct {
+		power      [2][]float32
+		window     []float32    // window weighting function
+		normFactor float32      // normalization factor, to account for the windowing
+		bitPerm    []int        // bit-reversal permutation table
+		tmpC       []complex128 // temporary buffer for FFT
+		tmp1, tmp2 []float32    // temporary buffers for processing
+	}
+)
+
+func runSpecAnalyzer(broker *Broker) {
+	s := &specAnalyzer{broker: broker}
+	s.init(specAnSettings{})
 	for {
 		select {
 		case <-s.broker.CloseSpecAn:
@@ -146,7 +198,7 @@ func (s *SpecAnalyzer) Run() {
 	}
 }
 
-func (s *SpecAnalyzer) handleMsg(msg MsgToSpecAn) {
+func (s *specAnalyzer) handleMsg(msg MsgToSpecAn) {
 	if msg.HasSettings {
 		s.init(msg.SpecSettings)
 	}
@@ -164,7 +216,7 @@ func (s *SpecAnalyzer) handleMsg(msg MsgToSpecAn) {
 	}
 }
 
-func (a *SpecAnalyzer) init(s SpecAnSettings) {
+func (a *specAnalyzer) init(s specAnSettings) {
 	s.Resolution = min(max(s.Resolution, SpecResolutionMin), SpecResolutionMax) + 10
 	a.settings = s
 	n := 1 << s.Resolution
@@ -198,7 +250,7 @@ func (a *SpecAnalyzer) init(s SpecAnSettings) {
 	}
 }
 
-func (s *SpecAnalyzer) update(buf sointu.AudioBuffer) *Spectrum {
+func (s *specAnalyzer) update(buf sointu.AudioBuffer) *Spectrum {
 	ret := s.broker.GetSpectrum()
 	switch s.settings.ChnMode {
 	case SpecChnModeSeparate:
@@ -220,7 +272,7 @@ func (s *SpecAnalyzer) update(buf sointu.AudioBuffer) *Spectrum {
 	return ret
 }
 
-func (sd *SpecAnalyzer) process(buf sointu.AudioBuffer, channel int) {
+func (sd *specAnalyzer) process(buf sointu.AudioBuffer, channel int) {
 	for i := range buf { // de-interleave
 		sd.temp.tmp1[i] = removeNaNsAndClamp(buf[i][channel])
 	}

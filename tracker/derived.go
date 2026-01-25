@@ -36,7 +36,6 @@ type (
 		patch         []derivedInstrument
 		tracks        []derivedTrack
 		railError     RailError
-		presetSearch  derivedPresetSearch
 		searchResults []string
 	}
 
@@ -53,52 +52,6 @@ type (
 		patternUseCounts []int
 	}
 )
-
-// public methods to access the derived data
-
-func (s *Model) RailError() RailError { return s.derived.railError }
-
-func (s *Model) RailWidth() int {
-	i := s.d.InstrIndex
-	if i < 0 || i >= len(s.derived.patch) {
-		return 0
-	}
-	return s.derived.patch[i].railWidth
-}
-
-func (m *Model) Wires(yield func(wire Wire) bool) {
-	i := m.d.InstrIndex
-	if i < 0 || i >= len(m.derived.patch) {
-		return
-	}
-	for _, wire := range m.derived.patch[i].wires {
-		wire.Highlight = (wire.FromSet && m.d.UnitIndex == wire.From) || (wire.ToSet && m.d.UnitIndex == wire.To.Y && m.d.ParamIndex == wire.To.X)
-		if !yield(wire) {
-			return
-		}
-	}
-}
-
-func (m *Model) TrackTitle(index int) string {
-	if index < 0 || index >= len(m.derived.tracks) {
-		return ""
-	}
-	return m.derived.tracks[index].title
-}
-
-func (m *Model) PatternUnique(track, pat int) bool {
-	if track < 0 || track >= len(m.derived.tracks) {
-		return false
-	}
-	if pat < 0 || pat >= len(m.derived.tracks[track].patternUseCounts) {
-		return false
-	}
-	return m.derived.tracks[track].patternUseCounts[pat] <= 1
-}
-
-func (e *RailError) Error() string { return e.Err.Error() }
-
-func (s *Rail) StackAfter() int { return s.PassThrough + s.StackUse.NumOutputs }
 
 // init / update methods
 

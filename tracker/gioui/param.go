@@ -128,9 +128,9 @@ func (p ParamWidget) Layout(gtx C) D {
 	title := Label(p.Theme, &p.Theme.UnitEditor.Name, p.Parameter.Name())
 	t := TrackerFromContext(gtx)
 	widget := func(gtx C) D {
-		if port, ok := p.Parameter.Port(); t.IsChoosingSendTarget() && ok {
+		if port, ok := p.Parameter.Port(); t.Params().IsChoosingSendTarget() && ok {
 			for p.State.clickable.Clicked(gtx) {
-				t.ChooseSendTarget(p.Parameter.UnitID(), port).Do()
+				t.Params().ChooseSendTarget(p.Parameter.UnitID(), port).Do()
 			}
 			k := Port(p.Theme, p.State)
 			return k.Layout(gtx)
@@ -144,7 +144,7 @@ func (p ParamWidget) Layout(gtx C) D {
 			return s.Layout(gtx)
 		case tracker.IDParameter:
 			for p.State.clickable.Clicked(gtx) {
-				t.ChooseSendSource(p.Parameter.UnitID()).Do()
+				t.Params().ChooseSendSource(p.Parameter.UnitID()).Do()
 			}
 			btn := Btn(t.Theme, &t.Theme.Button.Text, &p.State.clickable, "Set", p.Parameter.Hint().Label)
 			if p.Disabled {

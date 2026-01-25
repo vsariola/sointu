@@ -40,29 +40,29 @@ func (s *SpectrumState) Layout(gtx C) D {
 	rightSpacer := layout.Spacer{Width: unit.Dp(6)}.Layout
 
 	var chnModeTxt string = "???"
-	switch tracker.SpecChnMode(t.Model.SpecAnChannelsInt().Value()) {
+	switch tracker.SpecChnMode(t.Model.Spectrum().Channels().Value()) {
 	case tracker.SpecChnModeSum:
 		chnModeTxt = "Sum"
 	case tracker.SpecChnModeSeparate:
 		chnModeTxt = "Separate"
 	}
 
-	resolution := NumUpDown(t.Model.SpecAnResolution(), t.Theme, s.resolutionNumber, "Resolution")
+	resolution := NumUpDown(t.Model.Spectrum().Resolution(), t.Theme, s.resolutionNumber, "Resolution")
 	chnModeBtn := Btn(t.Theme, &t.Theme.Button.Text, s.chnModeBtn, chnModeTxt, "Channel mode")
-	speed := NumUpDown(t.Model.SpecAnSpeed(), t.Theme, s.speed, "Speed")
+	speed := NumUpDown(t.Model.Spectrum().Speed(), t.Theme, s.speed, "Speed")
 
 	numchns := 0
-	speclen := len(t.Model.Spectrum()[0])
+	speclen := len(t.Model.Spectrum().Result()[0])
 	if speclen > 0 {
 		numchns = 1
-		if len(t.Model.Spectrum()[1]) == speclen {
+		if len(t.Model.Spectrum().Result()[1]) == speclen {
 			numchns = 2
 		}
 	}
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Flexed(1, func(gtx C) D {
-			biquad, biquadok := t.Model.BiquadCoeffs()
+			biquad, biquadok := t.Model.Spectrum().BiquadCoeffs()
 			data := func(chn int, xr plotRange) (yr plotRange, ok bool) {
 				if chn == 2 {
 					if xr.a >= 0 {
@@ -88,16 +88,16 @@ func (s *SpectrumState) Layout(gtx C) D {
 				y2 := float32(math.Inf(+1))
 				switch {
 				case x2 <= x1+1 && x2 < speclen-1: // perform smoothstep interpolation when we are overlapping only a few bins
-					l := t.Model.Spectrum()[chn][x1]
-					r := t.Model.Spectrum()[chn][x1+1]
+					l := t.Model.Spectrum().Result()[chn][x1]
+					r := t.Model.Spectrum().Result()[chn][x1+1]
 					y1 = smoothInterpolate(l, r, float32(f1))
-					l = t.Model.Spectrum()[chn][x2]
-					r = t.Model.Spectrum()[chn][x2+1]
+					l = t.Model.Spectrum().Result()[chn][x2]
+					r = t.Model.Spectrum().Result()[chn][x2+1]
 					y2 = smoothInterpolate(l, r, float32(f2))
 					y1, y2 = max(y1, y2), min(y1, y2)
 				default:
 					for i := x1; i <= x2; i++ {
-						sample := t.Model.Spectrum()[chn][i]
+						sample := t.Model.Spectrum().Result()[chn][i]
 						y1 = max(y1, sample)
 						y2 = min(y2, sample)
 					}
@@ -210,8 +210,8 @@ func nextPowerOfTwo(v int) int {
 func (s *SpectrumState) Update(gtx C) {
 	t := TrackerFromContext(gtx)
 	for s.chnModeBtn.Clicked(gtx) {
-		t.Model.SpecAnChannelsInt().SetValue((t.SpecAnChannelsInt().Value() + 1) % int(tracker.NumSpecChnModes))
+		t.Model.Spectrum().Channels().SetValue((t.Model.Spectrum().Channels().Value() + 1) % int(tracker.NumSpecChnModes))
 	}
-	s.resolutionNumber.Update(gtx, t.Model.SpecAnResolution())
-	s.speed.Update(gtx, t.Model.SpecAnSpeed())
+	s.resolutionNumber.Update(gtx, t.Model.Spectrum().Resolution())
+	s.speed.Update(gtx, t.Model.Spectrum().Speed())
 }

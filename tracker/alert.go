@@ -17,9 +17,7 @@ type (
 		FadeLevel float64
 	}
 
-	AlertPriority  int
-	AlertYieldFunc func(index int, alert Alert) bool
-	Alerts         Model
+	AlertPriority int
 )
 
 const (
@@ -29,12 +27,12 @@ const (
 	Error
 )
 
-// Model methods
-
+// Alerts returns the Alerts model from the main Model, used to manage alerts.
 func (m *Model) Alerts() *Alerts { return (*Alerts)(m) }
 
-// Alerts methods
+type Alerts Model
 
+// Iterate through the alerts.
 func (m *Alerts) Iterate(yield func(index int, alert Alert) bool) {
 	for i, a := range m.alerts {
 		if !yield(i, a) {
@@ -43,6 +41,8 @@ func (m *Alerts) Iterate(yield func(index int, alert Alert) bool) {
 	}
 }
 
+// Update the alerts, reducing their duration and updating their fade levels,
+// given the elapsed time d.
 func (m *Alerts) Update(d time.Duration) (animating bool) {
 	for i := len(m.alerts) - 1; i >= 0; i-- {
 		if m.alerts[i].Duration >= d {
@@ -66,6 +66,7 @@ func (m *Alerts) Update(d time.Duration) (animating bool) {
 	return
 }
 
+// Add a new alert with the given message and priority.
 func (m *Alerts) Add(message string, priority AlertPriority) {
 	m.AddAlert(Alert{
 		Priority: priority,
@@ -74,6 +75,7 @@ func (m *Alerts) Add(message string, priority AlertPriority) {
 	})
 }
 
+// AddNamed adds a new alert with the given name, message, and priority.
 func (m *Alerts) AddNamed(name, message string, priority AlertPriority) {
 	m.AddAlert(Alert{
 		Name:     name,
@@ -83,6 +85,7 @@ func (m *Alerts) AddNamed(name, message string, priority AlertPriority) {
 	})
 }
 
+// ClearNamed clears the alert with the given name.
 func (m *Alerts) ClearNamed(name string) {
 	for i := range m.alerts {
 		if n := m.alerts[i].Name; n != "" && n == name {
@@ -92,6 +95,7 @@ func (m *Alerts) ClearNamed(name string) {
 	}
 }
 
+// AddAlert adds or updates an alert.
 func (m *Alerts) AddAlert(a Alert) {
 	for i := range m.alerts {
 		if n := m.alerts[i].Name; n != "" && n == a.Name {

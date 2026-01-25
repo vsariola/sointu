@@ -36,8 +36,8 @@ func NewInstrumentPresets(m *tracker.Model) *InstrumentPresets {
 		builtinPresetsBtn: new(Clickable),
 		saveUserPreset:    new(Clickable),
 		deleteUserPreset:  new(Clickable),
-		dirList:           NewDragList(m.PresetDirList().List(), layout.Vertical),
-		resultList:        NewDragList(m.PresetResultList().List(), layout.Vertical),
+		dirList:           NewDragList(m.Preset().DirList(), layout.Vertical),
+		resultList:        NewDragList(m.Preset().SearchResultList(), layout.Vertical),
 	}
 }
 
@@ -88,13 +88,13 @@ func (ip *InstrumentPresets) layout(gtx C) D {
 	ip.update(gtx)
 	// get tracker from values
 	tr := TrackerFromContext(gtx)
-	gmDlsBtn := ToggleBtn(tr.NoGmDls(), tr.Theme, ip.gmDlsBtn, "No gm.dls", "Exclude presets using gm.dls")
-	userPresetsFilterBtn := ToggleBtn(tr.UserPresetFilter(), tr.Theme, ip.userPresetsBtn, "User", "Show only user presets")
-	builtinPresetsFilterBtn := ToggleBtn(tr.BuiltinPresetsFilter(), tr.Theme, ip.builtinPresetsBtn, "Builtin", "Show only builtin presets")
-	saveUserPresetBtn := ActionIconBtn(tr.SaveAsUserPreset(), tr.Theme, ip.saveUserPreset, icons.ContentSave, "Save instrument as user preset")
-	deleteUserPresetBtn := ActionIconBtn(tr.TryDeleteUserPreset(), tr.Theme, ip.deleteUserPreset, icons.ActionDelete, "Delete user preset")
+	gmDlsBtn := ToggleBtn(tr.Preset().NoGmDls(), tr.Theme, ip.gmDlsBtn, "No gm.dls", "Exclude presets using gm.dls")
+	userPresetsFilterBtn := ToggleBtn(tr.Preset().UserFilter(), tr.Theme, ip.userPresetsBtn, "User", "Show only user presets")
+	builtinPresetsFilterBtn := ToggleBtn(tr.Preset().BuiltinFilter(), tr.Theme, ip.builtinPresetsBtn, "Builtin", "Show only builtin presets")
+	saveUserPresetBtn := ActionIconBtn(tr.Preset().Save(), tr.Theme, ip.saveUserPreset, icons.ContentSave, "Save instrument as user preset")
+	deleteUserPresetBtn := ActionIconBtn(tr.Preset().Delete(), tr.Theme, ip.deleteUserPreset, icons.ActionDelete, "Delete user preset")
 	dirElem := func(gtx C, i int) D {
-		return Label(tr.Theme, &tr.Theme.InstrumentEditor.Presets.Directory, tr.Model.PresetDirList().Value(i)).Layout(gtx)
+		return Label(tr.Theme, &tr.Theme.InstrumentEditor.Presets.Directory, tr.Model.Preset().Dir(i)).Layout(gtx)
 	}
 	dirs := func(gtx C) D {
 		gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(140), gtx.Constraints.Max.Y))
@@ -108,7 +108,7 @@ func (ip *InstrumentPresets) layout(gtx C) D {
 	}
 	resultElem := func(gtx C, i int) D {
 		gtx.Constraints.Min.X = gtx.Constraints.Max.X
-		n, d, u := tr.Model.PresetResultList().Value(i)
+		n, d, u := tr.Model.Preset().SearchResult(i)
 		if u {
 			ln := Label(tr.Theme, &tr.Theme.InstrumentEditor.Presets.Results.User, n)
 			ld := Label(tr.Theme, &tr.Theme.InstrumentEditor.Presets.Results.UserDir, d)
@@ -121,7 +121,7 @@ func (ip *InstrumentPresets) layout(gtx C) D {
 		return Label(tr.Theme, &tr.Theme.InstrumentEditor.Presets.Results.Builtin, n).Layout(gtx)
 	}
 	floatButtons := func(gtx C) D {
-		if tr.Model.DeleteUserPreset().Enabled() {
+		if tr.Model.Preset().Delete().Enabled() {
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 				layout.Rigid(deleteUserPresetBtn.Layout),
 				layout.Rigid(saveUserPresetBtn.Layout),
@@ -189,10 +189,10 @@ func (ip *InstrumentPresets) layoutSearch(gtx C) D {
 		})
 	}
 	ed := func(gtx C) D {
-		return ip.searchEditor.Layout(gtx, tr.Model.PresetSearchString(), tr.Theme, &tr.Theme.InstrumentEditor.UnitComment, "Search presets")
+		return ip.searchEditor.Layout(gtx, tr.Preset().SearchTerm(), tr.Theme, &tr.Theme.InstrumentEditor.UnitComment, "Search presets")
 	}
 	clr := func(gtx C) D {
-		btn := ActionIconBtn(tr.ClearPresetSearch(), tr.Theme, ip.clearSearchBtn, icons.ContentClear, "Clear search")
+		btn := ActionIconBtn(tr.Preset().ClearSearch(), tr.Theme, ip.clearSearchBtn, icons.ContentClear, "Clear search")
 		return btn.Layout(gtx)
 	}
 	w := func(gtx C) D {

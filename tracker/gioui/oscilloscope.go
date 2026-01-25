@@ -6,7 +6,6 @@ import (
 
 	"gioui.org/layout"
 	"gioui.org/unit"
-	"github.com/vsariola/sointu/tracker"
 )
 
 type (
@@ -20,12 +19,11 @@ type (
 
 	Oscilloscope struct {
 		Theme *Theme
-		Model *tracker.ScopeModel
 		State *OscilloscopeState
 	}
 )
 
-func NewOscilloscope(model *tracker.Model) *OscilloscopeState {
+func NewOscilloscope() *OscilloscopeState {
 	return &OscilloscopeState{
 		plot:                 NewPlot(plotRange{0, 1}, plotRange{-1, 1}, 0),
 		onceBtn:              new(Clickable),
@@ -35,10 +33,9 @@ func NewOscilloscope(model *tracker.Model) *OscilloscopeState {
 	}
 }
 
-func Scope(th *Theme, m *tracker.ScopeModel, st *OscilloscopeState) Oscilloscope {
+func Scope(th *Theme, st *OscilloscopeState) Oscilloscope {
 	return Oscilloscope{
 		Theme: th,
-		Model: m,
 		State: st,
 	}
 }
@@ -48,15 +45,15 @@ func (s *Oscilloscope) Layout(gtx C) D {
 	leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
 	rightSpacer := layout.Spacer{Width: unit.Dp(6)}.Layout
 
-	triggerChannel := NumUpDown(s.Model.TriggerChannel(), s.Theme, s.State.triggerChannelNumber, "Trigger channel")
-	lengthInBeats := NumUpDown(s.Model.LengthInBeats(), s.Theme, s.State.lengthInBeatsNumber, "Buffer length in beats")
+	triggerChannel := NumUpDown(t.Scope().TriggerChannel(), s.Theme, s.State.triggerChannelNumber, "Trigger channel")
+	lengthInBeats := NumUpDown(t.Scope().LengthInBeats(), s.Theme, s.State.lengthInBeatsNumber, "Buffer length in beats")
 
-	onceBtn := ToggleBtn(s.Model.Once(), s.Theme, s.State.onceBtn, "Once", "Trigger once on next event")
-	wrapBtn := ToggleBtn(s.Model.Wrap(), s.Theme, s.State.wrapBtn, "Wrap", "Wrap buffer when full")
+	onceBtn := ToggleBtn(t.Scope().Once(), s.Theme, s.State.onceBtn, "Once", "Trigger once on next event")
+	wrapBtn := ToggleBtn(t.Scope().Wrap(), s.Theme, s.State.wrapBtn, "Wrap", "Wrap buffer when full")
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Flexed(1, func(gtx C) D {
-			w := s.Model.Waveform()
+			w := t.Scope().Waveform()
 			cx := float32(w.Cursor) / float32(len(w.Buffer))
 
 			data := func(chn int, xr plotRange) (yr plotRange, ok bool) {
@@ -65,9 +62,10 @@ func (s *Oscilloscope) Layout(gtx C) D {
 				if x1 > x2 {
 					return plotRange{}, false
 				}
+				step := max((x2-x1)/1000, 1) // if the range is too large, sample only ~ 1000 points
 				y1 := float32(math.Inf(-1))
 				y2 := float32(math.Inf(+1))
-				for i := x1; i <= x2; i++ {
+				for i := x1; i <= x2; i += step {
 					sample := w.Buffer[i][chn]
 					y1 = max(y1, sample)
 					y2 = min(y2, sample)
@@ -75,9 +73,9 @@ func (s *Oscilloscope) Layout(gtx C) D {
 				return plotRange{-y1, -y2}, true
 			}
 
-			rpb := max(t.Model.RowsPerBeat().Value(), 1)
+			rpb := max(t.Song().RowsPerBeat().Value(), 1)
 			xticks := func(r plotRange, count int, yield func(pos float32, label string)) {
-				l := s.Model.LengthInBeats().Value() * rpb
+				l := t.Scope().LengthInBeats().Value() * rpb
 				a := max(int(math.Ceil(float64(r.a*float32(l)))), 0)
 				b := min(int(math.Floor(float64(r.b*float32(l)))), l)
 				step := 1

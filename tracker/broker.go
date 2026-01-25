@@ -98,7 +98,7 @@ type (
 	}
 
 	MsgToSpecAn struct {
-		SpecSettings SpecAnSettings
+		SpecSettings specAnSettings
 		HasSettings  bool
 		Data         any
 	}

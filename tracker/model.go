@@ -2,11 +2,8 @@ package tracker
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
+	"time"
 
 	"github.com/vsariola/sointu"
 )
@@ -45,7 +42,7 @@ type (
 		d       modelData
 		derived derivedModelData
 
-		instrEnlarged bool
+		trackerHidden bool
 
 		prevUndoKind    string
 		undoSkipCounter int
@@ -71,7 +68,7 @@ type (
 
 		playerStatus PlayerStatus
 
-		signalAnalyzer *ScopeModel
+		scopeData      scopeData
 		detectorResult DetectorResult
 
 		spectrum *Spectrum
@@ -79,7 +76,7 @@ type (
 		weightingType WeightingType
 		oversampling  bool
 
-		specAnSettings SpecAnSettings
+		specAnSettings specAnSettings
 		specAnEnabled  bool
 
 		alerts []Alert
@@ -90,10 +87,9 @@ type (
 
 		broker *Broker
 
-		MIDI MIDIContext
+		midi MIDIContext
 
-		presets     Presets
-		presetIndex int
+		presetData presetData
 	}
 
 	// Cursor identifies a row and a track in a song score.
@@ -125,15 +121,6 @@ type (
 	ChangeType     int
 
 	Dialog int
-
-	MIDIContext interface {
-		InputDevices(yield func(string) bool)
-		Open(name string) error
-		Close()
-		IsOpen() bool
-	}
-
-	NullMIDIContext struct{}
 
 	InstrumentTab int
 )
@@ -174,31 +161,25 @@ const (
 	InstrumentEditorTab InstrumentTab = iota
 	InstrumentPresetsTab
 	InstrumentCommentTab
+	NumInstrumentTabs
 )
 
 const maxUndo = 64
 
-func (m *Model) PlayPosition() sointu.SongPos { return m.playerStatus.SongPos }
-func (m *Model) Loop() Loop                   { return m.loop }
-func (m *Model) PlaySongRow() int             { return m.d.Song.Score.SongRow(m.playerStatus.SongPos) }
-func (m *Model) ChangedSinceSave() bool       { return m.d.ChangedSinceSave }
-func (m *Model) Dialog() Dialog               { return m.dialog }
-func (m *Model) Quitted() bool                { return m.quitted }
-
-func (m *Model) DetectorResult() DetectorResult { return m.detectorResult }
-func (m *Model) Spectrum() Spectrum             { return *m.spectrum }
+func (m *Model) Dialog() Dialog { return m.dialog }
+func (m *Model) Quitted() bool  { return m.quitted }
 
 // NewModelPlayer creates a new model and a player that communicates with it
 func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext, recoveryFilePath string) *Model {
 	m := new(Model)
 	m.synthers = synthers
-	m.MIDI = midiContext
+	m.midi = midiContext
 	m.broker = broker
 	m.d.Octave = 4
 	m.linkInstrTrack = true
 	m.d.RecoveryFilePath = recoveryFilePath
 	m.spectrum = broker.GetSpectrum()
-	m.resetSong()
+	m.Song().reset()
 	if recoveryFilePath != "" {
 		if bytes2, err := os.ReadFile(m.d.RecoveryFilePath); err == nil {
 			var data modelData
@@ -208,23 +189,59 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 		}
 	}
 	TrySend(broker.ToPlayer, any(m.d.Song.Copy())) // we should be non-blocking in the constructor
-	m.signalAnalyzer = NewScopeModel(m.d.Song.BPM)
+	m.scopeData = scopeData{lengthInBeats: 4}
+	m.Scope().updateBufferLength()
 	m.updateDeriveData(SongChange)
-	m.presets.load()
-	m.updateDerivedPresetSearch()
+	m.presetData.load()
+	m.Preset().updateCache()
 	m.derived.searchResults = make([]string, 0, len(sointu.UnitNames))
-	m.updateDerivedUnitSearch()
+	m.Unit().updateDerivedUnitSearch()
+	go runDetector(broker)
+	go runSpecAnalyzer(broker)
 	return m
 }
 
-func FindMIDIDeviceByPrefix(c MIDIContext, prefix string) (input string, ok bool) {
-	for input := range c.InputDevices {
-		if strings.HasPrefix(input, prefix) {
-			return input, true
-		}
-	}
-	return "", false
+func (m *Model) Close() {
+	TrySend(m.broker.CloseDetector, struct{}{})
+	TrySend(m.broker.CloseSpecAn, struct{}{})
+	TimeoutReceive(m.broker.FinishedDetector, 3*time.Second)
+	TimeoutReceive(m.broker.FinishedSpecAn, 3*time.Second)
 }
+
+// RequestQuit asks the tracker to quit, showing a dialog if there are unsaved
+// changes.
+func (m *Model) RequestQuit() Action { return MakeAction((*requestQuit)(m)) }
+
+type requestQuit Model
+
+func (m *requestQuit) Do() {
+	if !m.quitted {
+		m.dialog = QuitChanges
+		(*SongModel)(m).completeAction(true)
+	}
+}
+
+// ForceQuit returns an Action to force the tracker to quit immediately, without
+// saving any changes.
+func (m *Model) ForceQuit() Action { return MakeAction((*forceQuit)(m)) }
+
+type forceQuit Model
+
+func (m *forceQuit) Do() { m.quitted = true }
+
+// ShowLicense returns an Action to show the software license dialog.
+func (m *Model) ShowLicense() Action { return MakeAction((*showLicense)(m)) }
+
+type showLicense Model
+
+func (m *showLicense) Do() { m.dialog = License }
+
+// CancelDialog returns an Action to cancel the current dialog.
+func (m *Model) CancelDialog() Action { return MakeAction((*cancelDialog)(m)) }
+
+type cancelDialog Model
+
+func (m *cancelDialog) Do() { m.dialog = NoDialog }
 
 func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func() {
 	if m.changeLevel == 0 {
@@ -276,7 +293,7 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 			}
 			if m.changeType&BPMChange != 0 {
 				TrySend(m.broker.ToPlayer, any(BPMMsg{m.d.Song.BPM}))
-				m.signalAnalyzer.SetBpm(m.d.Song.BPM)
+				m.Scope().updateBufferLength()
 			}
 			if m.changeType&RowsPerBeatChange != 0 {
 				TrySend(m.broker.ToPlayer, any(RowsPerBeatMsg{m.d.Song.RowsPerBeat}))
@@ -306,65 +323,6 @@ func (m *Model) change(kind string, t ChangeType, severity ChangeSeverity) func(
 	}
 }
 
-func (m *Model) MarshalRecovery() []byte {
-	out, err := json.Marshal(m.d)
-	if err != nil {
-		return nil
-	}
-	if m.d.RecoveryFilePath != "" {
-		os.Remove(m.d.RecoveryFilePath)
-	}
-	m.d.ChangedSinceRecovery = false
-	return out
-}
-
-func (m *Model) SaveRecovery() error {
-	if !m.d.ChangedSinceRecovery {
-		return nil
-	}
-	if m.d.RecoveryFilePath == "" {
-		return errors.New("no backup file path")
-	}
-	out, err := json.Marshal(m.d)
-	if err != nil {
-		return fmt.Errorf("could not marshal recovery data: %w", err)
-	}
-	dir := filepath.Dir(m.d.RecoveryFilePath)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		os.MkdirAll(dir, os.ModePerm)
-	}
-	file, err := os.Create(m.d.RecoveryFilePath)
-	if err != nil {
-		return fmt.Errorf("could not create recovery file: %w", err)
-	}
-	_, err = file.Write(out)
-	if err != nil {
-		return fmt.Errorf("could not write recovery file: %w", err)
-	}
-	m.d.ChangedSinceRecovery = false
-	return nil
-}
-
-func (m *Model) UnmarshalRecovery(bytes []byte) {
-	var data modelData
-	err := json.Unmarshal(bytes, &data)
-	if err != nil {
-		return
-	}
-	m.d = data
-	if m.d.RecoveryFilePath != "" { // check if there's a recovery file on disk and load it instead
-		if bytes2, err := os.ReadFile(m.d.RecoveryFilePath); err == nil {
-			var data modelData
-			if json.Unmarshal(bytes2, &data) == nil {
-				m.d = data
-			}
-		}
-	}
-	m.d.ChangedSinceRecovery = false
-	TrySend(m.broker.ToPlayer, any(m.d.Song.Copy()))
-	m.updateDeriveData(SongChange)
-}
-
 func (m *Model) ProcessMsg(msg MsgToModel) {
 	if msg.HasPanicPlayerStatus {
 		m.playerStatus = msg.PlayerStatus
@@ -373,7 +331,7 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 			m.d.Cursor2.SongPos = msg.PlayerStatus.SongPos
 			TrySend(m.broker.ToGUI, any(MsgToGUI{
 				Kind:  GUIMessageCenterOnRow,
-				Param: m.PlaySongRow(),
+				Param: m.Play().SongRow(),
 			}))
 		}
 		m.panic = msg.Panic
@@ -382,10 +340,10 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 		m.detectorResult = msg.DetectorResult
 	}
 	if msg.TriggerChannel > 0 {
-		m.signalAnalyzer.Trigger(msg.TriggerChannel)
+		m.Scope().trigger(msg.TriggerChannel)
 	}
 	if msg.Reset {
-		m.signalAnalyzer.Reset()
+		m.Scope().reset()
 		TrySend(m.broker.ToDetector, MsgToDetector{Reset: true}) // chain the messages: when the signal analyzer is reset, also reset the detector
 	}
 	switch e := msg.Data.(type) {
@@ -402,13 +360,13 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 		defer m.change("Recording", SongChange, MajorChange)()
 		m.d.Song.Score = score
 		m.d.Song.BPM = int(e.BPM + 0.5)
-		m.instrEnlarged = false
+		m.trackerHidden = false
 	case Alert:
 		m.Alerts().AddAlert(e)
 	case IsPlayingMsg:
 		m.playing = e.bool
 	case *sointu.AudioBuffer:
-		m.signalAnalyzer.ProcessAudioBuffer(e)
+		m.Scope().processAudioBuffer(e)
 		// chain the messages: when we have a new audio buffer, send them to the detector and the spectrum analyzer
 		if m.specAnEnabled { // send buffers to spectrum analyzer only if it's enabled
 			clone := m.broker.GetAudioBuffer()
@@ -426,31 +384,12 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 	}
 }
 
-func (m *Model) CPULoad(buf []sointu.CPULoad) int {
-	return copy(buf, m.playerStatus.CPULoad[:m.playerStatus.NumThreads])
-}
-
-func (m *Model) SignalAnalyzer() *ScopeModel { return m.signalAnalyzer }
-func (m *Model) Broker() *Broker             { return m.broker }
+func (m *Model) Broker() *Broker { return m.broker }
 
 func (d *modelData) Copy() modelData {
 	ret := *d
 	ret.Song = d.Song.Copy()
 	return ret
-}
-
-func (m NullMIDIContext) InputDevices(yield func(string) bool) {}
-func (m NullMIDIContext) Open(name string) error               { return nil }
-func (m NullMIDIContext) Close()                               {}
-func (m NullMIDIContext) IsOpen() bool                         { return false }
-
-func (m *Model) resetSong() {
-	m.d.Song = defaultSong.Copy()
-	for _, instr := range m.d.Song.Patch {
-		(*Model)(m).assignUnitIDs(instr.Units)
-	}
-	m.d.FilePath = ""
-	m.d.ChangedSinceSave = false
 }
 
 func (m *Model) maxID() int {

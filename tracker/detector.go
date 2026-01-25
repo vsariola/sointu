@@ -7,26 +7,93 @@ import (
 	"github.com/vsariola/sointu"
 )
 
+const MAX_INTEGRATED_DATA = 10 * 60 * 60 // 1 hour of samples at 10 Hz (100 ms per sample)
+// In the detector, we clamp the signal levels to +-MAX_SIGNAL_AMPLITUDE to
+// avoid Inf results. This is 240 dBFS. max float32 is about 3.4e38, so squaring
+// the amplitude values gives 1e24, and adding 4410 of those together (when
+// taking the mean) gives a value < 1e37, which is still < max float32.
+const MAX_SIGNAL_AMPLITUDE = 1e12
+
+// Detector returns a DetectorModel which provides access to the detector
+// settings and results.
+func (m *Model) Detector() *DetectorModel { return (*DetectorModel)(m) }
+
+type DetectorModel Model
+
+// Result returns the latest DetectorResult from the detector.
+func (m *DetectorModel) Result() DetectorResult { return m.detectorResult }
+
 type (
-	Detector struct {
+	DetectorResult struct {
+		Loudness LoudnessResult
+		Peaks    PeakResult
+	}
+	LoudnessResult [NumLoudnessTypes]Decibel
+	PeakResult     [NumPeakTypes][2]Decibel
+	Decibel        float32
+	LoudnessType   int
+	PeakType       int
+)
+
+const (
+	LoudnessMomentary LoudnessType = iota
+	LoudnessShortTerm
+	LoudnessMaxMomentary
+	LoudnessMaxShortTerm
+	LoudnessIntegrated
+	NumLoudnessTypes
+)
+
+const (
+	PeakMomentary PeakType = iota
+	PeakShortTerm
+	PeakIntegrated
+	NumPeakTypes
+)
+
+// Weighting returns an Int property for setting the detector weighting type.
+func (m *DetectorModel) Weighting() Int { return MakeInt((*detectorWeighting)(m)) }
+
+type detectorWeighting Model
+
+func (v *detectorWeighting) Value() int { return int(v.weightingType) }
+func (v *detectorWeighting) SetValue(value int) bool {
+	v.weightingType = WeightingType(value)
+	TrySend(v.broker.ToDetector, MsgToDetector{HasWeightingType: true, WeightingType: WeightingType(value)})
+	return true
+}
+func (v *detectorWeighting) Range() RangeInclusive {
+	return RangeInclusive{0, int(NumWeightingTypes) - 1}
+}
+
+type WeightingType int
+
+const (
+	KWeighting WeightingType = iota
+	AWeighting
+	CWeighting
+	NoWeighting
+	NumWeightingTypes
+)
+
+// Oversampling returns a Bool property for setting whether the peak detector
+// uses oversampling to calculate true peaks, or just sample peaks if not.
+func (m *DetectorModel) Oversampling() Bool { return MakeBool((*detectorOversampling)(m)) }
+
+type detectorOversampling Model
+
+func (m *detectorOversampling) Value() bool { return m.oversampling }
+func (m *detectorOversampling) SetValue(val bool) {
+	m.oversampling = val
+	TrySend(m.broker.ToDetector, MsgToDetector{HasOversampling: true, Oversampling: val})
+}
+
+type (
+	detector struct {
 		broker           *Broker
 		loudnessDetector loudnessDetector
 		peakDetector     peakDetector
 		chunker          chunker
-	}
-
-	WeightingType int
-	LoudnessType  int
-	PeakType      int
-
-	Decibel float32
-
-	LoudnessResult [NumLoudnessTypes]Decibel
-	PeakResult     [NumPeakTypes][2]Decibel
-
-	DetectorResult struct {
-		Loudness LoudnessResult
-		Peaks    PeakResult
 	}
 
 	loudnessDetector struct {
@@ -62,52 +129,14 @@ type (
 		history   [11]float32
 		tmp, tmp2 []float32
 	}
-
-	chunker struct {
-		buffer sointu.AudioBuffer
-	}
 )
 
-const (
-	LoudnessMomentary LoudnessType = iota
-	LoudnessShortTerm
-	LoudnessMaxMomentary
-	LoudnessMaxShortTerm
-	LoudnessIntegrated
-	NumLoudnessTypes
-)
-
-const MAX_INTEGRATED_DATA = 10 * 60 * 60 // 1 hour of samples at 10 Hz (100 ms per sample)
-// In the detector, we clamp the signal levels to +-MAX_SIGNAL_AMPLITUDE to
-// avoid Inf results. This is 240 dBFS. max float32 is about 3.4e38, so squaring
-// the amplitude values gives 1e24, and adding 4410 of those together (when
-// taking the mean) gives a value < 1e37, which is still < max float32.
-const MAX_SIGNAL_AMPLITUDE = 1e12
-
-const (
-	PeakMomentary PeakType = iota
-	PeakShortTerm
-	PeakIntegrated
-	NumPeakTypes
-)
-
-const (
-	KWeighting WeightingType = iota
-	AWeighting
-	CWeighting
-	NoWeighting
-	NumWeightingTypes
-)
-
-func NewDetector(b *Broker) *Detector {
-	return &Detector{
+func runDetector(b *Broker) {
+	s := &detector{
 		broker:           b,
 		loudnessDetector: makeLoudnessDetector(KWeighting),
 		peakDetector:     makePeakDetector(true),
 	}
-}
-
-func (s *Detector) Run() {
 	for {
 		select {
 		case <-s.broker.CloseDetector:
@@ -119,7 +148,7 @@ func (s *Detector) Run() {
 	}
 }
 
-func (s *Detector) handleMsg(msg MsgToDetector) {
+func (s *detector) handleMsg(msg MsgToDetector) {
 	if msg.Reset {
 		s.loudnessDetector.reset()
 		s.peakDetector.reset()
@@ -419,6 +448,17 @@ func (d *peakDetector) reset() {
 	}
 }
 
+// chunker maintains a buffer of audio data. Its Process method appends an input
+// buffer to the buffer and calls a callback function with chunks of specified
+// length and overlap. The remaining data is kept in the buffer for the next
+// call.
+type chunker struct {
+	buffer sointu.AudioBuffer
+}
+
+// Process appends input to the internal buffer and calls cb with chunks of
+// windowLen length and overlap overlap. The remaining data is kept in the
+// internal buffer.
 func (c *chunker) Process(input sointu.AudioBuffer, windowLen, overlap int, cb func(sointu.AudioBuffer)) {
 	c.buffer = append(c.buffer, input...)
 	b := c.buffer

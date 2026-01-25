@@ -53,7 +53,7 @@ type (
 
 func NewInstrumentEditor(m *tracker.Model) *InstrumentEditor {
 	ret := &InstrumentEditor{
-		dragList:       NewDragList(m.Units(), layout.Vertical),
+		dragList:       NewDragList(m.Unit().List(), layout.Vertical),
 		addUnitBtn:     new(Clickable),
 		searchEditor:   NewEditor(true, true, text.Start),
 		DeleteUnitBtn:  new(Clickable),
@@ -62,9 +62,9 @@ func NewInstrumentEditor(m *tracker.Model) *InstrumentEditor {
 		CopyUnitBtn:    new(Clickable),
 		SelectTypeBtn:  new(Clickable),
 		commentEditor:  NewEditor(true, true, text.Start),
-		paramTable:     NewScrollTable(m.Params().Table(), m.ParamVertList().List(), m.Units()),
-		searchList:     NewDragList(m.SearchResults(), layout.Vertical),
-		searching:      m.UnitSearching(),
+		paramTable:     NewScrollTable(m.Params().Table(), m.Params().Columns(), m.Unit().List()),
+		searchList:     NewDragList(m.Unit().SearchResults(), layout.Vertical),
+		searching:      m.Unit().Searching(),
 	}
 	ret.caser = cases.Title(language.English)
 	ret.copyHint = makeHint("Copy unit", " (%s)", "Copy")
@@ -95,9 +95,9 @@ func (ul *InstrumentEditor) layoutList(gtx C) D {
 	element := func(gtx C, i int) D {
 		gtx.Constraints.Max.Y = gtx.Dp(20)
 		gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
-		u := t.Unit(i)
+		u := t.Unit().Item(i)
 		editorStyle := t.Theme.InstrumentEditor.UnitList.Name
-		signalError := t.RailError()
+		signalError := t.Unit().RailError()
 		switch {
 		case u.Disabled:
 			editorStyle = t.Theme.InstrumentEditor.UnitList.NameDisabled
@@ -107,7 +107,7 @@ func (ul *InstrumentEditor) layoutList(gtx C) D {
 		unitName := func(gtx C) D {
 			if i == ul.dragList.TrackerList.Selected() {
 				defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-				return ul.searchEditor.Layout(gtx, t.Model.UnitSearch(), t.Theme, &editorStyle, "---")
+				return ul.searchEditor.Layout(gtx, t.Model.Unit().SearchTerm(), t.Theme, &editorStyle, "---")
 			} else {
 				text := u.Type
 				if text == "" {
@@ -169,40 +169,40 @@ func (ul *InstrumentEditor) update(gtx C) {
 			case key.NameRightArrow:
 				t.PatchPanel.instrEditor.paramTable.RowTitleList.Focus()
 			case key.NameDeleteBackward:
-				t.SetSelectedUnitType("")
-				t.UnitSearching().SetValue(true)
+				t.Unit().SetType("")
+				t.Unit().Searching().SetValue(true)
 				ul.searchEditor.Focus()
 			case key.NameEnter, key.NameReturn:
-				t.Model.AddUnit(e.Modifiers.Contain(key.ModCtrl)).Do()
-				t.UnitSearching().SetValue(true)
+				t.Model.Unit().Add(e.Modifiers.Contain(key.ModCtrl)).Do()
+				t.Unit().Searching().SetValue(true)
 				ul.searchEditor.Focus()
 			}
 		}
 	}
-	str := t.Model.UnitSearch()
+	str := t.Model.Unit().SearchTerm()
 	for ev := ul.searchEditor.Update(gtx, str); ev != EditorEventNone; ev = ul.searchEditor.Update(gtx, str) {
 		if ev == EditorEventSubmit {
 			if str.Value() != "" {
 				for _, n := range sointu.UnitNames {
 					if strings.HasPrefix(n, str.Value()) {
-						t.SetSelectedUnitType(n)
+						t.Unit().SetType(n)
 						break
 					}
 				}
 			} else {
-				t.SetSelectedUnitType("")
+				t.Unit().SetType("")
 			}
 		}
 		ul.dragList.Focus()
-		t.UnitSearching().SetValue(false)
+		t.Unit().Searching().SetValue(false)
 	}
 	for ul.addUnitBtn.Clicked(gtx) {
-		t.AddUnit(false).Do()
-		t.UnitSearching().SetValue(true)
+		t.Unit().Add(false).Do()
+		t.Unit().Searching().SetValue(true)
 		ul.searchEditor.Focus()
 	}
 	for ul.CopyUnitBtn.Clicked(gtx) {
-		if contents, ok := t.Units().CopyElements(); ok {
+		if contents, ok := t.Unit().List().CopyElements(); ok {
 			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
 			t.Alerts().Add("Unit(s) copied to clipboard", tracker.Info)
 		}
@@ -211,9 +211,9 @@ func (ul *InstrumentEditor) update(gtx C) {
 		ul.ChooseUnitType(t)
 	}
 	for ul.ClearUnitBtn.Clicked(gtx) {
-		t.ClearUnit().Do()
-		t.UnitSearch().SetValue("")
-		t.UnitSearching().SetValue(true)
+		t.Unit().Clear().Do()
+		t.Unit().SearchTerm().SetValue("")
+		t.Unit().Searching().SetValue(true)
 		ul.searchList.Focus()
 	}
 	for {
@@ -228,7 +228,7 @@ func (ul *InstrumentEditor) update(gtx C) {
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
 			switch e.Name {
 			case key.NameEscape:
-				t.UnitSearching().SetValue(false)
+				t.Unit().Searching().SetValue(false)
 				ul.paramTable.RowTitleList.Focus()
 			case key.NameEnter, key.NameReturn:
 				ul.ChooseUnitType(t)
@@ -288,8 +288,8 @@ func (pe *InstrumentEditor) layoutTable(gtx C) D {
 }
 
 func (pe *InstrumentEditor) ChooseUnitType(t *Tracker) {
-	if ut, ok := t.SearchResult(pe.searchList.TrackerList.Selected()); ok {
-		t.SetSelectedUnitType(ut)
+	if ut, ok := t.Unit().SearchResult(pe.searchList.TrackerList.Selected()); ok {
+		t.Unit().SetType(ut)
 		pe.paramTable.RowTitleList.Focus()
 	}
 }
@@ -305,9 +305,9 @@ func (pe *InstrumentEditor) layoutRack(gtx C) D {
 	cellWidth := gtx.Dp(t.Theme.UnitEditor.Width)
 	cellHeight := gtx.Dp(t.Theme.UnitEditor.Height)
 	rowTitleLabelWidth := gtx.Dp(t.Theme.UnitEditor.UnitList.LabelWidth)
-	rowTitleSignalWidth := gtx.Dp(t.Theme.SignalRail.SignalWidth) * t.RailWidth()
+	rowTitleSignalWidth := gtx.Dp(t.Theme.SignalRail.SignalWidth) * t.Unit().RailWidth()
 	rowTitleWidth := rowTitleLabelWidth + rowTitleSignalWidth
-	signalError := t.RailError()
+	signalError := t.Unit().RailError()
 	columnTitleHeight := gtx.Dp(0)
 	for i := range pe.Parameters {
 		for len(pe.Parameters[i]) < width {
@@ -321,7 +321,7 @@ func (pe *InstrumentEditor) layoutRack(gtx C) D {
 		if y < 0 || y >= len(pe.Parameters) {
 			return D{}
 		}
-		item := t.Unit(y)
+		item := t.Unit().Item(y)
 		sr := Rail(t.Theme, item.Signals)
 		label := Label(t.Theme, &t.Theme.UnitEditor.UnitList.Name, item.Type)
 		switch {
@@ -360,20 +360,20 @@ func (pe *InstrumentEditor) layoutRack(gtx C) D {
 		}
 
 		param := t.Model.Params().Item(point)
-		paramStyle := Param(param, t.Theme, pe.Parameters[y][x], pe.paramTable.Table.Cursor() == point, t.Unit(y).Disabled)
+		paramStyle := Param(param, t.Theme, pe.Parameters[y][x], pe.paramTable.Table.Cursor() == point, t.Unit().Item(y).Disabled)
 		paramStyle.Layout(gtx)
 		if x == t.Model.Params().RowWidth(y) {
 			if y == cursor.Y {
 				return layout.W.Layout(gtx, func(gtx C) D {
-					for pe.commentEditor.Update(gtx, t.UnitComment()) != EditorEventNone {
+					for pe.commentEditor.Update(gtx, t.Unit().Comment()) != EditorEventNone {
 						t.FocusPrev(gtx, false)
 					}
 					gtx.Constraints.Max.X = 1e6
 					gtx.Constraints.Min.Y = 0
-					return pe.commentEditor.Layout(gtx, t.UnitComment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "---")
+					return pe.commentEditor.Layout(gtx, t.Unit().Comment(), t.Theme, &t.Theme.InstrumentEditor.UnitComment, "---")
 				})
 			} else {
-				comment := t.Unit(y).Comment
+				comment := t.Unit().Item(y).Comment
 				if comment != "" {
 					style := t.Theme.InstrumentEditor.UnitComment.AsLabelStyle()
 					label := Label(t.Theme, &style, comment)
@@ -408,7 +408,7 @@ func (pe *InstrumentEditor) drawSignals(gtx C, rowTitleWidth int) {
 	gtx.Constraints.Max = gtx.Constraints.Max.Sub(p)
 	defer clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops).Pop()
 	defer op.Offset(image.Pt(-colP.Offset, -rowP.Offset)).Push(gtx.Ops).Pop()
-	for wire := range t.Wires {
+	for wire := range t.Params().Wires {
 		clr := t.Theme.UnitEditor.WireColor
 		if wire.Highlight {
 			clr = t.Theme.UnitEditor.WireHighlight
@@ -516,9 +516,9 @@ func mulVec(a, b f32.Point) f32.Point {
 
 func (pe *InstrumentEditor) layoutFooter(gtx C) D {
 	t := TrackerFromContext(gtx)
-	deleteUnitBtn := ActionIconBtn(t.DeleteUnit(), t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
+	deleteUnitBtn := ActionIconBtn(t.Unit().Delete(), t.Theme, pe.DeleteUnitBtn, icons.ActionDelete, "Delete unit (Ctrl+Backspace)")
 	copyUnitBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, pe.CopyUnitBtn, icons.ContentContentCopy, pe.copyHint)
-	disableUnitBtn := ToggleIconBtn(t.UnitDisabled(), t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
+	disableUnitBtn := ToggleIconBtn(t.Unit().Disabled(), t.Theme, pe.DisableUnitBtn, icons.AVVolumeUp, icons.AVVolumeOff, pe.disableUnitHint, pe.enableUnitHint)
 	clearUnitBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, pe.ClearUnitBtn, icons.ContentClear, "Clear unit")
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(deleteUnitBtn.Layout),
@@ -531,7 +531,7 @@ func (pe *InstrumentEditor) layoutFooter(gtx C) D {
 func (pe *InstrumentEditor) layoutUnitTypeChooser(gtx C) D {
 	t := TrackerFromContext(gtx)
 	element := func(gtx C, i int) D {
-		name, _ := t.SearchResult(i)
+		name, _ := t.Unit().SearchResult(i)
 		w := Label(t.Theme, &t.Theme.UnitEditor.Chooser, name)
 		if i == pe.searchList.TrackerList.Selected() {
 			return pe.SelectTypeBtn.Layout(gtx, w.Layout)

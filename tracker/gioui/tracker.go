@@ -94,7 +94,7 @@ func NewTracker(model *tracker.Model) *Tracker {
 
 		Model: model,
 
-		filePathString: model.FilePath(),
+		filePathString: model.Song().FilePath(),
 	}
 	t.SongPanel = NewSongPanel(t)
 	t.KeyNoteMap = MakeKeyboard[key.Name](model.Broker())
@@ -185,12 +185,12 @@ func (t *Tracker) Main() {
 				}
 				acks <- struct{}{}
 			case <-recoveryTicker.C:
-				t.SaveRecovery()
+				t.History().SaveRecovery()
 			}
 		}
 	}
 	recoveryTicker.Stop()
-	t.SaveRecovery()
+	t.History().SaveRecovery()
 	close(t.Broker().FinishedGUI)
 }
 
@@ -226,7 +226,7 @@ func (t *Tracker) Layout(gtx layout.Context) {
 	paint.Fill(gtx.Ops, t.Theme.Material.Bg)
 	event.Op(gtx.Ops, t) // area for capturing scroll events
 
-	if t.InstrEnlarged().Value() {
+	if t.Play().TrackerHidden().Value() {
 		t.layoutTop(gtx)
 	} else {
 		t.VerticalSplit.Layout(gtx,
@@ -263,14 +263,14 @@ func (t *Tracker) Layout(gtx layout.Context) {
 		case key.Event:
 			t.KeyEvent(e, gtx)
 		case transfer.DataEvent:
-			t.ReadSong(e.Open())
+			t.Song().Read(e.Open())
 		}
 	}
 	// if no-one else handled the note events, we handle them here
 	for len(t.noteEvents) > 0 {
 		ev := t.noteEvents[0]
 		ev.IsTrack = false
-		ev.Channel = t.Model.Instruments().Selected()
+		ev.Channel = t.Model.Instrument().List().Selected()
 		ev.Source = t
 		copy(t.noteEvents, t.noteEvents[1:])
 		t.noteEvents = t.noteEvents[:len(t.noteEvents)-1]
@@ -285,49 +285,49 @@ func (t *Tracker) showDialog(gtx C) {
 	switch t.Dialog() {
 	case tracker.NewSongChanges, tracker.OpenSongChanges, tracker.QuitChanges:
 		dialog := MakeDialog(t.Theme, t.DialogState, "Save changes to song?", "Your changes will be lost if you don't save them.",
-			DialogBtn("Save", t.SaveSong()),
-			DialogBtn("Don't save", t.DiscardSong()),
-			DialogBtn("Cancel", t.Cancel()),
+			DialogBtn("Save", t.Song().Save()),
+			DialogBtn("Don't save", t.Song().Discard()),
+			DialogBtn("Cancel", t.CancelDialog()),
 		)
 		dialog.Layout(gtx)
 	case tracker.Export:
 		dialog := MakeDialog(t.Theme, t.DialogState, "Export format", "Choose the sample format for the exported .wav file.",
-			DialogBtn("Int16", t.ExportInt16()),
-			DialogBtn("Float32", t.ExportFloat()),
-			DialogBtn("Cancel", t.Cancel()),
+			DialogBtn("Int16", t.Song().ExportInt16()),
+			DialogBtn("Float32", t.Song().ExportFloat()),
+			DialogBtn("Cancel", t.CancelDialog()),
 		)
 		dialog.Layout(gtx)
 	case tracker.OpenSongOpenExplorer:
-		t.explorerChooseFile(t.ReadSong, ".yml", ".json")
+		t.explorerChooseFile(t.Song().Read, ".yml", ".json")
 	case tracker.NewSongSaveExplorer, tracker.OpenSongSaveExplorer, tracker.QuitSaveExplorer, tracker.SaveAsExplorer:
 		filename := t.filePathString.Value()
 		if filename == "" {
 			filename = "song.yml"
 		}
-		t.explorerCreateFile(t.WriteSong, filename)
+		t.explorerCreateFile(t.Song().Write, filename)
 	case tracker.ExportFloatExplorer, tracker.ExportInt16Explorer:
 		filename := "song.wav"
 		if p := t.filePathString.Value(); p != "" {
 			filename = p[:len(p)-len(filepath.Ext(p))] + ".wav"
 		}
 		t.explorerCreateFile(func(wc io.WriteCloser) {
-			t.WriteWav(wc, t.Dialog() == tracker.ExportInt16Explorer)
+			t.Song().WriteWav(wc, t.Dialog() == tracker.ExportInt16Explorer)
 		}, filename)
 	case tracker.License:
 		dialog := MakeDialog(t.Theme, t.DialogState, "License", sointu.License,
-			DialogBtn("Close", t.Cancel()),
+			DialogBtn("Close", t.CancelDialog()),
 		)
 		dialog.Layout(gtx)
 	case tracker.DeleteUserPresetDialog:
 		dialog := MakeDialog(t.Theme, t.DialogState, "Delete user preset?", "Are you sure you want to delete the selected user preset?\nThis action cannot be undone.",
-			DialogBtn("Delete", t.DeleteUserPreset()),
-			DialogBtn("Cancel", t.Cancel()),
+			DialogBtn("Delete", t.Preset().ConfirmDelete()),
+			DialogBtn("Cancel", t.CancelDialog()),
 		)
 		dialog.Layout(gtx)
 	case tracker.OverwriteUserPresetDialog:
 		dialog := MakeDialog(t.Theme, t.DialogState, "Overwrite user preset?", "Are you sure you want to overwrite the existing user preset with the same name?",
-			DialogBtn("Save", t.OverwriteUserPreset()),
-			DialogBtn("Cancel", t.Cancel()),
+			DialogBtn("Save", t.Preset().Overwrite()),
+			DialogBtn("Cancel", t.CancelDialog()),
 		)
 		dialog.Layout(gtx)
 	}
@@ -342,7 +342,7 @@ func (t *Tracker) explorerChooseFile(success func(io.ReadCloser), extensions ...
 			if err == nil {
 				success(file)
 			} else {
-				t.Cancel().Do()
+				t.CancelDialog().Do()
 				if err != explorer.ErrUserDecline {
 					t.Alerts().Add(err.Error(), tracker.Error)
 				}
@@ -360,7 +360,7 @@ func (t *Tracker) explorerCreateFile(success func(io.WriteCloser), filename stri
 			if err == nil {
 				success(file)
 			} else {
-				t.Cancel().Do()
+				t.CancelDialog().Do()
 				if err != explorer.ErrUserDecline {
 					t.Alerts().Add(err.Error(), tracker.Error)
 				}
@@ -416,7 +416,7 @@ func (t *Tracker) openUrl(url string) {
 
 func (t *Tracker) Tags(curLevel int, yield TagYieldFunc) bool {
 	ret := t.PatchPanel.Tags(curLevel+1, yield)
-	if !t.InstrEnlarged().Value() {
+	if !t.Play().TrackerHidden().Value() {
 		ret = ret && t.OrderEditor.Tags(curLevel+1, yield) &&
 			t.TrackEditor.Tags(curLevel+1, yield)
 	}

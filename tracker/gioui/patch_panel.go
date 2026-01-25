@@ -75,9 +75,9 @@ func (pp *PatchPanel) Layout(gtx C) D {
 	tr := TrackerFromContext(gtx)
 	bottom := func(gtx C) D {
 		switch {
-		case tr.InstrComment().Value():
+		case tr.Instrument().Tab().Value() == int(tracker.InstrumentCommentTab):
 			return pp.instrProps.layout(gtx)
-		case tr.InstrPresets().Value():
+		case tr.Instrument().Tab().Value() == int(tracker.InstrumentPresetsTab):
 			return pp.instrPresets.layout(gtx)
 		default: // editor
 			return pp.instrEditor.layout(gtx)
@@ -92,9 +92,9 @@ func (pp *PatchPanel) Layout(gtx C) D {
 
 func (pp *PatchPanel) BottomTags(level int, yield TagYieldFunc) bool {
 	switch {
-	case pp.InstrComment().Value():
+	case pp.Instrument().Tab().Value() == int(tracker.InstrumentCommentTab):
 		return pp.instrProps.Tags(level, yield)
-	case pp.InstrPresets().Value():
+	case pp.Instrument().Tab().Value() == int(tracker.InstrumentPresetsTab):
 		return pp.instrPresets.Tags(level, yield)
 	default: // editor
 		return pp.instrEditor.Tags(level, yield)
@@ -143,18 +143,18 @@ func MakeInstrumentTools(m *tracker.Model) InstrumentTools {
 func (it *InstrumentTools) Layout(gtx C) D {
 	t := TrackerFromContext(gtx)
 	it.update(gtx, t)
-	editorBtn := TabBtn(t.Model.InstrEditor(), t.Theme, it.EditorTab, "Editor", "")
-	presetsBtn := TabBtn(t.Model.InstrPresets(), t.Theme, it.PresetsTab, "Presets", "")
-	commentBtn := TabBtn(t.Model.InstrComment(), t.Theme, it.CommentTab, "Properties", "")
-	octave := NumUpDown(t.Model.Octave(), t.Theme, t.OctaveNumberInput, "Octave")
-	linkInstrTrackBtn := ToggleIconBtn(t.Model.LinkInstrTrack(), t.Theme, it.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, it.linkDisabledHint, it.linkEnabledHint)
-	instrEnlargedBtn := ToggleIconBtn(t.Model.InstrEnlarged(), t.Theme, it.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, it.enlargeHint, it.shrinkHint)
-	addInstrumentBtn := ActionIconBtn(t.Model.AddInstrument(), t.Theme, it.newInstrumentBtn, icons.ContentAdd, it.addInstrumentHint)
+	editorBtn := TabBtn(tracker.MakeBool((*editorTab)(t.Model)), t.Theme, it.EditorTab, "Editor", "")
+	presetsBtn := TabBtn(tracker.MakeBool((*presetsTab)(t.Model)), t.Theme, it.PresetsTab, "Presets", "")
+	commentBtn := TabBtn(tracker.MakeBool((*commentTab)(t.Model)), t.Theme, it.CommentTab, "Properties", "")
+	octave := NumUpDown(t.Note().Octave(), t.Theme, t.OctaveNumberInput, "Octave")
+	linkInstrTrackBtn := ToggleIconBtn(t.Track().LinkInstrument(), t.Theme, it.linkInstrTrackBtn, icons.NotificationSyncDisabled, icons.NotificationSync, it.linkDisabledHint, it.linkEnabledHint)
+	instrEnlargedBtn := ToggleIconBtn(t.Play().TrackerHidden(), t.Theme, it.enlargeBtn, icons.NavigationFullscreen, icons.NavigationFullscreenExit, it.enlargeHint, it.shrinkHint)
+	addInstrumentBtn := ActionIconBtn(t.Model.Instrument().Add(), t.Theme, it.newInstrumentBtn, icons.ContentAdd, it.addInstrumentHint)
 
 	saveInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.saveInstrumentBtn, icons.ContentSave, "Save instrument")
 	loadInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.loadInstrumentBtn, icons.FileFolderOpen, "Load instrument")
 	copyInstrumentBtn := IconBtn(t.Theme, &t.Theme.IconButton.Enabled, it.copyInstrumentBtn, icons.ContentContentCopy, "Copy instrument")
-	deleteInstrumentBtn := ActionIconBtn(t.DeleteInstrument(), t.Theme, it.deleteInstrumentBtn, icons.ActionDelete, it.deleteInstrumentHint)
+	deleteInstrumentBtn := ActionIconBtn(t.Instrument().Delete(), t.Theme, it.deleteInstrumentBtn, icons.ActionDelete, it.deleteInstrumentHint)
 	btns := func(gtx C) D {
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(layout.Spacer{Width: 6}.Layout),
@@ -177,26 +177,58 @@ func (it *InstrumentTools) Layout(gtx C) D {
 	return Surface{Height: 4, Focus: t.PatchPanel.TreeFocused(gtx)}.Layout(gtx, btns)
 }
 
+type (
+	editorTab  tracker.Model
+	presetsTab tracker.Model
+	commentTab tracker.Model
+)
+
+func (e *editorTab) Value() bool {
+	return (*tracker.Model)(e).Instrument().Tab().Value() == int(tracker.InstrumentEditorTab)
+}
+func (e *editorTab) SetValue(val bool) {
+	if val {
+		(*tracker.Model)(e).Instrument().Tab().SetValue(int(tracker.InstrumentEditorTab))
+	}
+}
+
+func (p *presetsTab) Value() bool {
+	return (*tracker.Model)(p).Instrument().Tab().Value() == int(tracker.InstrumentPresetsTab)
+}
+func (p *presetsTab) SetValue(val bool) {
+	if val {
+		(*tracker.Model)(p).Instrument().Tab().SetValue(int(tracker.InstrumentPresetsTab))
+	}
+}
+func (c *commentTab) Value() bool {
+	return (*tracker.Model)(c).Instrument().Tab().Value() == int(tracker.InstrumentCommentTab)
+}
+func (c *commentTab) SetValue(val bool) {
+	if val {
+		(*tracker.Model)(c).Instrument().Tab().SetValue(int(tracker.InstrumentCommentTab))
+	}
+}
+
 func (it *InstrumentTools) update(gtx C, tr *Tracker) {
 	for it.copyInstrumentBtn.Clicked(gtx) {
-		if contents, ok := tr.Instruments().CopyElements(); ok {
+		if contents, ok := tr.Instrument().List().CopyElements(); ok {
 			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(bytes.NewReader(contents))})
 			tr.Alerts().Add("Instrument copied to clipboard", tracker.Info)
 		}
 	}
 	for it.saveInstrumentBtn.Clicked(gtx) {
-		writer, err := tr.Explorer.CreateFile(tr.InstrumentName().Value() + ".yml")
+		writer, err := tr.Explorer.CreateFile(tr.Instrument().Name().Value() + ".yml")
 		if err != nil {
 			continue
 		}
-		tr.SaveInstrument(writer)
+		tr.Instrument().Write(writer)
 	}
 	for it.loadInstrumentBtn.Clicked(gtx) {
 		reader, err := tr.Explorer.ChooseFile(".yml", ".json", ".4ki", ".4kp")
 		if err != nil {
 			continue
 		}
-		tr.LoadInstrument(reader)
+		tr.Instrument().Read(reader)
 	}
 }
 
@@ -208,7 +240,7 @@ func (it *InstrumentTools) Tags(level int, yield TagYieldFunc) bool {
 
 func MakeInstrList(model *tracker.Model) InstrumentList {
 	return InstrumentList{
-		instrumentDragList: NewDragList(model.Instruments(), layout.Horizontal),
+		instrumentDragList: NewDragList(model.Instrument().List(), layout.Horizontal),
 		nameEditor:         NewEditor(true, true, text.Middle),
 	}
 }
@@ -221,7 +253,7 @@ func (il *InstrumentList) Layout(gtx C) D {
 	element := func(gtx C, i int) D {
 		grabhandle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentList.Number, strconv.Itoa(i+1))
 		label := func(gtx C) D {
-			name, level, mute, ok := t.Instrument(i)
+			name, level, mute, ok := t.Instrument().Item(i)
 			if !ok {
 				labelStyle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentList.Number, "")
 				return layout.Center.Layout(gtx, labelStyle.Layout)
@@ -233,12 +265,12 @@ func (il *InstrumentList) Layout(gtx C) D {
 				s.Color = color.NRGBA{R: 255, G: k, B: 255, A: 255}
 			}
 			if i == il.instrumentDragList.TrackerList.Selected() {
-				for il.nameEditor.Update(gtx, t.InstrumentName()) != EditorEventNone {
+				for il.nameEditor.Update(gtx, t.Instrument().Name()) != EditorEventNone {
 					il.instrumentDragList.Focus()
 				}
 				return layout.Center.Layout(gtx, func(gtx C) D {
 					defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()
-					return il.nameEditor.Layout(gtx, t.InstrumentName(), t.Theme, &s, "Instr")
+					return il.nameEditor.Layout(gtx, t.Instrument().Name(), t.Theme, &s, "Instr")
 				})
 			}
 			if name == "" {
@@ -280,9 +312,9 @@ func (il *InstrumentList) update(gtx C, t *Tracker) {
 			case key.NameDownArrow:
 				var tagged Tagged
 				switch {
-				case t.InstrComment().Value():
+				case t.Instrument().Tab().Value() == int(tracker.InstrumentCommentTab):
 					tagged = &t.PatchPanel.instrProps
-				case t.InstrPresets().Value():
+				case t.Instrument().Tab().Value() == int(tracker.InstrumentPresetsTab):
 					tagged = &t.PatchPanel.instrPresets
 				default: // editor
 					tagged = &t.PatchPanel.instrEditor

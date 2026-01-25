@@ -42,8 +42,8 @@ func NewOrderEditor(m *tracker.Model) *OrderEditor {
 	return &OrderEditor{
 		scrollTable: NewScrollTable(
 			m.Order().Table(),
-			m.Tracks(),
-			m.OrderRows(),
+			m.Track().List(),
+			m.Order().RowList(),
 		),
 	}
 }
@@ -67,12 +67,12 @@ func (oe *OrderEditor) Layout(gtx C) D {
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
 		defer op.Affine(f32.Affine2D{}.Rotate(f32.Pt(0, 0), -90*math.Pi/180).Offset(f32.Point{X: 0, Y: float32(h)})).Push(gtx.Ops).Pop()
 		gtx.Constraints = layout.Exact(image.Pt(1e6, 1e6))
-		Label(t.Theme, &t.Theme.OrderEditor.TrackTitle, t.Model.TrackTitle(i)).Layout(gtx)
+		Label(t.Theme, &t.Theme.OrderEditor.TrackTitle, t.Model.Track().Item(i).Title).Layout(gtx)
 		return D{Size: image.Pt(gtx.Dp(patternCellWidth), h)}
 	}
 
 	rowTitleBg := func(gtx C, j int) D {
-		if t.Model.Playing().Value() && j == t.PlayPosition().OrderRow {
+		if t.Model.Play().Started().Value() && j == t.Play().Position().OrderRow {
 			paint.FillShape(gtx.Ops, t.Theme.OrderEditor.Play, clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Dp(patternCellHeight))}.Op())
 		}
 		return D{}
@@ -84,7 +84,7 @@ func (oe *OrderEditor) Layout(gtx C) D {
 	rowTitle := func(gtx C, j int) D {
 		w := gtx.Dp(unit.Dp(30))
 		callOp := rowMarkerPatternTextColorOp
-		if l := t.Loop(); j >= l.Start && j < l.Start+l.Length {
+		if l := t.Play().Loop(); j >= l.Start && j < l.Start+l.Length {
 			callOp = loopMarkerColorOp
 		}
 		defer op.Offset(image.Pt(0, -2)).Push(gtx.Ops).Pop()
@@ -184,14 +184,14 @@ func (oe *OrderEditor) command(t *Tracker, e key.Event) {
 	switch e.Name {
 	case key.NameDeleteBackward:
 		if e.Modifiers.Contain(key.ModShortcut) {
-			t.Model.DeleteOrderRow(true).Do()
+			t.Model.Order().DeleteRow(true).Do()
 		}
 	case key.NameDeleteForward:
 		if e.Modifiers.Contain(key.ModShortcut) {
-			t.Model.DeleteOrderRow(false).Do()
+			t.Model.Order().DeleteRow(false).Do()
 		}
 	case key.NameReturn:
-		t.Model.AddOrderRow(e.Modifiers.Contain(key.ModShortcut)).Do()
+		t.Model.Order().AddRow(e.Modifiers.Contain(key.ModShortcut)).Do()
 	}
 	if iv, err := strconv.Atoi(string(e.Name)); err == nil {
 		t.Model.Order().SetValue(oe.scrollTable.Table.Cursor(), iv)
