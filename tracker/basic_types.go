@@ -152,6 +152,25 @@ func (v Int) Value() int {
 	return v.value.Value()
 }
 
+// Enum
+
+type (
+	Enum struct {
+		value EnumValue
+		Int
+	}
+
+	EnumValue interface {
+		Option(value int) string
+		IntValue
+	}
+)
+
+func MakeEnum(e EnumValue) Enum { return Enum{value: e, Int: Int{e}} }
+
+func (e Enum) String() string      { return e.value.Option(e.Value()) }
+func (e Enum) Option(v int) string { return e.value.Option(v) }
+
 // String
 
 type (
