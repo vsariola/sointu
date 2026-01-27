@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   roughly to -12 dBFS true peak. ([#211][i211])
 
 ### Fixed
+- Occasional NaNs in the Trisaw oscillator when the color was 0 in the Go VM.
 - The tracker thought that "sync" unit pops the value from stack, even if the VM
   did not, resulting it claiming errors in patches that worked once compiled.
 

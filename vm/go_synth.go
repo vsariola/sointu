@@ -500,7 +500,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, r
 							*statevar -= float32(int(*statevar+1) - 1)
 							phase := *statevar
 							phase += params[2]
-							phase -= float32(int(phase))
+							phase -= float32(int(phase+1) - 1)
 							color := params[3]
 							switch {
 							case flags&0x40 == 0x40: // Sine
