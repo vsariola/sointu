@@ -1,8 +1,9 @@
 package tracker
 
 import (
+	"strconv"
+
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/vm"
 )
 
 // Scope returns the ScopeModel view of the Model, used for oscilloscope
@@ -53,7 +54,16 @@ func (s *scopeTriggerChannel) SetValue(val int) bool {
 	s.scopeData.triggerChannel = val
 	return true
 }
-func (s *scopeTriggerChannel) Range() RangeInclusive { return RangeInclusive{0, vm.MAX_VOICES} }
+func (s *scopeTriggerChannel) Range() RangeInclusive { return RangeInclusive{0, len(s.d.Song.Patch)} }
+func (s *scopeTriggerChannel) StringOf(value int) string {
+	if value == 0 {
+		return "Disabled"
+	}
+	if value >= 1 && value <= len(s.d.Song.Patch) && s.d.Song.Patch[value-1].Name != "" {
+		return s.d.Song.Patch[value-1].Name
+	}
+	return strconv.Itoa(value)
+}
 
 // Waveform returns the oscilloscope waveform buffer.
 func (s *ScopeModel) Waveform() RingBuffer[[2]float32] { return s.scopeData.waveForm }

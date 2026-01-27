@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 
 	"gioui.org/app"
 	"github.com/vsariola/sointu"
@@ -46,20 +47,18 @@ func main() {
 	broker := tracker.NewBroker()
 	midiContext := cmd.NewMidiContext(broker)
 	defer midiContext.Close()
-	if isFlagPassed("midi-input") {
-		input, ok := tracker.FindMIDIDeviceByPrefix(midiContext, *defaultMidiInput)
-		if ok {
-			err := midiContext.Open(input)
-			if err != nil {
-				log.Printf("failed to open MIDI input '%s': %v", input, err)
-			}
-		} else {
-			log.Printf("no MIDI input device found with prefix '%s'", *defaultMidiInput)
-		}
-	}
 	model := tracker.NewModel(broker, cmd.Synthers, midiContext, recoveryFile)
 	player := tracker.NewPlayer(broker, cmd.Synthers[0])
-
+	if isFlagPassed("midi-input") {
+		for i, s := range model.MIDI().Input().Values {
+			if strings.HasPrefix(s, *defaultMidiInput) {
+				model.MIDI().Input().SetValue(i)
+				goto found
+			}
+		}
+		model.Alerts().Add(fmt.Sprintf("MIDI command line argument passed, but device with given prefix not found: %s", *defaultMidiInput), tracker.Error)
+	found:
+	}
 	if a := flag.Args(); len(a) > 0 {
 		f, err := os.Open(a[0])
 		if err == nil {

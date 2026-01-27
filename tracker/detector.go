@@ -65,6 +65,20 @@ func (v *detectorWeighting) SetValue(value int) bool {
 func (v *detectorWeighting) Range() RangeInclusive {
 	return RangeInclusive{0, int(NumWeightingTypes) - 1}
 }
+func (v *detectorWeighting) StringOf(value int) string {
+	switch WeightingType(value) {
+	case KWeighting:
+		return "K-weighting (LUFS)"
+	case AWeighting:
+		return "A-weighting"
+	case CWeighting:
+		return "C-weighting"
+	case NoWeighting:
+		return "No weighting (RMS)"
+	default:
+		return "Unknown"
+	}
+}
 
 type WeightingType int
 

@@ -178,7 +178,6 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 		}
 		effectBtn := ToggleBtn(t.Track().Effect(), t.Theme, te.EffectBtn, "Hex", "Input notes as hex values")
 		uniqueBtn := ToggleIconBtn(t.Note().UniquePatterns(), t.Theme, te.UniqueBtn, icons.ToggleStarBorder, icons.ToggleStar, te.uniqueOffTip, te.uniqueOnTip)
-		midiInBtn := ToggleBtn(t.MIDI().InputtingNotes(), t.Theme, te.TrackMidiInBtn, "MIDI", "Input notes from MIDI keyboard")
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D { return layout.Dimensions{Size: image.Pt(gtx.Dp(unit.Dp(12)), 0)} }),
 			layout.Rigid(addSemitoneBtn.Layout),
@@ -193,7 +192,6 @@ func (te *NoteEditor) layoutButtons(gtx C, t *Tracker) D {
 			layout.Rigid(layout.Spacer{Width: 4}.Layout),
 			layout.Rigid(trackVoicesInsetted),
 			layout.Rigid(splitTrackBtn.Layout),
-			layout.Rigid(midiInBtn.Layout),
 			layout.Flexed(1, func(gtx C) D { return layout.Dimensions{Size: gtx.Constraints.Min} }),
 			layout.Rigid(deleteTrackBtn.Layout),
 			layout.Rigid(newTrackBtn.Layout))
@@ -276,7 +274,6 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 	cursor := te.scrollTable.Table.Cursor()
 	drawSelection := cursor != te.scrollTable.Table.Cursor2()
 	selection := te.scrollTable.Table.Range()
-	hasTrackMidiIn := t.MIDI().InputtingNotes().Value()
 
 	patternNoOp := colorOp(gtx, t.Theme.NoteEditor.PatternNo.Color)
 	uniqueOp := colorOp(gtx, t.Theme.NoteEditor.Unique.Color)
@@ -297,9 +294,6 @@ func (te *NoteEditor) layoutTracks(gtx C, t *Tracker) D {
 			c := t.Theme.Cursor.Inactive
 			if gtx.Focused(te.scrollTable) {
 				c = t.Theme.Cursor.Active
-			}
-			if hasTrackMidiIn {
-				c = t.Theme.Cursor.ActiveAlt
 			}
 			te.paintColumnCell(gtx, x, t, c)
 		}

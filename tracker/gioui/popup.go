@@ -38,6 +38,8 @@ func Popup(th *Theme, visible *bool) PopupWidget {
 	}
 }
 
+func (s PopupWidget) WithStyle(style *PopupStyle) PopupWidget { s.Style = style; return s }
+
 func (s PopupWidget) Layout(gtx C, contents layout.Widget) D {
 	s.update(gtx)
 

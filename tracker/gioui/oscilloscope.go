@@ -6,15 +6,17 @@ import (
 
 	"gioui.org/layout"
 	"gioui.org/unit"
+	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
 type (
 	OscilloscopeState struct {
-		onceBtn              *Clickable
-		wrapBtn              *Clickable
-		lengthInBeatsNumber  *NumericUpDownState
-		triggerChannelNumber *NumericUpDownState
-		plot                 *Plot
+		onceBtn             *Clickable
+		wrapBtn             *Clickable
+		triggerBtn          *Clickable
+		lengthInBeatsNumber *NumericUpDownState
+		triggerMenuState    *MenuState
+		plot                *Plot
 	}
 
 	Oscilloscope struct {
@@ -25,11 +27,12 @@ type (
 
 func NewOscilloscope() *OscilloscopeState {
 	return &OscilloscopeState{
-		plot:                 NewPlot(plotRange{0, 1}, plotRange{-1, 1}, 0),
-		onceBtn:              new(Clickable),
-		wrapBtn:              new(Clickable),
-		lengthInBeatsNumber:  NewNumericUpDownState(),
-		triggerChannelNumber: NewNumericUpDownState(),
+		plot:                NewPlot(plotRange{0, 1}, plotRange{-1, 1}, 0),
+		onceBtn:             new(Clickable),
+		wrapBtn:             new(Clickable),
+		lengthInBeatsNumber: NewNumericUpDownState(),
+		triggerBtn:          new(Clickable),
+		triggerMenuState:    &MenuState{},
 	}
 }
 
@@ -45,7 +48,6 @@ func (s *Oscilloscope) Layout(gtx C) D {
 	leftSpacer := layout.Spacer{Width: unit.Dp(6), Height: unit.Dp(24)}.Layout
 	rightSpacer := layout.Spacer{Width: unit.Dp(6)}.Layout
 
-	triggerChannel := NumUpDown(t.Scope().TriggerChannel(), s.Theme, s.State.triggerChannelNumber, "Trigger channel")
 	lengthInBeats := NumUpDown(t.Scope().LengthInBeats(), s.Theme, s.State.lengthInBeatsNumber, "Buffer length in beats")
 
 	onceBtn := ToggleBtn(t.Scope().Once(), s.Theme, s.State.onceBtn, "Once", "Trigger once on next event")
@@ -107,7 +109,11 @@ func (s *Oscilloscope) Layout(gtx C) D {
 				layout.Rigid(Label(s.Theme, &s.Theme.SongPanel.RowHeader, "Trigger").Layout),
 				layout.Flexed(1, func(gtx C) D { return D{Size: gtx.Constraints.Min} }),
 				layout.Rigid(onceBtn.Layout),
-				layout.Rigid(triggerChannel.Layout),
+				layout.Rigid(func(gtx C) D {
+					triggerBtn := MenuBtn(s.State.triggerMenuState, s.State.triggerBtn, t.Scope().TriggerChannel().String()).
+						WithBtnStyle(&t.Theme.Button.Text).WithPopupStyle(&t.Theme.Popup.ContextMenu)
+					return triggerBtn.Layout(gtx, IntMenuChild(t.Scope().TriggerChannel(), icons.NavigationCheck))
+				}),
 				layout.Rigid(rightSpacer),
 			)
 		}),

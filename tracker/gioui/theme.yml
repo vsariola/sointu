@@ -219,6 +219,10 @@ popup:
     color: { r: 50, g: 50, b: 51, a: 255 }
     cornerradii: { nw: 0, ne: 0, se: 6, sw: 6 }
     shadow: { n: 0, s: 2, e: 2, w: 2, color: { r: 0, g: 0, b: 0, a: 192 } }
+  contextmenu:
+    color: { r: 50, g: 50, b: 51, a: 255 }
+    cornerradii: { nw: 6, ne: 6, se: 6, sw: 6 }
+    shadow: { n: 2, s: 2, e: 2, w: 2, color: { r: 0, g: 0, b: 0, a: 192 } }
 dialog:
   bg: { r: 0, g: 0, b: 0, a: 224 }
   title: { textsize: 16, color: *highemphasis, shadowcolor: *black }

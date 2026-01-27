@@ -128,8 +128,9 @@ type Theme struct {
 		Bg    color.NRGBA
 	}
 	Popup struct {
-		Menu   PopupStyle
-		Dialog PopupStyle
+		Menu        PopupStyle
+		Dialog      PopupStyle
+		ContextMenu PopupStyle
 	}
 	Split        SplitStyle
 	ScrollBar    ScrollBarStyle

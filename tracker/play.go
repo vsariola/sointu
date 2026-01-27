@@ -182,6 +182,12 @@ func (v *playSyntherIndex) SetValue(value int) bool {
 	TrySend(v.broker.ToPlayer, any(v.synthers[value]))
 	return true
 }
+func (v *playSyntherIndex) StringOf(value int) string {
+	if value < 0 || value >= len(v.synthers) {
+		return ""
+	}
+	return v.synthers[value].Name()
+}
 
 // SyntherName returns the name of the currently selected synther.
 func (v *Play) SyntherName() string { return v.synthers[v.syntherIndex].Name() }

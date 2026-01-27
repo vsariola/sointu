@@ -32,6 +32,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   did not, resulting it claiming errors in patches that worked once compiled.
 
 ### Changed
+- Tracker model supports now enum-style values, which are integers that have a
+  name associated with them. These enums are used to display menus where you
+  select one of the options, for example in the MIDI menu to choose one of the
+  ports; a context menu in to choose which instrument triggers the oscilloscope;
+  and a context menu to choose the weighting type in the loudness detector.
 - The song panel can scroll if all the widgets don't fit into it
 - The provided MacOS executables are now arm64, which means the x86 native
   synths are not compiled in.

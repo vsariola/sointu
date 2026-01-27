@@ -87,7 +87,7 @@ type (
 
 		broker *Broker
 
-		midi MIDIContext
+		midi midiState
 
 		presetData presetData
 	}
@@ -173,7 +173,7 @@ func (m *Model) Quitted() bool  { return m.quitted }
 func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext, recoveryFilePath string) *Model {
 	m := new(Model)
 	m.synthers = synthers
-	m.midi = midiContext
+	m.midi = midiState{context: midiContext}
 	m.broker = broker
 	m.d.Octave = 4
 	m.linkInstrTrack = true
@@ -196,6 +196,7 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 	m.Preset().updateCache()
 	m.derived.searchResults = make([]string, 0, len(sointu.UnitNames))
 	m.Unit().updateDerivedUnitSearch()
+	m.MIDI().Refresh().Do()
 	go runDetector(broker)
 	go runSpecAnalyzer(broker)
 	return m

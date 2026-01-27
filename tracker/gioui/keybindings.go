@@ -283,6 +283,10 @@ func (t *Tracker) KeyEvent(e key.Event, gtx C) {
 		t.FocusNext(gtx, false)
 	case "FocusNextInto":
 		t.FocusNext(gtx, true)
+	case "MIDIRefresh":
+		t.MIDI().Refresh().Do()
+	case "ToggleMIDIInputtingNotes":
+		t.MIDI().InputtingNotes().Toggle()
 	default:
 		if len(action) > 4 && action[:4] == "Note" {
 			val, err := strconv.Atoi(string(action[4:]))
