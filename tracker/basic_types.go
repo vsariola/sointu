@@ -4,6 +4,7 @@ import (
 	"iter"
 	"math"
 	"math/bits"
+	"strconv"
 )
 
 // Enabler is an interface that defines a single Enabled() method, which is used
@@ -111,7 +112,9 @@ type (
 	// length, etc. It is a wrapper around an IntValue interface that provides
 	// methods to manipulate the value, but Int guard that all changes are
 	// within the range of the underlying IntValue implementation and that
-	// SetValue is not called when the value is unchanged.
+	// SetValue is not called when the value is unchanged. The IntValue can
+	// optionally implement the StringOfer interface to provide custom string
+	// representations of the integer values.
 	Int struct {
 		value IntValue
 	}
@@ -120,6 +123,10 @@ type (
 		Value() int
 		SetValue(int) (changed bool)
 		Range() RangeInclusive
+	}
+
+	StringOfer interface {
+		StringOf(value int) string
 	}
 )
 
@@ -152,24 +159,16 @@ func (v Int) Value() int {
 	return v.value.Value()
 }
 
-// Enum
+func (v Int) String() string {
+	return v.StringOf(v.Value())
+}
 
-type (
-	Enum struct {
-		value EnumValue
-		Int
+func (v Int) StringOf(value int) string {
+	if s, ok := v.value.(StringOfer); ok {
+		return s.StringOf(value)
 	}
-
-	EnumValue interface {
-		Option(value int) string
-		IntValue
-	}
-)
-
-func MakeEnum(e EnumValue) Enum { return Enum{value: e, Int: Int{e}} }
-
-func (e Enum) String() string      { return e.value.Option(e.Value()) }
-func (e Enum) Option(v int) string { return e.value.Option(v) }
+	return strconv.Itoa(value)
+}
 
 // String
 

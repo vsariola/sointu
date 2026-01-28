@@ -415,10 +415,11 @@ func (t *Tracker) openUrl(url string) {
 }
 
 func (t *Tracker) Tags(curLevel int, yield TagYieldFunc) bool {
-	ret := t.PatchPanel.Tags(curLevel+1, yield)
+	curLevel++
+	ret := t.SongPanel.Tags(curLevel, yield) && t.PatchPanel.Tags(curLevel, yield)
 	if !t.Play().TrackerHidden().Value() {
-		ret = ret && t.OrderEditor.Tags(curLevel+1, yield) &&
-			t.TrackEditor.Tags(curLevel+1, yield)
+		ret = ret && t.OrderEditor.Tags(curLevel, yield) &&
+			t.TrackEditor.Tags(curLevel, yield)
 	}
 	return ret
 }

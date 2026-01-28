@@ -465,7 +465,7 @@ type MenuBar struct {
 	Clickables []Clickable
 	MenuStates []MenuState
 
-	midiMenuItems []ActionMenuItem
+	midiMenuItems []MenuChild
 
 	panicHint string
 	PanicBtn  *Clickable
@@ -480,7 +480,7 @@ func NewMenuBar(tr *Tracker) *MenuBar {
 	}
 	for input := range tr.MIDI().InputDevices {
 		ret.midiMenuItems = append(ret.midiMenuItems,
-			MenuItem(tr.MIDI().Open(input), input, "", icons.ImageControlPoint),
+			ActionMenuChild(tr.MIDI().Open(input), input, "", icons.ImageControlPoint),
 		)
 	}
 	return ret
@@ -492,40 +492,40 @@ func (t *MenuBar) Layout(gtx C) D {
 	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(36))
 
 	flex := layout.Flex{Axis: layout.Horizontal, Alignment: layout.End}
-	fileBtn := MenuBtn(tr.Theme, &t.MenuStates[0], &t.Clickables[0], "File")
+	fileBtn := MenuBtn(&t.MenuStates[0], &t.Clickables[0], "File")
 	fileFC := layout.Rigid(func(gtx C) D {
-		items := [...]ActionMenuItem{
-			MenuItem(tr.Song().New(), "New Song", keyActionMap["NewSong"], icons.ContentClear),
-			MenuItem(tr.Song().Open(), "Open Song", keyActionMap["OpenSong"], icons.FileFolder),
-			MenuItem(tr.Song().Save(), "Save Song", keyActionMap["SaveSong"], icons.ContentSave),
-			MenuItem(tr.Song().SaveAs(), "Save Song As...", keyActionMap["SaveSongAs"], icons.ContentSave),
-			MenuItem(tr.Song().Export(), "Export Wav...", keyActionMap["ExportWav"], icons.ImageAudiotrack),
-			MenuItem(tr.RequestQuit(), "Quit", keyActionMap["Quit"], icons.ActionExitToApp),
+		items := [...]MenuChild{
+			ActionMenuChild(tr.Song().New(), "New Song", keyActionMap["NewSong"], icons.ContentClear),
+			ActionMenuChild(tr.Song().Open(), "Open Song", keyActionMap["OpenSong"], icons.FileFolder),
+			ActionMenuChild(tr.Song().Save(), "Save Song", keyActionMap["SaveSong"], icons.ContentSave),
+			ActionMenuChild(tr.Song().SaveAs(), "Save Song As...", keyActionMap["SaveSongAs"], icons.ContentSave),
+			ActionMenuChild(tr.Song().Export(), "Export Wav...", keyActionMap["ExportWav"], icons.ImageAudiotrack),
+			ActionMenuChild(tr.RequestQuit(), "Quit", keyActionMap["Quit"], icons.ActionExitToApp),
 		}
 		if !canQuit {
 			return fileBtn.Layout(gtx, items[:len(items)-1]...)
 		}
 		return fileBtn.Layout(gtx, items[:]...)
 	})
-	editBtn := MenuBtn(tr.Theme, &t.MenuStates[1], &t.Clickables[1], "Edit")
+	editBtn := MenuBtn(&t.MenuStates[1], &t.Clickables[1], "Edit")
 	editFC := layout.Rigid(func(gtx C) D {
 		return editBtn.Layout(gtx,
-			MenuItem(tr.History().Undo(), "Undo", keyActionMap["Undo"], icons.ContentUndo),
-			MenuItem(tr.History().Redo(), "Redo", keyActionMap["Redo"], icons.ContentRedo),
-			MenuItem(tr.Order().RemoveUnusedPatterns(), "Remove unused data", keyActionMap["RemoveUnused"], icons.ImageCrop),
+			ActionMenuChild(tr.History().Undo(), "Undo", keyActionMap["Undo"], icons.ContentUndo),
+			ActionMenuChild(tr.History().Redo(), "Redo", keyActionMap["Redo"], icons.ContentRedo),
+			ActionMenuChild(tr.Order().RemoveUnusedPatterns(), "Remove unused data", keyActionMap["RemoveUnused"], icons.ImageCrop),
 		)
 	})
-	midiBtn := MenuBtn(tr.Theme, &t.MenuStates[2], &t.Clickables[2], "MIDI")
+	midiBtn := MenuBtn(&t.MenuStates[2], &t.Clickables[2], "MIDI")
 	midiFC := layout.Rigid(func(gtx C) D {
 		return midiBtn.Layout(gtx, t.midiMenuItems...)
 	})
-	helpBtn := MenuBtn(tr.Theme, &t.MenuStates[3], &t.Clickables[3], "?")
+	helpBtn := MenuBtn(&t.MenuStates[3], &t.Clickables[3], "?")
 	helpFC := layout.Rigid(func(gtx C) D {
 		return helpBtn.Layout(gtx,
-			MenuItem(tr.ShowManual(), "Manual", keyActionMap["ShowManual"], icons.AVLibraryBooks),
-			MenuItem(tr.AskHelp(), "Ask help", keyActionMap["AskHelp"], icons.ActionHelp),
-			MenuItem(tr.ReportBug(), "Report bug", keyActionMap["ReportBug"], icons.ActionBugReport),
-			MenuItem(tr.ShowLicense(), "License", keyActionMap["ShowLicense"], icons.ActionCopyright))
+			ActionMenuChild(tr.ShowManual(), "Manual", keyActionMap["ShowManual"], icons.AVLibraryBooks),
+			ActionMenuChild(tr.AskHelp(), "Ask help", keyActionMap["AskHelp"], icons.ActionHelp),
+			ActionMenuChild(tr.ReportBug(), "Report bug", keyActionMap["ReportBug"], icons.ActionBugReport),
+			ActionMenuChild(tr.ShowLicense(), "License", keyActionMap["ShowLicense"], icons.ActionCopyright))
 	})
 	panicBtn := ToggleIconBtn(tr.Play().Panicked(), tr.Theme, t.PanicBtn, icons.AlertErrorOutline, icons.AlertError, t.panicHint, t.panicHint)
 	if tr.Play().Panicked().Value() {
@@ -536,6 +536,15 @@ func (t *MenuBar) Layout(gtx C) D {
 		return flex.Layout(gtx, fileFC, editFC, midiFC, helpFC, panicFC)
 	}
 	return flex.Layout(gtx, fileFC, editFC, helpFC, panicFC)
+}
+
+func (sp *SongPanel) Tags(level int, yield TagYieldFunc) bool {
+	for i := range sp.MenuBar.MenuStates {
+		if !sp.MenuBar.MenuStates[i].Tags(level, yield) {
+			return false
+		}
+	}
+	return true
 }
 
 type PlayBar struct {

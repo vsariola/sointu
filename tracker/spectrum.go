@@ -71,6 +71,16 @@ func (v *spectrumChannels) SetValue(value int) bool {
 func (v *spectrumChannels) Range() RangeInclusive {
 	return RangeInclusive{0, int(NumSpecChnModes) - 1}
 }
+func (v *spectrumChannels) StringOf(value int) string {
+	switch SpecChnMode(value) {
+	case SpecChnModeSum:
+		return "Sum"
+	case SpecChnModeSeparate:
+		return "Separate"
+	default:
+		return "Unknown"
+	}
+}
 
 type SpecChnMode int
 
