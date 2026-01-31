@@ -82,8 +82,10 @@ type (
 		alerts []Alert
 		dialog Dialog
 
-		syntherIndex int              // the index of the synther used to create new synths
-		synthers     []sointu.Synther // the synther used to create new synths
+		syntherIndex   int              // the index of the synther used to create new synths
+		synthers       []sointu.Synther // the synther used to create new synths
+		multithreading bool             // is the multithreading enabled or not
+		curSynther     sointu.Synther   // the current synther, either multithreaded or not depending on multithreading
 
 		broker *Broker
 
@@ -197,6 +199,7 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 	m.derived.searchResults = make([]string, 0, len(sointu.UnitNames))
 	m.Unit().updateDerivedUnitSearch()
 	m.MIDI().Refresh().Do()
+	m.Play().setSynther(0, false)
 	go runDetector(broker)
 	go runSpecAnalyzer(broker)
 	return m

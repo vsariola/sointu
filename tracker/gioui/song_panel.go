@@ -31,9 +31,10 @@ type SongPanel struct {
 	CPUExpander          *Expander
 	SpectrumExpander     *Expander
 
-	WeightingTypeBtn *Clickable
-	OversamplingBtn  *Clickable
-	SynthBtn         *Clickable
+	WeightingTypeBtn  *Clickable
+	OversamplingBtn   *Clickable
+	SynthBtn          *Clickable
+	MultithreadingBtn *Clickable
 
 	BPM            *NumericUpDownState
 	RowsPerPattern *NumericUpDownState
@@ -67,9 +68,10 @@ func NewSongPanel(tr *Tracker) *SongPanel {
 		MenuBar:        NewMenuBar(tr),
 		PlayBar:        NewPlayBar(),
 
-		WeightingTypeBtn: new(Clickable),
-		OversamplingBtn:  new(Clickable),
-		SynthBtn:         new(Clickable),
+		WeightingTypeBtn:  new(Clickable),
+		OversamplingBtn:   new(Clickable),
+		SynthBtn:          new(Clickable),
+		MultithreadingBtn: new(Clickable),
 
 		SongSettingsExpander: &Expander{Expanded: true},
 		ScopeExpander:        &Expander{},
@@ -159,7 +161,8 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 		return cpuLabel.Layout(gtx)
 	}
 
-	synthBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.SynthBtn, tr.Model.Play().SyntherName(), "")
+	synthBtn := Btn(tr.Theme, &tr.Theme.Button.Text, t.SynthBtn, tr.Model.Play().SyntherIndex().String(), "")
+	multithreadingBtn := ToggleIconBtn(tr.Play().Multithreading(), tr.Theme, t.MultithreadingBtn, icons.ToggleCheckBoxOutlineBlank, icons.ToggleCheckBox, "Threading disabled", "Threading enabled")
 
 	listItem := func(gtx C, index int) D {
 		switch index {
@@ -198,6 +201,7 @@ func (t *SongPanel) layoutSongOptions(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical, Alignment: layout.End}.Layout(gtx,
 						layout.Rigid(func(gtx C) D { return layoutSongOptionRow(gtx, tr.Theme, "Load", cpuEnlargedWidget) }),
 						layout.Rigid(func(gtx C) D { return layoutSongOptionRow(gtx, tr.Theme, "Synth", synthBtn.Layout) }),
+						layout.Rigid(func(gtx C) D { return layoutSongOptionRow(gtx, tr.Theme, "Multithreading", multithreadingBtn.Layout) }),
 					)
 				},
 			)

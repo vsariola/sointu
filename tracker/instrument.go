@@ -237,7 +237,7 @@ func (m *InstrModel) warnAboutCrossThreadSends() {
 
 func (m *InstrModel) warnNoMultithreadSupport() {
 	for _, instr := range m.d.Song.Patch {
-		if instr.ThreadMaskM1 > 0 && !m.synthers[m.syntherIndex].SupportsMultithreading() {
+		if instr.ThreadMaskM1 > 0 && !m.curSynther.SupportsMultithreading() {
 			(*Alerts)(m).AddNamed("NoMultithreadSupport", "The current synth does not support multithreading and the patch was configured to use more than one thread", Warning)
 			return
 		}

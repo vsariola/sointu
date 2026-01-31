@@ -5,7 +5,4 @@ import (
 	"github.com/vsariola/sointu/vm"
 )
 
-var Synthers = []sointu.Synther{
-	vm.GoSynther{},
-	vm.MakeMultithreadSynther(vm.GoSynther{}),
-}
+var Synthers = []sointu.Synther{vm.GoSynther{}}

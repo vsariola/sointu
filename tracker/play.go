@@ -1,6 +1,9 @@
 package tracker
 
-import "github.com/vsariola/sointu"
+import (
+	"github.com/vsariola/sointu"
+	"github.com/vsariola/sointu/vm"
+)
 
 type Play Model
 
@@ -175,11 +178,7 @@ type playSyntherIndex Play
 func (v *playSyntherIndex) Value() int            { return v.syntherIndex }
 func (v *playSyntherIndex) Range() RangeInclusive { return RangeInclusive{0, len(v.synthers) - 1} }
 func (v *playSyntherIndex) SetValue(value int) bool {
-	if value < 0 || value >= len(v.synthers) {
-		return false
-	}
-	v.syntherIndex = value
-	TrySend(v.broker.ToPlayer, any(v.synthers[value]))
+	(*Play)(v).setSynther(value, v.multithreading)
 	return true
 }
 func (v *playSyntherIndex) StringOf(value int) string {
@@ -189,8 +188,26 @@ func (v *playSyntherIndex) StringOf(value int) string {
 	return v.synthers[value].Name()
 }
 
-// SyntherName returns the name of the currently selected synther.
-func (v *Play) SyntherName() string { return v.synthers[v.syntherIndex].Name() }
+func (m *Play) Multithreading() Bool { return MakeBool((*playMultithreading)(m)) }
+
+type playMultithreading Play
+
+func (v *playMultithreading) Value() bool         { return v.multithreading }
+func (v *playMultithreading) SetValue(value bool) { (*Play)(v).setSynther(v.syntherIndex, value) }
+
+func (m *Play) setSynther(index int, multithreading bool) {
+	if index < 0 || index >= len(m.synthers) {
+		return
+	}
+	m.syntherIndex = index
+	m.multithreading = multithreading
+	if multithreading {
+		m.curSynther = vm.MakeMultithreadSynther(m.synthers[m.syntherIndex])
+	} else {
+		m.curSynther = m.synthers[m.syntherIndex]
+	}
+	TrySend(m.broker.ToPlayer, any(m.curSynther))
+}
 
 // CPULoad fills the given buffer with CPU load information and returns the
 // number of threads filled.
