@@ -58,11 +58,18 @@ func (s *Oscilloscope) Layout(gtx C) D {
 			w := t.Scope().Waveform()
 			cx := float32(w.Cursor) / float32(len(w.Buffer))
 
+			env, envOk := t.Scope().Envelope()
+
 			data := func(chn int, xr plotRange) (yr plotRange, ok bool) {
 				x1 := max(int(xr.a*float32(len(w.Buffer))), 0)
 				x2 := min(int(xr.b*float32(len(w.Buffer))), len(w.Buffer)-1)
 				if x1 > x2 {
 					return plotRange{}, false
+				}
+				if chn == 2 && envOk {
+					y1 := env.Value(x1)
+					y2 := env.Value(x2)
+					return plotRange{-max(y1, y2), -min(y1, y2)}, true
 				}
 				step := max((x2-x1)/1000, 1) // if the range is too large, sample only ~ 1000 points
 				y1 := float32(math.Inf(-1))
@@ -101,7 +108,12 @@ func (s *Oscilloscope) Layout(gtx C) D {
 				yield(1, "")
 			}
 
-			return s.State.plot.Layout(gtx, data, xticks, yticks, cx, 2)
+			numChannels := 2
+			if envOk {
+				numChannels = 3
+			}
+
+			return s.State.plot.Layout(gtx, data, xticks, yticks, cx, numChannels)
 		}),
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,

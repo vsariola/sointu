@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Plot the envelope shape on top of the oscilloscope when the envelope unit is
+  selected.
 - Spectrum analyzer showing the spectrum. When the user has a filter or belleq
   unit selected, it's frequency response is plotted on top. ([#67][i67])
 - belleq unit: a bell-shaped second-order filter for equalization. Belleq unit

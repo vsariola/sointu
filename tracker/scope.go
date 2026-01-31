@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"math"
 	"strconv"
 
 	"github.com/vsariola/sointu"
@@ -67,6 +68,69 @@ func (s *scopeTriggerChannel) StringOf(value int) string {
 
 // Waveform returns the oscilloscope waveform buffer.
 func (s *ScopeModel) Waveform() RingBuffer[[2]float32] { return s.scopeData.waveForm }
+
+func (s *ScopeModel) Envelope() (Envelope, bool) {
+	i := s.d.InstrIndex
+	u := s.d.UnitIndex
+	if i < 0 || i >= len(s.d.Song.Patch) || u < 0 || u >= len(s.d.Song.Patch[i].Units) || s.d.Song.Patch[i].Units[u].Type != "envelope" {
+		return Envelope{}, false
+	}
+	var ret Envelope = Envelope{{Position: math.MaxInt}, {Position: math.MaxInt}, {Position: math.MaxInt}, {Position: math.MaxInt}, {Position: math.MaxInt}}
+	releasePos := len(s.scopeData.waveForm.Buffer) / 2
+	p := s.d.Song.Patch[s.d.InstrIndex].Units[s.d.UnitIndex].Parameters
+	attack := nonLinearMap((float32)(p["attack"]) / 128.0)
+	decay := nonLinearMap((float32)(p["decay"]) / 128.0)
+	sustain := (float32)(p["sustain"]) / 128.0
+	release := nonLinearMap((float32)(p["release"]) / 128.0)
+	gain := (float32)(p["gain"]) / 128.0
+	curpos := 0
+	for i := 0; i < 3; i++ {
+		var nextpos int
+		switch i {
+		case 0:
+			ret[i] = EnvelopePoint{Position: curpos, Level: 0, Slope: attack * gain}
+			nextpos = curpos + int(math.Ceil(float64(1/attack)))
+		case 1:
+			ret[i] = EnvelopePoint{Position: curpos, Level: gain, Slope: -decay * gain}
+			nextpos = curpos + int(math.Ceil(float64((1-sustain)/decay)))
+		case 2:
+			ret[i] = EnvelopePoint{Position: curpos, Level: sustain * gain, Slope: 0}
+			nextpos = math.MaxInt
+		}
+		if nextpos >= releasePos {
+			v := ret[i].Level + ret[i].Slope*float32(releasePos-curpos)
+			ret[i+1] = EnvelopePoint{Position: releasePos, Level: v, Slope: -release * gain}
+			ret[i+2] = EnvelopePoint{Position: releasePos + int(math.Ceil(float64(v/(release*gain)))), Level: 0, Slope: 0}
+			break
+		}
+		curpos = nextpos
+	}
+	return ret, true
+}
+
+func nonLinearMap(value float32) float32 {
+	return float32(math.Exp2(float64(-24 * value)))
+}
+
+type Envelope [5]EnvelopePoint
+
+type EnvelopePoint struct {
+	Position     int
+	Level, Slope float32
+}
+
+func (e *Envelope) Value(position int) float32 {
+	for i := len(e) - 1; i >= 0; i-- {
+		if position >= e[i].Position {
+			return e[i].Value(position + 1)
+		}
+	}
+	return 0
+}
+
+func (e *EnvelopePoint) Value(position int) float32 {
+	return e.Level + e.Slope*float32(position-e.Position)
+}
 
 // processAudioBuffer fills the oscilloscope buffer with audio data from the
 // given buffer.
