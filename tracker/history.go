@@ -57,6 +57,7 @@ func (m *historyRedo) Do() {
 func (m *HistoryModel) MarshalRecovery() []byte {
 	out, err := json.Marshal(m.d)
 	if err != nil {
+		(*Model)(m).Alerts().Add(fmt.Sprintf("Could not marshal recovery data: %s", err.Error()), Error)
 		return nil
 	}
 	if m.d.RecoveryFilePath != "" {

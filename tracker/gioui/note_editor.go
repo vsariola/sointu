@@ -144,7 +144,7 @@ func (te *NoteEditor) Layout(gtx layout.Context) layout.Dimensions {
 		}
 		copy(t.noteEvents, t.noteEvents[1:])
 		t.noteEvents = t.noteEvents[:len(t.noteEvents)-1]
-		tracker.TrySend(t.Broker().ToPlayer, any(ev))
+		tracker.TrySend(t.Broker().ToPlayer, any(&ev))
 	}
 
 	defer clip.Rect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)).Push(gtx.Ops).Pop()

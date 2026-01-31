@@ -508,9 +508,13 @@ func (t *MenuBar) Layout(gtx C) D {
 	midiBtn := MenuBtn(&t.MenuStates[2], &t.Clickables[2], "MIDI")
 	midiFC := layout.Rigid(func(gtx C) D {
 		return midiBtn.Layout(gtx,
-			ActionMenuChild(tr.MIDI().Refresh(), "Refresh port list", keyActionMap["MIDIRefresh"], icons.NavigationRefresh),
-			BoolMenuChild(tr.MIDI().InputtingNotes(), "Use for note input", keyActionMap["ToggleMIDIInputtingNotes"], icons.NavigationCheck),
+			BoolMenuChild(tr.MIDI().Binding(), "Bind to controller", keyActionMap["ToggleMIDIBinding"], icons.NavigationCheck),
+			ActionMenuChild(tr.MIDI().Unbind(), "Unbind", keyActionMap["MIDIUnbind"], icons.ImageLeakRemove),
+			ActionMenuChild(tr.MIDI().UnbindAll(), "Unbind all", keyActionMap["MIDIUnbindAll"], icons.ImageLeakRemove),
 			DividerMenuChild(),
+			BoolMenuChild(tr.MIDI().InputtingNotes(), "Input notes", keyActionMap["ToggleMIDIInputtingNotes"], icons.NavigationCheck),
+			DividerMenuChild(),
+			ActionMenuChild(tr.MIDI().Refresh(), "Refresh", keyActionMap["MIDIRefresh"], icons.NavigationRefresh),
 			IntMenuChild(tr.MIDI().Input(), icons.NavigationCheck),
 		)
 	})

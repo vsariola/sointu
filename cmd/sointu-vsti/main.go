@@ -97,12 +97,19 @@ func init() {
 					for i := 0; i < events.NumEvents(); i++ {
 						switch ev := events.Event(i).(type) {
 						case *vst2.MIDIEvent:
-							if ev.Data[0] >= 0x80 && ev.Data[0] <= 0x9F {
+							switch {
+							case ev.Data[0] >= 0x80 && ev.Data[0] <= 0x9F:
 								channel := ev.Data[0] & 0x0F
 								note := ev.Data[1]
 								on := ev.Data[0] >= 0x90
 								trackerEvent := tracker.NoteEvent{Timestamp: int64(ev.DeltaFrames) + totalFrames, On: on, Channel: int(channel), Note: note, Source: &context}
-								tracker.TrySend(broker.MIDIChannel(), any(trackerEvent))
+								tracker.TrySend(broker.ToMIDIRouter, any(&trackerEvent))
+							case ev.Data[0] >= 0xB0 && ev.Data[0] <= 0xBF:
+								channel := ev.Data[0] & 0x0F
+								controller := ev.Data[1]
+								value := ev.Data[2]
+								trackerEvent := tracker.ControlChange{Channel: int(channel), Control: int(controller), Value: int(value)}
+								tracker.TrySend(broker.ToMIDIRouter, any(&trackerEvent))
 							}
 						}
 					}

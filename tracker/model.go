@@ -36,6 +36,7 @@ type (
 		SendSource              int
 		InstrumentTab           InstrumentTab
 		PresetSearchString      string
+		MIDIBindings            MIDIBindings
 	}
 
 	Model struct {
@@ -202,14 +203,17 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 	m.Play().setSynther(0, false)
 	go runDetector(broker)
 	go runSpecAnalyzer(broker)
+	go runMIDIRouter(broker)
 	return m
 }
 
 func (m *Model) Close() {
 	TrySend(m.broker.CloseDetector, struct{}{})
 	TrySend(m.broker.CloseSpecAn, struct{}{})
+	TrySend(m.broker.CloseMIDIRouter, struct{}{})
 	TimeoutReceive(m.broker.FinishedDetector, 3*time.Second)
 	TimeoutReceive(m.broker.FinishedSpecAn, 3*time.Second)
+	TimeoutReceive(m.broker.FinishedMIDIRouter, 3*time.Second)
 }
 
 // RequestQuit asks the tracker to quit, showing a dialog if there are unsaved
@@ -385,6 +389,8 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 	case *Spectrum:
 		m.broker.PutSpectrum(m.spectrum)
 		m.spectrum = e
+	case *ControlChange:
+		m.MIDI().handleControlEvent(*e)
 	}
 }
 
@@ -393,6 +399,7 @@ func (m *Model) Broker() *Broker { return m.broker }
 func (d *modelData) Copy() modelData {
 	ret := *d
 	ret.Song = d.Song.Copy()
+	ret.MIDIBindings = d.MIDIBindings.Copy()
 	return ret
 }
 

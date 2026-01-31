@@ -145,8 +145,8 @@ func (t *Tracker) Main() {
 			select {
 			case e := <-t.Broker().ToGUI:
 				switch e := e.(type) {
-				case tracker.NoteEvent:
-					t.noteEvents = append(t.noteEvents, e)
+				case *tracker.NoteEvent:
+					t.noteEvents = append(t.noteEvents, *e)
 				case tracker.MsgToGUI:
 					switch e.Kind {
 					case tracker.GUIMessageCenterOnRow:
@@ -274,7 +274,7 @@ func (t *Tracker) Layout(gtx layout.Context) {
 		ev.Source = t
 		copy(t.noteEvents, t.noteEvents[1:])
 		t.noteEvents = t.noteEvents[:len(t.noteEvents)-1]
-		tracker.TrySend(t.Broker().ToPlayer, any(ev))
+		tracker.TrySend(t.Broker().ToPlayer, any(&ev))
 	}
 }
 

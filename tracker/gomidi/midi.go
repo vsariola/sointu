@@ -79,12 +79,15 @@ func (m RTMIDIInputDevice) Open() error {
 }
 
 func (m *RTMIDIInputDevice) handleMessage(msg midi.Message, timestampms int32) {
-	var channel, key, velocity uint8
+	var channel, key, velocity, controller, value uint8
 	if msg.GetNoteOn(&channel, &key, &velocity) {
 		ev := tracker.NoteEvent{Timestamp: int64(timestampms) * 441 / 10, On: true, Channel: int(channel), Note: key, Source: m}
-		tracker.TrySend(m.broker.MIDIChannel(), any(ev))
+		tracker.TrySend(m.broker.ToMIDIRouter, any(&ev))
 	} else if msg.GetNoteOff(&channel, &key, &velocity) {
 		ev := tracker.NoteEvent{Timestamp: int64(timestampms) * 441 / 10, On: false, Channel: int(channel), Note: key, Source: m}
-		tracker.TrySend(m.broker.MIDIChannel(), any(ev))
+		tracker.TrySend(m.broker.ToMIDIRouter, any(&ev))
+	} else if msg.GetControlChange(&channel, &controller, &value) {
+		ev := tracker.ControlChange{Channel: int(channel), Control: int(controller), Value: int(value)}
+		tracker.TrySend(m.broker.ToMIDIRouter, any(&ev))
 	}
 }

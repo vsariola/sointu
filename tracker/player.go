@@ -69,6 +69,12 @@ type (
 
 		playerTimestamp int64 // the timestamp of the event, adjusted to the player's clock, used to sort events
 	}
+
+	ControlChange struct {
+		Channel int
+		Control int
+		Value   int
+	}
 )
 
 type (
@@ -274,8 +280,8 @@ loop:
 					}
 				}
 				TrySend(p.broker.ToModel, MsgToModel{Reset: true})
-			case NoteEvent:
-				p.events = append(p.events, m)
+			case *NoteEvent:
+				p.events = append(p.events, *m)
 			case RecordingMsg:
 				if m.bool {
 					p.recording = Recording{State: RecordingWaitingForNote}

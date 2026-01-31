@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Ability to bind MIDI controllers to specific parameters. The MIDI menu has the
+  options to bind/unbind parameters. When the user starts binding a parameter,
+  Sointu waits for the next MIDI Control Change event and binds the currently
+  selected parameter to that controller. ([#152][i152])
 - Plot the envelope shape on top of the oscilloscope when the envelope unit is
   selected.
 - Spectrum analyzer showing the spectrum. When the user has a filter or belleq
@@ -389,6 +393,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i149]: https://github.com/vsariola/sointu/issues/149
 [i150]: https://github.com/vsariola/sointu/issues/150
 [i151]: https://github.com/vsariola/sointu/issues/151
+[i152]: https://github.com/vsariola/sointu/issues/152
 [i153]: https://github.com/vsariola/sointu/issues/153
 [i154]: https://github.com/vsariola/sointu/issues/154
 [i155]: https://github.com/vsariola/sointu/issues/155

@@ -28,6 +28,9 @@
 - { key: "E", shortcut: true, action: "InstrEnlargedToggle" }
 - { key: "K", shortcut: true, action: "LinkInstrTrackToggle" }
 - { key: "W", shortcut: true, action: "Quit" }
+- { key: "B", shortcut: true, action: "ToggleMIDIBinding" }
+- { key: "U", shortcut: true, action: "MIDIUnbind" }
+- { key: "U", shortcut: true, shift: true, action: "MIDIUnbindAll" }
 - { key: "Space", action: "PlayingToggleUnfollow" }
 - { key: "Space", shift: true, action: "PlayingToggleFollow" }
 - { key: "F1", action: "OrderEditorFocus" }

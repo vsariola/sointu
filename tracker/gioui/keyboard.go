@@ -32,7 +32,7 @@ func (t *Keyboard[T]) Press(key T, ev tracker.NoteEvent) {
 		ev.Source = t // set the source to this keyboard
 		ev.On = true
 		ev.Timestamp = t.now()
-		if tracker.TrySend(t.broker.ToPlayer, any(ev)) {
+		if tracker.TrySend(t.broker.ToPlayer, any(&ev)) {
 			t.pressed[key] = ev
 		}
 	}
@@ -42,7 +42,7 @@ func (t *Keyboard[T]) Release(key T) {
 	if ev, ok := t.pressed[key]; ok {
 		ev.Timestamp = t.now()
 		ev.On = false // the pressed contains the event we need to send to release the note
-		tracker.TrySend(t.broker.ToPlayer, any(ev))
+		tracker.TrySend(t.broker.ToPlayer, any(&ev))
 		delete(t.pressed, key)
 	}
 }
