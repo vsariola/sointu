@@ -243,7 +243,10 @@ func (m *MIDIModel) handleControlEvent(e ControlChange) {
 	if err != nil {
 		return
 	}
-	newVal := (e.Value*(t.Max-t.Min)+63)/127 + t.Min
+	// +62 is chose so that the center position of a typical MIDI controller,
+	// which is 64, maps to 64 of a 0..128 range Sointu parameter. From there
+	// on, 65 maps to 66 and, importantly, 127 maps to 128.
+	newVal := (e.Value*(t.Max-t.Min)+62)/127 + t.Min
 	if m.d.Song.Patch[i].Units[u].Parameters[t.Param] == newVal {
 		return
 	}
