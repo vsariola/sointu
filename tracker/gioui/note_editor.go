@@ -134,16 +134,20 @@ func (te *NoteEditor) Layout(gtx layout.Context) layout.Dimensions {
 		}
 	}
 
-	for gtx.Focused(te.scrollTable) && len(t.noteEvents) > 0 {
-		ev := t.noteEvents[0]
-		ev.IsTrack = true
-		ev.Channel = t.Model.Note().Cursor().X
-		ev.Source = te
+	for gtx.Focused(te.scrollTable) && len(t.midiMsgs) > 0 {
+		ev := tracker.NoteEvent{
+			Timestamp: t.midiMsgs[0].Timestamp,
+			Note:      t.midiMsgs[0].Data[1],
+			On:        t.midiMsgs[0].Data[0]&0xF0 != 0x80,
+			IsTrack:   true,
+			Channel:   t.Model.Note().Cursor().X,
+			Source:    t.midiMsgs[0].Source,
+		}
 		if ev.On {
 			t.Model.Note().Input(ev.Note)
 		}
-		copy(t.noteEvents, t.noteEvents[1:])
-		t.noteEvents = t.noteEvents[:len(t.noteEvents)-1]
+		copy(t.midiMsgs, t.midiMsgs[1:])
+		t.midiMsgs = t.midiMsgs[:len(t.midiMsgs)-1]
 		tracker.TrySend(t.Broker().ToPlayer, any(&ev))
 	}
 

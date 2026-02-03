@@ -203,17 +203,17 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 	m.Play().setSynther(0, false)
 	go runDetector(broker)
 	go runSpecAnalyzer(broker)
-	go runMIDIRouter(broker)
+	go runMIDIHandler(broker)
 	return m
 }
 
 func (m *Model) Close() {
 	TrySend(m.broker.CloseDetector, struct{}{})
 	TrySend(m.broker.CloseSpecAn, struct{}{})
-	TrySend(m.broker.CloseMIDIRouter, struct{}{})
+	TrySend(m.broker.CloseMIDIHandler, struct{}{})
 	TimeoutReceive(m.broker.FinishedDetector, 3*time.Second)
 	TimeoutReceive(m.broker.FinishedSpecAn, 3*time.Second)
-	TimeoutReceive(m.broker.FinishedMIDIRouter, 3*time.Second)
+	TimeoutReceive(m.broker.FinishedMIDIHandler, 3*time.Second)
 }
 
 // RequestQuit asks the tracker to quit, showing a dialog if there are unsaved
@@ -389,8 +389,10 @@ func (m *Model) ProcessMsg(msg MsgToModel) {
 	case *Spectrum:
 		m.broker.PutSpectrum(m.spectrum)
 		m.spectrum = e
-	case *ControlChange:
-		m.MIDI().handleControlEvent(*e)
+	case *MIDIMessage:
+		if channel, control, value, ok := e.getControlChange(); ok {
+			m.MIDI().handleControlEvent(int(channel), int(control), int(value))
+		}
 	}
 }
 

@@ -46,7 +46,7 @@ func (m *RTMIDIContext) Inputs(yield func(input tracker.MIDIInputDevice) bool) {
 	}
 	for _, in := range ins {
 		r := RTMIDIInputDevice{In: in, broker: m.broker}
-		if !yield(r) {
+		if !yield(&r) {
 			break
 		}
 	}
@@ -67,27 +67,21 @@ func (c *RTMIDIContext) Support() tracker.MIDISupport {
 }
 
 // Open an input device and starting the listener.
-func (m RTMIDIInputDevice) Open() error {
+func (m *RTMIDIInputDevice) Open(h func(msg *tracker.MIDIMessage)) error {
 	if err := m.In.Open(); err != nil {
 		return fmt.Errorf("opening MIDI input failed: %w", err)
 	}
-	if _, err := midi.ListenTo(m.In, m.handleMessage); err != nil {
+	q := func(msg midi.Message, timestampms int32) {
+		if len(msg.Bytes()) == 0 || len(msg.Bytes()) > 3 {
+			return
+		}
+		t := tracker.MIDIMessage{Timestamp: int64(timestampms) * 441 / 10, Source: m}
+		copy(t.Data[:], msg.Bytes())
+		h(&t)
+	}
+	if _, err := midi.ListenTo(m.In, q); err != nil {
 		m.In.Close()
 		return fmt.Errorf("listening to MIDI input failed: %w", err)
 	}
 	return nil
-}
-
-func (m *RTMIDIInputDevice) handleMessage(msg midi.Message, timestampms int32) {
-	var channel, key, velocity, controller, value uint8
-	if msg.GetNoteOn(&channel, &key, &velocity) {
-		ev := tracker.NoteEvent{Timestamp: int64(timestampms) * 441 / 10, On: true, Channel: int(channel), Note: key, Source: m}
-		tracker.TrySend(m.broker.ToMIDIRouter, any(&ev))
-	} else if msg.GetNoteOff(&channel, &key, &velocity) {
-		ev := tracker.NoteEvent{Timestamp: int64(timestampms) * 441 / 10, On: false, Channel: int(channel), Note: key, Source: m}
-		tracker.TrySend(m.broker.ToMIDIRouter, any(&ev))
-	} else if msg.GetControlChange(&channel, &controller, &value) {
-		ev := tracker.ControlChange{Channel: int(channel), Control: int(controller), Value: int(value)}
-		tracker.TrySend(m.broker.ToMIDIRouter, any(&ev))
-	}
 }

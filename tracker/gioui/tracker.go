@@ -51,7 +51,7 @@ type (
 		SongPanel   *SongPanel
 
 		filePathString tracker.String
-		noteEvents     []tracker.NoteEvent
+		midiMsgs       []*tracker.MIDIMessage
 
 		preferences Preferences
 
@@ -145,8 +145,8 @@ func (t *Tracker) Main() {
 			select {
 			case e := <-t.Broker().ToGUI:
 				switch e := e.(type) {
-				case *tracker.NoteEvent:
-					t.noteEvents = append(t.noteEvents, *e)
+				case *tracker.MIDIMessage:
+					t.midiMsgs = append(t.midiMsgs, e)
 				case tracker.MsgToGUI:
 					switch e.Kind {
 					case tracker.GUIMessageCenterOnRow:
@@ -267,13 +267,17 @@ func (t *Tracker) Layout(gtx layout.Context) {
 		}
 	}
 	// if no-one else handled the note events, we handle them here
-	for len(t.noteEvents) > 0 {
-		ev := t.noteEvents[0]
-		ev.IsTrack = false
-		ev.Channel = t.Model.Instrument().List().Selected()
-		ev.Source = t
-		copy(t.noteEvents, t.noteEvents[1:])
-		t.noteEvents = t.noteEvents[:len(t.noteEvents)-1]
+	for len(t.midiMsgs) > 0 {
+		ev := tracker.NoteEvent{
+			Timestamp: t.midiMsgs[0].Timestamp,
+			Note:      t.midiMsgs[0].Data[1],
+			On:        t.midiMsgs[0].Data[0]&0xF0 != 0x80,
+			IsTrack:   false,
+			Channel:   t.Model.Instrument().List().Selected(),
+			Source:    t.midiMsgs[0].Source,
+		}
+		copy(t.midiMsgs, t.midiMsgs[1:])
+		t.midiMsgs = t.midiMsgs[:len(t.midiMsgs)-1]
 		tracker.TrySend(t.Broker().ToPlayer, any(&ev))
 	}
 }

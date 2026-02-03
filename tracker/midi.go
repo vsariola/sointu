@@ -11,8 +11,8 @@ func (m *Model) MIDI() *MIDIModel { return (*MIDIModel)(m) }
 
 type (
 	midiState struct {
-		noteEventsToGui bool
-		binding         bool
+		binding bool
+		router  midiRouter
 
 		currentInput MIDIInputDevice
 		context      MIDIContext
@@ -26,7 +26,7 @@ type (
 	}
 
 	MIDIInputDevice interface {
-		Open() error
+		Open(func(msg *MIDIMessage)) error
 		Close() error
 		IsOpen() bool
 		String() string
@@ -56,7 +56,10 @@ func (m *midiRefresh) Do() {
 		if m.midi.currentInput != nil && i.String() == m.midi.currentInput.String() {
 			m.midi.currentInput.Close()
 			m.midi.currentInput = nil
-			if err := i.Open(); err != nil {
+			handler := func(msg *MIDIMessage) {
+				TrySend(m.broker.ToMIDIHandler, any(msg))
+			}
+			if err := i.Open(handler); err != nil {
 				(*Model)(m).Alerts().Add(fmt.Sprintf("Failed to reopen MIDI input port: %s", err.Error()), Error)
 				continue
 			}
@@ -96,7 +99,10 @@ func (m *midiInputDevices) SetValue(val int) bool {
 		return true
 	}
 	newInput := m.midi.inputs[val-1]
-	if err := newInput.Open(); err != nil {
+	handler := func(msg *MIDIMessage) {
+		TrySend(m.broker.ToMIDIHandler, any(msg))
+	}
+	if err := newInput.Open(handler); err != nil {
 		(*Model)(m).Alerts().Add(fmt.Sprintf("Failed to open MIDI input port: %s", err.Error()), Error)
 		return false
 	}
@@ -131,34 +137,82 @@ func (m *MIDIModel) InputtingNotes() Bool { return MakeBool((*midiInputtingNotes
 
 type midiInputtingNotes Model
 
-func (m *midiInputtingNotes) Value() bool { return m.midi.noteEventsToGui }
+func (m *midiInputtingNotes) Value() bool { return m.midi.router.sendNoteEventsToGUI }
 func (m *midiInputtingNotes) SetValue(val bool) {
-	m.midi.noteEventsToGui = val
-	TrySend(m.broker.ToMIDIRouter, any(setNoteEventsToGUI(val)))
+	m.midi.router.sendNoteEventsToGUI = val
+	TrySend(m.broker.ToMIDIHandler, any(m.midi.router))
+	TrySend(m.broker.ToPlayer, any(m.midi.router))
 }
 
-type setNoteEventsToGUI bool
+// MIDIMessage represents a MIDI message received from a MIDI input port or VST
+// host.
+type MIDIMessage struct {
+	Timestamp int64 // in samples (at 44100 Hz)
+	Data      [3]byte
+	Source    any // tag to identify the source of the message; any unique pointer will do
+}
 
-func runMIDIRouter(broker *Broker) {
-	noteEventsToGUI := false
+func (m *MIDIMessage) isNoteOff() bool       { return m.Data[0]&0xF0 == 0x80 }
+func (m *MIDIMessage) isNoteOn() bool        { return m.Data[0]&0xF0 == 0x90 }
+func (m *MIDIMessage) isControlChange() bool { return m.Data[0]&0xF0 == 0xB0 }
+
+func (m *MIDIMessage) getNoteOn() (channel, note, velocity byte, ok bool) {
+	if !m.isNoteOn() {
+		return 0, 0, 0, false
+	}
+	return m.Data[0] & 0x0F, m.Data[1], m.Data[2], true
+}
+
+func (m *MIDIMessage) getNoteOff() (channel, note, velocity byte, ok bool) {
+	if !m.isNoteOff() {
+		return 0, 0, 0, false
+	}
+	return m.Data[0] & 0x0F, m.Data[1], m.Data[2], true
+}
+
+func (m *MIDIMessage) getControlChange() (channel, controller, value byte, ok bool) {
+	if !m.isControlChange() {
+		return 0, 0, 0, false
+	}
+	return m.Data[0] & 0x0F, m.Data[1], m.Data[2], true
+}
+
+// midiRouter encompasses all the necessary information where MIDIMessages
+// should be forwarded. MIDIHandler and Player have their own copies of the
+// midiRouter so that the messages don't have to pass through other goroutines
+// to be routed. Model has also a copy to display a gui to modify it.
+type midiRouter struct {
+	sendNoteEventsToGUI bool
+}
+
+func (r *midiRouter) route(b *Broker, msg *MIDIMessage) (ok bool) {
+	switch {
+	case msg.isNoteOn() || msg.isNoteOff():
+		if r.sendNoteEventsToGUI {
+			return TrySend(b.ToGUI, any(msg))
+		} else {
+			return TrySend(b.ToPlayer, any(msg))
+		}
+	case msg.isControlChange():
+		return TrySend(b.ToModel, MsgToModel{Data: msg})
+	}
+	return false
+}
+
+func runMIDIHandler(b *Broker) {
+	router := midiRouter{sendNoteEventsToGUI: false}
 	for {
 		select {
-		case <-broker.CloseMIDIRouter:
-			close(broker.FinishedMIDIRouter)
-			return
-		case msg := <-broker.ToMIDIRouter:
-			switch m := msg.(type) {
-			case setNoteEventsToGUI:
-				noteEventsToGUI = bool(m)
-			case *NoteEvent:
-				if noteEventsToGUI {
-					TrySend(broker.ToGUI, msg)
-					continue
-				}
-				TrySend(broker.ToPlayer, msg)
-			case *ControlChange:
-				TrySend(broker.ToModel, MsgToModel{Data: msg})
+		case v := <-b.ToMIDIHandler:
+			switch msg := v.(type) {
+			case *MIDIMessage:
+				router.route(b, msg)
+			case midiRouter:
+				router = msg
 			}
+		case <-b.CloseMIDIHandler:
+			close(b.FinishedMIDIHandler)
+			return
 		}
 	}
 }
@@ -223,8 +277,8 @@ func (m *MIDIModel) selectedParam() (MIDIParam, bool) {
 	return value, true
 }
 
-func (m *MIDIModel) handleControlEvent(e ControlChange) {
-	key := MIDIControl{Channel: e.Channel, Control: e.Control}
+func (m *MIDIModel) handleControlEvent(channel, control, value int) {
+	key := MIDIControl{Channel: channel, Control: control}
 	if m.midi.binding {
 		m.midi.binding = false
 		value, ok := m.selectedParam()
@@ -246,7 +300,7 @@ func (m *MIDIModel) handleControlEvent(e ControlChange) {
 	// +62 is chose so that the center position of a typical MIDI controller,
 	// which is 64, maps to 64 of a 0..128 range Sointu parameter. From there
 	// on, 65 maps to 66 and, importantly, 127 maps to 128.
-	newVal := (e.Value*(t.Max-t.Min)+62)/127 + t.Min
+	newVal := (value*(t.Max-t.Min)+62)/127 + t.Min
 	if m.d.Song.Patch[i].Units[u].Parameters[t.Param] == newVal {
 		return
 	}

@@ -30,6 +30,8 @@ type (
 		frameDeltas map[any]int64 // Player.frame (approx.)= event.Timestamp + frameDeltas[event.Source]
 		events      NoteEventList
 
+		midiRouter midiRouter
+
 		status PlayerStatus // the part of the Player state that is communicated to the model to visualize what Player is doing
 
 		synther sointu.Synther // the synther used to create new synths
@@ -180,6 +182,8 @@ func (p *Player) Process(buffer sointu.AudioBuffer, context PlayerProcessContext
 	p.SendAlert("PlayerCrash", fmt.Sprintf("synth did not fill the audio buffer even with %d render calls", numRenderTries), Error)
 }
 
+func (p *Player) EmitMIDIMsg(msg *MIDIMessage) bool { return p.midiRouter.route(p.broker, msg) }
+
 func (p *Player) destroySynth() {
 	if p.synth != nil {
 		p.synth.Close()
@@ -282,6 +286,20 @@ loop:
 				TrySend(p.broker.ToModel, MsgToModel{Reset: true})
 			case *NoteEvent:
 				p.events = append(p.events, *m)
+			case *MIDIMessage:
+				// In future, here we should map midi channels to various
+				// instruments, possible mapping the velocity to another
+				// instrument as well
+				if m.Data[0] >= 0x80 && m.Data[0] <= 0x9F {
+					p.events = append(p.events, NoteEvent{
+						Timestamp: m.Timestamp,
+						Channel:   int(m.Data[0] & 0x0F),
+						Note:      m.Data[1],
+						On:        m.Data[0] >= 0x90,
+						Source:    m.Source})
+				}
+			case midiRouter:
+				p.midiRouter = m
 			case RecordingMsg:
 				if m.bool {
 					p.recording = Recording{State: RecordingWaitingForNote}
