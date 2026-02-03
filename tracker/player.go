@@ -71,12 +71,6 @@ type (
 
 		playerTimestamp int64 // the timestamp of the event, adjusted to the player's clock, used to sort events
 	}
-
-	ControlChange struct {
-		Channel int
-		Control int
-		Value   int
-	}
 )
 
 type (
