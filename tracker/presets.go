@@ -167,6 +167,7 @@ func (m *presetResultList) SetSelected(i int) {
 	newInstr := m.presetData.cache.results[i].instr.Copy()
 	newInstr.NumVoices = clamp(m.d.Song.Patch[m.d.InstrIndex].NumVoices, 1, vm.MAX_VOICES)
 	(*Model)(m).assignUnitIDs(newInstr.Units)
+	newInstr.MIDI = m.d.Song.Patch[m.d.InstrIndex].MIDI // keep the MIDI config of the current instrument
 	m.d.Song.Patch[m.d.InstrIndex] = newInstr
 }
 

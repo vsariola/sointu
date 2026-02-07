@@ -24,7 +24,8 @@ type (
 		// ThreadMaskM1 is a bit mask of which threads are used, minus 1. Minus
 		// 1 is done so that the default value 0 means bit mask 0b0001 i.e. only
 		// thread 1 is rendering the instrument.
-		ThreadMaskM1 int `yaml:",omitempty"`
+		ThreadMaskM1 int  `yaml:",omitempty"`
+		MIDI         MIDI `yaml:",flow,omitempty"`
 		Units        []Unit
 	}
 
@@ -62,6 +63,16 @@ type (
 		// instead of/besides the type of the unit in the GUI, to make it easier
 		// to track what the unit is doing & to make it easier to target sends.
 		Comment string `yaml:",omitempty"`
+	}
+
+	MIDI struct { // contains info on how MIDI events should trigger this instrument; if empty, then the instrument is not triggered by MIDI events
+		Channel       int  `yaml:",omitempty"` // 0 means automatically assigned channel, 1-16 means MIDI channel 1-16
+		Start         int  `yaml:",omitempty"` // MIDI note number to start on, 0-127
+		End           int  `yaml:",omitempty"` // MIDI note number to end on, counted backwards from 127, done so that the default number of 0 corresponds to "full keyboard", without any splittings
+		Transpose     int  `yaml:",omitempty"` // value to be added to the MIDI note/velocity number, can be negative
+		Velocity      bool `yaml:",omitempty"` // is this instrument triggered by midi event velocity or note
+		NoRetrigger   bool `yaml:",omitempty"` // if true, then this instrument does not retrigger if two consecutive events have the same value
+		IgnoreNoteOff bool `yaml:",omitempty"` // if true, then this instrument should ignore note off events, i.e. notes never release
 	}
 
 	ParamMap map[string]int

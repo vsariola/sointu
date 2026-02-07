@@ -175,7 +175,7 @@ func (recording *Recording) Score(patch sointu.Patch, rowsPerBeat, rowsPerPatter
 				order[k] = len(patterns)
 				patterns = append(patterns, newPat)
 			}
-			track := sointu.Track{NumVoices: numVoices, Effect: false, Order: order, Patterns: patterns}
+			track := sointu.Track{NumVoices: numVoices, Effect: patch[i].MIDI.Velocity, Order: order, Patterns: patterns}
 			songTracks = append(songTracks, track)
 		}
 	}

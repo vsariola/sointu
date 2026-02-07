@@ -3,6 +3,8 @@ package tracker
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/vsariola/sointu"
 )
 
 type MIDIModel Model
@@ -142,6 +144,239 @@ func (m *midiInputtingNotes) SetValue(val bool) {
 	m.midi.router.sendNoteEventsToGUI = val
 	TrySend(m.broker.ToMIDIHandler, any(m.midi.router))
 	TrySend(m.broker.ToPlayer, any(m.midi.router))
+}
+
+// Transpose returns an Int controlling the MIDI transpose value of the
+// currently selected instrument.
+func (m *MIDIModel) Transpose() Int { return MakeInt((*midiTranspose)(m)) }
+
+type midiTranspose MIDIModel
+
+func (m *midiTranspose) Value() int {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return 0
+	}
+	return m.d.Song.Patch[i].MIDI.Transpose
+}
+func (m *midiTranspose) SetValue(val int) bool {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return false
+	}
+	defer (*Model)(m).change("MIDITranspose", PatchChange, MinorChange)()
+	m.d.Song.Patch[i].MIDI.Transpose = val
+	return true
+}
+func (m *midiTranspose) Range() RangeInclusive { return RangeInclusive{-127, 127} }
+
+// NoteStart returns an Int controlling the MIDI note start value of the
+// currently selected instrument.
+func (m *MIDIModel) NoteStart() Int { return MakeInt((*midiNoteStart)(m)) }
+
+type midiNoteStart MIDIModel
+
+func (m *midiNoteStart) Value() int {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return 0
+	}
+	return m.d.Song.Patch[i].MIDI.Start
+}
+func (m *midiNoteStart) SetValue(val int) bool {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return false
+	}
+	defer (*Model)(m).change("MIDINoteStart", PatchChange, MinorChange)()
+	m.d.Song.Patch[i].MIDI.Start = val
+	return true
+}
+func (m *midiNoteStart) Range() RangeInclusive { return RangeInclusive{0, 127} }
+
+// NoteEnd returns an Int controlling the MIDI note end value of the
+// currently selected instrument.
+func (m *MIDIModel) NoteEnd() Int { return MakeInt((*midiNoteEnd)(m)) }
+
+type midiNoteEnd MIDIModel
+
+func (m *midiNoteEnd) Value() int {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return 0
+	}
+	return 127 - m.d.Song.Patch[i].MIDI.End
+}
+func (m *midiNoteEnd) SetValue(val int) bool {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return false
+	}
+	defer (*Model)(m).change("MIDINoteEnd", PatchChange, MinorChange)()
+	m.d.Song.Patch[i].MIDI.End = 127 - val
+	return true
+}
+func (m *midiNoteEnd) Range() RangeInclusive { return RangeInclusive{0, 127} }
+
+// Velocity returns a Bool controlling whether the velocity value from MIDI
+// event is used instead of the normal note value
+func (m *MIDIModel) Velocity() Bool { return MakeBool((*midiVelocity)(m)) }
+
+type midiVelocity MIDIModel
+
+func (m *midiVelocity) Value() bool {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return false
+	}
+	return m.d.Song.Patch[i].MIDI.Velocity
+}
+func (m *midiVelocity) SetValue(val bool) {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return
+	}
+	defer (*Model)(m).change("MIDIVelocity", PatchChange, MinorChange)()
+	m.d.Song.Patch[i].MIDI.Velocity = val
+}
+
+// Change returns a Bool controlling whether only the change in note or velocity value is used
+func (m *MIDIModel) Change() Bool { return MakeBool((*midiChange)(m)) }
+
+type midiChange MIDIModel
+
+func (m *midiChange) Value() bool {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return false
+	}
+	return m.d.Song.Patch[i].MIDI.NoRetrigger
+}
+func (m *midiChange) SetValue(val bool) {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return
+	}
+	defer (*Model)(m).change("MIDIChange", PatchChange, MinorChange)()
+	m.d.Song.Patch[i].MIDI.NoRetrigger = val
+}
+
+// IgnoreNoteOff returns a Bool controlling whether note off events are ignored
+func (m *MIDIModel) IgnoreNoteOff() Bool { return MakeBool((*midiIgnoreNoteOff)(m)) }
+
+type midiIgnoreNoteOff MIDIModel
+
+func (m *midiIgnoreNoteOff) Value() bool {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return false
+	}
+	return m.d.Song.Patch[i].MIDI.IgnoreNoteOff
+}
+func (m *midiIgnoreNoteOff) SetValue(val bool) {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return
+	}
+	defer (*Model)(m).change("MIDIIgnoreNoteOff", PatchChange, MinorChange)()
+	m.d.Song.Patch[i].MIDI.IgnoreNoteOff = val
+}
+
+// Channel returns an Int controlling the MIDI channel of the currently selected
+// instrument. 0 = automatically selected, 1-16 fixed to specific MIDI channel
+func (m *MIDIModel) Channel() Int { return MakeInt((*midiChannel)(m)) }
+
+type midiChannel MIDIModel
+
+func (m *midiChannel) Value() int {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return 0
+	}
+	return m.d.Song.Patch[i].MIDI.Channel
+}
+func (m *midiChannel) SetValue(val int) bool {
+	i := m.d.InstrIndex
+	if i < 0 || i >= len(m.d.Song.Patch) {
+		return false
+	}
+	defer (*Model)(m).change("MIDIChannel", PatchChange, MinorChange)()
+	m.d.Song.Patch[i].MIDI.Channel = val
+	return true
+}
+func (m *midiChannel) Range() RangeInclusive { return RangeInclusive{0, 16} }
+
+type (
+	midiAssigns struct {
+		ctoi map[midiAssignKey][]midiAssignRange // map to quickly find which instruments to trigger
+		itoc []int                               // slice to quickly find which MIDI channel was assigned for a given instrument
+	}
+	midiAssignKey struct {
+		Channel  int
+		Velocity bool
+	}
+	midiAssignRange struct {
+		Start, End byte
+		Instr      int
+	}
+)
+
+const MAX_MIDI_CHANNELS = 16
+
+// update tries to assign MIDI channels to instruments that have MIDI channel 0
+// (automatic) in a way that minimizes the number of channels used. It also
+// updates the ctoi and itoc maps for quick lookup when routing MIDI messages.
+// The algorithm iterates through the instruments and, for those with automatic
+// channel, it tries to find the lowest MIDI channel that doesn't have an
+// overlapping note range with any of the already assigned instruments with the
+// same velocity setting. If it runs out of channels, it leaves the rest of the
+// instruments unassigned (channel 0).
+func (a *midiAssigns) update(p sointu.Patch) {
+	for k := range a.ctoi {
+		a.ctoi[k] = a.ctoi[k][:0] // clear all slices, keeping their allocated memory
+	}
+	a.itoc = a.itoc[:0]
+	for i, instr := range p {
+		if instr.MIDI.Channel != 0 {
+			k := midiAssignKey{Channel: instr.MIDI.Channel, Velocity: instr.MIDI.Velocity}
+			v := midiAssignRange{Start: byte(max(instr.MIDI.Start, 0)), End: byte(min(127-instr.MIDI.End, 127)), Instr: i}
+			a.ctoi[k] = append(a.ctoi[k], v)
+		}
+	}
+	k := midiAssignKey{Channel: 1, Velocity: false}
+outer:
+	for i, e := range p {
+		if e.MIDI.Channel > 0 { // already assigned to a specific channel, so skip automatic assignment
+			a.itoc = append(a.itoc, e.MIDI.Channel)
+			continue
+		}
+		k.Velocity = e.MIDI.Velocity
+		x := midiAssignRange{Start: byte(max(e.MIDI.Start, 0)), End: byte(min(127-e.MIDI.End, 127)), Instr: i}
+	inner:
+		for {
+			for _, y := range a.ctoi[k] {
+				if max(x.Start, y.Start) <= min(x.End, y.End) {
+					if k.Channel >= MAX_MIDI_CHANNELS {
+						break outer // we've ran out of channels, leave the rest unassigned
+					}
+					k.Channel++
+					continue inner // this channel is already taken for the overlapping range, try next channel
+				}
+			}
+			break // this channel had no overlaps with the already assigned ranges, so we can use it
+		}
+		a.ctoi[k] = append(a.ctoi[k], x)
+		a.itoc = append(a.itoc, k.Channel)
+	}
+}
+
+func (a *midiAssigns) forEach(chn int, vel bool, val byte, cb func(instr int, val byte)) {
+	k := midiAssignKey{Channel: chn, Velocity: vel}
+	for _, r := range a.ctoi[k] {
+		if r.Start <= val && val <= r.End {
+			cb(r.Instr, val)
+		}
+	}
 }
 
 // MIDIMessage represents a MIDI message received from a MIDI input port or VST

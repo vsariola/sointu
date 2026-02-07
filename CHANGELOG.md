@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- MIDI velocity, keyboard splitting, forcing specific instrument to use
+  particular MIDI channel, and ability to transpose the incoming note values.
+  These settings can be configured under instrument properties. ([#124][i124],
+  [#215][i215], [#221][i221])
 - Ability to bind MIDI controllers to specific parameters. The MIDI menu has the
   options to bind/unbind parameters. When the user starts binding a parameter,
   Sointu waits for the next MIDI Control Change event and binds the currently
@@ -378,6 +382,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i120]: https://github.com/vsariola/sointu/issues/120
 [i121]: https://github.com/vsariola/sointu/issues/121
 [i122]: https://github.com/vsariola/sointu/issues/122
+[i124]: https://github.com/vsariola/sointu/issues/124
 [i125]: https://github.com/vsariola/sointu/issues/125
 [i128]: https://github.com/vsariola/sointu/issues/128
 [i129]: https://github.com/vsariola/sointu/issues/129
@@ -417,3 +422,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i200]: https://github.com/vsariola/sointu/issues/200
 [i210]: https://github.com/vsariola/sointu/issues/210
 [i211]: https://github.com/vsariola/sointu/issues/211
+[i215]: https://github.com/vsariola/sointu/issues/215
+[i221]: https://github.com/vsariola/sointu/issues/221

@@ -75,9 +75,9 @@ func (m *splitInstrument) Do() {
 }
 
 // Item returns information about the instrument at a given index.
-func (v *InstrModel) Item(i int) (name string, maxLevel float32, mute bool, ok bool) {
+func (v *InstrModel) Item(i int) (name, title string, maxLevel float32, mute bool, ok bool) {
 	if i < 0 || i >= len(v.d.Song.Patch) {
-		return "", 0, false, false
+		return "", "", 0, false, false
 	}
 	name = v.d.Song.Patch[i].Name
 	mute = v.d.Song.Patch[i].Mute
@@ -92,6 +92,9 @@ func (v *InstrModel) Item(i int) (name string, maxLevel float32, mute bool, ok b
 				maxLevel = level
 			}
 		}
+	}
+	if i >= 0 && i < len(v.derived.patch) {
+		title = v.derived.patch[i].title
 	}
 	ok = true
 	return
@@ -478,6 +481,7 @@ success:
 	}
 	instrument.NumVoices = clamp(instrument.NumVoices, 1, 32-numVoices)
 	(*Model)(m).assignUnitIDs(instrument.Units)
+	instrument.MIDI = m.d.Song.Patch[m.d.InstrIndex].MIDI // keep the MIDI config of the current instrument
 	m.d.Song.Patch[m.d.InstrIndex] = instrument
 	return true
 }

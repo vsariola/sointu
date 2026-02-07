@@ -30,7 +30,9 @@ type (
 		frameDeltas map[any]int64 // Player.frame (approx.)= event.Timestamp + frameDeltas[event.Source]
 		events      NoteEventList
 
-		midiRouter midiRouter
+		midiRouter  midiRouter
+		midiAssigns midiAssigns
+		prevVal     []byte
 
 		status PlayerStatus // the part of the Player state that is communicated to the model to visualize what Player is doing
 
@@ -64,7 +66,7 @@ type (
 	NoteEvent struct {
 		Timestamp int64 // in frames, relative to whatever clock the source is using
 		On        bool
-		Channel   int
+		Channel   int // which track or instrument is triggered, depending on IsTrack
 		Note      byte
 		IsTrack   bool // true if "Channel" means track number, false if it means instrument number
 		Source    any
@@ -90,6 +92,7 @@ func NewPlayer(broker *Broker, synther sointu.Synther) *Player {
 		broker:      broker,
 		synther:     synther,
 		frameDeltas: make(map[any]int64),
+		midiAssigns: midiAssigns{ctoi: map[midiAssignKey][]midiAssignRange{}},
 	}
 }
 
@@ -183,6 +186,7 @@ func (p *Player) destroySynth() {
 		p.synth.Close()
 		p.synth = nil
 	}
+	p.prevVal = p.prevVal[:0]
 }
 
 func (p *Player) advanceRow() {
@@ -281,16 +285,31 @@ loop:
 			case *NoteEvent:
 				p.events = append(p.events, *m)
 			case *MIDIMessage:
-				// In future, here we should map midi channels to various
-				// instruments, possible mapping the velocity to another
-				// instrument as well
 				if m.Data[0] >= 0x80 && m.Data[0] <= 0x9F {
-					p.events = append(p.events, NoteEvent{
-						Timestamp: m.Timestamp,
-						Channel:   int(m.Data[0] & 0x0F),
-						Note:      m.Data[1],
-						On:        m.Data[0] >= 0x90,
-						Source:    m.Source})
+					chn := int(m.Data[0]&0x0F) + 1
+					note := m.Data[1]
+					velocity := m.Data[2]
+					on := m.Data[0] >= 0x90
+					cb := func(i int, v byte) {
+						if i < 0 || i >= len(p.song.Patch) {
+							return
+						}
+						instr := p.song.Patch[i]
+						if instr.MIDI.IgnoreNoteOff && !on {
+							return // instruments configured to ignore note offs never release
+						}
+						n := byte(min(max(int(v)+instr.MIDI.Transpose, 2), 255)) // 0 and 1 have special meaning
+						if instr.MIDI.NoRetrigger && on && i < len(p.prevVal) && p.prevVal[i] == n {
+							return // the instrument is configured to respond only to changes in values and there was no change
+						}
+						p.events = append(p.events, NoteEvent{Timestamp: m.Timestamp, Channel: i, Note: n, On: on, Source: m.Source})
+						for len(p.prevVal) <= i {
+							p.prevVal = append(p.prevVal, 0)
+						}
+						p.prevVal[i] = n
+					}
+					p.midiAssigns.forEach(chn, false, note, cb)    // trigger instruments that are configured to respond to this midi channel's note events
+					p.midiAssigns.forEach(chn, true, velocity, cb) // trigger instruments that are configured to respond to this midi channel's velocity events
 				}
 			case midiRouter:
 				p.midiRouter = m
@@ -401,6 +420,7 @@ func (p *Player) compileOrUpdateSynth() {
 		}
 		voice += instr.NumVoices
 	}
+	p.midiAssigns.update(p.song.Patch)
 }
 
 // all sendTargets from player are always non-blocking, to ensure that the player thread cannot end up in a dead-lock

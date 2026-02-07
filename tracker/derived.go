@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/vsariola/sointu"
@@ -45,6 +46,7 @@ type (
 		railWidth   int
 		params      [][]Parameter
 		paramsWidth int
+		title       string
 	}
 
 	derivedTrack struct {
@@ -72,6 +74,25 @@ func (m *Model) updateDeriveData(changeType ChangeType) {
 		m.updateParams()
 		m.updateRails()
 		m.updateWires()
+		m.buildInstrumentTitles()
+	}
+}
+
+func (m *Model) buildInstrumentTitles() {
+	m.midiAssign.update(m.d.Song.Patch)
+	for i, instr := range m.d.Song.Patch {
+		if i >= len(m.midiAssign.itoc) || m.midiAssign.itoc[i] == 0 {
+			m.derived.patch[i].title = "---"
+			continue
+		}
+		t := strconv.Itoa(m.midiAssign.itoc[i])
+		if instr.MIDI.Velocity {
+			t = t + " vel"
+		}
+		if instr.MIDI.Start > 0 || instr.MIDI.End > 0 {
+			t = t + fmt.Sprintf(" [%d-%d]", instr.MIDI.Start, 127-instr.MIDI.End)
+		}
+		m.derived.patch[i].title = t
 	}
 }
 

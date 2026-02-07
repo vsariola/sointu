@@ -5,7 +5,6 @@ import (
 	"image"
 	"image/color"
 	"io"
-	"strconv"
 
 	"gioui.org/io/clipboard"
 	"gioui.org/io/event"
@@ -251,9 +250,9 @@ func (il *InstrumentList) Layout(gtx C) D {
 	gtx.Constraints.Max.Y = gtx.Dp(36)
 	gtx.Constraints.Min.Y = gtx.Dp(36)
 	element := func(gtx C, i int) D {
-		grabhandle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentList.Number, strconv.Itoa(i+1))
+		name, title, level, mute, ok := t.Instrument().Item(i)
+		grabhandle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentList.Number, title)
 		label := func(gtx C) D {
-			name, level, mute, ok := t.Instrument().Item(i)
 			if !ok {
 				labelStyle := Label(t.Theme, &t.Theme.InstrumentEditor.InstrumentList.Number, "")
 				return layout.Center.Layout(gtx, labelStyle.Layout)

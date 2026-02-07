@@ -90,7 +90,8 @@ type (
 
 		broker *Broker
 
-		midi midiState
+		midi       midiState
+		midiAssign midiAssigns
 
 		presetData presetData
 	}
@@ -177,6 +178,7 @@ func NewModel(broker *Broker, synthers []sointu.Synther, midiContext MIDIContext
 	m := new(Model)
 	m.synthers = synthers
 	m.midi = midiState{context: midiContext}
+	m.midiAssign = midiAssigns{ctoi: map[midiAssignKey][]midiAssignRange{}}
 	m.broker = broker
 	m.d.Octave = 4
 	m.linkInstrTrack = true
