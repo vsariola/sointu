@@ -316,6 +316,7 @@ loop:
 			case RecordingMsg:
 				if m.bool {
 					p.recording = Recording{State: RecordingWaitingForNote}
+					p.prevVal = p.prevVal[:0] // reset prevVal, so that instruments configured to respond only to changes in values would trigger correctly in the new recording
 				} else {
 					if p.recording.State == RecordingStarted && len(p.recording.Events) > 0 {
 						p.recording.Finish(p.frame, p.frameDeltas)
