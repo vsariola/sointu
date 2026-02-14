@@ -37,6 +37,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   roughly to -12 dBFS true peak. ([#211][i211])
 
 ### Fixed
+- VSTi queries the host sample rate more robustly. Cubase previously reported
+  the sample rate as 0 Hz, leading to persistent error message about the sample
+  rate not being 44100 Hz. ([#222][i222])
 - Occasional NaNs in the Trisaw oscillator when the color was 0 in the Go VM.
 - The tracker thought that "sync" unit pops the value from stack, even if the VM
   did not, resulting it claiming errors in patches that worked once compiled.
@@ -427,3 +430,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i211]: https://github.com/vsariola/sointu/issues/211
 [i215]: https://github.com/vsariola/sointu/issues/215
 [i221]: https://github.com/vsariola/sointu/issues/221
+[i222]: https://github.com/vsariola/sointu/issues/222

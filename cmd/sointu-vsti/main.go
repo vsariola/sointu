@@ -34,6 +34,14 @@ func (c *VSTIProcessContext) BPM() (bpm float64, ok bool) {
 	return timeInfo.Tempo, true
 }
 
+func (c *VSTIProcessContext) SampleRate() (samplerate float64, ok bool) {
+	timeInfo := c.host.GetTimeInfo(0)
+	if timeInfo == nil || timeInfo.SampleRate == 0 {
+		return 0, false
+	}
+	return timeInfo.SampleRate, true
+}
+
 func init() {
 	var (
 		version = int32(100)
@@ -60,6 +68,7 @@ func init() {
 		context := &VSTIProcessContext{host: h}
 		buf := make(sointu.AudioBuffer, 1024)
 		var totalFrames int64 = 0
+		start := time.Now()
 		return vst2.Plugin{
 				UniqueID:       [4]byte{'S', 'n', 't', 'u'},
 				Version:        version,
@@ -70,8 +79,11 @@ func init() {
 				Category:       vst2.PluginCategorySynth,
 				Flags:          vst2.PluginIsSynth,
 				ProcessFloatFunc: func(in, out vst2.FloatBuffer) {
-					if s := h.GetSampleRate(); math.Abs(float64(h.GetSampleRate()-44100.0)) > 1e-6 {
-						player.SendAlert("WrongSampleRate", fmt.Sprintf("VSTi host sample rate is %.0f Hz; sointu supports 44100 Hz only", s), tracker.Error)
+					if time.Since(start) > 2*time.Second { // limit the rate we query the samplerate from the host and send alerts
+						if s, ok := context.SampleRate(); ok && math.Abs(float64(s-44100.0)) > 1e-6 {
+							player.SendAlert("WrongSampleRate", fmt.Sprintf("VSTi host sample rate is %.0f Hz; Sointu supports 44100 Hz only", s), tracker.Error)
+						}
+						start = time.Now()
 					}
 					left := out.Channel(0)
 					right := out.Channel(1)
