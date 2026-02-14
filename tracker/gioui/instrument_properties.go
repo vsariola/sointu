@@ -35,6 +35,8 @@ type (
 		noteEnd       *NumericUpDownState
 		transpose     *NumericUpDownState
 		midiChannel   *NumericUpDownState
+
+		scrollBar ScrollBar
 	}
 )
 
@@ -55,6 +57,7 @@ func NewInstrumentProperties() *InstrumentProperties {
 		noteEnd:            NewNumericUpDownState(),
 		transpose:          NewNumericUpDownState(),
 		midiChannel:        NewNumericUpDownState(),
+		scrollBar:          ScrollBar{Axis: layout.Vertical},
 	}
 	ret.soloHint = makeHint("Solo", " (%s)", "SoloToggle")
 	ret.unsoloHint = makeHint("Unsolo", " (%s)", "SoloToggle")
@@ -96,9 +99,9 @@ func (ip *InstrumentProperties) layout(gtx C) D {
 			layout.Rigid(thread4btn.Layout),
 		)
 	}
-	gtx.Constraints.Max.X = min(gtx.Dp(300), gtx.Constraints.Max.X)
-	gtx.Constraints.Min.X = min(gtx.Constraints.Max.X, gtx.Constraints.Min.X)
-	return ip.list.Layout(gtx, 18, func(gtx C, index int) D {
+	ret := ip.list.Layout(gtx, 18, func(gtx C, index int) D {
+		gtx.Constraints.Max.X = min(gtx.Dp(300), gtx.Constraints.Max.X)
+		gtx.Constraints.Min.X = min(gtx.Constraints.Max.X, gtx.Constraints.Min.X)
 		switch index {
 		case 0:
 			return layoutInstrumentPropertyLine(gtx, "Name", func(gtx C) D {
@@ -154,6 +157,8 @@ func (ip *InstrumentProperties) layout(gtx C) D {
 			return D{Size: image.Pt(gtx.Constraints.Max.X, px)}
 		}
 	})
+	ip.scrollBar.Layout(gtx, &tr.Theme.ScrollBar, 18, &ip.list.Position)
+	return ret
 }
 
 func layoutInstrumentPropertyLine(gtx C, text string, content layout.Widget) D {
