@@ -43,7 +43,7 @@ func init() {
 		if configDir, err := os.UserConfigDir(); err == nil {
 			randBytes := make([]byte, 16)
 			rand.Read(randBytes)
-			recoveryFile = filepath.Join(configDir, "sointu", "sointu-vsti-recovery-"+hex.EncodeToString(randBytes))
+			recoveryFile = filepath.Join(configDir, "sointu", "recovery", "sointu-vsti-recovery-"+hex.EncodeToString(randBytes)+".json")
 		}
 		broker := tracker.NewBroker()
 		model := tracker.NewModel(broker, cmd.Synthers, cmd.NewMidiContext(broker), recoveryFile)

@@ -42,7 +42,7 @@ func main() {
 	}
 	recoveryFile := ""
 	if configDir, err := os.UserConfigDir(); err == nil {
-		recoveryFile = filepath.Join(configDir, "Sointu", "sointu-track-recovery")
+		recoveryFile = filepath.Join(configDir, "sointu", "recovery", "sointu-track-recovery.json")
 	}
 	broker := tracker.NewBroker()
 	midiContext := cmd.NewMidiContext(broker)

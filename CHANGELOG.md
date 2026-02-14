@@ -42,6 +42,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   did not, resulting it claiming errors in patches that worked once compiled.
 
 ### Changed
+- Recovery files were moved to `os.UserConfigDir()/sointu/recovery/` instead of
+  `os.UserConfigDir()/sointu/` so that they don't pollute the main configuration
+  directory and so that it's easy to delete just the recovery files.
 - Tracker model supports now enum-style values, which are integers that have a
   name associated with them. These enums are used to display menus where you
   select one of the options, for example in the MIDI menu to choose one of the
