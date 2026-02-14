@@ -470,18 +470,9 @@ success:
 	for len(m.d.Song.Patch) <= m.d.InstrIndex {
 		m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
 	}
-	m.d.Song.Patch[m.d.InstrIndex] = sointu.Instrument{}
-	numVoices := m.d.Song.Patch.NumVoices()
-	if numVoices >= vm.MAX_VOICES {
-		// this really shouldn't happen, as we have already cleared the
-		// instrument and assuming each instrument has at least 1 voice, it
-		// should have freed up some voices
-		(*Model)(m).Alerts().Add(fmt.Sprintf("The patch has already %d voices", vm.MAX_VOICES), Error)
-		return false
-	}
-	instrument.NumVoices = clamp(instrument.NumVoices, 1, 32-numVoices)
 	(*Model)(m).assignUnitIDs(instrument.Units)
-	instrument.MIDI = m.d.Song.Patch[m.d.InstrIndex].MIDI // keep the MIDI config of the current instrument
-	m.d.Song.Patch[m.d.InstrIndex] = instrument
+	m.d.Song.Patch[m.d.InstrIndex].Name = instrument.Name // only copy the relevant fields to preserve the user defined values e.g. NumVoices and MIDI configuration
+	m.d.Song.Patch[m.d.InstrIndex].Comment = instrument.Comment
+	m.d.Song.Patch[m.d.InstrIndex].Units = instrument.Units
 	return true
 }

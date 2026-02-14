@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/vsariola/sointu"
-	"github.com/vsariola/sointu/vm"
 	"gopkg.in/yaml.v3"
 )
 
@@ -165,10 +164,10 @@ func (m *presetResultList) SetSelected(i int) {
 		m.d.Song.Patch = append(m.d.Song.Patch, defaultInstrument.Copy())
 	}
 	newInstr := m.presetData.cache.results[i].instr.Copy()
-	newInstr.NumVoices = clamp(m.d.Song.Patch[m.d.InstrIndex].NumVoices, 1, vm.MAX_VOICES)
 	(*Model)(m).assignUnitIDs(newInstr.Units)
-	newInstr.MIDI = m.d.Song.Patch[m.d.InstrIndex].MIDI // keep the MIDI config of the current instrument
-	m.d.Song.Patch[m.d.InstrIndex] = newInstr
+	m.d.Song.Patch[m.d.InstrIndex].Name = newInstr.Name // only copy the relevant fields to preserve the  user defined values e.g. NumVoices and MIDI configuration
+	m.d.Song.Patch[m.d.InstrIndex].Comment = newInstr.Comment
+	m.d.Song.Patch[m.d.InstrIndex].Units = newInstr.Units
 }
 
 // SearchResult returns the search result at the given index in the search
