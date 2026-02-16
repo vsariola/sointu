@@ -18,25 +18,28 @@ Installation
 You can either:
 
   1) Download the latest build from the master branch from the
-     [actions](https://github.com/vsariola/sointu/actions) (find workflow
+     [actions](https://github.com/vsariola/sointu/actions). Find workflow
      "Binaries" and scroll down for .zip files containing the artifacts.
      **Note:** You have to be logged into Github to download artifacts!
 
  or
 
-  2) Download the prebuilt release binaries from the
-     [releases](https://github.com/vsariola/sointu/releases). Then just run one
-     of the executables or, in the case of the VST plugins library files, copy
-     them wherever you keep you VST2 plugins.
+  2) Download one of the tagged
+     [releases](https://github.com/vsariola/sointu/releases).
+    
+In both cases, you can then just run one of the executables (no need to install
+anything); or in the case of the VST plugins library files, copy them wherever
+you keep you VST2 plugins.
 
-The pre 1.0 version tags are mostly for reference: no backwards
-compatibility will be guaranteed while upgrading to a newer version.
-Backwards compatibility will be attempted from 1.0 onwards.
+The pre 1.0 version release tags are mostly for reference: no backwards
+compatibility will be guaranteed while upgrading to a newer version. Backwards
+compatibility will be attempted from 1.0 onwards.
 
-**Uninstallation**: Sointu stores recovery data in OS-specific folders
-e.g. `AppData/Roaming/Sointu` on Windows. For clean uninstall, delete
-also this folder. See [here](https://pkg.go.dev/os#UserConfigDir) where
-to find those folders on other platforms.
+**Uninstallation**: Sointu stores configuration and recovery data files in
+OS-specific folders e.g. `AppData/Roaming/Sointu` on Windows. For clean
+uninstall, delete also this folder. See
+[here](https://pkg.go.dev/os#UserConfigDir) where to find those folders on other
+platforms.
 
 Summary
 -------
@@ -86,10 +89,9 @@ for the audio, so the portability is currently limited by these.
   patch also works once compiled:
    - Follow the instructions to build the [x86 native virtual machine](#native-virtual-machine)
      before building the tracker.
-   - cgo compatible compiler e.g. [gcc](https://gcc.gnu.org/). On
-     windows, you best bet is [MinGW](http://www.mingw.org/). We use the [tdm-gcc](https://jmeubank.github.io/tdm-gcc/).
-     The compiler can be in PATH or you can use the environment variable
-     `CC` to help go find the compiler.
+   - cgo compatible compiler e.g. [gcc](https://gcc.gnu.org/). On windows, you
+     best bet is [MinGW](http://www.mingw.org/). The compiler can be in PATH or
+     you can use the environment variable `CC` to help go find the compiler.
    - Setting environment variable `CGO_ENABLED=1` is a good idea,
      because if it is not set and go fails to find the compiler, go just
      excludes all files with `import "C"` from the build, resulting in
@@ -125,10 +127,9 @@ a dynamically linked library and ran inside a VST host.
 #### Prerequisites
 
 - [go](https://golang.org/)
-- cgo compatible compiler e.g. [gcc](https://gcc.gnu.org/). On windows,
-  you best bet is [MinGW](http://www.mingw.org/). We use the [tdm-gcc](https://jmeubank.github.io/tdm-gcc/).
-  The compiler can be in PATH or you can use the environment variable
-  `CC` to help go find the compiler.
+- cgo compatible compiler e.g. [gcc](https://gcc.gnu.org/). On windows, you best
+  bet is [MinGW](http://www.mingw.org/). The compiler can be in PATH or you can
+  use the environment variable `CC` to help go find the compiler.
 - Setting environment variable `CGO_ENABLED=1` is a good idea, because
   if it is not set and go fails to find the compiler, go just excludes
   all files with `import "C"` from the build, resulting in lots of
@@ -333,7 +334,8 @@ New features since fork
 -----------------------
 
   - **New units**. For example: bit-crusher, gain, inverse gain, clip, modulate
-    bpm (proper triplets!), compressor (can be used for side-chaining).
+    bpm (proper triplets!), compressor (can be used for side-chaining), bell eq
+    (for more versatile EQuing of the sounds).
   - **Compiler**. Written in go. The input is a .yml file and the output is an
     .asm. It works by inputting the song data to the excellent go
     `text/template` package, effectively working as a preprocessor. This allows
