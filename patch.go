@@ -12,10 +12,12 @@ import (
 )
 
 type (
-	// Patch is simply a list of instruments used in a song
+	// Patch is a list of instruments used in a song
 	Patch []Instrument
 
-	// Instrument includes a list of units consisting of the instrument, and the number of polyphonic voices for this instrument
+	// Instrument includes various properties of the instrument (name, comment,
+	// number of polyphonic voices, etc.) and a list of units for the
+	// instrument.
 	Instrument struct {
 		Name      string `yaml:",omitempty"`
 		Comment   string `yaml:",omitempty"`
@@ -24,12 +26,13 @@ type (
 		// ThreadMaskM1 is a bit mask of which threads are used, minus 1. Minus
 		// 1 is done so that the default value 0 means bit mask 0b0001 i.e. only
 		// thread 1 is rendering the instrument.
-		ThreadMaskM1 int  `yaml:",omitempty"`
-		MIDI         MIDI `yaml:",flow,omitempty"`
-		Units        []Unit
+		ThreadMaskM1 int    `yaml:",omitempty"`
+		MIDI         MIDI   `yaml:",flow,omitempty"` // MIDI contains info on how MIDI events should trigger this instrument.
+		Units        []Unit // Units contains all the units of the instrument
 	}
 
-	// Unit is e.g. a filter, oscillator, envelope and its parameters
+	// Unit is one small component of an instrument—e.g. a filter, an
+	// oscillator, or an envelope—and its parameters
 	Unit struct {
 		// Type is the type of the unit, e.g. "add","oscillator" or "envelope".
 		// Always in lowercase. "" type should be ignored, no invalid types should
@@ -65,12 +68,13 @@ type (
 		Comment string `yaml:",omitempty"`
 	}
 
-	MIDI struct { // contains info on how MIDI events should trigger this instrument; if empty, then the instrument is not triggered by MIDI events
+	// MIDI contains info on how MIDI events should trigger an instrument
+	MIDI struct {
 		Channel       int  `yaml:",omitempty"` // 0 means automatically assigned channel, 1-16 means MIDI channel 1-16
 		Start         int  `yaml:",omitempty"` // MIDI note number to start on, 0-127
 		End           int  `yaml:",omitempty"` // MIDI note number to end on, counted backwards from 127, done so that the default number of 0 corresponds to "full keyboard", without any splittings
 		Transpose     int  `yaml:",omitempty"` // value to be added to the MIDI note/velocity number, can be negative
-		Velocity      bool `yaml:",omitempty"` // is this instrument triggered by midi event velocity or note
+		Velocity      bool `yaml:",omitempty"` // if true, then this instrument triggered by midi event velocity instead of its note number
 		NoRetrigger   bool `yaml:",omitempty"` // if true, then this instrument does not retrigger if two consecutive events have the same value
 		IgnoreNoteOff bool `yaml:",omitempty"` // if true, then this instrument should ignore note off events, i.e. notes never release
 	}
@@ -83,15 +87,15 @@ type (
 		MinValue    int    // minimum value of the parameter, inclusive
 		MaxValue    int    // maximum value of the parameter, inclusive
 		Neutral     int    // neutral value of the parameter
-		CanSet      bool   // if this parameter can be set before hand i.e. through the gui
-		CanModulate bool   // if this parameter can be modulated i.e. has a port number in "send" unit
+		CanSet      bool   // if true, then this parameter can be set through the gui
+		CanModulate bool   // if true, then this parameter can be modulated i.e. has a port number in "send" unit
 		DisplayFunc UnitParameterDisplayFunc
 	}
 
 	// StackUse documents how a unit will affect the signal stack.
 	StackUse struct {
 		Inputs     [][]int // Inputs documents which inputs contribute to which outputs. len(Inputs) is the number of inputs. Each input can contribute to multiple outputs, so its a slice.
-		Modifies   []bool  // Modifies documents which of the (mixed) inputs are actually modified by the unit
+		Modifies   []bool  // Modifies documents which of the outputs are actually modified versions of the inputs
 		NumOutputs int     // NumOutputs is the number of outputs produced by the unit. This is used to determine how many outputs are needed for the unit.
 	}
 
