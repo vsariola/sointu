@@ -29,6 +29,7 @@ type (
 		ThreadMaskM1 int    `yaml:",omitempty"`
 		MIDI         MIDI   `yaml:",flow,omitempty"` // MIDI contains info on how MIDI events should trigger this instrument.
 		Units        []Unit // Units contains all the units of the instrument
+		VoiceRecordingCooldown int `yaml:",omitempty"`
 	}
 
 	// Unit is one small component of an instrument—e.g. a filter, an
@@ -512,6 +513,14 @@ func (instr *Instrument) Copy() Instrument {
 		ret.Units[i] = u.Copy()
 	}
 	return ret
+}
+
+func (i *Instrument) GetVoiceRecordingCooldown() int {
+	return i.VoiceRecordingCooldown
+}
+
+func (i *Instrument) SetVoiceRecordingCooldown(count int) {
+	i.VoiceRecordingCooldown = count
 }
 
 // Implement the counter interface

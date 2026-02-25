@@ -36,6 +36,8 @@ type (
 		transpose     *NumericUpDownState
 		midiChannel   *NumericUpDownState
 
+		voiceCooldown *NumericUpDownState
+
 		scrollBar ScrollBar
 	}
 )
@@ -57,6 +59,7 @@ func NewInstrumentProperties() *InstrumentProperties {
 		noteEnd:            NewNumericUpDownState(),
 		transpose:          NewNumericUpDownState(),
 		midiChannel:        NewNumericUpDownState(),
+		voiceCooldown: 		NewNumericUpDownState(),
 		scrollBar:          ScrollBar{Axis: layout.Vertical},
 	}
 	ret.soloHint = makeHint("Solo", " (%s)", "SoloToggle")
@@ -99,7 +102,7 @@ func (ip *InstrumentProperties) layout(gtx C) D {
 			layout.Rigid(thread4btn.Layout),
 		)
 	}
-	ret := ip.list.Layout(gtx, 18, func(gtx C, index int) D {
+	ret := ip.list.Layout(gtx, 19, func(gtx C, index int) D {
 		gtx.Constraints.Max.X = min(gtx.Dp(300), gtx.Constraints.Max.X)
 		gtx.Constraints.Min.X = min(gtx.Constraints.Max.X, gtx.Constraints.Min.X)
 		switch index {
@@ -147,7 +150,10 @@ func (ip *InstrumentProperties) layout(gtx C) D {
 		case 15:
 			noteOff := ToggleIconBtn(tr.MIDI().IgnoreNoteOff(), tr.Theme, ip.ignoreNoteOff, icons.ToggleCheckBoxOutlineBlank, icons.ToggleCheckBox, "Notes released", "Notes never released")
 			return layoutInstrumentPropertyLine(gtx, "Ignore note off", noteOff.Layout)
-		case 17:
+		case 16:
+			voiceCooldown := NumUpDown(tr.Model.Instrument().VoiceRecordingCooldown(), tr.Theme, ip.voiceCooldown, "A voice is disabled for recording for this amount of rows after a note off.")
+			return layoutInstrumentPropertyLine(gtx, "Voice recording cooldown", voiceCooldown.Layout)
+		case 18:
 			return layout.UniformInset(unit.Dp(6)).Layout(gtx, func(gtx C) D {
 				return ip.commentEditor.Layout(gtx, tr.Instrument().Comment(), tr.Theme, &tr.Theme.InstrumentEditor.InstrumentComment, "Comment")
 			})

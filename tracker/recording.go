@@ -90,7 +90,7 @@ func (recording *Recording) Score(patch sointu.Patch, rowsPerBeat, rowsPerPatter
 		for _, n := range c {
 			// if a track is release, assign the note to left-most released track
 			for k, t := range tracks[i] {
-				if len(t) == 0 || t[len(t)-1].endRow <= n.startRow {
+				if len(t) == 0 || t[len(t)-1].endRow + patch[i].VoiceRecordingCooldown <= n.startRow {
 					tracks[i][k] = append(t, n)
 					continue noteloop
 				}
