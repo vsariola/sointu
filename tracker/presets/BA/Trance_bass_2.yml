@@ -1,0 +1,39 @@
+numvoices: 2
+units:
+    - id: 1351
+      parameters: {}
+      comment: Modulations
+    - type: envelope
+      id: 173
+      parameters: {attack: 69, decay: 0, gain: 64, release: 81, stereo: 0, sustain: 128}
+    - id: 2040
+      parameters: {}
+    - type: send
+      id: 175
+      parameters: {amount: 46, port: 3, sendpop: 1, target: 179}
+    - id: 1350
+      parameters: {}
+      comment: Main body
+    - type: oscillator
+      id: 177
+      parameters: {color: 96, detune: 59, gain: 64, lfo: 0, phase: 0, shape: 47, stereo: 0, transpose: 76, type: 0, unison: 0}
+    - type: oscillator
+      id: 179
+      parameters: {color: 128, detune: 77, gain: 74, lfo: 0, phase: 64, shape: 111, stereo: 0, transpose: 64, type: 1, unison: 3}
+    - type: addp
+      id: 178
+      parameters: {stereo: 0}
+    - type: envelope
+      id: 176
+      parameters: {attack: 0, decay: 0, gain: 92, release: 70, stereo: 0, sustain: 89}
+    - type: mulp
+      id: 185
+      parameters: {stereo: 0}
+    - type: pan
+      id: 183
+      parameters: {panning: 64, stereo: 0}
+    - id: 1344
+      parameters: {}
+    - type: outaux
+      id: 184
+      parameters: {auxgain: 1, outgain: 24, stereo: 1}

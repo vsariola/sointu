@@ -1,0 +1,66 @@
+comment: |-
+    Generic pluck generator
+    Use oscillator type, color and shape to alter the sound properties
+numvoices: 2
+units:
+    - id: 1713
+      parameters: {}
+      comment: Main envelopes
+    - type: envelope
+      id: 163
+      parameters: {attack: 0, decay: 85, gain: 50, release: 84, stereo: 0, sustain: 32}
+    - id: 2347
+      parameters: {}
+      comment: Main oscillators
+    - type: oscillator
+      id: 164
+      parameters: {color: 125, detune: 70, gain: 64, lfo: 0, phase: 0, shape: 25, stereo: 0, transpose: 76, type: 1, unison: 2}
+    - type: add
+      id: 1715
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 165
+      parameters: {color: 102, detune: 70, gain: 128, lfo: 0, phase: 0, shape: 34, stereo: 0, transpose: 64, type: 1, unison: 2}
+    - type: addp
+      id: 166
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1002
+      parameters: {color: 128, detune: 64, gain: 128, looplength: 821, loopstart: 2374, phase: 0, samplestart: 557335, shape: 64, stereo: 0, transpose: 76, type: 0, unison: 0}
+    - type: addp
+      id: 1004
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 167
+      parameters: {stereo: 0}
+    - id: 1716
+      parameters: {}
+      comment: Modulated filters
+    - type: loadnote
+      id: 219
+      parameters: {stereo: 0}
+    - type: loadval
+      id: 2349
+      parameters: {stereo: 0, value: 98}
+    - type: addp
+      id: 2348
+      parameters: {stereo: 0}
+    - type: send
+      id: 220
+      parameters: {amount: 105, port: 0, sendpop: 1, stereo: 0, target: 218, voice: 0}
+    - type: filter
+      id: 218
+      parameters: {bandpass: 0, frequency: 47, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+    - id: 1005
+      parameters: {}
+      comment: Delay & output
+    - type: pan
+      id: 168
+      parameters: {panning: 64, stereo: 0}
+    - type: delay
+      id: 169
+      parameters: {damp: 36, dry: 63, feedback: 76, notetracking: 0, pregain: 52, stereo: 1}
+      varargs: [12550, 24402, 21265, 32419]
+    - type: outaux
+      id: 172
+      parameters: {auxgain: 17, outgain: 35, stereo: 1}

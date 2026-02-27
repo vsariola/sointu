@@ -1,0 +1,29 @@
+numvoices: 1
+units:
+    - type: oscillator
+      id: 3
+      parameters: {color: 91, detune: 68, gain: 64, lfo: 0, phase: 13, shape: 42, stereo: 1, transpose: 76, type: 1, unison: 1}
+    - type: oscillator
+      id: 4
+      parameters: {color: 126, detune: 53, gain: 64, lfo: 0, phase: 0, shape: 50, stereo: 1, transpose: 64, type: 1, unison: 2}
+    - type: addp
+      id: 1084
+      parameters: {stereo: 1}
+    - type: envelope
+      id: 1085
+      parameters: {attack: 30, decay: 81, gain: 128, release: 77, stereo: 1, sustain: 81}
+    - type: send
+      id: 1088
+      parameters: {amount: 108, port: 0, sendpop: 0, stereo: 1, target: 1087, voice: 0}
+    - type: mulp
+      id: 1086
+      parameters: {stereo: 1}
+    - type: filter
+      id: 1087
+      parameters: {bandpass: -1, frequency: 15, highpass: 0, lowpass: 1, resonance: 58, stereo: 1}
+    - type: pan
+      id: 284
+      parameters: {panning: 64, stereo: 1}
+    - type: outaux
+      id: 15
+      parameters: {auxgain: 0, outgain: 17, stereo: 1}

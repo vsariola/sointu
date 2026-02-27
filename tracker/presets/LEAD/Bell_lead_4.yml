@@ -1,0 +1,46 @@
+name: Bell lead 4
+numvoices: 1
+units:
+    - id: 1250
+      parameters: {}
+      comment: Main oscillators
+    - type: oscillator
+      id: 1268
+      parameters: {color: 70, detune: 68, gain: 26, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 2, unison: 3}
+    - type: oscillator
+      id: 1251
+      parameters: {color: 72, detune: 61, gain: 74, looplength: 1645, loopstart: 3820, phase: 0, samplestart: 551786, shape: 103, stereo: 0, transpose: 71, type: 4, unison: 1}
+    - type: addp
+      id: 1269
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1254
+      parameters: {color: 64, detune: 64, gain: 128, looplength: 21, loopstart: 3175, phase: 0, samplestart: 216843, shape: 90, stereo: 0, transpose: 52, type: 4, unison: 0}
+    - type: dbgain
+      id: 1256
+      parameters: {decibels: 75, stereo: 0}
+    - type: addp
+      id: 1255
+      parameters: {stereo: 0}
+    - id: 1252
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1270
+      parameters: {attack: 0, decay: 75, gain: 64, release: 80, stereo: 0, sustain: 64}
+    - type: mulp
+      id: 1271
+      parameters: {stereo: 0}
+    - id: 1003
+      parameters: {}
+      comment: Delay & output
+    - type: pan
+      id: 1272
+      parameters: {panning: 56, stereo: 0}
+    - type: delay
+      id: 1273
+      parameters: {damp: 56, dry: 74, feedback: 95, notetracking: 0, pregain: 64, stereo: 1}
+      varargs: [12550, 24402, 21265, 32419]
+    - type: outaux
+      id: 1253
+      parameters: {auxgain: 25, outgain: 29, stereo: 1}

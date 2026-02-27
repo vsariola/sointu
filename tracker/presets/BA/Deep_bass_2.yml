@@ -1,0 +1,38 @@
+numvoices: 1
+units:
+    - type: oscillator
+      id: 1983
+      parameters: {color: 122, detune: 77, gain: 53, lfo: 0, phase: 0, shape: 111, stereo: 1, transpose: 64, type: 1, unison: 3}
+    - type: oscillator
+      id: 1984
+      parameters: {color: 112, detune: 54, gain: 70, lfo: 0, phase: 32, shape: 29, stereo: 1, transpose: 64, type: 1, unison: 3}
+    - type: distort
+      id: 1708
+      parameters: {drive: 104, stereo: 1}
+    - type: addp
+      id: 1985
+      parameters: {stereo: 1}
+    - type: oscillator
+      id: 1700
+      parameters: {color: 51, detune: 72, gain: 128, phase: 64, shape: 48, stereo: 1, transpose: 52, type: 0, unison: 3}
+    - type: distort
+      id: 1709
+      parameters: {drive: 122, stereo: 1}
+    - type: addp
+      id: 1701
+      parameters: {stereo: 1}
+    - type: envelope
+      id: 1986
+      parameters: {attack: 24, decay: 24, gain: 93, release: 56, stereo: 1, sustain: 128}
+    - type: mulp
+      id: 1987
+      parameters: {stereo: 1}
+    - type: pan
+      id: 1988
+      parameters: {panning: 64, stereo: 1}
+    - type: filter
+      id: 1707
+      parameters: {bandpass: 0, frequency: 12, highpass: 1, lowpass: 0, resonance: 128, stereo: 1}
+    - type: outaux
+      id: 1989
+      parameters: {auxgain: 0, outgain: 15, stereo: 1}
