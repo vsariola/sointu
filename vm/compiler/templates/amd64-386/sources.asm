@@ -269,7 +269,10 @@ su_oscillat_pulse_up:
 {{- if .HasCall "su_oscillat_trisaw"}}
 {{.Func "su_oscillat_trisaw"}}
     fucomi  st1                             ; // c      p
-    jnc     short su_oscillat_trisaw_up
+    ; we do jnbe instead of jnc to avoid NaN. phase cannot be < 0 or >= 1, so the important cases are
+    ; c = 0 => the branch is never taken, because c > p can never happen, and thus results in .../(1-c)    
+    ; c = 1 => the branch is always taken, because p < c and thus always gives .../c
+    jnbe    short su_oscillat_trisaw_up     
     fld1                                    ; // 1      c       p
     fsubr   st2, st0                        ; // 1      c       1-p
     fsubrp  st1, st0                        ; // 1-c    1-p

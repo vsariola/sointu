@@ -481,10 +481,10 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, r
 						}
 						omega += float64(unit.ports[6]) // add frequency modulation
 						var amplitude float32
-						*statevar += float32(omega)
+						phase := float64(*statevar) + omega
 						if flags&0x80 == 0x80 { // if this is a sample oscillator
-							phase := *statevar
-							phase += params[2]
+							*statevar = float32(phase)
+							phase += float64(params[2])
 							sampleno := operandsAtTransform[3] // reuse color as the sample number
 							sampleoffset := s.bytecode.SampleOffsets[sampleno]
 							sampleindex := int(phase*84.28074964676522 + 0.5)
@@ -497,22 +497,25 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, r
 							sampleindex += int(sampleoffset.Start)
 							amplitude = float32(int16(binary.LittleEndian.Uint16(su_sample_table[sampleindex*2:]))) / 32767.0
 						} else {
-							*statevar -= float32(int(*statevar+1) - 1)
-							phase := *statevar
-							phase += params[2]
-							phase -= float32(int(phase+1) - 1)
-							color := params[3]
+							// at this point, the native synth actually uses 80-bit precision, so emulate that as closely as possible by using 64-bit math here
+							phase += 1
+							phase -= float64(int(phase))
+							*statevar = float32(phase)
+							phase += float64(params[2])
+							phase += 1
+							phase -= float64(int(phase)) // this should guaranteee that phase is [0,1), so that the Trisaw should not nan even if color = 1
+							color := float64(params[3])
 							switch {
 							case flags&0x40 == 0x40: // Sine
 								if phase < color {
-									amplitude = float32(math.Sin(2 * math.Pi * float64(phase/color)))
+									amplitude = float32(math.Sin(2 * math.Pi * phase / color))
 								}
 							case flags&0x20 == 0x20: // Trisaw
-								if phase >= color {
+								if phase >= color { // since phase cannot be 1, if color = 1, then this condition never fires
 									phase = 1 - phase
 									color = 1 - color
 								}
-								amplitude = phase/color*2 - 1
+								amplitude = float32(phase/color*2 - 1)
 							case flags&0x10 == 0x10: // Pulse
 								if phase >= color {
 									amplitude = -1
