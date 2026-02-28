@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Voice recording cooldown in instrument settings and YAML. When recording,
+  voices were considered released at note off. Releases and feedback can cause
+  notes to be much longer; The feature disables all voices in an instrument for
+  a specific number of additional rows after the last note off when recording.
 - MIDI velocity, keyboard splitting, forcing specific instrument to use
   particular MIDI channel, and ability to transpose the incoming note values.
   These settings can be configured under instrument properties. ([#124][i124],

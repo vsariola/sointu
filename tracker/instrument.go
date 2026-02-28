@@ -392,6 +392,33 @@ func (v *instrumentVoices) Range() RangeInclusive {
 	return RangeInclusive{1, (*Model)(v).remainingVoices(true, v.linkInstrTrack) + v.Value()}
 }
 
+// A voice recording cooldown feature for instruments.
+type voiceCooldownValue struct {
+    model *InstrModel
+}
+
+func (v voiceCooldownValue) Value() int {
+    return v.model.d.Song.Patch[v.model.d.InstrIndex].VoiceRecordingCooldown
+}
+
+func (v voiceCooldownValue) SetValue(val int) bool {
+    if v.Value() == val {
+        return false
+    }
+    v.model.d.Song.Patch[v.model.d.InstrIndex].VoiceRecordingCooldown = val
+    return true
+}
+
+func (v voiceCooldownValue) Range() RangeInclusive {
+    return RangeInclusive{Min: 0, Max: 255}
+}
+
+func (m *InstrModel) VoiceRecordingCooldown() Int {
+    return Int{
+        value: voiceCooldownValue{model: m},
+    }
+}
+
 // Write writes the currently selected instrument to the given io.WriteCloser.
 // If the WriteCloser is a file, the file extension is used to determine the
 // format (.json for JSON, anything else for YAML).
