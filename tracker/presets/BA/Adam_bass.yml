@@ -8,7 +8,6 @@ comment: |
     Filter 1: High pass filter to remove the low end.
     Filter 2: Low pass filter, with the frequency modulated by the Send (starts high and drops low, for that snap).
     Envelope-distort-send: Make the filter 2 frequency drop quickly from high to low, for the "snap".
-numvoices: 1
 units:
     - type: envelope
       id: 217

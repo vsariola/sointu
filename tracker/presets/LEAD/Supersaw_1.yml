@@ -1,5 +1,4 @@
 comment: Automate filter frequency for the classic trance sound
-numvoices: 1
 units:
     - id: 1741
       parameters: {}

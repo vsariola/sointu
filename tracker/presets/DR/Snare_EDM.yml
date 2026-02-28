@@ -1,5 +1,4 @@
 comment: 'Suggested range: E-4'
-numvoices: 1
 units:
     - id: 241
       parameters: {}

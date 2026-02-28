@@ -1,5 +1,3 @@
-name: UTIL global-mastering
-numvoices: 1
 units:
     - id: 1173
       parameters: {}

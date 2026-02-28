@@ -10,7 +10,6 @@ comment: |
     Delay: Add some reverb to make it sound little less synthetic. Used the exact same coefficients as the main reverb, so they appear in the final .asm only once.
     Compressor: Tame the transient, boost the tail.
     Envelope-distort-send: Quickly drop the pitch of the tom from high to neutral.
-numvoices: 1
 units:
     - id: 31
       parameters: {}

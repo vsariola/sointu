@@ -1,6 +1,4 @@
-name: DR kickedm2
 comment: A#2
-numvoices: 2
 units:
     - id: 1660
       parameters: {}

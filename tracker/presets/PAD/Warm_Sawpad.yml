@@ -1,5 +1,3 @@
-name: Warm Sawpad
-numvoices: 6
 units:
     - id: 1753
       parameters: {}

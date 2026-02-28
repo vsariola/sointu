@@ -4,7 +4,6 @@ comment: |-
     Source: https://github.com/armak/pbr-whitespace
 
     Relicensed under MIT with permission from noby
-numvoices: 1
 units:
     - type: envelope
       id: 166

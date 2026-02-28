@@ -1,6 +1,4 @@
-name: DR kick-edm
 comment: A#2
-numvoices: 2
 units:
     - id: 128
       parameters: {}

@@ -45,6 +45,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   did not, resulting it claiming errors in patches that worked once compiled.
 
 ### Changed
+- Save only units and comment to instrument files, as we keep all the other
+  fields while loading a new instrument / preset and the name comes from the
+  filename.
 - Recovery files were moved to `os.UserConfigDir()/sointu/recovery/` instead of
   `os.UserConfigDir()/sointu/` so that they don't pollute the main configuration
   directory and so that it's easy to delete just the recovery files.

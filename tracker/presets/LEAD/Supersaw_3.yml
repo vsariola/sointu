@@ -1,5 +1,4 @@
 comment: Try lower octaves for epic sound
-numvoices: 1
 units:
     - id: 231
       parameters: {}

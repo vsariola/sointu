@@ -1,5 +1,4 @@
 comment: Use range C-4 to G-4
-numvoices: 1
 units:
     - type: envelope
       id: 1217

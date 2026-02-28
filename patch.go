@@ -21,8 +21,8 @@ type (
 	Instrument struct {
 		Name      string `yaml:",omitempty"`
 		Comment   string `yaml:",omitempty"`
-		NumVoices int
-		Mute      bool `yaml:",omitempty"` // Mute is only used in the tracker for soloing/muting instruments; the compiled player ignores this field
+		NumVoices int    `yaml:",omitempty"`
+		Mute      bool   `yaml:",omitempty"` // Mute is only used in the tracker for soloing/muting instruments; the compiled player ignores this field
 		// ThreadMaskM1 is a bit mask of which threads are used, minus 1. Minus
 		// 1 is done so that the default value 0 means bit mask 0b0001 i.e. only
 		// thread 1 is rendering the instrument.

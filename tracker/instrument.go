@@ -408,13 +408,18 @@ func (m *InstrModel) Write(w io.WriteCloser) bool {
 	var contents []byte
 	var err error
 	instr := m.d.Song.Patch[m.d.InstrIndex]
+	instr2 := sointu.Instrument{ // save only the relevant fields
+		Name:    instr.Name,
+		Comment: instr.Comment,
+		Units:   instr.Units,
+	}
 	if _, ok := w.(*os.File); ok {
-		instr.Name = "" // don't save the instrument name to a file; we'll replace the instruments name with the filename when loading from a file
+		instr2.Name = "" // don't save the instrument name to a file; we'll replace the instruments name with the filename when loading from a file
 	}
 	if extension == ".json" {
-		contents, err = json.Marshal(instr)
+		contents, err = json.Marshal(instr2)
 	} else {
-		contents, err = yaml.Marshal(instr)
+		contents, err = yaml.Marshal(instr2)
 	}
 	if err != nil {
 		(*Model)(m).Alerts().Add(fmt.Sprintf("Error marshaling an instrument file: %v", err), Error)
