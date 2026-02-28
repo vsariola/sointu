@@ -1,0 +1,77 @@
+name: DR kick-edm
+comment: A#2
+numvoices: 2
+units:
+    - id: 128
+      parameters: {}
+      comment: Pitch drop
+    - type: envelope
+      id: 1282
+      parameters: {attack: 72, decay: 85, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: envelope
+      id: 120
+      parameters: {attack: 50, decay: 80, gain: 64, release: 0, stereo: 0, sustain: 0}
+    - type: mulp
+      id: 121
+      parameters: {stereo: 0}
+    - type: send
+      id: 1283
+      parameters: {amount: 0, port: 0, sendpop: 1, target: 1285}
+    - id: 129
+      parameters: {}
+      comment: Body & tail
+    - type: envelope
+      id: 1284
+      parameters: {attack: 53, decay: 68, gain: 98, release: 0, stereo: 0, sustain: 0}
+    - type: send
+      id: 1348
+      parameters: {amount: 26, port: 0, sendpop: 0, stereo: 0, target: 184, voice: 0}
+    - type: oscillator
+      id: 1285
+      parameters: {color: 128, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 80, type: 0, unison: 3}
+    - type: mulp
+      id: 126
+      parameters: {stereo: 0}
+    - id: 130
+      parameters: {}
+      comment: Tick
+    - type: envelope
+      id: 1286
+      parameters: {attack: 0, decay: 46, gain: 128, release: 0, stereo: 0, sustain: 0}
+    - type: noise
+      id: 111
+      parameters: {gain: 128, shape: 64, stereo: 0}
+    - type: filter
+      id: 112
+      parameters: {bandpass: 1, frequency: 91, highpass: 0, lowpass: 0, resonance: 128, stereo: 0}
+    - type: filter
+      id: 1287
+      parameters: {bandpass: 1, frequency: 83, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+    - type: mulp
+      id: 1288
+      parameters: {stereo: 0}
+    - type: addp
+      id: 1289
+      parameters: {stereo: 0}
+    - id: 131
+      parameters: {}
+      comment: Filters
+    - type: filter
+      id: 1290
+      parameters: {bandpass: 1, frequency: 86, highpass: -1, lowpass: 1, resonance: 63, stereo: 0}
+    - type: filter
+      id: 1293
+      parameters: {bandpass: 1, frequency: 15, highpass: -1, lowpass: 1, resonance: 84, stereo: 0}
+    - id: 132
+      parameters: {}
+      comment: Output
+    - type: pan
+      id: 1294
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 1295
+      parameters: {auxgain: 4, outgain: 98, stereo: 1}
+    - id: 1443
+      parameters: {}
+    - id: 1346
+      parameters: {}

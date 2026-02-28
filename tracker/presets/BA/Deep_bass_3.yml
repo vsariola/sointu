@@ -1,0 +1,29 @@
+numvoices: 2
+units:
+    - type: envelope
+      id: 1974
+      parameters: {attack: 21, decay: 64, gain: 92, release: 64, stereo: 0, sustain: 83}
+    - type: push
+      id: 161
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1975
+      parameters: {color: 64, detune: 68, gain: 128, lfo: 0, phase: 15, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+    - type: addp
+      id: 1976
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1977
+      parameters: {color: 113, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 102, stereo: 0, transpose: 64, type: 1, unison: 0}
+    - type: addp
+      id: 165
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 1978
+      parameters: {stereo: 0}
+    - type: pan
+      id: 1979
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 1980
+      parameters: {auxgain: 0, outgain: 38, stereo: 1}

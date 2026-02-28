@@ -1,4 +1,4 @@
-numvoices: 1
+numvoices: 2
 units:
     - id: 1241
       parameters: {}
@@ -17,10 +17,10 @@ units:
       comment: Main oscillators
     - type: oscillator
       id: 1246
-      parameters: {color: 83, detune: 64, gain: 64, lfo: 0, phase: 64, shape: 84, stereo: 0, transpose: 64, type: 0, unison: 1}
+      parameters: {color: 64, detune: 64, gain: 64, lfo: 0, phase: 64, shape: 84, stereo: 0, transpose: 64, type: 0, unison: 1}
     - type: oscillator
       id: 1247
-      parameters: {color: 100, detune: 64, gain: 64, lfo: 0, phase: 0, shape: 26, stereo: 0, transpose: 64, type: 1, unison: 2}
+      parameters: {color: 104, detune: 64, gain: 74, lfo: 0, phase: 0, shape: 17, stereo: 0, transpose: 64, type: 1, unison: 2}
     - type: addp
       id: 1248
       parameters: {stereo: 0}
@@ -50,13 +50,13 @@ units:
       parameters: {bandpass: 0, frequency: 29, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: filter
       id: 1257
-      parameters: {bandpass: 1, frequency: 57, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: -1, frequency: 64, highpass: 1, lowpass: 1, resonance: 128, stereo: 0}
     - type: hold
       id: 1698
-      parameters: {holdfreq: 64, stereo: 0}
+      parameters: {holdfreq: 66, stereo: 0}
     - type: pan
       id: 1258
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 1259
-      parameters: {auxgain: 7, outgain: 44, stereo: 1}
+      parameters: {auxgain: 7, outgain: 64, stereo: 1}

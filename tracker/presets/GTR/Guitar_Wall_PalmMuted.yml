@@ -1,0 +1,71 @@
+numvoices: 1
+units:
+    - type: envelope
+      id: 1993
+      parameters: {attack: 0, decay: 62, gain: 80, release: 0, stereo: 0, sustain: 0}
+    - type: send
+      id: 1994
+      parameters: {amount: 82, port: 2, sendpop: 0, stereo: 0, target: 1999, voice: 0}
+    - type: send
+      id: 1995
+      parameters: {amount: 100, port: 0, sendpop: 0, stereo: 0, target: 2000, voice: 0}
+    - type: oscillator
+      id: 1996
+      parameters: {color: 64, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 66, type: 0, unison: 1}
+    - type: mulp
+      id: 1997
+      parameters: {stereo: 0}
+    - type: delay
+      id: 1998
+      parameters: {damp: 17, dry: 0, feedback: 125, notetracking: 1, pregain: 63, stereo: 0}
+      varargs: [10847, 5382, 10787]
+    - type: belleq
+      id: 1999
+      parameters: {bandwidth: 39, frequency: 34, gain: 32, stereo: 0}
+    - type: filter
+      id: 2000
+      parameters: {bandpass: 0, frequency: 37, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+    - type: compressor
+      id: 2001
+      parameters: {attack: 22, invgain: 16, ratio: 64, release: 44, stereo: 0, threshold: 64}
+    - type: mulp
+      id: 2002
+      parameters: {stereo: 0}
+    - type: distort
+      id: 2003
+      parameters: {drive: 109, stereo: 0}
+    - type: belleq
+      id: 2004
+      parameters: {bandwidth: 71, frequency: 77, gain: 79, stereo: 0}
+    - type: envelope
+      id: 2005
+      parameters: {attack: 0, decay: 70, gain: 77, release: 66, stereo: 0, sustain: 64}
+    - type: mulp
+      id: 2006
+      parameters: {stereo: 0}
+    - type: distort
+      id: 2007
+      parameters: {drive: 108, stereo: 0}
+    - type: send
+      id: 2008
+      parameters: {amount: 118, port: 0, sendpop: 0, stereo: 0, target: 2010, voice: 0}
+    - id: 2009
+      parameters: {}
+      comment: Output
+    - type: pan
+      id: 2010
+      parameters: {panning: 64, stereo: 0}
+    - type: belleq
+      id: 2011
+      parameters: {bandwidth: 54, frequency: 101, gain: 56, stereo: 1}
+    - type: outaux
+      id: 2012
+      parameters: {auxgain: 5, outgain: 22, stereo: 1}
+    - id: 2013
+      parameters: {}
+    - type: noise
+      id: 2014
+      parameters: {gain: 64, shape: 64, stereo: 0}
+    - type: send
+      id: 2015
+      parameters: {amount: 77, port: 6, sendpop: 1, stereo: 0, target: 1996, voice: 0}

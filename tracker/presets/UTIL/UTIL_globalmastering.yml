@@ -1,0 +1,43 @@
+name: UTIL global-mastering
+numvoices: 1
+units:
+    - id: 1173
+      parameters: {}
+      comment: Aux1 reverb
+    - type: in
+      id: 1157
+      parameters: {channel: 2, stereo: 1}
+    - type: delay
+      id: 1158
+      parameters: {damp: 64, dry: 0, feedback: 121, notetracking: 0, pregain: 70, stereo: 1}
+      varargs: [1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618, 1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642]
+    - type: out
+      id: 1169
+      parameters: {gain: 90, stereo: 1}
+    - id: 1174
+      parameters: {}
+      comment: Mastering
+    - type: in
+      id: 1170
+      parameters: {channel: 0, stereo: 1}
+    - type: gain
+      id: 1697
+      parameters: {gain: 21, stereo: 1}
+    - type: filter
+      id: 1171
+      parameters: {bandpass: -1, frequency: 100, highpass: -1, lowpass: 1, resonance: 128, stereo: 1}
+      comment: Limit highs
+    - type: filter
+      id: 1166
+      parameters: {bandpass: -1, frequency: 12, highpass: -1, lowpass: 1, resonance: 96, stereo: 1}
+      comment: Low cut
+    - type: compressor
+      id: 1694
+      parameters: {attack: 45, invgain: 89, ratio: 110, release: 45, stereo: 1, threshold: 85}
+    - type: mulp
+      id: 1695
+      parameters: {stereo: 1}
+    - type: out
+      id: 1172
+      parameters: {gain: 64, stereo: 1}
+      comment: Master gain

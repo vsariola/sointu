@@ -1,0 +1,50 @@
+numvoices: 2
+units:
+    - id: 2064
+      parameters: {}
+      comment: Main oscillators & envelope
+    - type: envelope
+      id: 2065
+      parameters: {attack: 0, decay: 0, gain: 57, release: 71, stereo: 0, sustain: 101}
+    - type: oscillator
+      id: 2066
+      parameters: {color: 28, detune: 64, gain: 44, phase: 0, shape: 64, stereo: 0, transpose: 71, type: 2, unison: 1}
+    - type: oscillator
+      id: 2067
+      parameters: {color: 39, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 88, type: 2, unison: 0}
+    - type: addp
+      id: 2068
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 1991
+      parameters: {color: 90, detune: 66, gain: 88, phase: 32, shape: 64, stereo: 0, transpose: 64, type: 2, unison: 1}
+    - type: addp
+      id: 2069
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 2070
+      parameters: {stereo: 0}
+    - id: 2071
+      parameters: {}
+      comment: Effects
+    - type: envelope
+      id: 2072
+      parameters: {attack: 0, decay: 72, gain: 128, release: 81, stereo: 0, sustain: 0}
+    - type: send
+      id: 2073
+      parameters: {amount: 87, port: 0, sendpop: 1, stereo: 0, target: 2074, voice: 0}
+    - type: filter
+      id: 2074
+      parameters: {bandpass: 1, frequency: 38, highpass: 0, lowpass: 1, resonance: 122, stereo: 0}
+    - type: filter
+      id: 2076
+      parameters: {bandpass: -1, frequency: 11, highpass: -1, lowpass: 1, resonance: 98, stereo: 0}
+    - id: 2078
+      parameters: {}
+      comment: Effects & output
+    - type: pan
+      id: 2081
+      parameters: {panning: 64, stereo: 0}
+    - type: outaux
+      id: 2082
+      parameters: {auxgain: 4, outgain: 15, stereo: 1}

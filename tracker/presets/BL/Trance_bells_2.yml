@@ -1,0 +1,51 @@
+comment: |-
+    Generic pluck generator
+    Use oscillator type, color and shape to alter the sound properties
+numvoices: 2
+units:
+    - id: 1007
+      parameters: {}
+      comment: Main envelopes
+    - type: envelope
+      id: 1793
+      parameters: {attack: 22, decay: 84, gain: 66, release: 84, stereo: 1, sustain: 64}
+    - id: 1008
+      parameters: {}
+      comment: Main oscillators
+    - type: oscillator
+      id: 1974
+      parameters: {color: 64, detune: 61, gain: 54, lfo: 0, phase: 0, shape: 104, stereo: 1, transpose: 76, type: 1, unison: 1}
+    - type: add
+      id: 214
+      parameters: {stereo: 1}
+    - type: oscillator
+      id: 1975
+      parameters: {color: 98, detune: 73, gain: 64, lfo: 0, phase: 64, shape: 64, stereo: 1, transpose: 76, type: 1, unison: 3}
+    - type: addp
+      id: 1976
+      parameters: {stereo: 1}
+    - type: oscillator
+      id: 2033
+      parameters: {color: 108, detune: 56, gain: 52, lfo: 0, phase: 85, shape: 31, stereo: 1, transpose: 64, type: 1, unison: 3}
+    - type: addp
+      id: 2034
+      parameters: {stereo: 1}
+    - type: mulp
+      id: 1798
+      parameters: {stereo: 1}
+    - id: 1006
+      parameters: {}
+      comment: Modulated filters
+    - type: filter
+      id: 2046
+      parameters: {bandpass: 0, frequency: 121, highpass: -1, lowpass: 1, resonance: 84, stereo: 1}
+    - id: 2047
+      parameters: {}
+      comment: Delay & output
+    - type: delay
+      id: 1801
+      parameters: {damp: 0, dry: 72, feedback: 57, notetracking: 2, pregain: 63, stereo: 1}
+      varargs: [36, 74]
+    - type: outaux
+      id: 1802
+      parameters: {auxgain: 12, outgain: 26, stereo: 1}

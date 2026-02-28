@@ -1,0 +1,40 @@
+name: Warm Sawpad
+numvoices: 6
+units:
+    - id: 1753
+      parameters: {}
+      comment: Main oscillators
+    - type: oscillator
+      id: 1754
+      parameters: {color: 128, detune: 55, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 1, transpose: 64, type: 1, unison: 3}
+    - type: envelope
+      id: 1755
+      parameters: {attack: 79, decay: 0, gain: 128, release: 80, stereo: 1, sustain: 128}
+    - type: mulp
+      id: 1756
+      parameters: {stereo: 1}
+    - id: 1757
+      parameters: {}
+      comment: Effects & output
+    - type: filter
+      id: 1758
+      parameters: {bandpass: 0, frequency: 42, highpass: 1, lowpass: 1, resonance: 128, stereo: 1}
+    - type: filter
+      id: 1759
+      parameters: {bandpass: 0, frequency: 45, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
+    - type: filter
+      id: 1760
+      parameters: {bandpass: 0, frequency: 128, highpass: 0, lowpass: 1, resonance: 39, stereo: 1}
+    - type: pan
+      id: 1761
+      parameters: {panning: 64, stereo: 1}
+    - type: delay
+      id: 1762
+      parameters: {damp: 120, dry: 128, feedback: 81, notetracking: 0, pregain: 73, stereo: 1}
+      varargs: [12550, 24402, 21265, 32419]
+    - type: outaux
+      id: 1763
+      parameters: {auxgain: 35, outgain: 60, stereo: 1}
+    - id: 1764
+      parameters: {}
+      comment: Filter modulation
