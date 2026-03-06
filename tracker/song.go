@@ -19,6 +19,9 @@ func (m *Model) Song() *SongModel { return (*SongModel)(m) }
 
 type SongModel Model
 
+// ChangesSinceSave returns a Bool representing whether the current song has unsaved
+func (m *SongModel) ChangedSinceSave() bool { return m.d.ChangedSinceSave }
+
 // FilePath returns a String representing the file path of the current song.
 func (m *SongModel) FilePath() String { return MakeString((*songFilePath)(m)) }
 

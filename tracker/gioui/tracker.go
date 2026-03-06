@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"gioui.org/app"
@@ -122,11 +123,12 @@ func (t *Tracker) Main() {
 	recoveryTicker := time.NewTicker(time.Second * 30)
 	var ops op.Ops
 	titlePath := ""
+	changedSinceSave := false
 	globals := make(map[string]any, 1)
 	globals["Tracker"] = t
 	for !t.Quitted() {
 		w := t.newWindow()
-		w.Option(app.Title(titleFromPath(titlePath)))
+		w.Option(app.Title(titleFromPath(titlePath, changedSinceSave)))
 		t.Explorer = explorer.NewExplorer(w)
 		acks := make(chan struct{})
 		events := make(chan event.Event)
@@ -171,9 +173,10 @@ func (t *Tracker) Main() {
 					acks <- struct{}{}
 					break F // this window is done, we need to create a new one
 				case app.FrameEvent:
-					if titlePath != t.filePathString.Value() {
+					if titlePath != t.filePathString.Value() || changedSinceSave != t.Song().ChangedSinceSave() {
 						titlePath = t.filePathString.Value()
-						w.Option(app.Title(titleFromPath(titlePath)))
+						changedSinceSave = t.Song().ChangedSinceSave()
+						w.Option(app.Title(titleFromPath(titlePath, changedSinceSave)))
 					}
 					gtx := app.NewContext(&ops, e)
 					gtx.Values = globals
@@ -211,11 +214,17 @@ func (t *Tracker) newWindow() *app.Window {
 	return w
 }
 
-func titleFromPath(path string) string {
-	if path == "" {
-		return "Sointu Tracker"
+func titleFromPath(path string, unsaved bool) string {
+	var sb strings.Builder
+	sb.WriteString("Sointu Tracker")
+	if path != "" {
+		sb.WriteString(" - ")
+		sb.WriteString(path)
 	}
-	return fmt.Sprintf("Sointu Tracker - %s", path)
+	if unsaved {
+		sb.WriteString(" *")
+	}
+	return sb.String()
 }
 
 func (t *Tracker) Layout(gtx layout.Context) {
