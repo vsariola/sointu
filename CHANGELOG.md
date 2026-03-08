@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Song corpus with songs from real intros for testing size optimizations in
+  Sointu systematically. ([#227][i227]) 
 - MIDI velocity, keyboard splitting, forcing specific instrument to use
   particular MIDI channel, and ability to transpose the incoming note values.
   These settings can be configured under instrument properties. ([#124][i124],
