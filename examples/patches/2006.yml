@@ -1,0 +1,285 @@
+bpm: 100
+rowsperbeat: 4
+score:
+    tracks:
+        - numvoices: 2
+          order: [0, 1, 2, 3, 0, 3, 4, 3, 0, 1, 2, 3, 0, 3, 4, 3, 0, 1, 2, 3, 0, 3, 4, 3, 0, 1, 2, 3, 0, 3, 4, 3, 0, 1, 2, 3, 0, 3, 4, 3, 0, 1, 2, 3, 0, 3, 4, 3, 3, 5, -1]
+          patterns: [[76, 1, 1, 1, 1, 1, 1, 1, 76, 1, 1, 1, 1, 1, 1, 1], [75, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [68, 1, 1, 1, 1, 1, 1, 1, 76, 1, 1, 1, 1, 1, 1, 1], [76, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [78, 1, 1, 1, 1, 1, 1, 1, 78, 1, 1, 1, 1, 1, 1, 1], [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+        - numvoices: 2
+          order: [0, 1, 2, 3, 0, 3, 4, 3, 0, 1, 2, 3, 0, 3, 4, 3, 0, 1, 2, 3, 0, 3, 4, 3, 0, 1, 2, 3, 0, 3, 4, 3, 0, 1, 2, 3, 0, 3, 4, 3, 0, 1, 2, 3, 0, 3, 4, 3, 1, 5, -1]
+          patterns: [[71, 1, 1, 1, 1, 1, 1, 1, 71, 1, 1, 1, 1, 1, 1, 1], [71, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [75, 1, 1, 1, 1, 1, 1, 1, 73, 1, 1, 1, 1, 1, 1, 1], [73, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [73, 1, 1, 1, 1, 1, 1, 1, 75, 1, 1, 1, 1, 1, 1, 1], [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+        - numvoices: 2
+          order: [0, 1, 2, 3, 0, 1, 4, 3, 0, 1, 2, 3, 0, 1, 4, 3, 0, 1, 2, 3, 0, 1, 4, 3, 0, 1, 2, 3, 0, 1, 4, 3, 0, 1, 2, 3, 0, 1, 4, 3, 0, 1, 2, 3, 0, 1, 4, 3, 1, 5, -1]
+          patterns: [[66, 1, 1, 1, 1, 1, 1, 1, 68, 1, 1, 1, 1, 1, 1, 1], [68, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [73, 1, 1, 1, 1, 1, 1, 1, 68, 1, 1, 1, 1, 1, 1, 1], [69, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [71, 1, 1, 1, 1, 1, 1, 1, 71, 1, 1, 1, 1, 1, 1, 1], [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+        - numvoices: 2
+          order: [0, 1, 2, 3, 0, 4, 5, 3, 0, 1, 2, 3, 0, 4, 5, 3, 0, 1, 2, 3, 0, 4, 5, 3, 0, 1, 2, 3, 0, 4, 5, 3, 0, 1, 2, 3, 0, 4, 5, 3, 0, 1, 2, 3, 0, 4, 5, 3, 6, -1, -1]
+          patterns: [[40, 1, 1, 1, 1, 1, 1, 1, 40, 1, 1, 1, 1, 1, 1, 1], [44, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [37, 1, 1, 1, 1, 1, 1, 1, 37, 1, 1, 1, 1, 1, 1, 1], [45, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [37, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [47, 1, 1, 1, 1, 1, 1, 1, 47, 1, 1, 1, 1, 1, 1, 1], [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+        - numvoices: 2
+          order: [-1, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2, 2, 3, 4, 5, 6, 0, 1, 2, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 7, 8, 9, 15, 16, 17, 18, 19, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+          patterns: [[76, 1, 0, 1, 1, 1, 78, 1, 76, 1, 0, 1, 71, 1, 0, 1], [75, 1, 0, 1, 1, 1, 76, 1, 75, 1, 0, 1, 71, 1, 0, 1], [73, 1, 0, 1, 1, 1, 75, 1, 76, 1, 0, 1, 73, 1, 0, 1], [71, 1, 0, 1, 1, 1, 66, 1, 68, 1, 0, 1, 71, 1, 0, 1], [73, 1, 0, 1, 1, 1, 68, 1, 71, 1, 0, 1, 73, 1, 0, 1], [71, 1, 0, 1, 1, 1, 73, 1, 75, 1, 0, 1, 78, 1, 0, 1], [76, 1, 0, 1, 1, 1, 73, 1, 71, 1, 0, 1, 69, 1, 0, 1], [71, 0, 1, 73, 71, 0, 66, 0, 68, 0, 1, 73, 71, 0, 76, 0], [75, 0, 1, 76, 75, 0, 71, 0, 68, 0, 1, 71, 73, 0, 75, 0], [73, 0, 1, 68, 69, 0, 73, 0, 73, 0, 1, 76, 73, 0, 68, 0], [69, 0, 1, 71, 73, 0, 1, 76, 69, 0, 1, 73, 75, 0, 76, 0], [66, 68, 0, 71, 73, 0, 66, 0, 1, 1, 1, 71, 71, 0, 76, 73], [68, 0, 1, 69, 68, 0, 1, 68, 76, 0, 1, 1, 1, 1, 75, 76], [0, 1, 73, 71, 71, 0, 73, 0, 78, 0, 1, 76, 75, 0, 1, 1], [76, 0, 1, 73, 73, 0, 1, 75, 76, 0, 1, 69, 0, 1, 1, 1], [69, 0, 1, 71, 73, 0, 75, 1, 69, 0, 1, 73, 75, 0, 76, 0], [66, 68, 0, 71, 73, 0, 66, 0, 68, 1, 0, 71, 71, 0, 76, 73], [68, 0, 1, 69, 68, 0, 68, 68, 76, 0, 1, 1, 73, 1, 75, 76], [71, 1, 73, 71, 71, 0, 73, 0, 78, 0, 1, 76, 75, 0, 1, 1], [76, 0, 1, 73, 73, 0, 73, 1, 76, 0, 1, 69, 69, 1, 0, 1]]
+        - numvoices: 1
+          order: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4, 5, 6, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+          patterns: [[76, 1, 0, 1, 1, 1, 78, 1, 76, 1, 0, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 76, 1, 75, 1, 0, 1, 71, 1, 0, 1], [1, 1, 1, 1, 1, 1, 75, 1, 76, 1, 0, 1, 1, 1, 1, 1], [73, 1, 0, 1, 1, 1, 1, 76, 76, 1, 0, 1, 73, 1, 0, 1], [71, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [73, 1, 0, 1, 1, 1, 1, 1, 71, 1, 0, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 75, 1, 0, 1, 78, 1, 0, 1], [1, 1, 1, 1, 1, 1, 1, 75, 71, 1, 0, 1, 1, 1, 1, 1]]
+        - numvoices: 2
+          order: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+          patterns: [[48, 0, 48, 0, 1, 1, 1, 1, 48, 0, 48, 0, 1, 1, 1, 1]]
+        - numvoices: 1
+          order: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+          patterns: [[1, 1, 1, 1, 61, 0, 1, 1, 1, 1, 1, 1, 61, 0, 1, 1]]
+        - numvoices: 1
+          order: [0, 1, 2, 3, 0, 2, 4, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 0, 2, 4, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+          patterns: [[76, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [80, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [73, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [81, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [83, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+    rowsperpattern: 16
+    length: 51
+patch:
+    - name: Pad
+      numvoices: 6
+      units:
+        - type: oscillator
+          id: 2
+          parameters: {attack: 64, color: 128, decay: 64, detune: 68, gain: 64, phase: 0, release: 64, shape: 97, stereo: 1, sustain: 64, transpose: 64, type: 0, unison: 3}
+        - type: oscillator
+          id: 16
+          parameters: {color: 116, detune: 57, gain: 64, phase: 0, shape: 64, stereo: 1, transpose: 64, type: 0, unison: 3}
+        - type: addp
+          id: 17
+          parameters: {stereo: 1}
+        - type: oscillator
+          id: 18
+          parameters: {color: 128, damp: 0, detune: 53, dry: 128, feedback: 96, gain: 64, notetracking: 2, phase: 0, pregain: 40, shape: 23, stereo: 1, transpose: 64, type: 0, unison: 3}
+        - type: addp
+          id: 19
+          parameters: {panning: 64, stereo: 1}
+        - type: envelope
+          id: 1
+          parameters: {attack: 76, auxgain: 64, decay: 64, gain: 64, outgain: 64, release: 78, stereo: 1, sustain: 89}
+        - type: mulp
+          id: 3
+          parameters: {stereo: 1}
+        - type: filter
+          id: 20
+          parameters: {bandpass: 0, frequency: 46, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 64, stereo: 1}
+        - type: pan
+          id: 5
+          parameters: {damp: 0, dry: 128, feedback: 96, notetracking: 2, panning: 64, pregain: 40, stereo: 1}
+        - type: outaux
+          id: 6
+          parameters: {auxgain: 18, outgain: 17, panning: 64, stereo: 1}
+    - name: Bass
+      numvoices: 2
+      units:
+        - type: oscillator
+          id: 21
+          parameters: {channel: 2, color: 64, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0}
+        - type: send
+          id: 22
+          parameters: {amount: 65, damp: 64, dry: 128, feedback: 125, notetracking: 0, port: 6, pregain: 40, sendpop: 1, stereo: 0, target: 11, unit: 0, voice: 0}
+        - type: oscillator
+          id: 11
+          parameters: {color: 101, damp: 64, detune: 103, dry: 128, feedback: 125, gain: 128, notetracking: 0, phase: 0, pregain: 40, shape: 64, stereo: 0, transpose: 64, type: 0}
+        - type: envelope
+          id: 10
+          parameters: {attack: 12, channel: 2, decay: 47, gain: 128, release: 78, stereo: 0, sustain: 64}
+        - type: mulp
+          id: 12
+          parameters: {gain: 128, stereo: 0}
+        - type: filter
+          id: 23
+          parameters: {bandpass: 0, frequency: 29, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 64, stereo: 0}
+        - type: pan
+          id: 14
+          parameters: {panning: 64, stereo: 0}
+        - type: outaux
+          id: 15
+          parameters: {auxgain: 64, outgain: 64, stereo: 1}
+    - name: Lead
+      numvoices: 3
+      units:
+        - type: oscillator
+          id: 28
+          parameters: {color: 128, detune: 64, gain: 64, phase: 0, shape: 104, stereo: 0, transpose: 64, type: 0}
+        - type: envelope
+          id: 27
+          parameters: {attack: 9, decay: 74, gain: 64, release: 78, stereo: 0, sustain: 0}
+        - type: mulp
+          id: 29
+          parameters: {stereo: 0}
+        - type: envelope
+          id: 33
+          parameters: {attack: 0, decay: 74, gain: 64, release: 64, stereo: 0, sustain: 0}
+        - type: send
+          id: 34
+          parameters: {amount: 128, port: 0, sendpop: 1, stereo: 0, target: 35, unit: 0, voice: 0}
+        - type: filter
+          id: 35
+          parameters: {bandpass: 0, frequency: 7, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 64, stereo: 0}
+        - type: delay
+          id: 36
+          parameters: {damp: 68, dry: 128, feedback: 121, notetracking: 0, pregain: 40, stereo: 0}
+          varargs: [1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618]
+        - type: pan
+          id: 31
+          parameters: {panning: 64, stereo: 0}
+        - type: outaux
+          id: 32
+          parameters: {auxgain: 64, outgain: 64, stereo: 1}
+    - name: Kick
+      numvoices: 2
+      units:
+        - type: envelope
+          id: 37
+          parameters: {attack: 0, decay: 64, gain: 64, release: 64, stereo: 0, sustain: 0}
+        - type: send
+          id: 38
+          parameters: {amount: 120, port: 0, sendpop: 1, stereo: 0, target: 40, unit: 0, voice: 0}
+        - type: envelope
+          id: 39
+          parameters: {attack: 10, decay: 69, gain: 64, release: 64, stereo: 0, sustain: 0}
+        - type: oscillator
+          id: 40
+          parameters: {color: 128, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 28, type: 0}
+        - type: mulp
+          id: 30
+          parameters: {stereo: 0}
+        - id: 41
+          parameters: {}
+        - type: envelope
+          id: 42
+          parameters: {attack: 0, decay: 57, gain: 64, release: 64, stereo: 0, sustain: 0}
+        - type: send
+          id: 43
+          parameters: {amount: 124, port: 0, sendpop: 1, stereo: 0, target: 45, unit: 0, voice: 0}
+        - type: envelope
+          id: 44
+          parameters: {attack: 0, decay: 63, gain: 64, release: 64, stereo: 0, sustain: 0}
+        - type: oscillator
+          id: 45
+          parameters: {color: 64, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 0}
+        - type: mulp
+          id: 46
+          parameters: {stereo: 0}
+        - type: addp
+          id: 47
+          parameters: {stereo: 0}
+        - id: 48
+          parameters: {}
+        - type: envelope
+          id: 49
+          parameters: {attack: 29, decay: 63, gain: 64, release: 64, stereo: 0, sustain: 0}
+        - type: oscillator
+          id: 50
+          parameters: {color: 128, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0}
+        - type: mulp
+          id: 51
+          parameters: {stereo: 0}
+        - type: addp
+          id: 52
+          parameters: {stereo: 0}
+        - id: 53
+          parameters: {}
+        - type: distort
+          id: 54
+          parameters: {drive: 108, stereo: 0}
+        - type: clip
+          id: 55
+          parameters: {stereo: 0}
+        - id: 56
+          parameters: {}
+        - type: filter
+          id: 57
+          parameters: {bandpass: 0, frequency: 44, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 64, stereo: 0}
+        - id: 58
+          parameters: {}
+        - type: pan
+          id: 59
+          parameters: {panning: 64, stereo: 0}
+        - type: outaux
+          id: 60
+          parameters: {auxgain: 51, outgain: 52, stereo: 1}
+    - name: Hat
+      numvoices: 1
+      units:
+        - type: envelope
+          id: 86
+          parameters: {attack: 0, decay: 62, gain: 64, release: 64, stereo: 0, sustain: 0}
+        - type: send
+          id: 88
+          parameters: {amount: 84, port: 0, sendpop: 1, stereo: 0, target: 87, unit: 0, voice: 0}
+        - type: envelope
+          id: 94
+          parameters: {attack: 0, decay: 57, gain: 64, release: 64, stereo: 0, sustain: 0}
+        - type: oscillator
+          id: 87
+          parameters: {color: 64, detune: 64, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 39, type: 0}
+        - type: mulp
+          id: 95
+          parameters: {stereo: 0}
+        - id: 93
+          parameters: {}
+        - type: noise
+          id: 96
+          parameters: {gain: 128, shape: 42, stereo: 0}
+        - type: envelope
+          id: 97
+          parameters: {attack: 1, decay: 59, gain: 64, release: 0, stereo: 0, sustain: 0}
+        - type: mulp
+          id: 98
+          parameters: {stereo: 0}
+        - type: addp
+          id: 89
+          parameters: {stereo: 0}
+        - id: 90
+          parameters: {}
+        - type: filter
+          id: 91
+          parameters: {bandpass: 0, frequency: 49, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 62, stereo: 0}
+        - id: 92
+          parameters: {}
+        - type: pan
+          id: 99
+          parameters: {panning: 64, stereo: 0}
+        - type: outaux
+          id: 100
+          parameters: {auxgain: 52, outgain: 53, stereo: 1}
+    - name: Glitter
+      numvoices: 1
+      units:
+        - type: envelope
+          id: 101
+          parameters: {attack: 11, decay: 65, gain: 64, release: 74, stereo: 0, sustain: 63}
+        - type: oscillator
+          id: 102
+          parameters: {color: 128, detune: 69, gain: 64, phase: 0, shape: 5, stereo: 0, transpose: 88, type: 0, unison: 0}
+        - type: mulp
+          id: 103
+          parameters: {stereo: 0}
+        - type: filter
+          id: 107
+          parameters: {bandpass: 0, frequency: 55, highpass: 0, lowpass: 1, negbandpass: 0, neghighpass: 0, resonance: 64, stereo: 0}
+        - type: delay
+          id: 104
+          parameters: {damp: 0, dry: 128, feedback: 101, notetracking: 2, pregain: 40, stereo: 0}
+          varargs: [48]
+        - type: pan
+          id: 105
+          parameters: {panning: 64, stereo: 0}
+        - type: outaux
+          id: 106
+          parameters: {auxgain: 64, outgain: 64, stereo: 1}
+    - name: Global
+      numvoices: 1
+      units:
+        - type: in
+          id: 7
+          parameters: {channel: 2, stereo: 1}
+        - type: out
+          id: 9
+          parameters: {gain: 128, stereo: 1}
+        - id: 24
+          parameters: {}
+        - type: oscillator
+          id: 25
+          parameters: {color: 128, detune: 64, gain: 64, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 0, type: 0}
+        - type: send
+          id: 26
+          parameters: {amount: 77, port: 0, sendpop: 1, stereo: 0, target: 23, unit: 0, voice: 0}
