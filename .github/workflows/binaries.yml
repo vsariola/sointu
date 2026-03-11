@@ -52,6 +52,10 @@ jobs:
             asmnasm: C:\Users\runneradmin\nasm\nasm
             output: sointu-vsti.dll
             params: -buildmode=c-shared -tags="plugin,native" ./cmd/sointu-vsti/
+          - os: windows-latest
+            asmnasm: C:\Users\runneradmin\nasm\nasm
+            output: sointu-play.exe
+            params: cmd/sointu-play/main.go
           - os: ubuntu-latest
             asmnasm: /home/runner/nasm/nasm
             output: sointu-compile
@@ -67,6 +71,11 @@ jobs:
             output: sointu-vsti.so
             params: -buildmode=c-shared -tags="plugin,native" ./cmd/sointu-vsti/
             packages: libegl-dev libvulkan-dev libxkbcommon-x11-dev libwayland-dev libasound2-dev libx11-xcb-dev libxcursor-dev libxfixes-dev
+          - os: ubuntu-latest
+            asmnasm: /home/runner/nasm/nasm
+            output: sointu-play
+            params: cmd/sointu-play/main.go
+            packages: libegl-dev libvulkan-dev libxkbcommon-x11-dev libwayland-dev libasound2-dev libx11-xcb-dev libxcursor-dev libxfixes-dev
           - os: macos-latest
             asmnasm: /Users/runner/nasm/nasm
             output: sointu-compile
@@ -81,6 +90,10 @@ jobs:
             bundleoutput: sointu-vsti            
             params: -buildmode=c-archive -tags="plugin" ./cmd/sointu-vsti/
             bundle: true
+          - os: macos-latest
+            asmnasm: /Users/runner/nasm/nasm
+            output: sointu-play
+            params: cmd/sointu-play/main.go
     steps:
     - uses: benjlevesque/short-sha@v3.0
       id: short-sha
