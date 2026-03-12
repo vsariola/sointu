@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.6.0]
 ### Added
 - Binary builds for sointu-play from GitHub Actions on all platforms.
   ([#226][i226]) 
@@ -375,7 +375,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - a command line utility to convert .yml songs to .asm
   - a command line utility to play the songs on command line
 
-[Unreleased]: https://github.com/vsariola/sointu/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/vsariola/sointu/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/vsariola/sointu/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/vsariola/sointu/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/vsariola/sointu/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/vsariola/sointu/compare/v0.3.0...v0.4.0
@@ -438,3 +439,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i215]: https://github.com/vsariola/sointu/issues/215
 [i221]: https://github.com/vsariola/sointu/issues/221
 [i222]: https://github.com/vsariola/sointu/issues/222
+[i226]: https://github.com/vsariola/sointu/issues/226
+[i227]: https://github.com/vsariola/sointu/issues/227
