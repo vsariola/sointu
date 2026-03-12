@@ -204,7 +204,7 @@ jobs:
         path: sointu-${{ matrix.config.os }}
     - name: Zip binaries
       run: |
-        zip ./sointu-${{ matrix.config.os }}.zip sointu-${{ matrix.config.os }}/*
+        zip -r ./sointu-${{ matrix.config.os }}.zip sointu-${{ matrix.config.os }}/*
     - name: Upload release assets
       uses: actions/upload-release-asset@v1
       env:
