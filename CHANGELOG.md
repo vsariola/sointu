@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Binary builds for sointu-play from GitHub Actions on all platforms.
+  ([#226][i226]) 
 - Song corpus with songs from real intros for testing size optimizations in
   Sointu systematically. ([#227][i227]) 
 - MIDI velocity, keyboard splitting, forcing specific instrument to use
