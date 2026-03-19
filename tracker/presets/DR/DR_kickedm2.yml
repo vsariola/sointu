@@ -69,11 +69,3 @@ units:
     - type: envelope
       id: 1769
       parameters: {attack: 57, decay: 75, gain: 128, release: 0, stereo: 0, sustain: 0}
-    - type: send
-      id: 1727
-      parameters: {amount: 21, port: 0, sendpop: 0, stereo: 0, target: 1726, voice: 0}
-    - type: send
-      id: 1728
-      parameters: {amount: 20, port: 0, sendpop: 1, stereo: 0, target: 1713, voice: 0}
-    - id: 1682
-      parameters: {}
