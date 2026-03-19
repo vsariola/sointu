@@ -63,9 +63,3 @@ units:
     - type: outaux
       id: 1681
       parameters: {auxgain: 1, outgain: 128, stereo: 1}
-    - id: 1773
-      parameters: {}
-      comment: SideChains
-    - type: envelope
-      id: 1769
-      parameters: {attack: 57, decay: 75, gain: 128, release: 0, stereo: 0, sustain: 0}
