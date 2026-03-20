@@ -39,6 +39,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   the loudness and peak detector. ([#210][i210])
 - More presets from Reaby, and all new and existing presets were normalized
   roughly to -12 dBFS true peak. ([#211][i211])
+- noisegate unit: suppress signals below a threshold power. Parameters are
+  the attack (time to close the gate), release (time to open up again) and
+  hold times (how long, below threshold, to delay the closing) ([#109][i109])
 
 ### Fixed
 - VSTi queries the host sample rate more robustly. Cubase previously reported

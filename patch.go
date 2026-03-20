@@ -273,20 +273,11 @@ var UnitTypes = map[string]UnitType{
 			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "attack", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
 			{Name: "release", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
-			{Name: "invgain", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) {
-				return strconv.FormatFloat(toDecibel(128/float64(v)), 'g', 3, 64), "dB"
-			}},
-			{Name: "threshold", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) {
-				return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB"
-			}},
+			{Name: "invgain", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: decibelLevelDispFunc},
+			{Name: "threshold", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: decibelLevelDispFunc},
 			{Name: "ratio", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(1 - float64(v)/128), "" }},
 		},
-		StackUse: func(u *Unit) StackUse {
-			if stereo, ok := u.Parameters["stereo"]; ok && stereo == 1 {
-				return StackUse{Inputs: [][]int{{0, 2, 3}, {1, 2, 3}}, Modifies: []bool{false, false, true, true}, NumOutputs: 4}
-			}
-			return StackUse{Inputs: [][]int{{0, 1}}, Modifies: []bool{false, true}, NumOutputs: 2}
-		},
+		StackUse: stackUseCalculateFactor,
 	},
 	"speed": {
 		Params:   []UnitParameter{},
@@ -426,6 +417,16 @@ var UnitTypes = map[string]UnitType{
 		},
 		StackUse: stackUseEffect,
 	},
+	"noisegate": {
+		Params: []UnitParameter{
+			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
+			{Name: "threshold", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: decibelLevelDispFunc},
+			{Name: "attack", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
+			{Name: "release", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
+			{Name: "hold", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
+		},
+		StackUse: stackUseCalculateFactor,
+	},
 }
 
 func stackUseSource(u *Unit) StackUse {
@@ -447,6 +448,15 @@ func stackUseEffect(u *Unit) StackUse {
 		return StackUse{Inputs: [][]int{{0}, {1}}, Modifies: []bool{true, true}, NumOutputs: 2}
 	}
 	return StackUse{Inputs: [][]int{{0}}, Modifies: []bool{true}, NumOutputs: 1}
+}
+
+// Effects like the Compressor add their calculated factor on top of the stack,
+// for greater flexibility (so you usually "mulp" this directly, but can choose otherwise)
+func stackUseCalculateFactor(u *Unit) StackUse {
+	if stereo, ok := u.Parameters["stereo"]; ok && stereo == 1 {
+		return StackUse{Inputs: [][]int{{0, 2, 3}, {1, 2, 3}}, Modifies: []bool{false, false, true, true}, NumOutputs: 4}
+	}
+	return StackUse{Inputs: [][]int{{0, 1}}, Modifies: []bool{false, true}, NumOutputs: 2}
 }
 
 // compile errors if interface is not implemented.
@@ -488,6 +498,10 @@ func compressorTimeDispFunc(v int) (string, string) {
 	alpha := math.Pow(2, -24*float64(v)/128) // alpha is the "smoothing factor" of first order low pass iir
 	sec := -1 / (44100 * math.Log(1-alpha))  // from smoothing factor to time constant, https://en.wikipedia.org/wiki/Exponential_smoothing
 	return engineeringTime(sec)
+}
+
+func decibelLevelDispFunc(v int) (string, string) {
+	return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB"
 }
 
 func engineeringTime(sec float64) (string, string) {

@@ -491,3 +491,82 @@ su_op_compressor_mono:
 {{- end}}
     ret
 {{- end}}
+
+
+{{- if .HasOp "noisegate"}}
+;-------------------------------------------------------------------------------
+;   NOISEGATE opcode: push noisegate gain to stack
+;-------------------------------------------------------------------------------
+;   Mono:   push g on stack, where g is a suitable gain for the signal
+;           you can then MULP to actually gate the signal or SEND it somewhere
+;   Stereo: push g g on stack, where g is calculated using the max(l, r) signal
+;-------------------------------------------------------------------------------
+{{.Func "su_op_noisegate" "Opcode"}}
+    fld     st0                                 ; x x
+    fmul    st0, st0                            ; x^2 x
+{{- if .StereoAndMono "noisegate"}}
+    jnc     su_op_noisegate_mono
+{{- end}}
+{{- if .Stereo "noisegate"}}
+    fld     st2                                 ; r x^2 l r
+    fst     st3                                 ; y x^2 l r
+    fmul    st0, st0                            ; y^2 x^2 l r
+    fucomi  st0, st1
+    fcmovb  st0, st1                            ; (y^2 < x^2 ? x^2 : y^2) x^2 l r
+    fstp    st1                                 ; max(x,y)^2 l r
+{{- if .StereoAndMono "noisegate"}}
+    call    su_op_noisegate_mono
+    fld     st0
+    ret
+su_op_noisegate_mono:                           ; (...==signal) x
+{{- end}}
+{{- end}}
+    fld     dword [{{.Input "noisegate" "threshold"}}] ; threshold signal x
+    fmul    st0, st0                            ; threshold^2 signal x
+    fucomip st0, st1                            ; signal x
+    fstp    st0                                 ; x
+    fld     dword [{{.WRK}}+4]                  ; holding x
+    jae     su_op_noisegate_holding             ;; (signal <= threshold) -> jump
+    fstp    st0                                 ; x
+    fld1                                        ; (1==holding) x
+    jmp     su_op_noisegate_evaluate
+su_op_noisegate_holding:
+    mov     al, {{.InputNumber "noisegate" "hold"}}
+    {{.Call "su_nonlinear_map"}}                ; holdrate holding x
+    fsubp   st1, st0                            ; (remaining holding) x
+su_op_noisegate_evaluate:
+    fld     dword [{{.WRK}}]                    ; (1-level) holding x
+    fld1                                        ; 1 (1-level) holding x
+    fsubrp  st1, st0                            ; level holding x
+    fldz                                        ; 0 level holding x
+    fucomip st0, st2                            ; level holding x
+    jae     su_op_noisegate_attack              ;; if (holding <= 0) -> jump
+su_op_noisegate_release:
+    mov     al, {{.InputNumber "noisegate" "release"}}
+    {{.Call "su_nonlinear_map"}}                ; release level holding x
+    faddp   st1, st0                            ; (level+release) holding x
+    fld1                                        ; 1 level' holding x
+    fucomi  st0, st1                            ; limit level holding x
+    jae     su_op_noisegate_leave               ;; if (limit >= level) -> jump
+    fxch                                        ; level limit holding x
+    jmp     su_op_noisegate_leave               ; level (limit==level) holding x
+su_op_noisegate_attack:
+    mov     al, {{.InputNumber "noisegate" "attack"}}
+    {{.Call "su_nonlinear_map"}}                ; attack level holding x
+    fsubp  st1, st0                             ; (level-attack) holding x
+    fldz                                        ; 0 level' holding x
+    fucomi  st0, st1                            ; limit level holding x
+    jbe     su_op_noisegate_leave               ;; if (limit <= level) -> jump
+    fxch                                        ; level (limit==level) holding x
+su_op_noisegate_leave:
+    fstp    st0                                 ; level holding x
+    fld1                                        ; 1 level holding x
+    fsub    st0, st1                            ; (1-level) level holding x
+    fstp    dword [{{.WRK}}]                    ; level holding x
+    fxch                                        ; holding level  x
+    fstp    dword [{{.WRK}}+4]                  ; level x
+{{- if and (.Stereo "noisegate") (not (.Mono "noisegate"))}}
+    fld     st0                                 ; and return the computed gain two times, ready for MULP STEREO
+{{- end}}
+    ret
+{{- end}}
