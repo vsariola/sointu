@@ -201,14 +201,14 @@ var UnitTypes = map[string]UnitType{
 	"gain": {
 		Params: []UnitParameter{
 			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-			{Name: "gain", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB" }},
+			{Name: "gain", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: decibelLevelDispFunc},
 		},
 		StackUse: stackUseEffect,
 	},
 	"invgain": {
 		Params: []UnitParameter{
 			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-			{Name: "invgain", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return strconv.FormatFloat(toDecibel(128/float64(v)), 'g', 3, 64), "dB" }},
+			{Name: "invgain", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: decibelInverseDispFunc},
 		},
 		StackUse: stackUseEffect,
 	},
@@ -273,7 +273,7 @@ var UnitTypes = map[string]UnitType{
 			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "attack", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
 			{Name: "release", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
-			{Name: "invgain", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: decibelLevelDispFunc},
+			{Name: "invgain", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: decibelInverseDispFunc},
 			{Name: "threshold", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: decibelLevelDispFunc},
 			{Name: "ratio", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(1 - float64(v)/128), "" }},
 		},
@@ -417,13 +417,13 @@ var UnitTypes = map[string]UnitType{
 		},
 		StackUse: stackUseEffect,
 	},
-	"noisegate": {
+	"gate": {
 		Params: []UnitParameter{
 			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
-			{Name: "threshold", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: decibelLevelDispFunc},
-			{Name: "attack", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
-			{Name: "release", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
-			{Name: "hold", MinValue: 0, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
+			{Name: "release", MinValue: 0, Default: 24, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
+			{Name: "hold", MinValue: 0, Default: 24, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
+			{Name: "attack", MinValue: 0, Default: 24, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: compressorTimeDispFunc},
+			{Name: "threshold", MinValue: 0, Default: 0, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: decibelLevelDispFunc},
 		},
 		StackUse: stackUseCalculateFactor,
 	},
@@ -502,6 +502,10 @@ func compressorTimeDispFunc(v int) (string, string) {
 
 func decibelLevelDispFunc(v int) (string, string) {
 	return strconv.FormatFloat(toDecibel(float64(v)/128), 'g', 3, 64), "dB"
+}
+
+func decibelInverseDispFunc(v int) (string, string) {
+	return strconv.FormatFloat(toDecibel(128/float64(v)), 'g', 3, 64), "dB"
 }
 
 func engineeringTime(sec float64) (string, string) {

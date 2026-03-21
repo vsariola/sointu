@@ -15,15 +15,15 @@ const (
 	opEnvelope   = 11
 	opFilter     = 12
 	opGain       = 13
-	opHold       = 14
-	opIn         = 15
-	opInvgain    = 16
-	opLoadnote   = 17
-	opLoadval    = 18
-	opMul        = 19
-	opMulp       = 20
-	opNoise      = 21
-	opNoisegate  = 22
+	opGate       = 14
+	opHold       = 15
+	opIn         = 16
+	opInvgain    = 17
+	opLoadnote   = 18
+	opLoadval    = 19
+	opMul        = 20
+	opMulp       = 21
+	opNoise      = 22
 	opOscillator = 23
 	opOut        = 24
 	opOutaux     = 25
@@ -37,4 +37,4 @@ const (
 	opXch        = 33
 )
 
-var transformCounts = [...]int{0, 0, 1, 3, 0, 5, 1, 1, 4, 1, 5, 2, 1, 1, 0, 1, 0, 1, 0, 0, 2, 4, 6, 1, 2, 1, 0, 0, 0, 1, 0, 0, 0}
+var transformCounts = [...]int{0, 0, 1, 3, 0, 5, 1, 1, 4, 1, 5, 2, 1, 4, 1, 0, 1, 0, 1, 0, 0, 2, 6, 1, 2, 1, 0, 0, 0, 1, 0, 0, 0}
