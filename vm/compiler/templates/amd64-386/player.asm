@@ -44,9 +44,6 @@ extern syncBuf
     {{- end}}
     {{- end}}
     xor     eax, eax
-    {{- if ne .VoiceTrackBitmask 0}}
-    {{.Push (.VoiceTrackBitmask | printf "%v") "VoiceTrackBitmask"}}
-    {{- end}}
     {{.Push "1" "RandSeed"}}
     {{.Push .AX "GlobalTick"}}
 su_render_rowloop:                      ; loop through every row in the song
@@ -55,9 +52,6 @@ su_render_rowloop:                      ; loop through every row in the song
         xor     eax, eax                ; ecx is the current sample within row
 su_render_sampleloop:                   ; loop through every sample in the row
             {{.Push .AX "Sample"}}
-            {{- if .SupportsPolyphony}}
-            {{.Push (.PolyphonyBitmask | printf "%v") "PolyphonyBitmask"}} ; does the next voice reuse the current opcodes?
-            {{- end}}
             {{.Push (.Song.Patch.NumVoices | printf "%v") "VoicesRemain"}}
             mov     {{.DX}}, {{.PTRWORD}} su_synth_obj                       ; {{.DX}} points to the synth object
             mov     {{.COM}}, {{.PTRWORD}} su_patch_opcodes           ; COM points to vm code
@@ -68,9 +62,6 @@ su_render_sampleloop:                   ; loop through every sample in the row
             lea     {{.WRK}}, [{{.DX}} + su_synthworkspace.voices]            ; WRK points to the first voice
             {{.Call "su_run_vm"}} ; run through the VM code
             {{.Pop .AX}}
-            {{- if .SupportsPolyphony}}
-            {{.Pop .AX}}
-            {{- end}}
             {{- template "output_sound.asm" .}}                ; *ptr++ = left, *ptr++ = right
             {{.Pop .AX}}
             inc     dword [{{.Stack "GlobalTick"}}] ; increment global time, used by delays
@@ -106,7 +97,7 @@ su_render_sampleloop:                   ; loop through every sample in the row
 ;   Dirty:      pretty much everything
 ;-------------------------------------------------------------------------------
 {{.Func "su_update_voices"}}
-{{- if ne .VoiceTrackBitmask 0}}
+{{- if .HasVoiceTrack}}
 ; The more complicated implementation: one track can trigger multiple voices
     xor     edx, edx
     mov     ebx, {{.PatternLength}}                   ; we could do xor ebx,ebx; mov bl,PATTERN_SIZE, but that would limit patternsize to 256...
@@ -125,7 +116,8 @@ su_update_voices_trackloop:
         xor     edx, edx                            ; edx=0
         mov     ecx, ebx                            ; ecx=first voice of the track to be done
 su_calculate_voices_loop:                           ; do {
-        bt      dword [{{.Stack "VoiceTrackBitmask"}} + {{.PTRSIZE}}],ecx ; test voicetrack_bitmask// notice that the incs don't set carry
+        {{- .Prepare "su_voicetrack_bitmask" | indent 4}}    
+        bt      dword [{{.Use "su_voicetrack_bitmask"}}], ecx ; if voice bit of su_polyphonism not set
         inc     edx                                 ;   edx++   // edx=numvoices
         inc     ecx                                 ;   ecx++   // ecx=the first voice of next track
         jc      su_calculate_voices_loop            ; } while bit ecx-1 of bitmask is on
@@ -248,6 +240,24 @@ su_update_voices_skipadd:
 ;-------------------------------------------------------------------------------
 {{.Data "su_patch_operands"}}
     db {{.Operands | toStrings | join ","}}
+
+{{- if not .Library}}
+{{- if .SupportsPolyphony}}
+;-------------------------------------------------------------------------------
+;    PolyphonyBitmask
+;-------------------------------------------------------------------------------
+{{.Data "su_polyphony_bitmask"}}
+    db {{.PolyphonyBitmask | toStrings | join ","}}
+{{- end}}
+{{- end}}
+
+{{- if .HasVoiceTrack}}
+;-------------------------------------------------------------------------------
+;    VoiceTrackBitmask
+;-------------------------------------------------------------------------------
+{{.Data "su_voicetrack_bitmask"}}
+    db {{.VoiceTrackBitmask | toStrings | join ","}}
+{{- end}}
 
 ;-------------------------------------------------------------------------------
 ;    Constants

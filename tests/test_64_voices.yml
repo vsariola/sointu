@@ -1,0 +1,743 @@
+bpm: 100
+rowsperbeat: 4
+score:
+    tracks:
+        - numvoices: 1
+          order: [0]
+          patterns: [[64, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 65, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 66, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 1, 67, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 1, 1, 68, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 1, 1, 1, 69, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 1, 1, 1, 1, 70, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 71, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 72, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 73, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 74, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 75, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 76, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 77, 0]]
+        - numvoices: 1
+          order: [0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 78, 0]]
+        - numvoices: 1
+          order: [0, 1]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 79], [0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[80, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 81, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 82, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 83, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 1, 84, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 1, 1, 85, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 1, 1, 1, 86, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 87, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 88, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 89, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 90, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 91, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 92, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 93, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 94, 0]]
+        - numvoices: 1
+          order: [-1, 0]
+          patterns: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 95]]
+    rowsperpattern: 16
+    length: 2
+patch:
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 385
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 386
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 387
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 388
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 389
+          parameters: {stereo: 1}
+        - type: out
+          id: 390
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 379
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 380
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 381
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 382
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 383
+          parameters: {stereo: 1}
+        - type: out
+          id: 384
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 373
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 374
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 375
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 376
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 377
+          parameters: {stereo: 1}
+        - type: out
+          id: 378
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 367
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 368
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 369
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 370
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 371
+          parameters: {stereo: 1}
+        - type: out
+          id: 372
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 361
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 362
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 363
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 364
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 365
+          parameters: {stereo: 1}
+        - type: out
+          id: 366
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 355
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 356
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 357
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 358
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 359
+          parameters: {stereo: 1}
+        - type: out
+          id: 360
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 349
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 350
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 351
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 352
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 353
+          parameters: {stereo: 1}
+        - type: out
+          id: 354
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 343
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 344
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 345
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 346
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 347
+          parameters: {stereo: 1}
+        - type: out
+          id: 348
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 337
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 338
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 339
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 340
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 341
+          parameters: {stereo: 1}
+        - type: out
+          id: 342
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 331
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 332
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 333
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 334
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 335
+          parameters: {stereo: 1}
+        - type: out
+          id: 336
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 325
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 326
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 327
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 328
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 329
+          parameters: {stereo: 1}
+        - type: out
+          id: 330
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 319
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 320
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 321
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 322
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 323
+          parameters: {stereo: 1}
+        - type: out
+          id: 324
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 313
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 314
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 315
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 316
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 317
+          parameters: {stereo: 1}
+        - type: out
+          id: 318
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 307
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 308
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 309
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 310
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 311
+          parameters: {stereo: 1}
+        - type: out
+          id: 312
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 301
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 302
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 303
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 304
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 305
+          parameters: {stereo: 1}
+        - type: out
+          id: 306
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 391
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 392
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 393
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 394
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 395
+          parameters: {stereo: 1}
+        - type: out
+          id: 396
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 397
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 398
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 399
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 400
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 401
+          parameters: {stereo: 1}
+        - type: out
+          id: 402
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 403
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 404
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 405
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 406
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 407
+          parameters: {stereo: 1}
+        - type: out
+          id: 408
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 409
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 410
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 411
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 412
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 413
+          parameters: {stereo: 1}
+        - type: out
+          id: 414
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 415
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 416
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 417
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 418
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 419
+          parameters: {stereo: 1}
+        - type: out
+          id: 420
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 421
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 422
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 423
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 424
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 425
+          parameters: {stereo: 1}
+        - type: out
+          id: 426
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 427
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 428
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 429
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 430
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 431
+          parameters: {stereo: 1}
+        - type: out
+          id: 432
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 433
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 434
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 435
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 436
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 437
+          parameters: {stereo: 1}
+        - type: out
+          id: 438
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 439
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 440
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 441
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 442
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 443
+          parameters: {stereo: 1}
+        - type: out
+          id: 444
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 445
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 446
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 447
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 448
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 449
+          parameters: {stereo: 1}
+        - type: out
+          id: 450
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 451
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 452
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 453
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 454
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 455
+          parameters: {stereo: 1}
+        - type: out
+          id: 456
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 457
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 458
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 459
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 460
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 461
+          parameters: {stereo: 1}
+        - type: out
+          id: 462
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 463
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 464
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 465
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 466
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 467
+          parameters: {stereo: 1}
+        - type: out
+          id: 468
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 469
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 470
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 471
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 472
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 473
+          parameters: {stereo: 1}
+        - type: out
+          id: 474
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 475
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 476
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 477
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 478
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 479
+          parameters: {stereo: 1}
+        - type: out
+          id: 480
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 481
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 482
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 483
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 484
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 485
+          parameters: {stereo: 1}
+        - type: out
+          id: 486
+          parameters: {gain: 128, stereo: 1}
+    - numvoices: 2
+      units:
+        - type: envelope
+          id: 295
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: envelope
+          id: 296
+          parameters: {attack: 32, decay: 32, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: oscillator
+          id: 297
+          parameters: {color: 96, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: oscillator
+          id: 298
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 96, stereo: 0, transpose: 72, type: 0, unison: 0}
+        - type: mulp
+          id: 299
+          parameters: {stereo: 1}
+        - type: out
+          id: 300
+          parameters: {gain: 128, stereo: 1}

@@ -212,7 +212,7 @@ func (m *Model) buildPatternUseCounts(track sointu.Track) []int {
 
 func (m *Model) updateRails() {
 	type stackElem struct{ instr, unit int }
-	scratchArray := [32]stackElem{}
+	scratchArray := [256]stackElem{}
 	scratch := scratchArray[:0]
 	m.derived.railError = RailError{}
 	for i, instr := range m.d.Song.Patch {

@@ -63,7 +63,13 @@ su_run_vm_advance:
     mov     [{{.Stack "Voice"}}], {{.WRK}}         ; update the pointer in the stack to point to the new voice
     mov     ecx, [{{.Stack "VoicesRemain"}}]     ; ecx = how many voices remain to process
     dec     ecx                             ; decrement number of voices to process
-    bt      dword [{{.Stack "PolyphonyBitmask"}}], ecx ; if voice bit of su_polyphonism not set
+{{- if .Library}}    
+    mov     {{.VAL}}, [{{.Stack "PolyphonyBitmaskAddr"}}] 
+    bt      dword [{{.VAL}}], ecx ; if voice bit of su_polyphonism not set
+{{- else }}
+    {{- .Prepare "su_polyphony_bitmask" | indent 4}}    
+    bt      dword [{{.Use "su_polyphony_bitmask"}}], ecx ; if voice bit of su_polyphonism not set
+{{- end}}
     jnc     su_op_advance_next_instrument   ; goto next_instrument
     mov     {{.VAL}}, [{{.Stack "OperandStream"}}] ; if it was set, then repeat the opcodes for the current voice
     mov     {{.COM}}, [{{.Stack "OpcodeStream"}}]

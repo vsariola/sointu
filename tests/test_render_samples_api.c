@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     memcpy(synth->Opcodes, opcodes, sizeof(opcodes));
     memcpy(synth->Operands, operands, sizeof(operands));
     synth->NumVoices = 1;
-    synth->Polyphony = 0;
+    memset(synth->Polyphony, 0, sizeof(synth->Polyphony));    
     synth->RandSeed = 1;
     // initialize Buffer
     buffer = (float *)malloc(2 * sizeof(float) * su_max_samples);

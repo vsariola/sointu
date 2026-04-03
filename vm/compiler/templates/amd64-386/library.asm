@@ -7,9 +7,9 @@ struc su_synth
     .sampleoffs resb    su_sample_offset.size * 256
     .randseed   resd    1
     .globaltime resd    1
-    .opcodes    resb    32 * 64
-    .operands   resb    32 * 64 * 8
-    .polyphony  resd    1
+    .opcodes    resb    256 * 64
+    .operands   resb    256 * 64 * 8
+    .polyphony  resb    32
     .numvoices  resd    1
 endstruc
 
@@ -68,8 +68,8 @@ su_render_samples_loop:
         inc     dword [{{.Stack "BufSample"}}]       ; samples++
         mov     {{.CX}}, [{{.Stack "SynthState"}}]
         {{.Push .AX "Sample"}}
-        mov     eax, [{{.CX}} + su_synth.polyphony]
-        {{.Push .AX "PolyphonyBitmask"}}
+        lea     {{.AX}}, [{{.CX}} + su_synth.polyphony]
+        {{.Push .AX "PolyphonyBitmaskAddr"}}
         mov     eax, [{{.CX}} + su_synth.numvoices]
         {{.Push .AX "VoicesRemain"}}
         lea     {{.DX}}, [{{.CX}}+ su_synth.synth_wrk]

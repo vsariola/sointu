@@ -23,11 +23,11 @@ typedef struct DelayWorkspace {
 } DelayWorkspace;
 
 typedef struct SynthWorkspace {
-    unsigned char Curvoices[32];
+    unsigned char Curvoices[256];
     float Left;
     float Right;
     float Aux[6];
-    struct Voice Voices[32];
+    struct Voice Voices[256];
 } SynthWorkspace;
 
 typedef struct SampleOffset {
@@ -43,9 +43,9 @@ typedef struct Synth {
     struct SampleOffset SampleOffsets[256];
     unsigned int RandSeed;
     unsigned int GlobalTick;
-    unsigned char Opcodes[32 * 64];
-    unsigned char Operands[32 * 64 * 8];
-    unsigned int Polyphony;
+    unsigned char Opcodes[256 * 64];
+    unsigned char Operands[256 * 64 * 8];
+    unsigned char Polyphony[32];
     unsigned int NumVoices;
 } Synth;
 #pragma pack(pop)

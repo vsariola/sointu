@@ -30,7 +30,8 @@ int main(int argc, char* argv[])
     memcpy(synth->Opcodes, opcodes, sizeof(opcodes));
     memcpy(synth->Operands, operands, sizeof(operands));
     synth->NumVoices = 3;
-    synth->Polyphony = 6;
+    memset(synth->Polyphony, 0, sizeof(synth->Polyphony));    
+    synth->Polyphony[0] = 6;
     synth->RandSeed = 1;
     synth->SampleOffsets[0].Start = 91507;
     synth->SampleOffsets[0].LoopStart = 5448;

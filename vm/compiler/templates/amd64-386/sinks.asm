@@ -94,6 +94,7 @@ su_op_aux_mono:
     test    ah, 0x80
     jz      su_op_send_skipglobal
     mov     {{.CX}}, [{{.Stack "Synth"}} + {{.PTRSIZE}}]
+    lea     {{.CX}}, [{{.CX}} + su_synthworkspace.voices - su_unit.size]
 su_op_send_skipglobal:
     popf
 {{- end}}

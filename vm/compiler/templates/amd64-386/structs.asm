@@ -23,11 +23,11 @@ endstruc
 ;   synthworkspace struct
 ;-------------------------------------------------------------------------------
 struc su_synthworkspace
-    .curvoices  resb    32      ; these are used by the multitrack player to store which voice is playing on which track
+    .curvoices  resb    256      ; these are used by the multitrack player to store which voice is playing on which track
     .left       resd    1
     .right      resd    1
     .aux        resd    6       ; 3 auxiliary signals
-    .voices     resb    32 * su_voice.size
+    .voices     resb    256 * su_voice.size
     .size:
 endstruc
 

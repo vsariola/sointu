@@ -319,7 +319,7 @@ var UnitTypes = map[string]UnitType{
 		Params: []UnitParameter{
 			{Name: "stereo", MinValue: 0, MaxValue: 1, CanSet: true, CanModulate: false},
 			{Name: "amount", MinValue: 0, Neutral: 64, Default: 64, MaxValue: 128, CanSet: true, CanModulate: true, DisplayFunc: func(v int) (string, string) { return formatFloat(float64(v)/64 - 1), "" }},
-			{Name: "voice", MinValue: 0, MaxValue: 32, CanSet: true, CanModulate: false, DisplayFunc: func(v int) (string, string) {
+			{Name: "voice", MinValue: 0, MaxValue: 256, CanSet: true, CanModulate: false, DisplayFunc: func(v int) (string, string) {
 				if v == 0 {
 					return "default", ""
 				}

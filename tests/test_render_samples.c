@@ -23,7 +23,7 @@ void SU_CALLCONV su_render_song(float *buffer)
     memcpy(synth->Opcodes, opcodes, sizeof(opcodes));
     memcpy(synth->Operands, operands, sizeof(operands));
     synth->NumVoices = 1;
-    synth->Polyphony = 0;
+    memset(synth->Polyphony, 0, sizeof(synth->Polyphony));    
     synth->RandSeed = 1;
     // triger first voice
     synth->SynthWrk.Voices[0].Note = 64;

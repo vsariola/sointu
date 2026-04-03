@@ -174,6 +174,8 @@ regression_test(test_envelope_16bit ENVELOPE "" test_envelope "-i")
 
 regression_test(test_polyphony "ENVELOPE;VCO_SINE" POLYPHONY)
 regression_test(test_polyphony_init POLYPHONY)
+regression_test(test_64_voices "ENVELOPE;POLYPHONY" VCO_SINE)
+
 regression_test(test_chords "ENVELOPE;VCO_SINE")
 regression_test(test_speed "ENVELOPE;VCO_SINE")
 regression_test(test_sync "ENVELOPE" "" "" "-r")

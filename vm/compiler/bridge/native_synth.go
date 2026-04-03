@@ -49,7 +49,6 @@ func Synth(patch sointu.Patch, bpm int) (*NativeSynth, error) {
 	if len(comPatch.Opcodes) == 0 {
 		s.Opcodes[0] = 0
 		s.NumVoices = 1
-		s.Polyphony = 0
 		return &NativeSynth{csynth: *s}, nil
 	}
 	for i, v := range comPatch.Opcodes {
@@ -67,7 +66,9 @@ func Synth(patch sointu.Patch, bpm int) (*NativeSynth, error) {
 		s.SampleOffsets[i].LoopLength = (C.ushort)(v.LoopLength)
 	}
 	s.NumVoices = C.uint(comPatch.NumVoices)
-	s.Polyphony = C.uint(comPatch.PolyphonyBitmask)
+	for i, v := range comPatch.PolyphonyBitmask {
+		s.Polyphony[i] = (C.uchar)(v)
+	}
 	s.RandSeed = 1
 	return &NativeSynth{csynth: *s}, nil
 }
@@ -160,7 +161,6 @@ func (bridgesynth *NativeSynth) Update(patch sointu.Patch, bpm int) error {
 	if len(comPatch.Opcodes) == 0 {
 		s.Opcodes[0] = 0
 		s.NumVoices = 1
-		s.Polyphony = 0
 		return nil
 	}
 	needsRefresh := false
@@ -182,7 +182,9 @@ func (bridgesynth *NativeSynth) Update(patch sointu.Patch, bpm int) error {
 		s.SampleOffsets[i].LoopLength = (C.ushort)(v.LoopLength)
 	}
 	s.NumVoices = C.uint(comPatch.NumVoices)
-	s.Polyphony = C.uint(comPatch.PolyphonyBitmask)
+	for i, v := range comPatch.PolyphonyBitmask {
+		s.Polyphony[i] = (C.uchar)(v)
+	}
 	if needsRefresh {
 		for i := range s.SynthWrk.Voices {
 			// if any of the opcodes change, we retrigger all units

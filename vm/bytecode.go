@@ -42,7 +42,7 @@ type (
 		// example, if first instrument has 3 voices, second instrument has 2
 		// voices, and third instrument four voices, the PolyphonyBitmask is: (MSB)
 		// 110101110 (LSB)
-		PolyphonyBitmask uint32
+		PolyphonyBitmask []byte
 
 		// NumVoices is the total number of voices in the patch
 		NumVoices uint32
@@ -69,8 +69,8 @@ type bytecodeBuilder struct {
 }
 
 func NewBytecode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode, error) {
-	if patch.NumVoices() > 32 {
-		return nil, fmt.Errorf("Sointu does not support more than 32 concurrent voices; patch uses %v", patch.NumVoices())
+	if patch.NumVoices() > MAX_VOICES {
+		return nil, fmt.Errorf("Sointu does not support more than %d concurrent voices; patch uses %v", MAX_VOICES, patch.NumVoices())
 	}
 	b := newBytecodeBuilder(patch, bpm)
 	for instrIndex, instr := range patch {
@@ -213,12 +213,13 @@ func NewBytecode(patch sointu.Patch, featureSet FeatureSet, bpm int) (*Bytecode,
 }
 
 func newBytecodeBuilder(patch sointu.Patch, bpm int) *bytecodeBuilder {
-	var polyphonyBitmask uint32 = 0
+	var polyphonyBitmask []byte = make([]byte, (patch.NumVoices()+7)/8) // 1 bit per voice, rounded up to full bytes
 	for _, instr := range patch {
 		for j := 0; j < instr.NumVoices-1; j++ {
-			polyphonyBitmask = (polyphonyBitmask << 1) + 1 // for each instrument, NumVoices - 1 bits are ones
+			shiftLeftMask(polyphonyBitmask)
+			polyphonyBitmask[0] += 1 // for each instrument, NumVoices - 1 bits are ones
 		}
-		polyphonyBitmask <<= 1 // ...and the last bit is zero, to denote "change instrument"
+		shiftLeftMask(polyphonyBitmask) // ...and the last bit is zero, to denote "change instrument"
 	}
 	delayTimesInt, delayIndices := constructDelayTimeTable(patch, bpm)
 	delayTimesU16 := make([]uint16, len(delayTimesInt))
@@ -234,6 +235,13 @@ func newBytecodeBuilder(patch sointu.Patch, bpm int) *bytecodeBuilder {
 		localFixups:     map[int]([]int){},
 		delayIndices:    delayIndices}
 	return &c
+}
+
+func shiftLeftMask(b []byte) {
+	var carry byte = 0
+	for i := range b {
+		carry, b[i] = b[i]&128, (b[i]<<1)+(carry>>7)
+	}
 }
 
 // op adds a command to the bytecode, and increments the unit number

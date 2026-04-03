@@ -37,7 +37,7 @@ type (
 	}
 )
 
-const MAX_VOICES = 32
+const MAX_VOICES = 256
 const MAX_UNITS = 63
 
 type (
@@ -189,7 +189,7 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, r
 					voices = voices[1:]
 					units = voices[0].units[:]
 				}
-				if mask := uint32(1) << uint32(voicesRemaining); s.bytecode.PolyphonyBitmask&mask == mask {
+				if mask := byte(1) << uint32(voicesRemaining&7); s.bytecode.PolyphonyBitmask[voicesRemaining>>3]&mask == mask {
 					opcodes, operands = opcodesInstr, operandsInstr
 				} else {
 					opcodesInstr, operandsInstr = opcodes, operands
