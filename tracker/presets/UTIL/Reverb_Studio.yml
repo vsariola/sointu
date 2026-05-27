@@ -1,0 +1,20 @@
+name: Reverb Studio
+numvoices: 1
+units:
+    - id: 1173
+      parameters: {}
+      comment: 'Studio Reverb - Load this before Global mastering '
+    - type: in
+      id: 1157
+      parameters: {channel: 2, stereo: 1}
+      comment: if you need secondary reverb set channel to 4. use opcode "aux" to send here.
+    - id: 1185
+      parameters: {}
+      comment: Use feedback and damp values to sculpt the room size and brightness.
+    - type: delay
+      id: 1158
+      parameters: {damp: 30, dry: 0, feedback: 90, notetracking: 0, pregain: 64, stereo: 1}
+      varargs: [443, 523, 613, 691, 787, 877, 971, 1051, 1151, 1237, 1321, 1447, 1531, 1613, 1721, 1823, 457, 547, 619, 709, 809, 883, 983, 1063, 1163, 1259, 1361, 1453, 1549, 1621, 1733, 1847]
+    - type: out
+      id: 1169
+      parameters: {gain: 128, stereo: 1}

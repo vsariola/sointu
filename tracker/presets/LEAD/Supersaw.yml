@@ -1,0 +1,70 @@
+name: Supersaw
+comment: Automate filter frequency for the classic trance sound
+numvoices: 5
+units:
+    - id: 2198
+      parameters: {}
+      comment: Right
+    - type: oscillator
+      id: 2199
+      parameters: {color: 128, detune: 30, gain: 64, phase: 43, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+    - type: oscillator
+      id: 2200
+      parameters: {color: 128, detune: 90, gain: 64, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+    - type: addp
+      id: 2218
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 2217
+      parameters: {color: 128, detune: 50, gain: 64, lfo: 0, phase: 22, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+    - type: addp
+      id: 2201
+      parameters: {stereo: 0}
+    - type: envelope
+      id: 2202
+      parameters: {attack: 30, decay: 0, gain: 64, release: 64, stereo: 0, sustain: 85}
+    - type: mulp
+      id: 2203
+      parameters: {stereo: 0}
+    - id: 2204
+      parameters: {}
+      comment: Left
+    - type: oscillator
+      id: 2205
+      parameters: {color: 128, detune: 90, gain: 64, phase: 32, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+    - type: oscillator
+      id: 2206
+      parameters: {color: 128, detune: 35, gain: 64, lfo: 0, phase: 16, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 3}
+    - type: addp
+      id: 2207
+      parameters: {stereo: 0}
+    - type: oscillator
+      id: 2219
+      parameters: {color: 128, detune: 25, gain: 79, phase: 98, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 3}
+    - type: addp
+      id: 2220
+      parameters: {stereo: 0}
+    - type: envelope
+      id: 2208
+      parameters: {attack: 30, decay: 0, gain: 64, release: 64, stereo: 0, sustain: 85}
+    - type: mulp
+      id: 2209
+      parameters: {stereo: 0}
+    - id: 2210
+      parameters: {}
+      comment: Effects
+    - type: belleq
+      id: 2211
+      parameters: {bandwidth: 90, frequency: 81, gain: 70, stereo: 0}
+    - type: xch
+      id: 2212
+      parameters: {}
+    - type: belleq
+      id: 2213
+      parameters: {bandwidth: 92, frequency: 72, gain: 69}
+    - id: 2214
+      parameters: {}
+      comment: Output
+    - type: outaux
+      id: 2216
+      parameters: {auxgain: 0, outgain: 21, stereo: 1}

@@ -1,0 +1,69 @@
+name: Trance bass 5
+numvoices: 5
+units:
+    - id: 2092
+      parameters: {}
+      comment: Modulations
+    - type: envelope
+      id: 2093
+      parameters: {attack: 0, decay: 78, gain: 128, release: 86, stereo: 0, sustain: 64}
+    - type: send
+      id: 174
+      parameters: {amount: 104, port: 0, sendpop: 0, target: 181}
+    - type: send
+      id: 2094
+      parameters: {amount: 100, port: 3, sendpop: 1, target: 2105, voice: 0}
+    - type: noise
+      id: 2095
+      parameters: {gain: 64, shape: 39}
+    - type: send
+      id: 2096
+      parameters: {amount: 62, port: 2, sendpop: 0, target: 2100}
+    - type: hold
+      id: 2097
+      parameters: {holdfreq: 0}
+    - type: send
+      id: 2098
+      parameters: {amount: 26, port: 2, sendpop: 1, target: 2105}
+    - id: 2099
+      parameters: {}
+      comment: Main body
+    - type: oscillator
+      id: 2100
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+    - type: distort
+      id: 2101
+      parameters: {drive: 120}
+    - type: filter
+      id: 2102
+      parameters: {bandpass: 1, frequency: 80, highpass: 0, lowpass: 1, resonance: 96}
+    - type: push
+      id: 2103
+      parameters: {}
+    - id: 2104
+      parameters: {}
+    - type: oscillator
+      id: 2105
+      parameters: {color: 64, detune: 63, gain: 71, lfo: 0, phase: 64, shape: 64, stereo: 1, transpose: 76, type: 1, unison: 1}
+    - type: distort
+      id: 2106
+      parameters: {drive: 70, stereo: 1}
+    - type: addp
+      id: 2107
+      parameters: {stereo: 1}
+    - type: filter
+      id: 181
+      parameters: {bandpass: 0, frequency: 0, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
+    - type: envelope
+      id: 2108
+      parameters: {attack: 0, decay: 75, gain: 48, release: 72, stereo: 1, sustain: 64}
+    - type: mulp
+      id: 2109
+      parameters: {stereo: 1}
+    - id: 2110
+      parameters: {}
+    - type: outaux
+      id: 2112
+      parameters: {auxgain: 0, outgain: 67, stereo: 1}
+    - id: 2113
+      parameters: {}

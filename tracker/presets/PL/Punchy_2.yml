@@ -1,0 +1,64 @@
+name: Punchy2
+numvoices: 5
+units:
+    - id: 197
+      parameters: {}
+      comment: Modulations
+    - type: oscillator
+      id: 1854
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0}
+    - type: send
+      id: 12
+      parameters: {amount: 71, port: 1, sendpop: 1, target: 1857}
+    - type: envelope
+      id: 1855
+      parameters: {attack: 0, decay: 68, gain: 128, release: 73, stereo: 0, sustain: 14}
+    - type: send
+      id: 1698
+      parameters: {amount: 84, port: 0, sendpop: 0, target: 1861}
+    - type: send
+      id: 4
+      parameters: {amount: 109, port: 0, sendpop: 1, target: 20}
+    - id: 195
+      parameters: {}
+      comment: Main oscillators
+    - type: oscillator
+      id: 1857
+      parameters: {color: 128, detune: 70, gain: 64, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 1}
+    - type: oscillator
+      id: 1858
+      parameters: {color: 90, detune: 73, gain: 31, lfo: 0, phase: 32, shape: 64, stereo: 0, transpose: 76, type: 2, unison: 3}
+    - type: addp
+      id: 1860
+      parameters: {stereo: 0}
+    - id: 196
+      parameters: {}
+      comment: Filters
+    - type: filter
+      id: 1861
+      parameters: {bandpass: 0, frequency: 66, highpass: -1, lowpass: 1, resonance: 83, stereo: 0}
+    - type: filter
+      id: 20
+      parameters: {bandpass: -1, frequency: 40, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
+    - id: 193
+      parameters: {}
+      comment: Main envelope
+    - type: envelope
+      id: 1862
+      parameters: {attack: 25, decay: 64, gain: 128, release: 71, stereo: 0, sustain: 128}
+    - type: mulp
+      id: 1863
+      parameters: {stereo: 0}
+    - id: 194
+      parameters: {}
+      comment: Effects & output
+    - type: pan
+      id: 23
+      parameters: {panning: 64, stereo: 0}
+    - type: delay
+      id: 1864
+      parameters: {damp: 78, dry: 128, feedback: 45, notetracking: 2, pregain: 81, stereo: 1}
+      varargs: [36, 32]
+    - type: outaux
+      id: 25
+      parameters: {auxgain: 13, outgain: 19, stereo: 1}

@@ -1,23 +1,25 @@
+name: DR kickedm2
 comment: A#2
+numvoices: 1
 units:
-    - id: 1660
+    - id: 1833
       parameters: {}
-      comment: Pitch drop
+      comment: 'Suggested range: A-1 --> C-2'
     - type: envelope
       id: 1661
-      parameters: {attack: 64, decay: 0, gain: 128, release: 0, stereo: 0, sustain: 128}
+      parameters: {attack: 66, decay: 0, gain: 128, release: 64, stereo: 0, sustain: 128}
     - type: send
       id: 1664
-      parameters: {amount: 52, port: 0, sendpop: 1, target: 1667}
+      parameters: {amount: 53, port: 0, sendpop: 1, target: 1667}
     - id: 1665
       parameters: {}
       comment: Body & tail
-    - type: envelope
-      id: 1666
-      parameters: {attack: 0, decay: 73, gain: 100, release: 0, stereo: 0, sustain: 0}
     - type: oscillator
       id: 1667
-      parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 0, shape: 64, stereo: 0, transpose: 83, type: 0, unison: 3}
+      parameters: {color: 117, detune: 75, gain: 128, lfo: 0, phase: 32, shape: 70, stereo: 0, transpose: 82, type: 0, unison: 2}
+    - type: envelope
+      id: 1666
+      parameters: {attack: 0, decay: 73, gain: 64, release: 0, stereo: 0, sustain: 0}
     - type: mulp
       id: 1668
       parameters: {stereo: 0}
@@ -26,34 +28,25 @@ units:
       comment: Tick
     - type: envelope
       id: 1670
-      parameters: {attack: 0, decay: 64, gain: 128, release: 0, stereo: 0, sustain: 0}
-    - type: oscillator
-      id: 1831
-      parameters: {color: 64, detune: 64, gain: 128, looplength: 1, loopstart: 640, phase: 0, samplestart: 649771, shape: 64, stereo: 0, transpose: 76, type: 4, unison: 0}
+      parameters: {attack: 5, decay: 26, gain: 128, release: 0, stereo: 0, sustain: 0}
     - type: filter
       id: 1672
-      parameters: {bandpass: 1, frequency: 99, highpass: -1, lowpass: 0, resonance: 128, stereo: 0}
+      parameters: {bandpass: -1, frequency: 114, highpass: 0, lowpass: 0, resonance: 80, stereo: 0}
     - type: dbgain
       id: 1832
-      parameters: {decibels: 81, stereo: 0}
-    - type: mulp
-      id: 1674
-      parameters: {stereo: 0}
+      parameters: {decibels: 85, stereo: 0}
     - type: addp
       id: 1675
       parameters: {stereo: 0}
     - id: 1676
       parameters: {}
       comment: Filters
-    - type: hold
-      id: 1792
-      parameters: {holdfreq: 72, stereo: 0}
     - type: filter
       id: 1771
-      parameters: {bandpass: 1, frequency: 115, highpass: 0, lowpass: 1, resonance: 87, stereo: 0}
+      parameters: {bandpass: 0, frequency: 85, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: filter
       id: 1677
-      parameters: {bandpass: 1, frequency: 9, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
+      parameters: {bandpass: 1, frequency: 12, highpass: 1, lowpass: 0, resonance: 57, stereo: 0}
     - id: 1679
       parameters: {}
       comment: Output
@@ -62,4 +55,6 @@ units:
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 1681
-      parameters: {auxgain: 1, outgain: 128, stereo: 1}
+      parameters: {auxgain: 3, outgain: 24, stereo: 1}
+    - id: 1682
+      parameters: {}

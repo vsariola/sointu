@@ -1,0 +1,35 @@
+name: Reverb Church
+numvoices: 1
+units:
+    - id: 1191
+      parameters: {}
+      comment: Church Reverb - Load this before Global mastering
+    - type: in
+      id: 1192
+      parameters: {channel: 2, stereo: 1}
+      comment: If you need second reverb set channel to 4 and use aux opcode to send
+    - type: filter
+      id: 1699
+      parameters: {bandpass: 0, frequency: 75, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
+      comment: Filter hights - church doesn't reflect very bright sounds, adjust to fit your style
+    - type: filter
+      id: 1700
+      parameters: {bandpass: 0, frequency: 19, highpass: 1, lowpass: 0, resonance: 128, stereo: 1}
+      comment: Filter bass - to clean up some low frequences
+    - id: 1703
+      parameters: {}
+      comment: First reflections, adjust feedback to alter the first reflections length
+    - type: delay
+      id: 1698
+      parameters: {damp: 22, dry: 0, feedback: 105, notetracking: 0, pregain: 62, stereo: 1}
+      varargs: [1777, 2129, 2467, 2819, 3217, 3571, 3929, 4297, 1783, 2131, 2473, 2833, 3221, 3581, 3931, 4327]
+    - id: 1704
+      parameters: {}
+      comment: Longer reverb tail from the church.. alter pregain and feedback to sculpt the reverb
+    - type: delay
+      id: 1701
+      parameters: {damp: 28, dry: 128, feedback: 110, notetracking: 0, pregain: 75, stereo: 1}
+      varargs: [4703, 5087, 5483, 5857, 6269, 6673, 7039, 7499, 4721, 5099, 5501, 5861, 6271, 6679, 7043, 7507]
+    - type: out
+      id: 1702
+      parameters: {gain: 128, stereo: 1}

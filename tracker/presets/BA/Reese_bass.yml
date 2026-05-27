@@ -1,0 +1,42 @@
+name: Reese bass
+numvoices: 1
+units:
+    - type: oscillator
+      id: 1756
+      parameters: {color: 122, detune: 77, gain: 60, lfo: 0, phase: 0, shape: 113, stereo: 1, transpose: 64, type: 1, unison: 3}
+    - type: send
+      id: 1724
+      parameters: {amount: 93, port: 0, sendpop: 0, stereo: 0, target: 1763, voice: 0}
+    - type: oscillator
+      id: 1757
+      parameters: {color: 112, detune: 54, gain: 64, lfo: 0, phase: 32, shape: 29, stereo: 1, transpose: 64, type: 1, unison: 3}
+    - type: distort
+      id: 1758
+      parameters: {drive: 96, stereo: 1}
+    - type: addp
+      id: 1759
+      parameters: {stereo: 1}
+    - type: oscillator
+      id: 1722
+      parameters: {color: 103, detune: 72, gain: 64, phase: 0, shape: 64, stereo: 1, transpose: 52, type: 1, unison: 3}
+    - type: distort
+      id: 1760
+      parameters: {drive: 126, stereo: 1}
+    - type: addp
+      id: 1723
+      parameters: {stereo: 1}
+    - type: envelope
+      id: 1761
+      parameters: {attack: 35, decay: 0, gain: 93, release: 68, stereo: 1, sustain: 128}
+    - type: mulp
+      id: 1762
+      parameters: {stereo: 1}
+    - type: pan
+      id: 1763
+      parameters: {panning: 64, stereo: 1}
+    - type: filter
+      id: 1764
+      parameters: {bandpass: 1, frequency: 10, highpass: 1, lowpass: 0, resonance: 128, stereo: 1}
+    - type: outaux
+      id: 1765
+      parameters: {auxgain: 0, outgain: 13, stereo: 1}

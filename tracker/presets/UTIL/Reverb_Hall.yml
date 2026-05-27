@@ -1,0 +1,32 @@
+name: Reverb Hall
+numvoices: 1
+units:
+    - id: 1723
+      parameters: {}
+      comment: Hall reverb - Load this before Global mastering
+    - type: in
+      id: 1724
+      parameters: {channel: 2, stereo: 1}
+      comment: Set channel to 4 if you need second reverb, use aux opcode to send
+    - type: filter
+      id: 1736
+      parameters: {bandpass: 1, frequency: 97, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
+      comment: Filter highs - adjust to increase brightness
+    - type: filter
+      id: 1735
+      parameters: {bandpass: 0, frequency: 26, highpass: 1, lowpass: 0, resonance: 128, stereo: 1}
+      comment: Filter lows - to clean up muddy bass freqs
+    - id: 1738
+      parameters: {}
+      comment: Try different feedback and damp values to sculpt the reverb length and tone
+    - type: delay
+      id: 1725
+      parameters: {damp: 21, dry: 0, feedback: 119, notetracking: 0, pregain: 64, stereo: 1}
+      varargs: [601, 751, 911, 1069, 1229, 1381, 1543, 1709, 1871, 2027, 2179, 2339, 2477, 2621, 2777, 2927, 613, 761, 919, 1087, 1237, 1399, 1553, 1721, 1877, 2039, 2161, 2341, 2467, 2633, 2791, 2939]
+    - type: belleq
+      id: 1737
+      parameters: {bandwidth: 54, frequency: 36, gain: 55, stereo: 1}
+      comment: Cleanup mids (adjust or remove if you don't need)
+    - type: out
+      id: 1726
+      parameters: {gain: 128, stereo: 1}

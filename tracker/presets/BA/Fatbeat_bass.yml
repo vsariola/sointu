@@ -1,10 +1,23 @@
+name: Fatbeat bass
+numvoices: 4
 units:
+    - id: 1807
+      parameters: {}
+      comment: Modulations
+    - type: envelope
+      id: 1808
+      parameters: {attack: 47, decay: 64, gain: 74, release: 64, stereo: 0, sustain: 52}
+    - type: send
+      id: 1811
+      parameters: {amount: 106, port: 3, sendpop: 1, target: 1814}
+    - id: 1823
+      parameters: {}
     - type: envelope
       id: 1821
-      parameters: {attack: 71, decay: 0, gain: 64, release: 85, stereo: 0, sustain: 128}
+      parameters: {attack: 78, decay: 0, gain: 128, release: 64, stereo: 0, sustain: 128}
     - type: send
       id: 1810
-      parameters: {amount: 0, port: 0, sendpop: 1, stereo: 0, target: 1852, voice: 0}
+      parameters: {amount: 2, port: 0, sendpop: 1, stereo: 0, target: 1852, voice: 0}
     - id: 1812
       parameters: {}
       comment: Main body
@@ -12,19 +25,22 @@ units:
       parameters: {}
     - type: envelope
       id: 1813
-      parameters: {attack: 23, decay: 0, gain: 127, release: 73, stereo: 0, sustain: 128}
+      parameters: {attack: 30, decay: 71, gain: 127, release: 60, stereo: 0, sustain: 95}
     - type: oscillator
       id: 1849
-      parameters: {color: 128, detune: 50, gain: 64, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 2}
+      parameters: {color: 128, detune: 50, gain: 64, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 88, type: 1, unison: 2}
     - type: oscillator
       id: 1814
-      parameters: {color: 8, detune: 80, gain: 128, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 1, unison: 2}
+      parameters: {color: 55, detune: 80, gain: 128, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 2}
     - type: addp
       id: 1850
       parameters: {stereo: 0}
     - type: oscillator
       id: 1818
-      parameters: {color: 64, detune: 56, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 52, type: 2, unison: 2}
+      parameters: {color: 64, detune: 54, gain: 64, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 2, unison: 2}
+    - type: dbgain
+      id: 1830
+      parameters: {decibels: 78, stereo: 0}
     - type: addp
       id: 1819
       parameters: {stereo: 0}
@@ -33,7 +49,7 @@ units:
       parameters: {stereo: 0}
     - type: filter
       id: 1852
-      parameters: {bandpass: 0, frequency: 88, highpass: 0, lowpass: 1, resonance: 104, stereo: 0}
+      parameters: {bandpass: 0, frequency: 0, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
     - type: pan
       id: 1816
       parameters: {panning: 64, stereo: 0}
@@ -41,10 +57,10 @@ units:
       parameters: {}
     - type: compressor
       id: 1854
-      parameters: {attack: 48, invgain: 64, ratio: 90, release: 69, stereo: 1, threshold: 36}
+      parameters: {attack: 29, invgain: 71, ratio: 81, release: 60, stereo: 1, threshold: 77}
     - type: mulp
       id: 1855
       parameters: {stereo: 1}
     - type: outaux
       id: 1817
-      parameters: {auxgain: 0, outgain: 18, stereo: 1}
+      parameters: {auxgain: 0, outgain: 36, stereo: 1}

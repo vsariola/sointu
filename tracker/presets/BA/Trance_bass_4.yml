@@ -1,0 +1,67 @@
+name: Trance bass 4
+numvoices: 5
+units:
+    - id: 1351
+      parameters: {}
+      comment: Modulations
+    - type: envelope
+      id: 173
+      parameters: {attack: 0, decay: 76, gain: 128, release: 86, stereo: 0, sustain: 64}
+    - type: send
+      id: 2114
+      parameters: {amount: 100, port: 0, sendpop: 0, target: 2116}
+    - type: send
+      id: 175
+      parameters: {amount: 100, port: 3, sendpop: 1, target: 179, voice: 0}
+    - id: 1350
+      parameters: {}
+      comment: Main body
+    - type: envelope
+      id: 176
+      parameters: {attack: 0, decay: 77, gain: 76, release: 54, stereo: 0, sustain: 64}
+    - type: oscillator
+      id: 177
+      parameters: {color: 128, detune: 65, gain: 87, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+    - type: distort
+      id: 1698
+      parameters: {drive: 118}
+    - type: filter
+      id: 1708
+      parameters: {bandpass: 1, frequency: 69, highpass: 0, lowpass: 1, resonance: 128}
+    - type: oscillator
+      id: 179
+      parameters: {color: 57, detune: 64, gain: 74, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 76, type: 1, unison: 0}
+    - type: distort
+      id: 2115
+      parameters: {drive: 80}
+    - type: addp
+      id: 178
+      parameters: {stereo: 0}
+    - type: mulp
+      id: 185
+      parameters: {stereo: 0}
+    - type: filter
+      id: 2116
+      parameters: {bandpass: 1, frequency: 0, highpass: 0, lowpass: 1, resonance: 87, stereo: 0}
+    - id: 1344
+      parameters: {}
+    - type: pan
+      id: 183
+      parameters: {panning: 62, stereo: 0}
+    - type: outaux
+      id: 184
+      parameters: {auxgain: 0, outgain: 41, stereo: 1}
+    - id: 1702
+      parameters: {}
+    - type: noise
+      id: 1703
+      parameters: {gain: 40, shape: 47}
+    - type: send
+      id: 2117
+      parameters: {amount: 62, port: 2, sendpop: 0, target: 177}
+    - type: hold
+      id: 2118
+      parameters: {holdfreq: 0}
+    - type: send
+      id: 2119
+      parameters: {amount: 26, port: 2, sendpop: 1, target: 179}

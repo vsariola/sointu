@@ -1,0 +1,20 @@
+name: Reverb Room
+numvoices: 1
+units:
+    - id: 1699
+      parameters: {}
+      comment: Room reverb - load this before Global mastering
+    - type: in
+      id: 1700
+      parameters: {channel: 2, stereo: 1}
+      comment: Set channel 4 if you need secondary reverb. Use opcode "aux" to send
+    - id: 1703
+      parameters: {}
+      comment: Room reverbs are short by nature, so keep feedback less than ~80. Use damp to alter room brightness.
+    - type: delay
+      id: 1701
+      parameters: {damp: 59, dry: 0, feedback: 51, notetracking: 0, pregain: 64, stereo: 1}
+      varargs: [1116, 1188, 1276, 1356, 1422, 1492, 1556, 1618, 1140, 1212, 1300, 1380, 1446, 1516, 1580, 1642]
+    - type: out
+      id: 1702
+      parameters: {gain: 128, stereo: 1}

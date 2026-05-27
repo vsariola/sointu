@@ -1,0 +1,83 @@
+name: Trance bass 6
+numvoices: 5
+units:
+    - id: 2055
+      parameters: {}
+      comment: Modulations
+    - type: envelope
+      id: 2090
+      parameters: {attack: 70, decay: 0, gain: 128, release: 77, sustain: 128}
+    - type: send
+      id: 2091
+      parameters: {amount: 0, port: 0, sendpop: 1, target: 2087}
+    - type: envelope
+      id: 2056
+      parameters: {attack: 0, decay: 78, gain: 128, release: 64, stereo: 0, sustain: 64}
+    - type: send
+      id: 2057
+      parameters: {amount: 104, port: 0, sendpop: 0, target: 2080}
+    - type: send
+      id: 2058
+      parameters: {amount: 100, port: 3, sendpop: 1, target: 2077, voice: 0}
+    - type: noise
+      id: 2059
+      parameters: {gain: 64, shape: 39}
+    - type: send
+      id: 2060
+      parameters: {amount: 62, port: 2, sendpop: 0, target: 2064}
+    - type: hold
+      id: 2061
+      parameters: {holdfreq: 0}
+    - type: send
+      id: 2062
+      parameters: {amount: 26, port: 2, sendpop: 1, target: 2077}
+    - id: 2063
+      parameters: {}
+      comment: Main body
+    - type: oscillator
+      id: 2064
+      parameters: {color: 128, detune: 64, gain: 128, lfo: 0, phase: 64, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+    - type: distort
+      id: 2065
+      parameters: {drive: 119}
+    - type: filter
+      id: 2066
+      parameters: {bandpass: -1, frequency: 84, highpass: 1, lowpass: 1, resonance: 78}
+    - type: push
+      id: 2076
+      parameters: {}
+    - id: 2075
+      parameters: {}
+    - type: oscillator
+      id: 2077
+      parameters: {color: 64, detune: 63, gain: 71, lfo: 0, phase: 64, shape: 64, stereo: 1, transpose: 76, type: 1, unison: 1}
+    - type: distort
+      id: 2078
+      parameters: {drive: 70, stereo: 1}
+    - type: addp
+      id: 2079
+      parameters: {stereo: 1}
+    - type: filter
+      id: 2080
+      parameters: {bandpass: 0, frequency: 0, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
+    - type: envelope
+      id: 2081
+      parameters: {attack: 20, decay: 78, gain: 48, release: 56, stereo: 1, sustain: 53}
+    - type: mulp
+      id: 2074
+      parameters: {stereo: 1}
+    - id: 2082
+      parameters: {}
+    - type: push
+      id: 2086
+      parameters: {stereo: 1}
+    - type: outaux
+      id: 2067
+      parameters: {auxgain: 0, outgain: 64, stereo: 1}
+    - id: 2088
+      parameters: {}
+    - type: outaux
+      id: 2087
+      parameters: {auxgain: 0, outgain: 0, stereo: 1}
+    - id: 2089
+      parameters: {}

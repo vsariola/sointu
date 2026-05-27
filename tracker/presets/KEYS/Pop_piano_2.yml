@@ -1,37 +1,42 @@
+name: Pop piano 2
+numvoices: 4
 units:
     - id: 1187
       parameters: {}
       comment: Oscillators
     - type: oscillator
-      id: 2
-      parameters: {color: 64, detune: 64, gain: 96, looplength: 1854, loopstart: 9313, phase: 0, samplestart: 961458, shape: 64, stereo: 0, transpose: 76, type: 4, unison: 0}
+      id: 1396
+      parameters: {color: 64, detune: 64, gain: 64, looplength: 1339, loopstart: 9176, phase: 32, samplestart: 982589, shape: 64, stereo: 0, transpose: 60, type: 4, unison: 1}
     - type: oscillator
       id: 1241
-      parameters: {color: 64, detune: 67, gain: 96, looplength: 1487, loopstart: 8309, phase: 0, samplestart: 972709, shape: 64, stereo: 0, transpose: 68, type: 4}
+      parameters: {color: 64, detune: 64, gain: 128, looplength: 1487, loopstart: 8309, phase: 0, samplestart: 972709, shape: 64, stereo: 0, transpose: 68, type: 4, unison: 0}
     - type: addp
-      id: 1185
+      id: 1818
       parameters: {stereo: 0}
     - id: 1188
       parameters: {}
       comment: Envelope
     - type: envelope
       id: 1
-      parameters: {attack: 0, decay: 80, gain: 64, release: 34, stereo: 0, sustain: 36}
+      parameters: {attack: 11, decay: 82, gain: 64, release: 69, stereo: 0, sustain: 20}
     - type: mulp
-      id: 1186
+      id: 1819
       parameters: {stereo: 0}
     - id: 1189
       parameters: {}
       comment: Pan & output
     - type: filter
-      id: 1741
-      parameters: {bandpass: 0, frequency: 76, highpass: 0, lowpass: 1, resonance: 128, stereo: 0}
-    - type: hold
-      id: 1742
-      parameters: {holdfreq: 91, stereo: 0}
+      id: 1805
+      parameters: {bandpass: 0, frequency: 94, highpass: -1, lowpass: 1, resonance: 128, stereo: 0}
+    - type: compressor
+      id: 1397
+      parameters: {attack: 43, invgain: 70, ratio: 72, release: 74, stereo: 0, threshold: 30}
+    - type: mulp
+      id: 1398
+      parameters: {stereo: 0}
     - type: pan
       id: 5
       parameters: {panning: 64, stereo: 0}
     - type: outaux
       id: 6
-      parameters: {auxgain: 19, outgain: 64, stereo: 1}
+      parameters: {auxgain: 0, outgain: 29, stereo: 1}

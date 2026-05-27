@@ -1,0 +1,46 @@
+name: Happy lead
+numvoices: 5
+units:
+    - id: 1784
+      parameters: {}
+      comment: Main oscillators
+    - type: oscillator
+      id: 164
+      parameters: {color: 78, detune: 56, gain: 80, lfo: 0, phase: 0, shape: 36, stereo: 1, transpose: 76, type: 1, unison: 2}
+    - type: oscillator
+      id: 165
+      parameters: {color: 80, detune: 56, gain: 76, lfo: 0, phase: 64, shape: 24, stereo: 1, transpose: 88, type: 1, unison: 3}
+    - type: addp
+      id: 166
+      parameters: {stereo: 1}
+    - id: 1785
+      parameters: {}
+      comment: Main envelopes
+    - type: envelope
+      id: 163
+      parameters: {attack: 26, decay: 64, gain: 128, release: 65, stereo: 1, sustain: 128}
+    - type: mulp
+      id: 167
+      parameters: {stereo: 1}
+    - id: 234
+      parameters: {}
+      comment: Filters
+    - type: filter
+      id: 230
+      parameters: {bandpass: 1, frequency: 32, highpass: -1, lowpass: 0, resonance: 128, stereo: 1}
+    - type: filter
+      id: 217
+      parameters: {bandpass: -1, frequency: 128, highpass: -1, lowpass: 1, resonance: 128, stereo: 1}
+    - id: 1789
+      parameters: {}
+      comment: Delay & output
+    - type: pan
+      id: 168
+      parameters: {panning: 64, stereo: 1}
+    - type: delay
+      id: 169
+      parameters: {damp: 33, dry: 128, feedback: 78, notetracking: 0, pregain: 43, stereo: 1}
+      varargs: [12550, 24402, 21265, 32419]
+    - type: outaux
+      id: 172
+      parameters: {auxgain: 0, outgain: 23, stereo: 1}

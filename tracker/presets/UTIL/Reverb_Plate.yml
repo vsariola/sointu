@@ -1,0 +1,24 @@
+name: Reverb Plate
+numvoices: 1
+units:
+    - id: 1173
+      parameters: {}
+      comment: Plate Reverb - Load this before Global mastering preset
+    - type: in
+      id: 1157
+      parameters: {channel: 2, stereo: 1}
+      comment: If you need secondary reverb, set channel to 4 and use aux opcode to send
+    - type: filter
+      id: 1703
+      parameters: {bandpass: 0, frequency: 27, highpass: 1, lowpass: 0, resonance: 128, stereo: 1}
+      comment: Filter bass around 200hz, plate doesn't have usually low bass
+    - id: 1704
+      parameters: {}
+      comment: Feedback controls the plate reverb length, damp should be kept quite low values, plates sound metallic by their nature
+    - type: delay
+      id: 1158
+      parameters: {damp: 23, dry: 0, feedback: 120, notetracking: 0, pregain: 64, stereo: 1}
+      varargs: [223, 307, 397, 487, 593, 677, 787, 883, 997, 1093, 1213, 1303, 1439, 1543, 1627, 1753, 233, 317, 419, 503, 607, 701, 811, 911, 1019, 1109, 1229, 1321, 1453, 1559, 1663, 1783]
+    - type: out
+      id: 1169
+      parameters: {gain: 128, stereo: 1}
