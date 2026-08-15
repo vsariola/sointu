@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+### BREAKING CHANGES
+- BREAKING CHANGE: If song uses a speed unit, SU_LENGTH_IN_SAMPLES,
+  SU_BUFFER_LENGTH and SU_SYNCBUFFER_LENGTH won't be defined in the generated
+  header file, as we cannot know their exact values during compile time without
+  rendering the entire song. When using a speed unit, the user has to take
+  responsibility of allocating large enough buffers. ([#241][i241])
+
 ## [0.6.0]
 ### Added
 - Binary builds for sointu-play from GitHub Actions on all platforms.
@@ -441,3 +449,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [i222]: https://github.com/vsariola/sointu/issues/222
 [i226]: https://github.com/vsariola/sointu/issues/226
 [i227]: https://github.com/vsariola/sointu/issues/227
+[i241]: https://github.com/vsariola/sointu/issues/241
