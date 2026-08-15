@@ -143,9 +143,13 @@ func main() {
 		var compiledPlayer map[string]string
 		if compile {
 			var err error
-			compiledPlayer, err = comp.Song(&song)
+			var warnings []string
+			compiledPlayer, warnings, err = comp.Song(&song)
 			if err != nil {
 				return fmt.Errorf("compiling player failed: %v", err)
+			}
+			for _, warning := range warnings {
+				fmt.Fprintf(os.Stderr, "warning: %v\n", warning)
 			}
 			if len(*extensionsOut) > 0 {
 				compiledPlayer = filterExtensions(compiledPlayer, strings.Split(*extensionsOut, ","))

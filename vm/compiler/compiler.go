@@ -75,9 +75,9 @@ func (com *Compiler) Library() (map[string]string, error) {
 	return retmap, nil
 }
 
-func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
+func (com *Compiler) Song(song *sointu.Song) (retmap map[string]string, warnings []string, err error) {
 	if com.Arch != "386" && com.Arch != "amd64" && com.Arch != "wasm" {
-		return nil, fmt.Errorf(`compiling a song player is supported only on 386, amd64 and wasm architectures (targeted architecture was %v)`, com.Arch)
+		return nil, nil, fmt.Errorf(`compiling a song player is supported only on 386, amd64 and wasm architectures (targeted architecture was %v)`, com.Arch)
 	}
 	var templates []string
 	if com.Arch == "386" || com.Arch == "amd64" {
@@ -86,14 +86,17 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 		templates = []string{"player.wat"}
 	}
 	features := vm.NecessaryFeaturesFor(song.Patch)
-	retmap := map[string]string{}
+	if _, ok := features.Opcode("speed"); ok {
+		warnings = append(warnings, fmt.Sprintf(`song uses the speed unit, so SU_LENGTH_IN_SAMPLES, SU_BUFFER_LENGTH, and SU_SYNCBUFFER_LENGTH cannot be known without rendering the entire song. They won't be defined in the generated header file. You have to take responsibility for allocating large enough audio buffer and syncBuf.`))
+	}
+	retmap = map[string]string{}
 	encodedPatch, err := vm.NewBytecode(song.Patch, features, song.BPM)
 	if err != nil {
-		return nil, fmt.Errorf(`could not encode patch: %v`, err)
+		return nil, nil, fmt.Errorf(`could not encode patch: %v`, err)
 	}
 	patterns, sequences, err := ConstructPatterns(song)
 	if err != nil {
-		return nil, fmt.Errorf(`could not encode song: %v`, err)
+		return nil, nil, fmt.Errorf(`could not encode song: %v`, err)
 	}
 	for _, templateName := range templates {
 		compilerMacros := *NewCompilerMacros(*com)
@@ -133,11 +136,11 @@ func (com *Compiler) Song(song *sointu.Song) (map[string]string, error) {
 			populatedTemplate, extension, err = com.compile(templateName, &data)
 		}
 		if err != nil {
-			return nil, fmt.Errorf(`could not execute template "%v": %v`, templateName, err)
+			return nil, nil, fmt.Errorf(`could not execute template "%v": %v`, templateName, err)
 		}
 		retmap[extension] = populatedTemplate
 	}
-	return retmap, nil
+	return retmap, warnings, nil
 }
 
 func (com *Compiler) compile(templateName string, data interface{}) (string, string, error) {

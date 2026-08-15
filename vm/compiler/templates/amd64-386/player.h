@@ -3,15 +3,22 @@
 #define SU_RENDER_H
 
 #define SU_CHANNEL_COUNT        2
+{{- if .HasOp "speed" -}}
+// warning: song uses speed unit, so SU_LENGTH_IN_SAMPLES, SU_BUFFER_LENGTH, and
+// SU_SYNCBUFFER_LENGTH cannot be known without rendering the entire song. They
+// are not defined in this generated header file. You have to take
+// responsibility for allocating large enough audio buffer and syncBuf.
+{{- else}}
 #define SU_LENGTH_IN_SAMPLES    {{.MaxSamples}}
 #define SU_BUFFER_LENGTH        (SU_LENGTH_IN_SAMPLES*SU_CHANNEL_COUNT)
+{{- end}}
 
 #define SU_SAMPLE_RATE          44100
 #define SU_BPM                  {{.Song.BPM}}
 #define SU_ROWS_PER_BEAT        {{.Song.RowsPerBeat}}
 #define SU_ROWS_PER_PATTERN     {{.Song.Score.RowsPerPattern}}
 #define SU_LENGTH_IN_PATTERNS   {{.Song.Score.Length}}
-#define SU_LENGTH_IN_ROWS       (SU_LENGTH_IN_PATTERNS*SU_PATTERN_SIZE)
+#define SU_LENGTH_IN_ROWS       (SU_LENGTH_IN_PATTERNS*SU_ROWS_PER_PATTERN)
 #define SU_SAMPLES_PER_ROW      (SU_SAMPLE_RATE*60/(SU_BPM*SU_ROWS_PER_BEAT))
 
 {{- if or .RowSync (.HasOp "sync")}}
@@ -20,7 +27,12 @@
 {{- else}}
 #define SU_NUMSYNCS             {{.Song.Patch.NumSyncs}}
 {{- end}}
+{{- if .HasOp "speed" -}}
+// Patch uses the speed unit, cannot safely define SU_SYNCBUFFER_LENGTH here.
+// Normally it would be round_up(SU_LENGTH_IN_SAMPLES/256)*SU_NUMSYNCS.
+{{- else}}
 #define SU_SYNCBUFFER_LENGTH    ((SU_LENGTH_IN_SAMPLES+255)>>8)*SU_NUMSYNCS
+{{- end}}
 {{- end}}
 
 #include <stdint.h>

@@ -14,6 +14,12 @@
 #include <stdio.h>
 
 #include TEST_HEADER
+#ifndef SU_BUFFER_LENGTH
+// SU_BUFFER_LENGTH is not defined, likely because user is using the speed unit.
+// But we will make the tests so that they don't use any more than this, so the
+// usual size is fine.
+#define SU_BUFFER_LENGTH SU_SAMPLES_PER_ROW*SU_LENGTH_IN_ROWS*SU_CHANNEL_COUNT
+#endif
 SUsample buf[SU_BUFFER_LENGTH];
 SUsample filebuf[SU_BUFFER_LENGTH];
 #ifdef SU_SYNC
