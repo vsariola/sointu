@@ -616,6 +616,39 @@ func (s *GoSynth) Render(buffer sointu.AudioBuffer, maxtime int) (samples int, r
 					unit.state[2+i] = b2*x - a2*y
 					stack[l-1-i] = y
 				}
+			case opGate:
+				signal := stack[l-1] * stack[l-1]
+				if stereo {
+					signal += stack[l-2] * stack[l-2]
+				}
+				threshold := params[3] * params[3]
+				level := unit.state[0]
+				holding := unit.state[1]
+				// attacking is delayed until "holding" did count down to 0
+				if signal > threshold {
+					holding = 1
+					release := nonLinearMap(params[0])
+					level += release
+					if level > 1 {
+						level = 1
+					}
+				}
+				holding -= nonLinearMap(params[1])
+				if holding < 0 {
+					attack := nonLinearMap(params[2])
+					level -= attack
+					if level < 0 {
+						level = 0
+					}
+				}
+				unit.state[0] = level
+				unit.state[1] = holding
+				// like the compressor, this does not directly multiply the factor
+				// but writes it onto the stack for the user to decide what to do
+				stack = append(stack, level)
+				if stereo {
+					stack = append(stack, level)
+				}
 			case opSync:
 				break
 			default:

@@ -491,3 +491,77 @@ su_op_compressor_mono:
 {{- end}}
     ret
 {{- end}}
+
+
+
+{{- if .HasOp "gate"}}
+;-------------------------------------------------------------------------------
+;   GATE opcode: push noise gate gain to stack
+;-------------------------------------------------------------------------------
+;   Mono:   push g on stack, where g is a suitable gain for the signal
+;           you can then MULP to actually gate the signal or SEND it somewhere
+;   Stereo: push g g on stack, where g is calculated using the max(l, r) signal
+;-------------------------------------------------------------------------------
+{{.Func "su_op_gate" "Opcode"}}
+    fld     st0                                 ; x x
+    fmul    st0, st0                            ; x^2 x
+{{- if .StereoAndMono "gate"}}
+    jnc     su_op_gate_mono
+{{- end}}
+{{- if .Stereo "gate"}}
+    fld     st2                                 ; r x^2 l r
+    fst     st3                                 ; y x^2 l r
+    fmul    st0, st0                            ; y^2 x^2 l r
+    faddp   st1, st0                            ; y^2+x^2 l r
+{{- if .StereoAndMono "gate"}}
+    call    su_op_gate_mono
+    fld     st0
+    ret
+su_op_gate_mono:                                ; (...==signal) x
+{{- end}}
+{{- end}}
+    fld     dword [{{.Input "gate" "threshold"}}] ; threshold signal x
+    fmul    st0, st0                            ; threshold^2 signal x
+    fucomip st0, st1                            ; signal x
+    fstp    st0                                 ; x
+    fld     dword [{{.WRK}}+4]                  ; holding x
+    jae     su_op_gate_holding                  ;; (signal <= threshold) -> jump
+    fstp    st0                                 ; x
+    fld1                                        ; (1==holding) x
+    jmp     su_op_gate_evaluate
+su_op_gate_holding:
+    mov     al, {{.InputNumber "gate" "hold"}}
+    {{.Call "su_nonlinear_map"}}                ; holdrate holding x
+    fsubp   st1, st0                            ; (remaining holding) x
+su_op_gate_evaluate:
+    fld     dword [{{.WRK}}]                    ; level holding x
+    fldz                                        ; 0 level holding x
+    fucomip st0, st2                            ; level holding x
+    jae     su_op_gate_attack                   ;; if (holding <= 0) -> jump
+su_op_gate_release:
+    mov     al, {{.InputNumber "gate" "release"}}
+    {{.Call "su_nonlinear_map"}}                ; release level holding x
+    faddp   st1, st0                            ; (level+release) holding x
+    fld1                                        ; 1 level' holding x
+    fucomi  st0, st1                            ; limit level holding x
+    jae     su_op_gate_leave                    ;; if (limit >= level) -> jump
+    fxch                                        ; level limit holding x
+    jmp     su_op_gate_leave                    ; level (limit==level) holding x
+su_op_gate_attack:
+    mov     al, {{.InputNumber "gate" "attack"}}
+    {{.Call "su_nonlinear_map"}}                ; attack level holding x
+    fsubp  st1, st0                             ; (level-attack) holding x
+    fldz                                        ; 0 level' holding x
+    fucomi  st0, st1                            ; limit level holding x
+    jbe     su_op_gate_leave                    ;; if (limit <= level) -> jump
+    fxch                                        ; level (limit==level) holding x
+su_op_gate_leave:
+    fstp    st0                                 ; level holding x
+    fst     dword [{{.WRK}}]                    ; level holding x
+    fxch                                        ; holding level  x
+    fstp    dword [{{.WRK}}+4]                  ; level x
+{{- if and (.Stereo "gate") (not (.Mono "gate"))}}
+    fld     st0                                 ; and return the computed gain two times, ready for MULP STEREO
+{{- end}}
+    ret
+{{- end}}
