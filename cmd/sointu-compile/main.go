@@ -43,10 +43,19 @@ func main() {
 	extensionsOut := flag.String("e", "", "Output only the compiled files with these comma separated extensions. For example: h,asm")
 	targetArch := flag.String("arch", runtime.GOARCH, "Target architecture. Defaults to OS architecture. Possible values: 386, amd64, wasm")
 	output16bit := flag.Bool("i", false, "Compiled song should output 16-bit integers, instead of floats.")
-	targetOs := flag.String("os", runtime.GOOS, "Target OS. Defaults to current OS. Possible values: windows, darwin, linux. Anything else is assumed linuxy. Ignored when targeting wasm.")
+	targetOs := flag.String("os", runtime.GOOS, "Target OS. Defaults to current OS. Possible values: windows, darwin, linux. Anything else exits with error code. Ignored when targeting wasm.")
 	versionFlag := flag.Bool("v", false, "Print version.")
 	flag.Usage = printUsage
 	flag.Parse()
+	// Validate and guard against some oddly specific typos:
+	if *targetOs != "windows" && *targetOs != "linux" && *targetOs != "darwin" {
+		fmt.Fprintf(os.Stderr, "error: invalid OS: `%s` (must be `windows`, `linux` or `darwin`).\n", *targetOs)
+		os.Exit(1)
+	}
+	if *targetArch != "386" && *targetArch != "amd64" && *targetArch != "wasm" {
+		fmt.Fprintf(os.Stderr, "error: invalid target architecture: `%s` (must be `386`, `amd64` or `wasm`).\n", *targetOs)
+		os.Exit(1)
+	}
 	if *versionFlag {
 		fmt.Println(version.VersionOrHash)
 		os.Exit(0)
