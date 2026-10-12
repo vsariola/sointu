@@ -77,7 +77,7 @@ func init() {
 				Name:           "Sointu",
 				Vendor:         "vsariola/sointu",
 				Category:       vst2.PluginCategorySynth,
-				Flags:          vst2.PluginIsSynth,
+				Flags:          vst2.PluginIsSynth | vst2.PluginHasEditor,
 				ProcessFloatFunc: func(in, out vst2.FloatBuffer) {
 					if time.Since(start) > 2*time.Second { // limit the rate we query the samplerate from the host and send alerts
 						if s, ok := context.SampleRate(); ok && math.Abs(float64(s-44100.0)) > 1e-6 {
