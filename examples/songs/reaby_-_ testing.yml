@@ -1,0 +1,267 @@
+bpm: 110
+rowsperbeat: 4
+score:
+    tracks:
+        - numvoices: 1
+          order: [0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1]
+          patterns: [[48, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+        - numvoices: 1
+          order: [0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, -1, 1, -1, 2, -1, 3, -1, 4, -1, 5, -1, 0, -1, -1, -1, -1, -1, 6, -1, -1, -1]
+          patterns: [[47, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [49, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [50, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [54, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [55, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [57, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+        - numvoices: 3
+          order: [-1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1]
+          patterns: [[47, 0, 47, 0, 47, 0, 47, 0, 47, 0, 47, 0, 47, 0, 47, 0], [49, 0, 49, 0, 49, 0, 49, 0, 49, 0, 49, 0, 49, 0, 49, 0], [50, 0, 50, 0, 50, 0, 50, 0, 50, 0, 50, 0, 50, 0, 50, 0], [54, 0, 54, 0, 54, 0, 54, 0, 54, 0, 54, 0, 54, 0, 54, 0], [55, 0, 55, 0, 55, 0, 55, 0, 55, 0, 55, 0, 55, 0, 55, 0], [57, 0, 57, 0, 57, 0, 57, 0, 57, 0, 57, 0, 57, 0, 57, 0]]
+        - numvoices: 6
+          order: [-1, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2, 1, 3, 1, 3, 1, 0, 1, 2, 1, 3, 1, 3, 1, 0, 1, 4, 5, 6, 5, 3, 5, 0, 7, 8, 5, 0, 1, 0, 1, 9, -1, -1, -1, -1, -1]
+          patterns: [[59, 1, 1, 1, 1, 1, 1, 1, 62, 1, 1, 1, 1, 1, 1, 1], [66, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [55, 1, 1, 1, 1, 1, 1, 1, 62, 1, 1, 1, 1, 1, 1, 1], [57, 1, 1, 1, 1, 1, 1, 1, 62, 1, 1, 1, 1, 1, 1, 1], [61, 1, 1, 1, 1, 1, 1, 1, 64, 1, 1, 1, 1, 1, 1, 1], [69, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [62, 1, 1, 1, 1, 1, 1, 1, 64, 1, 1, 1, 1, 1, 1, 1], [71, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [61, 1, 1, 1, 1, 1, 1, 1, 62, 1, 1, 1, 1, 1, 1, 1], [59, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+    rowsperpattern: 16
+    length: 46
+patch:
+    - name: Noise sweep down
+      numvoices: 1
+      units:
+        - type: oscillator
+          id: 1741
+          parameters: {color: 128, detune: 64, gain: 90, lfo: 1, phase: 0, shape: 64, transpose: 0}
+        - type: send
+          id: 1734
+          parameters: {amount: 90, port: 0, sendpop: 0, stereo: 0, target: 1736, voice: 0}
+        - type: pop
+          id: 1748
+          parameters: {}
+        - type: envelope
+          id: 1746
+          parameters: {attack: 83, decay: 128, gain: 64, release: 79, sustain: 128}
+        - type: noise
+          id: 1735
+          parameters: {gain: 64, shape: 64, stereo: 0}
+        - type: filter
+          id: 1736
+          parameters: {bandpass: -1, frequency: 64, highpass: 0, lowpass: 1, resonance: 101, stereo: 0}
+        - type: mulp
+          id: 1747
+          parameters: {}
+        - type: pan
+          id: 1739
+          parameters: {panning: 64, stereo: 0}
+        - type: delay
+          id: 1738
+          parameters: {damp: 0, dry: 0, feedback: 83, notetracking: 2, pregain: 128, stereo: 0}
+          varargs: [32]
+        - type: outaux
+          id: 1740
+          parameters: {auxgain: 9, outgain: 17, stereo: 1}
+    - name: Reese bass
+      numvoices: 1
+      units:
+        - type: oscillator
+          id: 1756
+          parameters: {color: 122, detune: 77, gain: 60, lfo: 0, phase: 0, shape: 113, stereo: 1, transpose: 64, type: 1, unison: 3}
+        - type: send
+          id: 2122
+          parameters: {amount: 93, port: 0, sendpop: 0, stereo: 0, target: 1763, voice: 0}
+        - type: oscillator
+          id: 1757
+          parameters: {color: 112, detune: 54, gain: 64, lfo: 0, phase: 32, shape: 29, stereo: 1, transpose: 64, type: 1, unison: 3}
+        - type: distort
+          id: 1758
+          parameters: {drive: 96, stereo: 1}
+        - type: addp
+          id: 1759
+          parameters: {stereo: 1}
+        - type: oscillator
+          id: 1722
+          parameters: {color: 103, detune: 72, gain: 64, phase: 0, shape: 64, stereo: 1, transpose: 52, type: 1, unison: 3}
+        - type: distort
+          id: 1760
+          parameters: {drive: 126, stereo: 1}
+        - type: addp
+          id: 2123
+          parameters: {stereo: 1}
+        - type: envelope
+          id: 1761
+          parameters: {attack: 35, decay: 0, gain: 93, release: 68, stereo: 1, sustain: 128}
+        - type: mulp
+          id: 1762
+          parameters: {stereo: 1}
+        - type: pan
+          id: 1763
+          parameters: {panning: 64, stereo: 1}
+        - type: filter
+          id: 1764
+          parameters: {bandpass: 1, frequency: 10, highpass: 1, lowpass: 0, resonance: 128, stereo: 1}
+        - type: outaux
+          id: 1765
+          parameters: {auxgain: 6, outgain: 24, stereo: 1}
+    - name: Trance bass 6
+      numvoices: 3
+      units:
+        - id: 2136
+          parameters: {}
+          comment: Modulations
+        - type: envelope
+          id: 2090
+          parameters: {attack: 64, decay: 0, gain: 128, release: 79, sustain: 128}
+        - type: send
+          id: 2091
+          parameters: {amount: 16, port: 0, sendpop: 1, target: 2087}
+        - type: envelope
+          id: 2137
+          parameters: {attack: 0, decay: 78, gain: 128, release: 64, stereo: 0, sustain: 64}
+        - type: send
+          id: 2138
+          parameters: {amount: 104, port: 0, sendpop: 0, target: 2146}
+        - type: send
+          id: 2139
+          parameters: {amount: 100, port: 3, sendpop: 1, target: 2144, voice: 0}
+        - type: noise
+          id: 2140
+          parameters: {gain: 64, shape: 64}
+        - type: hold
+          id: 2061
+          parameters: {holdfreq: 0}
+        - type: send
+          id: 2062
+          parameters: {amount: 25, port: 2, sendpop: 1, target: 2144}
+        - id: 2142
+          parameters: {}
+          comment: Main body
+        - type: oscillator
+          id: 2064
+          parameters: {color: 64, detune: 64, gain: 128, lfo: 0, phase: 82, shape: 64, stereo: 0, transpose: 64, type: 0, unison: 0}
+        - type: push
+          id: 2076
+          parameters: {}
+        - id: 2143
+          parameters: {}
+        - type: oscillator
+          id: 2144
+          parameters: {color: 74, detune: 68, gain: 64, lfo: 0, phase: 64, shape: 64, stereo: 1, transpose: 64, type: 1, unison: 1}
+        - type: addp
+          id: 2079
+          parameters: {stereo: 1}
+        - type: filter
+          id: 2146
+          parameters: {bandpass: 0, frequency: 10, highpass: 0, lowpass: 1, resonance: 88, stereo: 1}
+        - type: distort
+          id: 2065
+          parameters: {drive: 84, stereo: 1}
+        - type: envelope
+          id: 2147
+          parameters: {attack: 0, decay: 80, gain: 37, release: 69, stereo: 1, sustain: 64}
+        - type: mulp
+          id: 2148
+          parameters: {stereo: 1}
+        - id: 2149
+          parameters: {}
+        - type: distort
+          id: 2145
+          parameters: {drive: 80, stereo: 1}
+        - type: outaux
+          id: 2150
+          parameters: {auxgain: 9, outgain: 40, stereo: 1}
+        - id: 2152
+          parameters: {}
+        - id: 2151
+          parameters: {}
+    - name: Synth strings
+      numvoices: 6
+      units:
+        - id: 66
+          parameters: {}
+          comment: Modulations
+        - type: oscillator
+          id: 2
+          parameters: {color: 128, detune: 64, gain: 83, lfo: 1, phase: 0, shape: 64, stereo: 0, transpose: 64, type: 0}
+        - type: send
+          id: 4
+          parameters: {amount: 70, port: 3, sendpop: 0, target: 63}
+        - type: send
+          id: 3
+          parameters: {amount: 70, port: 1, sendpop: 1, target: 6}
+        - id: 67
+          parameters: {}
+          comment: Main oscillators
+        - type: oscillator
+          id: 6
+          parameters: {color: 28, detune: 66, gain: 37, lfo: 0, phase: 0, shape: 42, stereo: 1, transpose: 76, type: 1, unison: 3}
+        - type: oscillator
+          id: 63
+          parameters: {color: 28, detune: 66, gain: 78, lfo: 0, phase: 29, shape: 91, stereo: 1, transpose: 76, type: 1, unison: 1}
+        - type: addp
+          id: 64
+          parameters: {stereo: 1}
+        - id: 68
+          parameters: {}
+          comment: Main envelope
+        - type: envelope
+          id: 1
+          parameters: {attack: 64, decay: 88, gain: 64, release: 88, stereo: 1, sustain: 88}
+        - type: mulp
+          id: 65
+          parameters: {stereo: 1}
+        - id: 69
+          parameters: {}
+          comment: Output
+        - type: pan
+          id: 10
+          parameters: {panning: 64, stereo: 1}
+        - type: outaux
+          id: 11
+          parameters: {auxgain: 15, outgain: 54, stereo: 1}
+    - name: Reverb Church
+      numvoices: 1
+      units:
+        - id: 1191
+          parameters: {}
+          comment: Church Reverb - Load this before Global mastering
+        - type: in
+          id: 1192
+          parameters: {channel: 2, stereo: 1}
+          comment: If you need second reverb set channel to 4 and use aux opcode to send
+        - type: filter
+          id: 1699
+          parameters: {bandpass: 0, frequency: 59, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
+          comment: Filter hights - church doesn't reflect very bright sounds, adjust to fit your style
+        - type: filter
+          id: 1700
+          parameters: {bandpass: 0, frequency: 22, highpass: 1, lowpass: 0, resonance: 128, stereo: 1}
+          comment: Filter bass - to clean up some low frequences
+        - id: 1703
+          parameters: {}
+          comment: First reflections, adjust feedback to alter the first reflections length
+        - type: delay
+          id: 1698
+          parameters: {damp: 22, dry: 0, feedback: 105, notetracking: 0, pregain: 62, stereo: 1}
+          varargs: [1777, 2129, 2467, 2819, 3217, 3571, 3929, 4297, 1783, 2131, 2473, 2833, 3221, 3581, 3931, 4327]
+        - id: 1704
+          parameters: {}
+          comment: Longer reverb tail from the church.. alter pregain and feedback to sculpt the reverb
+        - type: delay
+          id: 1701
+          parameters: {damp: 28, dry: 128, feedback: 110, notetracking: 0, pregain: 73, stereo: 1}
+          varargs: [4703, 5087, 5483, 5857, 6269, 6673, 7039, 7499, 4721, 5099, 5501, 5861, 6271, 6679, 7043, 7507]
+        - type: out
+          id: 1702
+          parameters: {gain: 128, stereo: 1}
+    - name: Global mastering
+      numvoices: 1
+      units:
+        - id: 1184
+          parameters: {}
+          comment: Global mastering - set this preset as last intrument, load reverbs before this
+        - type: in
+          id: 1170
+          parameters: {channel: 0, stereo: 1}
+        - type: filter
+          id: 1171
+          parameters: {bandpass: -1, frequency: 128, highpass: 0, lowpass: 1, resonance: 128, stereo: 1}
+          comment: Limit highs
+        - type: filter
+          id: 1166
+          parameters: {bandpass: 1, frequency: 10, highpass: 1, lowpass: 0, resonance: 128, stereo: 1}
+          comment: Low cut
+        - type: out
+          id: 1172
+          parameters: {gain: 128, stereo: 1}
+          comment: Master gain
